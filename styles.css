@@ -201,11 +201,16 @@ main {
 }
 
 .gallery-grid,
-.results-grid,
 .tomorrow-grid {
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.results-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
 }
 
 .image-card,
@@ -240,10 +245,9 @@ main {
 }
 
 .result-image {
-  aspect-ratio: 16 / 10;
   background: #eef2f7;
   display: block;
-  object-fit: contain;
+  height: auto;
   width: 100%;
 }
 

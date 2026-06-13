@@ -38,7 +38,7 @@ tabs.forEach((tab) => {
 });
 
 window.addEventListener("hashchange", () => {
-  showPage(window.location.hash.replace("#", "") || "tomorrow");
+  showPage(window.location.hash.replace("#", "") || "results");
 });
 
-showPage(window.location.hash.replace("#", "") || "tomorrow");
+showPage(window.location.hash.replace("#", "") || "results");

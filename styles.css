@@ -207,7 +207,7 @@ main {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.tomorrow-list {
+.match-list {
   display: grid;
   gap: 18px;
   margin: 0 auto;

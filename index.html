@@ -11,21 +11,91 @@
       <nav class="topbar" aria-label="Primary">
         <a class="brand" href="#results" data-page-link="results">Box This Lap</a>
         <div class="nav-links" role="tablist" aria-label="Site sections">
-          <!--<a href="#tomorrow" data-page-link="tomorrow" role="tab">Tomorrow</a>-->
+          <a href="#today" data-page-link="today" role="tab">Today</a>
+          <a href="#tomorrow" data-page-link="tomorrow" role="tab">Tomorrow</a>
           <a href="#results" data-page-link="results" role="tab">World Cup Results</a>
-          <!--<a href="#player-scores" data-page-link="player-scores" role="tab">Player Scores</a>
-          <a href="#manager-scores" data-page-link="manager-scores" role="tab">Manager Scores</a>-->
+          <a href="#player-scores" data-page-link="player-scores" role="tab">Player Scores</a>
+          <a href="#manager-scores" data-page-link="manager-scores" role="tab">Manager Scores</a>
         </div>
       </nav>
     </header>
 
     <main>
+      <section class="page" id="today" data-page="today">
+        <div class="section-heading">
+          <h1>Today</h1>
+        </div>
+
+        <div class="match-list">
+          <article class="match-card">
+            <div class="match-header">
+              <h2>Qatar v Switzerland</h2>
+              <p>3pm EST</p>
+            </div>
+            <table class="pair-table">
+              <tbody>
+                <tr>
+                  <th scope="row">Switzerland</th>
+                  <td>Jonathan</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="match-card">
+            <div class="match-header">
+              <h2>Brazil v Morocco</h2>
+              <p>6pm EST</p>
+            </div>
+            <table class="pair-table">
+              <tbody>
+                <tr>
+                  <th scope="row">Brazil</th>
+                  <td>Jordan</td>
+                </tr>
+                <tr>
+                  <th scope="row">Gabriel Magalhães (Brazil)</th>
+                  <td>Sean</td>
+                </tr>
+                <tr>
+                  <th scope="row">Neymar (Brazil)</th>
+                  <td>Jonathan</td>
+                </tr>
+                <tr>
+                  <th scope="row">Vini Jr (Brazil)</th>
+                  <td>Michael</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="match-card">
+            <div class="match-header">
+              <h2>Haiti v Scotland</h2>
+              <p>9pm EST</p>
+            </div>
+            <table class="pair-table">
+              <tbody>
+                <tr>
+                  <th scope="row">Scotland</th>
+                  <td>Luisa</td>
+                </tr>
+                <tr>
+                  <th scope="row">Ben Gannon-Doak (Scotland)</th>
+                  <td>Jonathan</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
       <section class="page" id="tomorrow" data-page="tomorrow">
         <div class="section-heading">
           <h1>Tomorrow</h1>
         </div>
 
-        <div class="tomorrow-list">
+        <div class="match-list">
           <article class="match-card">
             <div class="match-header">
               <h2>USA v Paraguay</h2>

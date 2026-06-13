@@ -4,6 +4,8 @@ const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
 const tabs = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
+const todayMatchList = document.querySelector("#today-match-list");
+const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 function showPage(pageName) {
@@ -63,12 +65,130 @@ loadPlayers()
 loadMatches()
   .then((matches) => {
     siteData.matches = matches;
+    renderMatchesForDate(todayMatchList, matches, getDateKey(0));
+    renderMatchesForDate(tomorrowMatchList, matches, getDateKey(1));
     console.info("Box This Lap match data loaded", matches);
   })
   .catch((error) => {
     siteData.matchesError = error;
+    renderMatchError(todayMatchList, error);
+    renderMatchError(tomorrowMatchList, error);
     console.error("Box This Lap match data failed to load", error);
   });
+
+function renderMatchesForDate(container, matches, dateKey) {
+  if (!container) {
+    return;
+  }
+
+  const filteredMatches = matches.filter((match) => getMatchDate(match) === dateKey);
+
+  if (filteredMatches.length === 0) {
+    container.innerHTML = `
+      <article class="match-card">
+        <div class="match-header">
+          <h2>No matches found</h2>
+          <p>${escapeHtml(dateKey)}</p>
+        </div>
+      </article>
+    `;
+    return;
+  }
+
+  container.innerHTML = filteredMatches.map(renderMatchCard).join("");
+}
+
+function renderMatchCard(match) {
+  const home = getField(match, "Home", "home") || "Home";
+  const away = getField(match, "Away", "away") || "Away";
+  const time = getField(match, "Time", "time") || "Time TBD";
+  const pairs = Object.entries(getField(match, "Data", "data") || {});
+
+  return `
+    <article class="match-card">
+      <div class="match-header">
+        <h2>${escapeHtml(home)} v ${escapeHtml(away)}</h2>
+        <p>${escapeHtml(time)}</p>
+      </div>
+      <table class="pair-table">
+        <tbody>
+          ${renderMatchRows(pairs)}
+        </tbody>
+      </table>
+    </article>
+  `;
+}
+
+function renderMatchRows(pairs) {
+  if (pairs.length === 0) {
+    return `
+      <tr>
+        <th scope="row">Data</th>
+        <td>TBD</td>
+      </tr>
+    `;
+  }
+
+  return pairs.map(([name, manager]) => {
+    return `
+      <tr>
+        <th scope="row">${escapeHtml(name)}</th>
+        <td>${escapeHtml(manager)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderMatchError(container, error) {
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <article class="match-card">
+      <div class="match-header">
+        <h2>Unable to load matches</h2>
+        <p>Error</p>
+      </div>
+      <table class="pair-table">
+        <tbody>
+          <tr>
+            <th scope="row">Details</th>
+            <td>${escapeHtml(error.message)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+  `;
+}
+
+function getMatchDate(match) {
+  return getField(match, "Date", "date");
+}
+
+function getField(source, ...names) {
+  const fieldName = names.find((name) => source?.[name] !== undefined);
+  return fieldName ? source[fieldName] : undefined;
+}
+
+function getDateKey(dayOffset) {
+  const dateParts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(dateParts.map((part) => [part.type, part.value]));
+  const date = new Date(
+    Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + dayOffset)
+  );
+
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
 
 function renderTestingPlayers(players) {
   if (!testingPlayerRows) {

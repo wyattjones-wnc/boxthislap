@@ -113,6 +113,12 @@ main {
   max-width: 680px;
 }
 
+.updated-time {
+  color: rgba(95, 105, 120, 0.76);
+  font-size: 0.78rem;
+  margin: 22px 0 0;
+}
+
 .hero-panel,
 .image-card,
 .result-card,

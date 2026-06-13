@@ -1,6 +1,6 @@
 [
     {
-        "Id": 4,
+        "Id": 8,
         "Date": "2026-06-13",
         "Time": "3 PM",
         "Home": "Qatar",
@@ -10,7 +10,7 @@
         }
     },
     {
-        "Id": 5,
+        "Id": 7,
         "Date": "2026-06-13",
         "Time": "6 PM",
         "Home": "Brazil",
@@ -23,7 +23,7 @@
         }
     },
     {
-        "Id": 6,
+        "Id": 5,
         "Date": "2026-06-13",
         "Time": "9 PM",
         "Home": "Haiti",
@@ -44,6 +44,18 @@
             "Türkiye": "Luisa",
             "Jacob Italiano": "Michael",
             "Can Uzun": "Jordan"
+        }
+    },
+    {
+        "Id": 9,
+        "Date": "2026-06-14",
+        "Time": "7 PM",
+        "Home": "Cote d'Ivoire",
+        "Away": "Ecuador",
+        "Data": {
+            "Ecuador": "Wyatt",
+            "Cote d'Ivoire": "Jonathan",
+            "Piero Hincapie": "Wyatt"
         }
     }
 ]

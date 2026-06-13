@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Box This Lap</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="topbar" aria-label="Primary">
+        <a class="brand" href="#home" data-page-link="home">Box This Lap</a>
+        <div class="nav-links">
+          <a href="#home" data-page-link="home">Home</a>
+          <a href="#gallery" data-page-link="gallery">Gallery</a>
+          <a href="#tables" data-page-link="tables">Tables</a>
+          <a href="#about" data-page-link="about">About</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="page is-active" id="home" data-page="home">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Motorsport notes, visuals, and data</p>
+            <h1>Box This Lap</h1>
+            <p class="lede">
+              A self-contained GitHub Pages site for race weekend images,
+              sectioned notes, and simple data tables.
+            </p>
+          </div>
+          <div class="hero-panel" aria-label="Featured stat">
+            <span class="panel-label">Next Build</span>
+            <strong>Pages-ready</strong>
+            <span>Static HTML, CSS, and JavaScript.</span>
+          </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Homepage sections">
+          <button class="tab is-active" type="button" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="features">Features</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="next">Next Steps</button>
+        </div>
+
+        <div class="tab-panel is-active" data-tab-panel="overview">
+          <h2>Built for a compact racing site</h2>
+          <p>
+            Use this front page for highlights, race notes, links, or a short
+            intro to the project. Everything runs without a backend.
+          </p>
+        </div>
+        <div class="tab-panel" data-tab-panel="features">
+          <h2>Room for images, pages, tabs, and tables</h2>
+          <p>
+            The structure is intentionally plain so it can grow into a richer
+            site without needing a framework or build step.
+          </p>
+        </div>
+        <div class="tab-panel" data-tab-panel="next">
+          <h2>Ready for your content</h2>
+          <p>
+            Add images to an assets folder, replace the sample table, and enable
+            GitHub Pages from the repository settings.
+          </p>
+        </div>
+      </section>
+
+      <section class="page" id="gallery" data-page="gallery">
+        <div class="section-heading">
+          <p class="eyebrow">Gallery</p>
+          <h1>Image Slots</h1>
+        </div>
+        <div class="gallery-grid">
+          <article class="image-card">
+            <div class="image-placeholder">Image</div>
+            <h2>Race Weekend</h2>
+            <p>Add track photos, car shots, charts, or screenshots here.</p>
+          </article>
+          <article class="image-card">
+            <div class="image-placeholder">Image</div>
+            <h2>Strategy Notes</h2>
+            <p>Pair visuals with commentary, weather, tires, and stint notes.</p>
+          </article>
+          <article class="image-card">
+            <div class="image-placeholder">Image</div>
+            <h2>Data Snapshot</h2>
+            <p>Use this space for timing graphics or exported visualizations.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" id="tables" data-page="tables">
+        <div class="section-heading">
+          <p class="eyebrow">Tables</p>
+          <h1>Sample Session Data</h1>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Session</th>
+                <th>Focus</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Practice</td>
+                <td>Baseline setup</td>
+                <td>Draft</td>
+              </tr>
+              <tr>
+                <td>Qualifying</td>
+                <td>Single-lap pace</td>
+                <td>Pending</td>
+              </tr>
+              <tr>
+                <td>Race</td>
+                <td>Strategy review</td>
+                <td>Pending</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="page" id="about" data-page="about">
+        <div class="section-heading">
+          <p class="eyebrow">About</p>
+          <h1>A small static site</h1>
+        </div>
+        <p class="body-copy">
+          This repository can be hosted directly by GitHub Pages. It does not
+          need npm, a database, or a deployment server.
+        </p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

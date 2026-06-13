@@ -199,6 +199,8 @@ main {
 
 .section-heading {
   margin-bottom: 24px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .gallery-grid {

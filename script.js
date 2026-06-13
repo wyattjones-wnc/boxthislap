@@ -1,3 +1,5 @@
+import { loadSiteData } from "./dataLoader.js";
+
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
 const tabs = document.querySelectorAll("[data-tab]");
@@ -42,3 +44,12 @@ window.addEventListener("hashchange", () => {
 });
 
 showPage(window.location.hash.replace("#", "") || "results");
+
+loadSiteData()
+  .then((data) => {
+    window.boxThisLapData = data;
+    console.info("Box This Lap data loaded", data);
+  })
+  .catch((error) => {
+    console.error("Box This Lap data failed to load", error);
+  });

@@ -1,9 +1,45 @@
-{
+[
     {
-        "Date": "6/13/26",
-        "Match": "Qatar v Switzerland",
+        "Id": 4,
+        "Date": "2026-06-13",
+        "Home": "Qatar",
+        "Away": "Switzerland",
         "Data": {
             "Switzerland": "Jonathan"
         }
+    },
+    {
+        "Id": 5,
+        "Date": "2026-06-13",
+        "Home": "Brazil",
+        "Away": "Morocco",
+        "Data": {
+            "Brazil": "Jordan",
+            "Gabriel Magalhães": "Sean",
+            "Neymar": "Jonathan",
+            "Vini Jr": "Michael"
+        }
+    },
+    {
+        "Id": 6,
+        "Date": "2026-06-13",
+        "Home": "Haiti",
+        "Away": "Scotland",
+        "Data": {
+            "Scotland": "Luisa",
+            "Ben Gannon-Doak": "Jonathan"
+        }
+    },
+    {
+        "Id": 7,
+        "Date": "2026-06-13",
+        "Home": "Australia",
+        "Away": "Türkiye",
+        "Data": {
+            "Australia": "Jonathan",
+            "Türkiye": "Luisa",
+            "Jacob Italiano": "Michael",
+            "Can Uzun": "Jordan"
+        }
     }
-}
+]

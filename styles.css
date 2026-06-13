@@ -239,6 +239,14 @@ main {
   justify-content: center;
 }
 
+.result-image {
+  aspect-ratio: 16 / 10;
+  background: #eef2f7;
+  display: block;
+  object-fit: contain;
+  width: 100%;
+}
+
 .summary-card,
 .card-body {
   padding: 18px;

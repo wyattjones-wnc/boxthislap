@@ -354,8 +354,10 @@ th {
   text-transform: uppercase;
 }
 
+.pair-table tr:last-child th,
+.pair-table tr:last-child td,
 tr:last-child td {
-  border-bottom: 0;
+  border-bottom: none;
 }
 
 @media (max-width: 760px) {

@@ -34,42 +34,61 @@
   {
     "Id": 5,
     "Date": "2026-06-13",
-    "Time": "",
+    "Time": "9 PM",
     "Home": "Haiti",
     "Away": "Scotland",
-    "Data": {}
+    "Data": {
+      "Scotland": "Luisa",
+      "Ben Gannon-Doak": "Jonathan"
+    }
   },
   {
     "Id": 6,
     "Date": "2026-06-13",
-    "Time": "",
+    "Time": "12 AM",
     "Home": "Australia",
     "Away": "Turkiye",
-    "Data": {}
+    "Data": {
+      "Australia": "Jonathan",
+      "Türkiye": "Luisa",
+      "Jacob Italiano": "Michael",
+      "Can Uzun": "Jordan"
+    }
   },
   {
     "Id": 7,
     "Date": "2026-06-13",
-    "Time": "",
+    "Time": "6 PM",
     "Home": "Brazil",
     "Away": "Morocco",
-    "Data": {}
+    "Data": {
+      "Brazil": "Jordan",
+      "Gabriel Magalhães": "Sean",
+      "Neymar": "Jonathan",
+      "Vini Jr": "Michael"
+    }
   },
   {
     "Id": 8,
     "Date": "2026-06-13",
-    "Time": "",
+    "Time": "3 PM",
     "Home": "Qatar",
     "Away": "Switzerland",
-    "Data": {}
+    "Data": {
+      "Switzerland": "Jonathan"
+    }
   },
   {
     "Id": 9,
     "Date": "2026-06-14",
-    "Time": "",
+    "Time": "7 PM",
     "Home": "Ivory Coast",
     "Away": "Ecuador",
-    "Data": {}
+    "Data": {
+      "Ecuador": "Wyatt",
+      "Cote d'Ivoire": "Jonathan",
+      "Piero Hincapie": "Wyatt"
+    }
   },
   {
     "Id": 10,

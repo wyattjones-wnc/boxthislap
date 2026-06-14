@@ -105,6 +105,31 @@ resultCards.forEach((card) => {
   });
 });
 
+managerResultsRows?.addEventListener("click", (event) => {
+  const managerRow = event.target.closest("[data-manager-result-row]");
+
+  if (!managerRow) {
+    return;
+  }
+
+  toggleManagerResultRow(managerRow);
+});
+
+managerResultsRows?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const managerRow = event.target.closest("[data-manager-result-row]");
+
+  if (!managerRow) {
+    return;
+  }
+
+  event.preventDefault();
+  toggleManagerResultRow(managerRow);
+});
+
 window.addEventListener("hashchange", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
 });
@@ -584,14 +609,82 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
   }
 
   managerResultsRows.innerHTML = rows.map((manager, index) => {
+    const detailId = `manager-detail-${escapeHtml(manager.id)}`;
+
     return `
-      <tr>
+      <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${index + 1}</td>
         <td data-label="Manager">${renderManagerChip(manager)}</td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
       </tr>
+      <tr class="manager-detail-row" id="${detailId}" hidden>
+        <td colspan="3">
+          ${renderManagerDraftDetails(manager)}
+        </td>
+      </tr>
     `;
   }).join("");
+}
+
+function toggleManagerResultRow(managerRow) {
+  const isExpanded = managerRow.getAttribute("aria-expanded") === "true";
+  const detailRow = managerRow.nextElementSibling;
+
+  managerResultsRows.querySelectorAll("[data-manager-result-row]").forEach((row) => {
+    row.setAttribute("aria-expanded", "false");
+    row.classList.remove("is-manager-expanded");
+
+    const rowDetail = row.nextElementSibling;
+    if (rowDetail?.classList.contains("manager-detail-row")) {
+      rowDetail.hidden = true;
+    }
+  });
+
+  if (isExpanded || !detailRow?.classList.contains("manager-detail-row")) {
+    return;
+  }
+
+  managerRow.setAttribute("aria-expanded", "true");
+  managerRow.classList.add("is-manager-expanded");
+  detailRow.hidden = false;
+}
+
+function renderManagerDraftDetails(manager) {
+  if (!manager.drafts.length) {
+    return `<div class="manager-detail-empty">No drafted items found.</div>`;
+  }
+
+  const nationItems = manager.drafts.filter((draft) => draft.type === "Nation");
+  const playerItems = manager.drafts.filter((draft) => draft.type === "Player");
+
+  return `
+    <div class="manager-detail-panel">
+      ${renderManagerDraftGroup("Nations", nationItems)}
+      ${renderManagerDraftGroup("Players", playerItems)}
+    </div>
+  `;
+}
+
+function renderManagerDraftGroup(label, drafts) {
+  if (drafts.length === 0) {
+    return "";
+  }
+
+  return `
+    <section class="manager-draft-group">
+      <h3>${escapeHtml(label)}</h3>
+      <ul class="manager-draft-list">
+        ${drafts.map((draft) => {
+          return `
+            <li>
+              <span>${escapeHtml(draft.name)}</span>
+              <strong>${escapeHtml(formatPoints(draft.points))}</strong>
+            </li>
+          `;
+        }).join("")}
+      </ul>
+    </section>
+  `;
 }
 
 function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults }) {
@@ -615,6 +708,7 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
     }
 
     managerRows.set(managerId, {
+      drafts: [],
       id: managerId,
       name: manager.Name,
       nationCount: 0,
@@ -632,7 +726,13 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
     }
 
     manager.nationCount += 1;
-    manager.points += nationPoints.get(normalizeLookupName(nation)) ?? 0;
+    const points = nationPoints.get(normalizeLookupName(nation)) ?? 0;
+    manager.points += points;
+    manager.drafts.push({
+      name: nation,
+      points,
+      type: "Nation",
+    });
   }
 
   for (const draft of playerDraft) {
@@ -645,7 +745,13 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
     }
 
     manager.playerCount += 1;
-    manager.points += playerPoints.get(String(playerId)) ?? playerPoints.get(normalizeLookupName(playerName)) ?? 0;
+    const points = playerPoints.get(String(playerId)) ?? playerPoints.get(normalizeLookupName(playerName)) ?? 0;
+    manager.points += points;
+    manager.drafts.push({
+      name: playerName,
+      points,
+      type: "Player",
+    });
   }
 
   return [...managerRows.values()].sort((firstManager, secondManager) => {

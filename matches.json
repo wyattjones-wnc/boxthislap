@@ -5,7 +5,11 @@
     "Time": "",
     "Home": "Mexico",
     "Away": "South Africa",
-    "Data": {}
+    "Data": {
+      "Mexico": "Jordan",
+      "Guillermo Ochoa": "Jonathan",
+      "Alexis Vega": "Jordan"
+    }
   },
   {
     "Id": 2,
@@ -13,7 +17,10 @@
     "Time": "",
     "Home": "South Korea",
     "Away": "Czechia",
-    "Data": {}
+    "Data": {
+      "South Korea": "Jordan",
+      "Kim Seung-gyu": "Jordan"
+    }
   },
   {
     "Id": 3,
@@ -21,7 +28,13 @@
     "Time": "",
     "Home": "Canada",
     "Away": "Bosnia and Herzegovina",
-    "Data": {}
+    "Data": {
+      "Bosnia": "Michael",
+      "Canada": "Sean",
+      "Nidal Celik": "Jordan",
+      "Benjamin Tahirovic": "Michael",
+      "Nihad Mujakic": "Michael"
+    }
   },
   {
     "Id": 4,
@@ -29,7 +42,10 @@
     "Time": "",
     "Home": "USA",
     "Away": "Paraguay",
-    "Data": {}
+    "Data": {
+      "Paraguay": "Jordan",
+      "USA": "Wyatt"
+    }
   },
   {
     "Id": 5,
@@ -49,8 +65,8 @@
     "Home": "Australia",
     "Away": "Turkiye",
     "Data": {
+      "Turkiye": "Luisa",
       "Australia": "Jonathan",
-      "Türkiye": "Luisa",
       "Jacob Italiano": "Michael",
       "Can Uzun": "Jordan"
     }
@@ -63,6 +79,7 @@
     "Away": "Morocco",
     "Data": {
       "Brazil": "Jordan",
+      "Morocco": "Michael",
       "Gabriel Magalhães": "Sean",
       "Neymar": "Jonathan",
       "Vini Jr": "Michael"
@@ -86,7 +103,7 @@
     "Away": "Ecuador",
     "Data": {
       "Ecuador": "Wyatt",
-      "Cote d'Ivoire": "Jonathan",
+      "Ivory Coast": "Jonathan",
       "Piero Hincapie": "Wyatt"
     }
   },
@@ -96,7 +113,13 @@
     "Time": "",
     "Home": "Germany",
     "Away": "Curacao",
-    "Data": {}
+    "Data": {
+      "Germany": "Michael",
+      "Manuel Neuer": "Michael",
+      "Antonio Rüdiger": "Luisa",
+      "Joshua Kimmich": "Luisa",
+      "Jamal Musiala": "Jonathan"
+    }
   },
   {
     "Id": 11,
@@ -104,7 +127,12 @@
     "Time": "",
     "Home": "Netherlands",
     "Away": "Japan",
-    "Data": {}
+    "Data": {
+      "Netherlands": "Wyatt",
+      "Japan": "Michael",
+      "Junya Ito": "Jordan",
+      "Takefusa Kubo": "Jonathan"
+    }
   },
   {
     "Id": 12,
@@ -112,7 +140,9 @@
     "Time": "",
     "Home": "Sweden",
     "Away": "Tunisia",
-    "Data": {}
+    "Data": {
+      "Gabriel Gudmundsson": "Jonathan"
+    }
   },
   {
     "Id": 13,
@@ -120,7 +150,9 @@
     "Time": "",
     "Home": "Saudi Arabia",
     "Away": "Uruguay",
-    "Data": {}
+    "Data": {
+      "Uruguay": "Sean"
+    }
   },
   {
     "Id": 14,
@@ -128,7 +160,11 @@
     "Time": "",
     "Home": "Spain",
     "Away": "Cape Verde",
-    "Data": {}
+    "Data": {
+      "Spain": "Jonathan",
+      "Pedri": "Wyatt",
+      "Lamine Yamal": "Wyatt"
+    }
   },
   {
     "Id": 15,
@@ -136,7 +172,9 @@
     "Time": "",
     "Home": "Iran",
     "Away": "New Zealand",
-    "Data": {}
+    "Data": {
+      "Tim Payne": "Jordan"
+    }
   },
   {
     "Id": 16,
@@ -144,7 +182,10 @@
     "Time": "",
     "Home": "Belgium",
     "Away": "Egypt",
-    "Data": {}
+    "Data": {
+      "Belgium": "Wyatt",
+      "Thibaut Courtois": "Wyatt"
+    }
   },
   {
     "Id": 17,
@@ -152,7 +193,14 @@
     "Time": "",
     "Home": "France",
     "Away": "Senegal",
-    "Data": {}
+    "Data": {
+      "France": "Luisa",
+      "Senegal": "Luisa",
+      "William Saliba": "Sean",
+      "Dayot Upamecano": "Wyatt",
+      "Kylian Mbappé": "Sean",
+      "Michael Olise": "Sean"
+    }
   },
   {
     "Id": 18,
@@ -160,7 +208,12 @@
     "Time": "",
     "Home": "Iraq",
     "Away": "Norway",
-    "Data": {}
+    "Data": {
+      "Norway": "Jonathan",
+      "Iraq": "Michael",
+      "Oscar Bobb": "Jordan",
+      "Erling Haaland": "Michael"
+    }
   },
   {
     "Id": 19,
@@ -168,7 +221,11 @@
     "Time": "",
     "Home": "Argentina",
     "Away": "Algeria",
-    "Data": {}
+    "Data": {
+      "Argentina": "Wyatt",
+      "Lionel Messi": "Wyatt",
+      "Julián Álvarez": "Luisa"
+    }
   },
   {
     "Id": 20,
@@ -176,7 +233,9 @@
     "Time": "",
     "Home": "Austria",
     "Away": "Jordan",
-    "Data": {}
+    "Data": {
+      "Jordan": "Jordan"
+    }
   },
   {
     "Id": 21,
@@ -192,7 +251,14 @@
     "Time": "",
     "Home": "England",
     "Away": "Croatia",
-    "Data": {}
+    "Data": {
+      "England": "Sean",
+      "Croatia": "Luisa",
+      "Jordan Pickford": "Luisa",
+      "Jude Bellingham": "Luisa",
+      "Declan Rice": "Sean",
+      "Harry Kane": "Luisa"
+    }
   },
   {
     "Id": 23,
@@ -200,7 +266,15 @@
     "Time": "",
     "Home": "Portugal",
     "Away": "DR Congo",
-    "Data": {}
+    "Data": {
+      "Portugal": "Sean",
+      "Diogo Costa": "Sean",
+      "Nuno Mendes": "Jonathan",
+      "Bruno Fernandes": "Sean",
+      "Ruben Dias": "Luisa",
+      "Charles Pickel": "Michael",
+      "Vitinha": "Wyatt"
+    }
   },
   {
     "Id": 24,
@@ -208,7 +282,9 @@
     "Time": "",
     "Home": "Uzbekistan",
     "Away": "Colombia",
-    "Data": {}
+    "Data": {
+      "Colombia": "Sean"
+    }
   },
   {
     "Id": 25,
@@ -224,7 +300,13 @@
     "Time": "",
     "Home": "Switzerland",
     "Away": "Bosnia and Herzegovina",
-    "Data": {}
+    "Data": {
+      "Switzerland": "Jonathan",
+      "Bosnia": "Michael",
+      "Nidal Celik": "Jordan",
+      "Benjamin Tahirovic": "Michael",
+      "Nihad Mujakic": "Michael"
+    }
   },
   {
     "Id": 27,
@@ -232,7 +314,9 @@
     "Time": "",
     "Home": "Canada",
     "Away": "Qatar",
-    "Data": {}
+    "Data": {
+      "Canada": "Sean"
+    }
   },
   {
     "Id": 28,
@@ -240,7 +324,13 @@
     "Time": "",
     "Home": "Mexico",
     "Away": "South Korea",
-    "Data": {}
+    "Data": {
+      "South Korea": "Jordan",
+      "Mexico": "Jordan",
+      "Guillermo Ochoa": "Jonathan",
+      "Kim Seung-gyu": "Jordan",
+      "Alexis Vega": "Jordan"
+    }
   },
   {
     "Id": 29,
@@ -248,7 +338,12 @@
     "Time": "",
     "Home": "Brazil",
     "Away": "Haiti",
-    "Data": {}
+    "Data": {
+      "Brazil": "Jordan",
+      "Gabriel Magalhães": "Sean",
+      "Neymar": "Jonathan",
+      "Vini Jr": "Michael"
+    }
   },
   {
     "Id": 30,
@@ -256,7 +351,11 @@
     "Time": "",
     "Home": "Scotland",
     "Away": "Morocco",
-    "Data": {}
+    "Data": {
+      "Morocco": "Michael",
+      "Scotland": "Luisa",
+      "Ben Gannon-Doak": "Jonathan"
+    }
   },
   {
     "Id": 31,
@@ -264,7 +363,11 @@
     "Time": "",
     "Home": "Turkiye",
     "Away": "Paraguay",
-    "Data": {}
+    "Data": {
+      "Paraguay": "Jordan",
+      "Turkiye": "Luisa",
+      "Can Uzun": "Jordan"
+    }
   },
   {
     "Id": 32,
@@ -272,7 +375,11 @@
     "Time": "",
     "Home": "USA",
     "Away": "Australia",
-    "Data": {}
+    "Data": {
+      "Australia": "Jonathan",
+      "USA": "Wyatt",
+      "Jacob Italiano": "Michael"
+    }
   },
   {
     "Id": 33,
@@ -280,7 +387,14 @@
     "Time": "",
     "Home": "Germany",
     "Away": "Ivory Coast",
-    "Data": {}
+    "Data": {
+      "Germany": "Michael",
+      "Ivory Coast": "Jonathan",
+      "Manuel Neuer": "Michael",
+      "Antonio Rüdiger": "Luisa",
+      "Joshua Kimmich": "Luisa",
+      "Jamal Musiala": "Jonathan"
+    }
   },
   {
     "Id": 34,
@@ -288,7 +402,10 @@
     "Time": "",
     "Home": "Ecuador",
     "Away": "Curacao",
-    "Data": {}
+    "Data": {
+      "Ecuador": "Wyatt",
+      "Piero Hincapie": "Wyatt"
+    }
   },
   {
     "Id": 35,
@@ -296,7 +413,10 @@
     "Time": "",
     "Home": "Netherlands",
     "Away": "Sweden",
-    "Data": {}
+    "Data": {
+      "Netherlands": "Wyatt",
+      "Gabriel Gudmundsson": "Jonathan"
+    }
   },
   {
     "Id": 36,
@@ -304,7 +424,11 @@
     "Time": "",
     "Home": "Tunisia",
     "Away": "Japan",
-    "Data": {}
+    "Data": {
+      "Japan": "Michael",
+      "Junya Ito": "Jordan",
+      "Takefusa Kubo": "Jonathan"
+    }
   },
   {
     "Id": 37,
@@ -312,7 +436,9 @@
     "Time": "",
     "Home": "Uruguay",
     "Away": "Cape Verde",
-    "Data": {}
+    "Data": {
+      "Uruguay": "Sean"
+    }
   },
   {
     "Id": 38,
@@ -320,7 +446,11 @@
     "Time": "",
     "Home": "Spain",
     "Away": "Saudi Arabia",
-    "Data": {}
+    "Data": {
+      "Spain": "Jonathan",
+      "Pedri": "Wyatt",
+      "Lamine Yamal": "Wyatt"
+    }
   },
   {
     "Id": 39,
@@ -328,7 +458,10 @@
     "Time": "",
     "Home": "Belgium",
     "Away": "Iran",
-    "Data": {}
+    "Data": {
+      "Belgium": "Wyatt",
+      "Thibaut Courtois": "Wyatt"
+    }
   },
   {
     "Id": 40,
@@ -336,7 +469,9 @@
     "Time": "",
     "Home": "New Zealand",
     "Away": "Egypt",
-    "Data": {}
+    "Data": {
+      "Tim Payne": "Jordan"
+    }
   },
   {
     "Id": 41,
@@ -344,7 +479,12 @@
     "Time": "",
     "Home": "Norway",
     "Away": "Senegal",
-    "Data": {}
+    "Data": {
+      "Norway": "Jonathan",
+      "Senegal": "Luisa",
+      "Oscar Bobb": "Jordan",
+      "Erling Haaland": "Michael"
+    }
   },
   {
     "Id": 42,
@@ -352,7 +492,14 @@
     "Time": "",
     "Home": "France",
     "Away": "Iraq",
-    "Data": {}
+    "Data": {
+      "France": "Luisa",
+      "Iraq": "Michael",
+      "William Saliba": "Sean",
+      "Dayot Upamecano": "Wyatt",
+      "Kylian Mbappé": "Sean",
+      "Michael Olise": "Sean"
+    }
   },
   {
     "Id": 43,
@@ -360,7 +507,11 @@
     "Time": "",
     "Home": "Argentina",
     "Away": "Austria",
-    "Data": {}
+    "Data": {
+      "Argentina": "Wyatt",
+      "Lionel Messi": "Wyatt",
+      "Julián Álvarez": "Luisa"
+    }
   },
   {
     "Id": 44,
@@ -368,7 +519,9 @@
     "Time": "",
     "Home": "Jordan",
     "Away": "Algeria",
-    "Data": {}
+    "Data": {
+      "Jordan": "Jordan"
+    }
   },
   {
     "Id": 45,
@@ -376,7 +529,13 @@
     "Time": "",
     "Home": "England",
     "Away": "Ghana",
-    "Data": {}
+    "Data": {
+      "England": "Sean",
+      "Jordan Pickford": "Luisa",
+      "Jude Bellingham": "Luisa",
+      "Declan Rice": "Sean",
+      "Harry Kane": "Luisa"
+    }
   },
   {
     "Id": 46,
@@ -384,7 +543,9 @@
     "Time": "",
     "Home": "Panama",
     "Away": "Croatia",
-    "Data": {}
+    "Data": {
+      "Croatia": "Luisa"
+    }
   },
   {
     "Id": 47,
@@ -392,7 +553,14 @@
     "Time": "",
     "Home": "Portugal",
     "Away": "Uzbekistan",
-    "Data": {}
+    "Data": {
+      "Portugal": "Sean",
+      "Diogo Costa": "Sean",
+      "Nuno Mendes": "Jonathan",
+      "Bruno Fernandes": "Sean",
+      "Ruben Dias": "Luisa",
+      "Vitinha": "Wyatt"
+    }
   },
   {
     "Id": 48,
@@ -400,7 +568,10 @@
     "Time": "",
     "Home": "Colombia",
     "Away": "DR Congo",
-    "Data": {}
+    "Data": {
+      "Colombia": "Sean",
+      "Charles Pickel": "Michael"
+    }
   },
   {
     "Id": 49,
@@ -408,7 +579,14 @@
     "Time": "",
     "Home": "Scotland",
     "Away": "Brazil",
-    "Data": {}
+    "Data": {
+      "Brazil": "Jordan",
+      "Scotland": "Luisa",
+      "Gabriel Magalhães": "Sean",
+      "Ben Gannon-Doak": "Jonathan",
+      "Neymar": "Jonathan",
+      "Vini Jr": "Michael"
+    }
   },
   {
     "Id": 50,
@@ -416,7 +594,9 @@
     "Time": "",
     "Home": "Morocco",
     "Away": "Haiti",
-    "Data": {}
+    "Data": {
+      "Morocco": "Michael"
+    }
   },
   {
     "Id": 51,
@@ -424,7 +604,10 @@
     "Time": "",
     "Home": "Switzerland",
     "Away": "Canada",
-    "Data": {}
+    "Data": {
+      "Switzerland": "Jonathan",
+      "Canada": "Sean"
+    }
   },
   {
     "Id": 52,
@@ -432,7 +615,12 @@
     "Time": "",
     "Home": "Bosnia and Herzegovina",
     "Away": "Qatar",
-    "Data": {}
+    "Data": {
+      "Bosnia": "Michael",
+      "Nidal Celik": "Jordan",
+      "Benjamin Tahirovic": "Michael",
+      "Nihad Mujakic": "Michael"
+    }
   },
   {
     "Id": 53,
@@ -440,7 +628,11 @@
     "Time": "",
     "Home": "Czechia",
     "Away": "Mexico",
-    "Data": {}
+    "Data": {
+      "Mexico": "Jordan",
+      "Guillermo Ochoa": "Jonathan",
+      "Alexis Vega": "Jordan"
+    }
   },
   {
     "Id": 54,
@@ -448,7 +640,10 @@
     "Time": "",
     "Home": "South Africa",
     "Away": "South Korea",
-    "Data": {}
+    "Data": {
+      "South Korea": "Jordan",
+      "Kim Seung-gyu": "Jordan"
+    }
   },
   {
     "Id": 55,
@@ -456,7 +651,9 @@
     "Time": "",
     "Home": "Curacao",
     "Away": "Ivory Coast",
-    "Data": {}
+    "Data": {
+      "Ivory Coast": "Jonathan"
+    }
   },
   {
     "Id": 56,
@@ -464,7 +661,15 @@
     "Time": "",
     "Home": "Ecuador",
     "Away": "Germany",
-    "Data": {}
+    "Data": {
+      "Germany": "Michael",
+      "Ecuador": "Wyatt",
+      "Manuel Neuer": "Michael",
+      "Antonio Rüdiger": "Luisa",
+      "Joshua Kimmich": "Luisa",
+      "Piero Hincapie": "Wyatt",
+      "Jamal Musiala": "Jonathan"
+    }
   },
   {
     "Id": 57,
@@ -472,7 +677,12 @@
     "Time": "",
     "Home": "Japan",
     "Away": "Sweden",
-    "Data": {}
+    "Data": {
+      "Japan": "Michael",
+      "Gabriel Gudmundsson": "Jonathan",
+      "Junya Ito": "Jordan",
+      "Takefusa Kubo": "Jonathan"
+    }
   },
   {
     "Id": 58,
@@ -480,7 +690,9 @@
     "Time": "",
     "Home": "Tunisia",
     "Away": "Netherlands",
-    "Data": {}
+    "Data": {
+      "Netherlands": "Wyatt"
+    }
   },
   {
     "Id": 59,
@@ -488,7 +700,11 @@
     "Time": "",
     "Home": "Turkiye",
     "Away": "USA",
-    "Data": {}
+    "Data": {
+      "Turkiye": "Luisa",
+      "USA": "Wyatt",
+      "Can Uzun": "Jordan"
+    }
   },
   {
     "Id": 60,
@@ -496,7 +712,11 @@
     "Time": "",
     "Home": "Paraguay",
     "Away": "Australia",
-    "Data": {}
+    "Data": {
+      "Paraguay": "Jordan",
+      "Australia": "Jonathan",
+      "Jacob Italiano": "Michael"
+    }
   },
   {
     "Id": 61,
@@ -504,7 +724,16 @@
     "Time": "",
     "Home": "Norway",
     "Away": "France",
-    "Data": {}
+    "Data": {
+      "France": "Luisa",
+      "Norway": "Jonathan",
+      "William Saliba": "Sean",
+      "Dayot Upamecano": "Wyatt",
+      "Oscar Bobb": "Jordan",
+      "Kylian Mbappé": "Sean",
+      "Erling Haaland": "Michael",
+      "Michael Olise": "Sean"
+    }
   },
   {
     "Id": 62,
@@ -512,7 +741,10 @@
     "Time": "",
     "Home": "Senegal",
     "Away": "Iraq",
-    "Data": {}
+    "Data": {
+      "Iraq": "Michael",
+      "Senegal": "Luisa"
+    }
   },
   {
     "Id": 63,
@@ -528,7 +760,11 @@
     "Time": "",
     "Home": "New Zealand",
     "Away": "Belgium",
-    "Data": {}
+    "Data": {
+      "Belgium": "Wyatt",
+      "Thibaut Courtois": "Wyatt",
+      "Tim Payne": "Jordan"
+    }
   },
   {
     "Id": 65,
@@ -544,7 +780,12 @@
     "Time": "",
     "Home": "Uruguay",
     "Away": "Spain",
-    "Data": {}
+    "Data": {
+      "Spain": "Jonathan",
+      "Uruguay": "Sean",
+      "Pedri": "Wyatt",
+      "Lamine Yamal": "Wyatt"
+    }
   },
   {
     "Id": 67,
@@ -552,7 +793,13 @@
     "Time": "",
     "Home": "Panama",
     "Away": "England",
-    "Data": {}
+    "Data": {
+      "England": "Sean",
+      "Jordan Pickford": "Luisa",
+      "Jude Bellingham": "Luisa",
+      "Declan Rice": "Sean",
+      "Harry Kane": "Luisa"
+    }
   },
   {
     "Id": 68,
@@ -560,7 +807,9 @@
     "Time": "",
     "Home": "Croatia",
     "Away": "Ghana",
-    "Data": {}
+    "Data": {
+      "Croatia": "Luisa"
+    }
   },
   {
     "Id": 69,
@@ -576,7 +825,12 @@
     "Time": "",
     "Home": "Jordan",
     "Away": "Argentina",
-    "Data": {}
+    "Data": {
+      "Argentina": "Wyatt",
+      "Jordan": "Jordan",
+      "Lionel Messi": "Wyatt",
+      "Julián Álvarez": "Luisa"
+    }
   },
   {
     "Id": 71,
@@ -584,7 +838,15 @@
     "Time": "",
     "Home": "Colombia",
     "Away": "Portugal",
-    "Data": {}
+    "Data": {
+      "Portugal": "Sean",
+      "Colombia": "Sean",
+      "Diogo Costa": "Sean",
+      "Nuno Mendes": "Jonathan",
+      "Bruno Fernandes": "Sean",
+      "Ruben Dias": "Luisa",
+      "Vitinha": "Wyatt"
+    }
   },
   {
     "Id": 72,
@@ -592,7 +854,9 @@
     "Time": "",
     "Home": "DR Congo",
     "Away": "Uzbekistan",
-    "Data": {}
+    "Data": {
+      "Charles Pickel": "Michael"
+    }
   },
   {
     "Id": 73,

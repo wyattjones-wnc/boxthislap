@@ -4,6 +4,7 @@ const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
 const tabs = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
+const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
 const matchdaySelect = document.querySelector("#matchday-select");
@@ -76,6 +77,20 @@ pageLinks.forEach((link) => {
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     showTab(tab.dataset.tab, { scrollToTop: true });
+  });
+});
+
+resultCards.forEach((card) => {
+  const toggle = card.querySelector("[data-result-toggle]");
+
+  toggle?.addEventListener("click", () => {
+    const shouldShow = !card.classList.contains("is-result-visible");
+
+    resultCards.forEach((resultCard) => {
+      resultCard.classList.remove("is-result-visible");
+    });
+
+    card.classList.toggle("is-result-visible", shouldShow);
   });
 });
 

@@ -305,6 +305,7 @@ main {
 .result-card {
   display: grid;
   justify-items: center;
+  position: relative;
 }
 
 .image-card h2,
@@ -339,6 +340,34 @@ main {
   height: auto;
   max-width: 100%;
   width: 100%;
+}
+
+.result-overlay {
+  align-items: center;
+  background: rgba(24, 33, 47, 0);
+  border: 0;
+  color: transparent;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: clamp(1.9rem, 7vw, 3.8rem);
+  font-weight: 900;
+  inset: 0;
+  justify-content: center;
+  line-height: 1.05;
+  padding: 24px;
+  position: absolute;
+  text-align: center;
+  transition: background 120ms ease, color 120ms ease;
+  width: 100%;
+}
+
+.result-card.is-result-visible .result-overlay,
+.result-overlay:focus-visible {
+  background: rgba(24, 33, 47, 0.68);
+  color: #ffffff;
+  outline: none;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .summary-card,

@@ -14,6 +14,15 @@ const nationsLeagueRows = document.querySelector("#nations-league-rows");
 const managerResultsRows = document.querySelector("#manager-results-rows");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
+const MANAGER_COLORS = {
+  jonathan: "#000000",
+  jordan: "#b7a7dc",
+  luisa: "#df000b",
+  michael: "#123f7a",
+  sean: "#f783bd",
+  wyatt: "#96df7d",
+};
+
 function showPage(pageName, options = {}) {
   const pageAliases = {
     "manager-scores": "standings",
@@ -153,6 +162,16 @@ Promise.all([
     siteData.managers = managers;
     siteData.teamDraft = teamDraft;
     siteData.playerDraft = playerDraft;
+    siteData.managerDrafts = buildManagerDraftLookups({ managers, teamDraft, playerDraft });
+
+    if (siteData.playerPerformances) {
+      renderPlayerChampionship(siteData.playerPerformances);
+    }
+
+    if (siteData.matchResults) {
+      renderNationsLeague(siteData.matchResults);
+    }
+
     renderManagerResults({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
     console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
   })
@@ -376,11 +395,13 @@ function renderPlayerChampionship(performances) {
   }
 
   playerChampionshipRows.innerHTML = rows.map((player, index) => {
+    const manager = getPlayerManager(player);
+
     return `
       <tr>
         <td data-label="Rank">${index + 1}</td>
         <td data-label="Player">${escapeHtml(player.name)}</td>
-        <td data-label="Team">${escapeHtml(player.team)}</td>
+        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
       </tr>
@@ -448,11 +469,13 @@ function renderNationsLeague(results) {
   }
 
   nationsLeagueRows.innerHTML = rows.map((nation, index) => {
+    const manager = getNationManager(nation.name);
+
     return `
       <tr>
         <td data-label="Rank">${index + 1}</td>
         <td data-label="Nation">${escapeHtml(nation.name)}</td>
-        <td data-label="Record">${escapeHtml(formatRecord(nation))}</td>
+        <td data-label="Record / Manager">${renderStandingDetail(formatRecord(nation), manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>
       </tr>
@@ -556,7 +579,7 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
   const rows = getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
 
   if (rows.length === 0) {
-    managerResultsRows.innerHTML = `<tr><td class="table-message" colspan="5">No manager results found.</td></tr>`;
+    managerResultsRows.innerHTML = `<tr><td class="table-message" colspan="3">No manager results found.</td></tr>`;
     return;
   }
 
@@ -564,9 +587,7 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
     return `
       <tr>
         <td data-label="Rank">${index + 1}</td>
-        <td data-label="Manager">${escapeHtml(manager.name)}</td>
-        <td data-label="Drafted">${escapeHtml(formatDraftSummary(manager))}</td>
-        <td data-label="Entries">${escapeHtml(formatPickCount(manager.nationCount + manager.playerCount))}</td>
+        <td data-label="Manager">${renderManagerChip(manager)}</td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
       </tr>
     `;
@@ -636,6 +657,48 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
   });
 }
 
+function buildManagerDraftLookups({ managers, teamDraft, playerDraft }) {
+  const managersById = new Map();
+  const nationManagers = new Map();
+  const playerManagersById = new Map();
+  const playerManagersByName = new Map();
+
+  for (const manager of managers) {
+    const managerMeta = getManagerMeta(manager);
+
+    if (managerMeta.id) {
+      managersById.set(managerMeta.id, managerMeta);
+    }
+  }
+
+  for (const draft of teamDraft) {
+    const manager = managersById.get(draft["Manager ID"]);
+    const nation = normalizeNationName(draft.Team);
+
+    if (manager && nation) {
+      nationManagers.set(normalizeLookupName(nation), manager);
+    }
+  }
+
+  for (const draft of playerDraft) {
+    const manager = managersById.get(draft["Manager ID"]);
+
+    if (!manager) {
+      continue;
+    }
+
+    if (draft["Player ID"]) {
+      playerManagersById.set(String(draft["Player ID"]), manager);
+    }
+
+    if (draft.Player) {
+      playerManagersByName.set(normalizeLookupName(draft.Player), manager);
+    }
+  }
+
+  return { managersById, nationManagers, playerManagersById, playerManagersByName };
+}
+
 function renderManagerResultsError(error) {
   if (!managerResultsRows) {
     return;
@@ -643,7 +706,7 @@ function renderManagerResultsError(error) {
 
   managerResultsRows.innerHTML = `
     <tr>
-      <td class="table-message" colspan="5">Unable to load manager results: ${escapeHtml(error.message)}</td>
+      <td class="table-message" colspan="3">Unable to load manager results: ${escapeHtml(error.message)}</td>
     </tr>
   `;
 }
@@ -683,14 +746,6 @@ function getWinnerPoints(result) {
   return rawPoints && Number.isFinite(points) ? points : getFallbackWinPoints(result);
 }
 
-function formatDraftSummary(manager) {
-  return `${manager.nationCount} nations / ${manager.playerCount} players`;
-}
-
-function formatPickCount(value) {
-  return Number(value) === 1 ? "1 pick" : `${value} picks`;
-}
-
 function normalizeLookupName(value) {
   return String(value ?? "").trim().toLowerCase();
 }
@@ -702,6 +757,57 @@ function normalizeNationName(value) {
   };
 
   return aliases[normalizeLookupName(nation)] ?? nation;
+}
+
+function getManagerMeta(manager) {
+  const name = manager.name || manager.Name || "";
+  const displayName = getManagerDisplayName(name);
+
+  return {
+    color: MANAGER_COLORS[normalizeLookupName(displayName)] || "#5f6978",
+    displayName,
+    id: manager.id || manager["Manager ID"],
+    name,
+  };
+}
+
+function getManagerDisplayName(name) {
+  return String(name ?? "").trim().split(/\s+/)[0] || "Manager";
+}
+
+function getPlayerManager(player) {
+  const drafts = siteData.managerDrafts;
+
+  if (!drafts) {
+    return null;
+  }
+
+  return drafts.playerManagersById.get(String(player.id)) ?? drafts.playerManagersByName.get(normalizeLookupName(player.name));
+}
+
+function getNationManager(nation) {
+  return siteData.managerDrafts?.nationManagers.get(normalizeLookupName(normalizeNationName(nation))) ?? null;
+}
+
+function renderStandingDetail(value, manager) {
+  const parts = [`<span class="standing-detail-main">${escapeHtml(value)}</span>`];
+
+  if (manager) {
+    parts.push(renderManagerChip(manager));
+  }
+
+  return `<span class="standing-detail">${parts.join("")}</span>`;
+}
+
+function renderManagerChip(manager) {
+  const managerMeta = getManagerMeta(manager);
+
+  return `
+    <span class="manager-chip" style="--manager-color: ${managerMeta.color}">
+      <span class="manager-dot" aria-hidden="true"></span>
+      <span class="manager-name">${escapeHtml(managerMeta.displayName)}</span>
+    </span>
+  `;
 }
 
 function renderTestingPlayers(players) {

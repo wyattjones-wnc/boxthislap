@@ -50,14 +50,26 @@ function showTab(tabName, options = {}) {
 }
 
 function scrollToPageTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   requestAnimationFrame(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   });
 }
 
 pageLinks.forEach((link) => {
-  link.addEventListener("click", () => {
-    showPage(link.dataset.pageLink, { scrollToTop: true });
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    const pageName = link.dataset.pageLink;
+    const nextHash = `#${pageName}`;
+
+    if (window.location.hash === nextHash) {
+      showPage(pageName, { scrollToTop: true });
+      return;
+    }
+
+    history.pushState(null, "", nextHash);
+    showPage(pageName, { scrollToTop: true });
   });
 });
 
@@ -68,6 +80,10 @@ tabs.forEach((tab) => {
 });
 
 window.addEventListener("hashchange", () => {
+  showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
+});
+
+window.addEventListener("popstate", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
 });
 

@@ -81,7 +81,9 @@ function renderMatchesForDate(container, matches, dateKey) {
     return;
   }
 
-  const filteredMatches = matches.filter((match) => getMatchDate(match) === dateKey);
+  const filteredMatches = matches
+    .filter((match) => getMatchDate(match) === dateKey)
+    .sort(compareMatchesByDisplayTime);
 
   if (filteredMatches.length === 0) {
     container.innerHTML = `
@@ -164,6 +166,38 @@ function renderMatchError(container, error) {
 
 function getMatchDate(match) {
   return getField(match, "Date", "date");
+}
+
+function compareMatchesByDisplayTime(firstMatch, secondMatch) {
+  const firstTime = getDisplayTimeSortValue(getField(firstMatch, "Time", "time"));
+  const secondTime = getDisplayTimeSortValue(getField(secondMatch, "Time", "time"));
+
+  if (firstTime !== secondTime) {
+    return firstTime - secondTime;
+  }
+
+  return Number(getField(firstMatch, "Id", "id") ?? 0) - Number(getField(secondMatch, "Id", "id") ?? 0);
+}
+
+function getDisplayTimeSortValue(time) {
+  const match = String(time ?? "")
+    .trim()
+    .match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2] ?? 0);
+  const period = match[3].toUpperCase();
+
+  if (period === "AM" && hour === 12) {
+    return 24 * 60 + minute;
+  }
+
+  const normalizedHour = period === "PM" && hour !== 12 ? hour + 12 : hour;
+  return normalizedHour * 60 + minute;
 }
 
 function getField(source, ...names) {

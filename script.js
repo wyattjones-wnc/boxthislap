@@ -12,12 +12,20 @@ const playerChampionshipRows = document.querySelector("#player-championship-rows
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 function showPage(pageName) {
+  const pageAliases = {
+    "manager-scores": "standings",
+    "player-scores": "standings",
+  };
+  const resolvedPageName = pageAliases[pageName] || pageName;
+  const pageExists = [...pages].some((page) => page.dataset.page === resolvedPageName);
+  const activePageName = pageExists ? resolvedPageName : "results";
+
   pages.forEach((page) => {
-    page.classList.toggle("is-active", page.dataset.page === pageName);
+    page.classList.toggle("is-active", page.dataset.page === activePageName);
   });
 
   pageLinks.forEach((link) => {
-    link.classList.toggle("is-active", link.dataset.pageLink === pageName);
+    link.classList.toggle("is-active", link.dataset.pageLink === activePageName);
   });
 }
 

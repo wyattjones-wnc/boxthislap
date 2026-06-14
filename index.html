@@ -14,8 +14,7 @@
           <a href="#today" data-page-link="today" role="tab">Today</a>
           <a href="#tomorrow" data-page-link="tomorrow" role="tab">Tomorrow</a>
           <a href="#results" data-page-link="results" role="tab">World Cup Results</a>
-          <a href="#player-scores" data-page-link="player-scores" role="tab">Player Scores</a>
-          <a href="#manager-scores" data-page-link="manager-scores" role="tab">Manager Scores</a>
+          <a href="#standings" data-page-link="standings" role="tab">Standings</a>
         </div>
       </nav>
     </header>
@@ -229,66 +228,97 @@
         </div>
       </section>
 
-      <section class="page" id="player-scores" data-page="player-scores">
+      <section class="page" id="standings" data-page="standings">
         <div class="section-heading">
-          <h1>Players Championship</h1>
+          <h1>Standings</h1>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Team</th>
-                <th>Matches</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody id="player-championship-rows">
-              <tr>
-                <td colspan="5">Loading player performance data...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
 
-      <section class="page" id="manager-scores" data-page="manager-scores">
-        <div class="section-heading">
-          <p class="eyebrow">Leaderboard</p>
-          <h1>Manager Scores</h1>
+        <div class="tabs" role="tablist" aria-label="Standings views">
+          <button class="tab is-active" type="button" data-tab="players-championship" role="tab" aria-selected="true">
+            Players&rsquo; Championship
+          </button>
+          <button class="tab" type="button" data-tab="nations-league" role="tab" aria-selected="false">
+            Nations League
+          </button>
+          <button class="tab" type="button" data-tab="manager-results" role="tab" aria-selected="false">
+            Manager Results
+          </button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Manager</th>
-                <th>Squad</th>
-                <th>Rank</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Manager One</td>
-                <td>TBD</td>
-                <td>1</td>
-                <td>0</td>
-              </tr>
-              <tr>
-                <td>Manager Two</td>
-                <td>TBD</td>
-                <td>2</td>
-                <td>0</td>
-              </tr>
-              <tr>
-                <td>Manager Three</td>
-                <td>TBD</td>
-                <td>3</td>
-                <td>0</td>
-              </tr>
-            </tbody>
-          </table>
+
+        <div class="tab-panel is-active" data-tab-panel="players-championship" role="tabpanel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Player</th>
+                  <th>Team</th>
+                  <th>Matches</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody id="player-championship-rows">
+                <tr>
+                  <td colspan="5">Loading player performance data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tab-panel="nations-league" role="tabpanel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Nation</th>
+                  <th>Matches</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4">Nations League results coming soon.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tab-panel="manager-results" role="tabpanel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Manager</th>
+                  <th>Squad</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Manager One</td>
+                  <td>TBD</td>
+                  <td>0</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>Manager Two</td>
+                  <td>TBD</td>
+                  <td>0</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>Manager Three</td>
+                  <td>TBD</td>
+                  <td>0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

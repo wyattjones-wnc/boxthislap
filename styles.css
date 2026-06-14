@@ -124,7 +124,6 @@ main {
 .match-card,
 .result-card,
 .summary-card,
-.tab-panel,
 .table-wrap {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -177,7 +176,6 @@ main {
 .tab-panel {
   display: none;
   margin-top: 18px;
-  padding: 22px;
 }
 
 .tab-panel.is-active {

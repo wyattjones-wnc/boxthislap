@@ -197,6 +197,12 @@ Promise.all([
       renderNationsLeague(siteData.matchResults);
     }
 
+    if (siteData.matches) {
+      renderMatchesForDate(todayMatchList, siteData.matches, getDateKey(0));
+      renderMatchesForDate(tomorrowMatchList, siteData.matches, getDateKey(1));
+      renderMatchesForDate(matchdayMatchList, siteData.matches, matchdaySelect?.value || "");
+    }
+
     renderManagerResults({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
     console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
   })
@@ -306,10 +312,16 @@ function renderMatchRows(pairs) {
     return `
       <tr>
         <th scope="row">${formatDataName(name)}</th>
-        <td>${escapeHtml(manager)}</td>
+        <td>${renderMatchManager(manager)}</td>
       </tr>
     `;
   }).join("");
+}
+
+function renderMatchManager(managerName) {
+  const manager = getManagerByName(managerName);
+
+  return manager ? renderManagerChip(manager) : escapeHtml(managerName);
 }
 
 function renderMatchError(container, error) {
@@ -893,6 +905,25 @@ function getPlayerManager(player) {
 
 function getNationManager(nation) {
   return siteData.managerDrafts?.nationManagers.get(normalizeLookupName(normalizeNationName(nation))) ?? null;
+}
+
+function getManagerByName(name) {
+  const normalizedName = normalizeLookupName(name);
+
+  if (!normalizedName || !siteData.managerDrafts) {
+    return null;
+  }
+
+  for (const manager of siteData.managerDrafts.managersById.values()) {
+    if (
+      normalizeLookupName(manager.name) === normalizedName ||
+      normalizeLookupName(manager.displayName) === normalizedName
+    ) {
+      return manager;
+    }
+  }
+
+  return null;
 }
 
 function renderStandingDetail(value, manager) {

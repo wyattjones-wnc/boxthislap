@@ -499,6 +499,10 @@ table {
   width: 44%;
 }
 
+.pair-table .manager-chip {
+  justify-content: flex-start;
+}
+
 th,
 td {
   border-bottom: 1px solid var(--line);

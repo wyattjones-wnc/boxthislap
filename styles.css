@@ -424,13 +424,13 @@ tr:last-child td {
   }
 
   .nav-links {
-    gap: 6px;
-    margin-top: 8px;
+    gap: 8px;
+    margin-top: 12px;
   }
 
   .nav-links a {
-    font-size: 0.78rem;
-    padding: 6px 7px;
+    font-size: 1rem;
+    padding: 8px 10px;
   }
 
   .brand {

@@ -81,13 +81,25 @@ export function parseCsv(csvText) {
     return [];
   }
 
-  const headers = rows[0].map((header) => header.trim());
+  const headers = getUniqueHeaders(rows[0].map((header) => header.trim()));
 
   return rows.slice(1).filter(hasValues).map((row) => {
     return headers.reduce((record, header, index) => {
       record[header || `Column ${index + 1}`] = row[index] ?? "";
       return record;
     }, {});
+  });
+}
+
+function getUniqueHeaders(headers) {
+  const counts = new Map();
+
+  return headers.map((header, index) => {
+    const fallbackHeader = header || `Column ${index + 1}`;
+    const count = counts.get(fallbackHeader) ?? 0;
+    counts.set(fallbackHeader, count + 1);
+
+    return count === 0 ? fallbackHeader : `${fallbackHeader} ${count + 1}`;
   });
 }
 

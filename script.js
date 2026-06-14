@@ -11,6 +11,7 @@ const matchdaySelect = document.querySelector("#matchday-select");
 const matchdayMatchList = document.querySelector("#matchday-match-list");
 const playerChampionshipRows = document.querySelector("#player-championship-rows");
 const nationsLeagueRows = document.querySelector("#nations-league-rows");
+const managerResultsRows = document.querySelector("#manager-results-rows");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 function showPage(pageName, options = {}) {
@@ -139,6 +140,25 @@ loadSheet("matchResults")
   .catch((error) => {
     renderNationsLeagueError(error);
     console.error("Box This Lap match result data failed to load", error);
+  });
+
+Promise.all([
+  loadSheet("managers"),
+  loadSheet("teamDraft"),
+  loadSheet("playerDraft"),
+  loadSheet("playerPerformances"),
+  loadSheet("matchResults"),
+])
+  .then(([managers, teamDraft, playerDraft, playerPerformances, matchResults]) => {
+    siteData.managers = managers;
+    siteData.teamDraft = teamDraft;
+    siteData.playerDraft = playerDraft;
+    renderManagerResults({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
+    console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
+  })
+  .catch((error) => {
+    renderManagerResultsError(error);
+    console.error("Box This Lap manager result data failed to load", error);
   });
 
 loadMatches()
@@ -528,6 +548,106 @@ function renderNationsLeagueError(error) {
   `;
 }
 
+function renderManagerResults({ managers, teamDraft, playerDraft, playerPerformances, matchResults }) {
+  if (!managerResultsRows) {
+    return;
+  }
+
+  const rows = getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
+
+  if (rows.length === 0) {
+    managerResultsRows.innerHTML = `<tr><td class="table-message" colspan="5">No manager results found.</td></tr>`;
+    return;
+  }
+
+  managerResultsRows.innerHTML = rows.map((manager, index) => {
+    return `
+      <tr>
+        <td data-label="Rank">${index + 1}</td>
+        <td data-label="Manager">${escapeHtml(manager.name)}</td>
+        <td data-label="Drafted">${escapeHtml(formatDraftSummary(manager))}</td>
+        <td data-label="Entries">${escapeHtml(formatPickCount(manager.nationCount + manager.playerCount))}</td>
+        <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults }) {
+  const nationPoints = new Map(
+    getNationsLeagueRows(matchResults).map((nation) => [normalizeLookupName(nation.name), nation.points])
+  );
+  const playerPoints = new Map();
+
+  for (const player of getPlayerChampionshipRows(playerPerformances)) {
+    playerPoints.set(String(player.id), player.points);
+    playerPoints.set(normalizeLookupName(player.name), player.points);
+  }
+
+  const managerRows = new Map();
+
+  for (const manager of managers) {
+    const managerId = manager["Manager ID"];
+
+    if (!managerId) {
+      continue;
+    }
+
+    managerRows.set(managerId, {
+      id: managerId,
+      name: manager.Name,
+      nationCount: 0,
+      playerCount: 0,
+      points: 0,
+    });
+  }
+
+  for (const draft of teamDraft) {
+    const manager = managerRows.get(draft["Manager ID"]);
+    const nation = normalizeNationName(draft.Team);
+
+    if (!manager || !nation) {
+      continue;
+    }
+
+    manager.nationCount += 1;
+    manager.points += nationPoints.get(normalizeLookupName(nation)) ?? 0;
+  }
+
+  for (const draft of playerDraft) {
+    const manager = managerRows.get(draft["Manager ID"]);
+    const playerId = draft["Player ID"];
+    const playerName = draft.Player;
+
+    if (!manager || (!playerId && !playerName)) {
+      continue;
+    }
+
+    manager.playerCount += 1;
+    manager.points += playerPoints.get(String(playerId)) ?? playerPoints.get(normalizeLookupName(playerName)) ?? 0;
+  }
+
+  return [...managerRows.values()].sort((firstManager, secondManager) => {
+    if (secondManager.points !== firstManager.points) {
+      return secondManager.points - firstManager.points;
+    }
+
+    return firstManager.name.localeCompare(secondManager.name);
+  });
+}
+
+function renderManagerResultsError(error) {
+  if (!managerResultsRows) {
+    return;
+  }
+
+  managerResultsRows.innerHTML = `
+    <tr>
+      <td class="table-message" colspan="5">Unable to load manager results: ${escapeHtml(error.message)}</td>
+    </tr>
+  `;
+}
+
 function parsePoints(value) {
   if (value === undefined || value === null || value === "") {
     return 0;
@@ -561,6 +681,27 @@ function getWinnerPoints(result) {
   const points = parsePoints(rawPoints);
 
   return rawPoints && Number.isFinite(points) ? points : getFallbackWinPoints(result);
+}
+
+function formatDraftSummary(manager) {
+  return `${manager.nationCount} nations / ${manager.playerCount} players`;
+}
+
+function formatPickCount(value) {
+  return Number(value) === 1 ? "1 pick" : `${value} picks`;
+}
+
+function normalizeLookupName(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function normalizeNationName(value) {
+  const nation = String(value ?? "").trim();
+  const aliases = {
+    bosnia: "Bosnia and Herzegovina",
+  };
+
+  return aliases[normalizeLookupName(nation)] ?? nation;
 }
 
 function renderTestingPlayers(players) {

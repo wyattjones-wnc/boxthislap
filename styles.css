@@ -48,16 +48,18 @@ a {
   align-items: center;
   display: flex;
   flex: 0 0 auto;
+  line-height: 0;
+  max-width: 132px;
   text-decoration: none;
+  width: 132px;
 }
 
 .brand img {
   display: block;
   height: auto;
-  max-height: 54px;
-  max-width: 180px;
+  max-width: 100%;
   object-fit: contain;
-  width: 180px;
+  width: 100%;
 }
 
 .nav-links {
@@ -417,13 +419,23 @@ tr:last-child td {
     display: block;
   }
 
-  .nav-links {
-    margin-top: 12px;
+  .topbar {
+    padding: 10px 12px 12px;
   }
 
-  .brand img {
-    max-width: 150px;
-    width: 150px;
+  .nav-links {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .nav-links a {
+    font-size: 0.78rem;
+    padding: 6px 7px;
+  }
+
+  .brand {
+    max-width: 104px;
+    width: 104px;
   }
 
   .hero-panel {

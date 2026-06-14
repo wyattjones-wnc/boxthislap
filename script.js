@@ -6,6 +6,8 @@ const tabs = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
+const matchdaySelect = document.querySelector("#matchday-select");
+const matchdayMatchList = document.querySelector("#matchday-match-list");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 function showPage(pageName) {
@@ -67,14 +69,42 @@ loadMatches()
     siteData.matches = matches;
     renderMatchesForDate(todayMatchList, matches, getDateKey(0));
     renderMatchesForDate(tomorrowMatchList, matches, getDateKey(1));
+    renderMatchdayPicker(matches);
     console.info("Box This Lap match data loaded", matches);
   })
   .catch((error) => {
     siteData.matchesError = error;
     renderMatchError(todayMatchList, error);
     renderMatchError(tomorrowMatchList, error);
+    renderMatchError(matchdayMatchList, error);
     console.error("Box This Lap match data failed to load", error);
   });
+
+function renderMatchdayPicker(matches) {
+  if (!matchdaySelect || !matchdayMatchList) {
+    return;
+  }
+
+  const matchdays = [...new Set(matches.map(getMatchDate).filter(Boolean))].sort();
+
+  if (matchdays.length === 0) {
+    matchdaySelect.innerHTML = `<option>No matchdays found</option>`;
+    renderMatchesForDate(matchdayMatchList, matches, "");
+    return;
+  }
+
+  matchdaySelect.innerHTML = matchdays.map((dateKey) => {
+    return `<option value="${escapeHtml(dateKey)}">${escapeHtml(formatMatchdayLabel(dateKey))}</option>`;
+  }).join("");
+
+  const initialDate = matchdays.includes(getDateKey(0)) ? getDateKey(0) : matchdays[0];
+  matchdaySelect.value = initialDate;
+  renderMatchesForDate(matchdayMatchList, matches, initialDate);
+
+  matchdaySelect.addEventListener("change", () => {
+    renderMatchesForDate(matchdayMatchList, matches, matchdaySelect.value);
+  });
+}
 
 function renderMatchesForDate(container, matches, dateKey) {
   if (!container) {
@@ -222,6 +252,18 @@ function getDateKey(dayOffset) {
     String(date.getUTCMonth() + 1).padStart(2, "0"),
     String(date.getUTCDate()).padStart(2, "0"),
   ].join("-");
+}
+
+function formatMatchdayLabel(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    weekday: "short",
+  }).format(date);
 }
 
 function renderTestingPlayers(players) {

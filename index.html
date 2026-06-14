@@ -169,9 +169,12 @@
       </section>
 
       <section class="page is-active" id="results" data-page="results">
-        <div class="section-heading">
-          <h1>World Cup Results</h1>
-          <p class="updated-time">Updated June 13, 2026 10:34 AM ET</p>
+        <div class="section-heading page-heading-with-action">
+          <div>
+            <h1>World Cup Results</h1>
+            <p class="updated-time">Updated June 13, 2026 10:34 AM ET</p>
+          </div>
+          <a class="action-button" href="#matches" data-page-link="matches">Matches</a>
         </div>
 
         <div class="results-grid">
@@ -281,6 +284,27 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section class="page" id="matches" data-page="matches">
+        <div class="section-heading page-heading-with-action">
+          <h1>Matches</h1>
+          <label class="select-control">
+            <span>Matchday</span>
+            <select id="matchday-select">
+              <option>Loading matchdays...</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="match-list" id="matchday-match-list">
+          <article class="match-card">
+            <div class="match-header">
+              <h2>Loading matches...</h2>
+              <p>Matchday</p>
+            </div>
+          </article>
         </div>
       </section>
 

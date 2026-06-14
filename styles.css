@@ -203,6 +203,41 @@ main {
   margin-right: auto;
 }
 
+.page-heading-with-action {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.action-button {
+  background: var(--track);
+  border-radius: 6px;
+  color: #ffffff;
+  font-weight: 800;
+  padding: 10px 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.select-control {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.select-control select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  padding: 9px 10px;
+}
+
 .gallery-grid {
   display: grid;
   gap: 18px;
@@ -399,6 +434,16 @@ tr:last-child td {
 
   .match-header h2 {
     font-size: 1.3rem;
+  }
+
+  .page-heading-with-action {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .action-button,
+  .select-control {
+    justify-self: start;
   }
 
   .pair-table th,

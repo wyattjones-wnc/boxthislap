@@ -350,6 +350,10 @@ main {
   overflow-x: auto;
 }
 
+.standings-table {
+  overflow: hidden;
+}
+
 table {
   border-collapse: collapse;
   min-width: 620px;
@@ -448,5 +452,73 @@ tr:last-child td {
   .pair-table td {
     font-size: 1rem;
     padding: 12px 15px;
+  }
+
+  .standings-table {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .standings-table table,
+  .standings-table tbody,
+  .standings-table tr,
+  .standings-table td {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .standings-table table {
+    border-collapse: separate;
+    border-spacing: 0 10px;
+  }
+
+  .standings-table thead {
+    display: none;
+  }
+
+  .standings-table tr {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .standings-table td {
+    align-items: baseline;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 14px;
+    justify-content: space-between;
+    padding: 10px 13px;
+    text-align: right;
+  }
+
+  .standings-table td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .standings-table td:nth-child(2) {
+    font-weight: 800;
+  }
+
+  .standings-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .standings-table .table-message {
+    display: block;
+    text-align: left;
+  }
+
+  .standings-table .table-message::before {
+    content: "";
   }
 }

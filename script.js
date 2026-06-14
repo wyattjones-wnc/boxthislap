@@ -294,18 +294,18 @@ function renderPlayerChampionship(performances) {
   const rows = getPlayerChampionshipRows(performances);
 
   if (rows.length === 0) {
-    playerChampionshipRows.innerHTML = `<tr><td colspan="5">No player performance data found.</td></tr>`;
+    playerChampionshipRows.innerHTML = `<tr><td class="table-message" colspan="5">No player performance data found.</td></tr>`;
     return;
   }
 
   playerChampionshipRows.innerHTML = rows.map((player, index) => {
     return `
       <tr>
-        <td>${index + 1}</td>
-        <td>${escapeHtml(player.name)}</td>
-        <td>${escapeHtml(player.team)}</td>
-        <td>${escapeHtml(player.matches)}</td>
-        <td>${escapeHtml(formatPoints(player.points))}</td>
+        <td data-label="Rank">${index + 1}</td>
+        <td data-label="Player">${escapeHtml(player.name)}</td>
+        <td data-label="Team">${escapeHtml(player.team)}</td>
+        <td data-label="Matches">${escapeHtml(player.matches)}</td>
+        <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
       </tr>
     `;
   }).join("");
@@ -353,7 +353,7 @@ function renderPlayerChampionshipError(error) {
 
   playerChampionshipRows.innerHTML = `
     <tr>
-      <td colspan="5">Unable to load player performance data: ${escapeHtml(error.message)}</td>
+      <td class="table-message" colspan="5">Unable to load player performance data: ${escapeHtml(error.message)}</td>
     </tr>
   `;
 }

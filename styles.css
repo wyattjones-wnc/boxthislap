@@ -45,9 +45,19 @@ a {
 }
 
 .brand {
-  font-size: 1.1rem;
-  font-weight: 800;
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
   text-decoration: none;
+}
+
+.brand img {
+  display: block;
+  height: auto;
+  max-height: 54px;
+  max-width: 180px;
+  object-fit: contain;
+  width: 180px;
 }
 
 .nav-links {
@@ -409,6 +419,11 @@ tr:last-child td {
 
   .nav-links {
     margin-top: 12px;
+  }
+
+  .brand img {
+    max-width: 150px;
+    width: 150px;
   }
 
   .hero-panel {

@@ -1,4 +1,4 @@
-import { loadMatches, loadPlayers, loadSheet } from "./dataLoader.js";
+import { loadMatches, loadPlayers, loadSheet } from "./dataLoader.js?v=202606141008";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");

@@ -431,12 +431,12 @@ function renderPlayerChampionship(performances) {
     return;
   }
 
-  playerChampionshipRows.innerHTML = rows.map((player, index) => {
+  playerChampionshipRows.innerHTML = rows.map((player) => {
     const manager = getPlayerManager(player);
 
     return `
       <tr>
-        <td data-label="Rank">${index + 1}</td>
+        <td data-label="Rank">${player.rank}</td>
         <td data-label="Player">${escapeHtml(player.name)}</td>
         <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
@@ -472,13 +472,17 @@ function getPlayerChampionshipRows(performances) {
     players.set(playerId, player);
   }
 
-  return [...players.values()].sort((firstPlayer, secondPlayer) => {
-    if (secondPlayer.points !== firstPlayer.points) {
-      return secondPlayer.points - firstPlayer.points;
-    }
+  return rankRows(
+    [...players.values()]
+      .filter((player) => player.points > 0)
+      .sort((firstPlayer, secondPlayer) => {
+        if (secondPlayer.points !== firstPlayer.points) {
+          return secondPlayer.points - firstPlayer.points;
+        }
 
-    return firstPlayer.name.localeCompare(secondPlayer.name);
-  });
+        return firstPlayer.name.localeCompare(secondPlayer.name);
+      })
+  );
 }
 
 function renderPlayerChampionshipError(error) {
@@ -493,6 +497,19 @@ function renderPlayerChampionshipError(error) {
   `;
 }
 
+function rankRows(rows) {
+  let previousPoints;
+  let previousRank = 0;
+
+  return rows.map((row, index) => {
+    const rank = previousPoints === row.points ? previousRank : index + 1;
+    previousPoints = row.points;
+    previousRank = rank;
+
+    return { ...row, rank };
+  });
+}
+
 function renderNationsLeague(results) {
   if (!nationsLeagueRows) {
     return;
@@ -505,12 +522,12 @@ function renderNationsLeague(results) {
     return;
   }
 
-  nationsLeagueRows.innerHTML = rows.map((nation, index) => {
+  nationsLeagueRows.innerHTML = rows.map((nation) => {
     const manager = getNationManager(nation.name);
 
     return `
       <tr>
-        <td data-label="Rank">${index + 1}</td>
+        <td data-label="Rank">${nation.rank}</td>
         <td data-label="Nation">${escapeHtml(nation.name)}</td>
         <td data-label="Record / Manager">${renderStandingDetail(formatRecord(nation), manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
@@ -564,9 +581,11 @@ function getNationsLeagueRows(results) {
     }
   }
 
-  return [...nations.values()]
-    .filter((nation) => nation.matches > 0)
-    .sort(compareNationStandings);
+  return rankRows(
+    [...nations.values()]
+      .filter((nation) => nation.matches > 0 && nation.points > 0)
+      .sort(compareNationStandings)
+  );
 }
 
 function getNationStanding(nations, name) {
@@ -620,12 +639,12 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
     return;
   }
 
-  managerResultsRows.innerHTML = rows.map((manager, index) => {
+  managerResultsRows.innerHTML = rows.map((manager) => {
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
-        <td data-label="Rank">${index + 1}</td>
+        <td data-label="Rank">${manager.rank}</td>
         <td data-label="Manager">${renderManagerChip(manager)}</td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
       </tr>
@@ -766,13 +785,15 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
     });
   }
 
-  return [...managerRows.values()].sort((firstManager, secondManager) => {
-    if (secondManager.points !== firstManager.points) {
-      return secondManager.points - firstManager.points;
-    }
+  return rankRows(
+    [...managerRows.values()].sort((firstManager, secondManager) => {
+      if (secondManager.points !== firstManager.points) {
+        return secondManager.points - firstManager.points;
+      }
 
-    return firstManager.name.localeCompare(secondManager.name);
-  });
+      return firstManager.name.localeCompare(secondManager.name);
+    })
+  );
 }
 
 function buildManagerDraftLookups({ managers, teamDraft, playerDraft }) {

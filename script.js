@@ -4,7 +4,6 @@ const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
 const tabs = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
-const hiddenLeaguesLinks = document.querySelectorAll("[data-hidden-leagues-link]");
 const headerArt = document.querySelectorAll("[data-header-art]");
 const navGroups = document.querySelectorAll("[data-nav-scope]");
 const leagueYearSelect = document.querySelector("#league-year-select");
@@ -286,20 +285,6 @@ function showPage(pageName, options = {}) {
     "player-scores": "standings",
   };
   const resolvedPageName = pageAliases[pageName] || pageName;
-  const hiddenLeaguePages = [
-    "leagues",
-    "fantasy-critic-2025",
-    "fantasy-critic-2026",
-    "formula-1-2024-questions",
-    "formula-1-2024-results",
-    "formula-1-2025-questions",
-    "formula-1-2025-results",
-  ];
-
-  if (hiddenLeaguePages.includes(resolvedPageName) && !isLeagueDirectoryEnabled()) {
-    pageName = "results";
-  }
-
   const allowedPageName = pageAliases[pageName] || pageName;
   const pageExists = [...pages].some((page) => page.dataset.page === allowedPageName);
   const activePageName = pageExists ? allowedPageName : "results";
@@ -753,10 +738,6 @@ function parseCsvMatrix(text) {
   return rows;
 }
 
-function isLeagueDirectoryEnabled() {
-  return sessionStorage.getItem("boxThisLapLeagueSwitcher") === "enabled";
-}
-
 pageLinks.forEach((link) => {
   link.addEventListener("click", (event) => {
     event.preventDefault();
@@ -779,16 +760,6 @@ tabs.forEach((tab) => {
     showTab(tab.dataset.tab, { scrollToTop: true });
   });
 });
-
-if (new URLSearchParams(window.location.search).get("switcher") === "1") {
-  sessionStorage.setItem("boxThisLapLeagueSwitcher", "enabled");
-}
-
-if (isLeagueDirectoryEnabled()) {
-  hiddenLeaguesLinks.forEach((link) => {
-    link.hidden = false;
-  });
-}
 
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);

@@ -9,6 +9,7 @@ const headerArt = document.querySelectorAll("[data-header-art]");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
+const fantasyCritic2026Content = document.querySelector("#fantasy-critic-2026-content");
 const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
@@ -137,8 +138,133 @@ const FANTASY_CRITIC_2025 = {
   ],
 };
 
+const FANTASY_CRITIC_2026 = {
+  title: "Fantasy Critic",
+  subtitle: "Best of the Rest",
+  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2026",
+  standings: [
+    {
+      rank: 1,
+      manager: "Sean",
+      publisher: "Microhard Artisanal Studios",
+      points: "96.61",
+      projected: "160.98",
+      released: "7",
+      expecting: "4",
+      budget: "$79",
+      roster: [
+        ["Grand Theft Auto VI", "", ""],
+        ["007 First Light", "88", "18"],
+        ["LEGO Batman: Legacy of the Dark Knight", "84", "14"],
+        ["Fire Emblem: Fortune's Weave", "", ""],
+        ["Dragon Quest VII Reimagined", "83", "13"],
+        ["Phantom Blade Zero", "", ""],
+        ["REANIMAL", "80", "10"],
+        ["Silent Hill: Townfall", "", ""],
+        ["Vampire Crawlers", "84", "14"],
+        ["Yoshi and the Mysterious Book", "80", "10"],
+        ["Mixtape", "87", "17"],
+        ["CPK Fable", "--", "0"],
+        ["CPK Warning!", "", ""],
+      ],
+    },
+    {
+      rank: 2,
+      manager: "Wyatt",
+      publisher: "Jones Public Investment Fund",
+      points: "88.77",
+      projected: "165.31",
+      released: "5",
+      expecting: "6",
+      budget: "$48",
+      roster: [
+        ["Resident Evil Requiem", "89", "19"],
+        ["Saros", "87", "17"],
+        ["Control Resonant", "", ""],
+        ["Pragmata", "86", "16"],
+        ["Crimson Desert", "79", "9"],
+        ["Marvel Tokon: Fighting Souls", "", ""],
+        ["Trails in the Sky 2nd Chapter", "", ""],
+        ["Fable", "--", "0"],
+        ["Mina the Hollower", "91", "23"],
+        ["Beast of Reincarnation", "", ""],
+        ["Denshattack!", "", ""],
+        ["Kena: Scars of Kosmora", "", ""],
+        ["CPK Pokemon Champions", "65", "5"],
+        ["CPK Tomb Raider: Legacy of Atlantis", "--", "0"],
+      ],
+    },
+    {
+      rank: 3,
+      manager: "DKPepper",
+      publisher: "Pepper Publishing",
+      points: "78.8",
+      projected: "120.99",
+      released: "5",
+      expecting: "3",
+      budget: "$100",
+      roster: [
+        ["Pokemon Pokopia", "89", "19"],
+        ["Nioh 3", "85", "15"],
+        ["Monster Hunter Stories 3: Twisted Reflection", "85", "15"],
+        ["The Duskbloods", "", ""],
+        ["Slay the Spire 2", "", ""],
+        ["Gears of War: E-Day", "", ""],
+        ["Mio: Memories in Orbit", "83", "13"],
+        ["Cairn", "86", "16"],
+        ["CPK Star Wars: Galactic Racer", "", ""],
+        ["CPK Warning!", "", ""],
+      ],
+    },
+    {
+      rank: 4,
+      manager: "Jonathan",
+      publisher: "Emo Girl! Emergencies",
+      points: "65.31",
+      projected: "75.58",
+      released: "8",
+      expecting: "0",
+      budget: "$100",
+      roster: [
+        ["Mewgenics", "89", "19"],
+        ["Yakuza Kiwami 3 & Dark Ties", "74", "4"],
+        ["High on Life 2", "73", "3"],
+        ["Code Vein II", "73", "3"],
+        ["Fatal Frame II: Crimson Butterfly Remake", "76", "6"],
+        ["Coffee Talk Tokyo", "82", "12"],
+        ["Mouse: P.I. For Hire", "81", "11"],
+        ["Tomodachi Life: Living the Dream", "79", "9"],
+        ["CPK Marvel Tokon: Fighting Souls", "", ""],
+        ["CPK Warning!", "", ""],
+      ],
+    },
+    {
+      rank: 5,
+      manager: "Michael",
+      publisher: "Totalsoftware de Venezuela",
+      points: "16.9",
+      projected: "81",
+      released: "2",
+      expecting: "5",
+      budget: "$100",
+      roster: [
+        ["Forza Horizon 6", "91", "22"],
+        ["Star Wars: Galactic Racer", "", ""],
+        ["Marvel's Wolverine", "", ""],
+        ["Tomb Raider: Legacy of Atlantis", "--", "0"],
+        ["Halo: Campaign Evolved", "", ""],
+        ["Pokemon Champions", "65", "-5"],
+        ["Ace Combat 8: Wings of Theve", "", ""],
+        ["Unannounced Mainline 3D Mario Platformer", "", ""],
+        ["CPK Grand Theft Auto VI", "", ""],
+        ["CPK Warning!", "", ""],
+      ],
+    },
+  ],
+};
+
 function showPage(pageName, options = {}) {
-  const hiddenLeaguePages = ["leagues", "fantasy-critic-2025"];
+  const hiddenLeaguePages = ["leagues", "fantasy-critic-2025", "fantasy-critic-2026"];
 
   if (hiddenLeaguePages.includes(pageName) && !isLeagueDirectoryEnabled()) {
     pageName = "results";
@@ -208,7 +334,7 @@ function renderLeagueList(year) {
 
   leagueList.innerHTML = leagues.map((league) => {
     const isWorldCup = year === "2026" && league === "World Cup";
-    const isFantasyCritic = year === "2025" && league === "Fantasy Critic";
+    const isFantasyCritic = (year === "2025" || year === "2026") && league === "Fantasy Critic";
     const canOpen = isWorldCup || isFantasyCritic;
 
     return `
@@ -216,30 +342,32 @@ function renderLeagueList(year) {
         <div>
           <h2>${escapeHtml(league)}</h2>
         </div>
-        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, canOpen })}
+        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, canOpen, year })}
       </article>
     `;
   }).join("");
 }
 
-function renderLeagueCardAction({ isWorldCup, isFantasyCritic, canOpen }) {
+function renderLeagueCardAction({ isWorldCup, isFantasyCritic, canOpen, year }) {
   if (isWorldCup) {
     return `<a class="league-card-link" href="#results" data-page-link="results">Open</a>`;
   }
 
   if (isFantasyCritic) {
-    return `<a class="league-card-link" href="#fantasy-critic-2025" data-page-link="fantasy-critic-2025">Open</a>`;
+    return `<a class="league-card-link" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open</a>`;
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
 }
 
 function renderFantasyCriticPage() {
-  if (!fantasyCritic2025Content) {
-    return;
+  if (fantasyCritic2025Content) {
+    fantasyCritic2025Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2025);
   }
 
-  fantasyCritic2025Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2025);
+  if (fantasyCritic2026Content) {
+    fantasyCritic2026Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2026);
+  }
 }
 
 function renderFantasyCriticLeague(league) {
@@ -278,11 +406,13 @@ function renderFantasyCriticStanding(entry) {
         <div class="fantasy-critic-points">
           <span>Points</span>
           <strong>${escapeHtml(entry.points)}</strong>
+          ${entry.projected ? `<small>Proj ${escapeHtml(entry.projected)}</small>` : ""}
         </div>
       </header>
 
       <div class="fantasy-critic-meta">
         <span>Released <strong>${escapeHtml(entry.released)}</strong></span>
+        ${entry.expecting ? `<span>Expecting <strong>${escapeHtml(entry.expecting)}</strong></span>` : ""}
         <span>Budget <strong>${escapeHtml(entry.budget)}</strong></span>
       </div>
 
@@ -294,11 +424,14 @@ function renderFantasyCriticStanding(entry) {
 }
 
 function renderFantasyCriticGame([game, critic, points]) {
+  const criticValue = critic || "--";
+  const pointsValue = points || "--";
+
   return `
     <div class="fantasy-critic-game">
       <strong>${escapeHtml(game)}</strong>
-      <span>Critic ${escapeHtml(critic)}</span>
-      <span>Pts ${escapeHtml(points)}</span>
+      <span>Critic ${escapeHtml(criticValue)}</span>
+      <span>Pts ${escapeHtml(pointsValue)}</span>
     </div>
   `;
 }

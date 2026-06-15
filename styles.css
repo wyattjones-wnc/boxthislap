@@ -406,6 +406,11 @@ main {
   font-size: 1.35rem;
 }
 
+.fantasy-critic-points small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .fantasy-critic-manager {
   display: grid;
   gap: 7px;

@@ -213,6 +213,10 @@ main {
   padding: 12px 14px;
 }
 
+.tab-link {
+  text-decoration: none;
+}
+
 .tab.is-active {
   border-color: var(--accent);
   color: var(--ink);
@@ -458,6 +462,108 @@ main {
 .fantasy-critic-game span {
   color: var(--muted);
   font-weight: 800;
+  text-align: right;
+}
+
+.formula-one-tabs {
+  margin-top: 0;
+}
+
+.formula-one-controls {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 320px) minmax(220px, 1fr);
+  margin-bottom: 16px;
+}
+
+.filter-control {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.filter-control input {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  padding: 9px 10px;
+}
+
+.formula-one-question-list {
+  display: grid;
+  gap: 16px;
+}
+
+.formula-one-question-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(24, 33, 47, 0.08);
+  overflow: hidden;
+}
+
+.formula-one-question-card header {
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.formula-one-question-card header span {
+  color: var(--accent-dark);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.formula-one-question-card h3 {
+  font-size: 1.15rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.formula-one-question-card p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.formula-one-question-card .table-message {
+  padding: 16px;
+}
+
+.formula-one-bet-list {
+  display: grid;
+}
+
+.formula-one-bet {
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 58px;
+  padding: 13px 16px;
+}
+
+.formula-one-bet:last-child {
+  border-bottom: 0;
+}
+
+.formula-one-bet .manager-chip {
+  margin-bottom: 5px;
+}
+
+.formula-one-bet p {
+  overflow-wrap: anywhere;
+}
+
+.formula-one-bet strong {
+  color: var(--accent-dark);
+  font-size: 1.05rem;
+  line-height: 1.2;
   text-align: right;
 }
 
@@ -844,6 +950,22 @@ tr:last-child td {
     display: grid;
   }
 
+  .formula-one-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-one-tabs {
+    gap: 4px;
+    justify-content: space-between;
+  }
+
+  .formula-one-tabs .tab {
+    flex: 1 1 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    text-align: center;
+  }
+
   .fantasy-critic-summary {
     grid-template-columns: 58px minmax(0, 1fr) 78px;
     padding: 13px;
@@ -866,6 +988,16 @@ tr:last-child td {
 
   .fantasy-critic-game span {
     font-size: 0.9rem;
+  }
+
+  .formula-one-question-card header {
+    padding: 13px;
+  }
+
+  .formula-one-bet {
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    padding: 12px 13px;
   }
 
   .standings-table {

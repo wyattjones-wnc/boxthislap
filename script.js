@@ -1,4 +1,4 @@
-import { loadMatches, loadPlayers, loadSheet } from "./dataLoader.js?v=202606141008";
+import { loadMatches, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202606150001";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -10,6 +10,10 @@ const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
 const fantasyCritic2026Content = document.querySelector("#fantasy-critic-2026-content");
+const formulaOneQuestionSelect = document.querySelector("#formula-one-question-select");
+const formulaOneQuestionFilter = document.querySelector("#formula-one-question-filter");
+const formulaOneQuestionList = document.querySelector("#formula-one-question-list");
+const formulaOneResultsRows = document.querySelector("#formula-one-results-rows");
 const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
@@ -264,7 +268,7 @@ const FANTASY_CRITIC_2026 = {
 };
 
 function showPage(pageName, options = {}) {
-  const hiddenLeaguePages = ["leagues", "fantasy-critic-2025", "fantasy-critic-2026"];
+  const hiddenLeaguePages = ["leagues", "fantasy-critic-2025", "fantasy-critic-2026", "formula-1-2024"];
 
   if (hiddenLeaguePages.includes(pageName) && !isLeagueDirectoryEnabled()) {
     pageName = "results";
@@ -335,26 +339,31 @@ function renderLeagueList(year) {
   leagueList.innerHTML = leagues.map((league) => {
     const isWorldCup = year === "2026" && league === "World Cup";
     const isFantasyCritic = (year === "2025" || year === "2026") && league === "Fantasy Critic";
-    const canOpen = isWorldCup || isFantasyCritic;
+    const isFormulaOne = year === "2024" && league === "Formula 1";
+    const canOpen = isWorldCup || isFantasyCritic || isFormulaOne;
 
     return `
       <article class="league-card${isWorldCup ? " is-current" : ""}">
         <div>
           <h2>${escapeHtml(league)}</h2>
         </div>
-        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, canOpen, year })}
+        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, canOpen, year })}
       </article>
     `;
   }).join("");
 }
 
-function renderLeagueCardAction({ isWorldCup, isFantasyCritic, canOpen, year }) {
+function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, canOpen, year }) {
   if (isWorldCup) {
     return `<a class="league-card-link" href="#results" data-page-link="results">Open</a>`;
   }
 
   if (isFantasyCritic) {
     return `<a class="league-card-link" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open</a>`;
+  }
+
+  if (isFormulaOne) {
+    return `<a class="league-card-link" href="#formula-1-2024" data-page-link="formula-1-2024">Open</a>`;
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
@@ -432,6 +441,224 @@ function renderFantasyCriticGame([game, critic, points]) {
   `;
 }
 
+function parseFormulaOne2024(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const managerRow = rows[0] ?? [];
+  const headerRow = rows[1] ?? [];
+
+  if (rows.length < 3 || headerRow[0] !== "Question" || headerRow[1] !== "Answer") {
+    throw new Error("Formula 1 sheet did not include the expected Question and Answer columns.");
+  }
+
+  const managerColumns = managerRow
+    .map((manager, index) => ({ manager: manager.trim(), index }))
+    .filter(({ manager, index }) => manager && index >= 2);
+
+  const questions = rows.slice(2).map((row, index) => {
+    return {
+      id: `question-${index + 1}`,
+      number: index + 1,
+      question: row[0]?.trim() ?? "",
+      answer: row[1]?.trim() ?? "",
+      bets: managerColumns.map(({ manager, index: betIndex }) => ({
+        manager,
+        bet: row[betIndex]?.trim() ?? "",
+        points: parsePoints(row[betIndex + 1]),
+      })),
+    };
+  }).filter((question) => question.question);
+
+  const standings = managerColumns.map(({ manager }) => {
+    const managerQuestions = questions.map((question) => {
+      return question.bets.find((bet) => bet.manager === manager) ?? { manager, bet: "", points: 0 };
+    });
+    const points = managerQuestions.reduce((total, bet) => total + bet.points, 0);
+    const scored = managerQuestions.filter((bet) => bet.points !== 0).length;
+
+    return {
+      manager,
+      questions: managerQuestions.length,
+      scored,
+      points,
+    };
+  }).sort((a, b) => b.points - a.points || a.manager.localeCompare(b.manager));
+
+  return { questions, standings: rankRows(standings) };
+}
+
+function renderFormulaOne2024(data) {
+  siteData.formulaOne2024 = data;
+  renderFormulaOneQuestionOptions(data.questions);
+  renderFormulaOneQuestions();
+  renderFormulaOneResults(data.standings);
+}
+
+function renderFormulaOneQuestionOptions(questions) {
+  if (!formulaOneQuestionSelect) {
+    return;
+  }
+
+  formulaOneQuestionSelect.innerHTML = `
+    <option value="">All questions</option>
+    ${questions.map((question) => {
+      return `<option value="${escapeHtml(question.id)}">${escapeHtml(question.number)}. ${escapeHtml(question.question)}</option>`;
+    }).join("")}
+  `;
+}
+
+function renderFormulaOneQuestions() {
+  if (!formulaOneQuestionList) {
+    return;
+  }
+
+  const data = siteData.formulaOne2024;
+
+  if (!data) {
+    return;
+  }
+
+  const selectedQuestion = formulaOneQuestionSelect?.value ?? "";
+  const filterText = (formulaOneQuestionFilter?.value ?? "").trim().toLowerCase();
+  const questions = data.questions.filter((question) => {
+    if (selectedQuestion && question.id !== selectedQuestion) {
+      return false;
+    }
+
+    if (!filterText) {
+      return true;
+    }
+
+    const searchableText = [
+      question.question,
+      question.answer,
+      ...question.bets.flatMap((bet) => [bet.manager, bet.bet, String(bet.points)]),
+    ].join(" ").toLowerCase();
+
+    return searchableText.includes(filterText);
+  });
+
+  if (questions.length === 0) {
+    formulaOneQuestionList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Formula 1 questions match that filter.</p></article>`;
+    return;
+  }
+
+  formulaOneQuestionList.innerHTML = questions.map(renderFormulaOneQuestion).join("");
+}
+
+function renderFormulaOneQuestion(question) {
+  return `
+    <article class="formula-one-question-card">
+      <header>
+        <span>Question ${escapeHtml(question.number)}</span>
+        <h3>${escapeHtml(question.question)}</h3>
+        <p>Answer: <strong>${escapeHtml(question.answer || "No answer listed")}</strong></p>
+      </header>
+      <div class="formula-one-bet-list">
+        ${question.bets.map(renderFormulaOneBet).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderFormulaOneBet(bet) {
+  const manager = getManagerByName(bet.manager) ?? { name: bet.manager };
+
+  return `
+    <div class="formula-one-bet">
+      <div>
+        ${renderManagerChip(manager)}
+        <p>${escapeHtml(bet.bet || "No bet listed")}</p>
+      </div>
+      <strong>${formatPoints(bet.points)}</strong>
+    </div>
+  `;
+}
+
+function renderFormulaOneResults(standings) {
+  if (!formulaOneResultsRows) {
+    return;
+  }
+
+  if (standings.length === 0) {
+    formulaOneResultsRows.innerHTML = `<tr><td class="table-message" colspan="5">No Formula 1 results were loaded.</td></tr>`;
+    return;
+  }
+
+  formulaOneResultsRows.innerHTML = standings.map((entry) => {
+    const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+
+    return `
+      <tr>
+        <td data-label="Rank">${escapeHtml(entry.rank)}</td>
+        <td data-label="Manager">${renderManagerChip(manager)}</td>
+        <td data-label="Questions">${escapeHtml(entry.questions)}</td>
+        <td data-label="Scored">${escapeHtml(entry.scored)}</td>
+        <td data-label="Points">${escapeHtml(formatPoints(entry.points))}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderFormulaOneError(error) {
+  if (formulaOneQuestionList) {
+    formulaOneQuestionList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Formula 1 questions: ${escapeHtml(error.message)}</p></article>`;
+  }
+
+  if (formulaOneResultsRows) {
+    formulaOneResultsRows.innerHTML = `<tr><td class="table-message" colspan="5">Unable to load Formula 1 results: ${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+function parseCsvMatrix(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+
+      if (char === "\r" && nextChar === "\n") {
+        index += 1;
+      }
+
+      continue;
+    }
+
+    field += char;
+  }
+
+  if (field !== "" || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
 function isLeagueDirectoryEnabled() {
   return sessionStorage.getItem("boxThisLapLeagueSwitcher") === "enabled";
 }
@@ -472,6 +699,9 @@ if (isLeagueDirectoryEnabled()) {
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
 });
+
+formulaOneQuestionSelect?.addEventListener("change", renderFormulaOneQuestions);
+formulaOneQuestionFilter?.addEventListener("input", renderFormulaOneQuestions);
 
 resultCards.forEach((card) => {
   const toggle = card.querySelector("[data-result-toggle]");
@@ -606,6 +836,17 @@ loadMatches()
     renderMatchError(tomorrowMatchList, error);
     renderMatchError(matchdayMatchList, error);
     console.error("Box This Lap match data failed to load", error);
+  });
+
+loadSheetText("formulaOne2024")
+  .then((csvText) => {
+    const data = parseFormulaOne2024(csvText);
+    renderFormulaOne2024(data);
+    console.info("Box This Lap Formula 1 2024 data loaded", data);
+  })
+  .catch((error) => {
+    renderFormulaOneError(error);
+    console.error("Box This Lap Formula 1 2024 data failed to load", error);
   });
 
 function renderMatchdayPicker(matches) {

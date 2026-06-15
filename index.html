@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Box This Lap | Results</title>
-    <link rel="stylesheet" href="styles.css?v=202606150008">
+    <link rel="stylesheet" href="styles.css?v=202606150009">
   </head>
   <body class="is-routing">
     <header class="site-header">
@@ -360,8 +360,68 @@
       <section class="page league-detail-page" id="fantasy-critic-2026" data-page="fantasy-critic-2026">
         <div id="fantasy-critic-2026-content"></div>
       </section>
+
+      <section class="page league-detail-page" id="formula-1-2024" data-page="formula-1-2024">
+        <div class="league-detail-heading">
+          <div>
+            <h2>Formula 1</h2>
+            <p>2024 Bet Results</p>
+          </div>
+        </div>
+
+        <div class="tabs formula-one-tabs" role="tablist" aria-label="Formula 1 views">
+          <button class="tab is-active" type="button" data-tab="f1-questions" role="tab" aria-selected="true">
+            Questions
+          </button>
+          <button class="tab" type="button" data-tab="f1-results" role="tab" aria-selected="false">
+            Results
+          </button>
+          <a class="tab tab-link" href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+
+        <div class="tab-panel is-active" data-tab-panel="f1-questions" role="tabpanel">
+          <div class="formula-one-controls">
+            <label class="select-control">
+              <span>Question</span>
+              <select id="formula-one-question-select">
+                <option value="">All questions</option>
+              </select>
+            </label>
+            <label class="filter-control">
+              <span>Filter</span>
+              <input id="formula-one-question-filter" type="search" placeholder="Driver, team, manager...">
+            </label>
+          </div>
+          <div class="formula-one-question-list" id="formula-one-question-list">
+            <article class="formula-one-question-card">
+              <p class="table-message">Loading Formula 1 questions...</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tab-panel="f1-results" role="tabpanel">
+          <div class="table-wrap standings-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Manager</th>
+                  <th>Questions</th>
+                  <th>Scored</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody id="formula-one-results-rows" class="compact-standing-rows">
+                <tr>
+                  <td class="table-message" colspan="5">Loading Formula 1 results...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <script type="module" src="script.js?v=202606150012"></script>
+    <script type="module" src="script.js?v=202606150013"></script>
   </body>
 </html>

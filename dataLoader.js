@@ -1,5 +1,7 @@
 const GOOGLE_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRlUykKGjYLQY5KqHJt0uF-b3HmhZZSAYCgZdF2L8cRxTlP64gPOWp7uiqC4zG8IlSy3eODn4vybN56/pub";
+const FORMULA_ONE_2024_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV8iyxCJX5DWDRzBNCyfzq7lCJkk5fFnZz8p0uCiNwXAsZEvXcdgdyDIu9haoRBmZ0ToreIRBl8Y3O/pub";
 
 export const DATA_SOURCES = {
   matches: "matches.json",
@@ -13,6 +15,7 @@ export const DATA_SOURCES = {
     matchResults: buildPublishedCsvUrl("396388040"),
     playerPerformances: buildPublishedCsvUrl("2122871848"),
     standings: buildPublishedCsvUrl("705930353"),
+    formulaOne2024: buildFormulaOne2024CsvUrl("1705332201"),
   },
 };
 
@@ -42,6 +45,16 @@ export async function loadCsv(url) {
   return parseCsv(await response.text());
 }
 
+export async function loadCsvText(url) {
+  const response = await fetch(url, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
+  }
+
+  return response.text();
+}
+
 export async function loadMatches() {
   return loadJson(DATA_SOURCES.matches);
 }
@@ -59,6 +72,16 @@ export function loadSheet(sheetName) {
   }
 
   return loadCsv(url);
+}
+
+export function loadSheetText(sheetName) {
+  const url = DATA_SOURCES.sheets[sheetName];
+
+  if (!url) {
+    throw new Error(`Unknown sheet source: ${sheetName}`);
+  }
+
+  return loadCsvText(url);
 }
 
 export async function loadSheets(sheetNames = Object.keys(DATA_SOURCES.sheets)) {
@@ -118,6 +141,10 @@ function normalizePlayerRow(row) {
 
 function buildPublishedCsvUrl(gid) {
   return `${GOOGLE_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+}
+
+function buildFormulaOne2024CsvUrl(gid) {
+  return `${FORMULA_ONE_2024_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
 }
 
 function stripBom(text) {

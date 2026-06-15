@@ -513,11 +513,14 @@ function renderMatchesForDate(container, matches, dateKey) {
     .sort(compareMatchesByDisplayTime);
 
   if (filteredMatches.length === 0) {
+    const title = dateKey ? "No matches found" : "No match data loaded";
+    const label = dateKey || "No data";
+
     container.innerHTML = `
       <article class="match-card">
         <div class="match-header">
-          <h2>No matches found</h2>
-          <p>${escapeHtml(dateKey)}</p>
+          <h2>${escapeHtml(title)}</h2>
+          <p>${escapeHtml(label)}</p>
         </div>
       </article>
     `;

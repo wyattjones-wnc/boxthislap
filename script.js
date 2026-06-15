@@ -196,7 +196,7 @@ const FANTASY_CRITIC_2026 = {
     },
     {
       rank: 3,
-      manager: "DKPepper",
+      manager: "Jordan",
       publisher: "Pepper Publishing",
       points: "78.8",
       projected: "120.99",

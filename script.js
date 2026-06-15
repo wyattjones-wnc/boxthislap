@@ -259,6 +259,8 @@ function renderFantasyCriticLeague(league) {
 }
 
 function renderFantasyCriticStanding(entry) {
+  const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+
   return `
     <article class="fantasy-critic-card">
       <header class="fantasy-critic-summary">
@@ -267,7 +269,7 @@ function renderFantasyCriticStanding(entry) {
           <strong>${escapeHtml(entry.rank)}</strong>
         </div>
         <div class="fantasy-critic-manager">
-          ${renderManagerChip(entry.manager)}
+          ${renderManagerChip(manager)}
           <small>${escapeHtml(entry.publisher)}</small>
         </div>
         <div class="fantasy-critic-points">

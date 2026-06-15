@@ -488,6 +488,7 @@ main {
 
 .formula-one-controls .select-control select,
 .formula-one-controls .filter-control input {
+  font-size: 16px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

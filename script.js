@@ -338,6 +338,10 @@ function getHeaderArtName(pageName) {
     return "formula-one-2025";
   }
 
+  if (getNavScope(pageName) === "world-cup") {
+    return "world-cup";
+  }
+
   return pageName;
 }
 
@@ -526,7 +530,9 @@ function parseFormulaOneSheet(csvText) {
     .map((manager, index) => ({ manager: manager.trim(), index }))
     .filter(({ manager, index }) => manager && index >= 2);
 
-  const questions = rows.slice(2).map((row, index) => {
+  const questions = rows.slice(2).filter((row) => {
+    return !isFormulaOneTotalRow(row[0]);
+  }).map((row, index) => {
     return {
       id: `question-${index + 1}`,
       number: index + 1,
@@ -621,13 +627,29 @@ function renderFormulaOneQuestion(question) {
       <header>
         <span>Question ${escapeHtml(question.number)}</span>
         <h3>${escapeHtml(question.question)}</h3>
-        <p>Answer: <strong>${escapeHtml(question.answer || "No answer listed")}</strong></p>
+        ${renderFormulaOneAnswer(question)}
       </header>
       <div class="formula-one-bet-list">
         ${question.bets.map(renderFormulaOneBet).join("")}
       </div>
     </article>
   `;
+}
+
+function renderFormulaOneAnswer(question) {
+  if (isBoldPredictionQuestion(question.question)) {
+    return "";
+  }
+
+  return `<p>Answer: <strong>${escapeHtml(question.answer || "No answer listed")}</strong></p>`;
+}
+
+function isBoldPredictionQuestion(question) {
+  return String(question ?? "").toLowerCase().includes("bold prediction");
+}
+
+function isFormulaOneTotalRow(question) {
+  return String(question ?? "").trim().toLowerCase() === "total";
 }
 
 function renderFormulaOneBet(bet) {

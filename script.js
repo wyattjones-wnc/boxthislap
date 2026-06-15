@@ -100,7 +100,6 @@ function renderLeagueList(year) {
       <article class="league-card${isWorldCup ? " is-current" : ""}">
         <div>
           <h2>${escapeHtml(league)}</h2>
-          <p>${escapeHtml(year)}</p>
         </div>
         ${isWorldCup ? `<a class="league-card-link" href="#results" data-page-link="results">Open</a>` : `<button class="league-card-link" type="button" disabled>Planned</button>`}
       </article>

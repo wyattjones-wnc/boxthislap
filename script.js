@@ -4,6 +4,9 @@ const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
 const tabs = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
+const leagueShells = document.querySelectorAll("[data-league]");
+const leagueSwitcher = document.querySelector("#league-switcher");
+const leagueSelect = document.querySelector("#league-select");
 const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
@@ -24,6 +27,8 @@ const MANAGER_COLORS = {
 };
 
 function showPage(pageName, options = {}) {
+  showLeague("world-cup");
+
   const pageAliases = {
     "manager-scores": "standings",
     "player-scores": "standings",
@@ -39,6 +44,24 @@ function showPage(pageName, options = {}) {
   pageLinks.forEach((link) => {
     link.classList.toggle("is-active", link.dataset.pageLink === activePageName);
   });
+
+  if (options.scrollToTop) {
+    scrollToPageTop();
+  }
+}
+
+function showLeague(leagueName, options = {}) {
+  const activeLeague = [...leagueShells].some((league) => league.dataset.league === leagueName)
+    ? leagueName
+    : "world-cup";
+
+  leagueShells.forEach((league) => {
+    league.classList.toggle("is-active", league.dataset.league === activeLeague);
+  });
+
+  if (leagueSelect) {
+    leagueSelect.value = activeLeague;
+  }
 
   if (options.scrollToTop) {
     scrollToPageTop();
@@ -91,6 +114,18 @@ tabs.forEach((tab) => {
   });
 });
 
+if (new URLSearchParams(window.location.search).get("switcher") === "1") {
+  sessionStorage.setItem("boxThisLapLeagueSwitcher", "enabled");
+}
+
+if (sessionStorage.getItem("boxThisLapLeagueSwitcher") === "enabled") {
+  leagueSwitcher.hidden = false;
+}
+
+leagueSelect?.addEventListener("change", () => {
+  showLeague(leagueSelect.value, { scrollToTop: true });
+});
+
 resultCards.forEach((card) => {
   const toggle = card.querySelector("[data-result-toggle]");
 
@@ -138,6 +173,7 @@ window.addEventListener("popstate", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
 });
 
+showLeague(leagueSelect?.value || "world-cup");
 showPage(window.location.hash.replace("#", "") || "results");
 
 const siteData = {};

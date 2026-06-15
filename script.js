@@ -19,6 +19,9 @@ const nationsLeagueRows = document.querySelector("#nations-league-rows");
 const managerResultsRows = document.querySelector("#manager-results-rows");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
+const siteData = {};
+window.boxThisLapData = siteData;
+
 const MANAGER_COLORS = {
   jonathan: "#000000",
   jordan: "#b7a7dc",
@@ -389,9 +392,6 @@ window.addEventListener("popstate", () => {
 showPage(window.location.hash.replace("#", "") || "results");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
-
-const siteData = {};
-window.boxThisLapData = siteData;
 
 loadPlayers()
   .then((players) => {

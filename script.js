@@ -547,7 +547,7 @@ function renderFormulaOneQuestionOptions(questions) {
   formulaOneQuestionSelect.innerHTML = `
     <option value="">All questions</option>
     ${questions.map((question) => {
-      return `<option value="${escapeHtml(question.id)}">${escapeHtml(question.number)}. ${escapeHtml(question.question)}</option>`;
+      return `<option value="${escapeHtml(question.id)}" title="${escapeHtml(question.question)}">Question ${escapeHtml(question.number)}</option>`;
     }).join("")}
   `;
 }
@@ -574,13 +574,7 @@ function renderFormulaOneQuestions() {
       return true;
     }
 
-    const searchableText = [
-      question.question,
-      question.answer,
-      ...question.bets.flatMap((bet) => [bet.manager, bet.bet, String(bet.points)]),
-    ].join(" ").toLowerCase();
-
-    return searchableText.includes(filterText);
+    return question.question.toLowerCase().includes(filterText);
   });
 
   if (questions.length === 0) {
@@ -626,7 +620,7 @@ function renderFormulaOneResults(standings) {
   }
 
   if (standings.length === 0) {
-    formulaOneResultsRows.innerHTML = `<tr><td class="table-message" colspan="5">No Formula 1 results were loaded.</td></tr>`;
+    formulaOneResultsRows.innerHTML = `<tr><td class="table-message" colspan="3">No Formula 1 results were loaded.</td></tr>`;
     return;
   }
 
@@ -637,8 +631,6 @@ function renderFormulaOneResults(standings) {
       <tr>
         <td data-label="Rank">${escapeHtml(entry.rank)}</td>
         <td data-label="Manager">${renderManagerChip(manager)}</td>
-        <td data-label="Questions">${escapeHtml(entry.questions)}</td>
-        <td data-label="Scored">${escapeHtml(entry.scored)}</td>
         <td data-label="Points">${escapeHtml(formatPoints(entry.points))}</td>
       </tr>
     `;
@@ -651,7 +643,7 @@ function renderFormulaOneError(error) {
   }
 
   if (formulaOneResultsRows) {
-    formulaOneResultsRows.innerHTML = `<tr><td class="table-message" colspan="5">Unable to load Formula 1 results: ${escapeHtml(error.message)}</td></tr>`;
+    formulaOneResultsRows.innerHTML = `<tr><td class="table-message" colspan="3">Unable to load Formula 1 results: ${escapeHtml(error.message)}</td></tr>`;
   }
 }
 
@@ -746,7 +738,13 @@ leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
 });
 
-formulaOneQuestionSelect?.addEventListener("change", renderFormulaOneQuestions);
+formulaOneQuestionSelect?.addEventListener("change", () => {
+  if (formulaOneQuestionFilter) {
+    formulaOneQuestionFilter.value = "";
+  }
+
+  renderFormulaOneQuestions();
+});
 formulaOneQuestionFilter?.addEventListener("input", renderFormulaOneQuestions);
 
 resultCards.forEach((card) => {

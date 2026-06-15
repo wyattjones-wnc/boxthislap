@@ -472,8 +472,22 @@ main {
 .formula-one-controls {
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(220px, 320px) minmax(220px, 1fr);
+  grid-template-columns: minmax(0, 240px) minmax(180px, 320px);
+  justify-content: start;
   margin-bottom: 16px;
+}
+
+.formula-one-controls .select-control,
+.formula-one-controls .filter-control {
+  min-width: 0;
+}
+
+.formula-one-controls .select-control select,
+.formula-one-controls .filter-control input {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .filter-control {

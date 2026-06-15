@@ -377,10 +377,6 @@ function renderFantasyCriticLeague(league) {
         <h2>${escapeHtml(league.title)}</h2>
         <p>${escapeHtml(league.subtitle)}</p>
       </div>
-      <div class="league-detail-actions">
-        <a class="league-source-link" href="#leagues" data-page-link="leagues">Leagues</a>
-        <a class="league-source-link" href="${escapeHtml(league.sourceUrl)}" target="_blank" rel="noopener">Source</a>
-      </div>
     </div>
 
     <div class="fantasy-critic-standings">

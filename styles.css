@@ -355,17 +355,6 @@ main {
   margin: 4px 0 0;
 }
 
-.league-source-link {
-  color: var(--accent-dark);
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.league-detail-actions {
-  display: flex;
-  gap: 14px;
-}
-
 .fantasy-critic-standings {
   display: grid;
   gap: 18px;

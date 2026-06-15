@@ -1,0 +1,55 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-site
+
+      - name: Build combined site
+        run: |
+          mkdir -p _site
+          rsync -a --exclude='.git' --exclude='.github' main-site/ _site/
+
+          if git ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
+            git clone --depth 1 --branch dev "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dev-site
+            mkdir -p _site/dev
+            rsync -a --exclude='.git' --exclude='.github' dev-site/ _site/dev/
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -29,18 +29,18 @@ jobs:
           ref: main
           path: main-site
 
+      - name: Check out dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev-site
+
       - name: Build combined site
         run: |
           mkdir -p _site
           rsync -a --exclude='.git' --exclude='.github' main-site/ _site/
-
-          if git ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
-            git clone --depth 1 --branch dev "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dev-site
-            mkdir -p _site/dev
-            rsync -a --exclude='.git' --exclude='.github' dev-site/ _site/dev/
-          fi
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          mkdir -p _site/dev
+          rsync -a --exclude='.git' --exclude='.github' dev-site/ _site/dev/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

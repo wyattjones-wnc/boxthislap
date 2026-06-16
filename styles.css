@@ -18,8 +18,8 @@
   --strong-shadow: rgba(0, 0, 0, 0.48);
   --accent-shadow: rgba(240, 82, 101, 0.12);
   --accent-border: rgba(240, 82, 101, 0.42);
-  --manager-dot-border: #ffffff;
-  --manager-dot-ring: rgba(255, 255, 255, 0.82);
+  --manager-dot-border: #303946;
+  --manager-dot-ring: rgba(255, 255, 255, 0.26);
   --updated: rgba(166, 176, 192, 0.76);
 }
 

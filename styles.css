@@ -137,6 +137,14 @@ a {
   object-position: center;
 }
 
+.header-page-art[data-header-art="fantasy-office-2025"] picture {
+  max-width: min(760px, 100%);
+}
+
+.header-page-art[data-header-art="fantasy-office-2025"] img {
+  height: 106px;
+}
+
 .nav-links {
   display: flex;
   flex: 0 0 auto;
@@ -1150,6 +1158,10 @@ tr:last-child td {
     max-width: 100%;
   }
 
+  .header-page-art[data-header-art="fantasy-office-2025"] img {
+    height: 74px;
+  }
+
   @media (orientation: landscape) and (max-height: 520px) {
     .topbar {
       grid-template-columns: 104px minmax(0, 1fr) auto;
@@ -1161,6 +1173,10 @@ tr:last-child td {
 
     .header-page-art img {
       height: 46px;
+    }
+
+    .header-page-art[data-header-art="fantasy-office-2025"] img {
+      height: 62px;
     }
   }
 

@@ -1056,6 +1056,24 @@ function renderFantasyOfficeError(error) {
   }
 }
 
+function renderFantasyOfficeDraftError(error) {
+  if (fantasyOffice2025View.draftList) {
+    fantasyOffice2025View.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office draft: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
+function renderFantasyOfficeMovieError(error) {
+  if (fantasyOffice2025View.movieList) {
+    fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Fantasy Office movies: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
+function renderFantasyOfficeResultsError(error) {
+  if (fantasyOffice2025View.resultList) {
+    fantasyOffice2025View.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office results: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
 function parseCsvMatrix(text) {
   const rows = [];
   let row = [];
@@ -1328,26 +1346,48 @@ loadSheetText("formulaOne2025")
     console.error("Box This Lap Formula 1 2025 data failed to load", error);
   });
 
-Promise.all([
-  loadSheetText("fantasyOffice2025Draft"),
-  loadSheetText("fantasyOffice2025Movies"),
-  loadSheetText("fantasyOffice2025Results"),
-  loadSheetText("fantasyOffice2025Ordering"),
-])
-  .then(([draftCsv, moviesCsv, resultsCsv, orderingCsv]) => {
-    const data = {
-      draft: parseFantasyOfficeDraft(draftCsv),
-      movies: parseFantasyOfficeMovies(moviesCsv),
-      ordering: parseCsvMatrix(orderingCsv),
-      results: parseFantasyOfficeResults(resultsCsv),
-    };
+siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };
 
-    renderFantasyOffice2025(data);
-    console.info("Box This Lap Fantasy Office 2025 data loaded", data);
+loadSheetText("fantasyOffice2025Draft")
+  .then((draftCsv) => {
+    siteData.fantasyOffice2025.draft = parseFantasyOfficeDraft(draftCsv);
+    renderFantasyOfficeDraft(siteData.fantasyOffice2025.draft);
+    console.info("Box This Lap Fantasy Office 2025 draft data loaded", siteData.fantasyOffice2025.draft);
   })
   .catch((error) => {
-    renderFantasyOfficeError(error);
-    console.error("Box This Lap Fantasy Office 2025 data failed to load", error);
+    renderFantasyOfficeDraftError(error);
+    console.error("Box This Lap Fantasy Office 2025 draft data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2025Results")
+  .then((resultsCsv) => {
+    siteData.fantasyOffice2025.results = parseFantasyOfficeResults(resultsCsv);
+    renderFantasyOfficeMovies(siteData.fantasyOffice2025.results);
+    renderFantasyOfficeResults(siteData.fantasyOffice2025.results);
+    console.info("Box This Lap Fantasy Office 2025 results data loaded", siteData.fantasyOffice2025.results);
+  })
+  .catch((error) => {
+    renderFantasyOfficeMovieError(error);
+    renderFantasyOfficeResultsError(error);
+    console.error("Box This Lap Fantasy Office 2025 results data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2025Movies")
+  .then((moviesCsv) => {
+    siteData.fantasyOffice2025.movies = parseFantasyOfficeMovies(moviesCsv);
+    console.info("Box This Lap Fantasy Office 2025 movie data loaded", siteData.fantasyOffice2025.movies);
+  })
+  .catch((error) => {
+    console.warn("Box This Lap Fantasy Office 2025 movie detail data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2025Ordering")
+  .then((orderingCsv) => {
+    siteData.fantasyOffice2025.ordering = parseCsvMatrix(orderingCsv);
+    console.info("Box This Lap Fantasy Office 2025 ordering data loaded", siteData.fantasyOffice2025.ordering);
+  })
+  .catch((error) => {
+    console.warn("Box This Lap Fantasy Office 2025 ordering data failed to load", error);
   });
 
 function renderMatchdayPicker(matches) {

@@ -25,10 +25,17 @@ const formulaOneViews = {
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
   },
 };
-const fantasyOffice2025View = {
-  draftList: document.querySelector("#fantasy-office-2025-draft-list"),
-  movieList: document.querySelector("#fantasy-office-2025-movie-list"),
-  resultList: document.querySelector("#fantasy-office-2025-result-list"),
+const fantasyOfficeViews = {
+  2025: {
+    draftList: document.querySelector("#fantasy-office-2025-draft-list"),
+    movieList: document.querySelector("#fantasy-office-2025-movie-list"),
+    resultList: document.querySelector("#fantasy-office-2025-result-list"),
+  },
+  2026: {
+    draftList: document.querySelector("#fantasy-office-2026-draft-list"),
+    movieList: document.querySelector("#fantasy-office-2026-movie-list"),
+    resultList: document.querySelector("#fantasy-office-2026-result-list"),
+  },
 };
 const fantasyOfficeMovieSort = {
   direction: "desc",
@@ -294,6 +301,7 @@ function showPage(pageName, options = {}) {
     "formula-1-2024": "formula-1-2024-questions",
     "formula-1-2025": "formula-1-2025-questions",
     "fantasy-office-2025": "fantasy-office-2025-results",
+    "fantasy-office-2026": "fantasy-office-2026-draft",
     "manager-scores": "standings",
     "player-scores": "standings",
   };
@@ -340,6 +348,10 @@ function getHeaderArtName(pageName) {
     return "fantasy-office-2025";
   }
 
+  if (pageName.startsWith("fantasy-office-2026")) {
+    return "world-cup";
+  }
+
   if (getNavScope(pageName) === "world-cup") {
     return "world-cup";
   }
@@ -358,6 +370,10 @@ function getNavScope(pageName) {
 
   if (pageName.startsWith("fantasy-office-2025")) {
     return "fantasy-office-2025";
+  }
+
+  if (pageName.startsWith("fantasy-office-2026")) {
+    return "fantasy-office-2026";
   }
 
   if (pageName === "leagues") {
@@ -380,6 +396,11 @@ function rememberNavScope(pageName) {
 
   if (pageName.startsWith("fantasy-office-2025")) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2025");
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-office-2026")) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2026");
     return;
   }
 
@@ -454,7 +475,7 @@ function renderLeagueList(year) {
     const isWorldCup = year === "2026" && league === "World Cup";
     const isFantasyCritic = (year === "2025" || year === "2026") && league === "Fantasy Critic";
     const isFormulaOne = (year === "2024" || year === "2025") && league === "Formula 1";
-    const isFantasyOffice = year === "2025" && league === "Fantasy Office";
+    const isFantasyOffice = (year === "2025" || year === "2026") && league === "Fantasy Office";
     const canOpen = isWorldCup || isFantasyCritic || isFormulaOne || isFantasyOffice;
 
     return `
@@ -482,7 +503,8 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isF
   }
 
   if (isFantasyOffice) {
-    return `<a class="league-card-link" href="#fantasy-office-${escapeHtml(year)}-results" data-page-link="fantasy-office-${escapeHtml(year)}-results">Open</a>`;
+    const page = year === "2026" ? "draft" : "results";
+    return `<a class="league-card-link" href="#fantasy-office-${escapeHtml(year)}-${page}" data-page-link="fantasy-office-${escapeHtml(year)}-${page}">Open</a>`;
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
@@ -765,7 +787,10 @@ function parseFantasyOfficeDraft(csvText) {
   }
 
   const managerRowIndex = rows.indexOf(managerRow);
-  const draftRows = rows.slice(managerRowIndex + 1).filter((row) => /^\d+$/.test(row[0]?.trim() ?? ""));
+  const draftRows = rows.slice(managerRowIndex + 1).filter((row) => {
+    const pick = row[0]?.trim() ?? "";
+    return /^\d+$/.test(pick) || pick.toLowerCase() === "sub";
+  });
 
   return managerColumns.map(({ manager, index }) => {
     return {
@@ -865,24 +890,30 @@ function parseFantasyOfficeResults(csvText) {
   }));
 }
 
-function renderFantasyOffice2025(data) {
-  siteData.fantasyOffice2025 = data;
-  renderFantasyOfficeDraft(data.draft);
-  renderFantasyOfficeMovies(data.results);
-  renderFantasyOfficeResults(data.results);
+function getFantasyOfficeView(year) {
+  return fantasyOfficeViews[year];
 }
 
-function renderFantasyOfficeDraft(draft) {
-  if (!fantasyOffice2025View.draftList) {
+function renderFantasyOffice2025(data) {
+  siteData.fantasyOffice2025 = data;
+  renderFantasyOfficeDraft(2025, data.draft);
+  renderFantasyOfficeMovies(2025, data.results);
+  renderFantasyOfficeResults(2025, data.results);
+}
+
+function renderFantasyOfficeDraft(year, draft) {
+  const view = getFantasyOfficeView(year);
+
+  if (!view?.draftList) {
     return;
   }
 
   if (!draft.length) {
-    fantasyOffice2025View.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office draft data was loaded.</p></article>`;
+    view.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office draft data was loaded.</p></article>`;
     return;
   }
 
-  fantasyOffice2025View.draftList.innerHTML = draft.map((managerDraft) => {
+  view.draftList.innerHTML = draft.map((managerDraft) => {
     const manager = getManagerByName(managerDraft.manager) ?? { name: managerDraft.manager };
 
     return `
@@ -905,19 +936,21 @@ function renderFantasyOfficeDraft(draft) {
   }).join("");
 }
 
-function renderFantasyOfficeMovies(results) {
-  if (!fantasyOffice2025View.movieList) {
+function renderFantasyOfficeMovies(year, results) {
+  const view = getFantasyOfficeView(year);
+
+  if (!view?.movieList) {
     return;
   }
 
   const movies = getFantasyOfficeMovieRows(results);
 
   if (!movies.length) {
-    fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Fantasy Office movie data was loaded.</p></article>`;
+    view.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Fantasy Office movie results are available yet.</p></article>`;
     return;
   }
 
-  fantasyOffice2025View.movieList.innerHTML = `
+  view.movieList.innerHTML = `
     <div class="table-wrap office-movie-table">
       <table>
         <thead>
@@ -981,7 +1014,7 @@ function compareFantasyOfficeMovies(firstMovie, secondMovie) {
 function renderFantasyOfficeMovieHeader(key, label) {
   const isActive = fantasyOfficeMovieSort.key === key;
   const directionLabel = fantasyOfficeMovieSort.direction === "asc" ? "ascending" : "descending";
-  const sortMark = isActive ? (fantasyOfficeMovieSort.direction === "asc" ? "↑" : "↓") : "";
+  const sortMark = isActive ? (fantasyOfficeMovieSort.direction === "asc" ? "&uarr;" : "&darr;") : "";
 
   return `
     <th>
@@ -993,17 +1026,19 @@ function renderFantasyOfficeMovieHeader(key, label) {
   `;
 }
 
-function renderFantasyOfficeResults(results) {
-  if (!fantasyOffice2025View.resultList) {
+function renderFantasyOfficeResults(year, results) {
+  const view = getFantasyOfficeView(year);
+
+  if (!view?.resultList) {
     return;
   }
 
   if (!results.length) {
-    fantasyOffice2025View.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office results were loaded.</p></article>`;
+    view.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office results are available yet.</p></article>`;
     return;
   }
 
-  fantasyOffice2025View.resultList.innerHTML = results.map((entry) => {
+  view.resultList.innerHTML = results.map((entry) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
 
     return `
@@ -1043,34 +1078,32 @@ function renderFantasyOfficeResults(results) {
 }
 
 function renderFantasyOfficeError(error) {
-  if (fantasyOffice2025View.draftList) {
-    fantasyOffice2025View.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office draft: ${escapeHtml(error.message)}</p></article>`;
-  }
+  renderFantasyOfficeDraftError(2025, error);
+  renderFantasyOfficeMovieError(2025, error);
+  renderFantasyOfficeResultsError(2025, error);
+}
 
-  if (fantasyOffice2025View.movieList) {
-    fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Fantasy Office movies: ${escapeHtml(error.message)}</p></article>`;
-  }
+function renderFantasyOfficeDraftError(year, error) {
+  const view = getFantasyOfficeView(year);
 
-  if (fantasyOffice2025View.resultList) {
-    fantasyOffice2025View.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office results: ${escapeHtml(error.message)}</p></article>`;
+  if (view?.draftList) {
+    view.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office draft: ${escapeHtml(error.message)}</p></article>`;
   }
 }
 
-function renderFantasyOfficeDraftError(error) {
-  if (fantasyOffice2025View.draftList) {
-    fantasyOffice2025View.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office draft: ${escapeHtml(error.message)}</p></article>`;
+function renderFantasyOfficeMovieError(year, error) {
+  const view = getFantasyOfficeView(year);
+
+  if (view?.movieList) {
+    view.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Fantasy Office movies: ${escapeHtml(error.message)}</p></article>`;
   }
 }
 
-function renderFantasyOfficeMovieError(error) {
-  if (fantasyOffice2025View.movieList) {
-    fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Fantasy Office movies: ${escapeHtml(error.message)}</p></article>`;
-  }
-}
+function renderFantasyOfficeResultsError(year, error) {
+  const view = getFantasyOfficeView(year);
 
-function renderFantasyOfficeResultsError(error) {
-  if (fantasyOffice2025View.resultList) {
-    fantasyOffice2025View.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office results: ${escapeHtml(error.message)}</p></article>`;
+  if (view?.resultList) {
+    view.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office results: ${escapeHtml(error.message)}</p></article>`;
   }
 }
 
@@ -1169,23 +1202,25 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   });
 });
 
-fantasyOffice2025View.movieList?.addEventListener("click", (event) => {
-  const sortButton = event.target.closest("[data-office-movie-sort]");
+Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
+  view.movieList?.addEventListener("click", (event) => {
+    const sortButton = event.target.closest("[data-office-movie-sort]");
 
-  if (!sortButton) {
-    return;
-  }
+    if (!sortButton) {
+      return;
+    }
 
-  const key = sortButton.dataset.officeMovieSort;
+    const key = sortButton.dataset.officeMovieSort;
 
-  if (fantasyOfficeMovieSort.key === key) {
-    fantasyOfficeMovieSort.direction = fantasyOfficeMovieSort.direction === "asc" ? "desc" : "asc";
-  } else {
-    fantasyOfficeMovieSort.key = key;
-    fantasyOfficeMovieSort.direction = key === "movie" || key === "manager" ? "asc" : "desc";
-  }
+    if (fantasyOfficeMovieSort.key === key) {
+      fantasyOfficeMovieSort.direction = fantasyOfficeMovieSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      fantasyOfficeMovieSort.key = key;
+      fantasyOfficeMovieSort.direction = key === "movie" || key === "manager" ? "asc" : "desc";
+    }
 
-  renderFantasyOfficeMovies(siteData.fantasyOffice2025?.results ?? []);
+    renderFantasyOfficeMovies(year, siteData[`fantasyOffice${year}`]?.results ?? []);
+  });
 });
 
 resultCards.forEach((card) => {
@@ -1347,28 +1382,29 @@ loadSheetText("formulaOne2025")
   });
 
 siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };
+siteData.fantasyOffice2026 = { draft: [], movies: [], ordering: [], results: [] };
 
 loadSheetText("fantasyOffice2025Draft")
   .then((draftCsv) => {
     siteData.fantasyOffice2025.draft = parseFantasyOfficeDraft(draftCsv);
-    renderFantasyOfficeDraft(siteData.fantasyOffice2025.draft);
+    renderFantasyOfficeDraft(2025, siteData.fantasyOffice2025.draft);
     console.info("Box This Lap Fantasy Office 2025 draft data loaded", siteData.fantasyOffice2025.draft);
   })
   .catch((error) => {
-    renderFantasyOfficeDraftError(error);
+    renderFantasyOfficeDraftError(2025, error);
     console.error("Box This Lap Fantasy Office 2025 draft data failed to load", error);
   });
 
 loadSheetText("fantasyOffice2025Results")
   .then((resultsCsv) => {
     siteData.fantasyOffice2025.results = parseFantasyOfficeResults(resultsCsv);
-    renderFantasyOfficeMovies(siteData.fantasyOffice2025.results);
-    renderFantasyOfficeResults(siteData.fantasyOffice2025.results);
+    renderFantasyOfficeMovies(2025, siteData.fantasyOffice2025.results);
+    renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
     console.info("Box This Lap Fantasy Office 2025 results data loaded", siteData.fantasyOffice2025.results);
   })
   .catch((error) => {
-    renderFantasyOfficeMovieError(error);
-    renderFantasyOfficeResultsError(error);
+    renderFantasyOfficeMovieError(2025, error);
+    renderFantasyOfficeResultsError(2025, error);
     console.error("Box This Lap Fantasy Office 2025 results data failed to load", error);
   });
 
@@ -1388,6 +1424,19 @@ loadSheetText("fantasyOffice2025Ordering")
   })
   .catch((error) => {
     console.warn("Box This Lap Fantasy Office 2025 ordering data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2026Draft")
+  .then((draftCsv) => {
+    siteData.fantasyOffice2026.draft = parseFantasyOfficeDraft(draftCsv);
+    renderFantasyOfficeDraft(2026, siteData.fantasyOffice2026.draft);
+    renderFantasyOfficeMovies(2026, siteData.fantasyOffice2026.results);
+    renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+    console.info("Box This Lap Fantasy Office 2026 draft data loaded", siteData.fantasyOffice2026.draft);
+  })
+  .catch((error) => {
+    renderFantasyOfficeDraftError(2026, error);
+    console.error("Box This Lap Fantasy Office 2026 draft data failed to load", error);
   });
 
 function renderMatchdayPicker(matches) {

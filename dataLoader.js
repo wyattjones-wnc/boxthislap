@@ -6,6 +6,8 @@ const FORMULA_ONE_2025_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrushAAc96VpAzSRiZsRK0198bbcVYBAFVxVmnaDtZ5fA1S6DlcXoLcLePVs75orDJRhNk9po44HW_/pub";
 const FANTASY_OFFICE_2025_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSYSfJjflJkmjJBmS5zr08qfr0Ul3DdjUk4ER988JtWz5jy5P5-z7v4E4tMQzW6K06IswWas8CRl7Yn/pub";
+const FANTASY_OFFICE_2026_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrjQ6L5xMBMnuDNrN95ngeKbTePfJeGltNCIVAai7bZKdgFG_Djj68OBZvK7B9VnREA-Ux4VbeaQZ-/pub";
 
 export const DATA_SOURCES = {
   matches: "matches.json",
@@ -25,6 +27,7 @@ export const DATA_SOURCES = {
     fantasyOffice2025Movies: buildFantasyOffice2025CsvUrl("517732298"),
     fantasyOffice2025Results: buildFantasyOffice2025CsvUrl("420488658"),
     fantasyOffice2025Ordering: buildFantasyOffice2025CsvUrl("929460611"),
+    fantasyOffice2026Draft: buildFantasyOffice2026CsvUrl("1020743771"),
   },
 };
 
@@ -162,6 +165,10 @@ function buildFormulaOne2025CsvUrl(gid) {
 
 function buildFantasyOffice2025CsvUrl(gid) {
   return `${FANTASY_OFFICE_2025_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+}
+
+function buildFantasyOffice2026CsvUrl(gid) {
+  return `${FANTASY_OFFICE_2026_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
 }
 
 function stripBom(text) {

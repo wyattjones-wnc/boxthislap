@@ -30,6 +30,10 @@ const fantasyOffice2025View = {
   movieList: document.querySelector("#fantasy-office-2025-movie-list"),
   resultList: document.querySelector("#fantasy-office-2025-result-list"),
 };
+const fantasyOfficeMovieSort = {
+  direction: "desc",
+  key: "points",
+};
 const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
@@ -864,7 +868,7 @@ function parseFantasyOfficeResults(csvText) {
 function renderFantasyOffice2025(data) {
   siteData.fantasyOffice2025 = data;
   renderFantasyOfficeDraft(data.draft);
-  renderFantasyOfficeMovies(data.movies);
+  renderFantasyOfficeMovies(data.results);
   renderFantasyOfficeResults(data.results);
 }
 
@@ -901,33 +905,92 @@ function renderFantasyOfficeDraft(draft) {
   }).join("");
 }
 
-function renderFantasyOfficeMovies(movies) {
+function renderFantasyOfficeMovies(results) {
   if (!fantasyOffice2025View.movieList) {
     return;
   }
+
+  const movies = getFantasyOfficeMovieRows(results);
 
   if (!movies.length) {
     fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Fantasy Office movie data was loaded.</p></article>`;
     return;
   }
 
-  fantasyOffice2025View.movieList.innerHTML = movies.map((movie) => {
-    return `
-      <article class="office-movie-card">
-        <header>
-          <span>${escapeHtml(movie["D#"])}</span>
-          <h3>${escapeHtml(movie.Movie)}</h3>
-          <strong>${escapeHtml(formatPoints(parsePoints(movie.Total)))} pts</strong>
-        </header>
-        <div class="office-score-grid">
-          <span>Box Office <strong>${escapeHtml(formatPoints(parsePoints(movie["BO Points"])))}</strong></span>
-          <span>Letterboxd <strong>${escapeHtml(formatPoints(parsePoints(movie["Letterboxd Points"])))}</strong></span>
-          <span>RT <strong>${escapeHtml(formatPoints(parsePoints(movie["RT Points"])))}</strong></span>
-          <span>Domestic #1 <strong>${escapeHtml(movie["Domestic #1"] || "0")}</strong></span>
-        </div>
-      </article>
-    `;
-  }).join("");
+  fantasyOffice2025View.movieList.innerHTML = `
+    <div class="table-wrap office-movie-table">
+      <table>
+        <thead>
+          <tr>
+            ${renderFantasyOfficeMovieHeader("movie", "Movie")}
+            ${renderFantasyOfficeMovieHeader("manager", "Manager")}
+            ${renderFantasyOfficeMovieHeader("boxOffice", "Box Office")}
+            ${renderFantasyOfficeMovieHeader("critical", "Critical")}
+            ${renderFantasyOfficeMovieHeader("award", "Awards")}
+            ${renderFantasyOfficeMovieHeader("points", "Total")}
+          </tr>
+        </thead>
+        <tbody>
+          ${movies.map((movie) => {
+            const manager = getManagerByName(movie.manager) ?? { name: movie.manager };
+
+            return `
+              <tr>
+                <td data-label="Movie">
+                  <span class="office-movie-title">${escapeHtml(movie.movie)}</span>
+                  <span class="office-movie-draft">${escapeHtml(movie.draftNumber)}</span>
+                </td>
+                <td data-label="Manager">${renderManagerChip(manager)}</td>
+                <td data-label="Box Office">${escapeHtml(formatPoints(movie.boxOffice))}</td>
+                <td data-label="Critical">${escapeHtml(formatPoints(movie.critical))}</td>
+                <td data-label="Awards">${escapeHtml(formatPoints(movie.award))}</td>
+                <td data-label="Total">${escapeHtml(formatPoints(movie.points))}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function getFantasyOfficeMovieRows(results) {
+  const rows = results.flatMap((entry) => {
+    return entry.movies.map((movie) => ({
+      ...movie,
+      manager: entry.manager,
+    }));
+  });
+
+  return rows.sort(compareFantasyOfficeMovies);
+}
+
+function compareFantasyOfficeMovies(firstMovie, secondMovie) {
+  const direction = fantasyOfficeMovieSort.direction === "asc" ? 1 : -1;
+  const key = fantasyOfficeMovieSort.key;
+  const firstValue = firstMovie[key];
+  const secondValue = secondMovie[key];
+
+  if (typeof firstValue === "number" && typeof secondValue === "number") {
+    return direction * (firstValue - secondValue) || firstMovie.movie.localeCompare(secondMovie.movie);
+  }
+
+  return direction * String(firstValue ?? "").localeCompare(String(secondValue ?? "")) || firstMovie.movie.localeCompare(secondMovie.movie);
+}
+
+function renderFantasyOfficeMovieHeader(key, label) {
+  const isActive = fantasyOfficeMovieSort.key === key;
+  const directionLabel = fantasyOfficeMovieSort.direction === "asc" ? "ascending" : "descending";
+  const sortMark = isActive ? fantasyOfficeMovieSort.direction : "";
+
+  return `
+    <th>
+      <button class="office-sort-button" type="button" data-office-movie-sort="${escapeHtml(key)}" aria-label="Sort by ${escapeHtml(label)}${isActive ? `, currently ${directionLabel}` : ""}">
+        <span>${escapeHtml(label)}</span>
+        <span aria-hidden="true">${sortMark}</span>
+      </button>
+    </th>
+  `;
 }
 
 function renderFantasyOfficeResults(results) {
@@ -1086,6 +1149,25 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   view.questionFilter?.addEventListener("input", () => {
     renderFormulaOneQuestions(year);
   });
+});
+
+fantasyOffice2025View.movieList?.addEventListener("click", (event) => {
+  const sortButton = event.target.closest("[data-office-movie-sort]");
+
+  if (!sortButton) {
+    return;
+  }
+
+  const key = sortButton.dataset.officeMovieSort;
+
+  if (fantasyOfficeMovieSort.key === key) {
+    fantasyOfficeMovieSort.direction = fantasyOfficeMovieSort.direction === "asc" ? "desc" : "asc";
+  } else {
+    fantasyOfficeMovieSort.key = key;
+    fantasyOfficeMovieSort.direction = key === "movie" || key === "manager" ? "asc" : "desc";
+  }
+
+  renderFantasyOfficeMovies(siteData.fantasyOffice2025?.results ?? []);
 });
 
 resultCards.forEach((card) => {

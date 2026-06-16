@@ -742,6 +742,64 @@ main {
   font-size: 1rem;
 }
 
+.office-movie-table {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+}
+
+.office-movie-table table {
+  min-width: 760px;
+}
+
+.office-sort-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 900;
+  gap: 6px;
+  justify-content: space-between;
+  padding: 0;
+  text-align: left;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.office-sort-button span:last-child {
+  color: var(--accent-dark);
+  font-size: 0.68rem;
+}
+
+.office-movie-title {
+  display: block;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.office-movie-draft {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.office-movie-table td:nth-child(n + 3) {
+  color: var(--accent-dark);
+  font-weight: 900;
+  text-align: right;
+}
+
+.office-movie-table th:nth-child(n + 3) .office-sort-button {
+  text-align: right;
+}
+
 .office-result-summary {
   align-items: center;
   display: grid;

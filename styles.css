@@ -18,6 +18,8 @@
   --strong-shadow: rgba(0, 0, 0, 0.48);
   --accent-shadow: rgba(240, 82, 101, 0.12);
   --accent-border: rgba(240, 82, 101, 0.42);
+  --manager-dot-border: #ffffff;
+  --manager-dot-ring: rgba(255, 255, 255, 0.82);
   --updated: rgba(166, 176, 192, 0.76);
 }
 
@@ -41,6 +43,8 @@ html[data-theme="light"] {
   --strong-shadow: rgba(0, 0, 0, 0.19);
   --accent-shadow: rgba(194, 31, 50, 0.08);
   --accent-border: rgba(194, 31, 50, 0.42);
+  --manager-dot-border: #ffffff;
+  --manager-dot-ring: rgba(24, 33, 47, 0.18);
   --updated: rgba(95, 105, 120, 0.76);
 }
 
@@ -784,9 +788,9 @@ main {
 
 .manager-dot {
   background: var(--manager-color);
-  border: 2px solid var(--panel);
+  border: 2px solid var(--manager-dot-border);
   border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(24, 33, 47, 0.18);
+  box-shadow: 0 0 0 1px var(--manager-dot-ring);
   display: inline-block;
   height: 18px;
   width: 18px;

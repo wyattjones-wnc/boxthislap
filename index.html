@@ -11,7 +11,7 @@
         document.documentElement.dataset.theme = "dark";
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202606150014">
+    <link rel="stylesheet" href="styles.css?v=202606150020">
   </head>
   <body class="is-routing">
     <header class="site-header">
@@ -70,6 +70,12 @@
         <div class="nav-links" data-nav-scope="formula-one-2025" role="tablist" aria-label="Formula 1 sections" hidden>
           <a href="#formula-1-2025-questions" data-page-link="formula-1-2025-questions" role="tab">Questions</a>
           <a href="#formula-1-2025-results" data-page-link="formula-1-2025-results" role="tab">Results</a>
+          <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+        <div class="nav-links" data-nav-scope="fantasy-office-2025" role="tablist" aria-label="Fantasy Office sections" hidden>
+          <a href="#fantasy-office-2025-draft" data-page-link="fantasy-office-2025-draft" role="tab">Draft</a>
+          <a href="#fantasy-office-2025-movies" data-page-link="fantasy-office-2025-movies" role="tab">Movies</a>
+          <a href="#fantasy-office-2025-results" data-page-link="fantasy-office-2025-results" role="tab">Results</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
       </nav>
@@ -520,6 +526,51 @@
           </table>
         </div>
       </section>
+
+      <section class="page league-detail-page" id="fantasy-office-2025-draft" data-page="fantasy-office-2025-draft">
+        <div class="league-detail-heading">
+          <div>
+            <h2>Fantasy Office</h2>
+            <p>2025 Draft</p>
+          </div>
+        </div>
+
+        <div class="office-draft-grid" id="fantasy-office-2025-draft-list">
+          <article class="fantasy-critic-card">
+            <p class="table-message">Loading Fantasy Office draft...</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page league-detail-page" id="fantasy-office-2025-movies" data-page="fantasy-office-2025-movies">
+        <div class="league-detail-heading">
+          <div>
+            <h2>Fantasy Office</h2>
+            <p>2025 Movies</p>
+          </div>
+        </div>
+
+        <div class="office-movie-list" id="fantasy-office-2025-movie-list">
+          <article class="formula-one-question-card">
+            <p class="table-message">Loading Fantasy Office movies...</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page league-detail-page" id="fantasy-office-2025-results" data-page="fantasy-office-2025-results">
+        <div class="league-detail-heading">
+          <div>
+            <h2>Fantasy Office</h2>
+            <p>2025 Results</p>
+          </div>
+        </div>
+
+        <div class="office-result-list" id="fantasy-office-2025-result-list">
+          <article class="fantasy-critic-card">
+            <p class="table-message">Loading Fantasy Office results...</p>
+          </article>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">
@@ -530,6 +581,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202606150019"></script>
+    <script type="module" src="script.js?v=202606150020"></script>
   </body>
 </html>

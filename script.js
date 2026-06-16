@@ -25,6 +25,11 @@ const formulaOneViews = {
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
   },
 };
+const fantasyOffice2025View = {
+  draftList: document.querySelector("#fantasy-office-2025-draft-list"),
+  movieList: document.querySelector("#fantasy-office-2025-movie-list"),
+  resultList: document.querySelector("#fantasy-office-2025-result-list"),
+};
 const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
@@ -284,6 +289,7 @@ function showPage(pageName, options = {}) {
   const pageAliases = {
     "formula-1-2024": "formula-1-2024-questions",
     "formula-1-2025": "formula-1-2025-questions",
+    "fantasy-office-2025": "fantasy-office-2025-results",
     "manager-scores": "standings",
     "player-scores": "standings",
   };
@@ -326,6 +332,10 @@ function getHeaderArtName(pageName) {
     return "formula-one-2025";
   }
 
+  if (pageName.startsWith("fantasy-office-2025")) {
+    return "world-cup";
+  }
+
   if (getNavScope(pageName) === "world-cup") {
     return "world-cup";
   }
@@ -340,6 +350,10 @@ function getNavScope(pageName) {
 
   if (pageName.startsWith("formula-1-2025")) {
     return "formula-one-2025";
+  }
+
+  if (pageName.startsWith("fantasy-office-2025")) {
+    return "fantasy-office-2025";
   }
 
   if (pageName === "leagues") {
@@ -357,6 +371,11 @@ function rememberNavScope(pageName) {
 
   if (pageName.startsWith("formula-1-2025")) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2025");
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-office-2025")) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2025");
     return;
   }
 
@@ -431,20 +450,21 @@ function renderLeagueList(year) {
     const isWorldCup = year === "2026" && league === "World Cup";
     const isFantasyCritic = (year === "2025" || year === "2026") && league === "Fantasy Critic";
     const isFormulaOne = (year === "2024" || year === "2025") && league === "Formula 1";
-    const canOpen = isWorldCup || isFantasyCritic || isFormulaOne;
+    const isFantasyOffice = year === "2025" && league === "Fantasy Office";
+    const canOpen = isWorldCup || isFantasyCritic || isFormulaOne || isFantasyOffice;
 
     return `
       <article class="league-card${isWorldCup ? " is-current" : ""}">
         <div>
           <h2>${escapeHtml(league)}</h2>
         </div>
-        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, canOpen, year })}
+        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year })}
       </article>
     `;
   }).join("");
 }
 
-function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, canOpen, year }) {
+function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year }) {
   if (isWorldCup) {
     return `<a class="league-card-link" href="#results" data-page-link="results">Open</a>`;
   }
@@ -455,6 +475,10 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, can
 
   if (isFormulaOne) {
     return `<a class="league-card-link" href="#formula-1-${escapeHtml(year)}-questions" data-page-link="formula-1-${escapeHtml(year)}-questions">Open</a>`;
+  }
+
+  if (isFantasyOffice) {
+    return `<a class="league-card-link" href="#fantasy-office-${escapeHtml(year)}-results" data-page-link="fantasy-office-${escapeHtml(year)}-results">Open</a>`;
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
@@ -718,6 +742,257 @@ function renderFormulaOneError(year, error) {
   }
 }
 
+function parseFantasyOfficeDraft(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const managerRow = rows.find((row) => {
+    return !row[0]?.trim() && row.slice(1).some((value) => value.trim() && !/^D\d+$/i.test(value.trim()));
+  });
+
+  if (!managerRow) {
+    throw new Error("Fantasy Office draft sheet did not include manager names.");
+  }
+
+  const managerColumns = managerRow
+    .map((manager, index) => ({ manager: manager.trim(), index }))
+    .filter(({ manager, index }) => manager && index > 0);
+
+  if (managerColumns.length === 0) {
+    throw new Error("Fantasy Office draft sheet did not include any draft columns.");
+  }
+
+  const managerRowIndex = rows.indexOf(managerRow);
+  const draftRows = rows.slice(managerRowIndex + 1).filter((row) => /^\d+$/.test(row[0]?.trim() ?? ""));
+
+  return managerColumns.map(({ manager, index }) => {
+    return {
+      manager,
+      picks: draftRows.map((row) => ({
+        pick: row[0]?.trim() ?? "",
+        movie: row[index]?.trim() ?? "",
+      })).filter((pick) => pick.movie),
+    };
+  });
+}
+
+function parseFantasyOfficeMovies(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const headerIndex = rows.findIndex((row) => row[0]?.trim() === "D#" && row[1]?.trim() === "Movie");
+
+  if (headerIndex === -1) {
+    throw new Error("Fantasy Office movies sheet did not include the expected D# and Movie columns.");
+  }
+
+  const headers = rows[headerIndex].map((header) => header.trim());
+
+  return rows.slice(headerIndex + 1).map((row) => {
+    return headers.reduce((record, header, index) => {
+      record[header || `Column ${index + 1}`] = row[index]?.trim() ?? "";
+      return record;
+    }, {});
+  }).filter((movie) => movie.Movie);
+}
+
+function parseFantasyOfficeResults(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const managers = [];
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const managerName = row[1]?.trim();
+
+    if (!managerName || rows[index + 1]?.[0]?.trim() !== "Draft #") {
+      continue;
+    }
+
+    const headerRow = rows[index + 1].map((header) => header.trim());
+    const movies = [];
+    let totals = { boxOffice: 0, critical: 0, award: 0, points: 0 };
+    index += 2;
+
+    for (; index < rows.length; index += 1) {
+      const resultRow = rows[index];
+      const firstCell = resultRow[0]?.trim();
+
+      if (!firstCell) {
+        break;
+      }
+
+      const record = headerRow.reduce((result, header, columnIndex) => {
+        result[header || `Column ${columnIndex + 1}`] = resultRow[columnIndex]?.trim() ?? "";
+        return result;
+      }, {});
+
+      if (firstCell.toLowerCase() === "total") {
+        totals = {
+          award: parsePoints(record.Award),
+          boxOffice: parsePoints(record.$),
+          critical: parsePoints(record.Critical),
+          points: parsePoints(record.Total),
+        };
+        break;
+      }
+
+      movies.push({
+        award: parsePoints(record.Award),
+        boxOffice: parsePoints(record.$),
+        critical: parsePoints(record.Critical),
+        draftNumber: record["Draft #"],
+        movie: record.Movie,
+        points: parsePoints(record.Total),
+      });
+    }
+
+    managers.push({
+      award: totals.award,
+      boxOffice: totals.boxOffice,
+      critical: totals.critical,
+      manager: managerName,
+      movies,
+      points: totals.points,
+    });
+  }
+
+  return rankRows(managers.sort((firstManager, secondManager) => {
+    if (secondManager.points !== firstManager.points) {
+      return secondManager.points - firstManager.points;
+    }
+
+    return firstManager.manager.localeCompare(secondManager.manager);
+  }));
+}
+
+function renderFantasyOffice2025(data) {
+  siteData.fantasyOffice2025 = data;
+  renderFantasyOfficeDraft(data.draft);
+  renderFantasyOfficeMovies(data.movies);
+  renderFantasyOfficeResults(data.results);
+}
+
+function renderFantasyOfficeDraft(draft) {
+  if (!fantasyOffice2025View.draftList) {
+    return;
+  }
+
+  if (!draft.length) {
+    fantasyOffice2025View.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office draft data was loaded.</p></article>`;
+    return;
+  }
+
+  fantasyOffice2025View.draftList.innerHTML = draft.map((managerDraft) => {
+    const manager = getManagerByName(managerDraft.manager) ?? { name: managerDraft.manager };
+
+    return `
+      <article class="office-draft-card">
+        <header>
+          ${renderManagerChip(manager)}
+        </header>
+        <ol class="office-pick-list">
+          ${managerDraft.picks.map((pick) => {
+            return `
+              <li>
+                <span>${escapeHtml(pick.pick)}</span>
+                <strong>${escapeHtml(pick.movie)}</strong>
+              </li>
+            `;
+          }).join("")}
+        </ol>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFantasyOfficeMovies(movies) {
+  if (!fantasyOffice2025View.movieList) {
+    return;
+  }
+
+  if (!movies.length) {
+    fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Fantasy Office movie data was loaded.</p></article>`;
+    return;
+  }
+
+  fantasyOffice2025View.movieList.innerHTML = movies.map((movie) => {
+    return `
+      <article class="office-movie-card">
+        <header>
+          <span>${escapeHtml(movie["D#"])}</span>
+          <h3>${escapeHtml(movie.Movie)}</h3>
+          <strong>${escapeHtml(formatPoints(parsePoints(movie.Total)))} pts</strong>
+        </header>
+        <div class="office-score-grid">
+          <span>Box Office <strong>${escapeHtml(formatPoints(parsePoints(movie["BO Points"])))}</strong></span>
+          <span>Letterboxd <strong>${escapeHtml(formatPoints(parsePoints(movie["Letterboxd Points"])))}</strong></span>
+          <span>RT <strong>${escapeHtml(formatPoints(parsePoints(movie["RT Points"])))}</strong></span>
+          <span>Domestic #1 <strong>${escapeHtml(movie["Domestic #1"] || "0")}</strong></span>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFantasyOfficeResults(results) {
+  if (!fantasyOffice2025View.resultList) {
+    return;
+  }
+
+  if (!results.length) {
+    fantasyOffice2025View.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office results were loaded.</p></article>`;
+    return;
+  }
+
+  fantasyOffice2025View.resultList.innerHTML = results.map((entry) => {
+    const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+
+    return `
+      <article class="office-result-card">
+        <header class="office-result-summary">
+          <div class="fantasy-critic-rank">
+            <span>Rank</span>
+            <strong>${escapeHtml(entry.rank)}</strong>
+          </div>
+          <div class="fantasy-critic-manager">
+            ${renderManagerChip(manager)}
+          </div>
+          <div class="fantasy-critic-points">
+            <span>Points</span>
+            <strong>${escapeHtml(formatPoints(entry.points))}</strong>
+          </div>
+        </header>
+        <div class="fantasy-critic-meta">
+          <span>$ <strong>${escapeHtml(formatPoints(entry.boxOffice))}</strong></span>
+          <span>Critical <strong>${escapeHtml(formatPoints(entry.critical))}</strong></span>
+          <span>Awards <strong>${escapeHtml(formatPoints(entry.award))}</strong></span>
+        </div>
+        <div class="fantasy-critic-roster">
+          ${entry.movies.map((movie) => {
+            return `
+              <div class="fantasy-critic-game">
+                <strong>${escapeHtml(movie.movie)}</strong>
+                <span>${escapeHtml(movie.draftNumber)}</span>
+                <span>${escapeHtml(formatPoints(movie.points))}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFantasyOfficeError(error) {
+  if (fantasyOffice2025View.draftList) {
+    fantasyOffice2025View.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office draft: ${escapeHtml(error.message)}</p></article>`;
+  }
+
+  if (fantasyOffice2025View.movieList) {
+    fantasyOffice2025View.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Fantasy Office movies: ${escapeHtml(error.message)}</p></article>`;
+  }
+
+  if (fantasyOffice2025View.resultList) {
+    fantasyOffice2025View.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office results: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
 function parseCsvMatrix(text) {
   const rows = [];
   let row = [];
@@ -969,6 +1244,28 @@ loadSheetText("formulaOne2025")
   .catch((error) => {
     renderFormulaOneError("2025", error);
     console.error("Box This Lap Formula 1 2025 data failed to load", error);
+  });
+
+Promise.all([
+  loadSheetText("fantasyOffice2025Draft"),
+  loadSheetText("fantasyOffice2025Movies"),
+  loadSheetText("fantasyOffice2025Results"),
+  loadSheetText("fantasyOffice2025Ordering"),
+])
+  .then(([draftCsv, moviesCsv, resultsCsv, orderingCsv]) => {
+    const data = {
+      draft: parseFantasyOfficeDraft(draftCsv),
+      movies: parseFantasyOfficeMovies(moviesCsv),
+      ordering: parseCsvMatrix(orderingCsv),
+      results: parseFantasyOfficeResults(resultsCsv),
+    };
+
+    renderFantasyOffice2025(data);
+    console.info("Box This Lap Fantasy Office 2025 data loaded", data);
+  })
+  .catch((error) => {
+    renderFantasyOfficeError(error);
+    console.error("Box This Lap Fantasy Office 2025 data failed to load", error);
   });
 
 function renderMatchdayPicker(matches) {

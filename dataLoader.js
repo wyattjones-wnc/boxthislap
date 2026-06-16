@@ -4,6 +4,8 @@ const FORMULA_ONE_2024_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV8iyxCJX5DWDRzBNCyfzq7lCJkk5fFnZz8p0uCiNwXAsZEvXcdgdyDIu9haoRBmZ0ToreIRBl8Y3O/pub";
 const FORMULA_ONE_2025_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrushAAc96VpAzSRiZsRK0198bbcVYBAFVxVmnaDtZ5fA1S6DlcXoLcLePVs75orDJRhNk9po44HW_/pub";
+const FANTASY_OFFICE_2025_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSYSfJjflJkmjJBmS5zr08qfr0Ul3DdjUk4ER988JtWz5jy5P5-z7v4E4tMQzW6K06IswWas8CRl7Yn/pub";
 
 export const DATA_SOURCES = {
   matches: "matches.json",
@@ -19,6 +21,10 @@ export const DATA_SOURCES = {
     standings: buildPublishedCsvUrl("705930353"),
     formulaOne2024: buildFormulaOne2024CsvUrl("1705332201"),
     formulaOne2025: buildFormulaOne2025CsvUrl("1705332201"),
+    fantasyOffice2025Draft: buildFantasyOffice2025CsvUrl("1020743771"),
+    fantasyOffice2025Movies: buildFantasyOffice2025CsvUrl("517732298"),
+    fantasyOffice2025Results: buildFantasyOffice2025CsvUrl("420488658"),
+    fantasyOffice2025Ordering: buildFantasyOffice2025CsvUrl("929460611"),
   },
 };
 
@@ -152,6 +158,10 @@ function buildFormulaOne2024CsvUrl(gid) {
 
 function buildFormulaOne2025CsvUrl(gid) {
   return `${FORMULA_ONE_2025_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+}
+
+function buildFantasyOffice2025CsvUrl(gid) {
+  return `${FANTASY_OFFICE_2025_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
 }
 
 function stripBom(text) {

@@ -6,6 +6,7 @@ const tabs = document.querySelectorAll("[data-tab]");
 const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const headerArt = document.querySelectorAll("[data-header-art]");
 const navGroups = document.querySelectorAll("[data-nav-scope]");
+const themeToggle = document.querySelector("[data-theme-toggle]");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
@@ -36,6 +37,8 @@ const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 const siteData = {};
 window.boxThisLapData = siteData;
+
+const THEME_STORAGE_KEY = "boxThisLapTheme";
 
 const MANAGER_COLORS = {
   jonathan: "#000000",
@@ -383,6 +386,33 @@ function scrollToPageTop() {
   requestAnimationFrame(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   });
+}
+
+function getCurrentTheme() {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+function setTheme(theme) {
+  const normalizedTheme = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = normalizedTheme;
+
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
+  } catch (error) {
+    console.warn("Unable to save theme preference", error);
+  }
+
+  syncThemeToggle();
+}
+
+function syncThemeToggle() {
+  if (!themeToggle) {
+    return;
+  }
+
+  const theme = getCurrentTheme();
+  themeToggle.textContent = theme === "dark" ? "Dark" : "Light";
+  themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
 }
 
 function renderLeagueList(year) {
@@ -755,6 +785,10 @@ pageLinks.forEach((link) => {
   });
 });
 
+themeToggle?.addEventListener("click", () => {
+  setTheme(getCurrentTheme() === "dark" ? "light" : "dark");
+});
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     showTab(tab.dataset.tab, { scrollToTop: true });
@@ -829,6 +863,7 @@ window.addEventListener("popstate", () => {
 showPage(window.location.hash.replace("#", "") || "results");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
+syncThemeToggle();
 
 loadPlayers()
   .then((players) => {

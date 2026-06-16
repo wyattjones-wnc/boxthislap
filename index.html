@@ -4,7 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Box This Lap | Results</title>
-    <link rel="stylesheet" href="styles.css?v=202606150013">
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem("boxThisLapTheme") || "dark";
+      } catch (error) {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css?v=202606150014">
   </head>
   <body class="is-routing">
     <header class="site-header">
@@ -515,6 +522,14 @@
       </section>
     </main>
 
-    <script type="module" src="script.js?v=202606150018"></script>
+    <footer class="site-footer">
+      <div class="theme-control">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="true">
+          Dark
+        </button>
+      </div>
+    </footer>
+
+    <script type="module" src="script.js?v=202606150019"></script>
   </body>
 </html>

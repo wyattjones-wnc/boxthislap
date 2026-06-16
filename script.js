@@ -981,7 +981,7 @@ function compareFantasyOfficeMovies(firstMovie, secondMovie) {
 function renderFantasyOfficeMovieHeader(key, label) {
   const isActive = fantasyOfficeMovieSort.key === key;
   const directionLabel = fantasyOfficeMovieSort.direction === "asc" ? "ascending" : "descending";
-  const sortMark = isActive ? fantasyOfficeMovieSort.direction : "";
+  const sortMark = isActive ? (fantasyOfficeMovieSort.direction === "asc" ? "↑" : "↓") : "";
 
   return `
     <th>

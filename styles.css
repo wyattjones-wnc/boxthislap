@@ -963,6 +963,16 @@ main {
   overflow: hidden;
 }
 
+.standings-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 12px;
+}
+
+.compact-select-control {
+  min-width: 140px;
+}
+
 .standing-detail {
   align-items: center;
   display: flex;

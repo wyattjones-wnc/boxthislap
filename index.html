@@ -11,7 +11,7 @@
         document.documentElement.dataset.theme = "dark";
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202606170001">
+    <link rel="stylesheet" href="styles.css?v=202606180002">
   </head>
   <body class="is-routing">
     <header class="site-header">
@@ -456,6 +456,16 @@
         </div>
 
         <div class="tab-panel" data-tab-panel="manager-results" role="tabpanel">
+          <div class="standings-controls">
+            <label class="select-control compact-select-control">
+              <span>Show</span>
+              <select id="manager-results-filter">
+                <option value="all">All</option>
+                <option value="players">Players</option>
+                <option value="nations">Nations</option>
+              </select>
+            </label>
+          </div>
           <div class="table-wrap standings-table">
             <table>
               <thead>
@@ -751,6 +761,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202606180001"></script>
+    <script type="module" src="script.js?v=202606180002"></script>
   </body>
 </html>

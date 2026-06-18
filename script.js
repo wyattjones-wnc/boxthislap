@@ -49,6 +49,7 @@ const matchdayMatchList = document.querySelector("#matchday-match-list");
 const playerChampionshipRows = document.querySelector("#player-championship-rows");
 const nationsLeagueRows = document.querySelector("#nations-league-rows");
 const managerResultsRows = document.querySelector("#manager-results-rows");
+const managerResultsFilter = document.querySelector("#manager-results-filter");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 const siteData = {};
@@ -1262,6 +1263,12 @@ managerResultsRows?.addEventListener("keydown", (event) => {
   toggleManagerResultRow(managerRow);
 });
 
+managerResultsFilter?.addEventListener("change", () => {
+  if (siteData.managerResultsSource) {
+    renderManagerResults(siteData.managerResultsSource);
+  }
+});
+
 window.addEventListener("hashchange", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
 });
@@ -1331,6 +1338,7 @@ Promise.all([
     siteData.managers = managers;
     siteData.teamDraft = teamDraft;
     siteData.playerDraft = playerDraft;
+    siteData.managerResultsSource = { managers, teamDraft, playerDraft, playerPerformances, matchResults };
     siteData.managerDrafts = buildManagerDraftLookups({ managers, teamDraft, playerDraft });
 
     if (siteData.playerPerformances) {
@@ -1347,7 +1355,7 @@ Promise.all([
       renderMatchesForDate(matchdayMatchList, siteData.matches, matchdaySelect?.value || "");
     }
 
-    renderManagerResults({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
+    renderManagerResults(siteData.managerResultsSource);
     console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
   })
   .catch((error) => {
@@ -1859,7 +1867,8 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
     return;
   }
 
-  const rows = getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults });
+  const filter = getManagerResultsFilter();
+  const rows = getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults, filter });
 
   if (rows.length === 0) {
     managerResultsRows.innerHTML = `<tr><td class="table-message" colspan="3">No manager results found.</td></tr>`;
@@ -1882,6 +1891,12 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
       </tr>
     `;
   }).join("");
+}
+
+function getManagerResultsFilter() {
+  const value = managerResultsFilter?.value || "all";
+
+  return ["all", "players", "nations"].includes(value) ? value : "all";
 }
 
 function toggleManagerResultRow(managerRow) {
@@ -1945,7 +1960,9 @@ function renderManagerDraftGroup(label, drafts) {
   `;
 }
 
-function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults }) {
+function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults, filter = "all" }) {
+  const includeNations = filter === "all" || filter === "nations";
+  const includePlayers = filter === "all" || filter === "players";
   const nationPoints = new Map(
     getNationsLeagueRows(matchResults).map((nation) => [normalizeLookupName(nation.name), nation.points])
   );
@@ -1975,41 +1992,45 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
     });
   }
 
-  for (const draft of teamDraft) {
-    const manager = managerRows.get(draft["Manager ID"]);
-    const nation = normalizeNationName(draft.Team);
+  if (includeNations) {
+    for (const draft of teamDraft) {
+      const manager = managerRows.get(draft["Manager ID"]);
+      const nation = normalizeNationName(draft.Team);
 
-    if (!manager || !nation) {
-      continue;
+      if (!manager || !nation) {
+        continue;
+      }
+
+      manager.nationCount += 1;
+      const points = nationPoints.get(normalizeLookupName(nation)) ?? 0;
+      manager.points += points;
+      manager.drafts.push({
+        name: nation,
+        points,
+        type: "Nation",
+      });
     }
-
-    manager.nationCount += 1;
-    const points = nationPoints.get(normalizeLookupName(nation)) ?? 0;
-    manager.points += points;
-    manager.drafts.push({
-      name: nation,
-      points,
-      type: "Nation",
-    });
   }
 
-  for (const draft of playerDraft) {
-    const manager = managerRows.get(draft["Manager ID"]);
-    const playerId = draft["Player ID"];
-    const playerName = draft.Player;
+  if (includePlayers) {
+    for (const draft of playerDraft) {
+      const manager = managerRows.get(draft["Manager ID"]);
+      const playerId = draft["Player ID"];
+      const playerName = draft.Player;
 
-    if (!manager || (!playerId && !playerName)) {
-      continue;
+      if (!manager || (!playerId && !playerName)) {
+        continue;
+      }
+
+      manager.playerCount += 1;
+      const points = playerPoints.get(String(playerId)) ?? playerPoints.get(normalizeLookupName(playerName)) ?? 0;
+      manager.points += points;
+      manager.drafts.push({
+        name: playerName,
+        points,
+        type: "Player",
+      });
     }
-
-    manager.playerCount += 1;
-    const points = playerPoints.get(String(playerId)) ?? playerPoints.get(normalizeLookupName(playerName)) ?? 0;
-    manager.points += points;
-    manager.drafts.push({
-      name: playerName,
-      points,
-      type: "Player",
-    });
   }
 
   return rankRows(

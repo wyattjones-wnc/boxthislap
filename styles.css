@@ -1009,6 +1009,10 @@ main {
   min-width: 0;
 }
 
+.player-position-label > span:last-child {
+  min-width: 0;
+}
+
 .position-icon {
   align-items: center;
   background: var(--soft);
@@ -1108,6 +1112,7 @@ table {
 
 .pair-table {
   min-width: 0;
+  table-layout: fixed;
 }
 
 .pair-table th,
@@ -1121,7 +1126,11 @@ table {
   color: var(--ink);
   font-weight: 800;
   text-transform: none;
-  width: 44%;
+  width: 62%;
+}
+
+.pair-table td {
+  width: 38%;
 }
 
 .pair-table .manager-chip {
@@ -1289,6 +1298,14 @@ tr:last-child td {
   .pair-table td {
     font-size: 1rem;
     padding: 12px 15px;
+  }
+
+  .pair-table th {
+    width: 66%;
+  }
+
+  .pair-table td {
+    width: 34%;
   }
 
   .league-detail-heading {

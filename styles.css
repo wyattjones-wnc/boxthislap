@@ -137,6 +137,14 @@ a {
   object-position: center;
 }
 
+.header-page-art[data-header-art="fantasy-office-2025"] picture {
+  max-width: min(760px, 100%);
+}
+
+.header-page-art[data-header-art="fantasy-office-2025"] img {
+  height: 106px;
+}
+
 .nav-links {
   display: flex;
   flex: 0 0 auto;
@@ -625,6 +633,189 @@ main {
   text-align: right;
 }
 
+.office-draft-grid,
+.office-movie-list,
+.office-result-list {
+  display: grid;
+  gap: 16px;
+}
+
+.office-draft-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.office-draft-card,
+.office-movie-card,
+.office-result-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  overflow: hidden;
+}
+
+.office-draft-card header {
+  border-bottom: 1px solid var(--line);
+  padding: 15px 16px;
+}
+
+.office-pick-list {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.office-pick-list li {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  padding: 11px 16px;
+}
+
+.office-pick-list li:last-child {
+  border-bottom: 0;
+}
+
+.office-pick-list span {
+  align-items: center;
+  background: var(--soft-strong);
+  border-radius: 6px;
+  color: var(--track);
+  display: flex;
+  font-weight: 900;
+  height: 30px;
+  justify-content: center;
+}
+
+.office-pick-list strong,
+.office-movie-card h3 {
+  overflow-wrap: anywhere;
+}
+
+.office-movie-card header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  padding: 15px 16px;
+}
+
+.office-movie-card header span {
+  align-items: center;
+  background: var(--soft-strong);
+  border-radius: 6px;
+  color: var(--track);
+  display: flex;
+  font-size: 0.86rem;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+}
+
+.office-movie-card h3 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.office-movie-card header strong {
+  color: var(--accent-dark);
+  font-size: 1.2rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.office-score-grid {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.office-score-grid span {
+  background: var(--soft);
+  color: var(--muted);
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 2px;
+  padding: 11px 12px;
+  text-transform: uppercase;
+}
+
+.office-score-grid strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.office-movie-table {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+}
+
+.office-movie-table table {
+  min-width: 760px;
+}
+
+.office-sort-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 900;
+  gap: 6px;
+  justify-content: space-between;
+  padding: 0;
+  text-align: left;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.office-sort-button span:last-child {
+  color: var(--accent-dark);
+  font-size: 0.68rem;
+}
+
+.office-movie-title {
+  display: block;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.office-movie-draft {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.office-movie-table td:nth-child(n + 3) {
+  color: var(--accent-dark);
+  font-weight: 900;
+  text-align: right;
+}
+
+.office-movie-table th:nth-child(n + 3) .office-sort-button {
+  text-align: right;
+}
+
+.office-result-summary {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 82px minmax(0, 1fr) 110px;
+  padding: 16px;
+}
+
 .gallery-grid {
   display: grid;
   gap: 18px;
@@ -801,6 +992,53 @@ main {
   font-weight: 800;
 }
 
+.player-position-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.position-icon {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.position-icon svg {
+  display: block;
+  fill: none;
+  height: 15px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  width: 15px;
+}
+
+.position-icon--forward {
+  color: var(--accent-dark);
+}
+
+.position-icon--defender {
+  color: #76a9ff;
+}
+
+.position-icon--midfielder {
+  color: #8fd19e;
+}
+
+.position-icon--goalkeeper {
+  color: #d8b4fe;
+}
+
 .manager-result-row {
   cursor: pointer;
 }
@@ -967,6 +1205,10 @@ tr:last-child td {
     max-width: 100%;
   }
 
+  .header-page-art[data-header-art="fantasy-office-2025"] img {
+    height: 74px;
+  }
+
   @media (orientation: landscape) and (max-height: 520px) {
     .topbar {
       grid-template-columns: 104px minmax(0, 1fr) auto;
@@ -978,6 +1220,10 @@ tr:last-child td {
 
     .header-page-art img {
       height: 46px;
+    }
+
+    .header-page-art[data-header-art="fantasy-office-2025"] img {
+      height: 62px;
     }
   }
 
@@ -1088,6 +1334,35 @@ tr:last-child td {
     gap: 10px;
     grid-template-columns: minmax(0, 1fr) 48px;
     padding: 12px 13px;
+  }
+
+  .office-draft-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .office-draft-card header,
+  .office-movie-card header,
+  .office-result-summary {
+    padding: 14px;
+  }
+
+  .office-movie-card header {
+    gap: 10px;
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .office-movie-card header strong {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .office-score-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .office-result-summary {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
   }
 
   .standings-table {

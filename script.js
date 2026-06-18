@@ -1,4 +1,4 @@
-import { loadMatches, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202606150001";
+import { loadMatches, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202606170001";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -24,6 +24,22 @@ const formulaOneViews = {
     questionList: document.querySelector("#formula-one-2025-question-list"),
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
   },
+};
+const fantasyOfficeViews = {
+  2025: {
+    draftList: document.querySelector("#fantasy-office-2025-draft-list"),
+    movieList: document.querySelector("#fantasy-office-2025-movie-list"),
+    resultList: document.querySelector("#fantasy-office-2025-result-list"),
+  },
+  2026: {
+    draftList: document.querySelector("#fantasy-office-2026-draft-list"),
+    movieList: document.querySelector("#fantasy-office-2026-movie-list"),
+    resultList: document.querySelector("#fantasy-office-2026-result-list"),
+  },
+};
+const fantasyOfficeMovieSort = {
+  direction: "desc",
+  key: "points",
 };
 const resultCards = document.querySelectorAll("[data-result-card]");
 const todayMatchList = document.querySelector("#today-match-list");
@@ -284,6 +300,8 @@ function showPage(pageName, options = {}) {
   const pageAliases = {
     "formula-1-2024": "formula-1-2024-questions",
     "formula-1-2025": "formula-1-2025-questions",
+    "fantasy-office-2025": "fantasy-office-2025-results",
+    "fantasy-office-2026": "fantasy-office-2026-draft",
     "manager-scores": "standings",
     "player-scores": "standings",
   };
@@ -326,6 +344,14 @@ function getHeaderArtName(pageName) {
     return "formula-one-2025";
   }
 
+  if (pageName.startsWith("fantasy-office-2025")) {
+    return "fantasy-office-2025";
+  }
+
+  if (pageName.startsWith("fantasy-office-2026")) {
+    return "world-cup";
+  }
+
   if (getNavScope(pageName) === "world-cup") {
     return "world-cup";
   }
@@ -340,6 +366,14 @@ function getNavScope(pageName) {
 
   if (pageName.startsWith("formula-1-2025")) {
     return "formula-one-2025";
+  }
+
+  if (pageName.startsWith("fantasy-office-2025")) {
+    return "fantasy-office-2025";
+  }
+
+  if (pageName.startsWith("fantasy-office-2026")) {
+    return "fantasy-office-2026";
   }
 
   if (pageName === "leagues") {
@@ -357,6 +391,16 @@ function rememberNavScope(pageName) {
 
   if (pageName.startsWith("formula-1-2025")) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2025");
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-office-2025")) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2025");
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-office-2026")) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2026");
     return;
   }
 
@@ -431,20 +475,21 @@ function renderLeagueList(year) {
     const isWorldCup = year === "2026" && league === "World Cup";
     const isFantasyCritic = (year === "2025" || year === "2026") && league === "Fantasy Critic";
     const isFormulaOne = (year === "2024" || year === "2025") && league === "Formula 1";
-    const canOpen = isWorldCup || isFantasyCritic || isFormulaOne;
+    const isFantasyOffice = (year === "2025" || year === "2026") && league === "Fantasy Office";
+    const canOpen = isWorldCup || isFantasyCritic || isFormulaOne || isFantasyOffice;
 
     return `
       <article class="league-card${isWorldCup ? " is-current" : ""}">
         <div>
           <h2>${escapeHtml(league)}</h2>
         </div>
-        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, canOpen, year })}
+        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year })}
       </article>
     `;
   }).join("");
 }
 
-function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, canOpen, year }) {
+function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year }) {
   if (isWorldCup) {
     return `<a class="league-card-link" href="#results" data-page-link="results">Open</a>`;
   }
@@ -455,6 +500,11 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, can
 
   if (isFormulaOne) {
     return `<a class="league-card-link" href="#formula-1-${escapeHtml(year)}-questions" data-page-link="formula-1-${escapeHtml(year)}-questions">Open</a>`;
+  }
+
+  if (isFantasyOffice) {
+    const page = year === "2026" ? "draft" : "results";
+    return `<a class="league-card-link" href="#fantasy-office-${escapeHtml(year)}-${page}" data-page-link="fantasy-office-${escapeHtml(year)}-${page}">Open</a>`;
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
@@ -718,6 +768,345 @@ function renderFormulaOneError(year, error) {
   }
 }
 
+function parseFantasyOfficeDraft(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const managerRow = rows.find((row) => {
+    return !row[0]?.trim() && row.slice(1).some((value) => value.trim() && !/^D\d+$/i.test(value.trim()));
+  });
+
+  if (!managerRow) {
+    throw new Error("Fantasy Office draft sheet did not include manager names.");
+  }
+
+  const managerColumns = managerRow
+    .map((manager, index) => ({ manager: manager.trim(), index }))
+    .filter(({ manager, index }) => manager && index > 0);
+
+  if (managerColumns.length === 0) {
+    throw new Error("Fantasy Office draft sheet did not include any draft columns.");
+  }
+
+  const managerRowIndex = rows.indexOf(managerRow);
+  const draftRows = rows.slice(managerRowIndex + 1).filter((row) => {
+    const pick = row[0]?.trim() ?? "";
+    return /^\d+$/.test(pick) || pick.toLowerCase() === "sub";
+  });
+
+  return managerColumns.map(({ manager, index }) => {
+    return {
+      manager,
+      picks: draftRows.map((row) => ({
+        pick: row[0]?.trim() ?? "",
+        movie: row[index]?.trim() ?? "",
+      })).filter((pick) => pick.movie),
+    };
+  });
+}
+
+function parseFantasyOfficeMovies(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const headerIndex = rows.findIndex((row) => row[0]?.trim() === "D#" && row[1]?.trim() === "Movie");
+
+  if (headerIndex === -1) {
+    throw new Error("Fantasy Office movies sheet did not include the expected D# and Movie columns.");
+  }
+
+  const headers = rows[headerIndex].map((header) => header.trim());
+
+  return rows.slice(headerIndex + 1).map((row) => {
+    return headers.reduce((record, header, index) => {
+      record[header || `Column ${index + 1}`] = row[index]?.trim() ?? "";
+      return record;
+    }, {});
+  }).filter((movie) => movie.Movie);
+}
+
+function parseFantasyOfficeResults(csvText) {
+  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
+  const managers = [];
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const managerName = row[1]?.trim();
+
+    if (!managerName || rows[index + 1]?.[0]?.trim() !== "Draft #") {
+      continue;
+    }
+
+    const headerRow = rows[index + 1].map((header) => header.trim());
+    const movies = [];
+    let totals = { boxOffice: 0, critical: 0, award: 0, points: 0 };
+    index += 2;
+
+    for (; index < rows.length; index += 1) {
+      const resultRow = rows[index];
+      const firstCell = resultRow[0]?.trim();
+
+      if (!firstCell) {
+        break;
+      }
+
+      const record = headerRow.reduce((result, header, columnIndex) => {
+        result[header || `Column ${columnIndex + 1}`] = resultRow[columnIndex]?.trim() ?? "";
+        return result;
+      }, {});
+
+      if (firstCell.toLowerCase() === "total") {
+        totals = {
+          award: parsePoints(record.Award),
+          boxOffice: parsePoints(record.$),
+          critical: parsePoints(record.Critical),
+          points: parsePoints(record.Total),
+        };
+        break;
+      }
+
+      movies.push({
+        award: parsePoints(record.Award),
+        boxOffice: parsePoints(record.$),
+        critical: parsePoints(record.Critical),
+        draftNumber: record["Draft #"],
+        movie: record.Movie,
+        points: parsePoints(record.Total),
+      });
+    }
+
+    managers.push({
+      award: totals.award,
+      boxOffice: totals.boxOffice,
+      critical: totals.critical,
+      manager: managerName,
+      movies,
+      points: totals.points,
+    });
+  }
+
+  return rankRows(managers.sort((firstManager, secondManager) => {
+    if (secondManager.points !== firstManager.points) {
+      return secondManager.points - firstManager.points;
+    }
+
+    return firstManager.manager.localeCompare(secondManager.manager);
+  }));
+}
+
+function getFantasyOfficeView(year) {
+  return fantasyOfficeViews[year];
+}
+
+function renderFantasyOffice2025(data) {
+  siteData.fantasyOffice2025 = data;
+  renderFantasyOfficeDraft(2025, data.draft);
+  renderFantasyOfficeMovies(2025, data.results);
+  renderFantasyOfficeResults(2025, data.results);
+}
+
+function renderFantasyOfficeDraft(year, draft) {
+  const view = getFantasyOfficeView(year);
+
+  if (!view?.draftList) {
+    return;
+  }
+
+  if (!draft.length) {
+    view.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office draft data was loaded.</p></article>`;
+    return;
+  }
+
+  view.draftList.innerHTML = draft.map((managerDraft) => {
+    const manager = getManagerByName(managerDraft.manager) ?? { name: managerDraft.manager };
+
+    return `
+      <article class="office-draft-card">
+        <header>
+          ${renderManagerChip(manager)}
+        </header>
+        <ol class="office-pick-list">
+          ${managerDraft.picks.map((pick) => {
+            return `
+              <li>
+                <span>${escapeHtml(pick.pick)}</span>
+                <strong>${escapeHtml(pick.movie)}</strong>
+              </li>
+            `;
+          }).join("")}
+        </ol>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFantasyOfficeMovies(year, results) {
+  const view = getFantasyOfficeView(year);
+
+  if (!view?.movieList) {
+    return;
+  }
+
+  const movies = getFantasyOfficeMovieRows(results);
+
+  if (!movies.length) {
+    view.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Fantasy Office movie results are available yet.</p></article>`;
+    return;
+  }
+
+  view.movieList.innerHTML = `
+    <div class="table-wrap office-movie-table">
+      <table>
+        <thead>
+          <tr>
+            ${renderFantasyOfficeMovieHeader("movie", "Movie")}
+            ${renderFantasyOfficeMovieHeader("manager", "Manager")}
+            ${renderFantasyOfficeMovieHeader("boxOffice", "Box Office")}
+            ${renderFantasyOfficeMovieHeader("critical", "Critical")}
+            ${renderFantasyOfficeMovieHeader("award", "Awards")}
+            ${renderFantasyOfficeMovieHeader("points", "Total")}
+          </tr>
+        </thead>
+        <tbody>
+          ${movies.map((movie) => {
+            const manager = getManagerByName(movie.manager) ?? { name: movie.manager };
+
+            return `
+              <tr>
+                <td data-label="Movie">
+                  <span class="office-movie-title">${escapeHtml(movie.movie)}</span>
+                  <span class="office-movie-draft">${escapeHtml(movie.draftNumber)}</span>
+                </td>
+                <td data-label="Manager">${renderManagerChip(manager)}</td>
+                <td data-label="Box Office">${escapeHtml(formatPoints(movie.boxOffice))}</td>
+                <td data-label="Critical">${escapeHtml(formatPoints(movie.critical))}</td>
+                <td data-label="Awards">${escapeHtml(formatPoints(movie.award))}</td>
+                <td data-label="Total">${escapeHtml(formatPoints(movie.points))}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function getFantasyOfficeMovieRows(results) {
+  const rows = results.flatMap((entry) => {
+    return entry.movies.map((movie) => ({
+      ...movie,
+      manager: entry.manager,
+    }));
+  });
+
+  return rows.sort(compareFantasyOfficeMovies);
+}
+
+function compareFantasyOfficeMovies(firstMovie, secondMovie) {
+  const direction = fantasyOfficeMovieSort.direction === "asc" ? 1 : -1;
+  const key = fantasyOfficeMovieSort.key;
+  const firstValue = firstMovie[key];
+  const secondValue = secondMovie[key];
+
+  if (typeof firstValue === "number" && typeof secondValue === "number") {
+    return direction * (firstValue - secondValue) || firstMovie.movie.localeCompare(secondMovie.movie);
+  }
+
+  return direction * String(firstValue ?? "").localeCompare(String(secondValue ?? "")) || firstMovie.movie.localeCompare(secondMovie.movie);
+}
+
+function renderFantasyOfficeMovieHeader(key, label) {
+  const isActive = fantasyOfficeMovieSort.key === key;
+  const directionLabel = fantasyOfficeMovieSort.direction === "asc" ? "ascending" : "descending";
+  const sortMark = isActive ? (fantasyOfficeMovieSort.direction === "asc" ? "&uarr;" : "&darr;") : "";
+
+  return `
+    <th>
+      <button class="office-sort-button" type="button" data-office-movie-sort="${escapeHtml(key)}" aria-label="Sort by ${escapeHtml(label)}${isActive ? `, currently ${directionLabel}` : ""}">
+        <span>${escapeHtml(label)}</span>
+        <span aria-hidden="true">${sortMark}</span>
+      </button>
+    </th>
+  `;
+}
+
+function renderFantasyOfficeResults(year, results) {
+  const view = getFantasyOfficeView(year);
+
+  if (!view?.resultList) {
+    return;
+  }
+
+  if (!results.length) {
+    view.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office results are available yet.</p></article>`;
+    return;
+  }
+
+  view.resultList.innerHTML = results.map((entry) => {
+    const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+
+    return `
+      <article class="office-result-card">
+        <header class="office-result-summary">
+          <div class="fantasy-critic-rank">
+            <span>Rank</span>
+            <strong>${escapeHtml(entry.rank)}</strong>
+          </div>
+          <div class="fantasy-critic-manager">
+            ${renderManagerChip(manager)}
+          </div>
+          <div class="fantasy-critic-points">
+            <span>Points</span>
+            <strong>${escapeHtml(formatPoints(entry.points))}</strong>
+          </div>
+        </header>
+        <div class="fantasy-critic-meta">
+          <span>$ <strong>${escapeHtml(formatPoints(entry.boxOffice))}</strong></span>
+          <span>Critical <strong>${escapeHtml(formatPoints(entry.critical))}</strong></span>
+          <span>Awards <strong>${escapeHtml(formatPoints(entry.award))}</strong></span>
+        </div>
+        <div class="fantasy-critic-roster">
+          ${entry.movies.map((movie) => {
+            return `
+              <div class="fantasy-critic-game">
+                <strong>${escapeHtml(movie.movie)}</strong>
+                <span>${escapeHtml(movie.draftNumber)}</span>
+                <span>${escapeHtml(formatPoints(movie.points))}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderFantasyOfficeError(error) {
+  renderFantasyOfficeDraftError(2025, error);
+  renderFantasyOfficeMovieError(2025, error);
+  renderFantasyOfficeResultsError(2025, error);
+}
+
+function renderFantasyOfficeDraftError(year, error) {
+  const view = getFantasyOfficeView(year);
+
+  if (view?.draftList) {
+    view.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office draft: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
+function renderFantasyOfficeMovieError(year, error) {
+  const view = getFantasyOfficeView(year);
+
+  if (view?.movieList) {
+    view.movieList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Fantasy Office movies: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
+function renderFantasyOfficeResultsError(year, error) {
+  const view = getFantasyOfficeView(year);
+
+  if (view?.resultList) {
+    view.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">Unable to load Fantasy Office results: ${escapeHtml(error.message)}</p></article>`;
+  }
+}
+
 function parseCsvMatrix(text) {
   const rows = [];
   let row = [];
@@ -813,6 +1202,27 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   });
 });
 
+Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
+  view.movieList?.addEventListener("click", (event) => {
+    const sortButton = event.target.closest("[data-office-movie-sort]");
+
+    if (!sortButton) {
+      return;
+    }
+
+    const key = sortButton.dataset.officeMovieSort;
+
+    if (fantasyOfficeMovieSort.key === key) {
+      fantasyOfficeMovieSort.direction = fantasyOfficeMovieSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      fantasyOfficeMovieSort.key = key;
+      fantasyOfficeMovieSort.direction = key === "movie" || key === "manager" ? "asc" : "desc";
+    }
+
+    renderFantasyOfficeMovies(year, siteData[`fantasyOffice${year}`]?.results ?? []);
+  });
+});
+
 resultCards.forEach((card) => {
   const toggle = card.querySelector("[data-result-toggle]");
 
@@ -868,7 +1278,19 @@ syncThemeToggle();
 loadPlayers()
   .then((players) => {
     siteData.players = players;
+    siteData.playerPositionLookups = buildPlayerPositionLookups(players);
     renderTestingPlayers(players);
+
+    if (siteData.playerPerformances) {
+      renderPlayerChampionship(siteData.playerPerformances);
+    }
+
+    if (siteData.matches) {
+      renderMatchesForDate(todayMatchList, siteData.matches, getDateKey(0));
+      renderMatchesForDate(tomorrowMatchList, siteData.matches, getDateKey(1));
+      renderMatchesForDate(matchdayMatchList, siteData.matches, matchdaySelect?.value || "");
+    }
+
     console.info("Box This Lap player data loaded", players);
   })
   .catch((error) => {
@@ -971,6 +1393,64 @@ loadSheetText("formulaOne2025")
     console.error("Box This Lap Formula 1 2025 data failed to load", error);
   });
 
+siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };
+siteData.fantasyOffice2026 = { draft: [], movies: [], ordering: [], results: [] };
+
+loadSheetText("fantasyOffice2025Draft")
+  .then((draftCsv) => {
+    siteData.fantasyOffice2025.draft = parseFantasyOfficeDraft(draftCsv);
+    renderFantasyOfficeDraft(2025, siteData.fantasyOffice2025.draft);
+    console.info("Box This Lap Fantasy Office 2025 draft data loaded", siteData.fantasyOffice2025.draft);
+  })
+  .catch((error) => {
+    renderFantasyOfficeDraftError(2025, error);
+    console.error("Box This Lap Fantasy Office 2025 draft data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2025Results")
+  .then((resultsCsv) => {
+    siteData.fantasyOffice2025.results = parseFantasyOfficeResults(resultsCsv);
+    renderFantasyOfficeMovies(2025, siteData.fantasyOffice2025.results);
+    renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+    console.info("Box This Lap Fantasy Office 2025 results data loaded", siteData.fantasyOffice2025.results);
+  })
+  .catch((error) => {
+    renderFantasyOfficeMovieError(2025, error);
+    renderFantasyOfficeResultsError(2025, error);
+    console.error("Box This Lap Fantasy Office 2025 results data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2025Movies")
+  .then((moviesCsv) => {
+    siteData.fantasyOffice2025.movies = parseFantasyOfficeMovies(moviesCsv);
+    console.info("Box This Lap Fantasy Office 2025 movie data loaded", siteData.fantasyOffice2025.movies);
+  })
+  .catch((error) => {
+    console.warn("Box This Lap Fantasy Office 2025 movie detail data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2025Ordering")
+  .then((orderingCsv) => {
+    siteData.fantasyOffice2025.ordering = parseCsvMatrix(orderingCsv);
+    console.info("Box This Lap Fantasy Office 2025 ordering data loaded", siteData.fantasyOffice2025.ordering);
+  })
+  .catch((error) => {
+    console.warn("Box This Lap Fantasy Office 2025 ordering data failed to load", error);
+  });
+
+loadSheetText("fantasyOffice2026Draft")
+  .then((draftCsv) => {
+    siteData.fantasyOffice2026.draft = parseFantasyOfficeDraft(draftCsv);
+    renderFantasyOfficeDraft(2026, siteData.fantasyOffice2026.draft);
+    renderFantasyOfficeMovies(2026, siteData.fantasyOffice2026.results);
+    renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+    console.info("Box This Lap Fantasy Office 2026 draft data loaded", siteData.fantasyOffice2026.draft);
+  })
+  .catch((error) => {
+    renderFantasyOfficeDraftError(2026, error);
+    console.error("Box This Lap Fantasy Office 2026 draft data failed to load", error);
+  });
+
 function renderMatchdayPicker(matches) {
   if (!matchdaySelect || !matchdayMatchList) {
     return;
@@ -1058,7 +1538,7 @@ function renderMatchRows(pairs) {
   return pairs.map(([name, manager]) => {
     return `
       <tr>
-        <th scope="row">${formatDataName(name)}</th>
+        <th scope="row">${renderMatchDataName(name)}</th>
         <td>${renderMatchManager(manager)}</td>
       </tr>
     `;
@@ -1184,7 +1664,7 @@ function renderPlayerChampionship(performances) {
     return `
       <tr>
         <td data-label="Rank">${player.rank}</td>
-        <td data-label="Player">${escapeHtml(player.name)}</td>
+        <td data-label="Player">${renderPlayerNameWithPosition(player.name, player.position)}</td>
         <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
@@ -1209,18 +1689,24 @@ function getPlayerChampionshipRows(performances) {
       matches: 0,
       name: performance.Name,
       points: 0,
+      position: performance.Position,
       team: performance.Team,
     };
 
     player.matches += 1;
     player.points += points;
     player.name ||= performance.Name;
+    player.position ||= performance.Position;
     player.team ||= performance.Team;
     players.set(playerId, player);
   }
 
   return rankRows(
     [...players.values()]
+      .map((player) => ({
+        ...player,
+        position: player.position || getPlayerPosition(player),
+      }))
       .filter((player) => player.points > 0)
       .sort((firstPlayer, secondPlayer) => {
         if (secondPlayer.points !== firstPlayer.points) {
@@ -1585,6 +2071,29 @@ function buildManagerDraftLookups({ managers, teamDraft, playerDraft }) {
   return { managersById, nationManagers, playerManagersById, playerManagersByName };
 }
 
+function buildPlayerPositionLookups(players) {
+  const byId = new Map();
+  const byName = new Map();
+
+  for (const player of players) {
+    const position = normalizePlayerPosition(player.position);
+
+    if (!position) {
+      continue;
+    }
+
+    if (player.id) {
+      byId.set(String(player.id), position);
+    }
+
+    if (player.name) {
+      byName.set(getPlayerNameLookupKey(player.name), position);
+    }
+  }
+
+  return { byId, byName };
+}
+
 function renderManagerResultsError(error) {
   if (!managerResultsRows) {
     return;
@@ -1671,6 +2180,22 @@ function getPlayerManager(player) {
   return drafts.playerManagersById.get(String(player.id)) ?? drafts.playerManagersByName.get(normalizeLookupName(player.name));
 }
 
+function getPlayerPosition(player) {
+  const lookups = siteData.playerPositionLookups;
+
+  if (!lookups) {
+    return normalizePlayerPosition(player.position);
+  }
+
+  return lookups.byId.get(String(player.id)) ??
+    lookups.byName.get(getPlayerNameLookupKey(player.name)) ??
+    normalizePlayerPosition(player.position);
+}
+
+function getPlayerPositionByName(name) {
+  return siteData.playerPositionLookups?.byName.get(getPlayerNameLookupKey(name)) ?? null;
+}
+
 function getNationManager(nation) {
   return siteData.managerDrafts?.nationManagers.get(normalizeLookupName(normalizeNationName(nation))) ?? null;
 }
@@ -1713,6 +2238,122 @@ function renderManagerChip(manager) {
       <span class="manager-name">${escapeHtml(managerMeta.displayName)}</span>
     </span>
   `;
+}
+
+function renderMatchDataName(name) {
+  const position = getPlayerPositionByName(name);
+  const formattedName = formatDataName(name);
+
+  return position ? renderPlayerNameWithPosition(formattedName, position, { isHtml: true }) : formattedName;
+}
+
+function renderPlayerNameWithPosition(name, position, options = {}) {
+  const icon = renderPositionIcon(position);
+  const renderedName = options.isHtml ? name : escapeHtml(name);
+
+  if (!icon) {
+    return renderedName;
+  }
+
+  return `
+    <span class="player-position-label">
+      ${icon}
+      <span>${renderedName}</span>
+    </span>
+  `;
+}
+
+function renderPositionIcon(position) {
+  const normalizedPosition = normalizePlayerPosition(position);
+  const labels = {
+    defender: "Defender",
+    forward: "Forward",
+    goalkeeper: "Goalkeeper",
+    midfielder: "Midfielder",
+  };
+
+  if (!normalizedPosition) {
+    return "";
+  }
+
+  return `
+    <span class="position-icon position-icon--${normalizedPosition}" role="img" aria-label="${labels[normalizedPosition]}">
+      ${getPositionIconSvg(normalizedPosition)}
+    </span>
+  `;
+}
+
+function getPositionIconSvg(position) {
+  const icons = {
+    defender: `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 3l7 3v5c0 4.5-2.7 7.8-7 10-4.3-2.2-7-5.5-7-10V6l7-3z"></path>
+      </svg>
+    `,
+    forward: `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5 17V8h14v9"></path>
+        <path d="M5 11h14M9.5 8v9M14.5 8v9"></path>
+        <circle cx="12" cy="16" r="2"></circle>
+      </svg>
+    `,
+    goalkeeper: `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 13V7a2 2 0 0 1 4 0v5"></path>
+        <path d="M10 12V5a2 2 0 0 1 4 0v7"></path>
+        <path d="M14 12V7a2 2 0 0 1 4 0v7"></path>
+        <path d="M6 13l2 6h8l2-5"></path>
+      </svg>
+    `,
+    midfielder: `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+        <path d="M12 5v14M4 12h16"></path>
+        <circle cx="12" cy="12" r="2"></circle>
+      </svg>
+    `,
+  };
+
+  return icons[position] ?? "";
+}
+
+function normalizePlayerPosition(position) {
+  const value = normalizeLookupName(position);
+
+  if (!value) {
+    return null;
+  }
+
+  if (value.includes("goal") || value === "gk") {
+    return "goalkeeper";
+  }
+
+  if (value.includes("def") || ["cb", "lb", "rb", "lcb", "rcb", "lwb", "rwb"].includes(value)) {
+    return "defender";
+  }
+
+  if (value.includes("mid") || ["cm", "dm", "am", "cdm", "cam", "lm", "rm"].includes(value)) {
+    return "midfielder";
+  }
+
+  if (
+    value.includes("forward") ||
+    value.includes("striker") ||
+    value.includes("wing") ||
+    ["fw", "st", "cf", "lw", "rw"].includes(value)
+  ) {
+    return "forward";
+  }
+
+  return null;
+}
+
+function getPlayerNameLookupKey(name) {
+  return normalizeLookupName(
+    String(name ?? "")
+      .replace(/\([^)]*\)/g, " ")
+      .replace(/\s+/g, " ")
+  );
 }
 
 function renderTestingPlayers(players) {

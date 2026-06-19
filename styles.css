@@ -882,7 +882,7 @@ main {
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: 0.06em;
-  margin: 0 auto 14px;
+  margin: 0 auto 0px;
   max-width: 760px;
   text-transform: uppercase;
 }

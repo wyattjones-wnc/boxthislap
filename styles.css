@@ -999,6 +999,7 @@ main {
   font-weight: 900;
   gap: 10px;
   justify-self: end;
+  white-space: nowrap;
 }
 
 .standings-scope-toggle input {
@@ -1244,6 +1245,7 @@ tr:last-child td {
 .view-counter img {
   display: block;
   height: 20px;
+  min-width: 66px;
   width: auto;
 }
 
@@ -1373,8 +1375,16 @@ tr:last-child td {
     display: grid;
   }
 
+  .standings-heading {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
   .standings-scope-toggle {
-    justify-self: start;
+    flex: 0 0 auto;
+    font-size: 0.82rem;
   }
 
   .action-button,
@@ -1481,8 +1491,8 @@ tr:last-child td {
   }
 
   .site-footer {
-    align-items: flex-start;
-    display: grid;
+    align-items: center;
+    display: flex;
   }
 
   .standings-table {

@@ -874,10 +874,11 @@ main {
 
 .results-matchday-heading {
   color: var(--muted);
+  text-align: center;
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: 0.06em;
-  margin: 0 auto 14px;
+  margin: 50px auto 0px auto;
   max-width: 760px;
   text-transform: uppercase;
 }

@@ -1138,11 +1138,17 @@ main {
   cursor: pointer;
 }
 
-.manager-result-row:hover {
+.standing-result-row {
+  cursor: pointer;
+}
+
+.manager-result-row:hover,
+.standing-result-row:hover {
   background: var(--soft);
 }
 
-.manager-detail-row td {
+.manager-detail-row td,
+.standing-result-detail-row td {
   background: var(--soft);
   padding: 0;
 }
@@ -1152,6 +1158,10 @@ main {
   gap: 18px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 16px;
+}
+
+.standing-result-detail-panel {
+  padding: 14px 16px;
 }
 
 .manager-draft-group h3 {
@@ -1170,7 +1180,16 @@ main {
   padding: 0;
 }
 
-.manager-draft-list li {
+.standing-result-detail-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.manager-draft-list li,
+.standing-result-detail-list li {
   align-items: center;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -1181,7 +1200,8 @@ main {
   padding: 8px 10px;
 }
 
-.manager-draft-list strong {
+.manager-draft-list strong,
+.standing-result-detail-list strong {
   color: var(--accent-dark);
 }
 
@@ -1682,6 +1702,44 @@ tr:last-child td {
     grid-column: 1 / -1;
     padding: 4px;
     text-align: left;
+  }
+
+  .compact-standing-rows .standing-result-row.is-standing-expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+  }
+
+  .compact-standing-rows .standing-result-detail-row {
+    background: var(--soft);
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    display: block;
+    margin-bottom: 16px;
+    padding: 0;
+  }
+
+  .compact-standing-rows .standing-result-detail-row[hidden] {
+    display: none;
+  }
+
+  .compact-standing-rows .standing-result-detail-row td {
+    display: block;
+    padding: 0;
+    width: 100%;
+  }
+
+  .compact-standing-rows .standing-result-detail-row td::before {
+    display: none;
+  }
+
+  .standing-result-detail-panel {
+    padding: 14px;
+  }
+
+  .standing-result-detail-list li {
+    padding: 9px 10px;
   }
 
   .compact-manager-rows tr {

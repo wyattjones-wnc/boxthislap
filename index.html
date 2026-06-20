@@ -11,7 +11,7 @@
         document.documentElement.dataset.theme = "dark";
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202606190002">
+    <link rel="stylesheet" href="styles.css?v=202606200001">
   </head>
   <body class="is-routing">
     <header class="site-header">
@@ -453,10 +453,18 @@
       <section class="page" id="standings" data-page="standings">
         <div class="section-heading page-heading-with-action standings-heading">
           <h1>Standings</h1>
-          <label class="standings-scope-toggle">
-            <span>All data</span>
-            <input id="standings-all-data-toggle" type="checkbox" checked>
-          </label>
+          <div class="standings-filter-controls">
+            <label class="standings-scope-toggle">
+              <span>All data</span>
+              <input id="standings-all-data-toggle" type="checkbox" checked>
+            </label>
+            <label class="select-control standings-round-control">
+              <span>Round</span>
+              <select id="standings-round-select">
+                <option value="">All</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <div class="tabs" role="tablist" aria-label="Standings views">
@@ -878,6 +886,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202606190001"></script>
+    <script type="module" src="script.js?v=202606200001"></script>
   </body>
 </html>

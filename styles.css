@@ -1035,6 +1035,21 @@ main {
   transform: translateX(20px);
 }
 
+.standings-filter-controls {
+  align-items: flex-end;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.standings-round-control {
+  min-width: 150px;
+}
+
+.standings-round-control span {
+  display: none;
+}
+
 .compact-select-control {
   min-width: 140px;
 }
@@ -1385,6 +1400,14 @@ tr:last-child td {
   .standings-scope-toggle {
     flex: 0 0 auto;
     font-size: 0.82rem;
+  }
+
+  .standings-filter-controls {
+    gap: 6px;
+  }
+
+  .standings-round-control {
+    min-width: 118px;
   }
 
   .action-button,

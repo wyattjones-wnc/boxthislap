@@ -57,6 +57,7 @@ const nationsLeagueRows = document.querySelector("#nations-league-rows");
 const managerResultsRows = document.querySelector("#manager-results-rows");
 const managerResultsFilter = document.querySelector("#manager-results-filter");
 const standingsAllDataToggle = document.querySelector("#standings-all-data-toggle");
+const standingsRoundSelect = document.querySelector("#standings-round-select");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 const siteData = {};
@@ -1258,6 +1259,58 @@ function parseCsvMatrix(text) {
   return rows;
 }
 
+function parseRoundOptions(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerRow = rows.find((row) => {
+    return row.some((value, index) => normalizeLookupName(value) === "round" && normalizeLookupName(row[index + 1]) === "id");
+  });
+
+  if (!headerRow) {
+    return [];
+  }
+
+  const roundColumn = headerRow.findIndex((value, index) => {
+    return normalizeLookupName(value) === "round" && normalizeLookupName(headerRow[index + 1]) === "id";
+  });
+  const startIndex = rows.indexOf(headerRow) + 1;
+  const rounds = [];
+
+  for (const row of rows.slice(startIndex)) {
+    const name = row[roundColumn]?.trim() ?? "";
+    const id = row[roundColumn + 1]?.trim() ?? "";
+
+    if (!name && !id) {
+      break;
+    }
+
+    if (!name || !id) {
+      continue;
+    }
+
+    rounds.push({ id, name });
+  }
+
+  return rounds;
+}
+
+function renderStandingsRoundOptions(rounds) {
+  if (!standingsRoundSelect) {
+    return;
+  }
+
+  const options = [`<option value="">All</option>`];
+
+  for (const round of rounds) {
+    options.push(`<option value="${escapeHtml(round.id)}">${escapeHtml(round.name)}</option>`);
+
+    if (String(round.id) === "3") {
+      options.push(`<option value="group">Group</option>`);
+    }
+  }
+
+  standingsRoundSelect.innerHTML = options.join("");
+}
+
 pageLinks.forEach((link) => {
   link.addEventListener("click", (event) => {
     event.preventDefault();
@@ -1370,6 +1423,14 @@ managerResultsFilter?.addEventListener("change", () => {
 });
 
 standingsAllDataToggle?.addEventListener("change", () => {
+  renderFilteredStandings();
+});
+
+standingsRoundSelect?.addEventListener("change", () => {
+  renderFilteredStandings();
+});
+
+function renderFilteredStandings() {
   if (siteData.playerPerformances) {
     renderPlayerChampionship(siteData.playerPerformances);
   }
@@ -1377,7 +1438,7 @@ standingsAllDataToggle?.addEventListener("change", () => {
   if (siteData.matchResults) {
     renderNationsLeague(siteData.matchResults);
   }
-});
+}
 
 window.addEventListener("hashchange", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
@@ -1435,6 +1496,17 @@ loadSheet("matchResults")
   .catch((error) => {
     renderNationsLeagueError(error);
     console.error("Box This Lap match result data failed to load", error);
+  });
+
+loadSheetText("data")
+  .then((csvText) => {
+    siteData.rounds = parseRoundOptions(csvText);
+    renderStandingsRoundOptions(siteData.rounds);
+    renderFilteredStandings();
+    console.info("Box This Lap round data loaded", siteData.rounds);
+  })
+  .catch((error) => {
+    console.error("Box This Lap round data failed to load", error);
   });
 
 Promise.all([
@@ -1774,7 +1846,7 @@ function renderPlayerChampionship(performances) {
     return;
   }
 
-  const rows = filterStandingRowsByGameScope(getPlayerChampionshipRows(performances), getPlayerManager);
+  const rows = filterStandingRowsByGameScope(getPlayerChampionshipRows(filterRowsBySelectedRound(performances)), getPlayerManager);
 
   if (rows.length === 0) {
     playerChampionshipRows.innerHTML = `<tr><td class="table-message" colspan="5">No player performance data found.</td></tr>`;
@@ -1871,7 +1943,7 @@ function renderNationsLeague(results) {
     return;
   }
 
-  const rows = filterStandingRowsByGameScope(getNationsLeagueRows(results), (nation) => getNationManager(nation.name));
+  const rows = filterStandingRowsByGameScope(getNationsLeagueRows(filterRowsBySelectedRound(results)), (nation) => getNationManager(nation.name));
 
   if (rows.length === 0) {
     nationsLeagueRows.innerHTML = `<tr><td class="table-message" colspan="5">No Nations League results found.</td></tr>`;
@@ -1907,6 +1979,30 @@ function filterStandingRowsByGameScope(rows, getManager) {
 
 function shouldShowAllStandingsData() {
   return standingsAllDataToggle?.checked ?? true;
+}
+
+function filterRowsBySelectedRound(rows) {
+  const roundIds = getSelectedStandingRoundIds();
+
+  if (!roundIds) {
+    return rows;
+  }
+
+  return rows.filter((row) => roundIds.has(String(row["Round ID"] ?? "").trim()));
+}
+
+function getSelectedStandingRoundIds() {
+  const value = standingsRoundSelect?.value || "";
+
+  if (!value) {
+    return null;
+  }
+
+  if (value === "group") {
+    return new Set(["1", "2", "3"]);
+  }
+
+  return new Set([value]);
 }
 
 function getNationsLeagueRows(results) {

@@ -1416,6 +1416,56 @@ managerResultsRows?.addEventListener("keydown", (event) => {
   toggleManagerResultRow(managerRow);
 });
 
+playerChampionshipRows?.addEventListener("click", (event) => {
+  const standingRow = event.target.closest("[data-standing-result-row]");
+
+  if (!standingRow) {
+    return;
+  }
+
+  toggleStandingResultRow(playerChampionshipRows, standingRow);
+});
+
+playerChampionshipRows?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const standingRow = event.target.closest("[data-standing-result-row]");
+
+  if (!standingRow) {
+    return;
+  }
+
+  event.preventDefault();
+  toggleStandingResultRow(playerChampionshipRows, standingRow);
+});
+
+nationsLeagueRows?.addEventListener("click", (event) => {
+  const standingRow = event.target.closest("[data-standing-result-row]");
+
+  if (!standingRow) {
+    return;
+  }
+
+  toggleStandingResultRow(nationsLeagueRows, standingRow);
+});
+
+nationsLeagueRows?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const standingRow = event.target.closest("[data-standing-result-row]");
+
+  if (!standingRow) {
+    return;
+  }
+
+  event.preventDefault();
+  toggleStandingResultRow(nationsLeagueRows, standingRow);
+});
+
 managerResultsFilter?.addEventListener("change", () => {
   if (siteData.managerResultsSource) {
     renderManagerResults(siteData.managerResultsSource);
@@ -1551,6 +1601,7 @@ loadMatches()
     renderMatchesForDate(todayMatchList, matches, getDateKey(0));
     renderMatchesForDate(tomorrowMatchList, matches, getDateKey(1));
     renderMatchdayPicker(matches);
+    renderFilteredStandings();
     console.info("Box This Lap match data loaded", matches);
   })
   .catch((error) => {
@@ -1853,16 +1904,22 @@ function renderPlayerChampionship(performances) {
     return;
   }
 
-  playerChampionshipRows.innerHTML = rows.map((player) => {
+  playerChampionshipRows.innerHTML = rows.map((player, index) => {
     const manager = getPlayerManager(player);
+    const detailId = `player-standing-detail-${index}`;
 
     return `
-      <tr>
+      <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${player.rank}</td>
         <td data-label="Player">${renderPlayerNameWithPosition(player.name, player.position)}</td>
         <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
+      </tr>
+      <tr class="standing-result-detail-row" id="${detailId}" hidden>
+        <td colspan="5">
+          ${renderStandingResultDetails(player.details)}
+        </td>
       </tr>
     `;
   }).join("");
@@ -1881,6 +1938,7 @@ function getPlayerChampionshipRows(performances) {
 
     const player = players.get(playerId) ?? {
       id: playerId,
+      details: [],
       matches: 0,
       name: performance.Name,
       points: 0,
@@ -1890,6 +1948,11 @@ function getPlayerChampionshipRows(performances) {
 
     player.matches += 1;
     player.points += points;
+    player.details.push({
+      matchId: performance["Match ID"],
+      points,
+      team: performance.Team,
+    });
     player.name ||= performance.Name;
     player.position ||= performance.Position;
     player.team ||= performance.Team;
@@ -1950,16 +2013,22 @@ function renderNationsLeague(results) {
     return;
   }
 
-  nationsLeagueRows.innerHTML = rows.map((nation) => {
+  nationsLeagueRows.innerHTML = rows.map((nation, index) => {
     const manager = getNationManager(nation.name);
+    const detailId = `nation-standing-detail-${index}`;
 
     return `
-      <tr>
+      <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${nation.rank}</td>
         <td data-label="Nation">${escapeHtml(nation.name)}</td>
         <td data-label="Record / Manager">${renderStandingDetail(formatRecord(nation), manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>
+      </tr>
+      <tr class="standing-result-detail-row" id="${detailId}" hidden>
+        <td colspan="5">
+          ${renderStandingResultDetails(nation.details)}
+        </td>
       </tr>
     `;
   }).join("");
@@ -2021,6 +2090,8 @@ function getNationsLeagueRows(results) {
     const opponentRow = getNationStanding(nations, opponent);
     const winnerPoints = getWinnerPoints(result);
     const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+    let teamPoints = 0;
+    let opponentPoints = 0;
 
     teamRow.matches += 1;
     opponentRow.matches += 1;
@@ -2028,25 +2099,34 @@ function getNationsLeagueRows(results) {
     if (outcome === "win") {
       teamRow.wins += 1;
       opponentRow.losses += 1;
-      teamRow.points += winnerPoints;
-      opponentRow.points += penaltyLoserPoints;
-      continue;
-    }
-
-    if (outcome === "lose" || outcome === "loss") {
+      teamPoints = winnerPoints;
+      opponentPoints = penaltyLoserPoints;
+    } else if (outcome === "lose" || outcome === "loss") {
       teamRow.losses += 1;
       opponentRow.wins += 1;
-      teamRow.points += penaltyLoserPoints;
-      opponentRow.points += winnerPoints;
-      continue;
-    }
-
-    if (outcome === "draw" || outcome === "tie") {
+      teamPoints = penaltyLoserPoints;
+      opponentPoints = winnerPoints;
+    } else if (outcome === "draw" || outcome === "tie") {
       teamRow.draws += 1;
       opponentRow.draws += 1;
-      teamRow.points += 1;
-      opponentRow.points += 1;
+      teamPoints = 1;
+      opponentPoints = 1;
     }
+
+    teamRow.points += teamPoints;
+    opponentRow.points += opponentPoints;
+    teamRow.details.push({
+      matchId: result["Match ID"],
+      opponent,
+      points: teamPoints,
+      team,
+    });
+    opponentRow.details.push({
+      matchId: result["Match ID"],
+      opponent: team,
+      points: opponentPoints,
+      team: opponent,
+    });
   }
 
   return rankRows(
@@ -2059,6 +2139,7 @@ function getNationsLeagueRows(results) {
 function getNationStanding(nations, name) {
   if (!nations.has(name)) {
     nations.set(name, {
+      details: [],
       draws: 0,
       losses: 0,
       matches: 0,
@@ -2153,6 +2234,76 @@ function toggleManagerResultRow(managerRow) {
   managerRow.setAttribute("aria-expanded", "true");
   managerRow.classList.add("is-manager-expanded");
   detailRow.hidden = false;
+}
+
+function toggleStandingResultRow(container, standingRow) {
+  const isExpanded = standingRow.getAttribute("aria-expanded") === "true";
+  const detailRow = standingRow.nextElementSibling;
+
+  container.querySelectorAll("[data-standing-result-row]").forEach((row) => {
+    row.setAttribute("aria-expanded", "false");
+    row.classList.remove("is-standing-expanded");
+
+    const rowDetail = row.nextElementSibling;
+    if (rowDetail?.classList.contains("standing-result-detail-row")) {
+      rowDetail.hidden = true;
+    }
+  });
+
+  if (isExpanded || !detailRow?.classList.contains("standing-result-detail-row")) {
+    return;
+  }
+
+  standingRow.setAttribute("aria-expanded", "true");
+  standingRow.classList.add("is-standing-expanded");
+  detailRow.hidden = false;
+}
+
+function renderStandingResultDetails(details = []) {
+  const pointDetails = details.filter((detail) => Number(detail.points) > 0);
+
+  if (pointDetails.length === 0) {
+    return `<div class="manager-detail-empty">No point details found.</div>`;
+  }
+
+  return `
+    <div class="standing-result-detail-panel">
+      <ul class="standing-result-detail-list">
+        ${pointDetails.map((detail) => {
+          return `
+            <li>
+              <span>${escapeHtml(getStandingResultMatchLabel(detail))}</span>
+              <strong>${escapeHtml(formatPoints(detail.points))}</strong>
+            </li>
+          `;
+        }).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function getStandingResultMatchLabel(detail) {
+  const match = getMatchById(detail.matchId);
+
+  if (match) {
+    return `${match.Home} v ${match.Away}`;
+  }
+
+  if (detail.team && detail.opponent) {
+    return `${detail.team} v ${detail.opponent}`;
+  }
+
+  return detail.matchId ? `Match ${detail.matchId}` : "Match";
+}
+
+function getMatchById(matchId) {
+  const normalizedId = String(matchId ?? "").trim();
+
+  if (!normalizedId || !siteData.matches) {
+    return null;
+  }
+
+  return siteData.matches.find((match) => String(match.Id ?? match.ID ?? match.id ?? "").trim() === normalizedId) ?? null;
 }
 
 function renderManagerDraftDetails(manager) {

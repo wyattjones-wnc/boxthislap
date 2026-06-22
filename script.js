@@ -51,6 +51,7 @@ const fantasyOfficeMovieSort = {
 };
 let formulaOne2025ResultsMode = "yearly";
 const resultsPage = document.querySelector("#results");
+const updatedTime = document.querySelector("[data-updated-time]");
 const dynamicResultImages = document.querySelector("#dynamic-result-images");
 const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
@@ -1536,7 +1537,7 @@ function parseRoundOptions(csvText) {
       break;
     }
 
-    if (!name || !id) {
+    if (!name || !id || normalizeLookupName(name) === "updated") {
       continue;
     }
 
@@ -1544,6 +1545,45 @@ function parseRoundOptions(csvText) {
   }
 
   return rounds;
+}
+
+function parseUpdatedTime(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerRow = rows.find((row) => {
+    return row.some((value, index) => normalizeLookupName(value) === "round" && normalizeLookupName(row[index + 1]) === "id");
+  });
+
+  if (!headerRow) {
+    return "";
+  }
+
+  const roundColumn = headerRow.findIndex((value, index) => {
+    return normalizeLookupName(value) === "round" && normalizeLookupName(headerRow[index + 1]) === "id";
+  });
+  const startIndex = rows.indexOf(headerRow) + 1;
+
+  for (const row of rows.slice(startIndex)) {
+    const name = row[roundColumn]?.trim() ?? "";
+    const id = row[roundColumn + 1]?.trim() ?? "";
+
+    if (!name && !id) {
+      break;
+    }
+
+    if (normalizeLookupName(name) === "updated") {
+      return id;
+    }
+  }
+
+  return "";
+}
+
+function renderUpdatedTime(value) {
+  if (!updatedTime || !value) {
+    return;
+  }
+
+  updatedTime.textContent = `Updated ${value}`;
 }
 
 function parseResultImages(csvText) {
@@ -1920,13 +1960,16 @@ loadSheet("matchResults")
 loadSheetText("data")
   .then((csvText) => {
     siteData.rounds = parseRoundOptions(csvText);
+    siteData.updatedTime = parseUpdatedTime(csvText);
     siteData.resultImages = parseResultImages(csvText);
+    renderUpdatedTime(siteData.updatedTime);
     renderStandingsRoundOptions(siteData.rounds);
     renderResultImages(siteData.resultImages);
     renderFilteredStandings();
     console.info("Box This Lap data sheet loaded", {
       resultImages: siteData.resultImages,
       rounds: siteData.rounds,
+      updatedTime: siteData.updatedTime,
     });
   })
   .catch((error) => {

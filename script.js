@@ -1073,15 +1073,24 @@ function renderFormulaOneWeeklyWildcard(entry) {
       <span>Wildcard</span>
       <strong>${escapeHtml(entry.picks.wildcard)}</strong>
       <div class="formula-one-weekly-wildcard-results">
-        <em>${escapeHtml(`Q ${formatFormulaOneWeeklyPickResult(entry.positions.wildcardQualifying, entry.points.wildcardQualifying)}`)}</em>
-        <em>${escapeHtml(`R ${formatFormulaOneWeeklyPickResult(entry.positions.wildcardRace, entry.points.wildcardRace)}`)}</em>
+        ${renderFormulaOneWeeklyWildcardResult("Q", entry.positions.wildcardQualifying, entry.points.wildcardQualifying)}
+        ${renderFormulaOneWeeklyWildcardResult("R", entry.positions.wildcardRace, entry.points.wildcardRace)}
       </div>
     </div>
   `;
 }
 
+function renderFormulaOneWeeklyWildcardResult(label, position, points) {
+  return `
+    <em>
+      <span>${escapeHtml(label)}</span>
+      <b>${escapeHtml(formatFormulaOneWeeklyPickResult(position, points))}</b>
+    </em>
+  `;
+}
+
 function formatFormulaOneWeeklyPickResult(position, points) {
-  return `${formatFormulaOnePosition(position)} - ${formatPoints(points)} pts`;
+  return `${formatFormulaOnePosition(position)} · ${formatPoints(points)} pts`;
 }
 
 function formatFormulaOnePosition(position) {

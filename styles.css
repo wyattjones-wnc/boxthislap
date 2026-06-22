@@ -733,7 +733,25 @@ main {
 
 .formula-one-weekly-wildcard-results {
   display: grid;
-  gap: 2px;
+  gap: 5px;
+}
+
+.formula-one-weekly-wildcard-results em {
+  align-items: baseline;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 16px minmax(0, 1fr);
+}
+
+.formula-one-weekly-wildcard-results span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.formula-one-weekly-wildcard-results b {
+  color: var(--accent-dark);
+  font-size: 0.84rem;
+  font-weight: 900;
 }
 
 .office-draft-grid,

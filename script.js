@@ -2709,7 +2709,7 @@ function filterRowsBySelectedRound(rows) {
     return rows;
   }
 
-  return rows.filter((row) => roundIds.has(String(row["Round ID"] ?? "").trim()));
+  return rows.filter((row) => roundIds.has(getStandingSourceRoundId(row)));
 }
 
 function getSelectedStandingRoundIds() {
@@ -2728,6 +2728,26 @@ function getSelectedStandingRoundIds() {
 
 function isBestStandingPerformanceSelected() {
   return standingsRoundSelect?.value === BEST_STANDING_PERFORMANCE_VALUE;
+}
+
+function getStandingSourceRoundId(row) {
+  const explicitRoundId = String(row["Round ID"] ?? "").trim();
+
+  if (explicitRoundId) {
+    return explicitRoundId;
+  }
+
+  return inferGroupRoundIdFromMatchId(row["Match ID"]);
+}
+
+function inferGroupRoundIdFromMatchId(matchId) {
+  const numericMatchId = Number(String(matchId ?? "").trim());
+
+  if (!Number.isFinite(numericMatchId) || numericMatchId < 1 || numericMatchId > 72) {
+    return "";
+  }
+
+  return String(Math.ceil(numericMatchId / 24));
 }
 
 function getNationsLeagueRows(results) {

@@ -69,6 +69,7 @@ const siteData = {};
 window.boxThisLapData = siteData;
 
 const THEME_STORAGE_KEY = "boxThisLapTheme";
+const BEST_STANDING_PERFORMANCE_VALUE = "best";
 
 const MANAGER_COLORS = {
   jonathan: "#000000",
@@ -1736,7 +1737,10 @@ function renderStandingsRoundOptions(rounds) {
     return;
   }
 
-  const options = [`<option value="">All</option>`];
+  const options = [
+    `<option value="">All</option>`,
+    `<option value="${BEST_STANDING_PERFORMANCE_VALUE}">Best Game</option>`,
+  ];
 
   for (const round of rounds) {
     options.push(`<option value="${escapeHtml(round.id)}">${escapeHtml(round.name)}</option>`);
@@ -2515,7 +2519,10 @@ function renderPlayerChampionship(performances) {
     return;
   }
 
-  const rows = filterStandingRowsByGameScope(getPlayerChampionshipRows(filterRowsBySelectedRound(performances)), getPlayerManager);
+  const sourceRows = isBestStandingPerformanceSelected()
+    ? getBestPlayerChampionshipRows(performances)
+    : getPlayerChampionshipRows(filterRowsBySelectedRound(performances));
+  const rows = filterStandingRowsByGameScope(sourceRows, getPlayerManager);
 
   if (rows.length === 0) {
     playerChampionshipRows.innerHTML = `<tr><td class="table-message" colspan="5">No player performance data found.</td></tr>`;
@@ -2594,6 +2601,30 @@ function getPlayerChampionshipRows(performances) {
   );
 }
 
+function getBestPlayerChampionshipRows(performances) {
+  return rankRows(
+    getPlayerChampionshipRows(performances)
+      .map((player) => {
+        const bestDetail = getBestStandingDetail(player.details);
+
+        return {
+          ...player,
+          details: bestDetail ? [bestDetail] : [],
+          matches: bestDetail ? 1 : 0,
+          points: bestDetail?.points ?? 0,
+        };
+      })
+      .filter((player) => player.points > 0)
+      .sort((firstPlayer, secondPlayer) => {
+        if (secondPlayer.points !== firstPlayer.points) {
+          return secondPlayer.points - firstPlayer.points;
+        }
+
+        return firstPlayer.name.localeCompare(secondPlayer.name);
+      })
+  );
+}
+
 function renderPlayerChampionshipError(error) {
   if (!playerChampionshipRows) {
     return;
@@ -2624,7 +2655,10 @@ function renderNationsLeague(results) {
     return;
   }
 
-  const rows = filterStandingRowsByGameScope(getNationsLeagueRows(filterRowsBySelectedRound(results)), (nation) => getNationManager(nation.name));
+  const sourceRows = isBestStandingPerformanceSelected()
+    ? getBestNationsLeagueRows(results)
+    : getNationsLeagueRows(filterRowsBySelectedRound(results));
+  const rows = filterStandingRowsByGameScope(sourceRows, (nation) => getNationManager(nation.name));
 
   if (rows.length === 0) {
     nationsLeagueRows.innerHTML = `<tr><td class="table-message" colspan="5">No Nations League results found.</td></tr>`;
@@ -2639,7 +2673,7 @@ function renderNationsLeague(results) {
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${nation.rank}</td>
         <td data-label="Nation">${escapeHtml(nation.name)}</td>
-        <td data-label="Record / Manager">${renderStandingDetail(formatRecord(nation), manager)}</td>
+        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>
       </tr>
@@ -2681,7 +2715,7 @@ function filterRowsBySelectedRound(rows) {
 function getSelectedStandingRoundIds() {
   const value = standingsRoundSelect?.value || "";
 
-  if (!value) {
+  if (!value || value === BEST_STANDING_PERFORMANCE_VALUE) {
     return null;
   }
 
@@ -2690,6 +2724,10 @@ function getSelectedStandingRoundIds() {
   }
 
   return new Set([value]);
+}
+
+function isBestStandingPerformanceSelected() {
+  return standingsRoundSelect?.value === BEST_STANDING_PERFORMANCE_VALUE;
 }
 
 function getNationsLeagueRows(results) {
@@ -2752,6 +2790,46 @@ function getNationsLeagueRows(results) {
       .filter((nation) => nation.matches > 0 && nation.points > 0)
       .sort(compareNationStandings)
   );
+}
+
+function getBestNationsLeagueRows(results) {
+  return rankRows(
+    getNationsLeagueRows(results)
+      .map((nation) => {
+        const bestDetail = getBestStandingDetail(nation.details);
+
+        return {
+          ...nation,
+          details: bestDetail ? [bestDetail] : [],
+          draws: 0,
+          losses: 0,
+          matches: bestDetail ? 1 : 0,
+          points: bestDetail?.points ?? 0,
+          recordLabel: "Best Game",
+          wins: 0,
+        };
+      })
+      .filter((nation) => nation.points > 0)
+      .sort((firstNation, secondNation) => {
+        if (secondNation.points !== firstNation.points) {
+          return secondNation.points - firstNation.points;
+        }
+
+        return firstNation.name.localeCompare(secondNation.name);
+      })
+  );
+}
+
+function getBestStandingDetail(details = []) {
+  return details
+    .filter((detail) => Number(detail.points) > 0)
+    .sort((firstDetail, secondDetail) => {
+      if (Number(secondDetail.points) !== Number(firstDetail.points)) {
+        return Number(secondDetail.points) - Number(firstDetail.points);
+      }
+
+      return String(firstDetail.matchId ?? "").localeCompare(String(secondDetail.matchId ?? ""), undefined, { numeric: true });
+    })[0];
 }
 
 function getNationStanding(nations, name) {

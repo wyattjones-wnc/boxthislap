@@ -2391,7 +2391,7 @@ function getMatchDraftPoints(match, draftName) {
     return playerPoints;
   }
 
-  return getNationMatchPoints(matchId, draftName);
+  return getNationMatchPoints(match, draftName);
 }
 
 function getPlayerMatchPoints(matchId, draftName) {
@@ -2413,19 +2413,16 @@ function getPlayerMatchPoints(matchId, draftName) {
   return Number.isFinite(points) ? points : null;
 }
 
-function getNationMatchPoints(matchId, draftName) {
-  if (!matchId || !siteData.matchResults) {
+function getNationMatchPoints(match, draftName) {
+  const matchId = getMatchId(match);
+
+  if (!siteData.matchResults) {
     return null;
   }
 
   const draftKey = normalizeLookupName(normalizeNationName(draftName));
-  const result = siteData.matchResults.find((row) => {
-    return String(row["Match ID"] ?? "").trim() === matchId &&
-      (
-        normalizeLookupName(normalizeNationName(row.Team)) === draftKey ||
-        normalizeLookupName(normalizeNationName(row.Opponent)) === draftKey
-      );
-  });
+  const result = siteData.matchResults.find((row) => isNationResultMatchId(row, matchId, draftKey)) ??
+    siteData.matchResults.find((row) => isNationResultMatchTeams(row, match, draftKey));
 
   if (!result) {
     return null;
@@ -2433,6 +2430,34 @@ function getNationMatchPoints(matchId, draftName) {
 
   const points = getNationPointsForResult(result, draftName);
   return Number.isFinite(points) ? points : null;
+}
+
+function isNationResultMatchId(result, matchId, draftKey) {
+  return Boolean(matchId) &&
+    String(result["Match ID"] ?? "").trim() === matchId &&
+    isNationResultForDraft(result, draftKey);
+}
+
+function isNationResultMatchTeams(result, match, draftKey) {
+  if (!isNationResultForDraft(result, draftKey)) {
+    return false;
+  }
+
+  const homeKey = normalizeLookupName(normalizeNationName(getField(match, "Home", "home")));
+  const awayKey = normalizeLookupName(normalizeNationName(getField(match, "Away", "away")));
+  const teamKey = normalizeLookupName(normalizeNationName(result.Team));
+  const opponentKey = normalizeLookupName(normalizeNationName(result.Opponent));
+
+  return Boolean(homeKey && awayKey && teamKey && opponentKey) &&
+    (
+      (teamKey === homeKey && opponentKey === awayKey) ||
+      (teamKey === awayKey && opponentKey === homeKey)
+    );
+}
+
+function isNationResultForDraft(result, draftKey) {
+  return normalizeLookupName(normalizeNationName(result.Team)) === draftKey ||
+    normalizeLookupName(normalizeNationName(result.Opponent)) === draftKey;
 }
 
 function getNationPointsForResult(result, nationName) {

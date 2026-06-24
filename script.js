@@ -1515,24 +1515,18 @@ function parseCsvMatrix(text) {
 }
 
 function parseRoundOptions(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerRow = rows.find((row) => {
-    return row.some((value, index) => normalizeLookupName(value) === "round" && normalizeLookupName(row[index + 1]) === "id");
-  });
+  const table = getRoundsTable(csvText);
 
-  if (!headerRow) {
+  if (!table) {
     return [];
   }
 
-  const roundColumn = headerRow.findIndex((value, index) => {
-    return normalizeLookupName(value) === "round" && normalizeLookupName(headerRow[index + 1]) === "id";
-  });
-  const startIndex = rows.indexOf(headerRow) + 1;
   const rounds = [];
 
-  for (const row of rows.slice(startIndex)) {
-    const name = row[roundColumn]?.trim() ?? "";
-    const id = row[roundColumn + 1]?.trim() ?? "";
+  for (const row of table.rows) {
+    const name = row[table.columns.round]?.trim() ?? "";
+    const id = row[table.columns.id]?.trim() ?? "";
+    const prettyName = row[table.columns.prettyName]?.trim() ?? "";
 
     if (!name && !id) {
       break;
@@ -1542,30 +1536,22 @@ function parseRoundOptions(csvText) {
       continue;
     }
 
-    rounds.push({ id, name });
+    rounds.push({ id, name, prettyName: prettyName || name });
   }
 
   return rounds;
 }
 
 function parseUpdatedTime(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerRow = rows.find((row) => {
-    return row.some((value, index) => normalizeLookupName(value) === "round" && normalizeLookupName(row[index + 1]) === "id");
-  });
+  const table = getRoundsTable(csvText);
 
-  if (!headerRow) {
+  if (!table) {
     return "";
   }
 
-  const roundColumn = headerRow.findIndex((value, index) => {
-    return normalizeLookupName(value) === "round" && normalizeLookupName(headerRow[index + 1]) === "id";
-  });
-  const startIndex = rows.indexOf(headerRow) + 1;
-
-  for (const row of rows.slice(startIndex)) {
-    const name = row[roundColumn]?.trim() ?? "";
-    const id = row[roundColumn + 1]?.trim() ?? "";
+  for (const row of table.rows) {
+    const name = row[table.columns.round]?.trim() ?? "";
+    const id = row[table.columns.id]?.trim() ?? "";
 
     if (!name && !id) {
       break;
@@ -1577,6 +1563,32 @@ function parseUpdatedTime(csvText) {
   }
 
   return "";
+}
+
+function getRoundsTable(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerRow = rows.find((row) => {
+    return row.some((value, index) => normalizeLookupName(value) === "round" && normalizeLookupName(row[index + 1]) === "id");
+  });
+
+  if (!headerRow) {
+    return null;
+  }
+
+  const roundColumn = headerRow.findIndex((value, index) => {
+    return normalizeLookupName(value) === "round" && normalizeLookupName(headerRow[index + 1]) === "id";
+  });
+  const prettyNameColumn = headerRow.findIndex((value) => normalizeLookupName(value) === "pretty name");
+  const startIndex = rows.indexOf(headerRow) + 1;
+
+  return {
+    columns: {
+      id: roundColumn + 1,
+      prettyName: prettyNameColumn,
+      round: roundColumn,
+    },
+    rows: rows.slice(startIndex),
+  };
 }
 
 function renderUpdatedTime(value) {
@@ -1715,6 +1727,7 @@ function parseResultImages(csvText) {
       homeScore,
       imageUrl,
       matchId: row[columns["match id"]]?.trim() ?? "",
+      roundId: row[columns["round id"]]?.trim() ?? "",
     });
   }
 
@@ -1765,22 +1778,64 @@ function renderResultImages(resultImages) {
   }
 
   dynamicResultImages.hidden = false;
-  dynamicResultImages.innerHTML = resultImages.map((result) => {
-    const resultText = formatResultImageText(result);
+  dynamicResultImages.innerHTML = renderResultImageGroups(resultImages);
+}
 
-    return `
-      <article class="result-card" data-result-card>
-        <img
-          class="result-image"
-          src="${escapeHtml(result.imageUrl)}"
-          alt="${escapeHtml(`${resultText} result`)}"
-        >
-        <button class="result-overlay" type="button" data-result-toggle aria-label="${escapeHtml(`Show ${resultText} result`)}">
-          ${escapeHtml(formatResultOverlayText(result))}
-        </button>
-      </article>
-    `;
+function renderResultImageGroups(resultImages) {
+  let previousRoundId = "";
+
+  return resultImages.map((result) => {
+    const roundId = getResultImageRoundId(result);
+    const divider = previousRoundId && roundId && roundId !== previousRoundId
+      ? renderResultRoundDivider(roundId)
+      : "";
+
+    previousRoundId = roundId || previousRoundId;
+
+    return `${divider}${renderResultImageCard(result)}`;
   }).join("");
+}
+
+function renderResultRoundDivider(roundId) {
+  const label = getRoundPrettyName(roundId);
+
+  if (!label) {
+    return "";
+  }
+
+  return `
+    <div class="results-matchday-wrapper">
+      <h2 class="results-matchday-heading">${escapeHtml(label)}</h2>
+      <hr class="simple-divider">
+    </div>
+  `;
+}
+
+function renderResultImageCard(result) {
+  const resultText = formatResultImageText(result);
+
+  return `
+    <article class="result-card" data-result-card>
+      <img
+        class="result-image"
+        src="${escapeHtml(result.imageUrl)}"
+        alt="${escapeHtml(`${resultText} result`)}"
+      >
+      <button class="result-overlay" type="button" data-result-toggle aria-label="${escapeHtml(`Show ${resultText} result`)}">
+        ${escapeHtml(formatResultOverlayText(result))}
+      </button>
+    </article>
+  `;
+}
+
+function getResultImageRoundId(result) {
+  return String(result.roundId || inferGroupRoundIdFromMatchId(result.matchId) || "").trim();
+}
+
+function getRoundPrettyName(roundId) {
+  const round = siteData.rounds?.find((entry) => String(entry.id) === String(roundId));
+
+  return round?.prettyName || round?.name || "";
 }
 
 function formatResultImageText(result) {

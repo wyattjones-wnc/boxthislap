@@ -212,7 +212,7 @@ main {
 .simple-divider {
   border: none;
   border-top: 2px solid #333;
-  margin: 5px 0px 25px 0px
+  margin: 5px 0px 25px 0px;
   width: 100%;
 }
 
@@ -987,8 +987,10 @@ main {
 }
 
 .results-matchday-wrapper {
+  grid-column: 1 / -1;
   margin: 50px auto 25px auto;
   text-align: center;
+  width: 100%;
 }
 
 .results-matchday-heading {

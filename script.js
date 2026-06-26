@@ -50,6 +50,7 @@ const fantasyOfficeMovieSort = {
   key: "points",
 };
 let formulaOne2025ResultsMode = "yearly";
+let bracketPicksFallback = {};
 const resultsPage = document.querySelector("#results");
 const updatedTime = document.querySelector("[data-updated-time]");
 const dynamicResultImages = document.querySelector("#dynamic-result-images");
@@ -57,6 +58,8 @@ const todayMatchList = document.querySelector("#today-match-list");
 const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
 const matchdaySelect = document.querySelector("#matchday-select");
 const matchdayMatchList = document.querySelector("#matchday-match-list");
+const bracketView = document.querySelector("#bracket-view");
+const bracketClearPicks = document.querySelector("#bracket-clear-picks");
 const playerChampionshipRows = document.querySelector("#player-championship-rows");
 const nationsLeagueRows = document.querySelector("#nations-league-rows");
 const managerResultsRows = document.querySelector("#manager-results-rows");
@@ -71,6 +74,15 @@ window.boxThisLapData = siteData;
 
 const THEME_STORAGE_KEY = "boxThisLapTheme";
 const BEST_STANDING_PERFORMANCE_VALUE = "best";
+const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
+const BRACKET_ROUNDS = [
+  { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
+  { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
+  { id: "6", label: "Round 6", matchIds: [97, 98, 99, 100] },
+  { id: "7", label: "Round 7", matchIds: [101, 102] },
+  { id: "8", label: "Round 8", matchIds: [103] },
+  { id: "9", label: "Round 9", matchIds: [104] },
+];
 const NATION_POT_RANKS = {
   a: 1,
   b: 2,
@@ -2092,6 +2104,20 @@ nationTestScoringToggle?.addEventListener("change", () => {
   renderCurrentMatchLists();
 });
 
+bracketView?.addEventListener("click", (event) => {
+  const pickButton = event.target.closest("[data-bracket-pick]");
+
+  if (!pickButton || pickButton.disabled) {
+    return;
+  }
+
+  setBracketPick(pickButton.getAttribute("data-match-id"), pickButton.getAttribute("data-side"));
+});
+
+bracketClearPicks?.addEventListener("click", () => {
+  clearBracketPicks();
+});
+
 function renderFilteredStandings() {
   if (siteData.playerPerformances) {
     renderPlayerChampionship(siteData.playerPerformances);
@@ -2234,6 +2260,7 @@ loadMatches()
     siteData.matches = matches;
     renderCurrentMatchLists();
     renderMatchdayPicker(matches);
+    renderBracket(matches);
     renderFilteredStandings();
     console.info("Box This Lap match data loaded", matches);
   })
@@ -2242,6 +2269,7 @@ loadMatches()
     renderMatchError(todayMatchList, error);
     renderMatchError(tomorrowMatchList, error);
     renderMatchError(matchdayMatchList, error);
+    renderBracketError(error);
     console.error("Box This Lap match data failed to load", error);
   });
 
@@ -2410,6 +2438,219 @@ function renderMatchesForDate(container, matches, dateKey) {
   }
 
   container.innerHTML = filteredMatches.map(renderMatchCard).join("");
+}
+
+function renderBracket(matches = siteData.matches) {
+  if (!bracketView) {
+    return;
+  }
+
+  if (!matches || matches.length === 0) {
+    bracketView.innerHTML = `
+      <article class="match-card">
+        <div class="match-header">
+          <h2>No bracket data loaded</h2>
+          <p>Knockout rounds</p>
+        </div>
+      </article>
+    `;
+    return;
+  }
+
+  const matchById = getMatchesById(matches);
+  const picks = getBracketPicks();
+
+  bracketView.innerHTML = `
+    <div class="bracket-grid">
+      ${BRACKET_ROUNDS.map((round) => renderBracketRound(round, matchById, picks)).join("")}
+    </div>
+  `;
+}
+
+function renderBracketRound(round, matchById, picks) {
+  const matches = round.matchIds.map((matchId) => matchById.get(String(matchId))).filter(Boolean);
+
+  return `
+    <section class="bracket-round" aria-label="${escapeHtml(round.label)}">
+      <h2>${escapeHtml(round.label)}</h2>
+      <div class="bracket-round-matches">
+        ${matches.map((match) => renderBracketMatch(match, matchById, picks)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderBracketMatch(match, matchById, picks) {
+  const matchId = getMatchId(match);
+  const selectedSide = picks[matchId] || "";
+  const home = resolveBracketEntrant(getField(match, "Home", "home"), matchById, picks);
+  const away = resolveBracketEntrant(getField(match, "Away", "away"), matchById, picks);
+  const date = formatMatchdayLabel(getMatchDate(match));
+  const time = getField(match, "Time", "time");
+
+  return `
+    <article class="bracket-match">
+      <header>
+        <strong>M${escapeHtml(matchId)}</strong>
+        <span>${escapeHtml([date, time].filter(Boolean).join(" · "))}</span>
+      </header>
+      <div class="bracket-team-list">
+        ${renderBracketTeamButton(matchId, "home", home, selectedSide)}
+        ${renderBracketTeamButton(matchId, "away", away, selectedSide)}
+      </div>
+    </article>
+  `;
+}
+
+function renderBracketTeamButton(matchId, side, entrant, selectedSide) {
+  const isSelected = selectedSide === side;
+  const disabledAttribute = entrant.isPending ? " disabled" : "";
+  const selectedAttribute = isSelected ? " aria-pressed=\"true\"" : " aria-pressed=\"false\"";
+  const selectedClass = isSelected ? " is-selected" : "";
+  const pendingClass = entrant.isPending ? " is-pending" : "";
+
+  return `
+    <button
+      class="bracket-team${selectedClass}${pendingClass}"
+      type="button"
+      data-bracket-pick
+      data-match-id="${escapeHtml(matchId)}"
+      data-side="${escapeHtml(side)}"
+      ${selectedAttribute}${disabledAttribute}
+    >
+      <span>${escapeHtml(entrant.label)}</span>
+    </button>
+  `;
+}
+
+function resolveBracketEntrant(value, matchById, picks, seen = new Set()) {
+  const rawValue = String(value ?? "").trim();
+
+  if (!rawValue) {
+    return { isPending: true, label: "TBD" };
+  }
+
+  const reference = parseBracketReference(rawValue);
+
+  if (!reference) {
+    return { isPending: false, label: rawValue };
+  }
+
+  const matchId = String(reference.matchId);
+  const sourceMatch = matchById.get(matchId);
+
+  if (!sourceMatch || seen.has(matchId)) {
+    return { isPending: true, label: rawValue };
+  }
+
+  const selectedSide = picks[matchId];
+
+  if (!selectedSide) {
+    return { isPending: true, label: rawValue };
+  }
+
+  const side = reference.type === "winner"
+    ? selectedSide
+    : selectedSide === "home" ? "away" : "home";
+  const nextSeen = new Set(seen);
+  nextSeen.add(matchId);
+
+  return resolveBracketEntrant(getField(sourceMatch, side === "home" ? "Home" : "Away", side), matchById, picks, nextSeen);
+}
+
+function parseBracketReference(value) {
+  const normalizedValue = String(value ?? "").trim();
+  const explicitReference = normalizedValue.match(/^(Winner|Loser)\s*M?(\d+)$/i);
+
+  if (explicitReference) {
+    return {
+      matchId: explicitReference[2],
+      type: explicitReference[1].toLowerCase() === "loser" ? "loser" : "winner",
+    };
+  }
+
+  const secondPlaceReference = normalizedValue.match(/^M?(\d+)\s*2$/i);
+
+  if (secondPlaceReference) {
+    return {
+      matchId: secondPlaceReference[1],
+      type: "loser",
+    };
+  }
+
+  return null;
+}
+
+function getMatchesById(matches) {
+  const matchById = new Map();
+
+  for (const match of matches) {
+    const matchId = getMatchId(match);
+
+    if (matchId) {
+      matchById.set(matchId, match);
+    }
+  }
+
+  return matchById;
+}
+
+function getBracketPicks() {
+  try {
+    const picks = JSON.parse(localStorage.getItem(BRACKET_STORAGE_KEY) || "{}");
+    return picks && typeof picks === "object" ? picks : {};
+  } catch {
+    return bracketPicksFallback;
+  }
+}
+
+function setBracketPick(matchId, side) {
+  if (!matchId || !["home", "away"].includes(side)) {
+    return;
+  }
+
+  const picks = getBracketPicks();
+
+  picks[String(matchId)] = side;
+  saveBracketPicks(picks);
+  renderBracket();
+}
+
+function clearBracketPicks() {
+  bracketPicksFallback = {};
+
+  try {
+    localStorage.removeItem(BRACKET_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures; in-memory picks have already been cleared.
+  }
+
+  renderBracket();
+}
+
+function saveBracketPicks(picks) {
+  bracketPicksFallback = { ...picks };
+
+  try {
+    localStorage.setItem(BRACKET_STORAGE_KEY, JSON.stringify(picks));
+  } catch {
+    // Ignore storage failures; picks simply will not persist across refreshes.
+  }
+}
+
+function renderBracketError(error) {
+  if (!bracketView) {
+    return;
+  }
+
+  bracketView.innerHTML = `
+    <article class="match-card">
+      <div class="match-header">
+        <h2>Unable to load bracket</h2>
+        <p>${escapeHtml(error.message)}</p>
+      </div>
+    </article>
+  `;
 }
 
 function renderMatchCard(match) {

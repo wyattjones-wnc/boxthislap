@@ -69,6 +69,7 @@
           <a href="#tomorrow" data-page-link="tomorrow" role="tab">Tomorrow</a>
           <a href="#results" data-page-link="results" role="tab">Results</a>
           <a href="#standings" data-page-link="standings" role="tab">Standings</a>
+          <a href="#bracket" data-page-link="bracket" role="tab">Bracket</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
         <div class="nav-links" data-nav-scope="formula-one-2024" role="tablist" aria-label="Formula 1 sections" hidden>
@@ -280,6 +281,22 @@
             <div class="match-header">
               <h2>Loading matches...</h2>
               <p>Matchday</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" id="bracket" data-page="bracket">
+        <div class="section-heading page-heading-with-action">
+          <h1>Bracket</h1>
+          <button class="action-button secondary-action" id="bracket-clear-picks" type="button">Clear Picks</button>
+        </div>
+
+        <div class="bracket-shell" id="bracket-view">
+          <article class="match-card">
+            <div class="match-header">
+              <h2>Loading bracket...</h2>
+              <p>Knockout rounds</p>
             </div>
           </article>
         </div>
@@ -623,6 +640,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202606260002"></script>
+    <script type="module" src="script.js?v=202606260003"></script>
   </body>
 </html>

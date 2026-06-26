@@ -1593,6 +1593,69 @@ function parseUpdatedTime(csvText) {
   return "";
 }
 
+function parseScheduleMatches(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerIndex = rows.findIndex((row) => {
+    const normalizedHeaders = row.map(normalizeLookupName);
+
+    return normalizedHeaders.includes("date") &&
+      normalizedHeaders.includes("match #") &&
+      normalizedHeaders.includes("home") &&
+      normalizedHeaders.includes("away");
+  });
+
+  if (headerIndex === -1) {
+    return [];
+  }
+
+  const headerRow = rows[headerIndex];
+  const columns = Object.fromEntries(
+    headerRow.map((header, index) => [normalizeLookupName(header), index])
+  );
+  const matches = [];
+
+  for (const row of rows.slice(headerIndex + 1)) {
+    const isBlankRow = row.every((value) => !String(value ?? "").trim());
+
+    if (isBlankRow) {
+      break;
+    }
+
+    const id = row[columns["match #"]]?.trim() ?? "";
+    const home = row[columns.home]?.trim() ?? "";
+    const away = row[columns.away]?.trim() ?? "";
+
+    if (!id || !home || !away) {
+      continue;
+    }
+
+    matches.push({
+      Away: away,
+      Date: formatScheduleDate(row[columns.date]?.trim() ?? ""),
+      Home: home,
+      Id: id,
+      Time: row[columns.time]?.trim() ?? "",
+    });
+  }
+
+  return matches;
+}
+
+function formatScheduleDate(value) {
+  const text = String(value ?? "").trim();
+  const slashMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+  if (!slashMatch) {
+    return text;
+  }
+
+  const year = Number(slashMatch[3]) < 100 ? 2000 + Number(slashMatch[3]) : Number(slashMatch[3]);
+  const month = String(Number(slashMatch[1])).padStart(2, "0");
+  const day = String(Number(slashMatch[2])).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function getRoundsTable(csvText) {
   const rows = parseCsvMatrix(csvText);
   const headerRow = rows.find((row) => {
@@ -2207,17 +2270,21 @@ loadSheetText("data")
     siteData.rounds = parseRoundOptions(csvText);
     siteData.updatedTime = parseUpdatedTime(csvText);
     siteData.resultImages = parseResultImages(csvText);
+    siteData.bracketMatches = parseScheduleMatches(csvText);
     renderUpdatedTime(siteData.updatedTime);
     renderStandingsRoundOptions(siteData.rounds);
     renderResultImages(siteData.resultImages);
+    renderBracket(siteData.bracketMatches);
     renderFilteredStandings();
     console.info("Box This Lap data sheet loaded", {
+      bracketMatches: siteData.bracketMatches,
       resultImages: siteData.resultImages,
       rounds: siteData.rounds,
       updatedTime: siteData.updatedTime,
     });
   })
   .catch((error) => {
+    renderBracketError(error);
     console.error("Box This Lap data sheet failed to load", error);
   });
 
@@ -2260,7 +2327,6 @@ loadMatches()
     siteData.matches = matches;
     renderCurrentMatchLists();
     renderMatchdayPicker(matches);
-    renderBracket(matches);
     renderFilteredStandings();
     console.info("Box This Lap match data loaded", matches);
   })
@@ -2269,7 +2335,6 @@ loadMatches()
     renderMatchError(todayMatchList, error);
     renderMatchError(tomorrowMatchList, error);
     renderMatchError(matchdayMatchList, error);
-    renderBracketError(error);
     console.error("Box This Lap match data failed to load", error);
   });
 
@@ -2440,7 +2505,7 @@ function renderMatchesForDate(container, matches, dateKey) {
   container.innerHTML = filteredMatches.map(renderMatchCard).join("");
 }
 
-function renderBracket(matches = siteData.matches) {
+function renderBracket(matches = siteData.bracketMatches) {
   if (!bracketView) {
     return;
   }
@@ -2450,7 +2515,7 @@ function renderBracket(matches = siteData.matches) {
       <article class="match-card">
         <div class="match-header">
           <h2>No bracket data loaded</h2>
-          <p>Knockout rounds</p>
+          <p>Google Sheets schedule</p>
         </div>
       </article>
     `;
@@ -2469,10 +2534,11 @@ function renderBracket(matches = siteData.matches) {
 
 function renderBracketRound(round, matchById, picks) {
   const matches = round.matchIds.map((matchId) => matchById.get(String(matchId))).filter(Boolean);
+  const label = getRoundPrettyName(round.id) || round.label;
 
   return `
-    <section class="bracket-round" aria-label="${escapeHtml(round.label)}">
-      <h2>${escapeHtml(round.label)}</h2>
+    <section class="bracket-round" aria-label="${escapeHtml(label)}">
+      <h2>${escapeHtml(label)}</h2>
       <div class="bracket-round-matches">
         ${matches.map((match) => renderBracketMatch(match, matchById, picks)).join("")}
       </div>
@@ -2485,14 +2551,14 @@ function renderBracketMatch(match, matchById, picks) {
   const selectedSide = picks[matchId] || "";
   const home = resolveBracketEntrant(getField(match, "Home", "home"), matchById, picks);
   const away = resolveBracketEntrant(getField(match, "Away", "away"), matchById, picks);
-  const date = formatMatchdayLabel(getMatchDate(match));
+  const date = formatBracketMatchDate(getMatchDate(match));
   const time = getField(match, "Time", "time");
 
   return `
     <article class="bracket-match">
       <header>
         <strong>M${escapeHtml(matchId)}</strong>
-        <span>${escapeHtml([date, time].filter(Boolean).join(" · "))}</span>
+        <span>${escapeHtml([date, time].filter(Boolean).join(" | "))}</span>
       </header>
       <div class="bracket-team-list">
         ${renderBracketTeamButton(matchId, "home", home, selectedSide)}
@@ -2500,6 +2566,16 @@ function renderBracketMatch(match, matchById, picks) {
       </div>
     </article>
   `;
+}
+
+function formatBracketMatchDate(dateKey) {
+  const value = String(dateKey ?? "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? formatMatchdayLabel(value) : value;
 }
 
 function renderBracketTeamButton(matchId, side, entrant, selectedSide) {

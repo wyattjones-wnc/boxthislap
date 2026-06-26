@@ -1816,8 +1816,7 @@ function renderResultRoundGroup(group, isOpen) {
   return `
     <details class="result-round" data-result-round${openAttribute}>
       <summary class="result-round-summary" aria-controls="${panelId}">
-        <span>${escapeHtml(label)}</span>
-        <span>${escapeHtml(String(group.results.length))}</span>
+        <span class="result-round-title">${escapeHtml(label)}</span>
       </summary>
       <div class="results-grid result-round-grid" id="${panelId}">
         ${group.results.map((result) => renderResultImageCard(result, isOpen)).join("")}

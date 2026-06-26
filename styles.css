@@ -1023,7 +1023,7 @@ main {
   display: inline-block;
   flex: 0 0 auto;
   height: 10px;
-  transform: rotate(45deg);
+  transform: rotate(225deg);
   transition: transform 160ms ease;
   width: 10px;
 }
@@ -1048,7 +1048,7 @@ main {
 
 .result-round[open] .result-round-summary::before,
 .result-round[open] .result-round-summary::after {
-  transform: rotate(225deg);
+  transform: rotate(45deg);
 }
 
 .result-round-grid {

@@ -986,21 +986,45 @@ main {
   max-width: 760px;
 }
 
-.results-matchday-wrapper {
-  grid-column: 1 / -1;
-  margin: 50px auto 25px auto;
-  text-align: center;
-  width: 100%;
+.result-round {
+  margin: 0 auto 22px;
+  max-width: 760px;
 }
 
-.results-matchday-heading {
-  color: var(--muted);
-  font-size: 1rem;
+.result-round-summary {
+  align-items: center;
+  border-bottom: 2px solid var(--line);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
   font-weight: 900;
-  letter-spacing: 0.06em;
-  margin: 0 auto 0px;
-  max-width: 760px;
+  justify-content: space-between;
+  letter-spacing: 0;
+  list-style: none;
+  padding: 12px 0;
   text-transform: uppercase;
+}
+
+.result-round-summary::-webkit-details-marker {
+  display: none;
+}
+
+.result-round-summary::after {
+  content: "+";
+  color: var(--accent-dark);
+  font-size: 1.25rem;
+}
+
+.result-round[open] .result-round-summary {
+  margin-bottom: 24px;
+}
+
+.result-round[open] .result-round-summary::after {
+  content: "-";
+}
+
+.result-round-grid {
+  margin-bottom: 34px;
 }
 
 .image-card,

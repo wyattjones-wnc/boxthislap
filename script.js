@@ -1782,43 +1782,61 @@ function renderResultImages(resultImages) {
 }
 
 function renderResultImageGroups(resultImages) {
-  let previousRoundId = "";
+  const groups = getResultImageGroups(resultImages);
+  const openRoundId = groups[0]?.roundId ?? "";
 
-  return resultImages.map((result) => {
-    const roundId = getResultImageRoundId(result);
-    const divider = previousRoundId && roundId && roundId !== previousRoundId
-      ? renderResultRoundDivider(roundId)
-      : "";
-
-    previousRoundId = roundId || previousRoundId;
-
-    return `${divider}${renderResultImageCard(result)}`;
-  }).join("");
+  return groups.map((group) => renderResultRoundGroup(group, group.roundId === openRoundId)).join("");
 }
 
-function renderResultRoundDivider(roundId) {
-  const label = getRoundPrettyName(roundId);
+function getResultImageGroups(resultImages) {
+  const groups = [];
+  const groupsByRound = new Map();
 
-  if (!label) {
-    return "";
+  for (const result of resultImages) {
+    const roundId = getResultImageRoundId(result) || "unknown";
+    let group = groupsByRound.get(roundId);
+
+    if (!group) {
+      group = { results: [], roundId };
+      groupsByRound.set(roundId, group);
+      groups.push(group);
+    }
+
+    group.results.push(result);
   }
 
+  return groups;
+}
+
+function renderResultRoundGroup(group, isOpen) {
+  const panelId = `result-round-${escapeHtml(group.roundId)}`;
+  const label = getRoundPrettyName(group.roundId) || "Results";
+  const openAttribute = isOpen ? " open" : "";
+
   return `
-    <div class="results-matchday-wrapper">
-      <h2 class="results-matchday-heading">${escapeHtml(label)}</h2>
-      <hr class="simple-divider">
-    </div>
+    <details class="result-round" data-result-round${openAttribute}>
+      <summary class="result-round-summary" aria-controls="${panelId}">
+        <span>${escapeHtml(label)}</span>
+        <span>${escapeHtml(String(group.results.length))}</span>
+      </summary>
+      <div class="results-grid result-round-grid" id="${panelId}">
+        ${group.results.map((result) => renderResultImageCard(result, isOpen)).join("")}
+      </div>
+    </details>
   `;
 }
 
-function renderResultImageCard(result) {
+function renderResultImageCard(result, shouldLoadImage = true) {
   const resultText = formatResultImageText(result);
+  const sourceAttribute = shouldLoadImage
+    ? `src="${escapeHtml(result.imageUrl)}"`
+    : `data-src="${escapeHtml(result.imageUrl)}"`;
 
   return `
     <article class="result-card" data-result-card>
       <img
         class="result-image"
-        src="${escapeHtml(result.imageUrl)}"
+        ${sourceAttribute}
         alt="${escapeHtml(`${resultText} result`)}"
       >
       <button class="result-overlay" type="button" data-result-toggle aria-label="${escapeHtml(`Show ${resultText} result`)}">
@@ -1919,6 +1937,16 @@ Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
 });
 
 resultsPage?.addEventListener("click", (event) => {
+  const resultRoundSummary = event.target.closest(".result-round-summary");
+
+  if (resultRoundSummary) {
+    const resultRound = resultRoundSummary.closest("[data-result-round]");
+
+    if (resultRound && !resultRound.open) {
+      loadResultRoundImages(resultRound);
+    }
+  }
+
   const toggle = event.target.closest("[data-result-toggle]");
 
   if (!toggle) {
@@ -1939,6 +1967,21 @@ resultsPage?.addEventListener("click", (event) => {
 
   card.classList.toggle("is-result-visible", shouldShow);
 });
+
+resultsPage?.addEventListener("toggle", (event) => {
+  const resultRound = event.target.closest?.("[data-result-round]");
+
+  if (resultRound?.open) {
+    loadResultRoundImages(resultRound);
+  }
+}, true);
+
+function loadResultRoundImages(resultRound) {
+  resultRound.querySelectorAll("img[data-src]").forEach((image) => {
+    image.setAttribute("src", image.getAttribute("data-src"));
+    image.removeAttribute("data-src");
+  });
+}
 
 managerResultsRows?.addEventListener("click", (event) => {
   const managerRow = event.target.closest("[data-manager-result-row]");

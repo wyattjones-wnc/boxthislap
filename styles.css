@@ -315,6 +315,20 @@ main {
   justify-content: space-between;
 }
 
+.results-heading {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.results-heading > div {
+  text-align: center;
+}
+
+.results-heading .action-button:last-child {
+  justify-self: end;
+}
+
 .action-button {
   background: var(--track);
   border: 0;
@@ -356,6 +370,52 @@ main {
   display: grid;
   gap: 14px;
   max-width: 760px;
+}
+
+.draft-panel {
+  display: none;
+  margin-top: 18px;
+}
+
+.draft-panel.is-active {
+  display: block;
+}
+
+.draft-list {
+  display: grid;
+  gap: 12px;
+  margin: 0 auto;
+  max-width: 760px;
+}
+
+.draft-card {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px 16px;
+}
+
+.draft-card h2 {
+  font-size: 1.12rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.draft-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 4px 0 0;
+}
+
+.draft-card strong {
+  color: var(--accent-dark);
+  font-size: 1.1rem;
 }
 
 .league-card {
@@ -1729,6 +1789,25 @@ tr:last-child td {
   .page-heading-with-action {
     align-items: stretch;
     display: grid;
+  }
+
+  .results-heading {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .results-heading > div {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: left;
+  }
+
+  .results-heading .action-button {
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .results-heading .action-button:last-child {
+    justify-self: end;
   }
 
   .standings-heading {

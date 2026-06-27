@@ -60,6 +60,11 @@ const matchdaySelect = document.querySelector("#matchday-select");
 const matchdayMatchList = document.querySelector("#matchday-match-list");
 const bracketView = document.querySelector("#bracket-view");
 const bracketClearPicks = document.querySelector("#bracket-clear-picks");
+const draftViewButtons = document.querySelectorAll("[data-draft-view]");
+const draftPanels = document.querySelectorAll("[data-draft-panel]");
+const draftNationsList = document.querySelector("#draft-nations-list");
+const draftPlayersList = document.querySelector("#draft-players-list");
+const draftPlayerPositionFilter = document.querySelector("#draft-player-position-filter");
 const playerChampionshipRows = document.querySelector("#player-championship-rows");
 const playerPositionFilter = document.querySelector("#player-position-filter");
 const nationsLeagueRows = document.querySelector("#nations-league-rows");
@@ -481,6 +486,20 @@ function showTab(tabName, options = {}) {
   if (options.scrollToTop) {
     scrollToPageTop();
   }
+}
+
+function showDraftView(viewName) {
+  const activeView = viewName === "players" ? "players" : "nations";
+
+  draftViewButtons.forEach((button) => {
+    const isActive = button.dataset.draftView === activeView;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  draftPanels.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.draftPanel === activeView);
+  });
 }
 
 function scrollToPageTop() {
@@ -1982,6 +2001,16 @@ tabs.forEach((tab) => {
   });
 });
 
+draftViewButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    showDraftView(button.dataset.draftView);
+  });
+});
+
+draftPlayerPositionFilter?.addEventListener("change", () => {
+  renderDraftPlayers();
+});
+
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
 });
@@ -2172,6 +2201,7 @@ playerPositionFilter?.addEventListener("change", () => {
 nationTestScoringToggle?.addEventListener("change", () => {
   renderFilteredStandings();
   renderCurrentMatchLists();
+  renderDraftPage();
 });
 
 bracketView?.addEventListener("click", (event) => {
@@ -2220,6 +2250,7 @@ loadPlayers()
     siteData.players = players;
     siteData.playerPositionLookups = buildPlayerPositionLookups(players);
     renderTestingPlayers(players);
+    renderDraftPlayers();
 
     if (siteData.playerPerformances) {
       renderPlayerChampionship(siteData.playerPerformances);
@@ -2240,6 +2271,7 @@ loadSheet("playerPerformances")
   .then((performances) => {
     siteData.playerPerformances = performances;
     renderPlayerChampionship(performances);
+    renderDraftPlayers();
     renderCurrentMatchLists();
     console.info("Box This Lap player performance data loaded", performances);
   })
@@ -2252,6 +2284,7 @@ loadSheet("matchResults")
   .then((results) => {
     siteData.matchResults = results;
     renderNationsLeague(results);
+    renderDraftNations();
     renderCurrentMatchLists();
     console.info("Box This Lap match result data loaded", results);
   })
@@ -2264,6 +2297,7 @@ loadSheet("teams")
   .then((teams) => {
     siteData.teams = teams;
     siteData.teamPots = buildTeamPotLookup(teams);
+    renderDraftPage();
     renderFilteredStandings();
     renderCurrentMatchLists();
     console.info("Box This Lap team pot data loaded", teams);
@@ -2308,6 +2342,7 @@ Promise.all([
     siteData.playerDraft = playerDraft;
     siteData.managerResultsSource = { managers, teamDraft, playerDraft, playerPerformances, matchResults };
     siteData.managerDrafts = buildManagerDraftLookups({ managers, teamDraft, playerDraft });
+    renderDraftPage();
 
     if (siteData.playerPerformances) {
       renderPlayerChampionship(siteData.playerPerformances);
@@ -2510,6 +2545,197 @@ function renderMatchesForDate(container, matches, dateKey) {
   }
 
   container.innerHTML = filteredMatches.map(renderMatchCard).join("");
+}
+
+function renderDraftPage() {
+  renderDraftNations();
+  renderDraftPlayers();
+}
+
+function renderDraftNations() {
+  if (!draftNationsList) {
+    return;
+  }
+
+  if (!siteData.teams || !siteData.teamDraft) {
+    draftNationsList.innerHTML = renderDraftMessage("Loading draft nations...");
+    return;
+  }
+
+  const draftedNationKeys = getDraftedNationKeys();
+  const nationPoints = getNationPointsMap();
+  const nations = siteData.teams
+    .map((team) => ({
+      name: normalizeNationName(team.Team || team.Nation || team.Name),
+      points: nationPoints.get(normalizeLookupName(normalizeNationName(team.Team || team.Nation || team.Name))) ?? 0,
+      pot: team.Pot,
+    }))
+    .filter((team) => {
+      const nationKey = normalizeLookupName(team.name);
+      return Boolean(team.name) &&
+        !draftedNationKeys.has(nationKey) &&
+        !isEliminatedNation(team.name);
+    })
+    .sort(compareDraftRows);
+
+  if (nations.length === 0) {
+    draftNationsList.innerHTML = renderDraftMessage("No available nations found.");
+    return;
+  }
+
+  draftNationsList.innerHTML = nations.map((nation) => {
+    return `
+      <article class="draft-card">
+        <div>
+          <h2>${escapeHtml(nation.name)}</h2>
+          <p>${escapeHtml(formatDraftMeta([nation.pot ? `Pot ${nation.pot}` : ""]))}</p>
+        </div>
+        <strong>${escapeHtml(formatPoints(nation.points))}</strong>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderDraftPlayers() {
+  if (!draftPlayersList) {
+    return;
+  }
+
+  if (!siteData.players || !siteData.teams || !siteData.teamDraft || !siteData.playerDraft) {
+    draftPlayersList.innerHTML = renderDraftMessage("Loading draft players...");
+    return;
+  }
+
+  const draftedNationKeys = getDraftedNationKeys();
+  const draftedPlayerKeys = getDraftedPlayerKeys();
+  const playerPoints = getPlayerPointsMap();
+  const selectedPosition = getSelectedDraftPlayerPosition();
+  const players = siteData.players
+    .map((player) => {
+      const position = normalizePlayerPosition(player.position);
+      const points = playerPoints.byId.get(String(player.id)) ??
+        playerPoints.byName.get(getPlayerNameLookupKey(player.name)) ??
+        0;
+
+      return {
+        id: player.id,
+        name: player.name,
+        points,
+        position,
+        team: normalizeNationName(player.team),
+      };
+    })
+    .filter((player) => {
+      const nationKey = normalizeLookupName(player.team);
+
+      return Boolean(player.name && player.team) &&
+        !draftedPlayerKeys.byId.has(String(player.id)) &&
+        !draftedPlayerKeys.byName.has(getPlayerNameLookupKey(player.name)) &&
+        !draftedNationKeys.has(nationKey) &&
+        !isEliminatedNation(player.team) &&
+        (selectedPosition === "all" || player.position === selectedPosition);
+    })
+    .sort(compareDraftRows);
+
+  if (players.length === 0) {
+    draftPlayersList.innerHTML = renderDraftMessage("No available players found.");
+    return;
+  }
+
+  draftPlayersList.innerHTML = players.map((player) => {
+    return `
+      <article class="draft-card">
+        <div>
+          <h2>${renderPlayerNameWithPosition(player.name, player.position)}</h2>
+          <p>${escapeHtml(player.team)}</p>
+        </div>
+        <strong>${escapeHtml(formatPoints(player.points))}</strong>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderDraftMessage(message) {
+  return `
+    <article class="draft-card">
+      <p class="table-message">${escapeHtml(message)}</p>
+    </article>
+  `;
+}
+
+function getDraftedNationKeys() {
+  return new Set(
+    (siteData.teamDraft || [])
+      .map((draft) => normalizeLookupName(normalizeNationName(draft.Team || draft.Nation || draft.Name)))
+      .filter(Boolean)
+  );
+}
+
+function getDraftedPlayerKeys() {
+  const byId = new Set();
+  const byName = new Set();
+
+  for (const draft of siteData.playerDraft || []) {
+    if (draft["Player ID"]) {
+      byId.add(String(draft["Player ID"]));
+    }
+
+    if (draft.Player) {
+      byName.add(getPlayerNameLookupKey(draft.Player));
+    }
+  }
+
+  return { byId, byName };
+}
+
+function getNationPointsMap() {
+  return new Map(
+    getNationsLeagueRows(siteData.matchResults || [])
+      .map((nation) => [normalizeLookupName(nation.name), nation.points])
+  );
+}
+
+function getPlayerPointsMap() {
+  const byId = new Map();
+  const byName = new Map();
+
+  for (const player of getPlayerChampionshipRows(siteData.playerPerformances || [])) {
+    byId.set(String(player.id), player.points);
+    byName.set(getPlayerNameLookupKey(player.name), player.points);
+  }
+
+  return { byId, byName };
+}
+
+function getSelectedDraftPlayerPosition() {
+  const position = draftPlayerPositionFilter?.value || "all";
+
+  return ["all", "goalkeeper", "defender", "midfielder", "forward"].includes(position) ? position : "all";
+}
+
+function isEliminatedNation(nationName) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+  const team = (siteData.teams || []).find((row) => {
+    return normalizeLookupName(normalizeNationName(row.Team || row.Nation || row.Name)) === nationKey;
+  });
+
+  return isTrueValue(team?.Eliminated);
+}
+
+function isTrueValue(value) {
+  return String(value ?? "").trim().toLowerCase() === "true";
+}
+
+function compareDraftRows(firstRow, secondRow) {
+  if (secondRow.points !== firstRow.points) {
+    return secondRow.points - firstRow.points;
+  }
+
+  return firstRow.name.localeCompare(secondRow.name);
+}
+
+function formatDraftMeta(parts) {
+  return parts.filter(Boolean).join(" | ");
 }
 
 function renderBracket(matches = siteData.bracketMatches) {

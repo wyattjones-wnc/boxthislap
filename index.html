@@ -151,7 +151,8 @@
       </section>
 
       <section class="page is-active" id="results" data-page="results">
-        <div class="section-heading page-heading-with-action">
+        <div class="section-heading page-heading-with-action results-heading">
+          <a class="action-button secondary-action" href="#draft" data-page-link="draft">Draft</a>
           <div>
             <h1>World Cup Results</h1>
             <p class="updated-time" data-updated-time>Updated June 19, 2026 12:06 AM ET</p>
@@ -162,6 +163,49 @@
 
         <div class="results-grid" id="dynamic-result-images"></div>
 
+      </section>
+
+      <section class="page" id="draft" data-page="draft">
+        <div class="section-heading">
+          <h1>Draft</h1>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Draft views">
+          <button class="tab is-active" type="button" data-draft-view="nations" aria-selected="true">
+            Nations
+          </button>
+          <button class="tab" type="button" data-draft-view="players" aria-selected="false">
+            Players
+          </button>
+        </div>
+
+        <div class="draft-panel is-active" data-draft-panel="nations">
+          <div class="draft-list" id="draft-nations-list">
+            <article class="draft-card">
+              <p class="table-message">Loading draft nations...</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="draft-panel" data-draft-panel="players">
+          <div class="standings-controls">
+            <label class="select-control compact-select-control">
+              <span>Position</span>
+              <select id="draft-player-position-filter">
+                <option value="all">All positions</option>
+                <option value="goalkeeper">Goalkeeper</option>
+                <option value="defender">Defender</option>
+                <option value="midfielder">Midfielder</option>
+                <option value="forward">Forward</option>
+              </select>
+            </label>
+          </div>
+          <div class="draft-list" id="draft-players-list">
+            <article class="draft-card">
+              <p class="table-message">Loading draft players...</p>
+            </article>
+          </div>
+        </div>
       </section>
 
       <section class="page" id="standings" data-page="standings">
@@ -652,6 +696,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202606270001"></script>
+    <script type="module" src="script.js?v=202606270002"></script>
   </body>
 </html>

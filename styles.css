@@ -418,6 +418,18 @@ main {
   font-size: 1.1rem;
 }
 
+.draft-unknown {
+  font-style: italic;
+}
+
+.draft-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-style: italic;
+  font-weight: 800;
+  margin: 4px 2px 0;
+}
+
 .league-card {
   align-items: center;
   background: var(--panel);

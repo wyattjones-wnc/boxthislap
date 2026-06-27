@@ -2566,6 +2566,7 @@ function renderDraftNations() {
   const nationPoints = getNationPointsMap();
   const nations = siteData.teams
     .map((team) => ({
+      isUnknown: isUnknownEliminationValue(team.Eliminated),
       name: normalizeNationName(team.Team || team.Nation || team.Name),
       points: nationPoints.get(normalizeLookupName(normalizeNationName(team.Team || team.Nation || team.Name))) ?? 0,
       pot: team.Pot,
@@ -2583,17 +2584,20 @@ function renderDraftNations() {
     return;
   }
 
-  draftNationsList.innerHTML = nations.map((nation) => {
+  draftNationsList.innerHTML = `
+    ${nations.map((nation) => {
     return `
       <article class="draft-card">
         <div>
-          <h2>${escapeHtml(nation.name)}</h2>
+          <h2>${renderDraftName(nation.name, nation.isUnknown)}</h2>
           <p>${escapeHtml(formatDraftMeta([nation.pot ? `Pot ${nation.pot}` : ""]))}</p>
         </div>
         <strong>${escapeHtml(formatPoints(nation.points))}</strong>
       </article>
     `;
-  }).join("");
+  }).join("")}
+    ${renderDraftUnknownNote(nations)}
+  `;
 }
 
 function renderDraftPlayers() {
@@ -2619,6 +2623,7 @@ function renderDraftPlayers() {
 
       return {
         id: player.id,
+        isUnknown: isUnknownEliminationNation(player.team),
         name: player.name,
         points,
         position,
@@ -2642,17 +2647,20 @@ function renderDraftPlayers() {
     return;
   }
 
-  draftPlayersList.innerHTML = players.map((player) => {
+  draftPlayersList.innerHTML = `
+    ${players.map((player) => {
     return `
       <article class="draft-card">
         <div>
-          <h2>${renderPlayerNameWithPosition(player.name, player.position)}</h2>
-          <p>${escapeHtml(player.team)}</p>
+          <h2 class="${player.isUnknown ? "draft-unknown" : ""}">${renderPlayerNameWithPosition(`${player.name}${player.isUnknown ? "*" : ""}`, player.position)}</h2>
+          <p>${renderDraftName(player.team, player.isUnknown)}</p>
         </div>
         <strong>${escapeHtml(formatPoints(player.points))}</strong>
       </article>
     `;
-  }).join("");
+  }).join("")}
+    ${renderDraftUnknownNote(players)}
+  `;
 }
 
 function renderDraftMessage(message) {
@@ -2715,15 +2723,43 @@ function getSelectedDraftPlayerPosition() {
 
 function isEliminatedNation(nationName) {
   const nationKey = normalizeLookupName(normalizeNationName(nationName));
-  const team = (siteData.teams || []).find((row) => {
-    return normalizeLookupName(normalizeNationName(row.Team || row.Nation || row.Name)) === nationKey;
-  });
+  const team = getTeamByNationKey(nationKey);
 
   return isTrueValue(team?.Eliminated);
 }
 
+function isUnknownEliminationNation(nationName) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+  const team = getTeamByNationKey(nationKey);
+
+  return isUnknownEliminationValue(team?.Eliminated);
+}
+
+function getTeamByNationKey(nationKey) {
+  return (siteData.teams || []).find((row) => {
+    return normalizeLookupName(normalizeNationName(row.Team || row.Nation || row.Name)) === nationKey;
+  });
+}
+
 function isTrueValue(value) {
   return String(value ?? "").trim().toLowerCase() === "true";
+}
+
+function isUnknownEliminationValue(value) {
+  return String(value ?? "").trim().toLowerCase() === "unknown";
+}
+
+function renderDraftName(name, isUnknown) {
+  const suffix = isUnknown ? "*" : "";
+  const className = isUnknown ? " class=\"draft-unknown\"" : "";
+
+  return `<span${className}>${escapeHtml(name)}${suffix}</span>`;
+}
+
+function renderDraftUnknownNote(rows) {
+  return rows.some((row) => row.isUnknown)
+    ? `<p class="draft-note">* Nation could still be eliminated in the Group Stage.</p>`
+    : "";
 }
 
 function compareDraftRows(firstRow, secondRow) {

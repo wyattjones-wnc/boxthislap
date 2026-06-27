@@ -2580,12 +2580,11 @@ function renderDraftPlayers() {
     return;
   }
 
-  if (!siteData.players || !siteData.teams || !siteData.teamDraft || !siteData.playerDraft) {
+  if (!siteData.players || !siteData.teams || !siteData.playerDraft) {
     draftPlayersList.innerHTML = renderDraftMessage("Loading draft players...");
     return;
   }
 
-  const draftedNationKeys = getDraftedNationKeys();
   const draftedPlayerKeys = getDraftedPlayerKeys();
   const playerPoints = getPlayerPointsMap();
   const selectedPosition = getSelectedDraftPlayerPosition();
@@ -2606,12 +2605,9 @@ function renderDraftPlayers() {
       };
     })
     .filter((player) => {
-      const nationKey = normalizeLookupName(player.team);
-
       return Boolean(player.name && player.team) &&
         !draftedPlayerKeys.byId.has(String(player.id)) &&
         !draftedPlayerKeys.byName.has(getPlayerNameLookupKey(player.name)) &&
-        !draftedNationKeys.has(nationKey) &&
         !isEliminatedNation(player.team) &&
         (selectedPosition === "all" || player.position === selectedPosition);
     })

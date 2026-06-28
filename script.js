@@ -1613,6 +1613,70 @@ function parseUpdatedTime(csvText) {
   return "";
 }
 
+function parseRoundMappings(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerIndex = rows.findIndex((row) => {
+    const normalizedHeaders = row.map(normalizeLookupName);
+
+    return normalizedHeaders.includes("round") &&
+      normalizedHeaders.includes("player round") &&
+      normalizedHeaders.includes("nation round");
+  });
+
+  if (headerIndex === -1) {
+    return [];
+  }
+
+  const headerRow = rows[headerIndex];
+  const columns = Object.fromEntries(
+    headerRow.map((header, index) => [normalizeLookupName(header), index])
+  );
+  const mappings = [];
+
+  for (const row of rows.slice(headerIndex + 1)) {
+    const roundValue = row[columns.round]?.trim() ?? "";
+
+    if (!roundValue) {
+      break;
+    }
+
+    const range = parseRoundRange(roundValue);
+
+    if (!range) {
+      continue;
+    }
+
+    mappings.push({
+      end: range.end,
+      label: roundValue,
+      nationRound: parseDraftRoundLimit(row[columns["nation round"]]),
+      playerRound: parseDraftRoundLimit(row[columns["player round"]]),
+      start: range.start,
+    });
+  }
+
+  return mappings;
+}
+
+function parseRoundRange(value) {
+  const numbers = String(value ?? "").match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
+
+  if (numbers.length === 0) {
+    return null;
+  }
+
+  return {
+    end: numbers.length > 1 ? Math.max(numbers[0], numbers[1]) : numbers[0],
+    start: numbers.length > 1 ? Math.min(numbers[0], numbers[1]) : numbers[0],
+  };
+}
+
+function parseDraftRoundLimit(value) {
+  const numbers = String(value ?? "").match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
+
+  return numbers.length > 0 ? Math.max(...numbers) : null;
+}
+
 function parseScheduleMatches(csvText) {
   const rows = parseCsvMatrix(csvText);
   const headerIndex = rows.findIndex((row) => {
@@ -2310,16 +2374,19 @@ loadSheetText("data")
   .then((csvText) => {
     siteData.rounds = parseRoundOptions(csvText);
     siteData.updatedTime = parseUpdatedTime(csvText);
+    siteData.roundMappings = parseRoundMappings(csvText);
     siteData.resultImages = parseResultImages(csvText);
     siteData.bracketMatches = parseScheduleMatches(csvText);
     renderUpdatedTime(siteData.updatedTime);
     renderStandingsRoundOptions(siteData.rounds);
     renderResultImages(siteData.resultImages);
     renderBracket(siteData.bracketMatches);
+    renderCurrentMatchLists();
     renderFilteredStandings();
     console.info("Box This Lap data sheet loaded", {
       bracketMatches: siteData.bracketMatches,
       resultImages: siteData.resultImages,
+      roundMappings: siteData.roundMappings,
       rounds: siteData.rounds,
       updatedTime: siteData.updatedTime,
     });
@@ -3070,6 +3137,10 @@ function getPlayerMatchPoints(matchId, draftName) {
     return null;
   }
 
+  if (siteData.playerDraft && !getActivePlayerDraftForPerformance(performance)) {
+    return null;
+  }
+
   const points = parsePoints(performance.Points);
   return Number.isFinite(points) ? points : null;
 }
@@ -3089,8 +3160,32 @@ function getNationMatchPoints(match, draftName) {
     return null;
   }
 
+  if (siteData.teamDraft && !getActiveNationDraftForResult(result, draftName)) {
+    return null;
+  }
+
   const points = getNationPointsForResult(result, draftName);
   return Number.isFinite(points) ? points : null;
+}
+
+function getActivePlayerDraftForPerformance(performance) {
+  return (siteData.playerDraft || [])
+    .filter((draft) => isPerformanceForDraft(performance, draft))
+    .filter((draft) => isDraftActiveForMatchRound(draft, getStandingSourceRoundId(performance), "player"))
+    .sort(compareDraftRoundDescending)[0] ?? null;
+}
+
+function getActiveNationDraftForResult(result, nationName) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+
+  return (siteData.teamDraft || [])
+    .filter((draft) => normalizeLookupName(normalizeNationName(draft.Team)) === nationKey)
+    .filter((draft) => isDraftActiveForMatchRound(draft, getStandingSourceRoundId(result), "nation"))
+    .sort(compareDraftRoundDescending)[0] ?? null;
+}
+
+function compareDraftRoundDescending(firstDraft, secondDraft) {
+  return (parseDraftRoundLimit(secondDraft.Round) ?? 0) - (parseDraftRoundLimit(firstDraft.Round) ?? 0);
 }
 
 function isNationResultMatchId(result, matchId, draftKey) {
@@ -3242,10 +3337,10 @@ function renderPlayerChampionship(performances) {
     return;
   }
 
-  const sourceRows = getCurrentPlayerChampionshipRows(performances);
-  const rows = filterPlayerRowsByPosition(
-    filterStandingRowsByGameScope(sourceRows, getPlayerManager)
-  );
+  const sourceRows = shouldShowAllStandingsData()
+    ? getCurrentPlayerChampionshipRows(performances)
+    : getCurrentDraftedPlayerChampionshipRows(performances);
+  const rows = filterPlayerRowsByPosition(sourceRows);
 
   if (rows.length === 0) {
     playerChampionshipRows.innerHTML = `<tr><td class="table-message" colspan="5">No player performance data found.</td></tr>`;
@@ -3253,7 +3348,7 @@ function renderPlayerChampionship(performances) {
   }
 
   playerChampionshipRows.innerHTML = rows.map((player, index) => {
-    const manager = getPlayerManager(player);
+    const manager = player.manager || getPlayerManager(player);
     const detailId = `player-standing-detail-${index}`;
 
     return `
@@ -3350,6 +3445,65 @@ function getCurrentPlayerChampionshipRows(performances) {
     : getPlayerChampionshipRows(filterRowsBySelectedRound(performances));
 }
 
+function getCurrentDraftedPlayerChampionshipRows(performances) {
+  return isBestStandingPerformanceSelected()
+    ? getBestDraftedPlayerChampionshipRows(performances)
+    : getDraftedPlayerChampionshipRows(filterRowsBySelectedRound(performances));
+}
+
+function getDraftedPlayerChampionshipRows(performances) {
+  const players = new Map();
+
+  for (const performance of performances) {
+    const draft = getActivePlayerDraftForPerformance(performance);
+    const playerId = performance["Player ID"] || performance.Name;
+    const points = parsePoints(performance.Points);
+
+    if (!draft || !playerId || !Number.isFinite(points)) {
+      continue;
+    }
+
+    const player = players.get(playerId) ?? {
+      id: playerId,
+      details: [],
+      manager: getManagerForDraft(draft),
+      matches: 0,
+      name: performance.Name,
+      points: 0,
+      position: performance.Position,
+      team: performance.Team,
+    };
+
+    player.matches += 1;
+    player.points += points;
+    player.details.push({
+      matchId: performance["Match ID"],
+      points,
+      team: performance.Team,
+    });
+    player.name ||= performance.Name;
+    player.position ||= performance.Position;
+    player.team ||= performance.Team;
+    players.set(playerId, player);
+  }
+
+  return rankRows(
+    [...players.values()]
+      .map((player) => ({
+        ...player,
+        position: player.position || getPlayerPosition(player),
+      }))
+      .filter((player) => player.points > 0)
+      .sort((firstPlayer, secondPlayer) => {
+        if (secondPlayer.points !== firstPlayer.points) {
+          return secondPlayer.points - firstPlayer.points;
+        }
+
+        return firstPlayer.name.localeCompare(secondPlayer.name);
+      })
+  );
+}
+
 function getBestPlayerChampionshipRows(performances) {
   return rankRows(
     getPlayerChampionshipRows(performances)
@@ -3408,8 +3562,9 @@ function renderNationsLeague(results) {
     return;
   }
 
-  const sourceRows = getCurrentNationsLeagueRows(results);
-  const rows = filterStandingRowsByGameScope(sourceRows, (nation) => getNationManager(nation.name));
+  const rows = shouldShowAllStandingsData()
+    ? getCurrentNationsLeagueRows(results)
+    : getCurrentDraftedNationsLeagueRows(results);
 
   if (rows.length === 0) {
     nationsLeagueRows.innerHTML = `<tr><td class="table-message" colspan="5">No Nations League results found.</td></tr>`;
@@ -3417,7 +3572,7 @@ function renderNationsLeague(results) {
   }
 
   nationsLeagueRows.innerHTML = rows.map((nation, index) => {
-    const manager = getNationManager(nation.name);
+    const manager = nation.manager || getNationManager(nation.name);
     const detailId = `nation-standing-detail-${index}`;
 
     return `
@@ -3494,11 +3649,83 @@ function getStandingSourceRoundId(row) {
 function inferGroupRoundIdFromMatchId(matchId) {
   const numericMatchId = Number(String(matchId ?? "").trim());
 
-  if (!Number.isFinite(numericMatchId) || numericMatchId < 1 || numericMatchId > 72) {
+  if (!Number.isFinite(numericMatchId) || numericMatchId < 1) {
     return "";
   }
 
-  return String(Math.ceil(numericMatchId / 24));
+  if (numericMatchId <= 72) {
+    return String(Math.ceil(numericMatchId / 24));
+  }
+
+  if (numericMatchId <= 88) {
+    return "4";
+  }
+
+  if (numericMatchId <= 96) {
+    return "5";
+  }
+
+  if (numericMatchId <= 100) {
+    return "6";
+  }
+
+  if (numericMatchId <= 102) {
+    return "7";
+  }
+
+  if (numericMatchId === 103) {
+    return "8";
+  }
+
+  if (numericMatchId === 104) {
+    return "9";
+  }
+
+  return "";
+}
+
+function getRoundMappingForMatchRound(matchRoundId) {
+  const numericRound = Number(String(matchRoundId ?? "").trim());
+
+  if (!Number.isFinite(numericRound)) {
+    return null;
+  }
+
+  return (siteData.roundMappings || [])
+    .filter((mapping) => numericRound >= mapping.start && numericRound <= mapping.end)
+    .sort((firstMapping, secondMapping) => {
+      if (secondMapping.start !== firstMapping.start) {
+        return secondMapping.start - firstMapping.start;
+      }
+
+      return (firstMapping.end - firstMapping.start) - (secondMapping.end - secondMapping.start);
+    })[0] ?? null;
+}
+
+function getActiveDraftRoundLimit(matchRoundId, draftType) {
+  const mapping = getRoundMappingForMatchRound(matchRoundId);
+
+  if (!mapping) {
+    return null;
+  }
+
+  return draftType === "player" ? mapping.playerRound : mapping.nationRound;
+}
+
+function isDraftActiveForMatchRound(draft, matchRoundId, draftType) {
+  const limit = getActiveDraftRoundLimit(matchRoundId, draftType);
+
+  if (!Number.isFinite(limit)) {
+    return true;
+  }
+
+  const draftRound = parseDraftRoundLimit(draft.Round);
+
+  if (!Number.isFinite(draftRound)) {
+    return false;
+  }
+
+  return draftRound <= limit;
 }
 
 function getNationsLeagueRows(results) {
@@ -3560,6 +3787,58 @@ function getCurrentNationsLeagueRows(results) {
   return isBestStandingPerformanceSelected()
     ? getBestNationsLeagueRows(results)
     : getNationsLeagueRows(filterRowsBySelectedRound(results));
+}
+
+function getCurrentDraftedNationsLeagueRows(results) {
+  return isBestStandingPerformanceSelected()
+    ? getBestDraftedNationsLeagueRows(results)
+    : getDraftedNationsLeagueRows(filterRowsBySelectedRound(results));
+}
+
+function getDraftedNationsLeagueRows(results) {
+  const nations = new Map();
+
+  for (const result of results) {
+    addDraftedNationResult(nations, result, result.Team, result.Opponent, "team");
+    addDraftedNationResult(nations, result, result.Opponent, result.Team, "opponent");
+  }
+
+  return rankRows(
+    [...nations.values()]
+      .filter((nation) => nation.matches > 0 && nation.points > 0)
+      .sort(compareNationStandings)
+  );
+}
+
+function addDraftedNationResult(nations, result, nationName, opponentName, side) {
+  const outcome = String(result.Result || "").trim().toLowerCase();
+  const draft = getActiveNationDraftForResult(result, nationName);
+
+  if (!draft || !nationName || !opponentName || !outcome) {
+    return;
+  }
+
+  const nationRow = getNationStanding(nations, nationName);
+  const points = getNationPointsForResult(result, nationName) ?? 0;
+
+  nationRow.manager = getManagerForDraft(draft);
+  nationRow.matches += 1;
+
+  if (outcome === "draw" || outcome === "tie") {
+    nationRow.draws += 1;
+  } else if ((side === "team" && outcome === "win") || (side === "opponent" && (outcome === "lose" || outcome === "loss"))) {
+    nationRow.wins += 1;
+  } else {
+    nationRow.losses += 1;
+  }
+
+  nationRow.points += points;
+  nationRow.details.push({
+    matchId: result["Match ID"],
+    opponent: opponentName,
+    points,
+    team: nationName,
+  });
 }
 
 function getBestNationsLeagueRows(results) {
@@ -3813,16 +4092,6 @@ function renderManagerDraftGroup(label, drafts) {
 function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults, filter = "all" }) {
   const includeNations = filter === "all" || filter === "nations";
   const includePlayers = filter === "all" || filter === "players";
-  const nationPoints = new Map(
-    getCurrentNationsLeagueRows(matchResults).map((nation) => [normalizeLookupName(nation.name), nation.points])
-  );
-  const playerPoints = new Map();
-
-  for (const player of getCurrentPlayerChampionshipRows(playerPerformances)) {
-    playerPoints.set(String(player.id), player.points);
-    playerPoints.set(normalizeLookupName(player.name), player.points);
-  }
-
   const managerRows = new Map();
 
   for (const manager of managers) {
@@ -3852,7 +4121,7 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
       }
 
       manager.nationCount += 1;
-      const points = nationPoints.get(normalizeLookupName(nation)) ?? 0;
+      const points = getDraftNationPoints(draft, matchResults);
       manager.points += points;
       manager.drafts.push({
         name: nation,
@@ -3873,7 +4142,7 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
       }
 
       manager.playerCount += 1;
-      const points = playerPoints.get(String(playerId)) ?? playerPoints.get(normalizeLookupName(playerName)) ?? 0;
+      const points = getDraftPlayerPoints(draft, playerPerformances);
       manager.points += points;
       manager.drafts.push({
         name: playerName,
@@ -3892,6 +4161,101 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
       return firstManager.name.localeCompare(secondManager.name);
     })
   );
+}
+
+function getBestDraftedNationsLeagueRows(results) {
+  return rankRows(
+    getDraftedNationsLeagueRows(results)
+      .map((nation) => {
+        const bestDetail = getBestStandingDetail(nation.details);
+
+        return {
+          ...nation,
+          details: bestDetail ? [bestDetail] : [],
+          draws: 0,
+          losses: 0,
+          matches: bestDetail ? 1 : 0,
+          points: bestDetail?.points ?? 0,
+          recordLabel: "Best Game",
+          wins: 0,
+        };
+      })
+      .filter((nation) => nation.points > 0)
+      .sort((firstNation, secondNation) => {
+        if (secondNation.points !== firstNation.points) {
+          return secondNation.points - firstNation.points;
+        }
+
+        return firstNation.name.localeCompare(secondNation.name);
+      })
+  );
+}
+
+function getBestDraftedPlayerChampionshipRows(performances) {
+  return rankRows(
+    getDraftedPlayerChampionshipRows(performances)
+      .map((player) => {
+        const bestDetail = getBestStandingDetail(player.details);
+
+        return {
+          ...player,
+          details: bestDetail ? [bestDetail] : [],
+          matches: bestDetail ? 1 : 0,
+          points: bestDetail?.points ?? 0,
+        };
+      })
+      .filter((player) => player.points > 0)
+      .sort((firstPlayer, secondPlayer) => {
+        if (secondPlayer.points !== firstPlayer.points) {
+          return secondPlayer.points - firstPlayer.points;
+        }
+
+        return firstPlayer.name.localeCompare(secondPlayer.name);
+      })
+  );
+}
+
+function getDraftNationPoints(draft, matchResults = []) {
+  const nation = normalizeNationName(draft.Team);
+
+  if (!nation) {
+    return 0;
+  }
+
+  return filterRowsBySelectedRound(matchResults).reduce((total, result) => {
+    const matchRoundId = getStandingSourceRoundId(result);
+
+    if (!isDraftActiveForMatchRound(draft, matchRoundId, "nation")) {
+      return total;
+    }
+
+    const points = getNationPointsForResult(result, nation);
+    return total + (Number.isFinite(points) ? points : 0);
+  }, 0);
+}
+
+function getDraftPlayerPoints(draft, playerPerformances = []) {
+  return filterRowsBySelectedRound(playerPerformances).reduce((total, performance) => {
+    const matchRoundId = getStandingSourceRoundId(performance);
+
+    if (!isDraftActiveForMatchRound(draft, matchRoundId, "player") || !isPerformanceForDraft(performance, draft)) {
+      return total;
+    }
+
+    const points = parsePoints(performance.Points);
+    return total + (Number.isFinite(points) ? points : 0);
+  }, 0);
+}
+
+function isPerformanceForDraft(performance, draft) {
+  const draftPlayerId = String(draft["Player ID"] ?? "").trim();
+  const performancePlayerId = String(performance["Player ID"] ?? "").trim();
+
+  if (draftPlayerId && performancePlayerId && draftPlayerId === performancePlayerId) {
+    return true;
+  }
+
+  return getPlayerNameLookupKey(performance.Name) === getPlayerNameLookupKey(draft.Player);
 }
 
 function buildManagerDraftLookups({ managers, teamDraft, playerDraft }) {
@@ -4211,6 +4575,10 @@ function getManagerByName(name) {
   }
 
   return null;
+}
+
+function getManagerForDraft(draft) {
+  return siteData.managerDrafts?.managersById.get(draft?.["Manager ID"]) ?? null;
 }
 
 function renderStandingDetail(value, manager) {

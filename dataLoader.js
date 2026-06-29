@@ -14,7 +14,6 @@ const FANTASY_OFFICE_2026_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrjQ6L5xMBMnuDNrN95ngeKbTePfJeGltNCIVAai7bZKdgFG_Djj68OBZvK7B9VnREA-Ux4VbeaQZ-/pub";
 
 export const DATA_SOURCES = {
-  matches: "matches.json",
   sheets: {
     data: buildPublishedCsvUrl("1157515704"),
     managers: buildPublishedCsvUrl("0"),
@@ -73,10 +72,6 @@ export async function loadCsvText(url) {
   return response.text();
 }
 
-export async function loadMatches() {
-  return loadJson(DATA_SOURCES.matches);
-}
-
 export async function loadPlayers() {
   const rows = await loadSheet("players");
   return rows.map(normalizePlayerRow);
@@ -111,8 +106,8 @@ export async function loadSheets(sheetNames = Object.keys(DATA_SOURCES.sheets)) 
 }
 
 export async function loadSiteData() {
-  const [matches, sheets] = await Promise.all([loadMatches(), loadSheets()]);
-  return { matches, sheets, players: sheets.players.map(normalizePlayerRow) };
+  const sheets = await loadSheets();
+  return { sheets, players: sheets.players.map(normalizePlayerRow) };
 }
 
 export function parseCsv(csvText) {

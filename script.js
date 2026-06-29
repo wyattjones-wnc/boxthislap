@@ -2836,20 +2836,26 @@ function renderBracket(matches = siteData.bracketMatches) {
   }
 
   const matchById = getMatchesById(matches);
-  const picks = getResolvedBracketPicks(matches, matchById);
+  const bracketState = getResolvedBracketState(matches, matchById);
 
   bracketView.innerHTML = `
     <div class="bracket-grid">
-      ${BRACKET_ROUNDS.map((round) => renderBracketRound(round, matchById, picks)).join("")}
+      ${BRACKET_ROUNDS.map((round) => renderBracketRound(round, matchById, bracketState)).join("")}
     </div>
   `;
 }
 
 function getResolvedBracketPicks(matches, matchById) {
+  return getResolvedBracketState(matches, matchById).picks;
+}
+
+function getResolvedBracketState(matches, matchById) {
   const savedPicks = getBracketPicks();
   const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, savedPicks);
+  const picks = { ...savedPicks, ...inferredPicks };
+  const lockedMatches = new Set(Object.keys(inferredPicks));
 
-  return { ...savedPicks, ...inferredPicks };
+  return { picks, lockedMatches };
 }
 
 function inferBracketPicksFromSchedule(matches, matchById, savedPicks = {}) {
@@ -2916,7 +2922,7 @@ function inferBracketPickFromEntrant(entrant, reference, matchById, picks) {
   };
 }
 
-function renderBracketRound(round, matchById, picks) {
+function renderBracketRound(round, matchById, bracketState) {
   const matches = round.matchIds.map((matchId) => matchById.get(String(matchId))).filter(Boolean);
   const label = getRoundPrettyName(round.id) || round.label;
 
@@ -2924,15 +2930,17 @@ function renderBracketRound(round, matchById, picks) {
     <section class="bracket-round" aria-label="${escapeHtml(label)}">
       <h2>${escapeHtml(label)}</h2>
       <div class="bracket-round-matches">
-        ${matches.map((match) => renderBracketMatch(match, matchById, picks)).join("")}
+        ${matches.map((match) => renderBracketMatch(match, matchById, bracketState)).join("")}
       </div>
     </section>
   `;
 }
 
-function renderBracketMatch(match, matchById, picks) {
+function renderBracketMatch(match, matchById, bracketState) {
+  const { picks, lockedMatches } = bracketState;
   const matchId = getMatchId(match);
   const selectedSide = picks[matchId] || "";
+  const isLocked = lockedMatches.has(String(matchId));
   const home = resolveBracketEntrant(getField(match, "Home", "home"), matchById, picks);
   const away = resolveBracketEntrant(getField(match, "Away", "away"), matchById, picks);
   const date = formatBracketMatchDate(getMatchDate(match));
@@ -2945,8 +2953,8 @@ function renderBracketMatch(match, matchById, picks) {
         <span>${escapeHtml([date, time].filter(Boolean).join(" | "))}</span>
       </header>
       <div class="bracket-team-list">
-        ${renderBracketTeamButton(matchId, "home", home, selectedSide)}
-        ${renderBracketTeamButton(matchId, "away", away, selectedSide)}
+        ${renderBracketTeamButton(matchId, "home", home, selectedSide, isLocked)}
+        ${renderBracketTeamButton(matchId, "away", away, selectedSide, isLocked)}
       </div>
     </article>
   `;
@@ -2962,9 +2970,10 @@ function formatBracketMatchDate(dateKey) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? formatMatchdayLabel(value) : value;
 }
 
-function renderBracketTeamButton(matchId, side, entrant, selectedSide) {
+function renderBracketTeamButton(matchId, side, entrant, selectedSide, isLocked = false) {
   const isSelected = selectedSide === side;
-  const disabledAttribute = entrant.isPending ? " disabled" : "";
+  const isDisabled = entrant.isPending || isLocked;
+  const disabledAttribute = isDisabled ? " disabled" : "";
   const selectedAttribute = isSelected ? " aria-pressed=\"true\"" : " aria-pressed=\"false\"";
   const selectedClass = isSelected ? " is-selected" : "";
   const pendingClass = entrant.isPending ? " is-pending" : "";
@@ -4544,7 +4553,13 @@ function formatRecord(nation) {
 }
 
 function isPenaltyResult(result) {
-  return String(result.Penalties || "").trim() !== "";
+  const value = String(result.Penalties || "").trim().toLowerCase();
+
+  if (!value || ["false", "no", "n", "0"].includes(value)) {
+    return false;
+  }
+
+  return true;
 }
 
 function getFallbackWinPoints(result) {

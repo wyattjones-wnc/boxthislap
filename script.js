@@ -3285,11 +3285,36 @@ function getPlayerDraftMatchPoints(draft, match) {
   });
 
   if (!performance) {
-    return null;
+    return hasLoggedMatchResult(match) ? 0 : null;
   }
 
   const points = parsePoints(performance.Points);
   return Number.isFinite(points) ? points : null;
+}
+
+function hasLoggedMatchResult(match) {
+  if (!siteData.matchResults) {
+    return false;
+  }
+
+  const matchId = getMatchId(match);
+
+  return siteData.matchResults.some((result) => {
+    if (matchId && String(result["Match ID"] ?? "").trim() === matchId) {
+      return true;
+    }
+
+    const homeKey = normalizeLookupName(normalizeNationName(getField(match, "Home", "home")));
+    const awayKey = normalizeLookupName(normalizeNationName(getField(match, "Away", "away")));
+    const teamKey = normalizeLookupName(normalizeNationName(result.Team));
+    const opponentKey = normalizeLookupName(normalizeNationName(result.Opponent));
+
+    return Boolean(homeKey && awayKey && teamKey && opponentKey) &&
+      (
+        (teamKey === homeKey && opponentKey === awayKey) ||
+        (teamKey === awayKey && opponentKey === homeKey)
+      );
+  });
 }
 
 function getNationDraftMatchPoints(draft, match) {

@@ -381,6 +381,7 @@ function showPage(pageName, options = {}) {
   });
 
   document.body.classList.remove("is-routing");
+  window.boxThisLapMarkReady?.();
 
   if (options.scrollToTop) {
     scrollToPageTop();

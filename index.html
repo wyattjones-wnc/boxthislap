@@ -15,13 +15,129 @@
         document.documentElement.dataset.theme = "dark";
       }
     </script>
+    <script>
+      (() => {
+        let isShellReady = false;
+        let staleTimer = null;
+        let startY = 0;
+        let pullDistance = 0;
+        let isTrackingPull = false;
+        const refreshThreshold = 72;
+
+        function hardRefresh() {
+          const url = new URL(window.location.href);
+          url.searchParams.set("refresh", Date.now().toString());
+          window.location.replace(url.toString());
+        }
+
+        function clearRefreshParam() {
+          const url = new URL(window.location.href);
+
+          if (!url.searchParams.has("refresh")) {
+            return;
+          }
+
+          url.searchParams.delete("refresh");
+          window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+        }
+
+        function showStaleWarning() {
+          if (isShellReady || !document.body) {
+            return;
+          }
+
+          document.body.classList.remove("is-routing");
+          document.body.classList.add("has-shell-stale-warning");
+        }
+
+        function setPullDistance(value) {
+          pullDistance = Math.max(0, value);
+          document.documentElement.style.setProperty("--pull-refresh-distance", `${pullDistance}px`);
+          document.body?.classList.toggle("is-pulling-refresh", pullDistance > 0);
+          document.body?.classList.toggle("is-pull-ready", pullDistance >= refreshThreshold);
+        }
+
+        window.boxThisLapHardRefresh = hardRefresh;
+        window.boxThisLapMarkReady = () => {
+          isShellReady = true;
+          clearTimeout(staleTimer);
+          document.body?.classList.remove("has-shell-stale-warning");
+          clearRefreshParam();
+        };
+
+        window.addEventListener("error", (event) => {
+          const target = event.target;
+
+          if (target instanceof HTMLScriptElement || target instanceof HTMLLinkElement) {
+            showStaleWarning();
+          }
+        }, true);
+
+        document.addEventListener("DOMContentLoaded", () => {
+          staleTimer = window.setTimeout(showStaleWarning, 4500);
+
+          document.querySelector("[data-hard-refresh]")?.addEventListener("click", hardRefresh);
+
+          document.addEventListener("touchstart", (event) => {
+            if (event.touches.length !== 1 || window.scrollY > 0) {
+              isTrackingPull = false;
+              return;
+            }
+
+            isTrackingPull = true;
+            startY = event.touches[0].clientY;
+          }, { passive: true });
+
+          document.addEventListener("touchmove", (event) => {
+            if (!isTrackingPull || event.touches.length !== 1) {
+              return;
+            }
+
+            const delta = event.touches[0].clientY - startY;
+
+            if (delta <= 0 || window.scrollY > 0) {
+              setPullDistance(0);
+              return;
+            }
+
+            setPullDistance(Math.min(120, delta * 0.5));
+
+            if (pullDistance > 8) {
+              event.preventDefault();
+            }
+          }, { passive: false });
+
+          document.addEventListener("touchend", () => {
+            if (!isTrackingPull) {
+              return;
+            }
+
+            isTrackingPull = false;
+
+            if (pullDistance >= refreshThreshold) {
+              hardRefresh();
+              return;
+            }
+
+            setPullDistance(0);
+          }, { passive: true });
+        });
+      })();
+    </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202606300001">
+    <link rel="stylesheet" href="styles.css?v=202607010001">
   </head>
   <body class="is-routing">
+    <div class="pull-refresh-indicator" aria-hidden="true">
+      <span>Pull to refresh</span>
+    </div>
+    <div class="stale-shell-alert" role="status">
+      <span>Having trouble loading the latest site.</span>
+      <button type="button" data-hard-refresh>Refresh</button>
+    </div>
     <header class="site-header">
       <nav class="topbar" aria-label="Primary">
         <a class="brand" href="#results" data-page-link="results">
@@ -704,6 +820,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202606300002"></script>
+    <script type="module" src="script.js?v=202607010001"></script>
   </body>
 </html>

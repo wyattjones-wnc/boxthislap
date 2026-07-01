@@ -3300,6 +3300,10 @@ function hasLoggedMatchResult(match) {
   const matchId = getMatchId(match);
 
   return siteData.matchResults.some((result) => {
+    if (!isLoggedNationResult(result)) {
+      return false;
+    }
+
     if (matchId && String(result["Match ID"] ?? "").trim() === matchId) {
       return true;
     }
@@ -3329,7 +3333,7 @@ function getNationDraftMatchPoints(draft, match) {
   const result = siteData.matchResults.find((row) => isNationResultMatchId(row, matchId, draftKey)) ??
     siteData.matchResults.find((row) => isNationResultMatchTeams(row, match, draftKey));
 
-  if (!result) {
+  if (!result || !isLoggedNationResult(result)) {
     return null;
   }
 
@@ -3382,7 +3386,7 @@ function getNationMatchPoints(match, draftName) {
   const result = siteData.matchResults.find((row) => isNationResultMatchId(row, matchId, draftKey)) ??
     siteData.matchResults.find((row) => isNationResultMatchTeams(row, match, draftKey));
 
-  if (!result) {
+  if (!result || !isLoggedNationResult(result)) {
     return null;
   }
 
@@ -3440,6 +3444,18 @@ function isNationResultMatchTeams(result, match, draftKey) {
 function isNationResultForDraft(result, draftKey) {
   return normalizeLookupName(normalizeNationName(result.Team)) === draftKey ||
     normalizeLookupName(normalizeNationName(result.Opponent)) === draftKey;
+}
+
+function isLoggedNationResult(result) {
+  if (Object.prototype.hasOwnProperty.call(result, "Recorded")) {
+    return isTruthySheetValue(result.Recorded);
+  }
+
+  return String(result.Result || "").trim() !== "";
+}
+
+function isTruthySheetValue(value) {
+  return ["true", "yes", "y", "1"].includes(String(value ?? "").trim().toLowerCase());
 }
 
 function getNationPointsForResult(result, nationName) {

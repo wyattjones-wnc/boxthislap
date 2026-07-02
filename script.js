@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202606180002";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607020004";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -60,6 +60,7 @@ const matchdaySelect = document.querySelector("#matchday-select");
 const matchdayMatchList = document.querySelector("#matchday-match-list");
 const bracketView = document.querySelector("#bracket-view");
 const bracketClearPicks = document.querySelector("#bracket-clear-picks");
+const bracketSubmissionSelect = document.querySelector("#bracket-submission-select");
 const bracketSubmitterInput = document.querySelector("#bracket-submitter");
 const bracketSubmitButton = document.querySelector("#bracket-submit-picks");
 const bracketSubmitStatus = document.querySelector("#bracket-submit-status");
@@ -86,6 +87,7 @@ const BEST_STANDING_PERFORMANCE_VALUE = "best";
 const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
 const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbzX29wZYzdCBW0pEwiJ_s22OGw-PpUJSBPQIXYxCaf9yHnFMCq9_r5z4nGfZaKk8fUF/exec";
+const BRACKET_MANUAL_PICK_VALUE = "";
 const BRACKET_ROUNDS = [
   { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
   { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
@@ -2334,6 +2336,11 @@ bracketClearPicks?.addEventListener("click", () => {
   clearBracketPicks();
 });
 
+bracketSubmissionSelect?.addEventListener("change", () => {
+  syncBracketSubmissionControls();
+  renderBracket();
+});
+
 bracketSubmitterInput?.addEventListener("input", () => {
   try {
     localStorage.setItem(BRACKET_SUBMITTER_STORAGE_KEY, bracketSubmitterInput.value.trim());
@@ -2466,6 +2473,19 @@ loadSheetText("data")
     renderMatchError(matchdayMatchList, error);
     renderBracketError(error);
     console.error("Box This Lap data sheet failed to load", error);
+  });
+
+loadSheet("bracketPicks")
+  .then((rows) => {
+    siteData.bracketSubmissions = parseBracketSubmissions(rows);
+    renderBracketSubmissionOptions(siteData.bracketSubmissions);
+    renderBracket(siteData.bracketMatches);
+    console.info("Box This Lap bracket submissions loaded", siteData.bracketSubmissions);
+  })
+  .catch((error) => {
+    siteData.bracketSubmissionsError = error;
+    renderBracketSubmissionOptions([]);
+    console.error("Box This Lap bracket submissions failed to load", error);
   });
 
 Promise.all([
@@ -2908,11 +2928,159 @@ function renderBracket(matches = siteData.bracketMatches) {
   }
 
   const matchById = getMatchesById(matches);
-  const bracketState = getResolvedBracketState(matches, matchById);
+  const selectedSubmission = getSelectedBracketSubmission();
+  const bracketState = selectedSubmission
+    ? getSubmittedBracketState(matches, matchById, selectedSubmission)
+    : getResolvedBracketState(matches, matchById);
 
   bracketView.innerHTML = `
+    ${selectedSubmission ? renderBracketSubmissionNotice(selectedSubmission) : ""}
     <div class="bracket-grid">
       ${BRACKET_ROUNDS.map((round) => renderBracketRound(round, matchById, bracketState)).join("")}
+    </div>
+  `;
+}
+
+function parseBracketSubmissions(rows) {
+  return rows
+    .map((row, index) => parseBracketSubmission(row, index))
+    .filter(Boolean)
+    .sort((firstSubmission, secondSubmission) => secondSubmission.timestampValue - firstSubmission.timestampValue);
+}
+
+function parseBracketSubmission(row, index) {
+  const rawPicks = getField(row, "Picks JSON", "picks json", "Picks");
+  const picks = parseBracketSubmissionPicks(rawPicks);
+
+  if (Object.keys(picks).length === 0) {
+    return null;
+  }
+
+  const timestamp = getField(row, "Timestamp", "timestamp");
+  const submitter = getField(row, "Submitter", "submitter") || "Unknown";
+  const timestampLabel = formatBracketSubmissionTimestamp(timestamp);
+  const parsedTimestamp = parseTimestampValue(timestamp);
+
+  return {
+    id: String(index),
+    label: `${submitter} - ${timestampLabel || "No timestamp"}`,
+    picks,
+    submitter,
+    timestamp,
+    timestampLabel,
+    timestampValue: Number.isFinite(parsedTimestamp) ? parsedTimestamp : 0,
+  };
+}
+
+function parseBracketSubmissionPicks(rawPicks) {
+  try {
+    const parsedPicks = JSON.parse(String(rawPicks || "[]"));
+
+    if (!Array.isArray(parsedPicks)) {
+      return {};
+    }
+
+    return parsedPicks.reduce((picks, pick) => {
+      const matchId = String(pick?.matchId ?? "").trim();
+      const side = String(pick?.side ?? "").trim().toLowerCase();
+
+      if (matchId && ["home", "away"].includes(side)) {
+        picks[matchId] = side;
+      }
+
+      return picks;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function formatBracketSubmissionTimestamp(value) {
+  const text = String(value ?? "").trim();
+  const parsedTime = parseTimestampValue(text);
+
+  if (!text) {
+    return "";
+  }
+
+  if (!Number.isFinite(parsedTime)) {
+    return text;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(parsedTime));
+}
+
+function parseTimestampValue(value) {
+  const parsedTime = Date.parse(String(value ?? "").trim());
+  return Number.isFinite(parsedTime) ? parsedTime : Number.NaN;
+}
+
+function renderBracketSubmissionOptions(submissions = []) {
+  if (!bracketSubmissionSelect) {
+    return;
+  }
+
+  const selectedValue = bracketSubmissionSelect.value;
+
+  bracketSubmissionSelect.innerHTML = `
+    <option value="${BRACKET_MANUAL_PICK_VALUE}">Make picks</option>
+    ${submissions.map((submission) => `
+      <option value="${escapeHtml(submission.id)}">${escapeHtml(submission.label)}</option>
+    `).join("")}
+  `;
+
+  bracketSubmissionSelect.value = submissions.some((submission) => submission.id === selectedValue)
+    ? selectedValue
+    : BRACKET_MANUAL_PICK_VALUE;
+  syncBracketSubmissionControls();
+}
+
+function getSelectedBracketSubmission() {
+  if (!bracketSubmissionSelect || bracketSubmissionSelect.value === BRACKET_MANUAL_PICK_VALUE) {
+    return null;
+  }
+
+  return (siteData.bracketSubmissions || []).find((submission) => submission.id === bracketSubmissionSelect.value) || null;
+}
+
+function syncBracketSubmissionControls() {
+  const isViewingSubmission = Boolean(getSelectedBracketSubmission());
+
+  if (bracketSubmitterInput) {
+    bracketSubmitterInput.disabled = isViewingSubmission;
+  }
+
+  if (bracketSubmitButton) {
+    bracketSubmitButton.disabled = isViewingSubmission;
+  }
+
+  if (bracketClearPicks) {
+    bracketClearPicks.disabled = isViewingSubmission;
+  }
+
+  if (!isViewingSubmission && bracketSubmitStatus?.textContent.startsWith("Viewing ")) {
+    setBracketSubmitStatus("");
+  }
+}
+
+function getSubmittedBracketState(matches, matchById, submission) {
+  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, submission.picks);
+  const picks = { ...submission.picks, ...inferredPicks };
+  const lockedMatches = new Set([
+    ...Object.keys(picks),
+    ...Object.keys(inferredPicks),
+  ]);
+
+  return { picks, lockedMatches, isReadOnly: true };
+}
+
+function renderBracketSubmissionNotice(submission) {
+  return `
+    <div class="bracket-submission-notice">
+      Viewing ${escapeHtml(submission.submitter)}${submission.timestampLabel ? ` from ${escapeHtml(submission.timestampLabel)}` : ""}
     </div>
   `;
 }
@@ -3025,8 +3193,8 @@ function renderBracketMatch(match, matchById, bracketState) {
         <span>${escapeHtml([date, time].filter(Boolean).join(" | "))}</span>
       </header>
       <div class="bracket-team-list">
-        ${renderBracketTeamButton(matchId, "home", home, selectedSide, isLocked)}
-        ${renderBracketTeamButton(matchId, "away", away, selectedSide, isLocked)}
+        ${renderBracketTeamButton(matchId, "home", home, selectedSide, isLocked, bracketState.isReadOnly)}
+        ${renderBracketTeamButton(matchId, "away", away, selectedSide, isLocked, bracketState.isReadOnly)}
       </div>
     </article>
   `;
@@ -3042,17 +3210,18 @@ function formatBracketMatchDate(dateKey) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? formatMatchdayLabel(value) : value;
 }
 
-function renderBracketTeamButton(matchId, side, entrant, selectedSide, isLocked = false) {
+function renderBracketTeamButton(matchId, side, entrant, selectedSide, isLocked = false, isReadOnly = false) {
   const isSelected = selectedSide === side;
-  const isDisabled = entrant.isPending || isLocked;
+  const isDisabled = entrant.isPending || isLocked || isReadOnly;
   const disabledAttribute = isDisabled ? " disabled" : "";
   const selectedAttribute = isSelected ? " aria-pressed=\"true\"" : " aria-pressed=\"false\"";
   const selectedClass = isSelected ? " is-selected" : "";
   const pendingClass = entrant.isPending ? " is-pending" : "";
+  const readOnlyClass = isReadOnly ? " is-read-only" : "";
 
   return `
     <button
-      class="bracket-team${selectedClass}${pendingClass}"
+      class="bracket-team${selectedClass}${pendingClass}${readOnlyClass}"
       type="button"
       data-bracket-pick
       data-match-id="${escapeHtml(matchId)}"

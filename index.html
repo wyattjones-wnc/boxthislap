@@ -128,7 +128,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607020001">
+    <link rel="stylesheet" href="styles.css?v=202607020004">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -470,6 +470,12 @@
         <div class="section-heading page-heading-with-action">
           <h1>Bracket</h1>
           <div class="bracket-actions">
+            <label class="bracket-submitter bracket-submission-viewer">
+              <span>Submitted</span>
+              <select id="bracket-submission-select">
+                <option value="">Make picks</option>
+              </select>
+            </label>
             <label class="bracket-submitter">
               <span>Name</span>
               <input id="bracket-submitter" type="text" autocomplete="name" placeholder="Your name">
@@ -828,6 +834,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607020003"></script>
+    <script type="module" src="script.js?v=202607020004"></script>
   </body>
 </html>

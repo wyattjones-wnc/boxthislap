@@ -85,7 +85,7 @@ const THEME_STORAGE_KEY = "boxThisLapTheme";
 const BEST_STANDING_PERFORMANCE_VALUE = "best";
 const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
-const BRACKET_SUBMISSION_ENDPOINT = "";
+const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbzX29wZYzdCBW0pEwiJ_s22OGw-PpUJSBPQIXYxCaf9yHnFMCq9_r5z4nGfZaKk8fUF/exec";
 const BRACKET_ROUNDS = [
   { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
   { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },

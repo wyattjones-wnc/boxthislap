@@ -1,3 +1,4 @@
+const BRACKET_PICKS_SPREADSHEET_ID = "1BPF3QrqPf1ok_x_W9hIJzFgozLAO1yX4Iu5vssoPIF4";
 const BRACKET_PICKS_SHEET_ID = 1943594150;
 const BRACKET_PICKS_HEADERS = [
   "Timestamp",
@@ -27,7 +28,7 @@ function doPost(event) {
 }
 
 function getBracketPicksSheet_() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = SpreadsheetApp.openById(BRACKET_PICKS_SPREADSHEET_ID);
   const sheets = spreadsheet.getSheets();
   const sheet = sheets.find((entry) => entry.getSheetId() === BRACKET_PICKS_SHEET_ID);
 

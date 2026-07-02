@@ -33,6 +33,7 @@ export const DATA_SOURCES = {
     fantasyOffice2025Results: buildFantasyOffice2025CsvUrl("420488658"),
     fantasyOffice2025Ordering: buildFantasyOffice2025CsvUrl("929460611"),
     fantasyOffice2026Draft: buildFantasyOffice2026CsvUrl("1020743771"),
+    bracketPicks: buildPublishedCsvUrl("1943594150"),
   },
 };
 

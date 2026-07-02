@@ -1128,7 +1128,8 @@ main {
   text-transform: uppercase;
 }
 
-.bracket-submitter input {
+.bracket-submitter input,
+.bracket-submitter select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -1141,7 +1142,18 @@ main {
   width: min(220px, 48vw);
 }
 
-.bracket-submitter input:focus {
+.bracket-submitter select {
+  min-width: min(260px, 64vw);
+}
+
+.bracket-submitter input:disabled,
+.bracket-submitter select:disabled {
+  cursor: not-allowed;
+  opacity: 0.66;
+}
+
+.bracket-submitter input:focus,
+.bracket-submitter select:focus {
   border-color: var(--accent);
   outline: 3px solid var(--accent-border);
 }
@@ -1161,6 +1173,18 @@ main {
 
 .bracket-submit-status[data-state="success"] {
   color: #56c271;
+}
+
+.bracket-submission-notice {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  text-align: center;
 }
 
 .bracket-grid {
@@ -1261,6 +1285,14 @@ main {
   color: var(--muted);
   cursor: not-allowed;
   opacity: 0.74;
+}
+
+.bracket-team.is-read-only {
+  cursor: not-allowed;
+}
+
+.bracket-team.is-read-only:not(.is-selected) {
+  opacity: 0.46;
 }
 
 .match-header {

@@ -60,6 +60,9 @@ const matchdaySelect = document.querySelector("#matchday-select");
 const matchdayMatchList = document.querySelector("#matchday-match-list");
 const bracketView = document.querySelector("#bracket-view");
 const bracketClearPicks = document.querySelector("#bracket-clear-picks");
+const bracketSubmitterInput = document.querySelector("#bracket-submitter");
+const bracketSubmitButton = document.querySelector("#bracket-submit-picks");
+const bracketSubmitStatus = document.querySelector("#bracket-submit-status");
 const draftViewButtons = document.querySelectorAll("[data-draft-view]");
 const draftPanels = document.querySelectorAll("[data-draft-panel]");
 const draftNationsList = document.querySelector("#draft-nations-list");
@@ -81,6 +84,8 @@ window.boxThisLapData = siteData;
 const THEME_STORAGE_KEY = "boxThisLapTheme";
 const BEST_STANDING_PERFORMANCE_VALUE = "best";
 const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
+const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
+const BRACKET_SUBMISSION_ENDPOINT = "";
 const BRACKET_ROUNDS = [
   { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
   { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
@@ -2329,6 +2334,18 @@ bracketClearPicks?.addEventListener("click", () => {
   clearBracketPicks();
 });
 
+bracketSubmitterInput?.addEventListener("input", () => {
+  try {
+    localStorage.setItem(BRACKET_SUBMITTER_STORAGE_KEY, bracketSubmitterInput.value.trim());
+  } catch {
+    // Ignore storage failures; the typed name can still be submitted.
+  }
+});
+
+bracketSubmitButton?.addEventListener("click", () => {
+  submitBracketPicks();
+});
+
 function renderFilteredStandings() {
   if (siteData.playerPerformances) {
     renderPlayerChampionship(siteData.playerPerformances);
@@ -2355,6 +2372,7 @@ showPage(window.location.hash.replace("#", "") || "results");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
 syncThemeToggle();
+hydrateBracketSubmitter();
 
 loadPlayers()
   .then((players) => {
@@ -3137,6 +3155,105 @@ function setBracketPick(matchId, side) {
   picks[String(matchId)] = side;
   saveBracketPicks(picks);
   renderBracket();
+}
+
+function hydrateBracketSubmitter() {
+  if (!bracketSubmitterInput) {
+    return;
+  }
+
+  try {
+    bracketSubmitterInput.value = localStorage.getItem(BRACKET_SUBMITTER_STORAGE_KEY) || "";
+  } catch {
+    bracketSubmitterInput.value = "";
+  }
+}
+
+async function submitBracketPicks() {
+  const submitter = bracketSubmitterInput?.value.trim() ?? "";
+  const picks = getBracketPicks();
+  const selectedMatchIds = Object.keys(picks);
+
+  if (!submitter) {
+    setBracketSubmitStatus("Enter your name before submitting.", "error");
+    bracketSubmitterInput?.focus();
+    return;
+  }
+
+  if (selectedMatchIds.length === 0) {
+    setBracketSubmitStatus("Make at least one bracket pick before submitting.", "error");
+    return;
+  }
+
+  if (!BRACKET_SUBMISSION_ENDPOINT) {
+    setBracketSubmitStatus("Bracket submission endpoint is not configured yet.", "error");
+    return;
+  }
+
+  const payload = buildBracketSubmissionPayload(submitter, picks);
+  bracketSubmitButton.disabled = true;
+  setBracketSubmitStatus("Submitting bracket picks...", "pending");
+
+  try {
+    await fetch(BRACKET_SUBMISSION_ENDPOINT, {
+      body: JSON.stringify(payload),
+      method: "POST",
+      mode: "no-cors",
+    });
+
+    setBracketSubmitStatus("Submitted. Google Sheets may take a moment to update.", "success");
+  } catch (error) {
+    setBracketSubmitStatus(`Unable to submit bracket picks: ${error.message}`, "error");
+  } finally {
+    bracketSubmitButton.disabled = false;
+  }
+}
+
+function buildBracketSubmissionPayload(submitter, picks) {
+  const matchById = getMatchesById(siteData.bracketMatches || []);
+  const bracketState = getResolvedBracketState(siteData.bracketMatches || [], matchById);
+  const resolvedPicks = bracketState.picks;
+  const userPickIds = Object.keys(picks).sort(compareNumericStrings);
+
+  return {
+    browser: window.navigator.userAgent,
+    submittedAt: new Date().toISOString(),
+    submitter,
+    pageUrl: window.location.href,
+    picks: userPickIds.map((matchId) => {
+      const side = picks[matchId];
+      const match = matchById.get(String(matchId));
+      const team = match ? resolveBracketPickLabel(match, matchById, resolvedPicks, side) : "";
+
+      return {
+        matchId,
+        side,
+        team,
+      };
+    }),
+  };
+}
+
+function resolveBracketPickLabel(match, matchById, picks, side) {
+  if (!["home", "away"].includes(side)) {
+    return "";
+  }
+
+  const field = side === "home" ? "Home" : "Away";
+  return resolveBracketEntrant(getField(match, field, side), matchById, picks).label;
+}
+
+function compareNumericStrings(firstValue, secondValue) {
+  return String(firstValue).localeCompare(String(secondValue), undefined, { numeric: true });
+}
+
+function setBracketSubmitStatus(message, state = "") {
+  if (!bracketSubmitStatus) {
+    return;
+  }
+
+  bracketSubmitStatus.textContent = message;
+  bracketSubmitStatus.dataset.state = state;
 }
 
 function clearBracketPicks() {

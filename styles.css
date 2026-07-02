@@ -721,6 +721,23 @@ main {
   margin: -6px 0 18px;
 }
 
+.formula-one-form-shell {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  min-height: 720px;
+  overflow: hidden;
+}
+
+.formula-one-form-shell iframe {
+  border: 0;
+  display: block;
+  height: min(920px, 78vh);
+  min-height: 720px;
+  width: 100%;
+}
+
 .formula-one-question-list {
   display: grid;
   gap: 16px;

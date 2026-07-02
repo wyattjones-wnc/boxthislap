@@ -128,7 +128,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607020004">
+    <link rel="stylesheet" href="styles.css?v=202607020005">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -209,6 +209,7 @@
         </div>
         <div class="nav-links" data-nav-scope="formula-one-2026" role="tablist" aria-label="Formula 1 sections" hidden>
           <a href="#formula-1-2026-questions" data-page-link="formula-1-2026-questions" role="tab">Questions</a>
+          <a href="#formula-1-2026-weekly" data-page-link="formula-1-2026-weekly" role="tab">Weekly</a>
           <a href="#formula-1-2026-results" data-page-link="formula-1-2026-results" role="tab">Results</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
@@ -723,6 +724,43 @@
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section class="page league-detail-page" id="formula-1-2026-weekly" data-page="formula-1-2026-weekly">
+        <div class="league-detail-heading">
+          <div>
+            <h2>Formula 1</h2>
+            <p>2026 Weekly</p>
+          </div>
+        </div>
+
+        <div class="tabs formula-one-tabs" role="tablist" aria-label="2026 Formula 1 weekly sections">
+          <button class="tab is-active" type="button" data-tab="formula-one-2026-weekly-bet" aria-selected="true" role="tab">Bet</button>
+          <button class="tab" type="button" data-tab="formula-one-2026-weekly-results" aria-selected="false" role="tab">Results</button>
+          <button class="tab" type="button" data-tab="formula-one-2026-weekly-managers" aria-selected="false" role="tab">Managers' Championship</button>
+        </div>
+
+        <section class="tab-panel is-active" data-tab-panel="formula-one-2026-weekly-bet" role="tabpanel">
+          <div class="formula-one-form-shell">
+            <iframe
+              title="2026 Formula 1 weekly bet form"
+              src="https://docs.google.com/forms/d/e/1FAIpQLSePP7FSNq5gYCOPr3pazGXZC-N86ZMVq5Q5CJAbbbZSsMn9Iw/viewform?embedded=true"
+              loading="lazy"
+            ></iframe>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-results" role="tabpanel">
+          <article class="formula-one-question-card">
+            <p class="table-message">Weekly results will appear here.</p>
+          </article>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-managers" role="tabpanel">
+          <article class="formula-one-question-card">
+            <p class="table-message">Managers' Championship standings will appear here.</p>
+          </article>
+        </section>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2025-draft" data-page="fantasy-office-2025-draft">

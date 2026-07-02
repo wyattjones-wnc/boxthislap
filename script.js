@@ -3144,7 +3144,7 @@ function hydrateBracketSubmitter() {
   }
 }
 
-async function submitBracketPicks() {
+function submitBracketPicks() {
   const submitter = bracketSubmitterInput?.value.trim() ?? "";
   const picks = getBracketPicks();
   const selectedMatchIds = Object.keys(picks);
@@ -3169,19 +3169,39 @@ async function submitBracketPicks() {
   bracketSubmitButton.disabled = true;
   setBracketSubmitStatus("Submitting bracket picks...", "pending");
 
-  try {
-    await fetch(BRACKET_SUBMISSION_ENDPOINT, {
-      body: JSON.stringify(payload),
-      method: "POST",
-      mode: "no-cors",
-    });
+  submitBracketPayloadWithForm(payload);
 
-    setBracketSubmitStatus("Submitted. Google Sheets may take a moment to update.", "success");
-  } catch (error) {
-    setBracketSubmitStatus(`Unable to submit bracket picks: ${error.message}`, "error");
-  } finally {
+  window.setTimeout(() => {
     bracketSubmitButton.disabled = false;
+    setBracketSubmitStatus("Submitted. Google Sheets may take a moment to update.", "success");
+  }, 900);
+}
+
+function submitBracketPayloadWithForm(payload) {
+  const iframeName = "bracket-submission-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
   }
+
+  const form = document.createElement("form");
+  form.action = BRACKET_SUBMISSION_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
 }
 
 function buildBracketSubmissionPayload(submitter, picks) {

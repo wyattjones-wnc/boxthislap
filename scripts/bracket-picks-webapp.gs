@@ -39,7 +39,7 @@ function getBracketPicksSheet_() {
 }
 
 function parseBracketPayload_(event) {
-  const text = event?.postData?.contents || "{}";
+  const text = event?.parameter?.payload || event?.postData?.contents || "{}";
 
   try {
     return JSON.parse(text);

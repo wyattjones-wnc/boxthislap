@@ -1111,6 +1111,58 @@ main {
   padding-bottom: 12px;
 }
 
+.bracket-actions {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.bracket-submitter {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 900;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+.bracket-submitter input {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  min-height: 38px;
+  padding: 8px 10px;
+  text-transform: none;
+  width: min(220px, 48vw);
+}
+
+.bracket-submitter input:focus {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-border);
+}
+
+.bracket-submit-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: -10px auto 18px;
+  max-width: 1180px;
+  min-height: 1.4em;
+}
+
+.bracket-submit-status[data-state="error"] {
+  color: var(--accent-dark);
+}
+
+.bracket-submit-status[data-state="success"] {
+  color: #56c271;
+}
+
 .bracket-grid {
   align-items: start;
   display: grid;

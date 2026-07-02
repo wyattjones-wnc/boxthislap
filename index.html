@@ -128,7 +128,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607010001">
+    <link rel="stylesheet" href="styles.css?v=202607020001">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -469,8 +469,16 @@
       <section class="page" id="bracket" data-page="bracket">
         <div class="section-heading page-heading-with-action">
           <h1>Bracket</h1>
-          <button class="action-button secondary-action" id="bracket-clear-picks" type="button">Clear Picks</button>
+          <div class="bracket-actions">
+            <label class="bracket-submitter">
+              <span>Name</span>
+              <input id="bracket-submitter" type="text" autocomplete="name" placeholder="Your name">
+            </label>
+            <button class="action-button" id="bracket-submit-picks" type="button">Submit</button>
+            <button class="action-button secondary-action" id="bracket-clear-picks" type="button">Clear Picks</button>
+          </div>
         </div>
+        <p class="bracket-submit-status" id="bracket-submit-status" role="status"></p>
 
         <div class="bracket-shell" id="bracket-view">
           <article class="match-card">
@@ -816,6 +824,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607010003"></script>
+    <script type="module" src="script.js?v=202607020001"></script>
   </body>
 </html>

@@ -721,6 +721,12 @@ main {
   margin: -6px 0 18px;
 }
 
+.formula-one-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .formula-one-form-shell {
   background: var(--panel);
   border: 1px solid var(--line);

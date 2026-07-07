@@ -3252,12 +3252,8 @@ function syncBracketSubmissionControls() {
 }
 
 function getSubmittedBracketState(matches, matchById, submission) {
-  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, submission.picks);
-  const picks = { ...submission.picks, ...inferredPicks };
-  const lockedMatches = new Set([
-    ...Object.keys(picks),
-    ...Object.keys(inferredPicks),
-  ]);
+  const picks = { ...submission.picks };
+  const lockedMatches = new Set(Object.keys(picks));
 
   return { picks, lockedMatches, isReadOnly: true };
 }
@@ -3366,8 +3362,8 @@ function renderBracketMatch(match, matchById, bracketState) {
   const matchId = getMatchId(match);
   const selectedSide = picks[matchId] || "";
   const isLocked = lockedMatches.has(String(matchId));
-  const home = resolveBracketEntrant(getField(match, "Home", "home"), matchById, picks);
-  const away = resolveBracketEntrant(getField(match, "Away", "away"), matchById, picks);
+  const home = resolveBracketEntrant(getBracketEntrantValue(match, "home", bracketState), matchById, picks);
+  const away = resolveBracketEntrant(getBracketEntrantValue(match, "away", bracketState), matchById, picks);
   const date = formatBracketMatchDate(getMatchDate(match));
   const time = getField(match, "Time", "time");
 
@@ -3383,6 +3379,17 @@ function renderBracketMatch(match, matchById, bracketState) {
       </div>
     </article>
   `;
+}
+
+function getBracketEntrantValue(match, side, bracketState) {
+  const matchId = getMatchId(match);
+  const slotReference = BRACKET_SLOT_REFERENCES[matchId]?.[side];
+
+  if (bracketState.isReadOnly && slotReference) {
+    return slotReference;
+  }
+
+  return getField(match, side === "home" ? "Home" : "Away", side);
 }
 
 function formatBracketMatchDate(dateKey) {

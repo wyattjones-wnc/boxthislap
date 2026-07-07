@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607020004";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607070001";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -30,6 +30,11 @@ const formulaOneViews = {
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),
+    roundFormFrame: document.querySelector("#formula-one-2026-round-form-frame"),
+    roundFormMessage: document.querySelector("#formula-one-2026-round-form-message"),
+    roundFormOpen: document.querySelector("#formula-one-2026-round-form-open"),
+    roundFormSelect: document.querySelector("#formula-one-2026-round-form-select"),
+    roundFormShell: document.querySelector("#formula-one-2026-round-form-shell"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
   },
 };
@@ -1199,6 +1204,171 @@ function renderFormulaOneWeeklyError(error) {
   }
 }
 
+function parseFormulaOneRoundForms(rows) {
+  return rows.map((row) => {
+    const roundId = String(getField(row, "Round ID", "Round Id", "Round") ?? "").trim();
+    const roundName = String(getField(row, "Round Name", "Name") ?? "").trim();
+    const dateText = String(getField(row, "Date") ?? "").trim();
+    const formUrl = String(getField(row, "Form Link", "Form URL", "Form") ?? "").trim();
+
+    return {
+      dateKey: parseFormulaOneRoundFormDate(dateText),
+      dateText,
+      formUrl,
+      label: [roundId, roundName].filter(Boolean).join(". "),
+      roundId,
+      roundName,
+    };
+  }).filter((roundForm) => roundForm.roundId || roundForm.roundName || roundForm.formUrl);
+}
+
+function parseFormulaOneRoundFormDate(value) {
+  const trimmedValue = String(value ?? "").trim();
+
+  if (!trimmedValue) {
+    return "";
+  }
+
+  const isoMatch = trimmedValue.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (isoMatch) {
+    return [
+      isoMatch[1],
+      isoMatch[2].padStart(2, "0"),
+      isoMatch[3].padStart(2, "0"),
+    ].join("-");
+  }
+
+  const shortDateMatch = trimmedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+
+  if (!shortDateMatch) {
+    return "";
+  }
+
+  const year = Number(shortDateMatch[3]);
+  const fullYear = year < 100 ? 2000 + year : year;
+
+  return [
+    String(fullYear),
+    shortDateMatch[1].padStart(2, "0"),
+    shortDateMatch[2].padStart(2, "0"),
+  ].join("-");
+}
+
+function renderFormulaOne2026RoundForms(roundForms) {
+  const view = formulaOneViews[2026];
+
+  if (!view?.roundFormSelect) {
+    return;
+  }
+
+  siteData.formulaOne2026RoundForms = roundForms;
+
+  if (roundForms.length === 0) {
+    view.roundFormSelect.innerHTML = `<option value="">No rounds loaded</option>`;
+    view.roundFormSelect.disabled = true;
+    setFormulaOne2026RoundFormState(null, "No Formula 1 weekly form rounds were loaded.");
+    return;
+  }
+
+  view.roundFormSelect.disabled = false;
+  view.roundFormSelect.innerHTML = roundForms.map((roundForm, index) => {
+    const label = roundForm.label || `Round ${index + 1}`;
+    const date = roundForm.dateText ? ` (${roundForm.dateText})` : "";
+    return `<option value="${index}">${escapeHtml(label)}${escapeHtml(date)}</option>`;
+  }).join("");
+
+  view.roundFormSelect.value = String(getDefaultFormulaOneRoundFormIndex(roundForms));
+  renderFormulaOne2026RoundFormSelection(view.roundFormSelect.value);
+}
+
+function getDefaultFormulaOneRoundFormIndex(roundForms) {
+  const todayKey = getDateKey(0);
+  const futureRound = roundForms
+    .map((roundForm, index) => ({ index, roundForm }))
+    .filter(({ roundForm }) => roundForm.dateKey && roundForm.dateKey >= todayKey)
+    .sort((a, b) => a.roundForm.dateKey.localeCompare(b.roundForm.dateKey))[0];
+
+  if (futureRound) {
+    return futureRound.index;
+  }
+
+  const latestRound = roundForms
+    .map((roundForm, index) => ({ index, roundForm }))
+    .filter(({ roundForm }) => roundForm.dateKey)
+    .sort((a, b) => b.roundForm.dateKey.localeCompare(a.roundForm.dateKey))[0];
+
+  return latestRound?.index ?? 0;
+}
+
+function renderFormulaOne2026RoundFormSelection(value) {
+  const roundForms = siteData.formulaOne2026RoundForms ?? [];
+  const roundForm = roundForms[Number(value)];
+
+  if (!roundForm) {
+    setFormulaOne2026RoundFormState(null, "No Formula 1 weekly form round is selected.");
+    return;
+  }
+
+  if (!roundForm.formUrl) {
+    const label = roundForm.label || "this round";
+    setFormulaOne2026RoundFormState(null, `No form link loaded for ${label}.`);
+    return;
+  }
+
+  setFormulaOne2026RoundFormState(roundForm.formUrl, "");
+}
+
+function setFormulaOne2026RoundFormState(formUrl, message, state = "") {
+  const view = formulaOneViews[2026];
+
+  if (view?.roundFormOpen) {
+    view.roundFormOpen.classList.toggle("is-disabled", !formUrl);
+    view.roundFormOpen.setAttribute("aria-disabled", String(!formUrl));
+
+    if (formUrl) {
+      view.roundFormOpen.href = formUrl;
+    } else {
+      view.roundFormOpen.removeAttribute("href");
+    }
+  }
+
+  if (view?.roundFormShell) {
+    view.roundFormShell.hidden = !formUrl;
+  }
+
+  if (view?.roundFormFrame) {
+    view.roundFormFrame.src = formUrl ? getGoogleFormEmbedUrl(formUrl) : "about:blank";
+  }
+
+  if (view?.roundFormMessage) {
+    view.roundFormMessage.textContent = message;
+    view.roundFormMessage.dataset.state = state;
+  }
+}
+
+function renderFormulaOne2026RoundFormError(error) {
+  const view = formulaOneViews[2026];
+
+  if (view?.roundFormSelect) {
+    view.roundFormSelect.innerHTML = `<option value="">Unable to load rounds</option>`;
+    view.roundFormSelect.disabled = true;
+  }
+
+  setFormulaOne2026RoundFormState(null, `Unable to load Formula 1 weekly forms: ${error.message}`, "error");
+}
+
+function getGoogleFormEmbedUrl(formUrl) {
+  try {
+    const url = new URL(formUrl);
+    url.searchParams.set("embedded", "true");
+    return url.toString();
+  } catch {
+    const separator = formUrl.includes("?") ? "&" : "?";
+    return `${formUrl}${separator}embedded=true`;
+  }
+}
+
 function parseFantasyOfficeDraft(csvText) {
   const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
   const managerRow = rows.find((row) => {
@@ -2151,6 +2321,10 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       setFormulaOne2025ResultsMode(button.getAttribute("data-formula-one-2025-results-mode"));
     });
   });
+
+  view.roundFormSelect?.addEventListener("change", () => {
+    renderFormulaOne2026RoundFormSelection(view.roundFormSelect.value);
+  });
 });
 
 Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
@@ -2564,6 +2738,17 @@ loadSheetText("formulaOne2026")
   .catch((error) => {
     renderFormulaOneError("2026", error);
     console.error("Box This Lap Formula 1 2026 data failed to load", error);
+  });
+
+loadSheet("formulaOne2026RoundForms")
+  .then((rows) => {
+    const roundForms = parseFormulaOneRoundForms(rows);
+    renderFormulaOne2026RoundForms(roundForms);
+    console.info("Box This Lap Formula 1 2026 round forms loaded", roundForms);
+  })
+  .catch((error) => {
+    renderFormulaOne2026RoundFormError(error);
+    console.error("Box This Lap Formula 1 2026 round forms failed to load", error);
   });
 
 siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };

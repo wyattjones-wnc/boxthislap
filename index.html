@@ -128,7 +128,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607030001">
+    <link rel="stylesheet" href="styles.css?v=202607070001">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -742,17 +742,26 @@
 
         <section class="tab-panel is-active" data-tab-panel="formula-one-2026-weekly-bet" role="tabpanel">
           <div class="formula-one-form-actions">
+            <label class="field-label" for="formula-one-2026-round-form-select">
+              Round
+              <select class="select-control" id="formula-one-2026-round-form-select">
+                <option value="">Loading rounds...</option>
+              </select>
+            </label>
             <a
               class="action-button"
+              id="formula-one-2026-round-form-open"
               href="https://docs.google.com/forms/d/e/1FAIpQLSePP7FSNq5gYCOPr3pazGXZC-N86ZMVq5Q5CJAbbbZSsMn9Iw/viewform"
               target="_blank"
               rel="noopener noreferrer"
             >Open Form</a>
           </div>
-          <div class="formula-one-form-shell">
+          <p class="formula-one-form-message" id="formula-one-2026-round-form-message" aria-live="polite"></p>
+          <div class="formula-one-form-shell" id="formula-one-2026-round-form-shell">
             <iframe
+              id="formula-one-2026-round-form-frame"
               title="2026 Formula 1 weekly bet form"
-              src="https://docs.google.com/forms/d/e/1FAIpQLSePP7FSNq5gYCOPr3pazGXZC-N86ZMVq5Q5CJAbbbZSsMn9Iw/viewform?embedded=true"
+              src="about:blank"
               loading="lazy"
             ></iframe>
           </div>
@@ -880,6 +889,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607020004"></script>
+    <script type="module" src="script.js?v=202607070001"></script>
   </body>
 </html>

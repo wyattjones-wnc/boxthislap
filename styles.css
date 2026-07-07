@@ -410,6 +410,12 @@ main {
   white-space: nowrap;
 }
 
+.action-button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .secondary-action {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -722,9 +728,33 @@ main {
 }
 
 .formula-one-form-actions {
+  align-items: end;
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.formula-one-form-actions .field-label {
+  margin: 0;
+  max-width: 100%;
+}
+
+.formula-one-form-actions .select-control {
+  min-width: min(280px, 100%);
+}
+
+.formula-one-form-message {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: -4px 0 12px;
+  min-height: 1.25em;
+}
+
+.formula-one-form-message[data-state="error"] {
+  color: var(--accent-dark);
 }
 
 .formula-one-form-shell {
@@ -734,6 +764,10 @@ main {
   box-shadow: 0 8px 18px var(--shadow);
   min-height: 720px;
   overflow: hidden;
+}
+
+.formula-one-form-shell[hidden] {
+  display: none;
 }
 
 .formula-one-form-shell iframe {

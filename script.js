@@ -2925,7 +2925,7 @@ function parseBracketSubmissions(rows) {
 
 function parseBracketSubmission(row, index) {
   const rawPicks = getField(row, "Picks JSON", "picks json", "Picks");
-  const picks = parseBracketSubmissionPicks(rawPicks);
+  const { picks, pickTeams } = parseBracketSubmissionPicks(rawPicks);
 
   if (Object.keys(picks).length === 0) {
     return null;
@@ -2939,6 +2939,7 @@ function parseBracketSubmission(row, index) {
   return {
     id: String(index),
     label: `${submitter} - ${timestampLabel || "No timestamp"}`,
+    pickTeams,
     picks,
     submitter,
     timestamp,
@@ -2952,21 +2953,29 @@ function parseBracketSubmissionPicks(rawPicks) {
     const parsedPicks = JSON.parse(String(rawPicks || "[]"));
 
     if (!Array.isArray(parsedPicks)) {
-      return {};
+      return { picks: {}, pickTeams: {} };
     }
 
-    return parsedPicks.reduce((picks, pick) => {
+    return parsedPicks.reduce((submissionData, pick) => {
       const matchId = String(pick?.matchId ?? "").trim();
       const side = String(pick?.side ?? "").trim().toLowerCase();
+      const team = String(pick?.team ?? "").trim();
 
       if (matchId && ["home", "away"].includes(side)) {
-        picks[matchId] = side;
+        submissionData.picks[matchId] = side;
+
+        if (team) {
+          submissionData.pickTeams[matchId] = {
+            side,
+            team,
+          };
+        }
       }
 
-      return picks;
-    }, {});
+      return submissionData;
+    }, { picks: {}, pickTeams: {} });
   } catch {
-    return {};
+    return { picks: {}, pickTeams: {} };
   }
 }
 
@@ -3042,14 +3051,15 @@ function syncBracketSubmissionControls() {
 }
 
 function getSubmittedBracketState(matches, matchById, submission) {
-  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, submission.picks);
-  const picks = { ...submission.picks, ...inferredPicks };
-  const lockedMatches = new Set([
-    ...Object.keys(picks),
-    ...Object.keys(inferredPicks),
-  ]);
+  const picks = { ...submission.picks };
+  const lockedMatches = new Set(Object.keys(picks));
 
-  return { picks, lockedMatches, isReadOnly: true };
+  return {
+    pickTeams: submission.pickTeams || {},
+    picks,
+    lockedMatches,
+    isReadOnly: true,
+  };
 }
 
 function renderBracketSubmissionNotice(submission) {
@@ -3156,8 +3166,8 @@ function renderBracketMatch(match, matchById, bracketState) {
   const matchId = getMatchId(match);
   const selectedSide = picks[matchId] || "";
   const isLocked = lockedMatches.has(String(matchId));
-  const home = resolveBracketEntrant(getField(match, "Home", "home"), matchById, picks);
-  const away = resolveBracketEntrant(getField(match, "Away", "away"), matchById, picks);
+  const home = resolveBracketEntrantForSide(match, "home", matchById, bracketState);
+  const away = resolveBracketEntrantForSide(match, "away", matchById, bracketState);
   const date = formatBracketMatchDate(getMatchDate(match));
   const time = getField(match, "Time", "time");
 
@@ -3173,6 +3183,37 @@ function renderBracketMatch(match, matchById, bracketState) {
       </div>
     </article>
   `;
+}
+
+function resolveBracketEntrantForSide(match, side, matchById, bracketState) {
+  const submittedTeam = getSubmittedBracketTeamForSide(bracketState, getMatchId(match), side);
+
+  if (submittedTeam) {
+    return { isPending: false, label: submittedTeam };
+  }
+
+  return resolveBracketEntrant(getBracketEntrantValue(match, side, bracketState), matchById, bracketState.picks);
+}
+
+function getSubmittedBracketTeamForSide(bracketState, matchId, side) {
+  if (!bracketState.isReadOnly) {
+    return "";
+  }
+
+  const pickTeam = bracketState.pickTeams?.[String(matchId)];
+
+  return pickTeam?.side === side ? pickTeam.team : "";
+}
+
+function getBracketEntrantValue(match, side, bracketState) {
+  const matchId = getMatchId(match);
+  const slotReference = BRACKET_SLOT_REFERENCES[matchId]?.[side];
+
+  if (bracketState.isReadOnly && slotReference) {
+    return slotReference;
+  }
+
+  return getField(match, side === "home" ? "Home" : "Away", side);
 }
 
 function formatBracketMatchDate(dateKey) {

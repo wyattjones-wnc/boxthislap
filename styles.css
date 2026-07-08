@@ -824,6 +824,7 @@ main {
 
 .formula-one-weekly-entry {
   border-bottom: 1px solid var(--line);
+  cursor: pointer;
   display: grid;
   gap: 12px;
   padding: 14px 16px;
@@ -831,6 +832,17 @@ main {
 
 .formula-one-weekly-entry:last-child {
   border-bottom: 0;
+}
+
+.formula-one-weekly-entry:hover,
+.formula-one-weekly-entry:focus-visible,
+.formula-one-weekly-entry.is-weekly-expanded {
+  background: var(--soft);
+}
+
+.formula-one-weekly-entry:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: -2px;
 }
 
 .formula-one-weekly-manager {
@@ -849,6 +861,10 @@ main {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.formula-one-weekly-picks[hidden] {
+  display: none;
 }
 
 .formula-one-weekly-pick {

@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607020004";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607080003";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -25,12 +25,15 @@ const formulaOneViews = {
     resultsModeButtons: document.querySelectorAll("[data-formula-one-2025-results-mode]"),
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
     weeklyList: document.querySelector("#formula-one-2025-weekly-list"),
+    weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
   },
   2026: {
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
+    weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
+    weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
   },
 };
 const fantasyOfficeViews = {
@@ -1061,8 +1064,8 @@ function setFormulaOne2025ResultsMode(mode) {
   renderFormulaOneResults("2025");
 }
 
-function renderFormulaOneWeeklyPage(data) {
-  const view = formulaOneViews[2025];
+function renderFormulaOneWeeklyPage(year, data) {
+  const view = formulaOneViews[year];
 
   if (!view?.weeklyList) {
     return;
@@ -1073,10 +1076,38 @@ function renderFormulaOneWeeklyPage(data) {
     return;
   }
 
-  view.weeklyList.innerHTML = data.races.map(renderFormulaOneWeeklyRace).join("");
+  renderFormulaOneWeeklyRoundOptions(year, data.races);
+
+  const selectedRound = view.weeklyRoundSelect?.value ?? "";
+  const races = selectedRound
+    ? data.races.filter((race) => String(race.id) === selectedRound)
+    : data.races;
+
+  if (races.length === 0) {
+    view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No weekly picks matched that round.</p></article>`;
+    return;
+  }
+
+  view.weeklyList.innerHTML = races.map((race) => renderFormulaOneWeeklyRace(year, race)).join("");
 }
 
-function renderFormulaOneWeeklyRace(race) {
+function renderFormulaOneWeeklyRoundOptions(year, races) {
+  const select = formulaOneViews[year]?.weeklyRoundSelect;
+
+  if (!select) {
+    return;
+  }
+
+  const selectedValue = select.value;
+  select.innerHTML = `
+    <option value="">All rounds</option>
+    ${races.map((race) => `<option value="${escapeHtml(String(race.id))}">${escapeHtml(race.name)}</option>`).join("")}
+  `;
+
+  select.value = races.some((race) => String(race.id) === selectedValue) ? selectedValue : "";
+}
+
+function renderFormulaOneWeeklyRace(year, race) {
   return `
     <article class="formula-one-weekly-card">
       <header>
@@ -1084,22 +1115,30 @@ function renderFormulaOneWeeklyRace(race) {
         <h3>Weekly Picks</h3>
       </header>
       <div class="formula-one-weekly-managers">
-        ${race.entries.map(renderFormulaOneWeeklyEntry).join("")}
+        ${race.entries.map((entry, index) => renderFormulaOneWeeklyEntry(year, race, entry, index)).join("")}
       </div>
     </article>
   `;
 }
 
-function renderFormulaOneWeeklyEntry(entry) {
+function renderFormulaOneWeeklyEntry(year, race, entry, index) {
   const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+  const detailsId = `formula-one-${year}-weekly-${race.id}-${index}`;
 
   return `
-    <section class="formula-one-weekly-entry">
+    <section
+      class="formula-one-weekly-entry"
+      data-formula-one-weekly-entry
+      aria-controls="${escapeHtml(detailsId)}"
+      aria-expanded="false"
+      role="button"
+      tabindex="0"
+    >
       <div class="formula-one-weekly-manager">
         ${renderManagerChip(manager)}
         <strong>${escapeHtml(formatPoints(entry.total))}</strong>
       </div>
-      <div class="formula-one-weekly-picks">
+      <div class="formula-one-weekly-picks" id="${escapeHtml(detailsId)}" hidden>
         ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
         ${renderFormulaOneWeeklyPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
         ${renderFormulaOneWeeklyPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
@@ -1107,6 +1146,33 @@ function renderFormulaOneWeeklyEntry(entry) {
       </div>
     </section>
   `;
+}
+
+function toggleFormulaOneWeeklyEntry(entry) {
+  const isExpanded = entry.getAttribute("aria-expanded") === "true";
+  const managerList = entry.closest(".formula-one-weekly-managers");
+
+  managerList?.querySelectorAll("[data-formula-one-weekly-entry]").forEach((row) => {
+    row.classList.remove("is-weekly-expanded");
+    row.setAttribute("aria-expanded", "false");
+
+    const details = document.getElementById(row.getAttribute("aria-controls"));
+    if (details) {
+      details.hidden = true;
+    }
+  });
+
+  if (isExpanded) {
+    return;
+  }
+
+  entry.classList.add("is-weekly-expanded");
+  entry.setAttribute("aria-expanded", "true");
+
+  const details = document.getElementById(entry.getAttribute("aria-controls"));
+  if (details) {
+    details.hidden = false;
+  }
 }
 
 function renderFormulaOneWeeklyPick(label, pick, position, points) {
@@ -1150,7 +1216,7 @@ function renderFormulaOneWeeklyWildcardResult(label, position, points) {
 }
 
 function formatFormulaOneWeeklyPickResult(position, points) {
-  return `${formatFormulaOnePosition(position)} · ${formatPoints(points)} pts`;
+  return `${formatFormulaOnePosition(position)} | ${formatPoints(points)} pts`;
 }
 
 function formatFormulaOnePosition(position) {
@@ -1175,8 +1241,8 @@ function renderFormulaOneError(year, error) {
   }
 }
 
-function renderFormulaOneWeeklyError(error) {
-  const view = formulaOneViews[2025];
+function renderFormulaOneWeeklyError(year, error) {
+  const view = formulaOneViews[year];
 
   if (view?.weeklyList) {
     view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Formula 1 weekly picks: ${escapeHtml(error.message)}</p></article>`;
@@ -2135,6 +2201,33 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       setFormulaOne2025ResultsMode(button.getAttribute("data-formula-one-2025-results-mode"));
     });
   });
+
+  view.weeklyRoundSelect?.addEventListener("change", () => {
+    renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
+  });
+
+  view.weeklyList?.addEventListener("click", (event) => {
+    const entry = event.target.closest("[data-formula-one-weekly-entry]");
+
+    if (entry) {
+      toggleFormulaOneWeeklyEntry(entry);
+    }
+  });
+
+  view.weeklyList?.addEventListener("keydown", (event) => {
+    if (!["Enter", " "].includes(event.key)) {
+      return;
+    }
+
+    const entry = event.target.closest("[data-formula-one-weekly-entry]");
+
+    if (!entry) {
+      return;
+    }
+
+    event.preventDefault();
+    toggleFormulaOneWeeklyEntry(entry);
+  });
 });
 
 Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
@@ -2521,12 +2614,12 @@ loadSheetText("formulaOne2025Weekly")
   .then((csvText) => {
     const data = parseFormulaOneWeeklySheet(csvText);
     siteData.formulaOne2025Weekly = data;
-    renderFormulaOneWeeklyPage(data);
+    renderFormulaOneWeeklyPage("2025", data);
     renderFormulaOneResults("2025");
     console.info("Box This Lap Formula 1 2025 weekly data loaded", data);
   })
   .catch((error) => {
-    renderFormulaOneWeeklyError(error);
+    renderFormulaOneWeeklyError("2025", error);
     console.error("Box This Lap Formula 1 2025 weekly data failed to load", error);
   });
 
@@ -2539,6 +2632,18 @@ loadSheetText("formulaOne2026")
   .catch((error) => {
     renderFormulaOneError("2026", error);
     console.error("Box This Lap Formula 1 2026 data failed to load", error);
+  });
+
+loadSheetText("formulaOne2026Weekly")
+  .then((csvText) => {
+    const data = parseFormulaOneWeeklySheet(csvText);
+    siteData.formulaOne2026Weekly = data;
+    renderFormulaOneWeeklyPage("2026", data);
+    console.info("Box This Lap Formula 1 2026 weekly data loaded", data);
+  })
+  .catch((error) => {
+    renderFormulaOneWeeklyError("2026", error);
+    console.error("Box This Lap Formula 1 2026 weekly data failed to load", error);
   });
 
 siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };

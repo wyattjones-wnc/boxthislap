@@ -8,6 +8,8 @@ const FORMULA_ONE_2025_WEEKLY_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4JBp8m58prqFPqifgHB0xS7y-mFEUwKFQwnEctIAT207dWYEJHEXfGb9sJpXARsTdeylYMascufcz/pub";
 const FORMULA_ONE_2026_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBdrnquLj8KnJhAFtF5hCdiW3TD-ILKxkk8G2av4DGc5bwPbP7WHOO-_5Mbh8urjAo4c0MAxSKF_pt/pub";
+const FORMULA_ONE_2026_WEEKLY_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5bYjw_XeqE4Pk6SosOnf-S0tFQI5IeyERphgP7BjKpum-0Qj2vTokmy99qgvbyvH6OU9_ENJjA-2/pub";
 const FANTASY_OFFICE_2025_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSYSfJjflJkmjJBmS5zr08qfr0Ul3DdjUk4ER988JtWz5jy5P5-z7v4E4tMQzW6K06IswWas8CRl7Yn/pub";
 const FANTASY_OFFICE_2026_SHEET_BASE_URL =
@@ -28,6 +30,7 @@ export const DATA_SOURCES = {
     formulaOne2025: buildFormulaOne2025CsvUrl("1705332201"),
     formulaOne2025Weekly: buildFormulaOne2025WeeklyCsvUrl("1508426028"),
     formulaOne2026: buildFormulaOne2026CsvUrl("1705332201"),
+    formulaOne2026Weekly: buildFormulaOne2026WeeklyCsvUrl("1508426028"),
     fantasyOffice2025Draft: buildFantasyOffice2025CsvUrl("1020743771"),
     fantasyOffice2025Movies: buildFantasyOffice2025CsvUrl("517732298"),
     fantasyOffice2025Results: buildFantasyOffice2025CsvUrl("420488658"),
@@ -171,6 +174,10 @@ function buildFormulaOne2025WeeklyCsvUrl(gid) {
 
 function buildFormulaOne2026CsvUrl(gid) {
   return `${FORMULA_ONE_2026_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+}
+
+function buildFormulaOne2026WeeklyCsvUrl(gid) {
+  return `${FORMULA_ONE_2026_WEEKLY_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
 }
 
 function buildFantasyOffice2025CsvUrl(gid) {

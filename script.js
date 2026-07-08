@@ -3920,7 +3920,7 @@ function renderPlayerChampionship(performances) {
     return `
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(player, index, rows))}</td>
-        <td data-label="Player">${renderPlayerNameWithPosition(formatPlayerStandingName(player), player.position)}</td>
+        <td data-label="Player">${renderPlayerNameWithPosition(player.name, player.position)}</td>
         <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
@@ -3932,17 +3932,6 @@ function renderPlayerChampionship(performances) {
       </tr>
     `;
   }).join("");
-}
-
-function formatPlayerStandingName(player) {
-  const name = String(player?.name ?? "").trim();
-  const nation = String(player?.team ?? "").trim();
-
-  if (!name || !nation) {
-    return name || nation;
-  }
-
-  return `${name} (${nation})`;
 }
 
 function filterPlayerRowsByPosition(rows) {
@@ -4663,7 +4652,7 @@ function renderManagerDraftGroup(label, drafts) {
         ${drafts.map((draft) => {
           return `
             <li>
-              <span>${escapeHtml(draft.name)}</span>
+              <span>${renderManagerDraftName(draft)}</span>
               <strong>${escapeHtml(formatPoints(draft.points))}</strong>
             </li>
           `;
@@ -4671,6 +4660,18 @@ function renderManagerDraftGroup(label, drafts) {
       </ul>
     </section>
   `;
+}
+
+function renderManagerDraftName(draft) {
+  if (draft.type !== "Player") {
+    return escapeHtml(draft.name);
+  }
+
+  const name = String(draft.name ?? "").trim();
+  const nation = String(draft.nation ?? "").trim();
+  const label = name && nation ? `${name} (${nation})` : name || nation;
+
+  return renderPlayerNameWithPosition(label, draft.position);
 }
 
 function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults, filter = "all" }) {
@@ -4727,10 +4728,18 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
 
       manager.playerCount += 1;
       const points = getDraftPlayerPoints(draft, playerPerformances);
+      const nation = normalizeNationName(draft.Nation || draft.Team);
+      const position = getPlayerPosition({
+        id: playerId,
+        name: playerName,
+        position: draft.Position,
+      });
       manager.points += points;
       manager.drafts.push({
         name: playerName,
+        nation,
         points,
+        position,
         type: "Player",
       });
     }

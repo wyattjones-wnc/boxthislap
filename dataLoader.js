@@ -31,6 +31,7 @@ export const DATA_SOURCES = {
     formulaOne2025Weekly: buildFormulaOne2025WeeklyCsvUrl("1508426028"),
     formulaOne2026: buildFormulaOne2026CsvUrl("1705332201"),
     formulaOne2026Weekly: buildFormulaOne2026WeeklyCsvUrl("1508426028"),
+    formulaOne2026WeeklyResults: buildFormulaOne2026WeeklyCsvUrl("700652503"),
     fantasyOffice2025Draft: buildFantasyOffice2025CsvUrl("1020743771"),
     fantasyOffice2025Movies: buildFantasyOffice2025CsvUrl("517732298"),
     fantasyOffice2025Results: buildFantasyOffice2025CsvUrl("420488658"),

@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607080003";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607080004";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -22,7 +22,7 @@ const formulaOneViews = {
     questionSelect: document.querySelector("#formula-one-2025-question-select"),
     questionFilter: document.querySelector("#formula-one-2025-question-filter"),
     questionList: document.querySelector("#formula-one-2025-question-list"),
-    resultsModeButtons: document.querySelectorAll("[data-formula-one-2025-results-mode]"),
+    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2025\"]"),
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
     weeklyList: document.querySelector("#formula-one-2025-weekly-list"),
     weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
@@ -31,6 +31,7 @@ const formulaOneViews = {
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),
+    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
     weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
     weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
@@ -52,7 +53,10 @@ const fantasyOfficeMovieSort = {
   direction: "desc",
   key: "points",
 };
-let formulaOne2025ResultsMode = "yearly";
+const formulaOneResultsMode = {
+  2025: "yearly",
+  2026: "yearly",
+};
 let bracketPicksFallback = {};
 const resultsPage = document.querySelector("#results");
 const updatedTime = document.querySelector("[data-updated-time]");
@@ -696,7 +700,7 @@ function parseFormulaOneSheet(csvText) {
       bets: managerColumns.map(({ manager, index: betIndex }) => ({
         manager,
         bet: row[betIndex]?.trim() ?? "",
-        points: parsePoints(row[betIndex + 1]),
+        points: parseFormulaOnePointValue(row[betIndex + 1]),
       })),
     };
   }).filter((question) => question.question);
@@ -705,8 +709,8 @@ function parseFormulaOneSheet(csvText) {
     const managerQuestions = questions.map((question) => {
       return question.bets.find((bet) => bet.manager === manager) ?? { manager, bet: "", points: 0 };
     });
-    const points = managerQuestions.reduce((total, bet) => total + bet.points, 0);
-    const scored = managerQuestions.filter((bet) => bet.points !== 0).length;
+    const points = managerQuestions.reduce((total, bet) => total + getFormulaOnePointNumber(bet.points), 0);
+    const scored = managerQuestions.filter((bet) => getFormulaOnePointNumber(bet.points) !== 0).length;
 
     return {
       manager,
@@ -761,13 +765,13 @@ function parseFormulaOneWeeklySheet(csvText) {
           wildcardRace: entryRow[11]?.trim() ?? "",
         },
         points: {
-          p1: parsePoints(entryRow[14]),
-          p2: parsePoints(entryRow[15]),
-          p3: parsePoints(entryRow[16]),
-          wildcardQualifying: parsePoints(entryRow[17]),
-          wildcardRace: parsePoints(entryRow[18]),
+          p1: parseFormulaOnePointValue(entryRow[14]),
+          p2: parseFormulaOnePointValue(entryRow[15]),
+          p3: parseFormulaOnePointValue(entryRow[16]),
+          wildcardQualifying: parseFormulaOnePointValue(entryRow[17]),
+          wildcardRace: parseFormulaOnePointValue(entryRow[18]),
         },
-        total: parsePoints(entryRow[19]),
+        total: parseFormulaOnePointValue(entryRow[19]),
       };
 
       if (hasFormulaOneWeeklyPicks(entry)) {
@@ -811,7 +815,7 @@ function getFormulaOneWeeklyStandings(races) {
 
   for (const manager of managerNames) {
     const raceTotals = races.map((race) => {
-      return race.entries.find((entry) => entry.manager === manager)?.total ?? 0;
+      return getFormulaOnePointNumber(race.entries.find((entry) => entry.manager === manager)?.total);
     });
     let points = 0;
 
@@ -837,6 +841,60 @@ function getFormulaOneWeeklyStandings(races) {
         return firstManager.manager.localeCompare(secondManager.manager);
       })
   );
+}
+
+function parseFormulaOneWeeklyResultsSheet(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const managerBlocks = [];
+  let currentBlock = [];
+
+  for (const row of rows) {
+    if (isKnownFormulaOneManager(row[0])) {
+      currentBlock.push(row);
+      continue;
+    }
+
+    if (currentBlock.length > 0) {
+      managerBlocks.push(currentBlock);
+      currentBlock = [];
+    }
+  }
+
+  if (currentBlock.length > 0) {
+    managerBlocks.push(currentBlock);
+  }
+
+  const totalBlocks = managerBlocks.filter((block) => {
+    return block.length > 0 && block.every((row) => {
+      return row[1]?.trim() && row.slice(2).every((value) => !String(value ?? "").trim());
+    });
+  });
+  const totalBlock = totalBlocks[totalBlocks.length - 1] ?? managerBlocks[managerBlocks.length - 1] ?? [];
+  const standings = totalBlock
+    .map((row) => {
+      const points = parseFormulaOnePointValue(row[1]);
+
+      return {
+        manager: row[0].trim(),
+        points,
+        pointsNumber: getFormulaOnePointNumber(points),
+      };
+    })
+    .filter((entry) => entry.manager)
+    .sort((firstEntry, secondEntry) => {
+      if (secondEntry.pointsNumber !== firstEntry.pointsNumber) {
+        return secondEntry.pointsNumber - firstEntry.pointsNumber;
+      }
+
+      return firstEntry.manager.localeCompare(secondEntry.manager);
+    })
+    .map(({ pointsNumber, ...entry }) => entry);
+
+  return { standings: rankRows(standings) };
+}
+
+function isKnownFormulaOneManager(value) {
+  return Object.prototype.hasOwnProperty.call(MANAGER_COLORS, normalizeLookupName(value));
 }
 
 function renderFormulaOneLeague(year, data) {
@@ -1015,7 +1073,7 @@ function renderFormulaOneBet(bet) {
         ${renderManagerChip(manager)}
         <p>${escapeHtml(bet.bet || "No bet listed")}</p>
       </div>
-      <strong>${formatPoints(bet.points)}</strong>
+      <strong>${escapeHtml(formatFormulaOnePointValue(bet.points))}</strong>
     </div>
   `;
 }
@@ -1028,13 +1086,14 @@ function renderFormulaOneResults(year) {
   }
 
   const data = siteData[`formulaOne${year}`];
-  const weeklyData = siteData.formulaOne2025Weekly;
-  const standings = year === "2025" && formulaOne2025ResultsMode === "weekly"
+  const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
+  const mode = formulaOneResultsMode[year] ?? "yearly";
+  const standings = mode === "weekly"
     ? weeklyData?.standings ?? []
     : data?.standings ?? [];
 
   if (standings.length === 0) {
-    const label = year === "2025" && formulaOne2025ResultsMode === "weekly" ? "weekly" : "yearly";
+    const label = mode === "weekly" ? "weekly" : "yearly";
     view.resultsRows.innerHTML = `<tr><td class="table-message" colspan="3">No Formula 1 ${label} results were loaded.</td></tr>`;
     return;
   }
@@ -1046,22 +1105,22 @@ function renderFormulaOneResults(year) {
       <tr>
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
         <td data-label="Manager">${renderManagerChip(manager)}</td>
-        <td data-label="Points">${escapeHtml(formatPoints(entry.points))}</td>
+        <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
     `;
   }).join("");
 }
 
-function setFormulaOne2025ResultsMode(mode) {
-  formulaOne2025ResultsMode = mode === "weekly" ? "weekly" : "yearly";
+function setFormulaOneResultsMode(year, mode) {
+  formulaOneResultsMode[year] = mode === "weekly" ? "weekly" : "yearly";
 
-  formulaOneViews[2025]?.resultsModeButtons?.forEach((button) => {
-    const isActive = button.getAttribute("data-formula-one-2025-results-mode") === formulaOne2025ResultsMode;
+  formulaOneViews[year]?.resultsModeButtons?.forEach((button) => {
+    const isActive = button.getAttribute("data-formula-one-results-mode") === formulaOneResultsMode[year];
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
 
-  renderFormulaOneResults("2025");
+  renderFormulaOneResults(year);
 }
 
 function renderFormulaOneWeeklyPage(year, data) {
@@ -1108,6 +1167,8 @@ function renderFormulaOneWeeklyRoundOptions(year, races) {
 }
 
 function renderFormulaOneWeeklyRace(year, race) {
+  const entries = rankFormulaOneWeeklyEntries(race.entries);
+
   return `
     <article class="formula-one-weekly-card">
       <header>
@@ -1115,13 +1176,37 @@ function renderFormulaOneWeeklyRace(year, race) {
         <h3>Weekly Picks</h3>
       </header>
       <div class="formula-one-weekly-managers">
-        ${race.entries.map((entry, index) => renderFormulaOneWeeklyEntry(year, race, entry, index)).join("")}
+        ${entries.map((entry, index) => renderFormulaOneWeeklyEntry(year, race, entry, index, entries)).join("")}
       </div>
     </article>
   `;
 }
 
-function renderFormulaOneWeeklyEntry(year, race, entry, index) {
+function rankFormulaOneWeeklyEntries(entries) {
+  let previousPoints;
+  let previousRank = 0;
+
+  return [...entries]
+    .sort((firstEntry, secondEntry) => {
+      const pointsDifference = getFormulaOnePointNumber(secondEntry.total) - getFormulaOnePointNumber(firstEntry.total);
+
+      if (pointsDifference !== 0) {
+        return pointsDifference;
+      }
+
+      return firstEntry.manager.localeCompare(secondEntry.manager);
+    })
+    .map((entry, index) => {
+      const currentPoints = getFormulaOnePointNumber(entry.total);
+      const rank = previousPoints === currentPoints ? previousRank : index + 1;
+      previousPoints = currentPoints;
+      previousRank = rank;
+
+      return { ...entry, rank };
+    });
+}
+
+function renderFormulaOneWeeklyEntry(year, race, entry, index, entries) {
   const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
   const detailsId = `formula-one-${year}-weekly-${race.id}-${index}`;
 
@@ -1135,8 +1220,12 @@ function renderFormulaOneWeeklyEntry(year, race, entry, index) {
       tabindex="0"
     >
       <div class="formula-one-weekly-manager">
-        ${renderManagerChip(manager)}
-        <strong>${escapeHtml(formatPoints(entry.total))}</strong>
+        <span class="formula-one-weekly-rank">
+          <small>Rank</small>
+          <b>${escapeHtml(formatRankDisplay(entry, index, entries))}</b>
+        </span>
+        <span class="formula-one-weekly-manager-chip">${renderManagerChip(manager)}</span>
+        <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))}</strong>
       </div>
       <div class="formula-one-weekly-picks" id="${escapeHtml(detailsId)}" hidden>
         ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
@@ -1216,7 +1305,30 @@ function renderFormulaOneWeeklyWildcardResult(label, position, points) {
 }
 
 function formatFormulaOneWeeklyPickResult(position, points) {
-  return `${formatFormulaOnePosition(position)} | ${formatPoints(points)} pts`;
+  const pointsLabel = typeof points === "number" && !Number.isNaN(points)
+    ? `${formatFormulaOnePointValue(points)} pts`
+    : formatFormulaOnePointValue(points);
+
+  return `${formatFormulaOnePosition(position)} | ${pointsLabel}`;
+}
+
+function parseFormulaOnePointValue(value) {
+  const trimmedValue = String(value ?? "").trim();
+
+  if (!trimmedValue) {
+    return 0;
+  }
+
+  const numericValue = Number(trimmedValue.replace(/,/g, ""));
+  return Number.isNaN(numericValue) ? trimmedValue : numericValue;
+}
+
+function getFormulaOnePointNumber(value) {
+  return typeof value === "number" && !Number.isNaN(value) ? value : 0;
+}
+
+function formatFormulaOnePointValue(value) {
+  return typeof value === "number" && !Number.isNaN(value) ? formatPoints(value) : String(value ?? "");
 }
 
 function formatFormulaOnePosition(position) {
@@ -2198,7 +2310,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
 
   view.resultsModeButtons?.forEach((button) => {
     button.addEventListener("click", () => {
-      setFormulaOne2025ResultsMode(button.getAttribute("data-formula-one-2025-results-mode"));
+      setFormulaOneResultsMode(year, button.getAttribute("data-formula-one-results-mode"));
     });
   });
 
@@ -2644,6 +2756,17 @@ loadSheetText("formulaOne2026Weekly")
   .catch((error) => {
     renderFormulaOneWeeklyError("2026", error);
     console.error("Box This Lap Formula 1 2026 weekly data failed to load", error);
+  });
+
+loadSheetText("formulaOne2026WeeklyResults")
+  .then((csvText) => {
+    const data = parseFormulaOneWeeklyResultsSheet(csvText);
+    siteData.formulaOne2026WeeklyResults = data;
+    renderFormulaOneResults("2026");
+    console.info("Box This Lap Formula 1 2026 weekly results loaded", data);
+  })
+  .catch((error) => {
+    console.error("Box This Lap Formula 1 2026 weekly results failed to load", error);
   });
 
 siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };
@@ -5083,6 +5206,10 @@ function parsePoints(value) {
 }
 
 function formatPoints(value) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return String(value ?? "");
+  }
+
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 

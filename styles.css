@@ -847,14 +847,40 @@ main {
 
 .formula-one-weekly-manager {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 12px;
-  justify-content: space-between;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.formula-one-weekly-rank {
+  align-items: center;
+  align-self: stretch;
+  background: var(--soft-strong);
+  border-radius: 6px;
+  color: var(--track);
+  display: grid;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 44px;
+  text-align: center;
+}
+
+.formula-one-weekly-rank small {
+  display: none;
+}
+
+.formula-one-weekly-rank b {
+  font-size: 1.05rem;
+}
+
+.formula-one-weekly-manager-chip {
+  min-width: 0;
 }
 
 .formula-one-weekly-manager strong {
   color: var(--accent-dark);
   font-size: 1.1rem;
+  justify-self: end;
 }
 
 .formula-one-weekly-picks {

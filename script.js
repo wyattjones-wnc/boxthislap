@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607080004";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607080005";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -33,6 +33,7 @@ const formulaOneViews = {
     questionList: document.querySelector("#formula-one-2026-question-list"),
     resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
+    weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
     weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
     weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
   },
@@ -897,6 +898,34 @@ function isKnownFormulaOneManager(value) {
   return Object.prototype.hasOwnProperty.call(MANAGER_COLORS, normalizeLookupName(value));
 }
 
+function parseFormulaOneRoundForms(rows) {
+  return rows
+    .map((row) => {
+      const roundId = getField(row, "Round ID", "Round Id", "ID");
+      const name = getField(row, "Round Name", "Round", "Name");
+      const formUrl = getField(row, "Form Link", "Form", "URL");
+
+      return {
+        date: parseFormulaOneFormDate(getField(row, "Date")),
+        formUrl,
+        id: String(roundId ?? "").trim(),
+        name,
+      };
+    })
+    .filter((form) => form.id && form.name && form.formUrl);
+}
+
+function parseFormulaOneFormDate(value) {
+  const match = String(value ?? "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
+  return new Date(Date.UTC(year, Number(match[1]) - 1, Number(match[2])));
+}
+
 function renderFormulaOneLeague(year, data) {
   siteData[`formulaOne${year}`] = data;
   renderFormulaOneQuestionOptions(year, data.questions);
@@ -1121,6 +1150,105 @@ function setFormulaOneResultsMode(year, mode) {
   });
 
   renderFormulaOneResults(year);
+}
+
+function renderFormulaOneWeeklyForm(year, forms) {
+  const view = formulaOneViews[year];
+
+  if (!view?.weeklyForm) {
+    return;
+  }
+
+  if (!forms?.length) {
+    view.weeklyForm.innerHTML = `<p class="table-message">No Formula 1 bet forms were loaded.</p>`;
+    return;
+  }
+
+  const selectedId = view.weeklyForm.querySelector("[data-formula-one-form-select]")?.value ||
+    getDefaultFormulaOneFormId(forms);
+  const selectedForm = forms.find((form) => form.id === selectedId) ?? forms[0];
+
+  view.weeklyForm.innerHTML = `
+    <div class="formula-one-form-header">
+      <label class="select-control">
+        <span>Bet Form</span>
+        <select data-formula-one-form-select>
+          ${forms.map((form) => {
+            return `<option value="${escapeHtml(form.id)}"${form.id === selectedForm.id ? " selected" : ""}>${escapeHtml(`${form.id}. ${form.name}`)}</option>`;
+          }).join("")}
+        </select>
+      </label>
+      <a class="league-card-link formula-one-form-link" href="${escapeHtml(selectedForm.formUrl)}" target="_blank" rel="noopener">Open Form</a>
+    </div>
+    ${renderFormulaOneFormEmbed(selectedForm)}
+  `;
+
+  loadVisibleFormulaOneFormIframes(view.weeklyForm);
+}
+
+function renderFormulaOneFormEmbed(form) {
+  const isCollapsed = isMobileSafari();
+  const embedUrl = getGoogleFormEmbedUrl(form.formUrl);
+
+  return `
+    <details class="formula-one-form-embed"${isCollapsed ? "" : " open"}>
+      <summary>Show embedded form</summary>
+      <iframe
+        title="${escapeHtml(`${form.name} bet form`)}"
+        data-src="${escapeHtml(embedUrl)}"
+        src="${isCollapsed ? "" : escapeHtml(embedUrl)}"
+        loading="lazy"
+      ></iframe>
+    </details>
+  `;
+}
+
+function getDefaultFormulaOneFormId(forms) {
+  const today = getEasternTodayDate();
+  const futureForms = forms
+    .filter((form) => form.date && form.date >= today)
+    .sort((firstForm, secondForm) => firstForm.date - secondForm.date);
+
+  return (futureForms[0] ?? forms[0])?.id ?? "";
+}
+
+function getEasternTodayDate() {
+  const dateParts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(dateParts.map((part) => [part.type, part.value]));
+
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+}
+
+function getGoogleFormEmbedUrl(formUrl) {
+  try {
+    const url = new URL(formUrl);
+    url.search = "";
+    url.searchParams.set("embedded", "true");
+    return url.toString();
+  } catch {
+    return formUrl;
+  }
+}
+
+function loadVisibleFormulaOneFormIframes(container) {
+  container.querySelectorAll(".formula-one-form-embed[open] iframe[data-src]").forEach((iframe) => {
+    if (!iframe.getAttribute("src")) {
+      iframe.setAttribute("src", iframe.getAttribute("data-src"));
+    }
+  });
+}
+
+function isMobileSafari() {
+  const userAgent = navigator.userAgent || "";
+  const isIos = /iP(ad|hone|od)/.test(userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/i.test(userAgent) && !/(CriOS|FxiOS|EdgiOS|OPiOS)/i.test(userAgent);
+
+  return isIos && isSafari;
 }
 
 function renderFormulaOneWeeklyPage(year, data) {
@@ -2318,6 +2446,22 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
   });
 
+  view.weeklyForm?.addEventListener("change", (event) => {
+    if (!event.target.matches("[data-formula-one-form-select]")) {
+      return;
+    }
+
+    renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+  });
+
+  view.weeklyForm?.addEventListener("toggle", (event) => {
+    if (!event.target.matches(".formula-one-form-embed")) {
+      return;
+    }
+
+    loadVisibleFormulaOneFormIframes(view.weeklyForm);
+  }, true);
+
   view.weeklyList?.addEventListener("click", (event) => {
     const entry = event.target.closest("[data-formula-one-weekly-entry]");
 
@@ -2767,6 +2911,21 @@ loadSheetText("formulaOne2026WeeklyResults")
   })
   .catch((error) => {
     console.error("Box This Lap Formula 1 2026 weekly results failed to load", error);
+  });
+
+loadSheet("formulaOne2026RoundForms")
+  .then((rows) => {
+    const forms = parseFormulaOneRoundForms(rows);
+    siteData.formulaOne2026RoundForms = forms;
+    renderFormulaOneWeeklyForm("2026", forms);
+    console.info("Box This Lap Formula 1 2026 round forms loaded", forms);
+  })
+  .catch((error) => {
+    if (formulaOneViews[2026]?.weeklyForm) {
+      formulaOneViews[2026].weeklyForm.innerHTML = `<p class="table-message">Unable to load Formula 1 bet forms: ${escapeHtml(error.message)}</p>`;
+    }
+
+    console.error("Box This Lap Formula 1 2026 round forms failed to load", error);
   });
 
 siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };

@@ -410,12 +410,6 @@ main {
   white-space: nowrap;
 }
 
-.action-button.is-disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-  pointer-events: none;
-}
-
 .secondary-action {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -727,53 +721,6 @@ main {
   margin: -6px 0 18px;
 }
 
-.formula-one-form-actions {
-  align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.formula-one-form-actions .select-control {
-  margin: 0;
-  min-width: min(280px, 100%);
-}
-
-.formula-one-form-message {
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 800;
-  margin: -4px 0 12px;
-  min-height: 1.25em;
-}
-
-.formula-one-form-message[data-state="error"] {
-  color: var(--accent-dark);
-}
-
-.formula-one-form-shell {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 8px 18px var(--shadow);
-  min-height: 720px;
-  overflow: hidden;
-}
-
-.formula-one-form-shell[hidden] {
-  display: none;
-}
-
-.formula-one-form-shell iframe {
-  border: 0;
-  display: block;
-  height: min(920px, 78vh);
-  min-height: 720px;
-  width: 100%;
-}
-
 .formula-one-question-list {
   display: grid;
   gap: 16px;
@@ -782,6 +729,62 @@ main {
 .formula-one-weekly-list {
   display: grid;
   gap: 16px;
+}
+
+.formula-one-form-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.formula-one-form-card .table-message {
+  margin: 0;
+}
+
+.formula-one-form-header {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 240px) auto;
+  justify-content: start;
+}
+
+.formula-one-form-header select {
+  font-size: 16px;
+  min-width: 0;
+  width: 100%;
+}
+
+.formula-one-form-link {
+  min-height: 38px;
+}
+
+.formula-one-form-embed {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.formula-one-form-embed summary {
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-weight: 900;
+  list-style-position: inside;
+}
+
+.formula-one-form-embed iframe {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: block;
+  height: min(78vh, 760px);
+  margin-top: 12px;
+  width: 100%;
 }
 
 .formula-one-question-card {
@@ -877,6 +880,7 @@ main {
 
 .formula-one-weekly-entry {
   border-bottom: 1px solid var(--line);
+  cursor: pointer;
   display: grid;
   gap: 12px;
   padding: 14px 16px;
@@ -886,22 +890,63 @@ main {
   border-bottom: 0;
 }
 
+.formula-one-weekly-entry:hover,
+.formula-one-weekly-entry:focus-visible,
+.formula-one-weekly-entry.is-weekly-expanded {
+  background: var(--soft);
+}
+
+.formula-one-weekly-entry:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: -2px;
+}
+
 .formula-one-weekly-manager {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 12px;
-  justify-content: space-between;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.formula-one-weekly-rank {
+  align-items: center;
+  align-self: stretch;
+  background: var(--soft-strong);
+  border-radius: 6px;
+  color: var(--track);
+  display: grid;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 44px;
+  text-align: center;
+}
+
+.formula-one-weekly-rank small {
+  display: none;
+}
+
+.formula-one-weekly-rank b {
+  font-size: 1.05rem;
+}
+
+.formula-one-weekly-manager-chip {
+  min-width: 0;
 }
 
 .formula-one-weekly-manager strong {
   color: var(--accent-dark);
   font-size: 1.1rem;
+  justify-self: end;
 }
 
 .formula-one-weekly-picks {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.formula-one-weekly-picks[hidden] {
+  display: none;
 }
 
 .formula-one-weekly-pick {
@@ -1846,9 +1891,9 @@ tr:last-child td {
 .site-footer {
   align-items: center;
   border-top: 1px solid var(--line);
-  display: grid;
+  display: flex;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  justify-content: space-between;
   margin: 0 auto;
   max-width: 1120px;
   padding: 20px;
@@ -1870,22 +1915,6 @@ tr:last-child td {
   width: auto;
 }
 
-.footer-test-toggle {
-  align-items: center;
-  color: var(--muted);
-  display: inline-flex;
-  font-size: 0.85rem;
-  font-weight: 800;
-  gap: 8px;
-  justify-content: center;
-}
-
-.footer-test-toggle input {
-  accent-color: var(--accent);
-  height: 18px;
-  width: 18px;
-}
-
 .theme-control {
   align-items: center;
   color: var(--muted);
@@ -1894,7 +1923,6 @@ tr:last-child td {
   font-weight: 800;
   gap: 10px;
   justify-content: flex-end;
-  justify-self: end;
 }
 
 .theme-toggle {
@@ -2080,6 +2108,20 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 
+  .formula-one-form-header {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .formula-one-form-link {
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .formula-one-form-embed iframe {
+    height: 72vh;
+  }
+
   .formula-one-tabs {
     gap: 4px;
     justify-content: space-between;
@@ -2170,6 +2212,7 @@ tr:last-child td {
 
   .site-footer {
     align-items: center;
+    display: flex;
   }
 
   .standings-table {

@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607070001";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607080005";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -22,20 +22,20 @@ const formulaOneViews = {
     questionSelect: document.querySelector("#formula-one-2025-question-select"),
     questionFilter: document.querySelector("#formula-one-2025-question-filter"),
     questionList: document.querySelector("#formula-one-2025-question-list"),
-    resultsModeButtons: document.querySelectorAll("[data-formula-one-2025-results-mode]"),
+    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2025\"]"),
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
     weeklyList: document.querySelector("#formula-one-2025-weekly-list"),
+    weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
   },
   2026: {
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),
-    roundFormFrame: document.querySelector("#formula-one-2026-round-form-frame"),
-    roundFormMessage: document.querySelector("#formula-one-2026-round-form-message"),
-    roundFormOpen: document.querySelector("#formula-one-2026-round-form-open"),
-    roundFormSelect: document.querySelector("#formula-one-2026-round-form-select"),
-    roundFormShell: document.querySelector("#formula-one-2026-round-form-shell"),
+    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
+    weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
+    weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
+    weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
   },
 };
 const fantasyOfficeViews = {
@@ -54,7 +54,10 @@ const fantasyOfficeMovieSort = {
   direction: "desc",
   key: "points",
 };
-let formulaOne2025ResultsMode = "yearly";
+const formulaOneResultsMode = {
+  2025: "yearly",
+  2026: "yearly",
+};
 let bracketPicksFallback = {};
 const resultsPage = document.querySelector("#results");
 const updatedTime = document.querySelector("[data-updated-time]");
@@ -81,7 +84,6 @@ const managerResultsRows = document.querySelector("#manager-results-rows");
 const managerResultsFilter = document.querySelector("#manager-results-filter");
 const standingsAllDataToggle = document.querySelector("#standings-all-data-toggle");
 const standingsRoundSelect = document.querySelector("#standings-round-select");
-const nationTestScoringToggle = document.querySelector("#nation-test-scoring-toggle");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 const siteData = {};
@@ -118,21 +120,6 @@ const BRACKET_SLOT_REFERENCES = {
   102: { home: "Winner M99", away: "Winner M100" },
   103: { home: "Loser M101", away: "Loser M102" },
   104: { home: "Winner M101", away: "Winner M102" },
-};
-const NATION_POT_RANKS = {
-  a: 1,
-  b: 2,
-  c: 3,
-  d: 4,
-  e: 5,
-  g: 6,
-};
-const TEST_KNOCKOUT_POT_BONUSES = {
-  b: 2,
-  c: 4,
-  d: 6,
-  e: 8,
-  g: 10,
 };
 
 const MANAGER_COLORS = {
@@ -714,7 +701,7 @@ function parseFormulaOneSheet(csvText) {
       bets: managerColumns.map(({ manager, index: betIndex }) => ({
         manager,
         bet: row[betIndex]?.trim() ?? "",
-        points: parsePoints(row[betIndex + 1]),
+        points: parseFormulaOnePointValue(row[betIndex + 1]),
       })),
     };
   }).filter((question) => question.question);
@@ -723,8 +710,8 @@ function parseFormulaOneSheet(csvText) {
     const managerQuestions = questions.map((question) => {
       return question.bets.find((bet) => bet.manager === manager) ?? { manager, bet: "", points: 0 };
     });
-    const points = managerQuestions.reduce((total, bet) => total + bet.points, 0);
-    const scored = managerQuestions.filter((bet) => bet.points !== 0).length;
+    const points = managerQuestions.reduce((total, bet) => total + getFormulaOnePointNumber(bet.points), 0);
+    const scored = managerQuestions.filter((bet) => getFormulaOnePointNumber(bet.points) !== 0).length;
 
     return {
       manager,
@@ -779,13 +766,13 @@ function parseFormulaOneWeeklySheet(csvText) {
           wildcardRace: entryRow[11]?.trim() ?? "",
         },
         points: {
-          p1: parsePoints(entryRow[14]),
-          p2: parsePoints(entryRow[15]),
-          p3: parsePoints(entryRow[16]),
-          wildcardQualifying: parsePoints(entryRow[17]),
-          wildcardRace: parsePoints(entryRow[18]),
+          p1: parseFormulaOnePointValue(entryRow[14]),
+          p2: parseFormulaOnePointValue(entryRow[15]),
+          p3: parseFormulaOnePointValue(entryRow[16]),
+          wildcardQualifying: parseFormulaOnePointValue(entryRow[17]),
+          wildcardRace: parseFormulaOnePointValue(entryRow[18]),
         },
-        total: parsePoints(entryRow[19]),
+        total: parseFormulaOnePointValue(entryRow[19]),
       };
 
       if (hasFormulaOneWeeklyPicks(entry)) {
@@ -829,7 +816,7 @@ function getFormulaOneWeeklyStandings(races) {
 
   for (const manager of managerNames) {
     const raceTotals = races.map((race) => {
-      return race.entries.find((entry) => entry.manager === manager)?.total ?? 0;
+      return getFormulaOnePointNumber(race.entries.find((entry) => entry.manager === manager)?.total);
     });
     let points = 0;
 
@@ -855,6 +842,88 @@ function getFormulaOneWeeklyStandings(races) {
         return firstManager.manager.localeCompare(secondManager.manager);
       })
   );
+}
+
+function parseFormulaOneWeeklyResultsSheet(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const managerBlocks = [];
+  let currentBlock = [];
+
+  for (const row of rows) {
+    if (isKnownFormulaOneManager(row[0])) {
+      currentBlock.push(row);
+      continue;
+    }
+
+    if (currentBlock.length > 0) {
+      managerBlocks.push(currentBlock);
+      currentBlock = [];
+    }
+  }
+
+  if (currentBlock.length > 0) {
+    managerBlocks.push(currentBlock);
+  }
+
+  const totalBlocks = managerBlocks.filter((block) => {
+    return block.length > 0 && block.every((row) => {
+      return row[1]?.trim() && row.slice(2).every((value) => !String(value ?? "").trim());
+    });
+  });
+  const totalBlock = totalBlocks[totalBlocks.length - 1] ?? managerBlocks[managerBlocks.length - 1] ?? [];
+  const standings = totalBlock
+    .map((row) => {
+      const points = parseFormulaOnePointValue(row[1]);
+
+      return {
+        manager: row[0].trim(),
+        points,
+        pointsNumber: getFormulaOnePointNumber(points),
+      };
+    })
+    .filter((entry) => entry.manager)
+    .sort((firstEntry, secondEntry) => {
+      if (secondEntry.pointsNumber !== firstEntry.pointsNumber) {
+        return secondEntry.pointsNumber - firstEntry.pointsNumber;
+      }
+
+      return firstEntry.manager.localeCompare(secondEntry.manager);
+    })
+    .map(({ pointsNumber, ...entry }) => entry);
+
+  return { standings: rankRows(standings) };
+}
+
+function isKnownFormulaOneManager(value) {
+  return Object.prototype.hasOwnProperty.call(MANAGER_COLORS, normalizeLookupName(value));
+}
+
+function parseFormulaOneRoundForms(rows) {
+  return rows
+    .map((row) => {
+      const roundId = getField(row, "Round ID", "Round Id", "ID");
+      const name = getField(row, "Round Name", "Round", "Name");
+      const formUrl = getField(row, "Form Link", "Form", "URL");
+
+      return {
+        date: parseFormulaOneFormDate(getField(row, "Date")),
+        formUrl,
+        id: String(roundId ?? "").trim(),
+        name,
+      };
+    })
+    .filter((form) => form.id && form.name && form.formUrl);
+}
+
+function parseFormulaOneFormDate(value) {
+  const match = String(value ?? "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
+  return new Date(Date.UTC(year, Number(match[1]) - 1, Number(match[2])));
 }
 
 function renderFormulaOneLeague(year, data) {
@@ -1033,7 +1102,7 @@ function renderFormulaOneBet(bet) {
         ${renderManagerChip(manager)}
         <p>${escapeHtml(bet.bet || "No bet listed")}</p>
       </div>
-      <strong>${formatPoints(bet.points)}</strong>
+      <strong>${escapeHtml(formatFormulaOnePointValue(bet.points))}</strong>
     </div>
   `;
 }
@@ -1046,13 +1115,14 @@ function renderFormulaOneResults(year) {
   }
 
   const data = siteData[`formulaOne${year}`];
-  const weeklyData = siteData.formulaOne2025Weekly;
-  const standings = year === "2025" && formulaOne2025ResultsMode === "weekly"
+  const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
+  const mode = formulaOneResultsMode[year] ?? "yearly";
+  const standings = mode === "weekly"
     ? weeklyData?.standings ?? []
     : data?.standings ?? [];
 
   if (standings.length === 0) {
-    const label = year === "2025" && formulaOne2025ResultsMode === "weekly" ? "weekly" : "yearly";
+    const label = mode === "weekly" ? "weekly" : "yearly";
     view.resultsRows.innerHTML = `<tr><td class="table-message" colspan="3">No Formula 1 ${label} results were loaded.</td></tr>`;
     return;
   }
@@ -1064,26 +1134,125 @@ function renderFormulaOneResults(year) {
       <tr>
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
         <td data-label="Manager">${renderManagerChip(manager)}</td>
-        <td data-label="Points">${escapeHtml(formatPoints(entry.points))}</td>
+        <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
     `;
   }).join("");
 }
 
-function setFormulaOne2025ResultsMode(mode) {
-  formulaOne2025ResultsMode = mode === "weekly" ? "weekly" : "yearly";
+function setFormulaOneResultsMode(year, mode) {
+  formulaOneResultsMode[year] = mode === "weekly" ? "weekly" : "yearly";
 
-  formulaOneViews[2025]?.resultsModeButtons?.forEach((button) => {
-    const isActive = button.getAttribute("data-formula-one-2025-results-mode") === formulaOne2025ResultsMode;
+  formulaOneViews[year]?.resultsModeButtons?.forEach((button) => {
+    const isActive = button.getAttribute("data-formula-one-results-mode") === formulaOneResultsMode[year];
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
 
-  renderFormulaOneResults("2025");
+  renderFormulaOneResults(year);
 }
 
-function renderFormulaOneWeeklyPage(data) {
-  const view = formulaOneViews[2025];
+function renderFormulaOneWeeklyForm(year, forms) {
+  const view = formulaOneViews[year];
+
+  if (!view?.weeklyForm) {
+    return;
+  }
+
+  if (!forms?.length) {
+    view.weeklyForm.innerHTML = `<p class="table-message">No Formula 1 bet forms were loaded.</p>`;
+    return;
+  }
+
+  const selectedId = view.weeklyForm.querySelector("[data-formula-one-form-select]")?.value ||
+    getDefaultFormulaOneFormId(forms);
+  const selectedForm = forms.find((form) => form.id === selectedId) ?? forms[0];
+
+  view.weeklyForm.innerHTML = `
+    <div class="formula-one-form-header">
+      <label class="select-control">
+        <span>Bet Form</span>
+        <select data-formula-one-form-select>
+          ${forms.map((form) => {
+            return `<option value="${escapeHtml(form.id)}"${form.id === selectedForm.id ? " selected" : ""}>${escapeHtml(`${form.id}. ${form.name}`)}</option>`;
+          }).join("")}
+        </select>
+      </label>
+      <a class="league-card-link formula-one-form-link" href="${escapeHtml(selectedForm.formUrl)}" target="_blank" rel="noopener">Open Form</a>
+    </div>
+    ${renderFormulaOneFormEmbed(selectedForm)}
+  `;
+
+  loadVisibleFormulaOneFormIframes(view.weeklyForm);
+}
+
+function renderFormulaOneFormEmbed(form) {
+  const isCollapsed = isMobileSafari();
+  const embedUrl = getGoogleFormEmbedUrl(form.formUrl);
+
+  return `
+    <details class="formula-one-form-embed"${isCollapsed ? "" : " open"}>
+      <summary>Show embedded form</summary>
+      <iframe
+        title="${escapeHtml(`${form.name} bet form`)}"
+        data-src="${escapeHtml(embedUrl)}"
+        src="${isCollapsed ? "" : escapeHtml(embedUrl)}"
+        loading="lazy"
+      ></iframe>
+    </details>
+  `;
+}
+
+function getDefaultFormulaOneFormId(forms) {
+  const today = getEasternTodayDate();
+  const futureForms = forms
+    .filter((form) => form.date && form.date >= today)
+    .sort((firstForm, secondForm) => firstForm.date - secondForm.date);
+
+  return (futureForms[0] ?? forms[0])?.id ?? "";
+}
+
+function getEasternTodayDate() {
+  const dateParts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(dateParts.map((part) => [part.type, part.value]));
+
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+}
+
+function getGoogleFormEmbedUrl(formUrl) {
+  try {
+    const url = new URL(formUrl);
+    url.search = "";
+    url.searchParams.set("embedded", "true");
+    return url.toString();
+  } catch {
+    return formUrl;
+  }
+}
+
+function loadVisibleFormulaOneFormIframes(container) {
+  container.querySelectorAll(".formula-one-form-embed[open] iframe[data-src]").forEach((iframe) => {
+    if (!iframe.getAttribute("src")) {
+      iframe.setAttribute("src", iframe.getAttribute("data-src"));
+    }
+  });
+}
+
+function isMobileSafari() {
+  const userAgent = navigator.userAgent || "";
+  const isIos = /iP(ad|hone|od)/.test(userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/i.test(userAgent) && !/(CriOS|FxiOS|EdgiOS|OPiOS)/i.test(userAgent);
+
+  return isIos && isSafari;
+}
+
+function renderFormulaOneWeeklyPage(year, data) {
+  const view = formulaOneViews[year];
 
   if (!view?.weeklyList) {
     return;
@@ -1094,10 +1263,40 @@ function renderFormulaOneWeeklyPage(data) {
     return;
   }
 
-  view.weeklyList.innerHTML = data.races.map(renderFormulaOneWeeklyRace).join("");
+  renderFormulaOneWeeklyRoundOptions(year, data.races);
+
+  const selectedRound = view.weeklyRoundSelect?.value ?? "";
+  const races = selectedRound
+    ? data.races.filter((race) => String(race.id) === selectedRound)
+    : data.races;
+
+  if (races.length === 0) {
+    view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No weekly picks matched that round.</p></article>`;
+    return;
+  }
+
+  view.weeklyList.innerHTML = races.map((race) => renderFormulaOneWeeklyRace(year, race)).join("");
 }
 
-function renderFormulaOneWeeklyRace(race) {
+function renderFormulaOneWeeklyRoundOptions(year, races) {
+  const select = formulaOneViews[year]?.weeklyRoundSelect;
+
+  if (!select) {
+    return;
+  }
+
+  const selectedValue = select.value;
+  select.innerHTML = `
+    <option value="">All rounds</option>
+    ${races.map((race) => `<option value="${escapeHtml(String(race.id))}">${escapeHtml(race.name)}</option>`).join("")}
+  `;
+
+  select.value = races.some((race) => String(race.id) === selectedValue) ? selectedValue : "";
+}
+
+function renderFormulaOneWeeklyRace(year, race) {
+  const entries = rankFormulaOneWeeklyEntries(race.entries);
+
   return `
     <article class="formula-one-weekly-card">
       <header>
@@ -1105,22 +1304,58 @@ function renderFormulaOneWeeklyRace(race) {
         <h3>Weekly Picks</h3>
       </header>
       <div class="formula-one-weekly-managers">
-        ${race.entries.map(renderFormulaOneWeeklyEntry).join("")}
+        ${entries.map((entry, index) => renderFormulaOneWeeklyEntry(year, race, entry, index, entries)).join("")}
       </div>
     </article>
   `;
 }
 
-function renderFormulaOneWeeklyEntry(entry) {
+function rankFormulaOneWeeklyEntries(entries) {
+  let previousPoints;
+  let previousRank = 0;
+
+  return [...entries]
+    .sort((firstEntry, secondEntry) => {
+      const pointsDifference = getFormulaOnePointNumber(secondEntry.total) - getFormulaOnePointNumber(firstEntry.total);
+
+      if (pointsDifference !== 0) {
+        return pointsDifference;
+      }
+
+      return firstEntry.manager.localeCompare(secondEntry.manager);
+    })
+    .map((entry, index) => {
+      const currentPoints = getFormulaOnePointNumber(entry.total);
+      const rank = previousPoints === currentPoints ? previousRank : index + 1;
+      previousPoints = currentPoints;
+      previousRank = rank;
+
+      return { ...entry, rank };
+    });
+}
+
+function renderFormulaOneWeeklyEntry(year, race, entry, index, entries) {
   const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+  const detailsId = `formula-one-${year}-weekly-${race.id}-${index}`;
 
   return `
-    <section class="formula-one-weekly-entry">
+    <section
+      class="formula-one-weekly-entry"
+      data-formula-one-weekly-entry
+      aria-controls="${escapeHtml(detailsId)}"
+      aria-expanded="false"
+      role="button"
+      tabindex="0"
+    >
       <div class="formula-one-weekly-manager">
-        ${renderManagerChip(manager)}
-        <strong>${escapeHtml(formatPoints(entry.total))}</strong>
+        <span class="formula-one-weekly-rank">
+          <small>Rank</small>
+          <b>${escapeHtml(formatRankDisplay(entry, index, entries))}</b>
+        </span>
+        <span class="formula-one-weekly-manager-chip">${renderManagerChip(manager)}</span>
+        <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))}</strong>
       </div>
-      <div class="formula-one-weekly-picks">
+      <div class="formula-one-weekly-picks" id="${escapeHtml(detailsId)}" hidden>
         ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
         ${renderFormulaOneWeeklyPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
         ${renderFormulaOneWeeklyPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
@@ -1128,6 +1363,33 @@ function renderFormulaOneWeeklyEntry(entry) {
       </div>
     </section>
   `;
+}
+
+function toggleFormulaOneWeeklyEntry(entry) {
+  const isExpanded = entry.getAttribute("aria-expanded") === "true";
+  const managerList = entry.closest(".formula-one-weekly-managers");
+
+  managerList?.querySelectorAll("[data-formula-one-weekly-entry]").forEach((row) => {
+    row.classList.remove("is-weekly-expanded");
+    row.setAttribute("aria-expanded", "false");
+
+    const details = document.getElementById(row.getAttribute("aria-controls"));
+    if (details) {
+      details.hidden = true;
+    }
+  });
+
+  if (isExpanded) {
+    return;
+  }
+
+  entry.classList.add("is-weekly-expanded");
+  entry.setAttribute("aria-expanded", "true");
+
+  const details = document.getElementById(entry.getAttribute("aria-controls"));
+  if (details) {
+    details.hidden = false;
+  }
 }
 
 function renderFormulaOneWeeklyPick(label, pick, position, points) {
@@ -1171,7 +1433,30 @@ function renderFormulaOneWeeklyWildcardResult(label, position, points) {
 }
 
 function formatFormulaOneWeeklyPickResult(position, points) {
-  return `${formatFormulaOnePosition(position)} · ${formatPoints(points)} pts`;
+  const pointsLabel = typeof points === "number" && !Number.isNaN(points)
+    ? `${formatFormulaOnePointValue(points)} pts`
+    : formatFormulaOnePointValue(points);
+
+  return `${formatFormulaOnePosition(position)} | ${pointsLabel}`;
+}
+
+function parseFormulaOnePointValue(value) {
+  const trimmedValue = String(value ?? "").trim();
+
+  if (!trimmedValue) {
+    return 0;
+  }
+
+  const numericValue = Number(trimmedValue.replace(/,/g, ""));
+  return Number.isNaN(numericValue) ? trimmedValue : numericValue;
+}
+
+function getFormulaOnePointNumber(value) {
+  return typeof value === "number" && !Number.isNaN(value) ? value : 0;
+}
+
+function formatFormulaOnePointValue(value) {
+  return typeof value === "number" && !Number.isNaN(value) ? formatPoints(value) : String(value ?? "");
 }
 
 function formatFormulaOnePosition(position) {
@@ -1196,176 +1481,11 @@ function renderFormulaOneError(year, error) {
   }
 }
 
-function renderFormulaOneWeeklyError(error) {
-  const view = formulaOneViews[2025];
+function renderFormulaOneWeeklyError(year, error) {
+  const view = formulaOneViews[year];
 
   if (view?.weeklyList) {
     view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">Unable to load Formula 1 weekly picks: ${escapeHtml(error.message)}</p></article>`;
-  }
-}
-
-function parseFormulaOneRoundForms(rows) {
-  return rows.map((row) => {
-    const roundId = String(getField(row, "Round ID", "Round Id", "Round") ?? "").trim();
-    const roundName = String(getField(row, "Round Name", "Name") ?? "").trim();
-    const dateText = String(getField(row, "Date") ?? "").trim();
-    const formUrl = String(getField(row, "Form Link", "Form URL", "Form") ?? "").trim();
-
-    return {
-      dateKey: parseFormulaOneRoundFormDate(dateText),
-      dateText,
-      formUrl,
-      label: [roundId, roundName].filter(Boolean).join(". "),
-      roundId,
-      roundName,
-    };
-  }).filter((roundForm) => roundForm.roundId || roundForm.roundName || roundForm.formUrl);
-}
-
-function parseFormulaOneRoundFormDate(value) {
-  const trimmedValue = String(value ?? "").trim();
-
-  if (!trimmedValue) {
-    return "";
-  }
-
-  const isoMatch = trimmedValue.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-
-  if (isoMatch) {
-    return [
-      isoMatch[1],
-      isoMatch[2].padStart(2, "0"),
-      isoMatch[3].padStart(2, "0"),
-    ].join("-");
-  }
-
-  const shortDateMatch = trimmedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
-
-  if (!shortDateMatch) {
-    return "";
-  }
-
-  const year = Number(shortDateMatch[3]);
-  const fullYear = year < 100 ? 2000 + year : year;
-
-  return [
-    String(fullYear),
-    shortDateMatch[1].padStart(2, "0"),
-    shortDateMatch[2].padStart(2, "0"),
-  ].join("-");
-}
-
-function renderFormulaOne2026RoundForms(roundForms) {
-  const view = formulaOneViews[2026];
-
-  if (!view?.roundFormSelect) {
-    return;
-  }
-
-  siteData.formulaOne2026RoundForms = roundForms;
-
-  if (roundForms.length === 0) {
-    view.roundFormSelect.innerHTML = `<option value="">No rounds loaded</option>`;
-    view.roundFormSelect.disabled = true;
-    setFormulaOne2026RoundFormState(null, "No Formula 1 weekly form rounds were loaded.");
-    return;
-  }
-
-  view.roundFormSelect.disabled = false;
-  view.roundFormSelect.innerHTML = roundForms.map((roundForm, index) => {
-    const label = roundForm.label || `Round ${index + 1}`;
-    const date = roundForm.dateText ? ` (${roundForm.dateText})` : "";
-    return `<option value="${index}">${escapeHtml(label)}${escapeHtml(date)}</option>`;
-  }).join("");
-
-  view.roundFormSelect.value = String(getDefaultFormulaOneRoundFormIndex(roundForms));
-  renderFormulaOne2026RoundFormSelection(view.roundFormSelect.value);
-}
-
-function getDefaultFormulaOneRoundFormIndex(roundForms) {
-  const todayKey = getDateKey(0);
-  const futureRound = roundForms
-    .map((roundForm, index) => ({ index, roundForm }))
-    .filter(({ roundForm }) => roundForm.dateKey && roundForm.dateKey >= todayKey)
-    .sort((a, b) => a.roundForm.dateKey.localeCompare(b.roundForm.dateKey))[0];
-
-  if (futureRound) {
-    return futureRound.index;
-  }
-
-  const latestRound = roundForms
-    .map((roundForm, index) => ({ index, roundForm }))
-    .filter(({ roundForm }) => roundForm.dateKey)
-    .sort((a, b) => b.roundForm.dateKey.localeCompare(a.roundForm.dateKey))[0];
-
-  return latestRound?.index ?? 0;
-}
-
-function renderFormulaOne2026RoundFormSelection(value) {
-  const roundForms = siteData.formulaOne2026RoundForms ?? [];
-  const roundForm = roundForms[Number(value)];
-
-  if (!roundForm) {
-    setFormulaOne2026RoundFormState(null, "No Formula 1 weekly form round is selected.");
-    return;
-  }
-
-  if (!roundForm.formUrl) {
-    const label = roundForm.label || "this round";
-    setFormulaOne2026RoundFormState(null, `No form link loaded for ${label}.`);
-    return;
-  }
-
-  setFormulaOne2026RoundFormState(roundForm.formUrl, "");
-}
-
-function setFormulaOne2026RoundFormState(formUrl, message, state = "") {
-  const view = formulaOneViews[2026];
-
-  if (view?.roundFormOpen) {
-    view.roundFormOpen.classList.toggle("is-disabled", !formUrl);
-    view.roundFormOpen.setAttribute("aria-disabled", String(!formUrl));
-
-    if (formUrl) {
-      view.roundFormOpen.href = formUrl;
-    } else {
-      view.roundFormOpen.removeAttribute("href");
-    }
-  }
-
-  if (view?.roundFormShell) {
-    view.roundFormShell.hidden = !formUrl;
-  }
-
-  if (view?.roundFormFrame) {
-    view.roundFormFrame.src = formUrl ? getGoogleFormEmbedUrl(formUrl) : "about:blank";
-  }
-
-  if (view?.roundFormMessage) {
-    view.roundFormMessage.textContent = message;
-    view.roundFormMessage.dataset.state = state;
-  }
-}
-
-function renderFormulaOne2026RoundFormError(error) {
-  const view = formulaOneViews[2026];
-
-  if (view?.roundFormSelect) {
-    view.roundFormSelect.innerHTML = `<option value="">Unable to load rounds</option>`;
-    view.roundFormSelect.disabled = true;
-  }
-
-  setFormulaOne2026RoundFormState(null, `Unable to load Formula 1 weekly forms: ${error.message}`, "error");
-}
-
-function getGoogleFormEmbedUrl(formUrl) {
-  try {
-    const url = new URL(formUrl);
-    url.searchParams.set("embedded", "true");
-    return url.toString();
-  } catch {
-    const separator = formUrl.includes("?") ? "&" : "?";
-    return `${formUrl}${separator}embedded=true`;
   }
 }
 
@@ -2318,12 +2438,51 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
 
   view.resultsModeButtons?.forEach((button) => {
     button.addEventListener("click", () => {
-      setFormulaOne2025ResultsMode(button.getAttribute("data-formula-one-2025-results-mode"));
+      setFormulaOneResultsMode(year, button.getAttribute("data-formula-one-results-mode"));
     });
   });
 
-  view.roundFormSelect?.addEventListener("change", () => {
-    renderFormulaOne2026RoundFormSelection(view.roundFormSelect.value);
+  view.weeklyRoundSelect?.addEventListener("change", () => {
+    renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
+  });
+
+  view.weeklyForm?.addEventListener("change", (event) => {
+    if (!event.target.matches("[data-formula-one-form-select]")) {
+      return;
+    }
+
+    renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+  });
+
+  view.weeklyForm?.addEventListener("toggle", (event) => {
+    if (!event.target.matches(".formula-one-form-embed")) {
+      return;
+    }
+
+    loadVisibleFormulaOneFormIframes(view.weeklyForm);
+  }, true);
+
+  view.weeklyList?.addEventListener("click", (event) => {
+    const entry = event.target.closest("[data-formula-one-weekly-entry]");
+
+    if (entry) {
+      toggleFormulaOneWeeklyEntry(entry);
+    }
+  });
+
+  view.weeklyList?.addEventListener("keydown", (event) => {
+    if (!["Enter", " "].includes(event.key)) {
+      return;
+    }
+
+    const entry = event.target.closest("[data-formula-one-weekly-entry]");
+
+    if (!entry) {
+      return;
+    }
+
+    event.preventDefault();
+    toggleFormulaOneWeeklyEntry(entry);
   });
 });
 
@@ -2490,12 +2649,6 @@ playerPositionFilter?.addEventListener("change", () => {
   }
 });
 
-nationTestScoringToggle?.addEventListener("change", () => {
-  renderFilteredStandings();
-  renderCurrentMatchLists();
-  renderDraftPage();
-});
-
 bracketView?.addEventListener("click", (event) => {
   const pickButton = event.target.closest("[data-bracket-pick]");
 
@@ -2606,14 +2759,11 @@ loadSheet("matchResults")
 loadSheet("teams")
   .then((teams) => {
     siteData.teams = teams;
-    siteData.teamPots = buildTeamPotLookup(teams);
     renderDraftPage();
-    renderFilteredStandings();
-    renderCurrentMatchLists();
-    console.info("Box This Lap team pot data loaded", teams);
+    console.info("Box This Lap team data loaded", teams);
   })
   .catch((error) => {
-    console.error("Box This Lap team pot data failed to load", error);
+    console.error("Box This Lap team data failed to load", error);
   });
 
 loadSheetText("data")
@@ -2720,12 +2870,12 @@ loadSheetText("formulaOne2025Weekly")
   .then((csvText) => {
     const data = parseFormulaOneWeeklySheet(csvText);
     siteData.formulaOne2025Weekly = data;
-    renderFormulaOneWeeklyPage(data);
+    renderFormulaOneWeeklyPage("2025", data);
     renderFormulaOneResults("2025");
     console.info("Box This Lap Formula 1 2025 weekly data loaded", data);
   })
   .catch((error) => {
-    renderFormulaOneWeeklyError(error);
+    renderFormulaOneWeeklyError("2025", error);
     console.error("Box This Lap Formula 1 2025 weekly data failed to load", error);
   });
 
@@ -2740,14 +2890,41 @@ loadSheetText("formulaOne2026")
     console.error("Box This Lap Formula 1 2026 data failed to load", error);
   });
 
-loadSheet("formulaOne2026RoundForms")
-  .then((rows) => {
-    const roundForms = parseFormulaOneRoundForms(rows);
-    renderFormulaOne2026RoundForms(roundForms);
-    console.info("Box This Lap Formula 1 2026 round forms loaded", roundForms);
+loadSheetText("formulaOne2026Weekly")
+  .then((csvText) => {
+    const data = parseFormulaOneWeeklySheet(csvText);
+    siteData.formulaOne2026Weekly = data;
+    renderFormulaOneWeeklyPage("2026", data);
+    console.info("Box This Lap Formula 1 2026 weekly data loaded", data);
   })
   .catch((error) => {
-    renderFormulaOne2026RoundFormError(error);
+    renderFormulaOneWeeklyError("2026", error);
+    console.error("Box This Lap Formula 1 2026 weekly data failed to load", error);
+  });
+
+loadSheetText("formulaOne2026WeeklyResults")
+  .then((csvText) => {
+    const data = parseFormulaOneWeeklyResultsSheet(csvText);
+    siteData.formulaOne2026WeeklyResults = data;
+    renderFormulaOneResults("2026");
+    console.info("Box This Lap Formula 1 2026 weekly results loaded", data);
+  })
+  .catch((error) => {
+    console.error("Box This Lap Formula 1 2026 weekly results failed to load", error);
+  });
+
+loadSheet("formulaOne2026RoundForms")
+  .then((rows) => {
+    const forms = parseFormulaOneRoundForms(rows);
+    siteData.formulaOne2026RoundForms = forms;
+    renderFormulaOneWeeklyForm("2026", forms);
+    console.info("Box This Lap Formula 1 2026 round forms loaded", forms);
+  })
+  .catch((error) => {
+    if (formulaOneViews[2026]?.weeklyForm) {
+      formulaOneViews[2026].weeklyForm.innerHTML = `<p class="table-message">Unable to load Formula 1 bet forms: ${escapeHtml(error.message)}</p>`;
+    }
+
     console.error("Box This Lap Formula 1 2026 round forms failed to load", error);
   });
 
@@ -3135,7 +3312,7 @@ function parseBracketSubmissions(rows) {
 
 function parseBracketSubmission(row, index) {
   const rawPicks = getField(row, "Picks JSON", "picks json", "Picks");
-  const picks = parseBracketSubmissionPicks(rawPicks);
+  const { picks, pickTeams } = parseBracketSubmissionPicks(rawPicks);
 
   if (Object.keys(picks).length === 0) {
     return null;
@@ -3149,6 +3326,7 @@ function parseBracketSubmission(row, index) {
   return {
     id: String(index),
     label: `${submitter} - ${timestampLabel || "No timestamp"}`,
+    pickTeams,
     picks,
     submitter,
     timestamp,
@@ -3162,21 +3340,29 @@ function parseBracketSubmissionPicks(rawPicks) {
     const parsedPicks = JSON.parse(String(rawPicks || "[]"));
 
     if (!Array.isArray(parsedPicks)) {
-      return {};
+      return { picks: {}, pickTeams: {} };
     }
 
-    return parsedPicks.reduce((picks, pick) => {
+    return parsedPicks.reduce((submissionData, pick) => {
       const matchId = String(pick?.matchId ?? "").trim();
       const side = String(pick?.side ?? "").trim().toLowerCase();
+      const team = String(pick?.team ?? "").trim();
 
       if (matchId && ["home", "away"].includes(side)) {
-        picks[matchId] = side;
+        submissionData.picks[matchId] = side;
+
+        if (team) {
+          submissionData.pickTeams[matchId] = {
+            side,
+            team,
+          };
+        }
       }
 
-      return picks;
-    }, {});
+      return submissionData;
+    }, { picks: {}, pickTeams: {} });
   } catch {
-    return {};
+    return { picks: {}, pickTeams: {} };
   }
 }
 
@@ -3255,7 +3441,12 @@ function getSubmittedBracketState(matches, matchById, submission) {
   const picks = { ...submission.picks };
   const lockedMatches = new Set(Object.keys(picks));
 
-  return { picks, lockedMatches, isReadOnly: true };
+  return {
+    pickTeams: submission.pickTeams || {},
+    picks,
+    lockedMatches,
+    isReadOnly: true,
+  };
 }
 
 function renderBracketSubmissionNotice(submission) {
@@ -3362,8 +3553,8 @@ function renderBracketMatch(match, matchById, bracketState) {
   const matchId = getMatchId(match);
   const selectedSide = picks[matchId] || "";
   const isLocked = lockedMatches.has(String(matchId));
-  const home = resolveBracketEntrant(getBracketEntrantValue(match, "home", bracketState), matchById, picks);
-  const away = resolveBracketEntrant(getBracketEntrantValue(match, "away", bracketState), matchById, picks);
+  const home = resolveBracketEntrantForSide(match, "home", matchById, bracketState);
+  const away = resolveBracketEntrantForSide(match, "away", matchById, bracketState);
   const date = formatBracketMatchDate(getMatchDate(match));
   const time = getField(match, "Time", "time");
 
@@ -3379,6 +3570,26 @@ function renderBracketMatch(match, matchById, bracketState) {
       </div>
     </article>
   `;
+}
+
+function resolveBracketEntrantForSide(match, side, matchById, bracketState) {
+  const submittedTeam = getSubmittedBracketTeamForSide(bracketState, getMatchId(match), side);
+
+  if (submittedTeam) {
+    return { isPending: false, label: submittedTeam };
+  }
+
+  return resolveBracketEntrant(getBracketEntrantValue(match, side, bracketState), matchById, bracketState.picks);
+}
+
+function getSubmittedBracketTeamForSide(bracketState, matchId, side) {
+  if (!bracketState.isReadOnly) {
+    return "";
+  }
+
+  const pickTeam = bracketState.pickTeams?.[String(matchId)];
+
+  return pickTeam?.side === side ? pickTeam.team : "";
 }
 
 function getBracketEntrantValue(match, side, bracketState) {
@@ -3985,14 +4196,32 @@ function getNationPointsForResult(result, nationName) {
   const nationKey = normalizeLookupName(normalizeNationName(nationName));
   const teamKey = normalizeLookupName(normalizeNationName(result.Team));
   const opponentKey = normalizeLookupName(normalizeNationName(result.Opponent));
-  const points = getNationResultPoints(result);
+  const outcome = String(result.Result || "").trim().toLowerCase();
+  const winnerPoints = getWinnerPoints(result);
+  const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
 
-  if (nationKey === teamKey) {
-    return points.team;
+  if (outcome === "draw" || outcome === "tie") {
+    return nationKey === teamKey || nationKey === opponentKey ? 1 : null;
   }
 
-  if (nationKey === opponentKey) {
-    return points.opponent;
+  if (outcome === "win") {
+    if (nationKey === teamKey) {
+      return winnerPoints;
+    }
+
+    if (nationKey === opponentKey) {
+      return penaltyLoserPoints;
+    }
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    if (nationKey === teamKey) {
+      return penaltyLoserPoints;
+    }
+
+    if (nationKey === opponentKey) {
+      return winnerPoints;
+    }
   }
 
   return null;
@@ -4507,9 +4736,10 @@ function getNationsLeagueRows(results) {
 
     const teamRow = getNationStanding(nations, team);
     const opponentRow = getNationStanding(nations, opponent);
-    const points = getNationResultPoints(result);
-    const teamPoints = points.team;
-    const opponentPoints = points.opponent;
+    const winnerPoints = getWinnerPoints(result);
+    const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+    let teamPoints = 0;
+    let opponentPoints = 0;
 
     teamRow.matches += 1;
     opponentRow.matches += 1;
@@ -4517,12 +4747,18 @@ function getNationsLeagueRows(results) {
     if (outcome === "win") {
       teamRow.wins += 1;
       opponentRow.losses += 1;
+      teamPoints = winnerPoints;
+      opponentPoints = penaltyLoserPoints;
     } else if (outcome === "lose" || outcome === "loss") {
       teamRow.losses += 1;
       opponentRow.wins += 1;
+      teamPoints = penaltyLoserPoints;
+      opponentPoints = winnerPoints;
     } else if (outcome === "draw" || outcome === "tie") {
       teamRow.draws += 1;
       opponentRow.draws += 1;
+      teamPoints = 1;
+      opponentPoints = 1;
     }
 
     teamRow.points += teamPoints;
@@ -4844,7 +5080,7 @@ function renderManagerDraftGroup(label, drafts) {
         ${drafts.map((draft) => {
           return `
             <li>
-              <span>${escapeHtml(draft.name)}</span>
+              <span>${renderManagerDraftName(draft)}</span>
               <strong>${escapeHtml(formatPoints(draft.points))}</strong>
             </li>
           `;
@@ -4852,6 +5088,18 @@ function renderManagerDraftGroup(label, drafts) {
       </ul>
     </section>
   `;
+}
+
+function renderManagerDraftName(draft) {
+  if (draft.type !== "Player") {
+    return escapeHtml(draft.name);
+  }
+
+  const name = String(draft.name ?? "").trim();
+  const nation = String(draft.nation ?? "").trim();
+  const label = name && nation ? `${name} (${nation})` : name || nation;
+
+  return renderPlayerNameWithPosition(label, draft.position);
 }
 
 function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerformances, matchResults, filter = "all" }) {
@@ -4908,10 +5156,18 @@ function getManagerResultRows({ managers, teamDraft, playerDraft, playerPerforma
 
       manager.playerCount += 1;
       const points = getDraftPlayerPoints(draft, playerPerformances);
+      const nation = normalizeNationName(draft.Nation || draft.Team);
+      const position = getPlayerPosition({
+        id: playerId,
+        name: playerName,
+        position: draft.Position,
+      });
       manager.points += points;
       manager.drafts.push({
         name: playerName,
+        nation,
         points,
+        position,
         type: "Player",
       });
     }
@@ -5109,6 +5365,10 @@ function parsePoints(value) {
 }
 
 function formatPoints(value) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return String(value ?? "");
+  }
+
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
@@ -5130,137 +5390,8 @@ function isPenaltyResult(result) {
   return true;
 }
 
-function buildTeamPotLookup(teams = []) {
-  const lookup = new Map();
-
-  for (const team of teams) {
-    const name = normalizeNationName(team.Team || team.Nation || team.Name);
-    const pot = normalizePot(team.Pot);
-
-    if (name && pot) {
-      lookup.set(normalizeLookupName(name), pot);
-    }
-  }
-
-  return lookup;
-}
-
-function shouldUseNationTestScoring() {
-  return nationTestScoringToggle?.checked ?? false;
-}
-
-function getNationResultPoints(result) {
-  return shouldUseNationTestScoring()
-    ? getTestNationResultPoints(result)
-    : getSheetNationResultPoints(result);
-}
-
-function getSheetNationResultPoints(result) {
-  const outcome = String(result.Result || "").trim().toLowerCase();
-  const winnerPoints = getWinnerPoints(result);
-  const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
-
-  if (outcome === "win") {
-    return { opponent: penaltyLoserPoints, team: winnerPoints };
-  }
-
-  if (outcome === "lose" || outcome === "loss") {
-    return { opponent: winnerPoints, team: penaltyLoserPoints };
-  }
-
-  if (outcome === "draw" || outcome === "tie") {
-    return { opponent: 1, team: 1 };
-  }
-
-  return { opponent: 0, team: 0 };
-}
-
-function getTestNationResultPoints(result) {
-  const outcome = String(result.Result || "").trim().toLowerCase();
-  const teamPot = getTeamPot(result.Team);
-  const opponentPot = getTeamPot(result.Opponent);
-
-  if (outcome === "win") {
-    return {
-      opponent: getTestPenaltyLoserPoints(result),
-      team: getTestWinPoints(result, teamPot, opponentPot),
-    };
-  }
-
-  if (outcome === "lose" || outcome === "loss") {
-    return {
-      opponent: getTestWinPoints(result, opponentPot, teamPot),
-      team: getTestPenaltyLoserPoints(result),
-    };
-  }
-
-  if (outcome === "draw" || outcome === "tie") {
-    return {
-      opponent: getTestDrawPoints(opponentPot, teamPot),
-      team: getTestDrawPoints(teamPot, opponentPot),
-    };
-  }
-
-  return { opponent: 0, team: 0 };
-}
-
-function getTestWinPoints(result, winnerPot, loserPot) {
-  const basePoints = isGroupStageResult(result) ? 9 : 15;
-  const knockoutBonus = isGroupStageResult(result) ? 0 : getTestKnockoutPotBonus(winnerPot);
-  const upsetBonus = isUpsetPotResult(winnerPot, loserPot) ? 3 : 0;
-
-  return basePoints + knockoutBonus + upsetBonus;
-}
-
-function getTestPenaltyLoserPoints(result) {
-  return isPenaltyResult(result) ? 6 : 0;
-}
-
-function getTestDrawPoints(teamPot, opponentPot) {
-  const basePoints = 3;
-  const upsetBonus = isUpsetDrawPotResult(teamPot, opponentPot) ? 3 : 0;
-
-  return basePoints + upsetBonus;
-}
-
-function getTestKnockoutPotBonus(pot) {
-  return TEST_KNOCKOUT_POT_BONUSES[normalizePot(pot)] ?? 0;
-}
-
-function isGroupStageResult(result) {
-  return String(result.Stage || "").toLowerCase().includes("group");
-}
-
-function isUpsetPotResult(winnerPot, loserPot) {
-  const winnerRank = getPotRank(winnerPot);
-  const loserRank = getPotRank(loserPot);
-
-  return Boolean(winnerRank && loserRank && winnerRank > loserRank);
-}
-
-function isUpsetDrawPotResult(teamPot, opponentPot) {
-  const teamRank = getPotRank(teamPot);
-  const opponentRank = getPotRank(opponentPot);
-
-  return Boolean(teamRank && opponentRank && teamRank > opponentRank && teamRank - opponentRank > 1);
-}
-
-function getPotRank(pot) {
-  return NATION_POT_RANKS[normalizePot(pot)] ?? null;
-}
-
-function getTeamPot(teamName) {
-  const teamKey = normalizeLookupName(normalizeNationName(teamName));
-
-  return siteData.teamPots?.get(teamKey) ?? "";
-}
-
-function normalizePot(pot) {
-  return String(pot ?? "").trim().toLowerCase();
-}
-
 function getFallbackWinPoints(result) {
-  return isGroupStageResult(result) ? 3 : 5;
+  return String(result.Stage || "").toLowerCase().includes("group") ? 3 : 5;
 }
 
 function getWinnerPoints(result) {

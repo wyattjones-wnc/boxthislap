@@ -213,6 +213,15 @@ body.has-shell-stale-warning .stale-shell-alert {
   height: 106px;
 }
 
+.header-page-art[data-header-art="formula-one-2026"] picture {
+  max-width: min(520px, 100%);
+}
+
+.header-page-art[data-header-art="formula-one-2026"] img {
+  height: auto;
+  object-fit: contain;
+}
+
 .nav-links {
   display: flex;
   flex: 0 0 auto;
@@ -1980,6 +1989,10 @@ tr:last-child td {
     height: 74px;
   }
 
+  .header-page-art[data-header-art="formula-one-2026"] img {
+    height: auto;
+  }
+
   @media (orientation: landscape) and (max-height: 520px) {
     .topbar {
       grid-template-columns: 104px minmax(0, 1fr) auto;
@@ -1995,6 +2008,10 @@ tr:last-child td {
 
     .header-page-art[data-header-art="fantasy-office-2025"] img {
       height: 62px;
+    }
+
+    .header-page-art[data-header-art="formula-one-2026"] img {
+      height: auto;
     }
   }
 

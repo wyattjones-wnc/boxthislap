@@ -747,22 +747,52 @@
           </div>
         </div>
 
-        <div class="formula-one-controls">
-          <label class="select-control">
-            <span>Round</span>
-            <select id="formula-one-2026-weekly-round-select">
-              <option value="">All rounds</option>
-            </select>
-          </label>
+        <div class="tabs formula-one-tabs" role="tablist" aria-label="2026 Formula 1 weekly sections">
+          <button class="tab is-active" type="button" data-tab="formula-one-2026-weekly-bet" aria-selected="true" role="tab">Bet</button>
+          <button class="tab" type="button" data-tab="formula-one-2026-weekly-results" aria-selected="false" role="tab">Results</button>
+          <button class="tab" type="button" data-tab="formula-one-2026-weekly-managers" aria-selected="false" role="tab">Managers' Championship</button>
         </div>
-        <div class="formula-one-form-card" id="formula-one-2026-weekly-form">
-          <p class="table-message">Loading Formula 1 bet form...</p>
-        </div>
-        <div class="formula-one-weekly-list" id="formula-one-2026-weekly-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">Loading Formula 1 weekly picks...</p>
-          </article>
-        </div>
+
+        <section class="tab-panel is-active" data-tab-panel="formula-one-2026-weekly-bet" role="tabpanel">
+          <div class="formula-one-form-card" id="formula-one-2026-weekly-form">
+            <p class="table-message">Loading Formula 1 bet form...</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-results" role="tabpanel">
+          <div class="formula-one-controls">
+            <label class="select-control">
+              <span>Round</span>
+              <select id="formula-one-2026-weekly-round-select">
+                <option value="">All rounds</option>
+              </select>
+            </label>
+          </div>
+          <div class="formula-one-weekly-list" id="formula-one-2026-weekly-list">
+            <article class="formula-one-question-card">
+              <p class="table-message">Loading Formula 1 weekly picks...</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-managers" role="tabpanel">
+          <div class="table-wrap standings-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Manager</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody id="formula-one-2026-weekly-managers" class="compact-manager-rows">
+                <tr>
+                  <td class="table-message" colspan="3">Loading Formula 1 weekly standings...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2025-draft" data-page="fantasy-office-2025-draft">
@@ -870,6 +900,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607080005"></script>
+    <script type="module" src="script.js?v=202607080006"></script>
   </body>
 </html>

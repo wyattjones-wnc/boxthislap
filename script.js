@@ -35,6 +35,7 @@ const formulaOneViews = {
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
     weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
     weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
+    weeklyManagers: document.querySelector("#formula-one-2026-weekly-managers"),
     weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
   },
 };
@@ -1260,10 +1261,12 @@ function renderFormulaOneWeeklyPage(year, data) {
 
   if (!data?.races?.length) {
     view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Formula 1 weekly picks were loaded.</p></article>`;
+    renderFormulaOneWeeklyManagers(year, []);
     return;
   }
 
   renderFormulaOneWeeklyRoundOptions(year, data.races);
+  renderFormulaOneWeeklyManagers(year, data.standings ?? []);
 
   const selectedRound = view.weeklyRoundSelect?.value ?? "";
   const races = selectedRound
@@ -1276,6 +1279,31 @@ function renderFormulaOneWeeklyPage(year, data) {
   }
 
   view.weeklyList.innerHTML = races.map((race) => renderFormulaOneWeeklyRace(year, race)).join("");
+}
+
+function renderFormulaOneWeeklyManagers(year, standings) {
+  const rows = formulaOneViews[year]?.weeklyManagers;
+
+  if (!rows) {
+    return;
+  }
+
+  if (!standings.length) {
+    rows.innerHTML = `<tr><td class="table-message" colspan="3">No Formula 1 weekly standings were loaded.</td></tr>`;
+    return;
+  }
+
+  rows.innerHTML = standings.map((entry, index) => {
+    const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+
+    return `
+      <tr>
+        <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
+        <td data-label="Manager">${renderManagerChip(manager)}</td>
+        <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderFormulaOneWeeklyRoundOptions(year, races) {

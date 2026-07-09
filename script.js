@@ -417,6 +417,10 @@ function getHeaderArtName(pageName) {
     return "formula-one-2026";
   }
 
+  if (pageName.startsWith("fantasy-critic-2025")) {
+    return "fantasy-critic-2025";
+  }
+
   if (pageName.startsWith("fantasy-office-2025")) {
     return "fantasy-office-2025";
   }

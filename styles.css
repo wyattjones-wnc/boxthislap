@@ -200,26 +200,9 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .header-page-art img {
-  height: 82px;
-  object-fit: cover;
-  object-position: center;
-}
-
-.header-page-art[data-header-art="fantasy-office-2025"] picture {
-  max-width: min(760px, 100%);
-}
-
-.header-page-art[data-header-art="fantasy-office-2025"] img {
   height: 106px;
-}
-
-.header-page-art[data-header-art="formula-one-2026"] picture {
-  max-width: min(620px, 100%);
-}
-
-.header-page-art[data-header-art="formula-one-2026"] img {
-  height: 132px;
   object-fit: contain;
+  object-position: center;
 }
 
 .nav-links {
@@ -1981,16 +1964,8 @@ tr:last-child td {
   }
 
   .header-page-art img {
-    height: 58px;
-    max-width: 100%;
-  }
-
-  .header-page-art[data-header-art="fantasy-office-2025"] img {
     height: 74px;
-  }
-
-  .header-page-art[data-header-art="formula-one-2026"] img {
-    height: 96px;
+    max-width: 100%;
   }
 
   @media (orientation: landscape) and (max-height: 520px) {
@@ -2003,14 +1978,6 @@ tr:last-child td {
     }
 
     .header-page-art img {
-      height: 46px;
-    }
-
-    .header-page-art[data-header-art="fantasy-office-2025"] img {
-      height: 62px;
-    }
-
-    .header-page-art[data-header-art="formula-one-2026"] img {
       height: 62px;
     }
   }

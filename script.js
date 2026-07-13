@@ -7,6 +7,7 @@ const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const headerArt = document.querySelectorAll("[data-header-art]");
 const navGroups = document.querySelectorAll("[data-nav-scope]");
 const themeToggle = document.querySelector("[data-theme-toggle]");
+const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
@@ -85,6 +86,7 @@ const managerResultsRows = document.querySelector("#manager-results-rows");
 const managerResultsFilter = document.querySelector("#manager-results-filter");
 const standingsAllDataToggle = document.querySelector("#standings-all-data-toggle");
 const standingsRoundSelect = document.querySelector("#standings-round-select");
+const nationTestScoringToggle = document.querySelector("#nation-test-scoring-toggle");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 const siteData = {};
@@ -96,6 +98,21 @@ const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
 const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbzX29wZYzdCBW0pEwiJ_s22OGw-PpUJSBPQIXYxCaf9yHnFMCq9_r5z4nGfZaKk8fUF/exec";
 const BRACKET_MANUAL_PICK_VALUE = "";
+const NATION_POT_RANKS = {
+  a: 1,
+  b: 2,
+  c: 3,
+  d: 4,
+  e: 5,
+  g: 6,
+};
+const TEST_KNOCKOUT_POT_BONUSES = {
+  b: 2,
+  c: 4,
+  d: 6,
+  e: 8,
+  g: 10,
+};
 const BRACKET_ROUNDS = [
   { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
   { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
@@ -375,7 +392,8 @@ function showPage(pageName, options = {}) {
   };
   const resolvedPageName = pageAliases[pageName] || pageName;
   const allowedPageName = pageAliases[pageName] || pageName;
-  const pageExists = [...pages].some((page) => page.dataset.page === allowedPageName);
+  const testRulesBlocked = allowedPageName === "rules" && !shouldUseNationTestScoring();
+  const pageExists = !testRulesBlocked && [...pages].some((page) => page.dataset.page === allowedPageName);
   const activePageName = pageExists ? allowedPageName : "results";
 
   pages.forEach((page) => {
@@ -2675,6 +2693,13 @@ standingsRoundSelect?.addEventListener("change", () => {
   renderFilteredStandings();
 });
 
+nationTestScoringToggle?.addEventListener("change", () => {
+  syncTestScoringUi();
+  renderFilteredStandings();
+  renderDraftPage();
+  renderCurrentMatchLists();
+});
+
 playerPositionFilter?.addEventListener("change", () => {
   if (siteData.playerPerformances) {
     renderPlayerChampionship(siteData.playerPerformances);
@@ -2726,6 +2751,20 @@ function renderFilteredStandings() {
   }
 }
 
+function syncTestScoringUi() {
+  const isTestMode = shouldUseNationTestScoring();
+
+  testRulesLinks.forEach((link) => {
+    link.hidden = !isTestMode;
+  });
+
+  document.body.classList.toggle("is-test-scoring", isTestMode);
+
+  if (!isTestMode && window.location.hash.replace("#", "") === "rules") {
+    showPage("standings", { scrollToTop: true });
+  }
+}
+
 window.addEventListener("hashchange", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
 });
@@ -2734,6 +2773,7 @@ window.addEventListener("popstate", () => {
   showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
 });
 
+syncTestScoringUi();
 showPage(window.location.hash.replace("#", "") || "results");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
@@ -2791,7 +2831,10 @@ loadSheet("matchResults")
 loadSheet("teams")
   .then((teams) => {
     siteData.teams = teams;
+    siteData.teamPots = buildTeamPotLookup(teams);
     renderDraftPage();
+    renderFilteredStandings();
+    renderCurrentMatchLists();
     console.info("Box This Lap team data loaded", teams);
   })
   .catch((error) => {
@@ -4228,32 +4271,14 @@ function getNationPointsForResult(result, nationName) {
   const nationKey = normalizeLookupName(normalizeNationName(nationName));
   const teamKey = normalizeLookupName(normalizeNationName(result.Team));
   const opponentKey = normalizeLookupName(normalizeNationName(result.Opponent));
-  const outcome = String(result.Result || "").trim().toLowerCase();
-  const winnerPoints = getWinnerPoints(result);
-  const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+  const points = getNationResultPoints(result);
 
-  if (outcome === "draw" || outcome === "tie") {
-    return nationKey === teamKey || nationKey === opponentKey ? 1 : null;
+  if (nationKey === teamKey) {
+    return points.team;
   }
 
-  if (outcome === "win") {
-    if (nationKey === teamKey) {
-      return winnerPoints;
-    }
-
-    if (nationKey === opponentKey) {
-      return penaltyLoserPoints;
-    }
-  }
-
-  if (outcome === "lose" || outcome === "loss") {
-    if (nationKey === teamKey) {
-      return penaltyLoserPoints;
-    }
-
-    if (nationKey === opponentKey) {
-      return winnerPoints;
-    }
+  if (nationKey === opponentKey) {
+    return points.opponent;
   }
 
   return null;
@@ -4768,8 +4793,7 @@ function getNationsLeagueRows(results) {
 
     const teamRow = getNationStanding(nations, team);
     const opponentRow = getNationStanding(nations, opponent);
-    const winnerPoints = getWinnerPoints(result);
-    const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+    const resultPoints = getNationResultPoints(result);
     let teamPoints = 0;
     let opponentPoints = 0;
 
@@ -4779,18 +4803,18 @@ function getNationsLeagueRows(results) {
     if (outcome === "win") {
       teamRow.wins += 1;
       opponentRow.losses += 1;
-      teamPoints = winnerPoints;
-      opponentPoints = penaltyLoserPoints;
+      teamPoints = resultPoints.team;
+      opponentPoints = resultPoints.opponent;
     } else if (outcome === "lose" || outcome === "loss") {
       teamRow.losses += 1;
       opponentRow.wins += 1;
-      teamPoints = penaltyLoserPoints;
-      opponentPoints = winnerPoints;
+      teamPoints = resultPoints.team;
+      opponentPoints = resultPoints.opponent;
     } else if (outcome === "draw" || outcome === "tie") {
       teamRow.draws += 1;
       opponentRow.draws += 1;
-      teamPoints = 1;
-      opponentPoints = 1;
+      teamPoints = resultPoints.team;
+      opponentPoints = resultPoints.opponent;
     }
 
     teamRow.points += teamPoints;
@@ -5422,8 +5446,137 @@ function isPenaltyResult(result) {
   return true;
 }
 
+function buildTeamPotLookup(teams = []) {
+  const lookup = new Map();
+
+  for (const team of teams) {
+    const name = normalizeNationName(team.Team || team.Nation || team.Name);
+    const pot = normalizePot(team.Pot);
+
+    if (name && pot) {
+      lookup.set(normalizeLookupName(name), pot);
+    }
+  }
+
+  return lookup;
+}
+
+function shouldUseNationTestScoring() {
+  return nationTestScoringToggle?.checked ?? false;
+}
+
+function getNationResultPoints(result) {
+  return shouldUseNationTestScoring()
+    ? getTestNationResultPoints(result)
+    : getSheetNationResultPoints(result);
+}
+
+function getSheetNationResultPoints(result) {
+  const outcome = String(result.Result || "").trim().toLowerCase();
+  const winnerPoints = getWinnerPoints(result);
+  const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+
+  if (outcome === "win") {
+    return { opponent: penaltyLoserPoints, team: winnerPoints };
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    return { opponent: winnerPoints, team: penaltyLoserPoints };
+  }
+
+  if (outcome === "draw" || outcome === "tie") {
+    return { opponent: 1, team: 1 };
+  }
+
+  return { opponent: 0, team: 0 };
+}
+
+function getTestNationResultPoints(result) {
+  const outcome = String(result.Result || "").trim().toLowerCase();
+  const teamPot = getTeamPot(result.Team);
+  const opponentPot = getTeamPot(result.Opponent);
+
+  if (outcome === "win") {
+    return {
+      opponent: getTestPenaltyLoserPoints(result),
+      team: getTestWinPoints(result, teamPot, opponentPot),
+    };
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    return {
+      opponent: getTestWinPoints(result, opponentPot, teamPot),
+      team: getTestPenaltyLoserPoints(result),
+    };
+  }
+
+  if (outcome === "draw" || outcome === "tie") {
+    return {
+      opponent: getTestDrawPoints(opponentPot, teamPot),
+      team: getTestDrawPoints(teamPot, opponentPot),
+    };
+  }
+
+  return { opponent: 0, team: 0 };
+}
+
+function getTestWinPoints(result, winnerPot, loserPot) {
+  const basePoints = isGroupStageResult(result) ? 9 : 15;
+  const knockoutBonus = isGroupStageResult(result) ? 0 : getTestKnockoutPotBonus(winnerPot);
+  const upsetBonus = isUpsetPotResult(winnerPot, loserPot) ? 3 : 0;
+
+  return basePoints + knockoutBonus + upsetBonus;
+}
+
+function getTestPenaltyLoserPoints(result) {
+  return isPenaltyResult(result) ? 6 : 0;
+}
+
+function getTestDrawPoints(teamPot, opponentPot) {
+  const basePoints = 3;
+  const upsetBonus = isUpsetDrawPotResult(teamPot, opponentPot) ? 3 : 0;
+
+  return basePoints + upsetBonus;
+}
+
+function getTestKnockoutPotBonus(pot) {
+  return TEST_KNOCKOUT_POT_BONUSES[normalizePot(pot)] ?? 0;
+}
+
+function isGroupStageResult(result) {
+  return String(result.Stage || "").toLowerCase().includes("group");
+}
+
+function isUpsetPotResult(winnerPot, loserPot) {
+  const winnerRank = getPotRank(winnerPot);
+  const loserRank = getPotRank(loserPot);
+
+  return Boolean(winnerRank && loserRank && winnerRank > loserRank);
+}
+
+function isUpsetDrawPotResult(teamPot, opponentPot) {
+  const teamRank = getPotRank(teamPot);
+  const opponentRank = getPotRank(opponentPot);
+
+  return Boolean(teamRank && opponentRank && teamRank > opponentRank && teamRank - opponentRank > 1);
+}
+
+function getPotRank(pot) {
+  return NATION_POT_RANKS[normalizePot(pot)] ?? null;
+}
+
+function getTeamPot(teamName) {
+  const teamKey = normalizeLookupName(normalizeNationName(teamName));
+
+  return siteData.teamPots?.get(teamKey) ?? "";
+}
+
+function normalizePot(pot) {
+  return String(pot ?? "").trim().toLowerCase();
+}
+
 function getFallbackWinPoints(result) {
-  return String(result.Stage || "").toLowerCase().includes("group") ? 3 : 5;
+  return isGroupStageResult(result) ? 3 : 5;
 }
 
 function getWinnerPoints(result) {

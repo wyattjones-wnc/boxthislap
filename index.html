@@ -168,7 +168,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607120001">
+    <link rel="stylesheet" href="styles.css?v=202607120002">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -243,6 +243,7 @@
           <a href="#results" data-page-link="results" role="tab">Results</a>
           <a href="#bracket" data-page-link="bracket" role="tab">Bracket</a>
           <a href="#standings" data-page-link="standings" role="tab">Standings</a>
+          <a href="#rules" data-page-link="rules" data-test-rules-link role="tab" hidden>Rules</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
         <div class="nav-links" data-nav-scope="formula-one-2024" role="tablist" aria-label="Formula 1 sections" hidden>
@@ -492,6 +493,56 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <section class="page rules-page" id="rules" data-page="rules">
+        <div class="league-detail-heading">
+          <div>
+            <h1>Test Rules</h1>
+            <p>Nation scoring proposal</p>
+          </div>
+        </div>
+
+        <div class="rules-grid">
+          <article class="rule-card">
+            <h2>Purpose</h2>
+            <p>The Test toggle recalculates nation points with a more aggressive reward for national team results. Player points continue to use the sheet values.</p>
+          </article>
+
+          <article class="rule-card">
+            <h2>Base Results</h2>
+            <ul>
+              <li>Group stage win: 9 points.</li>
+              <li>Knockout stage win: 15 points.</li>
+              <li>Draw: 3 points.</li>
+              <li>Penalty shootout loss: 6 points.</li>
+            </ul>
+          </article>
+
+          <article class="rule-card">
+            <h2>Upsets</h2>
+            <p>A win over a nation from a higher pot earns an additional 3 points. A draw can also earn the upset bonus when the lower-pot nation is more than one pot below its opponent.</p>
+            <p>Example: Pot C drawing Pot A earns the draw points plus the upset bonus.</p>
+          </article>
+
+          <article class="rule-card">
+            <h2>Knockout Pot Bonus</h2>
+            <p>Knockout winners from lower pots receive an additional pot bonus. These bonuses are doubled from the original draft concept.</p>
+            <ul>
+              <li>Pot A: no bonus.</li>
+              <li>Pot B: +2 points.</li>
+              <li>Pot C: +4 points.</li>
+              <li>Pot D: +6 points.</li>
+              <li>Pot E: +8 points.</li>
+              <li>Pot G: +10 points.</li>
+            </ul>
+          </article>
+
+          <article class="rule-card">
+            <h2>What Changes</h2>
+            <p>When Test is on, Nations League, Manager Results, draft nation totals, and match-card nation points use these calculated values. Player points and draft eligibility rules are unchanged.</p>
+          </article>
         </div>
       </section>
 
@@ -942,6 +993,10 @@
           alt="Site view count"
         >
       </div>
+      <label class="footer-test-toggle">
+        <input id="nation-test-scoring-toggle" type="checkbox">
+        <span>Test</span>
+      </label>
       <div class="theme-control">
         <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="true">
           Dark
@@ -949,6 +1004,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607120001"></script>
+    <script type="module" src="script.js?v=202607120002"></script>
   </body>
 </html>

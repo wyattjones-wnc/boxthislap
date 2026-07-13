@@ -23,6 +23,8 @@
         let pullDistance = 0;
         let isTrackingPull = false;
         const refreshThreshold = 72;
+        const staleResumeThreshold = 10 * 60 * 1000;
+        let hiddenAt = 0;
 
         function hardRefresh() {
           const url = new URL(window.location.href);
@@ -50,6 +52,19 @@
           document.body.classList.add("has-shell-stale-warning");
         }
 
+        function refreshIfStaleResume() {
+          if (!hiddenAt) {
+            return;
+          }
+
+          const hiddenDuration = Date.now() - hiddenAt;
+          hiddenAt = 0;
+
+          if (hiddenDuration >= staleResumeThreshold) {
+            hardRefresh();
+          }
+        }
+
         function setPullDistance(value) {
           pullDistance = Math.max(0, value);
           document.documentElement.style.setProperty("--pull-refresh-distance", `${pullDistance}px`);
@@ -72,6 +87,31 @@
             showStaleWarning();
           }
         }, true);
+
+        window.addEventListener("pagehide", () => {
+          hiddenAt = Date.now();
+        });
+
+        window.addEventListener("pageshow", (event) => {
+          if (event.persisted) {
+            refreshIfStaleResume();
+          }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") {
+            hiddenAt = Date.now();
+            return;
+          }
+
+          refreshIfStaleResume();
+        });
+
+        window.addEventListener("online", () => {
+          if (document.body?.classList.contains("has-shell-stale-warning")) {
+            hardRefresh();
+          }
+        });
 
         document.addEventListener("DOMContentLoaded", () => {
           staleTimer = window.setTimeout(showStaleWarning, 4500);
@@ -909,6 +949,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607090002"></script>
+    <script type="module" src="script.js?v=202607120001"></script>
   </body>
 </html>

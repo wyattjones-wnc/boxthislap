@@ -42,8 +42,11 @@ export const DATA_SOURCES = {
   },
 };
 
+const FETCH_TIMEOUT_MS = 12000;
+const FETCH_RETRY_DELAYS_MS = [350, 1200];
+
 export async function loadJson(path) {
-  const response = await fetch(path, { cache: "no-store" });
+  const response = await fetchWithRetry(path, { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error(`Failed to load JSON from ${path}: ${response.status}`);
@@ -59,7 +62,7 @@ export async function loadJson(path) {
 }
 
 export async function loadCsv(url) {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetchWithRetry(url, { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
@@ -69,7 +72,7 @@ export async function loadCsv(url) {
 }
 
 export async function loadCsvText(url) {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetchWithRetry(url, { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
@@ -130,6 +133,61 @@ export function parseCsv(csvText) {
       record[header || `Column ${index + 1}`] = row[index] ?? "";
       return record;
     }, {});
+  });
+}
+
+async function fetchWithRetry(resource, options = {}) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= FETCH_RETRY_DELAYS_MS.length; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const url = attempt === 0 ? resource : addCacheBust(resource);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+
+      if (response.ok || !isTransientResponse(response) || attempt === FETCH_RETRY_DELAYS_MS.length) {
+        return response;
+      }
+
+      lastError = new Error(`Temporary response ${response.status} from ${url}`);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === FETCH_RETRY_DELAYS_MS.length) {
+        break;
+      }
+    } finally {
+      window.clearTimeout(timeout);
+    }
+
+    await wait(FETCH_RETRY_DELAYS_MS[attempt]);
+  }
+
+  throw lastError;
+}
+
+function isTransientResponse(response) {
+  return response.status === 408 || response.status === 429 || response.status >= 500;
+}
+
+function addCacheBust(resource) {
+  try {
+    const url = new URL(resource, window.location.href);
+    url.searchParams.set("_bt", Date.now().toString());
+    return url.toString();
+  } catch {
+    return resource;
+  }
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
   });
 }
 

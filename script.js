@@ -87,6 +87,8 @@ const managerResultsFilter = document.querySelector("#manager-results-filter");
 const standingsAllDataToggle = document.querySelector("#standings-all-data-toggle");
 const standingsRoundSelect = document.querySelector("#standings-round-select");
 const nationTestScoringToggle = document.querySelector("#nation-test-scoring-toggle");
+const rulesNationSelect = document.querySelector("#rules-nation-select");
+const rulesNationBreakdown = document.querySelector("#rules-nation-breakdown");
 const testingPlayerRows = document.querySelector("#testing-player-rows");
 
 const siteData = {};
@@ -2698,6 +2700,12 @@ nationTestScoringToggle?.addEventListener("change", () => {
   renderFilteredStandings();
   renderDraftPage();
   renderCurrentMatchLists();
+  renderRulesNationOptions();
+  renderRulesNationBreakdown();
+});
+
+rulesNationSelect?.addEventListener("change", () => {
+  renderRulesNationBreakdown();
 });
 
 playerPositionFilter?.addEventListener("change", () => {
@@ -2763,6 +2771,151 @@ function syncTestScoringUi() {
   if (!isTestMode && window.location.hash.replace("#", "") === "rules") {
     showPage("standings", { scrollToTop: true });
   }
+
+  renderRulesNationOptions();
+  renderRulesNationBreakdown();
+}
+
+function renderRulesNationOptions() {
+  if (!rulesNationSelect) {
+    return;
+  }
+
+  const selected = rulesNationSelect.value;
+  const nationsByKey = new Map();
+
+  (siteData.teams || []).forEach((team) => {
+    const nation = normalizeNationName(team.Team || team.Nation || team.Name);
+
+    if (nation) {
+      nationsByKey.set(normalizeLookupName(nation), nation);
+    }
+  });
+
+  (siteData.matchResults || []).forEach((result) => {
+    [result.Team, result.Opponent].forEach((team) => {
+      const nation = normalizeNationName(team);
+
+      if (nation) {
+        nationsByKey.set(normalizeLookupName(nation), nation);
+      }
+    });
+  });
+
+  const nations = [...nationsByKey.values()].sort((a, b) => a.localeCompare(b));
+  const selectedStillExists = selected && nations.some((nation) => normalizeLookupName(nation) === normalizeLookupName(selected));
+
+  rulesNationSelect.innerHTML = [
+    `<option value="">${nations.length ? "Select a nation" : "No nations loaded"}</option>`,
+    ...nations.map((nation) => `<option value="${escapeHtml(nation)}"${selectedStillExists && normalizeLookupName(nation) === normalizeLookupName(selected) ? " selected" : ""}>${escapeHtml(nation)}</option>`),
+  ].join("");
+}
+
+function renderRulesNationBreakdown() {
+  if (!rulesNationBreakdown) {
+    return;
+  }
+
+  if (!shouldUseNationTestScoring()) {
+    rulesNationBreakdown.innerHTML = `<p class="table-message">Turn on Test in the footer to inspect the proposed nation scoring.</p>`;
+    return;
+  }
+
+  const nation = rulesNationSelect?.value || "";
+
+  if (!nation) {
+    rulesNationBreakdown.innerHTML = `<p class="table-message">Select a nation to see the point breakdown.</p>`;
+    return;
+  }
+
+  const rows = getRulesNationBreakdownRows(nation);
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+
+  if (!rows.length) {
+    rulesNationBreakdown.innerHTML = `
+      <div class="rules-breakdown-summary">
+        <strong>${escapeHtml(nation)}</strong>
+        <span>0 pts</span>
+      </div>
+      <p class="table-message">No logged nation results were found for this nation.</p>
+    `;
+    return;
+  }
+
+  rulesNationBreakdown.innerHTML = `
+    <div class="rules-breakdown-summary">
+      <strong>${escapeHtml(nation)}</strong>
+      <span>${formatPoints(total)} pts</span>
+    </div>
+    <div class="rules-breakdown-list">
+      ${rows.map(renderRulesNationBreakdownRow).join("")}
+    </div>
+  `;
+}
+
+function getRulesNationBreakdownRows(nationName) {
+  return (siteData.matchResults || [])
+    .filter(isLoggedNationResult)
+    .map((result) => getTestNationPointBreakdown(result, nationName))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const roundCompare = compareNumericLike(a.roundId, b.roundId);
+
+      if (roundCompare !== 0) {
+        return roundCompare;
+      }
+
+      return compareNumericLike(a.matchId, b.matchId);
+    });
+}
+
+function compareNumericLike(firstValue, secondValue) {
+  const firstNumber = Number(firstValue);
+  const secondNumber = Number(secondValue);
+
+  if (Number.isFinite(firstNumber) && Number.isFinite(secondNumber)) {
+    return firstNumber - secondNumber;
+  }
+
+  return String(firstValue ?? "").localeCompare(String(secondValue ?? ""), undefined, { numeric: true });
+}
+
+function renderRulesNationBreakdownRow(row) {
+  const roundLabel = row.roundLabel ? `<span>${escapeHtml(row.roundLabel)}</span>` : "";
+  const partsHtml = row.parts.length
+    ? row.parts.map((part) => `
+        <div class="rules-breakdown-part">
+          <span>${escapeHtml(part.label)}${part.detail ? ` <small>${escapeHtml(part.detail)}</small>` : ""}</span>
+          <strong>${formatPoints(part.points)}</strong>
+        </div>
+      `).join("")
+    : `<p class="rules-breakdown-empty">No points earned.</p>`;
+
+  return `
+    <article class="rules-breakdown-row">
+      <header>
+        <div>
+          <strong>${escapeHtml(row.matchLabel)}</strong>
+          <span>${escapeHtml(row.resultLabel)}</span>
+        </div>
+        <div class="rules-breakdown-meta">
+          ${roundLabel}
+          ${row.matchId ? `<span>M${escapeHtml(row.matchId)}</span>` : ""}
+        </div>
+      </header>
+      <div class="rules-breakdown-pots">
+        <span>${escapeHtml(row.team)}: Pot ${escapeHtml(row.teamPot || "?")}</span>
+        <span>${escapeHtml(row.opponent)}: Pot ${escapeHtml(row.opponentPot || "?")}</span>
+      </div>
+      <div class="rules-breakdown-parts">
+        ${partsHtml}
+      </div>
+      <div class="rules-breakdown-total">
+        <span>Match Total</span>
+        <strong>${formatPoints(row.total)} pts</strong>
+      </div>
+    </article>
+  `;
 }
 
 window.addEventListener("hashchange", () => {
@@ -2821,6 +2974,8 @@ loadSheet("matchResults")
     renderNationsLeague(results);
     renderDraftNations();
     renderCurrentMatchLists();
+    renderRulesNationOptions();
+    renderRulesNationBreakdown();
     console.info("Box This Lap match result data loaded", results);
   })
   .catch((error) => {
@@ -2835,6 +2990,8 @@ loadSheet("teams")
     renderDraftPage();
     renderFilteredStandings();
     renderCurrentMatchLists();
+    renderRulesNationOptions();
+    renderRulesNationBreakdown();
     console.info("Box This Lap team data loaded", teams);
   })
   .catch((error) => {
@@ -5492,51 +5649,142 @@ function getSheetNationResultPoints(result) {
 }
 
 function getTestNationResultPoints(result) {
+  return {
+    opponent: sumTestNationPointParts(result, "opponent"),
+    team: sumTestNationPointParts(result, "team"),
+  };
+}
+
+function getTestNationPointBreakdown(result, nationName) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+  const team = normalizeNationName(result.Team);
+  const opponent = normalizeNationName(result.Opponent);
+  const teamKey = normalizeLookupName(team);
+  const opponentKey = normalizeLookupName(opponent);
+  const side = nationKey === teamKey ? "team" : nationKey === opponentKey ? "opponent" : "";
+
+  if (!side) {
+    return null;
+  }
+
+  const parts = getTestNationPointParts(result, side);
+  const roundId = getStandingSourceRoundId(result);
+
+  return {
+    matchId: String(result["Match ID"] ?? "").trim(),
+    matchLabel: `${team} v ${opponent}`,
+    opponent,
+    opponentPot: getTeamPot(opponent),
+    parts,
+    resultLabel: formatNationResultLabel(result),
+    roundId,
+    roundLabel: getRoundPrettyName(roundId),
+    team,
+    teamPot: getTeamPot(team),
+    total: parts.reduce((sum, part) => sum + part.points, 0),
+  };
+}
+
+function sumTestNationPointParts(result, side) {
+  return getTestNationPointParts(result, side).reduce((sum, part) => sum + part.points, 0);
+}
+
+function getTestNationPointParts(result, side) {
   const outcome = String(result.Result || "").trim().toLowerCase();
   const teamPot = getTeamPot(result.Team);
   const opponentPot = getTeamPot(result.Opponent);
 
   if (outcome === "win") {
-    return {
-      opponent: getTestPenaltyLoserPoints(result),
-      team: getTestWinPoints(result, teamPot, opponentPot),
-    };
+    return side === "team"
+      ? getTestWinPointParts(result, teamPot, opponentPot)
+      : getTestPenaltyLoserPointParts(result);
   }
 
   if (outcome === "lose" || outcome === "loss") {
-    return {
-      opponent: getTestWinPoints(result, opponentPot, teamPot),
-      team: getTestPenaltyLoserPoints(result),
-    };
+    return side === "opponent"
+      ? getTestWinPointParts(result, opponentPot, teamPot)
+      : getTestPenaltyLoserPointParts(result);
   }
 
   if (outcome === "draw" || outcome === "tie") {
-    return {
-      opponent: getTestDrawPoints(opponentPot, teamPot),
-      team: getTestDrawPoints(teamPot, opponentPot),
-    };
+    return getTestDrawPointParts(side === "team" ? teamPot : opponentPot, side === "team" ? opponentPot : teamPot);
   }
 
-  return { opponent: 0, team: 0 };
+  return [];
 }
 
-function getTestWinPoints(result, winnerPot, loserPot) {
+function getTestWinPointParts(result, winnerPot, loserPot) {
   const basePoints = isGroupStageResult(result) ? 9 : 15;
+  const parts = [
+    {
+      detail: isGroupStageResult(result) ? "Group stage win" : "Knockout stage win",
+      label: "Base result",
+      points: basePoints,
+    },
+  ];
   const knockoutBonus = isGroupStageResult(result) ? 0 : getTestKnockoutPotBonus(winnerPot);
   const upsetBonus = isUpsetPotResult(winnerPot, loserPot) ? 3 : 0;
 
-  return basePoints + knockoutBonus + upsetBonus;
+  if (knockoutBonus) {
+    parts.push({
+      detail: `Pot ${String(winnerPot).toUpperCase()} knockout win`,
+      label: "Knockout pot bonus",
+      points: knockoutBonus,
+    });
+  }
+
+  if (upsetBonus) {
+    parts.push({
+      detail: `Pot ${String(winnerPot).toUpperCase()} beat Pot ${String(loserPot).toUpperCase()}`,
+      label: "Upset win bonus",
+      points: upsetBonus,
+    });
+  }
+
+  return parts;
+}
+
+function getTestWinPoints(result, winnerPot, loserPot) {
+  return getTestWinPointParts(result, winnerPot, loserPot).reduce((sum, part) => sum + part.points, 0);
+}
+
+function getTestPenaltyLoserPointParts(result) {
+  return isPenaltyResult(result)
+    ? [{ detail: "Lost after penalties", label: "Penalty shootout loss", points: 6 }]
+    : [];
 }
 
 function getTestPenaltyLoserPoints(result) {
-  return isPenaltyResult(result) ? 6 : 0;
+  return getTestPenaltyLoserPointParts(result).reduce((sum, part) => sum + part.points, 0);
+}
+
+function getTestDrawPointParts(teamPot, opponentPot) {
+  const parts = [{ detail: "Draw", label: "Base result", points: 3 }];
+  const upsetBonus = isUpsetDrawPotResult(teamPot, opponentPot) ? 3 : 0;
+
+  if (upsetBonus) {
+    parts.push({
+      detail: `Pot ${String(teamPot).toUpperCase()} drew Pot ${String(opponentPot).toUpperCase()}`,
+      label: "Upset draw bonus",
+      points: upsetBonus,
+    });
+  }
+
+  return parts;
 }
 
 function getTestDrawPoints(teamPot, opponentPot) {
-  const basePoints = 3;
-  const upsetBonus = isUpsetDrawPotResult(teamPot, opponentPot) ? 3 : 0;
+  return getTestDrawPointParts(teamPot, opponentPot).reduce((sum, part) => sum + part.points, 0);
+}
 
-  return basePoints + upsetBonus;
+function formatNationResultLabel(result) {
+  const outcome = String(result.Result || "").trim();
+  const points = getNationResultPoints(result);
+  const teamPoints = formatPoints(points.team);
+  const opponentPoints = formatPoints(points.opponent);
+  const resultText = outcome ? `${outcome}: ` : "";
+
+  return `${resultText}${normalizeNationName(result.Team)} ${teamPoints} pts, ${normalizeNationName(result.Opponent)} ${opponentPoints} pts`;
 }
 
 function getTestKnockoutPotBonus(pot) {

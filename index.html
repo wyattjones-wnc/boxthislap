@@ -168,7 +168,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607120002">
+    <link rel="stylesheet" href="styles.css?v=202607130001">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -503,6 +503,24 @@
             <p>Nation scoring proposal</p>
           </div>
         </div>
+
+        <section class="rules-breakdown-card" aria-labelledby="rules-nation-heading">
+          <div class="rules-breakdown-heading">
+            <div>
+              <h2 id="rules-nation-heading">Nation Breakdown</h2>
+              <p>Select a nation to see every scored match and how the Test value is calculated.</p>
+            </div>
+            <label class="select-control compact-select-control" for="rules-nation-select">
+              <span>Nation</span>
+              <select id="rules-nation-select">
+                <option value="">Loading nations...</option>
+              </select>
+            </label>
+          </div>
+          <div class="rules-breakdown" id="rules-nation-breakdown">
+            <p class="table-message">Select a nation to see the point breakdown.</p>
+          </div>
+        </section>
 
         <div class="rules-grid">
           <article class="rule-card">
@@ -1004,6 +1022,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607120002"></script>
+    <script type="module" src="script.js?v=202607130001"></script>
   </body>
 </html>

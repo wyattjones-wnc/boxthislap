@@ -5792,7 +5792,15 @@ function getTestKnockoutPotBonus(pot) {
 }
 
 function isGroupStageResult(result) {
-  return String(result.Stage || "").toLowerCase().includes("group");
+  const stage = String(result.Stage || "").toLowerCase();
+
+  if (stage) {
+    return stage.includes("group");
+  }
+
+  const roundId = Number(getStandingSourceRoundId(result));
+
+  return Number.isFinite(roundId) && roundId >= 1 && roundId <= 3;
 }
 
 function isUpsetPotResult(winnerPot, loserPot) {

@@ -407,13 +407,50 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 18px;
 }
 
+.workflow-dropdown {
+  align-self: start;
+  padding: 0;
+}
+
 .manager-hub-card-heading {
   align-items: center;
   border-bottom: 1px solid var(--line);
   display: flex;
+  gap: 12px;
   justify-content: space-between;
   margin-bottom: 12px;
   padding-bottom: 10px;
+}
+
+.workflow-summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 0;
+  padding: 12px 16px;
+}
+
+.workflow-summary::-webkit-details-marker {
+  display: none;
+}
+
+.workflow-summary::after {
+  color: var(--muted);
+  content: "v";
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.workflow-dropdown[open] .workflow-summary::after {
+  content: "^";
+}
+
+.workflow-dropdown:not([open]) .workflow-summary {
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.workflow-dropdown .workflow-list {
+  padding: 12px;
 }
 
 .manager-hub-card h2 {
@@ -425,6 +462,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--muted);
   font-size: 0.85rem;
   font-weight: 900;
+  margin-left: auto;
 }
 
 .workflow-list,

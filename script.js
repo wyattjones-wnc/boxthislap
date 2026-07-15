@@ -957,6 +957,7 @@ function parseFormulaOneRoundForms(rows) {
 
       return {
         date: parseFormulaOneFormDate(getField(row, "Date")),
+        dueEst: getField(row, "Due (est)", "Due (EST)", "Due EST", "Due"),
         formUrl,
         id: String(roundId ?? "").trim(),
         name,
@@ -3274,7 +3275,7 @@ function renderManagerHub() {
     }
 
     if (workflowCount) {
-      workflowCount.textContent = "0 open";
+      workflowCount.textContent = formatNotificationCount(0);
     }
 
     if (workflowList) {
@@ -3374,7 +3375,7 @@ function renderManagerWorkflow(managerId) {
   const openItems = buildManagerWorkflowItems(managerId).sort(compareWorkflowItems);
 
   if (workflowCount) {
-    workflowCount.textContent = `${openItems.length} open`;
+    workflowCount.textContent = formatNotificationCount(openItems.length);
   }
 
   if (!openItems.length) {
@@ -3397,7 +3398,7 @@ function buildDraftWorkflowItems(managerId) {
   const logs = siteData.portalLogs || [];
 
   return drafts
-    .filter((draft) => !isTruthy(draft.IsCompleted))
+    .filter((draft) => !isWorkflowDraftCompleted(draft))
     .filter((draft) => !hasManagerCompletedDraft(logs, managerId, draft.ID))
     .map((draft) => ({
       actionLabel: "Open",
@@ -3435,7 +3436,7 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
   return [{
     actionLabel: "Open",
     description: "2026 Formula 1 weekly bet",
-    dueDate: nextForm.date ? formatWorkflowDate(nextForm.date) : "",
+    dueDate: formatWorkflowDue(nextForm),
     id: `formula-one-2026-weekly-${nextForm.id}`,
     priority: nextForm.Priority || nextForm.priority || "1",
     status: "Upcoming race",
@@ -3446,6 +3447,14 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
     weeklyFormId: nextForm.id,
     year: "2026",
   }];
+}
+
+function formatNotificationCount(count) {
+  return `${count} ${count === 1 ? "notification" : "notifications"}`;
+}
+
+function isWorkflowDraftCompleted(draft) {
+  return isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"));
 }
 
 function getUpcomingFormulaOneForm(forms) {
@@ -3510,6 +3519,16 @@ function formatWorkflowDate(date) {
     month: "short",
     timeZone: "America/New_York",
   }).format(date);
+}
+
+function formatWorkflowDue(form) {
+  const dueEst = String(form?.dueEst ?? "").trim();
+
+  if (dueEst) {
+    return dueEst;
+  }
+
+  return form?.date ? formatWorkflowDate(form.date) : "";
 }
 
 function activateWorkflowItem(item) {

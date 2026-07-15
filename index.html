@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607150001">
+    <link rel="stylesheet" href="styles.css?v=202607150002">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -365,17 +365,17 @@
         </div>
 
         <div class="manager-hub-grid">
-          <section class="manager-hub-card" aria-labelledby="workflow-heading">
-            <div class="manager-hub-card-heading">
+          <details class="manager-hub-card workflow-dropdown" aria-labelledby="workflow-heading">
+            <summary class="manager-hub-card-heading workflow-summary">
               <h2 id="workflow-heading">Notifications</h2>
-              <span id="workflow-count">0 open</span>
-            </div>
+              <span id="workflow-count">0 notifications</span>
+            </summary>
             <div class="workflow-list" id="workflow-list">
               <article class="workflow-item">
                 <p class="table-message">Log in to load notifications.</p>
               </article>
             </div>
-          </section>
+          </details>
 
           <section class="manager-hub-card" aria-labelledby="manager-summary-heading">
             <div class="manager-hub-card-heading">
@@ -1133,6 +1133,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607150002"></script>
+    <script type="module" src="script.js?v=202607150003"></script>
   </body>
 </html>

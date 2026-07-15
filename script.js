@@ -3299,7 +3299,7 @@ function renderManagerHub() {
   renderManagerSummary(session.managerId);
 }
 
-function renderManagerWorkflow(managerId) {
+function renderManagerWorkflowLegacy(managerId) {
   if (!workflowList) {
     return;
   }

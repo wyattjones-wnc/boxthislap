@@ -3625,36 +3625,133 @@ function renderManagerSummary(managerId) {
 
   const source = siteData.managerResultsSource;
 
-  if (!source) {
+  if (!source && !hasManagerHubResultData()) {
     managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
     return;
   }
 
-  const managerSummary = getManagerSummaryRanks(managerId, source);
-  const manager = managerSummary.overall;
+  const resultCards = [
+    renderWorldCupManagerSummary(managerId, source),
+    renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2025, "2025 Fantasy Critic"),
+    renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2026, "2026 Fantasy Critic"),
+    renderFormulaOneWeeklyManagerSummary(managerId, "2025"),
+    renderFormulaOneWeeklyManagerSummary(managerId, "2026"),
+  ].filter(Boolean);
 
-  if (!manager) {
+  if (!resultCards.length) {
     managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No result summary found for this manager yet.</p></article>`;
     return;
   }
 
-  managerSummaryList.innerHTML = `
+  managerSummaryList.innerHTML = resultCards.join("");
+}
+
+function hasManagerHubResultData() {
+  return Boolean(
+    siteData.managerResultsSource ||
+    siteData.formulaOne2025Weekly?.standings?.length ||
+    siteData.formulaOne2026Weekly?.standings?.length ||
+    siteData.formulaOne2026WeeklyResults?.standings?.length
+  );
+}
+
+function renderWorldCupManagerSummary(managerId, source) {
+  if (!source) {
+    return "";
+  }
+
+  const managerSummary = getManagerSummaryRanks(managerId, source);
+  const manager = managerSummary.players || managerSummary.nations;
+
+  if (!manager) {
+    return "";
+  }
+
+  return `
     <article class="workflow-item">
       <header>
         <div>
           <h3>World Cup</h3>
-          <p>${escapeHtml(formatPoints(manager.points))} total points</p>
+          <p>Players' Championship and Nations League</p>
         </div>
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks">
-        ${renderManagerSummaryRank("Overall", managerSummary.overall)}
         ${renderManagerSummaryRank("Players", managerSummary.players)}
         ${renderManagerSummaryRank("Nations", managerSummary.nations)}
       </div>
       <a class="action-button" href="#standings" data-page-link="standings">Open Standings</a>
     </article>
   `;
+}
+
+function renderFantasyCriticManagerSummary(managerId, league, label) {
+  const row = findFantasyCriticManagerRow(managerId, league);
+
+  if (!row) {
+    return "";
+  }
+
+  const manager = getManagerByName(row.manager) ?? { name: row.manager };
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(label)}</h3>
+          <p>${escapeHtml(row.publisher || "Fantasy Critic")}</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks manager-summary-ranks--single">
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue)}
+      </div>
+      <a class="action-button" href="#fantasy-critic-${escapeHtml(label.slice(0, 4))}" data-page-link="fantasy-critic-${escapeHtml(label.slice(0, 4))}">Open Fantasy Critic</a>
+    </article>
+  `;
+}
+
+function findFantasyCriticManagerRow(managerId, league) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+
+  return league.standings.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+}
+
+function renderFormulaOneWeeklyManagerSummary(managerId, year) {
+  const data = year === "2026"
+    ? siteData.formulaOne2026WeeklyResults ?? siteData.formulaOne2026Weekly
+    : siteData.formulaOne2025Weekly;
+  const row = findFormulaOneManagerRow(managerId, data?.standings ?? []);
+
+  if (!row) {
+    return "";
+  }
+
+  const manager = getManagerByName(row.manager) ?? { name: row.manager };
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(year)} Formula 1 Weekly</h3>
+          <p>Weekly bet results</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks manager-summary-ranks--single">
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue)}
+      </div>
+      <a class="action-button" href="#formula-1-${escapeHtml(year)}-weekly" data-page-link="formula-1-${escapeHtml(year)}-weekly">Open Weekly</a>
+    </article>
+  `;
+}
+
+function findFormulaOneManagerRow(managerId, standings) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+
+  return standings.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
 }
 
 function getManagerSummaryRanks(managerId, source) {
@@ -3670,16 +3767,18 @@ function getManagerSummaryRanks(managerId, source) {
   };
 }
 
-function renderManagerSummaryRank(label, row) {
+function renderManagerSummaryRank(label, row, pointFormatter = formatPoints) {
   if (!row) {
     return "";
   }
+
+  const points = pointFormatter(row.points);
 
   return `
     <span class="manager-summary-rank">
       <small>${escapeHtml(label)}</small>
       <strong>#${escapeHtml(row.rank)}</strong>
-      <em>${escapeHtml(formatPoints(row.points))} pts</em>
+      <em>${escapeHtml(points)} pts</em>
     </span>
   `;
 }
@@ -4104,6 +4203,7 @@ Promise.all([
 loadSheetText("formulaOne2024")
   .then((csvText) => {
     const data = parseFormulaOneSheet(csvText);
+    siteData.formulaOne2024 = data;
     renderFormulaOneLeague("2024", data);
     console.info("Box This Lap Formula 1 2024 data loaded", data);
   })
@@ -4115,6 +4215,7 @@ loadSheetText("formulaOne2024")
 loadSheetText("formulaOne2025")
   .then((csvText) => {
     const data = parseFormulaOneSheet(csvText);
+    siteData.formulaOne2025 = data;
     renderFormulaOneLeague("2025", data);
     console.info("Box This Lap Formula 1 2025 data loaded", data);
   })
@@ -4129,6 +4230,7 @@ loadSheetText("formulaOne2025Weekly")
     siteData.formulaOne2025Weekly = data;
     renderFormulaOneWeeklyPage("2025", data);
     renderFormulaOneResults("2025");
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2025 weekly data loaded", data);
   })
   .catch((error) => {
@@ -4139,6 +4241,7 @@ loadSheetText("formulaOne2025Weekly")
 loadSheetText("formulaOne2026")
   .then((csvText) => {
     const data = parseFormulaOneSheet(csvText);
+    siteData.formulaOne2026 = data;
     renderFormulaOneLeague("2026", data);
     console.info("Box This Lap Formula 1 2026 data loaded", data);
   })
@@ -4152,6 +4255,7 @@ loadSheetText("formulaOne2026Weekly")
     const data = parseFormulaOneWeeklySheet(csvText);
     siteData.formulaOne2026Weekly = data;
     renderFormulaOneWeeklyPage("2026", data);
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 weekly data loaded", data);
   })
   .catch((error) => {
@@ -4164,6 +4268,7 @@ loadSheetText("formulaOne2026WeeklyResults")
     const data = parseFormulaOneWeeklyResultsSheet(csvText);
     siteData.formulaOne2026WeeklyResults = data;
     renderFormulaOneResults("2026");
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 weekly results loaded", data);
   })
   .catch((error) => {

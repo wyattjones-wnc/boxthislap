@@ -547,6 +547,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.manager-summary-ranks--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .manager-summary-rank {
   background: var(--panel);
   border: 1px solid var(--line);

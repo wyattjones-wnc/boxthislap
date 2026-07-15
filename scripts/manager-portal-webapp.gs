@@ -54,6 +54,7 @@ function handleManagerAuth_(payload) {
     const recoveryQuestionColumn = findColumn_(table.headers, ["Recovery Question", "Question"]);
     const recoveryAnswerColumn = findColumn_(table.headers, ["Recovery Answer", "Answer"]);
     const mustResetColumn = findColumn_(table.headers, ["Must_Reset", "Must Reset", "MustReset"]);
+    const updatedAtColumn = findColumn_(table.headers, ["Updated_At", "Updated At", "UpdatedAt"]);
 
     if (idColumn < 0 || passphraseColumn < 0) {
       return createPortalResponse_(payload, { ok: false, error: "Manager auth sheet needs Manager ID and Passphrase columns." });
@@ -120,6 +121,8 @@ function handleManagerAuth_(payload) {
         sheet.getRange(rowIndex + 2, mustResetColumn + 1).setValue(false);
       }
 
+      updateManagerSecretTimestamp_(sheet, rowIndex, updatedAtColumn);
+
       return createPortalResponse_(payload, {
         ok: true,
         managerId,
@@ -180,6 +183,14 @@ function normalizeRecoveryAnswer_(value) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function updateManagerSecretTimestamp_(sheet, rowIndex, updatedAtColumn) {
+  if (updatedAtColumn < 0) {
+    return;
+  }
+
+  sheet.getRange(rowIndex + 2, updatedAtColumn + 1).setValue(new Date());
 }
 
 function isTruthy_(value) {

@@ -4201,7 +4201,7 @@ function loadFantasyCriticJsonp(year) {
     script.onerror = () => {
       window.clearTimeout(timeout);
       cleanup();
-      reject(new Error("Unable to load Fantasy Critic proxy."));
+      reject(new Error("Unable to load Fantasy Critic proxy. Confirm the Apps Script Web App is deployed with access set to Anyone and that it is using the JSONP proxy code."));
     };
 
     const params = new URLSearchParams({

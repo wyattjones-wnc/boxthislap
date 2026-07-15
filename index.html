@@ -168,7 +168,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607140002">
+    <link rel="stylesheet" href="styles.css?v=202607140003">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -308,14 +308,27 @@
               <option value="">Loading managers...</option>
             </select>
           </label>
-          <label class="filter-control">
+          <label class="filter-control" id="login-passphrase-group">
             <span>Passphrase</span>
             <input id="login-passphrase" type="password" autocomplete="current-password" placeholder="Passphrase">
           </label>
-          <label class="login-setup-toggle">
-            <input id="login-setup-passphrase" type="checkbox">
-            <span>First time setup</span>
-          </label>
+          <div class="login-setup-panel" id="login-recovery-panel" hidden>
+            <p class="login-recovery-question" id="login-recovery-question"></p>
+            <label class="filter-control">
+              <span>Recovery Answer</span>
+              <input id="login-recovery-answer" type="text" autocomplete="off" placeholder="Answer">
+            </label>
+          </div>
+          <div class="login-setup-panel" id="login-new-passphrase-panel" hidden>
+            <label class="filter-control">
+              <span>New Passphrase</span>
+              <input id="login-new-passphrase" type="password" autocomplete="new-password" placeholder="New passphrase">
+            </label>
+            <label class="filter-control">
+              <span>Confirm Passphrase</span>
+              <input id="login-confirm-passphrase" type="password" autocomplete="new-password" placeholder="Confirm passphrase">
+            </label>
+          </div>
           <button class="action-button" id="login-submit-button" type="submit">Continue</button>
           <p class="login-feedback" id="login-feedback" role="status"></p>
         </form>
@@ -1098,6 +1111,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607140002"></script>
+    <script type="module" src="script.js?v=202607140003"></script>
   </body>
 </html>

@@ -341,6 +341,20 @@ body.has-shell-stale-warning .stale-shell-alert {
   margin: 0;
 }
 
+.login-setup-panel {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.login-recovery-question {
+  color: var(--ink);
+  font-weight: 900;
+}
+
 .icon-button {
   align-items: center;
   background: var(--soft);

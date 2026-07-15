@@ -11,8 +11,14 @@ const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
 const loginOpenButton = document.querySelector("#login-open-button");
 const loginPanel = document.querySelector("#login-panel");
 const loginManagerSelect = document.querySelector("#login-manager-select");
+const loginPassphraseGroup = document.querySelector("#login-passphrase-group");
 const loginPassphraseInput = document.querySelector("#login-passphrase");
-const loginSetupPassphrase = document.querySelector("#login-setup-passphrase");
+const loginRecoveryPanel = document.querySelector("#login-recovery-panel");
+const loginRecoveryQuestion = document.querySelector("#login-recovery-question");
+const loginRecoveryAnswerInput = document.querySelector("#login-recovery-answer");
+const loginNewPassphrasePanel = document.querySelector("#login-new-passphrase-panel");
+const loginNewPassphraseInput = document.querySelector("#login-new-passphrase");
+const loginConfirmPassphraseInput = document.querySelector("#login-confirm-passphrase");
 const loginSubmitButton = document.querySelector("#login-submit-button");
 const loginFeedback = document.querySelector("#login-feedback");
 const profileMenu = document.querySelector("#profile-menu");
@@ -2494,6 +2500,10 @@ loginPanel?.addEventListener("submit", (event) => {
   handleManagerLogin();
 });
 
+loginManagerSelect?.addEventListener("change", () => {
+  updateLoginModeForSelectedManager();
+});
+
 profileMenuButton?.addEventListener("click", () => {
   const isOpen = profileMenuButton.getAttribute("aria-expanded") === "true";
   profileMenuButton.setAttribute("aria-expanded", String(!isOpen));
@@ -2795,6 +2805,15 @@ function hideLoginPanel() {
   if (loginPassphraseInput) {
     loginPassphraseInput.value = "";
   }
+  if (loginRecoveryAnswerInput) {
+    loginRecoveryAnswerInput.value = "";
+  }
+  if (loginNewPassphraseInput) {
+    loginNewPassphraseInput.value = "";
+  }
+  if (loginConfirmPassphraseInput) {
+    loginConfirmPassphraseInput.value = "";
+  }
   loginFeedback.textContent = "";
   loginFeedback.classList.remove("is-error");
 }
@@ -2880,33 +2899,55 @@ function renderLoginManagerOptions() {
       return `<option value="${escapeHtml(meta.id)}"${selectedAttribute}>${escapeHtml(meta.displayName)}</option>`;
     }),
   ].join("");
+
+  updateLoginModeForSelectedManager({ skipRemoteCheck: true });
 }
 
 async function handleManagerLogin() {
   const managerId = loginManagerSelect?.value || "";
-  const passphrase = loginPassphraseInput?.value || "";
-  const isSetup = Boolean(loginSetupPassphrase?.checked);
+  const loginMode = getLoginMode();
 
   if (!managerId) {
     setLoginFeedback("Choose a manager.", true);
     return;
   }
 
-  if (!passphrase.trim()) {
-    setLoginFeedback("Enter a passphrase.", true);
-    loginPassphraseInput?.focus();
+  if (loginMode === "setup-recovery") {
+    await handleManagerRecoveryCheck(managerId);
     return;
   }
 
+  const passphrase = loginMode === "setup-passphrase"
+    ? loginNewPassphraseInput?.value || ""
+    : loginPassphraseInput?.value || "";
+
   loginSubmitButton.disabled = true;
-  setLoginFeedback(isSetup ? "Saving passphrase..." : "Checking passphrase...");
+  setLoginFeedback(loginMode === "setup-passphrase" ? "Saving passphrase..." : "Checking passphrase...");
 
   try {
-    const response = await submitManagerPortalPayload({
-      action: isSetup ? "setupPassphrase" : "login",
-      managerId,
-      passphrase,
-    });
+    let response;
+
+    if (loginMode === "setup-passphrase") {
+      validateNewPassphraseFields(passphrase);
+      response = await submitManagerPortalPayload({
+        action: "setupPassphrase",
+        managerId,
+        passphrase,
+        recoveryAnswer: siteData.loginRecoveryAnswer || loginRecoveryAnswerInput?.value || "",
+      });
+    } else {
+      if (!passphrase.trim()) {
+        setLoginFeedback("Enter a passphrase.", true);
+        loginPassphraseInput?.focus();
+        return;
+      }
+
+      response = await submitManagerPortalPayload({
+        action: "login",
+        managerId,
+        passphrase,
+      });
+    }
 
     if (!response?.ok) {
       throw new Error(response?.error || "Login was not accepted.");
@@ -2918,6 +2959,7 @@ async function handleManagerLogin() {
       managerId: String(managerId),
       signedInAt: new Date().toISOString(),
     });
+    setCachedManagerAuthStatus(managerId, { hasPassphrase: true, recoveryQuestion: "" });
     hideLoginPanel();
     showPage("manager-hub", { scrollToTop: true });
     window.location.hash = "manager-hub";
@@ -2928,6 +2970,55 @@ async function handleManagerLogin() {
   }
 }
 
+async function handleManagerRecoveryCheck(managerId) {
+  const recoveryAnswer = loginRecoveryAnswerInput?.value || "";
+
+  if (!recoveryAnswer.trim()) {
+    setLoginFeedback("Enter the recovery answer.", true);
+    loginRecoveryAnswerInput?.focus();
+    return;
+  }
+
+  loginSubmitButton.disabled = true;
+  setLoginFeedback("Checking recovery answer...");
+
+  try {
+    const response = await submitManagerPortalPayload({
+      action: "verifyRecovery",
+      managerId,
+      recoveryAnswer,
+    });
+
+    if (!response?.ok) {
+      throw new Error(response?.error || "Recovery answer was not accepted.");
+    }
+
+    siteData.loginRecoveryVerifiedManagerId = String(managerId);
+    siteData.loginRecoveryAnswer = recoveryAnswer;
+    renderLoginMode({ hasPassphrase: false, recoveryQuestion: response.recoveryQuestion || getCachedManagerAuthStatus(managerId)?.recoveryQuestion || "" });
+    setLoginFeedback("Answer accepted. Set your passphrase.");
+    loginNewPassphraseInput?.focus();
+  } catch (error) {
+    setLoginFeedback(error.message, true);
+  } finally {
+    loginSubmitButton.disabled = false;
+  }
+}
+
+function validateNewPassphraseFields(passphrase) {
+  const confirmation = loginConfirmPassphraseInput?.value || "";
+
+  if (!passphrase.trim()) {
+    loginNewPassphraseInput?.focus();
+    throw new Error("Enter a new passphrase.");
+  }
+
+  if (passphrase !== confirmation) {
+    loginConfirmPassphraseInput?.focus();
+    throw new Error("Passphrases do not match.");
+  }
+}
+
 function setLoginFeedback(message, isError = false) {
   if (!loginFeedback) {
     return;
@@ -2935,6 +3026,106 @@ function setLoginFeedback(message, isError = false) {
 
   loginFeedback.textContent = message;
   loginFeedback.classList.toggle("is-error", isError);
+}
+
+async function updateLoginModeForSelectedManager(options = {}) {
+  const managerId = loginManagerSelect?.value || "";
+  siteData.loginRecoveryVerifiedManagerId = "";
+  siteData.loginRecoveryAnswer = "";
+  hideLoginPanel();
+
+  if (!managerId) {
+    renderLoginMode({ hasPassphrase: true });
+    return;
+  }
+
+  const cachedStatus = getCachedManagerAuthStatus(managerId);
+
+  if (cachedStatus) {
+    renderLoginMode(cachedStatus);
+  } else {
+    renderLoginMode({ hasPassphrase: true });
+  }
+
+  if (options.skipRemoteCheck) {
+    return;
+  }
+
+  loginSubmitButton.disabled = true;
+  setLoginFeedback("Checking manager setup...");
+
+  try {
+    const response = await submitManagerPortalPayload({
+      action: "authStatus",
+      managerId,
+    });
+
+    if (!response?.ok) {
+      throw new Error(response?.error || "Unable to check manager setup.");
+    }
+
+    const status = {
+      hasPassphrase: Boolean(response.hasPassphrase),
+      recoveryQuestion: response.recoveryQuestion || "",
+    };
+    setCachedManagerAuthStatus(managerId, status);
+    renderLoginMode(status);
+    setLoginFeedback("");
+  } catch (error) {
+    setLoginFeedback(error.message, true);
+  } finally {
+    loginSubmitButton.disabled = false;
+  }
+}
+
+function getLoginMode() {
+  const managerId = loginManagerSelect?.value || "";
+  const status = getCachedManagerAuthStatus(managerId);
+
+  if (!managerId || status?.hasPassphrase !== false) {
+    return "login";
+  }
+
+  return siteData.loginRecoveryVerifiedManagerId === String(managerId) ? "setup-passphrase" : "setup-recovery";
+}
+
+function renderLoginMode(status = { hasPassphrase: true }) {
+  const loginMode = getLoginMode();
+  const isSetup = status.hasPassphrase === false;
+  const isPassphraseSetup = isSetup && loginMode === "setup-passphrase";
+
+  if (loginPassphraseGroup) {
+    loginPassphraseGroup.hidden = isSetup;
+  }
+
+  if (loginRecoveryPanel) {
+    loginRecoveryPanel.hidden = !isSetup || isPassphraseSetup;
+  }
+
+  if (loginNewPassphrasePanel) {
+    loginNewPassphrasePanel.hidden = !isPassphraseSetup;
+  }
+
+  if (loginRecoveryQuestion) {
+    loginRecoveryQuestion.textContent = status.recoveryQuestion
+      ? `Recovery Question: ${status.recoveryQuestion}`
+      : "Recovery Question";
+  }
+
+  if (loginSubmitButton) {
+    loginSubmitButton.textContent = isPassphraseSetup ? "Save Passphrase" : isSetup ? "Check Answer" : "Log In";
+  }
+}
+
+function getCachedManagerAuthStatus(managerId) {
+  return siteData.managerAuthStatus?.[String(managerId)] || null;
+}
+
+function setCachedManagerAuthStatus(managerId, status) {
+  siteData.managerAuthStatus = {
+    ...(siteData.managerAuthStatus || {}),
+    [String(managerId)]: status,
+  };
 }
 
 function submitManagerPortalPayload(payload) {

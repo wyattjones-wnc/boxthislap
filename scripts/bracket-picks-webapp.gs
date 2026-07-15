@@ -23,7 +23,12 @@ function doGet() {
 function doPost(event) {
   const payload = parseBracketPayload_(event);
 
-  if (payload.action === "login" || payload.action === "setupPassphrase") {
+  if (
+    payload.action === "authStatus" ||
+    payload.action === "login" ||
+    payload.action === "setupPassphrase" ||
+    payload.action === "verifyRecovery"
+  ) {
     return handleManagerAuth_(payload);
   }
 
@@ -82,8 +87,8 @@ function handleManagerAuth_(payload) {
     const managerId = String(payload.managerId || "").trim();
     const passphrase = String(payload.passphrase || "");
 
-    if (!managerId || !passphrase) {
-      return createPortalResponse_(payload, { ok: false, error: "Manager and passphrase are required." });
+    if (!managerId) {
+      return createPortalResponse_(payload, { ok: false, error: "Manager is required." });
     }
 
     const sheet = getManagerAuthSheet_();
@@ -91,6 +96,8 @@ function handleManagerAuth_(payload) {
     const idColumn = findColumn_(table.headers, ["Manager ID", "ID"]);
     const passphraseColumn = findColumn_(table.headers, ["Passphrase", "Passcode"]);
     const displayNameColumn = findColumn_(table.headers, ["Display Name", "Name"]);
+    const recoveryQuestionColumn = findColumn_(table.headers, ["Recovery Question", "Question"]);
+    const recoveryAnswerColumn = findColumn_(table.headers, ["Recovery Answer", "Answer"]);
 
     if (idColumn < 0 || passphraseColumn < 0) {
       return createPortalResponse_(payload, { ok: false, error: "Manager auth sheet needs Manager ID and Passphrase columns." });
@@ -105,9 +112,48 @@ function handleManagerAuth_(payload) {
     const row = table.rows[rowIndex];
     const storedPassphrase = String(row[passphraseColumn] || "");
 
+    if (payload.action === "authStatus") {
+      return createPortalResponse_(payload, {
+        ok: true,
+        managerId,
+        displayName: displayNameColumn >= 0 ? row[displayNameColumn] : "",
+        hasPassphrase: Boolean(storedPassphrase),
+        recoveryQuestion: storedPassphrase || recoveryQuestionColumn < 0 ? "" : row[recoveryQuestionColumn],
+      });
+    }
+
+    if (payload.action === "verifyRecovery") {
+      if (storedPassphrase) {
+        return createPortalResponse_(payload, { ok: false, error: "A passphrase already exists for this manager." });
+      }
+
+      const recoveryCheck = validateRecoveryAnswer_(payload, row, recoveryAnswerColumn);
+
+      if (!recoveryCheck.ok) {
+        return createPortalResponse_(payload, recoveryCheck);
+      }
+
+      return createPortalResponse_(payload, {
+        ok: true,
+        managerId,
+        displayName: displayNameColumn >= 0 ? row[displayNameColumn] : "",
+        recoveryQuestion: recoveryQuestionColumn >= 0 ? row[recoveryQuestionColumn] : "",
+      });
+    }
+
     if (payload.action === "setupPassphrase") {
       if (storedPassphrase) {
         return createPortalResponse_(payload, { ok: false, error: "A passphrase already exists for this manager." });
+      }
+
+      if (!passphrase) {
+        return createPortalResponse_(payload, { ok: false, error: "Passphrase is required." });
+      }
+
+      const recoveryCheck = validateRecoveryAnswer_(payload, row, recoveryAnswerColumn);
+
+      if (!recoveryCheck.ok) {
+        return createPortalResponse_(payload, recoveryCheck);
       }
 
       sheet.getRange(rowIndex + 2, passphraseColumn + 1).setValue(passphrase);
@@ -117,6 +163,10 @@ function handleManagerAuth_(payload) {
         managerId,
         displayName: displayNameColumn >= 0 ? row[displayNameColumn] : "",
       });
+    }
+
+    if (!passphrase) {
+      return createPortalResponse_(payload, { ok: false, error: "Passphrase is required." });
     }
 
     if (storedPassphrase !== passphrase) {
@@ -131,6 +181,39 @@ function handleManagerAuth_(payload) {
   } catch (error) {
     return createPortalResponse_(payload, { ok: false, error: error.message });
   }
+}
+
+function validateRecoveryAnswer_(payload, row, recoveryAnswerColumn) {
+  if (recoveryAnswerColumn < 0) {
+    return { ok: false, error: "Manager auth sheet needs a Recovery Answer column for first-time setup." };
+  }
+
+  const expectedAnswer = String(row[recoveryAnswerColumn] || "");
+  const submittedAnswer = String(payload.recoveryAnswer || "");
+
+  if (!isRecoveryAnswerMatch_(submittedAnswer, expectedAnswer)) {
+    return { ok: false, error: "Recovery answer did not match." };
+  }
+
+  return { ok: true };
+}
+
+function isRecoveryAnswerMatch_(submittedAnswer, expectedAnswer) {
+  const submitted = normalizeRecoveryAnswer_(submittedAnswer);
+  const expected = normalizeRecoveryAnswer_(expectedAnswer);
+
+  if (!submitted || !expected) {
+    return false;
+  }
+
+  return expected.includes(submitted) || submitted.includes(expected);
+}
+
+function normalizeRecoveryAnswer_(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 }
 
 function getManagerAuthSheet_() {

@@ -1,6 +1,7 @@
 const BRACKET_PICKS_SPREADSHEET_ID = "1BPF3QrqPf1ok_x_W9hIJzFgozLAO1yX4Iu5vssoPIF4";
 const BRACKET_PICKS_SHEET_ID = 1943594150;
 const MANAGER_PORTAL_SPREADSHEET_ID = "";
+const MANAGER_PORTAL_SPREADSHEET_ID_PROPERTY = "MANAGER_PORTAL_SPREADSHEET_ID";
 const MANAGER_AUTH_SHEET_NAMES = [
   "Manager Auth",
   "Managers Private",
@@ -231,8 +232,11 @@ function getManagerAuthSheet_() {
 }
 
 function getManagerPortalSpreadsheet_() {
-  if (MANAGER_PORTAL_SPREADSHEET_ID) {
-    return SpreadsheetApp.openById(MANAGER_PORTAL_SPREADSHEET_ID);
+  const configuredSpreadsheetId = MANAGER_PORTAL_SPREADSHEET_ID ||
+    PropertiesService.getScriptProperties().getProperty(MANAGER_PORTAL_SPREADSHEET_ID_PROPERTY);
+
+  if (configuredSpreadsheetId) {
+    return SpreadsheetApp.openById(configuredSpreadsheetId);
   }
 
   const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -241,7 +245,7 @@ function getManagerPortalSpreadsheet_() {
     return activeSpreadsheet;
   }
 
-  throw new Error("Set MANAGER_PORTAL_SPREADSHEET_ID or deploy this script bound to the manager portal workbook.");
+  throw new Error(`Set ${MANAGER_PORTAL_SPREADSHEET_ID_PROPERTY} in Script Properties, set MANAGER_PORTAL_SPREADSHEET_ID in code, or deploy this script bound to the manager portal workbook.`);
 }
 
 function readSheetTable_(sheet) {

@@ -30,6 +30,7 @@ const managerHubSubtitle = document.querySelector("#manager-hub-subtitle");
 const workflowCount = document.querySelector("#workflow-count");
 const workflowList = document.querySelector("#workflow-list");
 const managerSummaryList = document.querySelector("#manager-summary-list");
+const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
@@ -2763,6 +2764,14 @@ managerResultsFilter?.addEventListener("change", () => {
   }
 });
 
+managerSummaryYearSelect?.addEventListener("change", () => {
+  const session = siteData.managerSession;
+
+  if (session) {
+    renderManagerSummary(session.managerId);
+  }
+});
+
 standingsAllDataToggle?.addEventListener("change", () => {
   renderFilteredStandings();
 });
@@ -3630,20 +3639,38 @@ function renderManagerSummary(managerId) {
     return;
   }
 
+  const selectedYear = getManagerSummarySelectedYear();
   const resultCards = [
-    renderWorldCupManagerSummary(managerId, source),
-    renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2025, "2025 Fantasy Critic"),
-    renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2026, "2026 Fantasy Critic"),
-    renderFormulaOneWeeklyManagerSummary(managerId, "2025"),
-    renderFormulaOneWeeklyManagerSummary(managerId, "2026"),
+    selectedYear === "all" || selectedYear === "2026" ? renderWorldCupManagerSummary(managerId, source) : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2025, "2025 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2026, "2026 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneWeeklyManagerSummary(managerId, "2025") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneWeeklyManagerSummary(managerId, "2026") : "",
   ].filter(Boolean);
 
   if (!resultCards.length) {
-    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No result summary found for this manager yet.</p></article>`;
+    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No ${escapeHtml(selectedYear === "all" ? "" : `${selectedYear} `)}result summary found for this manager yet.</p></article>`;
     return;
   }
 
   managerSummaryList.innerHTML = resultCards.join("");
+}
+
+function getManagerSummarySelectedYear() {
+  const value = managerSummaryYearSelect?.value || "current";
+
+  if (value === "all") {
+    return "all";
+  }
+
+  if (/^\d{4}$/.test(value)) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).format(new Date());
 }
 
 function hasManagerHubResultData() {

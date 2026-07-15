@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607150003">
+    <link rel="stylesheet" href="styles.css?v=202607150004">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -380,6 +380,15 @@
           <section class="manager-hub-card" aria-labelledby="manager-summary-heading">
             <div class="manager-hub-card-heading">
               <h2 id="manager-summary-heading">Results</h2>
+              <label class="manager-summary-year-control">
+                <span>Year</span>
+                <select id="manager-summary-year-select">
+                  <option value="2026">2026</option>
+                  <option value="all">All</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                </select>
+              </label>
             </div>
             <div class="manager-summary-list" id="manager-summary-list">
               <article class="workflow-item">
@@ -1133,6 +1142,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607150005"></script>
+    <script type="module" src="script.js?v=202607150006"></script>
   </body>
 </html>

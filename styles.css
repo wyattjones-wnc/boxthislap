@@ -473,6 +473,31 @@ body.has-shell-stale-warning .stale-shell-alert {
   margin-left: auto;
 }
 
+.manager-summary-year-control {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.manager-summary-year-control span {
+  font-size: 0.78rem;
+  margin-left: 0;
+  text-transform: uppercase;
+}
+
+.manager-summary-year-control select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+  padding: 6px 8px;
+}
+
 .workflow-list,
 .manager-summary-list {
   display: grid;

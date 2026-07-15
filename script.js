@@ -3388,7 +3388,7 @@ function renderManagerWorkflowLegacy(managerId) {
   }
 
   const openItems = drafts
-    .filter((draft) => !isTruthy(draft.IsCompleted))
+    .filter((draft) => !isWorkflowDraftCompleted(draft))
     .filter((draft) => !hasManagerCompletedDraft(logs, managerId, draft.ID))
     .sort(compareWorkflowItems);
 
@@ -3558,7 +3558,7 @@ function formatNotificationCount(count) {
 }
 
 function isWorkflowDraftCompleted(draft) {
-  return isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"));
+  return isTruthy(getField(draft, "DraftCompleted", "Draft Completed", "IsCompleted", "Is Completed", "Completed"));
 }
 
 function getUpcomingFormulaOneForm(forms) {

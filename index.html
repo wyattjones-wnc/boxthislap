@@ -76,6 +76,7 @@
         window.boxThisLapMarkReady = () => {
           isShellReady = true;
           clearTimeout(staleTimer);
+          document.body?.classList.remove("is-routing");
           document.body?.classList.remove("has-shell-stale-warning");
           clearRefreshParam();
         };

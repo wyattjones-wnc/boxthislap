@@ -3525,10 +3525,51 @@ function formatWorkflowDue(form) {
   const dueEst = String(form?.dueEst ?? "").trim();
 
   if (dueEst) {
-    return dueEst;
+    return formatPrettyEasternDateTime(dueEst);
   }
 
   return form?.date ? formatWorkflowDate(form.date) : "";
+}
+
+function formatPrettyEasternDateTime(value) {
+  const rawValue = String(value ?? "").trim();
+  const sheetDateMatch = rawValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*([ap]m)?)?(?:\s*(?:est|edt|et))?$/i);
+
+  if (sheetDateMatch) {
+    const month = Number(sheetDateMatch[1]);
+    const day = Number(sheetDateMatch[2]);
+    const year = Number(sheetDateMatch[3].length === 2 ? `20${sheetDateMatch[3]}` : sheetDateMatch[3]);
+    const hour = sheetDateMatch[4] ? Number(sheetDateMatch[4]) : null;
+    const minute = sheetDateMatch[5] ? sheetDateMatch[5].padStart(2, "0") : "00";
+    const period = sheetDateMatch[6] ? sheetDateMatch[6].toUpperCase() : "";
+    const dateLabel = new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(Date.UTC(year, month - 1, day)));
+
+    if (hour) {
+      return `${dateLabel} at ${hour}:${minute}${period ? ` ${period}` : ""} ET`;
+    }
+
+    return dateLabel;
+  }
+
+  const parsedDate = new Date(rawValue);
+
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      month: "short",
+      timeZone: "America/New_York",
+      timeZoneName: "short",
+      year: "numeric",
+    }).format(parsedDate);
+  }
+
+  return rawValue;
 }
 
 function activateWorkflowItem(item) {
@@ -3589,9 +3630,8 @@ function renderManagerSummary(managerId) {
     return;
   }
 
-  const managerRows = getManagerResultRows({ ...source, filter: "all" });
-  const manager = managerRows.find((row) => String(row.id) === String(managerId)) ??
-    managerRows.find((row) => normalizeLookupName(row.displayName) === normalizeLookupName(getPortalManagerById(managerId)?.["Display Name"]));
+  const managerSummary = getManagerSummaryRanks(managerId, source);
+  const manager = managerSummary.overall;
 
   if (!manager) {
     managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No result summary found for this manager yet.</p></article>`;
@@ -3607,19 +3647,41 @@ function renderManagerSummary(managerId) {
         </div>
         ${renderManagerChip(manager)}
       </header>
-      <div class="workflow-meta">
-        <span>${escapeHtml(formatPoints(getManagerDraftTypePoints(manager, "Player")))} player pts</span>
-        <span>${escapeHtml(formatPoints(getManagerDraftTypePoints(manager, "Nation")))} nation pts</span>
+      <div class="manager-summary-ranks">
+        ${renderManagerSummaryRank("Overall", managerSummary.overall)}
+        ${renderManagerSummaryRank("Players", managerSummary.players)}
+        ${renderManagerSummaryRank("Nations", managerSummary.nations)}
       </div>
       <a class="action-button" href="#standings" data-page-link="standings">Open Standings</a>
     </article>
   `;
 }
 
-function getManagerDraftTypePoints(manager, type) {
-  return (manager.drafts || [])
-    .filter((draft) => draft.type === type)
-    .reduce((sum, draft) => sum + parsePoints(draft.points), 0);
+function getManagerSummaryRanks(managerId, source) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+  const findManager = (rows) => rows.find((row) => String(row.id) === String(managerId)) ??
+    rows.find((row) => normalizeLookupName(row.displayName || row.name) === normalizeLookupName(managerName));
+
+  return {
+    nations: findManager(getManagerResultRows({ ...source, filter: "nations" })),
+    overall: findManager(getManagerResultRows({ ...source, filter: "all" })),
+    players: findManager(getManagerResultRows({ ...source, filter: "players" })),
+  };
+}
+
+function renderManagerSummaryRank(label, row) {
+  if (!row) {
+    return "";
+  }
+
+  return `
+    <span class="manager-summary-rank">
+      <small>${escapeHtml(label)}</small>
+      <strong>#${escapeHtml(row.rank)}</strong>
+      <em>${escapeHtml(formatPoints(row.points))} pts</em>
+    </span>
+  `;
 }
 
 function getPortalManagers() {

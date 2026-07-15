@@ -2856,6 +2856,8 @@ function signOutManager() {
   profileMenuButton?.setAttribute("aria-expanded", "false");
   renderLoginState();
   renderManagerHub();
+  showPage("results", { scrollToTop: true });
+  window.location.hash = "results";
 }
 
 function renderLoginState() {
@@ -2959,7 +2961,7 @@ async function handleManagerLogin() {
       managerId: String(managerId),
       signedInAt: new Date().toISOString(),
     });
-    setCachedManagerAuthStatus(managerId, { hasPassphrase: true, recoveryQuestion: "" });
+    setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });
     hideLoginPanel();
     showPage("manager-hub", { scrollToTop: true });
     window.location.hash = "manager-hub";
@@ -3033,21 +3035,15 @@ async function updateLoginModeForSelectedManager(options = {}) {
   siteData.loginRecoveryVerifiedManagerId = "";
   siteData.loginRecoveryAnswer = "";
   hideLoginPanel();
+  renderLoginMode({ isLoading: Boolean(managerId) && !options.skipRemoteCheck });
 
   if (!managerId) {
-    renderLoginMode({ hasPassphrase: true });
+    renderLoginMode({ isIdle: true });
     return;
   }
 
-  const cachedStatus = getCachedManagerAuthStatus(managerId);
-
-  if (cachedStatus) {
-    renderLoginMode(cachedStatus);
-  } else {
-    renderLoginMode({ hasPassphrase: true });
-  }
-
   if (options.skipRemoteCheck) {
+    renderLoginMode({ isIdle: true });
     return;
   }
 
@@ -3064,8 +3060,13 @@ async function updateLoginModeForSelectedManager(options = {}) {
       throw new Error(response?.error || "Unable to check manager setup.");
     }
 
+    if (loginManagerSelect?.value !== managerId) {
+      return;
+    }
+
     const status = {
       hasPassphrase: Boolean(response.hasPassphrase),
+      mustReset: Boolean(response.mustReset),
       recoveryQuestion: response.recoveryQuestion || "",
     };
     setCachedManagerAuthStatus(managerId, status);
@@ -3082,7 +3083,7 @@ function getLoginMode() {
   const managerId = loginManagerSelect?.value || "";
   const status = getCachedManagerAuthStatus(managerId);
 
-  if (!managerId || status?.hasPassphrase !== false) {
+  if (!managerId || (!status?.mustReset && status?.hasPassphrase !== false)) {
     return "login";
   }
 
@@ -3090,8 +3091,23 @@ function getLoginMode() {
 }
 
 function renderLoginMode(status = { hasPassphrase: true }) {
+  if (status.isLoading || status.isIdle) {
+    hideLoginInputs();
+
+    if (loginSubmitButton) {
+      loginSubmitButton.hidden = true;
+      loginSubmitButton.textContent = "Continue";
+    }
+
+    return;
+  }
+
+  if (loginSubmitButton) {
+    loginSubmitButton.hidden = false;
+  }
+
   const loginMode = getLoginMode();
-  const isSetup = status.hasPassphrase === false;
+  const isSetup = status.mustReset || status.hasPassphrase === false;
   const isPassphraseSetup = isSetup && loginMode === "setup-passphrase";
 
   if (loginPassphraseGroup) {
@@ -3114,6 +3130,20 @@ function renderLoginMode(status = { hasPassphrase: true }) {
 
   if (loginSubmitButton) {
     loginSubmitButton.textContent = isPassphraseSetup ? "Save Passphrase" : isSetup ? "Check Answer" : "Log In";
+  }
+}
+
+function hideLoginInputs() {
+  if (loginPassphraseGroup) {
+    loginPassphraseGroup.hidden = true;
+  }
+
+  if (loginRecoveryPanel) {
+    loginRecoveryPanel.hidden = true;
+  }
+
+  if (loginNewPassphrasePanel) {
+    loginNewPassphrasePanel.hidden = true;
   }
 }
 

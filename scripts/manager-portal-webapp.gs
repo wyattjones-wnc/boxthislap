@@ -53,6 +53,7 @@ function handleManagerAuth_(payload) {
     const displayNameColumn = findColumn_(table.headers, ["Display Name", "Name"]);
     const recoveryQuestionColumn = findColumn_(table.headers, ["Recovery Question", "Question"]);
     const recoveryAnswerColumn = findColumn_(table.headers, ["Recovery Answer", "Answer"]);
+    const mustResetColumn = findColumn_(table.headers, ["Must_Reset", "Must Reset", "MustReset"]);
 
     if (idColumn < 0 || passphraseColumn < 0) {
       return createPortalResponse_(payload, { ok: false, error: "Manager auth sheet needs Manager ID and Passphrase columns." });
@@ -66,6 +67,7 @@ function handleManagerAuth_(payload) {
 
     const row = table.rows[rowIndex];
     const storedPassphrase = String(row[passphraseColumn] || "");
+    const mustReset = mustResetColumn >= 0 && isTruthy_(row[mustResetColumn]);
 
     if (payload.action === "authStatus") {
       return createPortalResponse_(payload, {
@@ -73,12 +75,13 @@ function handleManagerAuth_(payload) {
         managerId,
         displayName: displayNameColumn >= 0 ? row[displayNameColumn] : "",
         hasPassphrase: Boolean(storedPassphrase),
-        recoveryQuestion: storedPassphrase || recoveryQuestionColumn < 0 ? "" : row[recoveryQuestionColumn],
+        mustReset,
+        recoveryQuestion: (!mustReset && storedPassphrase) || recoveryQuestionColumn < 0 ? "" : row[recoveryQuestionColumn],
       });
     }
 
     if (payload.action === "verifyRecovery") {
-      if (storedPassphrase) {
+      if (storedPassphrase && !mustReset) {
         return createPortalResponse_(payload, { ok: false, error: "A passphrase already exists for this manager." });
       }
 
@@ -97,7 +100,7 @@ function handleManagerAuth_(payload) {
     }
 
     if (payload.action === "setupPassphrase") {
-      if (storedPassphrase) {
+      if (storedPassphrase && !mustReset) {
         return createPortalResponse_(payload, { ok: false, error: "A passphrase already exists for this manager." });
       }
 
@@ -113,6 +116,10 @@ function handleManagerAuth_(payload) {
 
       sheet.getRange(rowIndex + 2, passphraseColumn + 1).setValue(passphrase);
 
+      if (mustResetColumn >= 0) {
+        sheet.getRange(rowIndex + 2, mustResetColumn + 1).setValue(false);
+      }
+
       return createPortalResponse_(payload, {
         ok: true,
         managerId,
@@ -122,6 +129,10 @@ function handleManagerAuth_(payload) {
 
     if (!passphrase) {
       return createPortalResponse_(payload, { ok: false, error: "Passphrase is required." });
+    }
+
+    if (mustReset) {
+      return createPortalResponse_(payload, { ok: false, error: "Passphrase reset is required for this manager." });
     }
 
     if (storedPassphrase !== passphrase) {
@@ -169,6 +180,11 @@ function normalizeRecoveryAnswer_(value) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function isTruthy_(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["1", "true", "yes", "y", "x"].includes(normalized);
 }
 
 function getManagerAuthSheet_() {

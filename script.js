@@ -408,6 +408,38 @@ const FANTASY_CRITIC_2026 = {
   ],
 };
 
+const FANTASY_CRITIC_LEAGUE_ID = "f29fddba-fa80-40bf-aa71-d062e6e80635";
+const FANTASY_CRITIC_LEAGUE_METADATA = {
+  2025: {
+    sourceUrl: FANTASY_CRITIC_2025.sourceUrl,
+    subtitle: FANTASY_CRITIC_2025.subtitle,
+    title: FANTASY_CRITIC_2025.title,
+  },
+  2026: {
+    sourceUrl: FANTASY_CRITIC_2026.sourceUrl,
+    subtitle: FANTASY_CRITIC_2026.subtitle,
+    title: FANTASY_CRITIC_2026.title,
+  },
+};
+const FANTASY_CRITIC_PUBLISHER_MANAGERS = {
+  "amazon web services powered by gemini": "Michael",
+  "amazon web services powered by gemini powered by openai": "Michael",
+  "emo girl! emergencies": "Jonathan",
+  "hispan!c games": "Jonathan",
+  "jones public investment fund": "Wyatt",
+  "jonessoft": "Wyatt",
+  "microhaed studios": "Sean",
+  "microhard artisanal studios": "Sean",
+  "microhard studios": "Sean",
+  "pepper publishing": "Jordan",
+  "totalsoftware de venezuela": "Michael",
+};
+
+siteData.fantasyCritic = {
+  2025: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2025], status: "loading" },
+  2026: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2026], status: "loading" },
+};
+
 function showPage(pageName, options = {}) {
   const pageAliases = {
     "formula-1-2024": "formula-1-2024-questions",
@@ -658,15 +690,41 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isF
 
 function renderFantasyCriticPage() {
   if (fantasyCritic2025Content) {
-    fantasyCritic2025Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2025);
+    fantasyCritic2025Content.innerHTML = renderFantasyCriticLeagueState("2025");
   }
 
   if (fantasyCritic2026Content) {
-    fantasyCritic2026Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2026);
+    fantasyCritic2026Content.innerHTML = renderFantasyCriticLeagueState("2026");
   }
 }
 
-function renderFantasyCriticLeague(league) {
+function renderFantasyCriticLeagueState(year) {
+  const state = getFantasyCriticLeagueState(year);
+  const metadata = state.metadata || FANTASY_CRITIC_LEAGUE_METADATA[year];
+  const heading = renderFantasyCriticHeading(metadata);
+
+  if (state.status === "error") {
+    return `
+      ${heading}
+      <article class="fantasy-critic-card fantasy-critic-status-card">
+        <p class="table-message">Unable to load Fantasy Critic ${escapeHtml(year)} data: ${escapeHtml(state.errorMessage || "Unknown error")}</p>
+      </article>
+    `;
+  }
+
+  if (state.status !== "loaded" || !state.league) {
+    return `
+      ${heading}
+      <article class="fantasy-critic-card fantasy-critic-status-card">
+        <p class="table-message">Loading Fantasy Critic ${escapeHtml(year)} data...</p>
+      </article>
+    `;
+  }
+
+  return renderFantasyCriticLeague(state.league);
+}
+
+function renderFantasyCriticHeading(league) {
   return `
     <div class="league-detail-heading">
       <div>
@@ -674,6 +732,12 @@ function renderFantasyCriticLeague(league) {
         <p>${escapeHtml(league.subtitle)}</p>
       </div>
     </div>
+  `;
+}
+
+function renderFantasyCriticLeague(league) {
+  return `
+    ${renderFantasyCriticHeading(league)}
 
     <div class="fantasy-critic-standings">
       ${league.standings.map((entry) => renderFantasyCriticStanding(entry)).join("")}
@@ -3398,6 +3462,7 @@ function renderManagerWorkflow(managerId) {
 function buildManagerWorkflowItems(managerId) {
   return [
     ...buildDraftWorkflowItems(managerId),
+    ...buildFantasyCriticWorkflowItems(managerId),
     ...buildFormulaOneWeeklyWorkflowItems(managerId),
   ];
 }
@@ -3456,6 +3521,35 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
     weeklyFormId: nextForm.id,
     year: "2026",
   }];
+}
+
+function buildFantasyCriticWorkflowItems(managerId) {
+  return ["2025", "2026"].flatMap((year) => {
+    const state = getFantasyCriticLeagueState(year);
+
+    if (state.status !== "loaded" || !state.league?.isDynamic) {
+      return [];
+    }
+
+    const row = findFantasyCriticManagerRow(managerId, state.league);
+    const blankDrafts = row?.blankDrafts || [];
+
+    if (!blankDrafts.length) {
+      return [];
+    }
+
+    return [{
+      actionLabel: "Open",
+      description: `${blankDrafts.length} open ${blankDrafts.length === 1 ? "slot" : "slots"} in ${year} Fantasy Critic`,
+      dueDate: "",
+      id: `fantasy-critic-${year}-open-slots`,
+      priority: "2",
+      status: blankDrafts.map((slot) => slot.label).join(", "),
+      target: `fantasy-critic-${year}`,
+      title: `${year} Fantasy Critic draft`,
+      url: "",
+    }];
+  });
 }
 
 function formatNotificationCount(count) {
@@ -3642,8 +3736,8 @@ function renderManagerSummary(managerId) {
   const selectedYear = getManagerSummarySelectedYear();
   const resultCards = [
     selectedYear === "all" || selectedYear === "2026" ? renderWorldCupManagerSummary(managerId, source) : "",
-    selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2025, "2025 Fantasy Critic") : "",
-    selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, FANTASY_CRITIC_2026, "2026 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, "2025", "2025 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, "2026", "2026 Fantasy Critic") : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneWeeklyManagerSummary(managerId, "2025") : "",
     selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneWeeklyManagerSummary(managerId, "2026") : "",
   ].filter(Boolean);
@@ -3676,6 +3770,7 @@ function getManagerSummarySelectedYear() {
 function hasManagerHubResultData() {
   return Boolean(
     siteData.managerResultsSource ||
+    Object.values(siteData.fantasyCritic || {}).some((state) => state.status !== "loading") ||
     siteData.formulaOne2025Weekly?.standings?.length ||
     siteData.formulaOne2026Weekly?.standings?.length ||
     siteData.formulaOne2026WeeklyResults?.standings?.length
@@ -3712,7 +3807,37 @@ function renderWorldCupManagerSummary(managerId, source) {
   `;
 }
 
-function renderFantasyCriticManagerSummary(managerId, league, label) {
+function renderFantasyCriticManagerSummary(managerId, year, label) {
+  const state = getFantasyCriticLeagueState(year);
+
+  if (state.status === "loading") {
+    return `
+      <article class="workflow-item">
+        <header>
+          <div>
+            <h3>${escapeHtml(label)}</h3>
+            <p>Loading Fantasy Critic results...</p>
+          </div>
+        </header>
+      </article>
+    `;
+  }
+
+  if (state.status === "error") {
+    return `
+      <article class="workflow-item">
+        <header>
+          <div>
+            <h3>${escapeHtml(label)}</h3>
+            <p>Unable to load Fantasy Critic results: ${escapeHtml(state.errorMessage || "Unknown error")}</p>
+          </div>
+        </header>
+        <a class="action-button" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open Fantasy Critic</a>
+      </article>
+    `;
+  }
+
+  const league = getFantasyCriticLeague(year);
   const row = findFantasyCriticManagerRow(managerId, league);
 
   if (!row) {
@@ -3733,12 +3858,16 @@ function renderFantasyCriticManagerSummary(managerId, league, label) {
       <div class="manager-summary-ranks manager-summary-ranks--single">
         ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue)}
       </div>
-      <a class="action-button" href="#fantasy-critic-${escapeHtml(label.slice(0, 4))}" data-page-link="fantasy-critic-${escapeHtml(label.slice(0, 4))}">Open Fantasy Critic</a>
+      <a class="action-button" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open Fantasy Critic</a>
     </article>
   `;
 }
 
 function findFantasyCriticManagerRow(managerId, league) {
+  if (!league?.standings) {
+    return null;
+  }
+
   const portalManager = getPortalManagerById(managerId);
   const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
 
@@ -3976,6 +4105,209 @@ function renderRulesNationBreakdown() {
   `;
 }
 
+function getFantasyCriticLeagueState(year) {
+  return siteData.fantasyCritic?.[String(year)] || {
+    metadata: FANTASY_CRITIC_LEAGUE_METADATA[year],
+    status: "loading",
+  };
+}
+
+function getFantasyCriticLeague(year) {
+  return getFantasyCriticLeagueState(year).league || null;
+}
+
+function getFantasyCriticApiUrl(year) {
+  const params = new URLSearchParams({
+    leagueID: FANTASY_CRITIC_LEAGUE_ID,
+    year: String(year),
+  });
+
+  return `https://www.fantasycritic.games/api/League/GetLeagueYear?${params.toString()}`;
+}
+
+async function loadFantasyCriticLeague(year) {
+  const yearKey = String(year);
+
+  siteData.fantasyCritic = {
+    ...(siteData.fantasyCritic || {}),
+    [yearKey]: {
+      metadata: FANTASY_CRITIC_LEAGUE_METADATA[yearKey],
+      status: "loading",
+    },
+  };
+  renderFantasyCriticPage();
+  renderManagerHub();
+
+  try {
+    const response = await fetch(getFantasyCriticApiUrl(yearKey), {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Fantasy Critic API returned ${response.status}`);
+    }
+
+    const json = await response.json();
+    const league = parseFantasyCriticApiLeague(json, yearKey);
+
+    siteData.fantasyCritic = {
+      ...(siteData.fantasyCritic || {}),
+      [yearKey]: {
+        league,
+        metadata: FANTASY_CRITIC_LEAGUE_METADATA[yearKey],
+        status: "loaded",
+      },
+    };
+
+    renderFantasyCriticPage();
+    renderManagerHub();
+    console.info(`Box This Lap Fantasy Critic ${yearKey} data loaded`, league);
+  } catch (error) {
+    siteData.fantasyCritic = {
+      ...(siteData.fantasyCritic || {}),
+      [yearKey]: {
+        error,
+        errorMessage: error.message,
+        metadata: FANTASY_CRITIC_LEAGUE_METADATA[yearKey],
+        status: "error",
+      },
+    };
+
+    renderFantasyCriticPage();
+    renderManagerHub();
+    console.error(`Box This Lap Fantasy Critic ${yearKey} data failed to load`, error);
+  }
+}
+
+function parseFantasyCriticApiLeague(json, year) {
+  const metadata = FANTASY_CRITIC_LEAGUE_METADATA[year] || {};
+  const publisherRows = Array.isArray(json.publishers) ? json.publishers : [];
+  const leaguePlayers = Array.isArray(json.players) ? json.players : [];
+  const playerRowsByPublisherId = new Map(
+    leaguePlayers
+      .filter((player) => player?.publisher?.publisherID)
+      .map((player) => [player.publisher.publisherID, player])
+  );
+  const standardSlots = Number(json.settings?.standardGames) || 0;
+  const counterSlots = Number(json.settings?.counterPicks) || 0;
+
+  if (!publisherRows.length) {
+    throw new Error("Fantasy Critic API did not return publishers.");
+  }
+
+  const standings = publisherRows
+    .map((publisher) => parseFantasyCriticPublisher(publisher, playerRowsByPublisherId.get(publisher.publisherID), {
+      counterSlots,
+      standardSlots,
+    }))
+    .sort((firstEntry, secondEntry) => {
+      if (secondEntry.pointsValue !== firstEntry.pointsValue) {
+        return secondEntry.pointsValue - firstEntry.pointsValue;
+      }
+
+      return firstEntry.publisher.localeCompare(secondEntry.publisher);
+    });
+
+  return {
+    isDynamic: true,
+    sourceUrl: metadata.sourceUrl,
+    standings: rankRows(standings).map(({ pointsValue, ...entry }) => entry),
+    subtitle: metadata.subtitle || json.league?.leagueName || "Fantasy Critic",
+    title: metadata.title || "Fantasy Critic",
+    year,
+  };
+}
+
+function parseFantasyCriticPublisher(publisher, playerRow, slotCounts) {
+  const publisherName = publisher.publisherName || playerRow?.publisher?.publisherName || "Unknown Publisher";
+  const games = Array.isArray(publisher.games) ? publisher.games.filter((game) => !game.removedTimestamp) : [];
+  const standardGames = games.filter((game) => !game.counterPick);
+  const counterPicks = games.filter((game) => game.counterPick);
+  const blankDrafts = [
+    ...buildFantasyCriticOpenSlots("Draft", slotCounts.standardSlots - standardGames.length, false),
+    ...buildFantasyCriticOpenSlots("Counterpick", slotCounts.counterSlots - counterPicks.length, true),
+  ];
+  const roster = [
+    ...standardGames,
+    ...counterPicks,
+  ]
+    .sort((firstGame, secondGame) => {
+      const firstSlot = Number(firstGame.slotNumber ?? firstGame.overallDraftPosition ?? 999);
+      const secondSlot = Number(secondGame.slotNumber ?? secondGame.overallDraftPosition ?? 999);
+
+      return firstSlot - secondSlot;
+    })
+    .map((game) => parseFantasyCriticGame(game));
+  const pointsValue = Number(playerRow?.totalFantasyPoints ?? publisher.totalFantasyPoints ?? 0);
+
+  return {
+    blankDrafts,
+    budget: formatFantasyCriticBudget(publisher.budget ?? playerRow?.publisher?.budget),
+    expecting: formatFantasyCriticInteger(publisher.gamesWillRelease ?? playerRow?.publisher?.gamesWillRelease),
+    manager: getFantasyCriticManagerName(publisherName, publisher.playerName || playerRow?.user?.displayName),
+    points: formatFantasyCriticNumber(pointsValue),
+    pointsValue,
+    projected: formatFantasyCriticNumber(playerRow?.projectedFantasyPoints ?? publisher.totalProjectedPoints),
+    publisher: publisherName,
+    released: formatFantasyCriticInteger(publisher.gamesReleased ?? playerRow?.publisher?.gamesReleased),
+    roster: [
+      ...roster,
+      ...blankDrafts.map((slot) => [slot.label, "", "", slot]),
+    ],
+  };
+}
+
+function parseFantasyCriticGame(game) {
+  const prefix = game.counterPick ? "CPK " : "";
+
+  return [
+    `${prefix}${game.gameName || "Untitled Game"}`,
+    formatFantasyCriticNumber(game.criticScore ?? game.masterGame?.criticScore),
+    formatFantasyCriticNumber(game.fantasyPoints ?? game.masterGame?.fantasyPoints),
+  ];
+}
+
+function buildFantasyCriticOpenSlots(label, count, isCounterPick) {
+  return Array.from({ length: Math.max(0, count) }, (_, index) => ({
+    isBlank: true,
+    isCounterPick,
+    label: `${label} Slot ${index + 1}`,
+  }));
+}
+
+function getFantasyCriticManagerName(publisherName, playerName = "") {
+  return FANTASY_CRITIC_PUBLISHER_MANAGERS[normalizeLookupName(publisherName)] ||
+    FANTASY_CRITIC_PUBLISHER_MANAGERS[normalizeLookupName(playerName)] ||
+    playerName ||
+    publisherName;
+}
+
+function formatFantasyCriticBudget(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? `$${formatFantasyCriticNumber(number)}` : "--";
+}
+
+function formatFantasyCriticInteger(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? String(Math.round(number)) : "--";
+}
+
+function formatFantasyCriticNumber(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "";
+  }
+
+  return number.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  });
+}
+
 function getRulesNationBreakdownRows(nationName) {
   return (siteData.matchResults || [])
     .filter(isLoggedNationResult)
@@ -4053,6 +4385,8 @@ syncTestScoringUi();
 showPage(window.location.hash.replace("#", "") || "results");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
+loadFantasyCriticLeague("2025");
+loadFantasyCriticLeague("2026");
 syncThemeToggle();
 hydrateBracketSubmitter();
 hydrateManagerSession();

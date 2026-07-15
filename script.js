@@ -409,6 +409,7 @@ const FANTASY_CRITIC_2026 = {
 };
 
 const FANTASY_CRITIC_LEAGUE_ID = "f29fddba-fa80-40bf-aa71-d062e6e80635";
+const FANTASY_CRITIC_PROXY_URL = "https://script.google.com/macros/s/AKfycbyE8Br8eo9S6oSfDP7sR-_RcTAWEUgiDHQqS9UVxHtgmmi1DGWhpu3hFHN9La1FMol_lA/exec";
 const FANTASY_CRITIC_LEAGUE_METADATA = {
   2025: {
     sourceUrl: FANTASY_CRITIC_2025.sourceUrl,
@@ -4116,15 +4117,6 @@ function getFantasyCriticLeague(year) {
   return getFantasyCriticLeagueState(year).league || null;
 }
 
-function getFantasyCriticApiUrl(year) {
-  const params = new URLSearchParams({
-    leagueID: FANTASY_CRITIC_LEAGUE_ID,
-    year: String(year),
-  });
-
-  return `https://www.fantasycritic.games/api/League/GetLeagueYear?${params.toString()}`;
-}
-
 async function loadFantasyCriticLeague(year) {
   const yearKey = String(year);
 
@@ -4139,16 +4131,7 @@ async function loadFantasyCriticLeague(year) {
   renderManagerHub();
 
   try {
-    const response = await fetch(getFantasyCriticApiUrl(yearKey), {
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Fantasy Critic API returned ${response.status}`);
-    }
-
-    const json = await response.json();
+    const json = await loadFantasyCriticJsonp(yearKey);
     const league = parseFantasyCriticApiLeague(json, yearKey);
 
     siteData.fantasyCritic = {
@@ -4178,6 +4161,58 @@ async function loadFantasyCriticLeague(year) {
     renderManagerHub();
     console.error(`Box This Lap Fantasy Critic ${yearKey} data failed to load`, error);
   }
+}
+
+function loadFantasyCriticJsonp(year) {
+  return new Promise((resolve, reject) => {
+    if (!FANTASY_CRITIC_PROXY_URL) {
+      reject(new Error("Fantasy Critic proxy endpoint is not configured."));
+      return;
+    }
+
+    const callbackName = `boxThisLapFantasyCritic${year}${Date.now()}${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Fantasy Critic proxy did not respond."));
+    }, 20000);
+
+    window[callbackName] = (payload) => {
+      window.clearTimeout(timeout);
+      cleanup();
+
+      if (!payload?.ok) {
+        reject(new Error(payload?.error || "Fantasy Critic proxy returned an error."));
+        return;
+      }
+
+      if (!payload.data) {
+        reject(new Error("Fantasy Critic proxy returned no data."));
+        return;
+      }
+
+      resolve(payload.data);
+    };
+
+    script.onerror = () => {
+      window.clearTimeout(timeout);
+      cleanup();
+      reject(new Error("Unable to load Fantasy Critic proxy."));
+    };
+
+    const params = new URLSearchParams({
+      callback: callbackName,
+      leagueID: FANTASY_CRITIC_LEAGUE_ID,
+      year: String(year),
+    });
+    script.async = true;
+    script.src = `${FANTASY_CRITIC_PROXY_URL}?${params.toString()}`;
+    document.body.appendChild(script);
+  });
 }
 
 function parseFantasyCriticApiLeague(json, year) {

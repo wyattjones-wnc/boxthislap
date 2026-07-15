@@ -409,7 +409,7 @@ const FANTASY_CRITIC_2026 = {
 };
 
 const FANTASY_CRITIC_LEAGUE_ID = "f29fddba-fa80-40bf-aa71-d062e6e80635";
-const FANTASY_CRITIC_PROXY_URL = "https://script.google.com/macros/s/AKfycbyE8Br8eo9S6oSfDP7sR-_RcTAWEUgiDHQqS9UVxHtgmmi1DGWhpu3hFHN9La1FMol_lA/exec";
+const FANTASY_CRITIC_PROXY_URL = "https://script.google.com/macros/s/AKfycbwEs1gaKGBOc6D21nm761YZsmEXh51b86J_XUUg_J_7YUUSaZt5JRzUWEjV2WzvJD6GHA/exec";
 const FANTASY_CRITIC_LEAGUE_METADATA = {
   2025: {
     sourceUrl: FANTASY_CRITIC_2025.sourceUrl,

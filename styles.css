@@ -226,23 +226,17 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .login-row {
-  border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-top: 0;
 }
 
 .login-row-inner {
   align-items: center;
   display: flex;
   gap: 12px;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin: 0 auto;
   max-width: 1120px;
-  padding: 8px 20px;
-}
-
-.login-status {
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 700;
+  padding: 0 20px 10px;
 }
 
 .login-actions {
@@ -267,12 +261,24 @@ body.has-shell-stale-warning .stale-shell-alert {
 .login-button,
 .profile-button {
   align-items: center;
-  background: var(--panel);
-  color: var(--ink);
+  background: transparent;
+  color: var(--muted);
   display: inline-flex;
   gap: 8px;
-  min-height: 38px;
-  padding: 8px 10px;
+  min-height: 32px;
+  padding: 5px 8px;
+}
+
+.login-button {
+  border-color: transparent;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.login-button:hover,
+.profile-button:hover {
+  background: var(--soft);
+  color: var(--ink);
 }
 
 .profile-avatar {
@@ -318,15 +324,15 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: 0 16px 34px var(--strong-shadow);
   display: grid;
   gap: 12px;
-  margin: 0 auto 12px;
+  margin: 0 auto;
   max-width: min(520px, calc(100vw - 32px));
   padding: 14px;
 }
 
-.login-panel-heading {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
+.login-page .section-heading {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: min(520px, calc(100vw - 32px));
 }
 
 .login-panel p {
@@ -2368,14 +2374,13 @@ tr:last-child td {
 
 @media (max-width: 760px) {
   .login-row-inner {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: flex-end;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 0 12px 8px;
   }
 
   .login-actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   .manager-hub-grid {

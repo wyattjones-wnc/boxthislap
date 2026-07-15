@@ -168,7 +168,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
     <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607140001">
+    <link rel="stylesheet" href="styles.css?v=202607140002">
   </head>
   <body class="is-routing">
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -278,11 +278,8 @@
       </nav>
       <div class="login-row">
         <div class="login-row-inner">
-          <div class="login-status" id="login-status">
-            <span data-login-message>Manager tools are available after login.</span>
-          </div>
           <div class="login-actions">
-            <button class="login-button" id="login-open-button" type="button">Log In</button>
+            <a class="login-button" id="login-open-button" href="#login" data-page-link="login">Log In</a>
             <div class="profile-menu" id="profile-menu" hidden>
               <button class="profile-button" id="profile-menu-button" type="button" aria-expanded="false">
                 <span class="profile-avatar" aria-hidden="true">?</span>
@@ -295,11 +292,15 @@
             </div>
           </div>
         </div>
-        <form class="login-panel" id="login-panel" hidden>
-          <div class="login-panel-heading">
-            <strong>Manager Login</strong>
-            <button class="icon-button" id="login-close-button" type="button" aria-label="Close login">×</button>
-          </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="page login-page" id="login" data-page="login">
+        <div class="section-heading">
+          <h1>Manager Login</h1>
+        </div>
+        <form class="login-panel" id="login-panel">
           <p>This passphrase is only a lightweight site check. Do not reuse an important password.</p>
           <label class="select-control">
             <span>Manager</span>
@@ -318,10 +319,8 @@
           <button class="action-button" id="login-submit-button" type="submit">Continue</button>
           <p class="login-feedback" id="login-feedback" role="status"></p>
         </form>
-      </div>
-    </header>
+      </section>
 
-    <main>
       <section class="page manager-hub-page" id="manager-hub" data-page="manager-hub">
         <div class="section-heading page-heading-with-action">
           <div>
@@ -1099,6 +1098,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607140001"></script>
+    <script type="module" src="script.js?v=202607140002"></script>
   </body>
 </html>

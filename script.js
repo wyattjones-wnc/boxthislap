@@ -9,14 +9,12 @@ const navGroups = document.querySelectorAll("[data-nav-scope]");
 const themeToggle = document.querySelector("[data-theme-toggle]");
 const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
 const loginOpenButton = document.querySelector("#login-open-button");
-const loginCloseButton = document.querySelector("#login-close-button");
 const loginPanel = document.querySelector("#login-panel");
 const loginManagerSelect = document.querySelector("#login-manager-select");
 const loginPassphraseInput = document.querySelector("#login-passphrase");
 const loginSetupPassphrase = document.querySelector("#login-setup-passphrase");
 const loginSubmitButton = document.querySelector("#login-submit-button");
 const loginFeedback = document.querySelector("#login-feedback");
-const loginMessage = document.querySelector("[data-login-message]");
 const profileMenu = document.querySelector("#profile-menu");
 const profileMenuButton = document.querySelector("#profile-menu-button");
 const profileDropdown = document.querySelector("#profile-dropdown");
@@ -2491,14 +2489,6 @@ draftPlayerPositionFilter?.addEventListener("change", () => {
   renderDraftPlayers();
 });
 
-loginOpenButton?.addEventListener("click", () => {
-  showLoginPanel();
-});
-
-loginCloseButton?.addEventListener("click", () => {
-  hideLoginPanel();
-});
-
 loginPanel?.addEventListener("submit", (event) => {
   event.preventDefault();
   handleManagerLogin();
@@ -2797,23 +2787,11 @@ bracketSubmitButton?.addEventListener("click", () => {
   submitBracketPicks();
 });
 
-function showLoginPanel() {
-  if (!loginPanel) {
-    return;
-  }
-
-  loginPanel.hidden = false;
-  loginFeedback.textContent = "";
-  loginFeedback.classList.remove("is-error");
-  loginManagerSelect?.focus();
-}
-
 function hideLoginPanel() {
   if (!loginPanel) {
     return;
   }
 
-  loginPanel.hidden = true;
   if (loginPassphraseInput) {
     loginPassphraseInput.value = "";
   }
@@ -2884,11 +2862,6 @@ function renderLoginState() {
     avatar.style.background = managerMeta?.color || "";
   }
 
-  if (loginMessage) {
-    loginMessage.textContent = managerMeta
-      ? `Logged in as ${managerMeta.displayName}.`
-      : "Manager tools are available after login.";
-  }
 }
 
 function renderLoginManagerOptions() {

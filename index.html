@@ -164,10 +164,18 @@
         });
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=202606300001">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
-    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
+    <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001" data-icon-192>
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001" data-icon-512>
+    <script>
+      if (location.pathname.includes("/dev/")) {
+        document.querySelector("[data-app-manifest]")?.setAttribute("href", "manifest-dev.webmanifest?v=202607140001");
+        document.querySelector("[data-apple-touch-icon]")?.setAttribute("href", "assets/dev-apple-touch-icon.png?v=202607140001");
+        document.querySelector("[data-icon-192]")?.setAttribute("href", "assets/dev-icon-192.png?v=202607140001");
+        document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
+      }
+    </script>
     <link rel="stylesheet" href="styles.css?v=202607140003">
   </head>
   <body class="is-routing">
@@ -310,7 +318,7 @@
           </label>
           <label class="filter-control" id="login-passphrase-group">
             <span>Passphrase</span>
-            <input id="login-passphrase" type="password" autocomplete="current-password" placeholder="Passphrase">
+            <input id="login-passphrase" type="text" autocomplete="off" placeholder="Passphrase">
           </label>
           <div class="login-setup-panel" id="login-recovery-panel" hidden>
             <p class="login-recovery-question" id="login-recovery-question"></p>
@@ -322,11 +330,11 @@
           <div class="login-setup-panel" id="login-new-passphrase-panel" hidden>
             <label class="filter-control">
               <span>New Passphrase</span>
-              <input id="login-new-passphrase" type="password" autocomplete="new-password" placeholder="New passphrase">
+              <input id="login-new-passphrase" type="text" autocomplete="off" placeholder="New passphrase">
             </label>
             <label class="filter-control">
               <span>Confirm Passphrase</span>
-              <input id="login-confirm-passphrase" type="password" autocomplete="new-password" placeholder="Confirm passphrase">
+              <input id="login-confirm-passphrase" type="text" autocomplete="off" placeholder="Confirm passphrase">
             </label>
           </div>
           <button class="action-button" id="login-submit-button" type="submit">Continue</button>

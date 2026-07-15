@@ -2881,6 +2881,7 @@ function renderLoginState() {
   if (avatar) {
     avatar.textContent = managerMeta?.displayName?.charAt(0)?.toUpperCase() || "?";
     avatar.style.background = managerMeta?.color || "";
+    avatar.style.color = getContrastTextColor(managerMeta?.color);
   }
 
 }
@@ -6574,6 +6575,35 @@ function getManagerMeta(manager) {
 
 function getManagerDisplayName(name) {
   return String(name ?? "").trim().split(/\s+/)[0] || "Manager";
+}
+
+function getContrastTextColor(color) {
+  const hex = normalizeHexColor(color);
+
+  if (!hex) {
+    return "#ffffff";
+  }
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const luminance = (red * 0.299 + green * 0.587 + blue * 0.114) / 255;
+
+  return luminance > 0.58 ? "#111827" : "#ffffff";
+}
+
+function normalizeHexColor(color) {
+  const raw = String(color || "").trim().replace(/^#/, "");
+
+  if (/^[0-9a-f]{3}$/i.test(raw)) {
+    return raw.split("").map((digit) => digit + digit).join("").toLowerCase();
+  }
+
+  if (/^[0-9a-f]{6}$/i.test(raw)) {
+    return raw.toLowerCase();
+  }
+
+  return "";
 }
 
 function getPlayerManager(player) {

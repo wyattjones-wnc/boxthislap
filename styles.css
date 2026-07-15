@@ -442,6 +442,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 12px;
 }
 
+.workflow-item.is-actionable {
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.workflow-item.is-actionable:hover,
+.workflow-item.is-actionable:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .workflow-item header {
   align-items: start;
   display: flex;

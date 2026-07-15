@@ -116,6 +116,7 @@ const testingPlayerRows = document.querySelector("#testing-player-rows");
 const siteData = {};
 window.boxThisLapData = siteData;
 
+const WORKFLOW_LOOKAHEAD_DAYS = 7;
 const THEME_STORAGE_KEY = "boxThisLapTheme";
 const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
 const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
@@ -959,6 +960,7 @@ function parseFormulaOneRoundForms(rows) {
         formUrl,
         id: String(roundId ?? "").trim(),
         name,
+        priority: getField(row, "Priority"),
       };
     })
     .filter((form) => form.id && form.name && form.formUrl);
@@ -2475,6 +2477,27 @@ pageLinks.forEach((link) => {
   });
 });
 
+workflowList?.addEventListener("click", (event) => {
+  const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
+
+  if (item) {
+    activateWorkflowItem(item);
+  }
+});
+
+workflowList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
+
+  if (item) {
+    event.preventDefault();
+    activateWorkflowItem(item);
+  }
+});
+
 themeToggle?.addEventListener("click", () => {
   setTheme(getCurrentTheme() === "dark" ? "light" : "dark");
 });
@@ -3255,7 +3278,7 @@ function renderManagerHub() {
     }
 
     if (workflowList) {
-      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load workflow items.</p></article>`;
+      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load notifications.</p></article>`;
     }
 
     if (managerSummaryList) {
@@ -3336,6 +3359,205 @@ function renderWorkflowAction(draft) {
   return "";
 }
 
+function renderManagerWorkflow(managerId) {
+  if (!workflowList) {
+    return;
+  }
+
+  const drafts = siteData.portalDrafts || [];
+
+  if (!drafts.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading notifications...</p></article>`;
+    return;
+  }
+
+  const openItems = buildManagerWorkflowItems(managerId).sort(compareWorkflowItems);
+
+  if (workflowCount) {
+    workflowCount.textContent = `${openItems.length} open`;
+  }
+
+  if (!openItems.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">No notifications need attention.</p></article>`;
+    return;
+  }
+
+  workflowList.innerHTML = openItems.map(renderWorkflowItem).join("");
+}
+
+function buildManagerWorkflowItems(managerId) {
+  return [
+    ...buildDraftWorkflowItems(managerId),
+    ...buildFormulaOneWeeklyWorkflowItems(managerId),
+  ];
+}
+
+function buildDraftWorkflowItems(managerId) {
+  const drafts = siteData.portalDrafts || [];
+  const logs = siteData.portalLogs || [];
+
+  return drafts
+    .filter((draft) => !isTruthy(draft.IsCompleted))
+    .filter((draft) => !hasManagerCompletedDraft(logs, managerId, draft.ID))
+    .map((draft) => ({
+      actionLabel: "Open",
+      description: [draft.Year, draft.League, draft.Type].filter(Boolean).join(" - "),
+      dueDate: draft["Due Date"] || "",
+      id: `draft-${draft.ID || draft.Name || ""}`,
+      priority: draft.Priority || "999",
+      status: draft.Status || "",
+      target: draft["Target Page"] || getWorkflowTargetFromDraft(draft),
+      title: draft.Name || "Untitled draft",
+      url: draft["Target URL"] || "",
+    }));
+}
+
+function buildFormulaOneWeeklyWorkflowItems(managerId) {
+  const forms = siteData.formulaOne2026RoundForms || [];
+  const logs = siteData.portalLogs || [];
+  const nextForm = getUpcomingFormulaOneForm(forms);
+
+  if (!nextForm) {
+    return [];
+  }
+
+  const completionIds = [
+    `formula-one-2026-weekly-${nextForm.id}`,
+    `f1-2026-weekly-${nextForm.id}`,
+    `2026-f1-weekly-${nextForm.id}`,
+    nextForm.id,
+  ];
+
+  if (completionIds.some((id) => hasManagerCompletedDraft(logs, managerId, id))) {
+    return [];
+  }
+
+  return [{
+    actionLabel: "Open",
+    description: "2026 Formula 1 weekly bet",
+    dueDate: nextForm.date ? formatWorkflowDate(nextForm.date) : "",
+    id: `formula-one-2026-weekly-${nextForm.id}`,
+    priority: nextForm.Priority || nextForm.priority || "1",
+    status: "Upcoming race",
+    tab: "formula-one-2026-weekly-bet",
+    target: "formula-1-2026-weekly",
+    title: nextForm.name,
+    url: "",
+    weeklyFormId: nextForm.id,
+    year: "2026",
+  }];
+}
+
+function getUpcomingFormulaOneForm(forms) {
+  const today = getEasternTodayDate();
+  const lookaheadEnd = new Date(today);
+  lookaheadEnd.setUTCDate(lookaheadEnd.getUTCDate() + WORKFLOW_LOOKAHEAD_DAYS);
+
+  return forms
+    .filter((form) => form.date && form.date >= today && form.date <= lookaheadEnd)
+    .sort((firstForm, secondForm) => firstForm.date - secondForm.date)[0] || null;
+}
+
+function getWorkflowTargetFromDraft(draft) {
+  const league = normalizeLookupName(draft.League || draft.Name || "");
+  const year = String(draft.Year || "").trim();
+
+  if (league.includes("fantasycritic") || league.includes("fantasy critic")) {
+    return year === "2026" ? "fantasy-critic-2026" : "fantasy-critic-2025";
+  }
+
+  if (league.includes("formula1") || league.includes("formula 1")) {
+    return year === "2026" ? "formula-1-2026-weekly" : `formula-1-${year || "2025"}-questions`;
+  }
+
+  if (league.includes("worldcup") || league.includes("world cup")) {
+    return "standings";
+  }
+
+  return "";
+}
+
+function renderWorkflowItem(item) {
+  const targetAttrs = [
+    item.target ? `data-workflow-target="${escapeHtml(item.target)}"` : "",
+    item.url ? `data-workflow-url="${escapeHtml(item.url)}"` : "",
+    item.tab ? `data-workflow-tab="${escapeHtml(item.tab)}"` : "",
+    item.weeklyFormId ? `data-workflow-form-id="${escapeHtml(item.weeklyFormId)}"` : "",
+    item.year ? `data-workflow-year="${escapeHtml(item.year)}"` : "",
+  ].filter(Boolean).join(" ");
+
+  return `
+    <article class="workflow-item${targetAttrs ? " is-actionable" : ""}" ${targetAttrs} ${targetAttrs ? `role="button" tabindex="0"` : ""}>
+      <header>
+        <div>
+          <h3>${escapeHtml(item.title || "Untitled notification")}</h3>
+          ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+        </div>
+        ${item.priority ? `<span class="workflow-priority">P${escapeHtml(item.priority)}</span>` : ""}
+      </header>
+      <div class="workflow-meta">
+        ${item.dueDate ? `<span>Due ${escapeHtml(item.dueDate)}</span>` : ""}
+        ${item.status ? `<span>${escapeHtml(item.status)}</span>` : ""}
+      </div>
+      ${targetAttrs ? `<span class="action-button workflow-open-label">${escapeHtml(item.actionLabel || "Open")}</span>` : ""}
+    </article>
+  `;
+}
+
+function formatWorkflowDate(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "America/New_York",
+  }).format(date);
+}
+
+function activateWorkflowItem(item) {
+  const target = item.dataset.workflowTarget || "";
+  const url = item.dataset.workflowUrl || "";
+
+  if (target) {
+    const nextHash = `#${target}`;
+
+    if (window.location.hash !== nextHash) {
+      history.pushState(null, "", nextHash);
+    }
+
+    showPage(target, { scrollToTop: true });
+
+    if (item.dataset.workflowTab) {
+      showTab(item.dataset.workflowTab);
+    }
+
+    if (item.dataset.workflowFormId && item.dataset.workflowYear) {
+      selectFormulaOneWeeklyForm(item.dataset.workflowYear, item.dataset.workflowFormId);
+    }
+
+    return;
+  }
+
+  if (url) {
+    window.location.href = url;
+  }
+}
+
+function selectFormulaOneWeeklyForm(year, formId) {
+  const view = formulaOneViews[year];
+  const forms = siteData[`formulaOne${year}RoundForms`];
+
+  if (!view?.weeklyForm || !forms?.length) {
+    return;
+  }
+
+  const select = view.weeklyForm.querySelector("[data-formula-one-form-select]");
+
+  if (select) {
+    select.value = formId;
+  }
+
+  renderFormulaOneWeeklyForm(year, forms);
+}
+
 function renderManagerSummary(managerId) {
   if (!managerSummaryList) {
     return;
@@ -3408,13 +3630,31 @@ function hasManagerCompletedDraft(logs, managerId, draftId) {
 }
 
 function compareWorkflowItems(first, second) {
-  const priorityCompare = compareNumericLike(first.Priority || "999", second.Priority || "999");
+  const firstPriority = first.priority ?? first.Priority ?? "999";
+  const secondPriority = second.priority ?? second.Priority ?? "999";
+  const priorityCompare = compareNumericLike(firstPriority, secondPriority);
 
   if (priorityCompare !== 0) {
     return priorityCompare;
   }
 
-  return String(first.Name || "").localeCompare(String(second.Name || ""));
+  const firstDue = parseWorkflowSortDate(first.dueDate || first["Due Date"]);
+  const secondDue = parseWorkflowSortDate(second.dueDate || second["Due Date"]);
+
+  if (firstDue !== secondDue) {
+    return firstDue - secondDue;
+  }
+
+  return String(first.title || first.Name || "").localeCompare(String(second.title || second.Name || ""));
+}
+
+function parseWorkflowSortDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.getTime();
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
 }
 
 function isTruthy(value) {
@@ -3630,7 +3870,7 @@ Promise.all([
     }
 
     if (workflowList) {
-      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load workflow data: ${escapeHtml(error.message)}</p></article>`;
+      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load notifications: ${escapeHtml(error.message)}</p></article>`;
     }
 
     console.error("Box This Lap manager portal data failed to load", error);
@@ -3854,6 +4094,7 @@ loadSheet("formulaOne2026RoundForms")
     const forms = parseFormulaOneRoundForms(rows);
     siteData.formulaOne2026RoundForms = forms;
     renderFormulaOneWeeklyForm("2026", forms);
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 round forms loaded", forms);
   })
   .catch((error) => {

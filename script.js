@@ -4185,17 +4185,16 @@ function loadFantasyCriticJsonp(year) {
       window.clearTimeout(timeout);
       cleanup();
 
-      if (!payload?.ok) {
+      if (payload?.ok === false) {
         reject(new Error(payload?.error || "Fantasy Critic proxy returned an error."));
         return;
       }
 
-      if (!payload.data) {
-        reject(new Error("Fantasy Critic proxy returned no data."));
-        return;
+      try {
+        resolve(normalizeFantasyCriticProxyPayload(payload));
+      } catch (error) {
+        reject(error);
       }
-
-      resolve(payload.data);
     };
 
     script.onerror = () => {
@@ -4207,6 +4206,7 @@ function loadFantasyCriticJsonp(year) {
     const params = new URLSearchParams({
       callback: callbackName,
       leagueID: FANTASY_CRITIC_LEAGUE_ID,
+      nonce: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       year: String(year),
     });
     script.async = true;
@@ -4215,20 +4215,91 @@ function loadFantasyCriticJsonp(year) {
   });
 }
 
+function normalizeFantasyCriticProxyPayload(payload) {
+  if (!payload) {
+    throw new Error("Fantasy Critic proxy returned no payload.");
+  }
+
+  if (typeof payload === "string") {
+    try {
+      return JSON.parse(payload);
+    } catch (error) {
+      throw new Error("Fantasy Critic proxy returned text that was not JSON.");
+    }
+  }
+
+  const candidate = payload.data || payload.payload || payload.result || payload;
+
+  if (typeof candidate === "string") {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      throw new Error("Fantasy Critic proxy data was text that was not JSON.");
+    }
+  }
+
+  if (!candidate || typeof candidate !== "object") {
+    throw new Error("Fantasy Critic proxy returned data in an unexpected format.");
+  }
+
+  return candidate;
+}
+
+function getFantasyCriticJsonKeys(json) {
+  return Object.keys(json || {}).slice(0, 8).join(", ") || "none";
+}
+
+function getFantasyCriticPublishers(json) {
+  if (Array.isArray(json.publishers)) {
+    return json.publishers;
+  }
+
+  if (Array.isArray(json.leagueYear?.publishers)) {
+    return json.leagueYear.publishers;
+  }
+
+  if (Array.isArray(json.data?.publishers)) {
+    return json.data.publishers;
+  }
+
+  return [];
+}
+
+function getFantasyCriticPlayers(json) {
+  if (Array.isArray(json.players)) {
+    return json.players;
+  }
+
+  if (Array.isArray(json.leagueYear?.players)) {
+    return json.leagueYear.players;
+  }
+
+  if (Array.isArray(json.data?.players)) {
+    return json.data.players;
+  }
+
+  return [];
+}
+
+function getFantasyCriticSettings(json) {
+  return json.settings || json.leagueYear?.settings || json.data?.settings || {};
+}
+
 function parseFantasyCriticApiLeague(json, year) {
   const metadata = FANTASY_CRITIC_LEAGUE_METADATA[year] || {};
-  const publisherRows = Array.isArray(json.publishers) ? json.publishers : [];
-  const leaguePlayers = Array.isArray(json.players) ? json.players : [];
+  const publisherRows = getFantasyCriticPublishers(json);
+  const leaguePlayers = getFantasyCriticPlayers(json);
   const playerRowsByPublisherId = new Map(
     leaguePlayers
       .filter((player) => player?.publisher?.publisherID)
       .map((player) => [player.publisher.publisherID, player])
   );
-  const standardSlots = Number(json.settings?.standardGames) || 0;
-  const counterSlots = Number(json.settings?.counterPicks) || 0;
+  const settings = getFantasyCriticSettings(json);
+  const standardSlots = Number(settings.standardGames) || 0;
+  const counterSlots = Number(settings.counterPicks) || 0;
 
   if (!publisherRows.length) {
-    throw new Error("Fantasy Critic API did not return publishers.");
+    throw new Error(`Fantasy Critic API did not return publishers. Top-level keys: ${getFantasyCriticJsonKeys(json)}.`);
   }
 
   const standings = publisherRows

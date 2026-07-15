@@ -225,6 +225,244 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--track-ink);
 }
 
+.login-row {
+  border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+}
+
+.login-row-inner {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 8px 20px;
+}
+
+.login-status {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.login-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  position: relative;
+}
+
+.login-button,
+.profile-button,
+.profile-dropdown button,
+.profile-dropdown a {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.login-button,
+.profile-button {
+  align-items: center;
+  background: var(--panel);
+  color: var(--ink);
+  display: inline-flex;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.profile-avatar {
+  align-items: center;
+  background: var(--track);
+  border-radius: 999px;
+  color: var(--track-ink);
+  display: inline-flex;
+  font-size: 0.82rem;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.profile-dropdown {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 24px var(--strong-shadow);
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 180px;
+  z-index: 20;
+}
+
+.profile-dropdown button,
+.profile-dropdown a {
+  background: transparent;
+  color: var(--ink);
+  display: block;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.login-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px var(--strong-shadow);
+  display: grid;
+  gap: 12px;
+  margin: 0 auto 12px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 14px;
+}
+
+.login-panel-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.login-panel p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.icon-button {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.login-setup-toggle {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-weight: 900;
+  gap: 8px;
+}
+
+.login-feedback {
+  min-height: 1.4em;
+}
+
+.login-feedback.is-error {
+  color: var(--accent-dark);
+}
+
+.manager-hub-subtitle {
+  color: var(--muted);
+  font-weight: 800;
+  margin: 6px 0 0;
+}
+
+.manager-hub-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.manager-hub-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px var(--shadow);
+  padding: 18px;
+}
+
+.manager-hub-card-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+}
+
+.manager-hub-card h2 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.manager-hub-card-heading span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.workflow-list,
+.manager-summary-list {
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-item {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.workflow-item header {
+  align-items: start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.workflow-item h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.workflow-item p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.workflow-priority {
+  background: var(--accent);
+  border-radius: 999px;
+  color: #ffffff;
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+
+.workflow-meta {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.workflow-item .action-button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
 main {
   margin: 0 auto;
   max-width: 1120px;
@@ -2129,6 +2367,26 @@ tr:last-child td {
 }
 
 @media (max-width: 760px) {
+  .login-row-inner {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .login-actions {
+    justify-content: flex-start;
+  }
+
+  .manager-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-item header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   main {
     padding: 28px 12px 56px;
   }

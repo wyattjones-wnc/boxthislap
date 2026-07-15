@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607120001";
+import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607140001";
 
 const pageLinks = document.querySelectorAll("[data-page-link]");
 const pages = document.querySelectorAll("[data-page]");
@@ -8,6 +8,24 @@ const headerArt = document.querySelectorAll("[data-header-art]");
 const navGroups = document.querySelectorAll("[data-nav-scope]");
 const themeToggle = document.querySelector("[data-theme-toggle]");
 const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
+const loginOpenButton = document.querySelector("#login-open-button");
+const loginCloseButton = document.querySelector("#login-close-button");
+const loginPanel = document.querySelector("#login-panel");
+const loginManagerSelect = document.querySelector("#login-manager-select");
+const loginPassphraseInput = document.querySelector("#login-passphrase");
+const loginSetupPassphrase = document.querySelector("#login-setup-passphrase");
+const loginSubmitButton = document.querySelector("#login-submit-button");
+const loginFeedback = document.querySelector("#login-feedback");
+const loginMessage = document.querySelector("[data-login-message]");
+const profileMenu = document.querySelector("#profile-menu");
+const profileMenuButton = document.querySelector("#profile-menu-button");
+const profileDropdown = document.querySelector("#profile-dropdown");
+const profileName = document.querySelector("#profile-name");
+const logoutButton = document.querySelector("#logout-button");
+const managerHubSubtitle = document.querySelector("#manager-hub-subtitle");
+const workflowCount = document.querySelector("#workflow-count");
+const workflowList = document.querySelector("#workflow-list");
+const managerSummaryList = document.querySelector("#manager-summary-list");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
@@ -95,6 +113,8 @@ const siteData = {};
 window.boxThisLapData = siteData;
 
 const THEME_STORAGE_KEY = "boxThisLapTheme";
+const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
+const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
 const BEST_STANDING_PERFORMANCE_VALUE = "best";
 const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
@@ -2471,6 +2491,38 @@ draftPlayerPositionFilter?.addEventListener("change", () => {
   renderDraftPlayers();
 });
 
+loginOpenButton?.addEventListener("click", () => {
+  showLoginPanel();
+});
+
+loginCloseButton?.addEventListener("click", () => {
+  hideLoginPanel();
+});
+
+loginPanel?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  handleManagerLogin();
+});
+
+profileMenuButton?.addEventListener("click", () => {
+  const isOpen = profileMenuButton.getAttribute("aria-expanded") === "true";
+  profileMenuButton.setAttribute("aria-expanded", String(!isOpen));
+  profileDropdown.hidden = isOpen;
+});
+
+logoutButton?.addEventListener("click", () => {
+  signOutManager();
+});
+
+document.addEventListener("click", (event) => {
+  if (!profileMenu || profileMenu.hidden || profileMenu.contains(event.target)) {
+    return;
+  }
+
+  profileMenuButton?.setAttribute("aria-expanded", "false");
+  profileDropdown.hidden = true;
+});
+
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
 });
@@ -2745,6 +2797,415 @@ bracketSubmitButton?.addEventListener("click", () => {
   submitBracketPicks();
 });
 
+function showLoginPanel() {
+  if (!loginPanel) {
+    return;
+  }
+
+  loginPanel.hidden = false;
+  loginFeedback.textContent = "";
+  loginFeedback.classList.remove("is-error");
+  loginManagerSelect?.focus();
+}
+
+function hideLoginPanel() {
+  if (!loginPanel) {
+    return;
+  }
+
+  loginPanel.hidden = true;
+  if (loginPassphraseInput) {
+    loginPassphraseInput.value = "";
+  }
+  loginFeedback.textContent = "";
+  loginFeedback.classList.remove("is-error");
+}
+
+function hydrateManagerSession() {
+  try {
+    const rawSession = localStorage.getItem(MANAGER_SESSION_STORAGE_KEY);
+    siteData.managerSession = rawSession ? JSON.parse(rawSession) : null;
+  } catch {
+    siteData.managerSession = null;
+  }
+
+  renderLoginState();
+  renderManagerHub();
+}
+
+function saveManagerSession(session) {
+  siteData.managerSession = session;
+
+  try {
+    localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // Session persistence is helpful, but the in-memory session is enough for this visit.
+  }
+
+  renderLoginState();
+  renderManagerHub();
+}
+
+function signOutManager() {
+  siteData.managerSession = null;
+
+  try {
+    localStorage.removeItem(MANAGER_SESSION_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures; the in-memory session has already been cleared.
+  }
+
+  profileDropdown.hidden = true;
+  profileMenuButton?.setAttribute("aria-expanded", "false");
+  renderLoginState();
+  renderManagerHub();
+}
+
+function renderLoginState() {
+  const session = siteData.managerSession;
+  const manager = session ? getPortalManagerById(session.managerId) ?? session.manager : null;
+  const managerMeta = manager ? getManagerMeta(manager) : null;
+
+  if (loginOpenButton) {
+    loginOpenButton.hidden = Boolean(managerMeta);
+  }
+
+  if (profileMenu) {
+    profileMenu.hidden = !managerMeta;
+  }
+
+  if (profileName) {
+    profileName.textContent = managerMeta?.displayName || "Manager";
+  }
+
+  const avatar = profileMenu?.querySelector(".profile-avatar");
+  if (avatar) {
+    avatar.textContent = managerMeta?.displayName?.charAt(0)?.toUpperCase() || "?";
+    avatar.style.background = managerMeta?.color || "";
+  }
+
+  if (loginMessage) {
+    loginMessage.textContent = managerMeta
+      ? `Logged in as ${managerMeta.displayName}.`
+      : "Manager tools are available after login.";
+  }
+}
+
+function renderLoginManagerOptions() {
+  if (!loginManagerSelect) {
+    return;
+  }
+
+  const selected = loginManagerSelect.value;
+  const managers = getPortalManagers();
+
+  loginManagerSelect.innerHTML = [
+    `<option value="">${managers.length ? "Choose manager" : "Loading managers..."}</option>`,
+    ...managers.map((manager) => {
+      const meta = getManagerMeta(manager);
+      const selectedAttribute = String(meta.id) === String(selected) ? " selected" : "";
+      return `<option value="${escapeHtml(meta.id)}"${selectedAttribute}>${escapeHtml(meta.displayName)}</option>`;
+    }),
+  ].join("");
+}
+
+async function handleManagerLogin() {
+  const managerId = loginManagerSelect?.value || "";
+  const passphrase = loginPassphraseInput?.value || "";
+  const isSetup = Boolean(loginSetupPassphrase?.checked);
+
+  if (!managerId) {
+    setLoginFeedback("Choose a manager.", true);
+    return;
+  }
+
+  if (!passphrase.trim()) {
+    setLoginFeedback("Enter a passphrase.", true);
+    loginPassphraseInput?.focus();
+    return;
+  }
+
+  loginSubmitButton.disabled = true;
+  setLoginFeedback(isSetup ? "Saving passphrase..." : "Checking passphrase...");
+
+  try {
+    const response = await submitManagerPortalPayload({
+      action: isSetup ? "setupPassphrase" : "login",
+      managerId,
+      passphrase,
+    });
+
+    if (!response?.ok) {
+      throw new Error(response?.error || "Login was not accepted.");
+    }
+
+    const manager = getPortalManagerById(managerId) ?? response.manager ?? { id: managerId, name: response.displayName };
+    saveManagerSession({
+      manager,
+      managerId: String(managerId),
+      signedInAt: new Date().toISOString(),
+    });
+    hideLoginPanel();
+    showPage("manager-hub", { scrollToTop: true });
+    window.location.hash = "manager-hub";
+  } catch (error) {
+    setLoginFeedback(error.message, true);
+  } finally {
+    loginSubmitButton.disabled = false;
+  }
+}
+
+function setLoginFeedback(message, isError = false) {
+  if (!loginFeedback) {
+    return;
+  }
+
+  loginFeedback.textContent = message;
+  loginFeedback.classList.toggle("is-error", isError);
+}
+
+function submitManagerPortalPayload(payload) {
+  if (!MANAGER_PORTAL_ENDPOINT) {
+    return Promise.reject(new Error("Manager login endpoint is not configured yet."));
+  }
+
+  const callbackId = `manager-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const fullPayload = {
+    ...payload,
+    callbackId,
+    pageUrl: window.location.href,
+    browser: window.navigator.userAgent,
+  };
+
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener("message", handleMessage);
+      reject(new Error("No response from the login endpoint. Redeploy the Apps Script web app if the code changed."));
+    }, 12000);
+
+    function handleMessage(event) {
+      const data = event.data;
+
+      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== callbackId) {
+        return;
+      }
+
+      window.clearTimeout(timeout);
+      window.removeEventListener("message", handleMessage);
+      resolve(data);
+    }
+
+    window.addEventListener("message", handleMessage);
+    submitManagerPortalPayloadWithForm(fullPayload);
+  });
+}
+
+function submitManagerPortalPayloadWithForm(payload) {
+  const iframeName = "manager-portal-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
+  }
+
+  const form = document.createElement("form");
+  form.action = MANAGER_PORTAL_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
+function renderManagerHub() {
+  const session = siteData.managerSession;
+
+  if (!session) {
+    if (managerHubSubtitle) {
+      managerHubSubtitle.textContent = "Log in to see your open items and results.";
+    }
+
+    if (workflowCount) {
+      workflowCount.textContent = "0 open";
+    }
+
+    if (workflowList) {
+      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load workflow items.</p></article>`;
+    }
+
+    if (managerSummaryList) {
+      managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load manager results.</p></article>`;
+    }
+
+    return;
+  }
+
+  const manager = getPortalManagerById(session.managerId) ?? session.manager;
+  const managerMeta = getManagerMeta(manager);
+
+  if (managerHubSubtitle) {
+    managerHubSubtitle.textContent = `${managerMeta.displayName}'s open items and result summary.`;
+  }
+
+  renderManagerWorkflow(session.managerId);
+  renderManagerSummary(session.managerId);
+}
+
+function renderManagerWorkflow(managerId) {
+  if (!workflowList) {
+    return;
+  }
+
+  const drafts = siteData.portalDrafts || [];
+  const logs = siteData.portalLogs || [];
+
+  if (!drafts.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading workflow items...</p></article>`;
+    return;
+  }
+
+  const openItems = drafts
+    .filter((draft) => !isTruthy(draft.IsCompleted))
+    .filter((draft) => !hasManagerCompletedDraft(logs, managerId, draft.ID))
+    .sort(compareWorkflowItems);
+
+  if (workflowCount) {
+    workflowCount.textContent = `${openItems.length} open`;
+  }
+
+  if (!openItems.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">No open manager items.</p></article>`;
+    return;
+  }
+
+  workflowList.innerHTML = openItems.map((draft) => `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(draft.Name || "Untitled draft")}</h3>
+          <p>${escapeHtml([draft.Year, draft.League, draft.Type].filter(Boolean).join(" · "))}</p>
+        </div>
+        ${draft.Priority ? `<span class="workflow-priority">P${escapeHtml(draft.Priority)}</span>` : ""}
+      </header>
+      <div class="workflow-meta">
+        ${draft["Due Date"] ? `<span>Due ${escapeHtml(draft["Due Date"])}</span>` : ""}
+        ${draft.Status ? `<span>${escapeHtml(draft.Status)}</span>` : ""}
+      </div>
+      ${renderWorkflowAction(draft)}
+    </article>
+  `).join("");
+}
+
+function renderWorkflowAction(draft) {
+  const target = draft["Target Page"] || "";
+  const url = draft["Target URL"] || "";
+
+  if (target) {
+    return `<a class="action-button" href="#${escapeHtml(target)}" data-page-link="${escapeHtml(target)}">Open</a>`;
+  }
+
+  if (url) {
+    return `<a class="action-button" href="${escapeHtml(url)}">Open</a>`;
+  }
+
+  return "";
+}
+
+function renderManagerSummary(managerId) {
+  if (!managerSummaryList) {
+    return;
+  }
+
+  const source = siteData.managerResultsSource;
+
+  if (!source) {
+    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
+    return;
+  }
+
+  const managerRows = getManagerResultRows({ ...source, filter: "all" });
+  const manager = managerRows.find((row) => String(row.id) === String(managerId)) ??
+    managerRows.find((row) => normalizeLookupName(row.displayName) === normalizeLookupName(getPortalManagerById(managerId)?.["Display Name"]));
+
+  if (!manager) {
+    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No result summary found for this manager yet.</p></article>`;
+    return;
+  }
+
+  managerSummaryList.innerHTML = `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>World Cup</h3>
+          <p>${escapeHtml(formatPoints(manager.points))} total points</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="workflow-meta">
+        <span>${escapeHtml(formatPoints(getManagerDraftTypePoints(manager, "Player")))} player pts</span>
+        <span>${escapeHtml(formatPoints(getManagerDraftTypePoints(manager, "Nation")))} nation pts</span>
+      </div>
+      <a class="action-button" href="#standings" data-page-link="standings">Open Standings</a>
+    </article>
+  `;
+}
+
+function getManagerDraftTypePoints(manager, type) {
+  return (manager.drafts || [])
+    .filter((draft) => draft.type === type)
+    .reduce((sum, draft) => sum + parsePoints(draft.points), 0);
+}
+
+function getPortalManagers() {
+  return (siteData.portalManagers || [])
+    .filter((manager) => !manager.IsActive || isTruthy(manager.IsActive))
+    .map((manager) => ({
+      ...manager,
+      id: manager["Manager ID"] || manager.ID,
+      name: manager.Name,
+      displayName: manager["Display Name"] || getManagerDisplayName(manager.Name),
+      color: manager.Color ? `#${String(manager.Color).replace(/^#/, "")}` : undefined,
+    }));
+}
+
+function getPortalManagerById(managerId) {
+  return getPortalManagers().find((manager) => String(manager.id) === String(managerId)) || null;
+}
+
+function hasManagerCompletedDraft(logs, managerId, draftId) {
+  const completedStatuses = new Set(["complete", "completed", "done", "submitted"]);
+
+  return logs.some((log) => {
+    return String(log["Manager ID"]) === String(managerId) &&
+      String(log["Draft ID"]) === String(draftId) &&
+      completedStatuses.has(normalizeLookupName(log.Status));
+  });
+}
+
+function compareWorkflowItems(first, second) {
+  const priorityCompare = compareNumericLike(first.Priority || "999", second.Priority || "999");
+
+  if (priorityCompare !== 0) {
+    return priorityCompare;
+  }
+
+  return String(first.Name || "").localeCompare(String(second.Name || ""));
+}
+
+function isTruthy(value) {
+  return ["true", "yes", "y", "1"].includes(normalizeLookupName(value));
+}
+
 function renderFilteredStandings() {
   if (siteData.playerPerformances) {
     renderPlayerChampionship(siteData.playerPerformances);
@@ -2932,6 +3393,33 @@ renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
 syncThemeToggle();
 hydrateBracketSubmitter();
+hydrateManagerSession();
+
+Promise.all([
+  loadSheet("portalManagers"),
+  loadSheet("portalDrafts"),
+  loadSheet("portalLogs"),
+])
+  .then(([managers, drafts, logs]) => {
+    siteData.portalManagers = managers;
+    siteData.portalDrafts = drafts;
+    siteData.portalLogs = logs;
+    renderLoginManagerOptions();
+    renderLoginState();
+    renderManagerHub();
+    console.info("Box This Lap manager portal data loaded", { managers, drafts, logs });
+  })
+  .catch((error) => {
+    if (loginManagerSelect) {
+      loginManagerSelect.innerHTML = `<option value="">Unable to load managers</option>`;
+    }
+
+    if (workflowList) {
+      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load workflow data: ${escapeHtml(error.message)}</p></article>`;
+    }
+
+    console.error("Box This Lap manager portal data failed to load", error);
+  });
 
 loadPlayers()
   .then((players) => {
@@ -3069,6 +3557,7 @@ Promise.all([
 
     renderCurrentMatchLists();
     renderManagerResults(siteData.managerResultsSource);
+    renderManagerHub();
     console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
   })
   .catch((error) => {
@@ -5857,12 +6346,14 @@ function normalizeNationName(value) {
 
 function getManagerMeta(manager) {
   const name = manager.name || manager.Name || "";
-  const displayName = getManagerDisplayName(name);
+  const displayName = manager.displayName || manager["Display Name"] || getManagerDisplayName(name);
+  const explicitColor = manager.color || manager.Color;
+  const normalizedColor = explicitColor ? `#${String(explicitColor).replace(/^#/, "")}` : "";
 
   return {
-    color: MANAGER_COLORS[normalizeLookupName(displayName)] || "#5f6978",
+    color: normalizedColor || MANAGER_COLORS[normalizeLookupName(displayName)] || "#5f6978",
     displayName,
-    id: manager.id || manager["Manager ID"],
+    id: manager.id || manager["Manager ID"] || manager.ID,
     name,
   };
 }

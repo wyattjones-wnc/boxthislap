@@ -14,6 +14,8 @@ const FANTASY_OFFICE_2025_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSYSfJjflJkmjJBmS5zr08qfr0Ul3DdjUk4ER988JtWz5jy5P5-z7v4E4tMQzW6K06IswWas8CRl7Yn/pub";
 const FANTASY_OFFICE_2026_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrjQ6L5xMBMnuDNrN95ngeKbTePfJeGltNCIVAai7bZKdgFG_Djj68OBZvK7B9VnREA-Ux4VbeaQZ-/pub";
+const MANAGER_PORTAL_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub";
 
 export const DATA_SOURCES = {
   sheets: {
@@ -39,6 +41,9 @@ export const DATA_SOURCES = {
     fantasyOffice2025Ordering: buildFantasyOffice2025CsvUrl("929460611"),
     fantasyOffice2026Draft: buildFantasyOffice2026CsvUrl("1020743771"),
     bracketPicks: buildPublishedCsvUrl("1943594150"),
+    portalManagers: buildManagerPortalCsvUrl("0"),
+    portalDrafts: buildManagerPortalCsvUrl("1819817720"),
+    portalLogs: buildManagerPortalCsvUrl("121360226"),
   },
 };
 
@@ -246,6 +251,10 @@ function buildFantasyOffice2025CsvUrl(gid) {
 
 function buildFantasyOffice2026CsvUrl(gid) {
   return `${FANTASY_OFFICE_2026_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+}
+
+function buildManagerPortalCsvUrl(gid) {
+  return `${MANAGER_PORTAL_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
 }
 
 function stripBom(text) {

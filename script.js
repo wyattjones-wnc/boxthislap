@@ -2984,7 +2984,7 @@ function submitManagerPortalPayload(payload) {
     }, 12000);
 
     function handleMessage(event) {
-      const data = event.data;
+      const data = parsePortalMessage(event.data);
 
       if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== callbackId) {
         return;
@@ -2998,6 +2998,26 @@ function submitManagerPortalPayload(payload) {
     window.addEventListener("message", handleMessage);
     submitManagerPortalPayloadWithForm(fullPayload);
   });
+}
+
+function parsePortalMessage(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
 }
 
 function submitManagerPortalPayloadWithForm(payload) {

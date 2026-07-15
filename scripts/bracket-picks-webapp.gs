@@ -190,12 +190,36 @@ function createPortalResponse_(payload, response) {
     callbackId: payload.callbackId || "",
     ...response,
   };
+  const message = JSON.stringify(body);
   const script = `
     <!doctype html>
     <html>
       <body>
+        <pre id="response">${escapeHtml_(message)}</pre>
         <script>
-          parent.postMessage(${JSON.stringify(body)}, "*");
+          (function () {
+            var message = ${JSON.stringify(message)};
+            var parsed = JSON.parse(message);
+            function send() {
+              try {
+                parent.postMessage(parsed, "*");
+              } catch (error) {}
+              try {
+                parent.postMessage(message, "*");
+              } catch (error) {}
+              try {
+                top.postMessage(parsed, "*");
+              } catch (error) {}
+              try {
+                top.postMessage(message, "*");
+              } catch (error) {}
+            }
+            send();
+            window.addEventListener("load", send);
+            setTimeout(send, 100);
+            setTimeout(send, 500);
+            setTimeout(send, 1500);
+          })();
         </script>
       </body>
     </html>
@@ -204,4 +228,13 @@ function createPortalResponse_(payload, response) {
   return HtmlService
     .createHtmlOutput(script)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function escapeHtml_(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

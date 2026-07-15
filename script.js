@@ -98,7 +98,7 @@ const THEME_STORAGE_KEY = "boxThisLapTheme";
 const BEST_STANDING_PERFORMANCE_VALUE = "best";
 const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
-const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbzX29wZYzdCBW0pEwiJ_s22OGw-PpUJSBPQIXYxCaf9yHnFMCq9_r5z4nGfZaKk8fUF/exec";
+const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
 const BRACKET_MANUAL_PICK_VALUE = "";
 const NATION_POT_RANKS = {
   a: 1,

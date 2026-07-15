@@ -5852,7 +5852,7 @@ function getPlayerDraftMatchPoints(draft, match) {
     return hasLoggedMatchResult(match) ? 0 : null;
   }
 
-  const points = parsePoints(performance.Points);
+  const points = getPlayerPerformancePoints(performance);
   return Number.isFinite(points) ? points : null;
 }
 
@@ -5935,7 +5935,7 @@ function getPlayerMatchPoints(matchId, draftName) {
     return null;
   }
 
-  const points = parsePoints(performance.Points);
+  const points = getPlayerPerformancePoints(performance);
   return Number.isFinite(points) ? points : null;
 }
 
@@ -6199,7 +6199,7 @@ function getPlayerChampionshipRows(performances) {
 
   for (const performance of performances) {
     const playerId = performance["Player ID"] || performance.Name;
-    const points = parsePoints(performance.Points);
+    const points = getPlayerPerformancePoints(performance);
 
     if (!playerId || !Number.isFinite(points)) {
       continue;
@@ -6263,7 +6263,7 @@ function getDraftedPlayerChampionshipRows(performances) {
   for (const performance of performances) {
     const draft = getActivePlayerDraftForPerformance(performance);
     const playerId = performance["Player ID"] || performance.Name;
-    const points = parsePoints(performance.Points);
+    const points = getPlayerPerformancePoints(performance);
 
     if (!draft || !playerId || !Number.isFinite(points)) {
       continue;
@@ -7074,7 +7074,7 @@ function getDraftPlayerPoints(draft, playerPerformances = []) {
       return total;
     }
 
-    const points = parsePoints(performance.Points);
+    const points = getPlayerPerformancePoints(performance);
     return total + (Number.isFinite(points) ? points : 0);
   }, 0);
 }
@@ -7173,6 +7173,16 @@ function parsePoints(value) {
   }
 
   return Number(String(value).replace(/,/g, ""));
+}
+
+function getPlayerPerformancePoints(performance) {
+  const points = parsePoints(performance?.Points);
+
+  if (!Number.isFinite(points)) {
+    return points;
+  }
+
+  return points + (shouldUseNationTestScoring() ? 1 : 0);
 }
 
 function formatPoints(value) {

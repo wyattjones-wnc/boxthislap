@@ -14,6 +14,12 @@ const BRACKET_PICKS_HEADERS = [
   "User Agent",
 ];
 
+function doGet() {
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, service: "boxthislap-manager-portal" }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function doPost(event) {
   const payload = parseBracketPayload_(event);
 

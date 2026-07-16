@@ -3016,7 +3016,7 @@ function renderLoginState() {
   }
 
   if (copyCurrentPageLinkButton) {
-    copyCurrentPageLinkButton.hidden = !managerMeta;
+    copyCurrentPageLinkButton.hidden = !managerMeta?.isAdmin;
   }
 
   if (profileName) {

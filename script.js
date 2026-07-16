@@ -7,6 +7,7 @@ const tabPanels = document.querySelectorAll("[data-tab-panel]");
 const headerArt = document.querySelectorAll("[data-header-art]");
 const navGroups = document.querySelectorAll("[data-nav-scope]");
 const themeToggle = document.querySelector("[data-theme-toggle]");
+const copyCurrentPageLinkButton = document.querySelector("#copy-current-page-link");
 const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
 const loginOpenButton = document.querySelector("#login-open-button");
 const loginPanel = document.querySelector("#login-panel");
@@ -2569,6 +2570,10 @@ themeToggle?.addEventListener("click", () => {
   setTheme(getCurrentTheme() === "dark" ? "light" : "dark");
 });
 
+copyCurrentPageLinkButton?.addEventListener("click", () => {
+  copyCurrentPageUrl();
+});
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     showTab(tab.dataset.tab, { scrollToTop: true });
@@ -2958,6 +2963,45 @@ function signOutManager() {
   window.location.hash = "results";
 }
 
+async function copyCurrentPageUrl() {
+  if (!copyCurrentPageLinkButton) {
+    return;
+  }
+
+  const url = window.location.href;
+  const originalText = copyCurrentPageLinkButton.textContent;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      copyTextWithFallback(url);
+    }
+
+    copyCurrentPageLinkButton.textContent = "Copied";
+  } catch (error) {
+    console.warn("Unable to copy current page URL", error);
+    copyCurrentPageLinkButton.textContent = "Copy failed";
+  }
+
+  window.setTimeout(() => {
+    copyCurrentPageLinkButton.textContent = originalText || "Copy URL";
+  }, 1600);
+}
+
+function copyTextWithFallback(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  textArea.style.top = "0";
+  document.body.append(textArea);
+  textArea.select();
+  document.execCommand("copy");
+  textArea.remove();
+}
+
 function renderLoginState() {
   const session = siteData.managerSession;
   const manager = session ? getPortalManagerById(session.managerId) ?? session.manager : null;
@@ -2971,6 +3015,10 @@ function renderLoginState() {
     profileMenu.hidden = !managerMeta;
   }
 
+  if (copyCurrentPageLinkButton) {
+    copyCurrentPageLinkButton.hidden = !managerMeta;
+  }
+
   if (profileName) {
     profileName.textContent = managerMeta?.displayName || "Manager";
   }
@@ -2980,6 +3028,17 @@ function renderLoginState() {
     avatar.textContent = managerMeta?.displayName?.charAt(0)?.toUpperCase() || "?";
     avatar.style.background = managerMeta?.color || "";
     avatar.style.color = getContrastTextColor(managerMeta?.color);
+  }
+
+  if (session && managerMeta) {
+    siteData.managerSession = {
+      ...session,
+      isAdmin: managerMeta.isAdmin,
+      manager: {
+        ...manager,
+        isAdmin: managerMeta.isAdmin,
+      },
+    };
   }
 
 }
@@ -7468,17 +7527,35 @@ function getManagerMeta(manager) {
   const displayName = manager.displayName || manager["Display Name"] || getManagerDisplayName(name);
   const explicitColor = manager.color || manager.Color;
   const normalizedColor = explicitColor ? `#${String(explicitColor).replace(/^#/, "")}` : "";
+  const isAdmin = isAdminManager({ ...manager, displayName, name });
 
   return {
     color: normalizedColor || MANAGER_COLORS[normalizeLookupName(displayName)] || "#5f6978",
     displayName,
     id: manager.id || manager["Manager ID"] || manager.ID,
+    isAdmin,
     name,
   };
 }
 
 function getManagerDisplayName(name) {
   return String(name ?? "").trim().split(/\s+/)[0] || "Manager";
+}
+
+function isAdminManager(manager) {
+  const names = [
+    manager.displayName,
+    manager["Display Name"],
+    manager.name,
+    manager.Name,
+  ]
+    .filter(Boolean)
+    .flatMap((value) => {
+      const normalizedName = normalizeLookupName(value);
+      return [normalizedName, normalizedName.split(/\s+/)[0]];
+    });
+
+  return names.includes("wyatt");
 }
 
 function getContrastTextColor(color) {

@@ -2313,6 +2313,21 @@ tr:last-child td {
   border-color: var(--accent);
 }
 
+.footer-copy-link {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 8px 12px;
+}
+
+.footer-copy-link:hover {
+  border-color: var(--accent);
+}
+
 .footer-test-toggle {
   align-items: center;
   color: var(--muted);

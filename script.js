@@ -32,6 +32,7 @@ const workflowCount = document.querySelector("#workflow-count");
 const workflowList = document.querySelector("#workflow-list");
 const managerSummaryList = document.querySelector("#manager-summary-list");
 const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
+const managerAwardsList = document.querySelector("#manager-awards-list");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
@@ -122,6 +123,16 @@ const WORKFLOW_LOOKAHEAD_DAYS = 7;
 const THEME_STORAGE_KEY = "boxThisLapTheme";
 const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
 const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
+const AWARD_DEFINITIONS = [
+  {
+    abbreviation: "NL",
+    competition: "2026 World Cup",
+    id: "world-cup-2026-nations-league-winner",
+    label: "2026 World Cup Nations League Champion",
+    standings: "nations",
+    year: "2026",
+  },
+];
 const BEST_STANDING_PERFORMANCE_VALUE = "best";
 const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
@@ -2566,6 +2577,18 @@ workflowList?.addEventListener("keydown", (event) => {
   }
 });
 
+document.addEventListener("click", (event) => {
+  const awardButton = event.target.closest("[data-award-toggle]");
+
+  if (!awardButton) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  awardButton.setAttribute("aria-expanded", String(awardButton.getAttribute("aria-expanded") !== "true"));
+});
+
 themeToggle?.addEventListener("click", () => {
   setTheme(getCurrentTheme() === "dark" ? "light" : "dark");
 });
@@ -2804,6 +2827,10 @@ playerChampionshipRows?.addEventListener("keydown", (event) => {
 });
 
 nationsLeagueRows?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-award-toggle]")) {
+    return;
+  }
+
   const standingRow = event.target.closest("[data-standing-result-row]");
 
   if (!standingRow) {
@@ -2815,6 +2842,10 @@ nationsLeagueRows?.addEventListener("click", (event) => {
 
 nationsLeagueRows?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  if (event.target.closest("[data-award-toggle]")) {
     return;
   }
 
@@ -3419,6 +3450,10 @@ function renderManagerHub() {
       managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load manager results.</p></article>`;
     }
 
+    if (managerAwardsList) {
+      managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load awards.</p></article>`;
+    }
+
     return;
   }
 
@@ -3431,6 +3466,7 @@ function renderManagerHub() {
 
   renderManagerWorkflow(session.managerId);
   renderManagerSummary(session.managerId);
+  renderManagerAwards(session.managerId);
 }
 
 function renderManagerWorkflowLegacy(managerId) {
@@ -3810,6 +3846,36 @@ function renderManagerSummary(managerId) {
   managerSummaryList.innerHTML = resultCards.join("");
 }
 
+function renderManagerAwards(managerId) {
+  if (!managerAwardsList) {
+    return;
+  }
+
+  if (!siteData.matchResults || !siteData.managerDrafts) {
+    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
+    return;
+  }
+
+  const awards = getResolvedAwards().filter((award) => {
+    return String(award.manager?.id ?? "") === String(managerId);
+  });
+
+  if (!awards.length) {
+    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`;
+    return;
+  }
+
+  managerAwardsList.innerHTML = awards.map((award) => `
+    <article class="award-card">
+      ${renderAwardBadge(award, "manager")}
+      <div>
+        <h3>${escapeHtml(award.label)}</h3>
+        <p>${escapeHtml([award.entityName, award.competition].filter(Boolean).join(" - "))}</p>
+      </div>
+    </article>
+  `).join("");
+}
+
 function getManagerSummarySelectedYear() {
   const value = managerSummaryYearSelect?.value || "current";
 
@@ -3835,6 +3901,61 @@ function hasManagerHubResultData() {
     siteData.formulaOne2026Weekly?.standings?.length ||
     siteData.formulaOne2026WeeklyResults?.standings?.length
   );
+}
+
+function getResolvedAwards() {
+  return AWARD_DEFINITIONS
+    .map((definition) => resolveAward(definition))
+    .filter(Boolean);
+}
+
+function resolveAward(definition) {
+  if (definition.standings === "nations") {
+    const winner = getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
+
+    if (!winner) {
+      return null;
+    }
+
+    return {
+      ...definition,
+      entityName: winner.name,
+      manager: getNationManager(winner.name),
+      points: winner.points,
+    };
+  }
+
+  return null;
+}
+
+function getAwardsForNation(nationName) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+
+  return getResolvedAwards().filter((award) => {
+    return award.standings === "nations" &&
+      normalizeLookupName(normalizeNationName(award.entityName)) === nationKey;
+  });
+}
+
+function renderAwardBadges(awards = []) {
+  return awards.map((award) => renderAwardBadge(award)).join("");
+}
+
+function renderAwardBadge(award, context = "standings") {
+  const label = award.label || "Award";
+
+  return `
+    <button
+      class="award-badge award-badge--${escapeHtml(context)}"
+      type="button"
+      data-award-toggle
+      aria-expanded="false"
+      aria-label="${escapeHtml(label)}"
+    >
+      <span class="award-badge-mark">${escapeHtml(award.abbreviation || "AW")}</span>
+      <span class="award-badge-label">${escapeHtml(label)}</span>
+    </button>
+  `;
 }
 
 function renderWorldCupManagerSummary(managerId, source) {
@@ -6439,11 +6560,17 @@ function renderNationsLeague(results) {
   nationsLeagueRows.innerHTML = rows.map((nation, index) => {
     const manager = nation.manager || getNationManager(nation.name);
     const detailId = `nation-standing-detail-${index}`;
+    const awards = getAwardsForNation(nation.name);
 
     return `
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(nation, index, rows))}</td>
-        <td data-label="Nation">${escapeHtml(nation.name)}</td>
+        <td data-label="Nation">
+          <span class="standing-name-with-awards">
+            <span>${escapeHtml(nation.name)}</span>
+            ${renderAwardBadges(awards)}
+          </span>
+        </td>
         <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager)}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>

@@ -499,7 +499,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .workflow-list,
-.manager-summary-list {
+.manager-summary-list,
+.manager-awards-list {
   display: grid;
   gap: 10px;
 }
@@ -604,6 +605,81 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 900;
+}
+
+.award-card {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 12px;
+}
+
+.award-card h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.award-card p {
+  color: var(--muted);
+  font-weight: 800;
+  margin: 3px 0 0;
+}
+
+.standing-name-with-awards {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.award-badge {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--line));
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 7px 3px 3px;
+  vertical-align: middle;
+}
+
+.award-badge-mark {
+  align-items: center;
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #f6d365, #c78719);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  color: #111827;
+  display: inline-flex;
+  font-size: 0.62rem;
+  justify-content: center;
+  min-width: 24px;
+}
+
+.award-badge-label {
+  display: none;
+  white-space: normal;
+}
+
+.award-badge[aria-expanded="true"] .award-badge-label,
+.award-badge--manager .award-badge-label {
+  display: inline;
+}
+
+.award-badge--manager {
+  border-radius: 10px;
+  justify-self: start;
+  padding: 5px 9px 5px 5px;
 }
 
 main {

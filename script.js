@@ -128,6 +128,7 @@ const AWARD_DEFINITIONS = [
     abbreviation: "NL",
     competition: "2026 World Cup",
     id: "world-cup-2026-nations-league-winner",
+    image: "assets/awards/world-cup-2026-nations-league.jpg",
     label: "2026 World Cup Nations League Champion",
     standings: "nations",
     year: "2026",
@@ -3943,6 +3944,9 @@ function renderAwardBadges(awards = []) {
 
 function renderAwardBadge(award, context = "standings") {
   const label = award.label || "Award";
+  const mark = award.image
+    ? `<img src="${escapeHtml(award.image)}" alt="">`
+    : escapeHtml(award.abbreviation || "AW");
 
   return `
     <button
@@ -3952,7 +3956,7 @@ function renderAwardBadge(award, context = "standings") {
       aria-expanded="false"
       aria-label="${escapeHtml(label)}"
     >
-      <span class="award-badge-mark">${escapeHtml(award.abbreviation || "AW")}</span>
+      <span class="award-badge-mark">${mark}</span>
       <span class="award-badge-label">${escapeHtml(label)}</span>
     </button>
   `;

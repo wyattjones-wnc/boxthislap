@@ -664,6 +664,15 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 0.62rem;
   justify-content: center;
   min-width: 24px;
+  overflow: hidden;
+  width: 24px;
+}
+
+.award-badge-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .award-badge-label {
@@ -680,6 +689,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 10px;
   justify-self: start;
   padding: 5px 9px 5px 5px;
+}
+
+.award-badge--manager .award-badge-mark {
+  min-width: 42px;
+  width: 42px;
 }
 
 main {

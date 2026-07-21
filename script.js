@@ -3930,28 +3930,7 @@ function getResolvedAwards() {
 }
 
 function resolveAward(definition) {
-  const completedAward = resolveCompletedDraftAward(definition);
-
-  if (completedAward) {
-    return completedAward;
-  }
-
-  if (definition.standings === "nations") {
-    const winner = getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
-
-    if (!winner) {
-      return null;
-    }
-
-    return {
-      ...definition,
-      entityName: winner.name,
-      manager: getNationManager(winner.name),
-      points: winner.points,
-    };
-  }
-
-  return null;
+  return resolveCompletedDraftAward(definition);
 }
 
 function resolveCompletedDraftAward(definition) {
@@ -3967,15 +3946,11 @@ function resolveCompletedDraftAward(definition) {
     return null;
   }
 
-  const fallbackWinner = definition.standings === "nations"
-    ? getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1)
-    : null;
-
   return {
     ...definition,
-    entityName: getField(draft, "Winner", "Winner Name", "Winning Entity", "Winning Nation") || fallbackWinner?.name || "",
+    entityName: getField(draft, "Winner", "Winner Name", "Winning Entity", "Winning Nation") || "",
     manager,
-    points: fallbackWinner?.points ?? null,
+    points: null,
   };
 }
 

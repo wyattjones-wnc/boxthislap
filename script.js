@@ -4143,8 +4143,8 @@ function renderWorldCupManagerSummary(managerId, source) {
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks">
-        ${renderManagerSummaryRank("Players", managerSummary.players)}
-        ${renderManagerSummaryRank("Nations", managerSummary.nations)}
+        ${renderManagerSummaryRank("Players", managerSummary.players, formatPoints, { standings: "players" })}
+        ${renderManagerSummaryRank("Nations", managerSummary.nations, formatPoints, { standings: "nations" })}
       </div>
       <a class="action-button" href="#standings" data-page-link="standings">Open Standings</a>
     </article>
@@ -4267,17 +4267,23 @@ function getManagerSummaryRanks(managerId, source) {
   };
 }
 
-function renderManagerSummaryRank(label, row, pointFormatter = formatPoints) {
+function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, options = {}) {
   if (!row) {
     return "";
   }
 
   const points = pointFormatter(row.points);
+  const awards = row.rank === 1 && options.standings
+    ? getAwardsForManager(row, { standings: options.standings })
+    : [];
 
   return `
     <span class="manager-summary-rank">
       <small>${escapeHtml(label)}</small>
-      <strong>#${escapeHtml(row.rank)}</strong>
+      <span class="manager-summary-rank-line">
+        <strong>#${escapeHtml(row.rank)}</strong>
+        ${renderAwardBadges(awards)}
+      </span>
       <em>${escapeHtml(points)} pts</em>
     </span>
   `;
@@ -7102,7 +7108,8 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
 
   managerResultsRows.innerHTML = rows.map((manager, index) => {
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
-    const awards = getAwardsForManager(manager);
+    const awardFilter = filter === "all" ? "" : filter;
+    const awards = getAwardsForManager(manager, { standings: awardFilter });
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">

@@ -617,6 +617,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   line-height: 1.1;
 }
 
+.manager-summary-rank-line {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .manager-summary-rank em {
   color: var(--accent-dark);
   font-size: 0.78rem;

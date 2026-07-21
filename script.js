@@ -1,84 +1,100 @@
 import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607140001";
+import {
+  WORKFLOW_LOOKAHEAD_DAYS,
+  THEME_STORAGE_KEY,
+  MANAGER_SESSION_STORAGE_KEY,
+  MANAGER_PORTAL_ENDPOINT,
+  AWARD_DEFINITIONS,
+  BEST_STANDING_PERFORMANCE_VALUE,
+  BRACKET_STORAGE_KEY,
+  BRACKET_SUBMITTER_STORAGE_KEY,
+  BRACKET_SUBMISSION_ENDPOINT,
+  BRACKET_MANUAL_PICK_VALUE,
+  NATION_POT_RANKS,
+  TEST_KNOCKOUT_POT_BONUSES,
+  BRACKET_ROUNDS,
+  BRACKET_SLOT_REFERENCES,
+  MANAGER_COLORS,
+  FANTASY_LEAGUES_BY_YEAR,
+  FANTASY_CRITIC_LEAGUE_ID,
+  FANTASY_CRITIC_PROXY_URL,
+  FANTASY_CRITIC_LEAGUE_METADATA,
+  FANTASY_CRITIC_PUBLISHER_MANAGERS,
+} from "./modules/siteConfig.js?v=202607210002";
 
-const pageLinks = document.querySelectorAll("[data-page-link]");
-const pages = document.querySelectorAll("[data-page]");
-const tabs = document.querySelectorAll("[data-tab]");
-const tabPanels = document.querySelectorAll("[data-tab-panel]");
-const headerArt = document.querySelectorAll("[data-header-art]");
-const navGroups = document.querySelectorAll("[data-nav-scope]");
-const themeToggle = document.querySelector("[data-theme-toggle]");
-const copyCurrentPageLinkButton = document.querySelector("#copy-current-page-link");
-const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
-const loginOpenButton = document.querySelector("#login-open-button");
-const loginPanel = document.querySelector("#login-panel");
-const loginManagerSelect = document.querySelector("#login-manager-select");
-const loginPassphraseGroup = document.querySelector("#login-passphrase-group");
-const loginPassphraseInput = document.querySelector("#login-passphrase");
-const loginRecoveryPanel = document.querySelector("#login-recovery-panel");
-const loginRecoveryQuestion = document.querySelector("#login-recovery-question");
-const loginRecoveryAnswerInput = document.querySelector("#login-recovery-answer");
-const loginNewPassphrasePanel = document.querySelector("#login-new-passphrase-panel");
-const loginNewPassphraseInput = document.querySelector("#login-new-passphrase");
-const loginConfirmPassphraseInput = document.querySelector("#login-confirm-passphrase");
-const loginSubmitButton = document.querySelector("#login-submit-button");
-const loginFeedback = document.querySelector("#login-feedback");
-const profileMenu = document.querySelector("#profile-menu");
-const profileMenuButton = document.querySelector("#profile-menu-button");
-const profileDropdown = document.querySelector("#profile-dropdown");
-const profileName = document.querySelector("#profile-name");
-const logoutButton = document.querySelector("#logout-button");
-const managerHubSubtitle = document.querySelector("#manager-hub-subtitle");
-const workflowCount = document.querySelector("#workflow-count");
-const workflowList = document.querySelector("#workflow-list");
-const managerSummaryList = document.querySelector("#manager-summary-list");
-const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
-const managerAwardsList = document.querySelector("#manager-awards-list");
-const standingsAwards = document.querySelector("#standings-awards");
-const standingsAwardsList = document.querySelector("#standings-awards-list");
-const leagueYearSelect = document.querySelector("#league-year-select");
-const leagueList = document.querySelector("#league-list");
-const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
-const fantasyCritic2026Content = document.querySelector("#fantasy-critic-2026-content");
-const formulaOneViews = {
-  2024: {
-    questionSelect: document.querySelector("#formula-one-question-select"),
-    questionFilter: document.querySelector("#formula-one-question-filter"),
-    questionList: document.querySelector("#formula-one-question-list"),
-    resultsRows: document.querySelector("#formula-one-results-rows"),
-  },
-  2025: {
-    questionSelect: document.querySelector("#formula-one-2025-question-select"),
-    questionFilter: document.querySelector("#formula-one-2025-question-filter"),
-    questionList: document.querySelector("#formula-one-2025-question-list"),
-    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2025\"]"),
-    resultsRows: document.querySelector("#formula-one-2025-results-rows"),
-    weeklyList: document.querySelector("#formula-one-2025-weekly-list"),
-    weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
-  },
-  2026: {
-    questionSelect: document.querySelector("#formula-one-2026-question-select"),
-    questionFilter: document.querySelector("#formula-one-2026-question-filter"),
-    questionList: document.querySelector("#formula-one-2026-question-list"),
-    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
-    resultsRows: document.querySelector("#formula-one-2026-results-rows"),
-    weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
-    weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
-    weeklyManagers: document.querySelector("#formula-one-2026-weekly-managers"),
-    weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
-  },
-};
-const fantasyOfficeViews = {
-  2025: {
-    draftList: document.querySelector("#fantasy-office-2025-draft-list"),
-    movieList: document.querySelector("#fantasy-office-2025-movie-list"),
-    resultList: document.querySelector("#fantasy-office-2025-result-list"),
-  },
-  2026: {
-    draftList: document.querySelector("#fantasy-office-2026-draft-list"),
-    movieList: document.querySelector("#fantasy-office-2026-movie-list"),
-    resultList: document.querySelector("#fantasy-office-2026-result-list"),
-  },
-};
+import {
+  pageLinks,
+  pages,
+  tabs,
+  tabPanels,
+  headerArt,
+  navGroups,
+  themeToggle,
+  copyCurrentPageLinkButton,
+  testRulesLinks,
+  loginOpenButton,
+  loginPanel,
+  loginManagerSelect,
+  loginPassphraseGroup,
+  loginPassphraseInput,
+  loginRecoveryPanel,
+  loginRecoveryQuestion,
+  loginRecoveryAnswerInput,
+  loginNewPassphrasePanel,
+  loginNewPassphraseInput,
+  loginConfirmPassphraseInput,
+  loginSubmitButton,
+  loginFeedback,
+  profileMenu,
+  profileMenuButton,
+  profileDropdown,
+  profileName,
+  logoutButton,
+  managerHubSubtitle,
+  workflowCount,
+  workflowList,
+  managerSummaryList,
+  managerSummaryYearSelect,
+  managerAwardsList,
+  standingsAwards,
+  standingsAwardsList,
+  leagueYearSelect,
+  leagueList,
+  fantasyCritic2025Content,
+  fantasyCritic2026Content,
+  formulaOneViews,
+  fantasyOfficeViews,
+  resultsPage,
+  updatedTime,
+  dynamicResultImages,
+  todayMatchList,
+  tomorrowMatchList,
+  matchdaySelect,
+  matchdayMatchList,
+  bracketView,
+  bracketClearPicks,
+  bracketSubmissionSelect,
+  bracketSubmitterInput,
+  bracketSubmitButton,
+  bracketSubmitStatus,
+  draftViewButtons,
+  draftPanels,
+  draftNationsList,
+  draftPlayersList,
+  draftPlayerPositionFilter,
+  playerChampionshipRows,
+  playerPositionFilter,
+  nationsLeagueRows,
+  managerResultsRows,
+  managerResultsFilter,
+  standingsAllDataToggle,
+  standingsRoundSelect,
+  nationTestScoringToggle,
+  rulesNationSelect,
+  rulesNationBreakdown,
+  testingPlayerRows,
+} from "./modules/domRefs.js?v=202607210002";
+
 const fantasyOfficeMovieSort = {
   direction: "desc",
   key: "points",
@@ -88,379 +104,9 @@ const formulaOneResultsMode = {
   2026: "yearly",
 };
 let bracketPicksFallback = {};
-const resultsPage = document.querySelector("#results");
-const updatedTime = document.querySelector("[data-updated-time]");
-const dynamicResultImages = document.querySelector("#dynamic-result-images");
-const todayMatchList = document.querySelector("#today-match-list");
-const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
-const matchdaySelect = document.querySelector("#matchday-select");
-const matchdayMatchList = document.querySelector("#matchday-match-list");
-const bracketView = document.querySelector("#bracket-view");
-const bracketClearPicks = document.querySelector("#bracket-clear-picks");
-const bracketSubmissionSelect = document.querySelector("#bracket-submission-select");
-const bracketSubmitterInput = document.querySelector("#bracket-submitter");
-const bracketSubmitButton = document.querySelector("#bracket-submit-picks");
-const bracketSubmitStatus = document.querySelector("#bracket-submit-status");
-const draftViewButtons = document.querySelectorAll("[data-draft-view]");
-const draftPanels = document.querySelectorAll("[data-draft-panel]");
-const draftNationsList = document.querySelector("#draft-nations-list");
-const draftPlayersList = document.querySelector("#draft-players-list");
-const draftPlayerPositionFilter = document.querySelector("#draft-player-position-filter");
-const playerChampionshipRows = document.querySelector("#player-championship-rows");
-const playerPositionFilter = document.querySelector("#player-position-filter");
-const nationsLeagueRows = document.querySelector("#nations-league-rows");
-const managerResultsRows = document.querySelector("#manager-results-rows");
-const managerResultsFilter = document.querySelector("#manager-results-filter");
-const standingsAllDataToggle = document.querySelector("#standings-all-data-toggle");
-const standingsRoundSelect = document.querySelector("#standings-round-select");
-const nationTestScoringToggle = document.querySelector("#nation-test-scoring-toggle");
-const rulesNationSelect = document.querySelector("#rules-nation-select");
-const rulesNationBreakdown = document.querySelector("#rules-nation-breakdown");
-const testingPlayerRows = document.querySelector("#testing-player-rows");
-
 const siteData = {};
 window.boxThisLapData = siteData;
 
-const WORKFLOW_LOOKAHEAD_DAYS = 7;
-const THEME_STORAGE_KEY = "boxThisLapTheme";
-const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
-const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
-const AWARD_DEFINITIONS = [
-  {
-    abbreviation: "PC",
-    competition: "2026 World Cup",
-    draftName: "2026 World Cup Players' Championship",
-    id: "world-cup-2026-players-championship-winner",
-    image: "assets/awards/world-cup-2026-players-championship.png",
-    label: "2026 World Cup Players' Championship",
-    standings: "players",
-    year: "2026",
-  },
-  {
-    abbreviation: "NL",
-    competition: "2026 World Cup",
-    draftName: "2026 World Cup Nation's League",
-    id: "world-cup-2026-nations-league-winner",
-    image: "assets/awards/world-cup-2026-nations-league.png",
-    label: "2026 World Cup Nations League Champion",
-    standings: "nations",
-    year: "2026",
-  },
-];
-const BEST_STANDING_PERFORMANCE_VALUE = "best";
-const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
-const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
-const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
-const BRACKET_MANUAL_PICK_VALUE = "";
-const NATION_POT_RANKS = {
-  a: 1,
-  b: 2,
-  c: 3,
-  d: 4,
-  e: 5,
-  g: 6,
-};
-const TEST_KNOCKOUT_POT_BONUSES = {
-  b: 2,
-  c: 4,
-  d: 6,
-  e: 8,
-  g: 10,
-};
-const BRACKET_ROUNDS = [
-  { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
-  { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
-  { id: "6", label: "Round 6", matchIds: [97, 98, 99, 100] },
-  { id: "7", label: "Round 7", matchIds: [101, 102] },
-  { id: "8", label: "Round 8", matchIds: [103] },
-  { id: "9", label: "Round 9", matchIds: [104] },
-];
-const BRACKET_SLOT_REFERENCES = {
-  89: { home: "Winner M73", away: "Winner M76" },
-  90: { home: "Winner M75", away: "Winner M78" },
-  91: { home: "Winner M74", away: "Winner M77" },
-  92: { home: "Winner M79", away: "Winner M80" },
-  93: { home: "Winner M83", away: "Winner M84" },
-  94: { home: "Winner M81", away: "Winner M82" },
-  95: { home: "Winner M86", away: "Winner M87" },
-  96: { home: "Winner M85", away: "Winner M88" },
-  97: { home: "Winner M89", away: "Winner M90" },
-  98: { home: "Winner M93", away: "Winner M94" },
-  99: { home: "Winner M91", away: "Winner M92" },
-  100: { home: "Winner M95", away: "Winner M96" },
-  101: { home: "Winner M97", away: "Winner M98" },
-  102: { home: "Winner M99", away: "Winner M100" },
-  103: { home: "Loser M101", away: "Loser M102" },
-  104: { home: "Winner M101", away: "Winner M102" },
-};
-
-const MANAGER_COLORS = {
-  jonathan: "#000000",
-  jordan: "#b7a7dc",
-  luisa: "#df000b",
-  michael: "#123f7a",
-  sean: "#f783bd",
-  wyatt: "#96df7d",
-};
-
-const FANTASY_LEAGUES_BY_YEAR = {
-  2024: ["Formula 1"],
-  2025: ["Fantasy Critic", "Fantasy Office", "Formula 1"],
-  2026: ["Fantasy Critic", "Fantasy Office", "Formula 1", "World Cup"],
-};
-
-const FANTASY_CRITIC_2025 = {
-  title: "Fantasy Critic",
-  subtitle: "Best of the Rest",
-  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2025",
-  standings: [
-    {
-      rank: 1,
-      manager: "Wyatt",
-      publisher: "JonesSoft",
-      points: "169.79",
-      released: "12",
-      budget: "$0",
-      roster: [
-        ["Ghost of Yotei", "87", "17"],
-        ["Split Fiction", "91", "21"],
-        ["Sid Meier's Civilization VII", "79", "9"],
-        ["Death Stranding 2: On the Beach", "90", "20"],
-        ["Unannounced Mainline 3D Mario Platformer", "--", "0"],
-        ["Avowed", "80", "10"],
-        ["The Outer Worlds 2", "83", "13"],
-        ["Rift of the NecroDancer", "80", "10"],
-        ["Mario Kart World", "87", "17"],
-        ["Clair Obscur: Expedition 33", "92", "24"],
-        ["South of Midnight", "77", "7"],
-        ["Ninja Gaiden 4", "82", "12"],
-        ["Tails of Iron 2: Whiskers of Winter", "80", "10"],
-        ["CPK Coffee Talk Tokyo", "--", "0"],
-        ["CPK Arknights: Endfield", "--", "0"],
-      ],
-    },
-    {
-      rank: 2,
-      manager: "Sean",
-      publisher: "MicroHard Studios",
-      points: "155.86",
-      released: "12",
-      budget: "$11",
-      roster: [
-        ["Like a Dragon: Pirate Yakuza in Hawaii", "81", "11"],
-        ["Mafia: The Old Country", "74", "4"],
-        ["Assassin's Creed Shadows", "81", "11"],
-        ["Metroid Prime 4: Beyond", "81", "11"],
-        ["Pokemon Legends: Z-A", "79", "9"],
-        ["Wanderstop", "81", "11"],
-        ["Xenoblade Chronicles X: Definitive Edition", "87", "17"],
-        ["Ninja Gaiden: Ragebound", "86", "16"],
-        ["Tony Hawk's Pro Skater 3 + 4", "83", "13"],
-        ["Deltarune", "89", "19"],
-        ["Donkey Kong Bananza", "91", "23"],
-        ["The Elder Scrolls IV: Oblivion: Remastered", "82", "12"],
-        ["Mina the Hollower", "--", "0"],
-        ["CPK Subnautica 2", "--", "0"],
-        ["CPK Garfield Kart 2 - All You Can Drift", "--", "--"],
-      ],
-    },
-    {
-      rank: 3,
-      manager: "Michael",
-      publisher: "Amazon Web Services powered by Gemini powered by OpenAI",
-      points: "94.92",
-      released: "9",
-      budget: "$9",
-      roster: [
-        ["Monster Hunter Wilds", "89", "19"],
-        ["Doom: The Dark Ages", "86", "16"],
-        ["Kingdom Come: Deliverance II", "89", "19"],
-        ["Borderlands 4", "82", "12"],
-        ["Metal Gear Solid Delta: Snake Eater", "85", "15"],
-        ["Little Nightmares III", "71", "1"],
-        ["Subnautica 2", "--", "0"],
-        ["Wreckfest 2", "--", "0"],
-        ["Atomfall", "75", "5"],
-        ["Hollow Knight: Silksong", "91", "22"],
-        ["Garfield Kart 2 - All You Can Drift", "--", "--"],
-        ["CPK Unannounced Mainline 3D Mario Platformer", "--", "0"],
-        ["CPK", "--", "-15"],
-      ],
-    },
-    {
-      rank: 4,
-      manager: "Jonathan",
-      publisher: "Hispan!c Games",
-      points: "-7.53",
-      released: "3",
-      budget: "$100",
-      roster: [
-        ["Elden Ring Nightreign", "80", "10"],
-        ["Mewgenics", "--", "0"],
-        ["Coffee Talk Tokyo", "--", "0"],
-        ["The Bazaar", "--", "--"],
-        ["Slay the Spire 2", "--", "0"],
-        ["Citizen Sleeper 2: Starward Vector", "87", "17"],
-        ["Arknights: Endfield", "--", "0"],
-        ["CPK Death Stranding 2: On the Beach", "90", "-20"],
-        ["CPK", "--", "-15"],
-      ],
-    },
-  ],
-};
-
-const FANTASY_CRITIC_2026 = {
-  title: "Fantasy Critic",
-  subtitle: "Best of the Rest",
-  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2026",
-  standings: [
-    {
-      rank: 1,
-      manager: "Sean",
-      publisher: "Microhard Artisanal Studios",
-      points: "96.61",
-      projected: "160.98",
-      released: "7",
-      expecting: "4",
-      budget: "$79",
-      roster: [
-        ["Grand Theft Auto VI", "", ""],
-        ["007 First Light", "88", "18"],
-        ["LEGO Batman: Legacy of the Dark Knight", "84", "14"],
-        ["Fire Emblem: Fortune's Weave", "", ""],
-        ["Dragon Quest VII Reimagined", "83", "13"],
-        ["Phantom Blade Zero", "", ""],
-        ["REANIMAL", "80", "10"],
-        ["Silent Hill: Townfall", "", ""],
-        ["Vampire Crawlers", "84", "14"],
-        ["Yoshi and the Mysterious Book", "80", "10"],
-        ["Mixtape", "87", "17"],
-        ["CPK Fable", "--", "0"],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-    {
-      rank: 2,
-      manager: "Wyatt",
-      publisher: "Jones Public Investment Fund",
-      points: "88.77",
-      projected: "165.31",
-      released: "5",
-      expecting: "6",
-      budget: "$48",
-      roster: [
-        ["Resident Evil Requiem", "89", "19"],
-        ["Saros", "87", "17"],
-        ["Control Resonant", "", ""],
-        ["Pragmata", "86", "16"],
-        ["Crimson Desert", "79", "9"],
-        ["Marvel Tokon: Fighting Souls", "", ""],
-        ["Trails in the Sky 2nd Chapter", "", ""],
-        ["Fable", "--", "0"],
-        ["Mina the Hollower", "91", "23"],
-        ["Beast of Reincarnation", "", ""],
-        ["Denshattack!", "", ""],
-        ["Kena: Scars of Kosmora", "", ""],
-        ["CPK Pokemon Champions", "65", "5"],
-        ["CPK Tomb Raider: Legacy of Atlantis", "--", "0"],
-      ],
-    },
-    {
-      rank: 3,
-      manager: "Jordan",
-      publisher: "Pepper Publishing",
-      points: "78.8",
-      projected: "120.99",
-      released: "5",
-      expecting: "3",
-      budget: "$100",
-      roster: [
-        ["Pokemon Pokopia", "89", "19"],
-        ["Nioh 3", "85", "15"],
-        ["Monster Hunter Stories 3: Twisted Reflection", "85", "15"],
-        ["The Duskbloods", "", ""],
-        ["Slay the Spire 2", "", ""],
-        ["Gears of War: E-Day", "", ""],
-        ["Mio: Memories in Orbit", "83", "13"],
-        ["Cairn", "86", "16"],
-        ["CPK Star Wars: Galactic Racer", "", ""],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-    {
-      rank: 4,
-      manager: "Jonathan",
-      publisher: "Emo Girl! Emergencies",
-      points: "65.31",
-      projected: "75.58",
-      released: "8",
-      expecting: "0",
-      budget: "$100",
-      roster: [
-        ["Mewgenics", "89", "19"],
-        ["Yakuza Kiwami 3 & Dark Ties", "74", "4"],
-        ["High on Life 2", "73", "3"],
-        ["Code Vein II", "73", "3"],
-        ["Fatal Frame II: Crimson Butterfly Remake", "76", "6"],
-        ["Coffee Talk Tokyo", "82", "12"],
-        ["Mouse: P.I. For Hire", "81", "11"],
-        ["Tomodachi Life: Living the Dream", "79", "9"],
-        ["CPK Marvel Tokon: Fighting Souls", "", ""],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-    {
-      rank: 5,
-      manager: "Michael",
-      publisher: "Totalsoftware de Venezuela",
-      points: "16.9",
-      projected: "81",
-      released: "2",
-      expecting: "5",
-      budget: "$100",
-      roster: [
-        ["Forza Horizon 6", "91", "22"],
-        ["Star Wars: Galactic Racer", "", ""],
-        ["Marvel's Wolverine", "", ""],
-        ["Tomb Raider: Legacy of Atlantis", "--", "0"],
-        ["Halo: Campaign Evolved", "", ""],
-        ["Pokemon Champions", "65", "-5"],
-        ["Ace Combat 8: Wings of Theve", "", ""],
-        ["Unannounced Mainline 3D Mario Platformer", "", ""],
-        ["CPK Grand Theft Auto VI", "", ""],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-  ],
-};
-
-const FANTASY_CRITIC_LEAGUE_ID = "f29fddba-fa80-40bf-aa71-d062e6e80635";
-const FANTASY_CRITIC_PROXY_URL = "https://script.google.com/macros/s/AKfycbwEs1gaKGBOc6D21nm761YZsmEXh51b86J_XUUg_J_7YUUSaZt5JRzUWEjV2WzvJD6GHA/exec";
-const FANTASY_CRITIC_LEAGUE_METADATA = {
-  2025: {
-    sourceUrl: FANTASY_CRITIC_2025.sourceUrl,
-    subtitle: FANTASY_CRITIC_2025.subtitle,
-    title: FANTASY_CRITIC_2025.title,
-  },
-  2026: {
-    sourceUrl: FANTASY_CRITIC_2026.sourceUrl,
-    subtitle: FANTASY_CRITIC_2026.subtitle,
-    title: FANTASY_CRITIC_2026.title,
-  },
-};
-const FANTASY_CRITIC_PUBLISHER_MANAGERS = {
-  "amazon web services powered by gemini": "Michael",
-  "amazon web services powered by gemini powered by openai": "Michael",
-  "emo girl! emergencies": "Jonathan",
-  "hispan!c games": "Jonathan",
-  "jones public investment fund": "Wyatt",
-  "jonessoft": "Wyatt",
-  "microhaed studios": "Sean",
-  "microhard artisanal studios": "Sean",
-  "microhard studios": "Sean",
-  "pepper publishing": "Jordan",
-  "totalsoftware de venezuela": "Michael",
-};
 
 siteData.fantasyCritic = {
   2025: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2025], status: "loading" },

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-21T19:53:55.874Z",
+  "generatedAt": "2026-07-21T20:09:19.979Z",
   "source": "TheSportsDB",
   "coverage": {
     "mode": "league-season-free",
@@ -27,8 +27,10 @@
       "Barcelona: Merged 1 direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.",
       "Barcelona: Using free v1 API key; TheSportsDB documents lower schedule limits for free calls.",
       "Wrexham: Loaded 0 matching events from English League Championship 2026-2027.",
+      "Wrexham: Loaded 0 matching events from English League Championship 2026.",
       "Wrexham: Loaded 0 matching events from FA Cup 2026-2027.",
       "Wrexham: Loaded 0 matching events from FA Cup 2026.",
+      "Wrexham: Loaded 0 matching events from English Premier League Summer Series 2026-2027.",
       "Wrexham: Loaded 2 matching events from English Premier League Summer Series 2026.",
       "Wrexham: Merged 1 direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.",
       "Wrexham: Using free v1 API key; TheSportsDB documents lower schedule limits for free calls."
@@ -233,8 +235,5 @@
       "venue": "Emirates Stadium"
     }
   ],
-  "errors": [
-    "Wrexham: Unable to load English League Championship 2026: Failed to load JSON from https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4329&s=2026: 429",
-    "Wrexham: Unable to load English Premier League Summer Series 2026-2027: Failed to load JSON from https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=5647&s=2026-2027: 429"
-  ]
+  "errors": []
 }

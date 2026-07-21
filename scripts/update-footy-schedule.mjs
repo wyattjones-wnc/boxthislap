@@ -13,13 +13,15 @@ const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 2200;
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
 const SHOULD_USE_API_CACHE = !isFalseValue(process.env.FOOTY_API_CACHE || "true");
+const SHOULD_USE_CONFIGURED_SEASONS = isTrueValue(process.env.FOOTY_USE_CONFIGURED_SEASONS);
 const leagueSeasonCache = new Map();
 let lastExternalRequestAt = 0;
 
 async function main() {
   const generatedAt = new Date().toISOString();
-  const teamRows = await loadCsv(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
-  const activeTeams = teamRows
+  const footballData = await loadFootballData(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
+  const leagueRowsByTeamId = groupRowsByField(footballData.leagueRows, "Team ID", "TeamID");
+  const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
   const teams = [];
@@ -28,7 +30,7 @@ async function main() {
   const coverageNotes = [];
 
   for (const team of activeTeams) {
-    const teamRecord = await resolveTeam(team);
+    const teamRecord = await resolveTeam(team, leagueRowsByTeamId.get(getField(team, "ID")) || []);
     teams.push(teamRecord);
 
     if (!teamRecord.providerTeamId) {
@@ -66,7 +68,7 @@ async function main() {
   console.log(`Wrote ${fixtures.length} fixtures for ${teams.length} teams to ${OUTPUT_PATH}`);
 }
 
-async function resolveTeam(team) {
+async function resolveTeam(team, configuredLeagueRows = []) {
   const name = getField(team, "Name", "Team").trim();
   const league = getField(team, "League").trim();
   const explicitId = getField(
@@ -113,7 +115,7 @@ async function resolveTeam(team) {
     badge: providerTeam?.strBadge || "",
     id: getField(team, "ID"),
     league,
-    providerLeagues: getTeamProviderLeagues(team, providerTeam),
+    providerLeagues: getTeamProviderLeagues(team, configuredLeagueRows, providerTeam),
     name,
     priority: getField(team, "Priority"),
     provider: PROVIDER_NAME,
@@ -241,6 +243,28 @@ async function loadCsv(url) {
   return parseCsv(await loadText(url, { extension: "csv" }));
 }
 
+async function loadFootballData(url) {
+  const rows = parseCsvRows(stripBom(await loadText(url, { extension: "csv" })));
+  const sections = splitCsvSections(rows);
+  const teamRows = [];
+  const leagueRows = [];
+
+  for (const section of sections) {
+    const records = recordsFromCsvSection(section);
+
+    if (isTeamsSection(section.headers)) {
+      teamRows.push(...records);
+      continue;
+    }
+
+    if (isLeaguesSection(section.headers)) {
+      leagueRows.push(...records);
+    }
+  }
+
+  return { leagueRows, teamRows };
+}
+
 async function loadJson(url, headers = {}) {
   const text = await loadText(url, { extension: "json", headers });
 
@@ -333,14 +357,69 @@ function parseCsv(text) {
     return [];
   }
 
-  const headers = rows[0].map((header) => header.trim());
+  return recordsFromCsvSection({ headers: rows[0], rows: rows.slice(1) });
+}
 
-  return rows.slice(1).filter((row) => row.some((value) => value.trim())).map((row) => {
+function splitCsvSections(rows) {
+  const sections = [];
+  let headers = null;
+  let sectionRows = [];
+
+  for (const row of rows) {
+    if (isBlankCsvRow(row)) {
+      if (headers) {
+        sections.push({ headers, rows: sectionRows });
+        headers = null;
+        sectionRows = [];
+      }
+
+      continue;
+    }
+
+    if (!headers) {
+      headers = row;
+      sectionRows = [];
+      continue;
+    }
+
+    sectionRows.push(row);
+  }
+
+  if (headers) {
+    sections.push({ headers, rows: sectionRows });
+  }
+
+  return sections;
+}
+
+function recordsFromCsvSection(section) {
+  const headers = section.headers.map((header) => header.trim());
+
+  return section.rows.filter((row) => row.some((value) => value.trim())).map((row) => {
     return headers.reduce((record, header, index) => {
       record[header || `Column ${index + 1}`] = row[index] ?? "";
       return record;
     }, {});
   });
+}
+
+function isBlankCsvRow(row) {
+  return row.every((value) => !value.trim());
+}
+
+function isTeamsSection(headers) {
+  const normalizedHeaders = headers.map(normalizeText);
+
+  return normalizedHeaders.includes("priority") &&
+    normalizedHeaders.includes("provider team id") &&
+    !normalizedHeaders.includes("team id");
+}
+
+function isLeaguesSection(headers) {
+  const normalizedHeaders = headers.map(normalizeText);
+
+  return normalizedHeaders.includes("team id") &&
+    normalizedHeaders.includes("provider team id");
 }
 
 function parseCsvRows(text) {
@@ -407,7 +486,28 @@ function getField(row, ...names) {
   return "";
 }
 
-function getTeamProviderLeagues(team, providerTeam) {
+function getTeamProviderLeagues(team, configuredLeagueRows, providerTeam) {
+  const configuredLeagueTableIds = configuredLeagueRows.map((league) => {
+    const id = getField(
+      league,
+      "Provider League ID",
+      "ProviderLeagueID",
+      "Provider Team ID",
+      "ProviderTeamID",
+      "League ID",
+      "LeagueID",
+    ).trim();
+
+    return {
+      id,
+      name: getField(league, "Name").trim(),
+    };
+  }).filter((league) => league.id);
+
+  if (configuredLeagueTableIds.length > 0) {
+    return dedupeBy(configuredLeagueTableIds, (league) => league.id);
+  }
+
   const configuredLeagueIds = parseList(getField(
     team,
     "Provider League IDs",
@@ -444,6 +544,10 @@ function getTeamProviderLeagues(team, providerTeam) {
 }
 
 function getTeamScheduleSeasons(team) {
+  if (!SHOULD_USE_CONFIGURED_SEASONS) {
+    return getDefaultScheduleSeasons();
+  }
+
   const configuredSeasons = parseList(getField(
     team,
     "Schedule Seasons",
@@ -455,6 +559,24 @@ function getTeamScheduleSeasons(team) {
   ));
 
   return configuredSeasons.length > 0 ? configuredSeasons : getDefaultScheduleSeasons();
+}
+
+function groupRowsByField(rows, ...fieldNames) {
+  const groupedRows = new Map();
+
+  for (const row of rows) {
+    const key = getField(row, ...fieldNames).trim();
+
+    if (!key) {
+      continue;
+    }
+
+    const currentRows = groupedRows.get(key) || [];
+    currentRows.push(row);
+    groupedRows.set(key, currentRows);
+  }
+
+  return groupedRows;
 }
 
 function getDefaultScheduleSeasons(referenceDate = new Date()) {

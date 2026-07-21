@@ -212,6 +212,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 8px;
 }
 
+.nav-links[data-nav-scope="home"] {
+  gap: 18px;
+  justify-content: center;
+}
+
 .nav-links a {
   border-radius: 6px;
   color: var(--muted);
@@ -2725,6 +2730,11 @@ tr:last-child td {
     grid-column: 1 / -1;
     justify-content: space-between;
     margin-top: 0;
+  }
+
+  .nav-links[data-nav-scope="home"] {
+    gap: 28px;
+    justify-content: center;
   }
 
   .header-page-art {

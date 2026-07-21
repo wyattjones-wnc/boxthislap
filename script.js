@@ -129,6 +129,7 @@ const AWARD_DEFINITIONS = [
   {
     abbreviation: "NL",
     competition: "2026 World Cup",
+    draftName: "2026 World Cup Nation's League",
     id: "world-cup-2026-nations-league-winner",
     image: "assets/awards/world-cup-2026-nations-league.png",
     label: "2026 World Cup Nations League Champion",
@@ -3940,7 +3941,7 @@ function resolveCompletedDraftAward(definition) {
     return null;
   }
 
-  const manager = getAwardManagerById(getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID", "Winner", "Winner ID"));
+  const manager = getAwardManagerById(getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID"));
 
   if (!manager) {
     return null;
@@ -3960,7 +3961,7 @@ function findCompletedAwardDraft(definition) {
       return false;
     }
 
-    if (!getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID", "Winner", "Winner ID")) {
+    if (!getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID")) {
       return false;
     }
 
@@ -3969,20 +3970,33 @@ function findCompletedAwardDraft(definition) {
 }
 
 function isAwardDraftMatch(draft, definition) {
+  const draftName = normalizeAwardMatchName(getField(draft, "Name", "Draft", "Award Name", "Award"));
+  const expectedDraftName = normalizeAwardMatchName(definition.draftName || definition.label);
+
+  if (draftName && expectedDraftName) {
+    return draftName === expectedDraftName;
+  }
+
   const candidates = [
     getField(draft, "Award ID", "AwardID", "Award Id"),
     getField(draft, "Draft ID", "DraftID", "ID"),
-    getField(draft, "Award Name", "Award", "Name", "Draft"),
   ].map(normalizeLookupName).filter(Boolean);
   const awardIds = [
     definition.id,
-    definition.label,
-    definition.competition,
   ].map(normalizeLookupName).filter(Boolean);
 
   return candidates.some((candidate) => {
-    return awardIds.some((awardId) => candidate === awardId || candidate.includes(awardId) || awardId.includes(candidate));
+    return awardIds.some((awardId) => candidate === awardId);
   });
+}
+
+function normalizeAwardMatchName(value) {
+  return normalizeLookupName(value)
+    .replace(/['’]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function getAwardManagerById(managerId) {

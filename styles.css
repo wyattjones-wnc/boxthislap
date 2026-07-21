@@ -943,14 +943,25 @@ main {
 .results-heading {
   align-items: start;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(96px, 1fr) minmax(0, auto) minmax(96px, 1fr);
 }
 
-.results-heading > div {
+.heading-title {
   text-align: center;
 }
 
-.results-heading .action-button:last-child {
+.results-heading .heading-title {
+  grid-column: 2;
+}
+
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.heading-actions-right {
+  grid-column: 3;
   justify-self: end;
 }
 
@@ -2830,21 +2841,16 @@ tr:last-child td {
   }
 
   .results-heading {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
-  .results-heading > div {
-    grid-column: 1 / -1;
-    grid-row: 1;
+  .results-heading .heading-title {
+    grid-column: auto;
     text-align: left;
   }
 
-  .results-heading .action-button {
-    grid-row: 2;
-    justify-self: start;
-  }
-
-  .results-heading .action-button:last-child {
+  .results-heading .heading-actions {
+    grid-column: auto;
     justify-self: end;
   }
 

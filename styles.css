@@ -728,7 +728,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 .award-badge-mark img {
   display: block;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   width: 100%;
 }
 

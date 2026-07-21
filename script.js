@@ -3930,6 +3930,12 @@ function getResolvedAwards() {
 }
 
 function resolveAward(definition) {
+  const completedAward = resolveCompletedDraftAward(definition);
+
+  if (completedAward) {
+    return completedAward;
+  }
+
   if (definition.standings === "nations") {
     const winner = getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
 
@@ -3946,6 +3952,74 @@ function resolveAward(definition) {
   }
 
   return null;
+}
+
+function resolveCompletedDraftAward(definition) {
+  const draft = findCompletedAwardDraft(definition);
+
+  if (!draft) {
+    return null;
+  }
+
+  const manager = getAwardManagerById(getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID", "Winner", "Winner ID"));
+
+  if (!manager) {
+    return null;
+  }
+
+  const fallbackWinner = definition.standings === "nations"
+    ? getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1)
+    : null;
+
+  return {
+    ...definition,
+    entityName: getField(draft, "Winner", "Winner Name", "Winning Entity", "Winning Nation") || fallbackWinner?.name || "",
+    manager,
+    points: fallbackWinner?.points ?? null,
+  };
+}
+
+function findCompletedAwardDraft(definition) {
+  return (siteData.portalDrafts || []).find((draft) => {
+    if (!isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"))) {
+      return false;
+    }
+
+    if (!getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID", "Winner", "Winner ID")) {
+      return false;
+    }
+
+    return isAwardDraftMatch(draft, definition);
+  }) || null;
+}
+
+function isAwardDraftMatch(draft, definition) {
+  const candidates = [
+    getField(draft, "Award ID", "AwardID", "Award Id"),
+    getField(draft, "Draft ID", "DraftID", "ID"),
+    getField(draft, "Award Name", "Award", "Name", "Draft"),
+  ].map(normalizeLookupName).filter(Boolean);
+  const awardIds = [
+    definition.id,
+    definition.label,
+    definition.competition,
+  ].map(normalizeLookupName).filter(Boolean);
+
+  return candidates.some((candidate) => {
+    return awardIds.some((awardId) => candidate === awardId || candidate.includes(awardId) || awardId.includes(candidate));
+  });
+}
+
+function getAwardManagerById(managerId) {
+  const id = String(managerId ?? "").trim();
+
+  if (!id) {
+    return null;
+  }
+
+  return getPortalManagerById(id) ??
+    siteData.managerDrafts?.managersById.get(id) ??
+    getManagerMeta({ ID: id, Name: `Manager ${id}` });
 }
 
 function getAwardsForNation(nationName) {
@@ -4743,6 +4817,7 @@ Promise.all([
     renderLoginManagerOptions();
     renderLoginState();
     renderManagerHub();
+    renderStandingsAwards();
     console.info("Box This Lap manager portal data loaded", { managers, drafts, logs });
   })
   .catch((error) => {

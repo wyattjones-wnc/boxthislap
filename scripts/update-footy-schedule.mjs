@@ -6,16 +6,19 @@ const DEFAULT_FOOTBALL_TEAMS_CSV_URL =
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const PROVIDER_NAME = "TheSportsDB";
 const THE_SPORTS_DB_BASE_URL = "https://www.thesportsdb.com/api/v1/json/3";
+const THE_SPORTS_DB_V2_BASE_URL = "https://www.thesportsdb.com/api/v2/json";
+const THE_SPORTS_DB_API_KEY = process.env.THE_SPORTS_DB_API_KEY || "";
 
 async function main() {
   const generatedAt = new Date().toISOString();
   const teamRows = await loadCsv(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const activeTeams = teamRows
-    .filter((team) => !isFalseValue(getField(team, "IsActive", "Active")))
+    .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
   const teams = [];
   const fixtures = [];
   const errors = [];
+  const coverageNotes = [];
 
   for (const team of activeTeams) {
     const teamRecord = await resolveTeam(team);
@@ -27,7 +30,9 @@ async function main() {
     }
 
     try {
-      const events = await loadUpcomingEvents(teamRecord);
+      const schedule = await loadTeamSchedule(teamRecord);
+      coverageNotes.push(...schedule.notes.map((note) => `${teamRecord.name}: ${note}`));
+      const events = schedule.events;
       fixtures.push(...events.map((event) => normalizeEvent(event, teamRecord)));
     } catch (error) {
       errors.push(`Unable to load fixtures for ${teamRecord.name}: ${error.message}`);
@@ -39,6 +44,10 @@ async function main() {
   const payload = {
     generatedAt,
     source: PROVIDER_NAME,
+    coverage: {
+      mode: THE_SPORTS_DB_API_KEY ? "full-team-season" : "limited-next-events",
+      notes: [...new Set(coverageNotes)],
+    },
     teams,
     fixtures,
     errors,
@@ -52,7 +61,17 @@ async function main() {
 async function resolveTeam(team) {
   const name = getField(team, "Name", "Team").trim();
   const league = getField(team, "League").trim();
-  const explicitId = getField(team, "TheSportsDB ID", "TheSportsDBID", "Source ID", "SourceID", "Provider ID", "ProviderID").trim();
+  const explicitId = getField(
+    team,
+    "Provider Team ID",
+    "ProviderTeamID",
+    "TheSportsDB ID",
+    "TheSportsDBID",
+    "Source ID",
+    "SourceID",
+    "Provider ID",
+    "ProviderID",
+  ).trim();
 
   if (!name) {
     return {
@@ -67,75 +86,69 @@ async function resolveTeam(team) {
     };
   }
 
-  if (explicitId) {
+  if (!explicitId) {
     return {
       id: getField(team, "ID"),
       league,
       name,
       priority: getField(team, "Priority"),
       provider: PROVIDER_NAME,
-      providerTeamId: explicitId,
-      resolvedName: name,
-      status: "configured",
+      providerTeamId: "",
+      resolvedName: "",
+      status: "missing-provider-team-id",
     };
   }
 
-  const candidates = await searchTeams(name);
-  const selectedTeam = selectBestTeamCandidate(candidates, { league, name });
+  const providerTeam = await loadTeamDetails(explicitId);
 
   return {
-    badge: selectedTeam?.strBadge || "",
+    badge: providerTeam?.strBadge || "",
     id: getField(team, "ID"),
     league,
     name,
     priority: getField(team, "Priority"),
     provider: PROVIDER_NAME,
-    providerLeague: selectedTeam?.strLeague || "",
-    providerTeamId: selectedTeam?.idTeam || "",
-    resolvedName: selectedTeam?.strTeam || "",
-    status: selectedTeam ? "resolved" : "unresolved",
+    providerLeague: providerTeam?.strLeague || "",
+    providerTeamId: explicitId,
+    resolvedName: providerTeam?.strTeam || name,
+    status: providerTeam ? "configured" : "configured-unverified",
   };
 }
 
-async function searchTeams(name) {
-  const data = await loadJson(`${THE_SPORTS_DB_BASE_URL}/searchteams.php?t=${encodeURIComponent(name)}`);
+async function loadTeamDetails(providerTeamId) {
+  const data = await loadJson(`${THE_SPORTS_DB_BASE_URL}/lookupteam.php?id=${encodeURIComponent(providerTeamId)}`);
 
-  return Array.isArray(data.teams) ? data.teams.filter((team) => team.strSport === "Soccer") : [];
+  return Array.isArray(data.teams) ? data.teams[0] : null;
 }
 
-function selectBestTeamCandidate(candidates, { league, name }) {
-  if (candidates.length === 0) {
-    return null;
+async function loadTeamSchedule(team) {
+  if (THE_SPORTS_DB_API_KEY) {
+    const fullSchedule = await loadFullTeamSchedule(team);
+
+    return {
+      events: fullSchedule,
+      notes: ["Loaded full team season schedule from the v2 API."],
+    };
   }
 
-  const normalizedName = normalizeText(name);
-  const normalizedLeague = normalizeText(league);
+  const nextEvents = await loadUpcomingEvents(team);
 
-  return [...candidates].sort((first, second) => {
-    return scoreTeamCandidate(second, normalizedName, normalizedLeague) -
-      scoreTeamCandidate(first, normalizedName, normalizedLeague);
-  })[0];
+  return {
+    events: nextEvents,
+    notes: [
+      "Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured.",
+    ],
+  };
 }
 
-function scoreTeamCandidate(team, normalizedName, normalizedLeague) {
-  const candidateName = normalizeText(team.strTeam);
-  const alternateNames = normalizeText(team.strTeamAlternate);
-  const candidateLeague = normalizeText(team.strLeague);
-  let score = 0;
+async function loadFullTeamSchedule(team) {
+  const data = await loadJson(
+    `${THE_SPORTS_DB_V2_BASE_URL}/schedule/full/team/${encodeURIComponent(team.providerTeamId)}`,
+    { "X-API-KEY": THE_SPORTS_DB_API_KEY },
+  );
+  const eventLists = [data.events, data.event, data.schedule, data.data].filter(Array.isArray);
 
-  if (candidateName === normalizedName) {
-    score += 100;
-  }
-
-  if (alternateNames.includes(normalizedName)) {
-    score += 30;
-  }
-
-  if (normalizedLeague && (candidateLeague.includes(normalizedLeague) || normalizedLeague.includes(candidateLeague))) {
-    score += 20;
-  }
-
-  return score;
+  return eventLists.flat();
 }
 
 async function loadUpcomingEvents(team) {
@@ -189,8 +202,8 @@ async function loadCsv(url) {
   return parseCsv(await response.text());
 }
 
-async function loadJson(url) {
-  const response = await fetch(url, { headers: { "user-agent": "boxthislap-footy-updater" } });
+async function loadJson(url, headers = {}) {
+  const response = await fetch(url, { headers: { "user-agent": "boxthislap-footy-updater", ...headers } });
 
   if (!response.ok) {
     throw new Error(`Failed to load JSON from ${url}: ${response.status}`);
@@ -278,6 +291,10 @@ function getField(row, ...names) {
   }
 
   return "";
+}
+
+function hasTeamIdentity(team) {
+  return Boolean(getField(team, "Name", "Team").trim() || getField(team, "Provider Team ID", "ProviderTeamID").trim());
 }
 
 function normalizeText(value) {

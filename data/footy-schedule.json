@@ -1,6 +1,14 @@
 {
-  "generatedAt": "2026-07-21T18:56:55.483Z",
+  "generatedAt": "2026-07-21T19:10:23.091Z",
   "source": "TheSportsDB",
+  "coverage": {
+    "mode": "limited-next-events",
+    "notes": [
+      "Arsenal: Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured.",
+      "Barcelona: Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured.",
+      "Wrexham: Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured."
+    ]
+  },
   "teams": [
     {
       "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -12,7 +20,7 @@
       "providerLeague": "English Premier League",
       "providerTeamId": "133604",
       "resolvedName": "Arsenal",
-      "status": "resolved"
+      "status": "configured"
     },
     {
       "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -24,7 +32,7 @@
       "providerLeague": "Spanish La Liga",
       "providerTeamId": "133739",
       "resolvedName": "Barcelona",
-      "status": "resolved"
+      "status": "configured"
     },
     {
       "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -36,7 +44,7 @@
       "providerLeague": "English League Championship",
       "providerTeamId": "134775",
       "resolvedName": "Wrexham",
-      "status": "resolved"
+      "status": "configured"
     }
   ],
   "fixtures": [

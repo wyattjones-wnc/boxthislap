@@ -1,9 +1,102 @@
 {
-  "generatedAt": "",
+  "generatedAt": "2026-07-21T18:56:55.483Z",
   "source": "TheSportsDB",
-  "teams": [],
-  "fixtures": [],
-  "errors": [
-    "Footy schedule has not been populated yet."
-  ]
+  "teams": [
+    {
+      "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+      "id": "1",
+      "league": "Premier League",
+      "name": "Arsenal",
+      "priority": "1",
+      "provider": "TheSportsDB",
+      "providerLeague": "English Premier League",
+      "providerTeamId": "133604",
+      "resolvedName": "Arsenal",
+      "status": "resolved"
+    },
+    {
+      "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+      "id": "2",
+      "league": "La Liga",
+      "name": "Barcelona",
+      "priority": "2",
+      "provider": "TheSportsDB",
+      "providerLeague": "Spanish La Liga",
+      "providerTeamId": "133739",
+      "resolvedName": "Barcelona",
+      "status": "resolved"
+    },
+    {
+      "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
+      "id": "3",
+      "league": "Championship",
+      "name": "Wrexham",
+      "priority": "3",
+      "provider": "TheSportsDB",
+      "providerLeague": "English League Championship",
+      "providerTeamId": "134775",
+      "resolvedName": "Wrexham",
+      "status": "resolved"
+    }
+  ],
+  "fixtures": [
+    {
+      "away": "CE Europa",
+      "awayBadge": "https://r2.thesportsdb.com/images/media/team/badge/ypaxo61686529648.png",
+      "date": "2026-07-24",
+      "home": "Barcelona",
+      "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+      "id": "2521609",
+      "isHome": true,
+      "league": "Club Friendlies",
+      "opponent": "CE Europa",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "status": "NS",
+      "teamId": "2",
+      "teamName": "Barcelona",
+      "time": "12:00:00",
+      "timestamp": "2026-07-24T12:00:00Z",
+      "venue": "Spotify Camp Nou"
+    },
+    {
+      "away": "Leeds United",
+      "awayBadge": "https://r2.thesportsdb.com/images/media/team/badge/jcgrml1756649030.png",
+      "date": "2026-07-25",
+      "home": "Wrexham",
+      "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
+      "id": "2529345",
+      "isHome": true,
+      "league": "English Premier League Summer Series",
+      "opponent": "Leeds United",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "status": "NS",
+      "teamId": "3",
+      "teamName": "Wrexham",
+      "time": "20:00:00",
+      "timestamp": "2026-07-25T20:00:00Z",
+      "venue": "Raymond James Stadium"
+    },
+    {
+      "away": "Arsenal",
+      "awayBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+      "date": "2026-08-01",
+      "home": "Girona",
+      "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/kfu7zu1659897499.png",
+      "id": "2521780",
+      "isHome": false,
+      "league": "Club Friendlies",
+      "opponent": "Girona",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "status": "NS",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "18:00:00",
+      "timestamp": "2026-08-01T18:00:00Z",
+      "venue": "Estadi Municipal de Montilivi"
+    }
+  ],
+  "errors": []
 }

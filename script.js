@@ -94,6 +94,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210002";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607210001";
 
 const fantasyOfficeMovieSort = {
   direction: "desc",
@@ -113,196 +114,19 @@ siteData.fantasyCritic = {
   2026: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2026], status: "loading" },
 };
 
-function showPage(pageName, options = {}) {
-  const pageAliases = {
-    "formula-1-2024": "formula-1-2024-questions",
-    "formula-1-2025": "formula-1-2025-questions",
-    "formula-1-2026": "formula-1-2026-questions",
-    "fantasy-office-2025": "fantasy-office-2025-results",
-    "fantasy-office-2026": "fantasy-office-2026-draft",
-    "manager-scores": "standings",
-    "player-scores": "standings",
-  };
-  const resolvedPageName = pageAliases[pageName] || pageName;
-  const allowedPageName = pageAliases[pageName] || pageName;
-  const testRulesBlocked = allowedPageName === "rules" && !shouldUseNationTestScoring();
-  const pageExists = !testRulesBlocked && [...pages].some((page) => page.dataset.page === allowedPageName);
-  const activePageName = pageExists ? allowedPageName : "footy";
-
-  pages.forEach((page) => {
-    page.classList.toggle("is-active", page.dataset.page === activePageName);
-  });
-
-  pageLinks.forEach((link) => {
-    link.classList.toggle("is-active", link.dataset.pageLink === activePageName);
-  });
-
-  headerArt.forEach((art) => {
-    art.classList.toggle("is-active", art.dataset.headerArt === getHeaderArtName(activePageName));
-  });
-
-  rememberNavScope(activePageName);
-
-  navGroups.forEach((group) => {
-    group.hidden = group.dataset.navScope !== getNavScope(activePageName);
-  });
-
-  document.body.classList.remove("is-routing");
-  window.boxThisLapMarkReady?.();
-
-  if (options.scrollToTop) {
-    scrollToPageTop();
-  }
-}
-
-function getHeaderArtName(pageName) {
-  if (getNavScope(pageName) === "home") {
-    return "";
-  }
-
-  if (pageName.startsWith("formula-1-2024")) {
-    return "formula-one-2024";
-  }
-
-  if (pageName.startsWith("formula-1-2025")) {
-    return "formula-one-2025";
-  }
-
-  if (pageName.startsWith("formula-1-2026")) {
-    return "formula-one-2026";
-  }
-
-  if (pageName.startsWith("fantasy-critic-2025")) {
-    return "fantasy-critic-2025";
-  }
-
-  if (pageName.startsWith("fantasy-office-2025")) {
-    return "fantasy-office-2025";
-  }
-
-  if (pageName.startsWith("fantasy-office-2026")) {
-    return "world-cup";
-  }
-
-  if (getNavScope(pageName) === "world-cup") {
-    return "world-cup";
-  }
-
-  return pageName;
-}
-
-function getNavScope(pageName) {
-  if (["footy", "leagues", "login", "manager-hub"].includes(pageName)) {
-    return "home";
-  }
-
-  if (pageName.startsWith("formula-1-2024")) {
-    return "formula-one-2024";
-  }
-
-  if (pageName.startsWith("formula-1-2025")) {
-    return "formula-one-2025";
-  }
-
-  if (pageName.startsWith("formula-1-2026")) {
-    return "formula-one-2026";
-  }
-
-  if (pageName.startsWith("fantasy-office-2025")) {
-    return "fantasy-office-2025";
-  }
-
-  if (pageName.startsWith("fantasy-office-2026")) {
-    return "fantasy-office-2026";
-  }
-
-  if (isWorldCupPage(pageName)) {
-    return "world-cup";
-  }
-
-  return "home";
-}
-
-function rememberNavScope(pageName) {
-  if (pageName.startsWith("formula-1-2024")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2024");
-    return;
-  }
-
-  if (pageName.startsWith("formula-1-2025")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2025");
-    return;
-  }
-
-  if (pageName.startsWith("formula-1-2026")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2026");
-    return;
-  }
-
-  if (pageName.startsWith("fantasy-office-2025")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2025");
-    return;
-  }
-
-  if (pageName.startsWith("fantasy-office-2026")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2026");
-    return;
-  }
-
-  if (isWorldCupPage(pageName)) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "world-cup");
-    return;
-  }
-
-  if (["footy", "leagues", "login", "manager-hub"].includes(pageName)) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "home");
-  }
-}
-
-function isWorldCupPage(pageName) {
-  return ["today", "tomorrow", "results", "draft", "standings", "rules", "matches", "bracket", "testing"].includes(pageName);
-}
-
-function showTab(tabName, options = {}) {
-  tabs.forEach((tab) => {
-    const isActive = tab.dataset.tab === tabName;
-    tab.classList.toggle("is-active", isActive);
-    tab.setAttribute("aria-selected", String(isActive));
-  });
-
-  tabPanels.forEach((panel) => {
-    panel.classList.toggle("is-active", panel.dataset.tabPanel === tabName);
-  });
-
-  if (["players-championship", "nations-league", "manager-results"].includes(tabName)) {
-    renderStandingsAwards();
-  }
-
-  if (options.scrollToTop) {
-    scrollToPageTop();
-  }
-}
-
-function showDraftView(viewName) {
-  const activeView = viewName === "players" ? "players" : "nations";
-
-  draftViewButtons.forEach((button) => {
-    const isActive = button.dataset.draftView === activeView;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-selected", String(isActive));
-  });
-
-  draftPanels.forEach((panel) => {
-    panel.classList.toggle("is-active", panel.dataset.draftPanel === activeView);
-  });
-}
-
-function scrollToPageTop() {
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  });
-}
+const router = createRouter({
+  draftPanels,
+  draftViewButtons,
+  headerArt,
+  navGroups,
+  onStandingsTabShown: () => renderStandingsAwards(),
+  pageLinks,
+  pages,
+  shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
+  tabPanels,
+  tabs,
+});
+const { showDraftView, showPage, showTab } = router;
 
 function getCurrentTheme() {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";

@@ -3907,8 +3907,7 @@ function renderStandingsAwards() {
     return;
   }
 
-  const activeTab = getActiveStandingsTab();
-  const awards = getAwardsForStandingsTab(activeTab);
+  const awards = getAwardsForCurrentStandings();
 
   standingsAwards.hidden = awards.length === 0;
 
@@ -3920,16 +3919,8 @@ function renderStandingsAwards() {
   standingsAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
 }
 
-function getActiveStandingsTab() {
-  return document.querySelector("#standings [data-tab].is-active")?.dataset.tab || "players-championship";
-}
-
-function getAwardsForStandingsTab(tabName) {
-  if (tabName === "nations-league") {
-    return getResolvedAwards().filter((award) => award.standings === "nations");
-  }
-
-  return [];
+function getAwardsForCurrentStandings() {
+  return getResolvedAwards();
 }
 
 function getResolvedAwards() {
@@ -3940,13 +3931,7 @@ function getResolvedAwards() {
 
 function resolveAward(definition) {
   if (definition.standings === "nations") {
-    const displayRows = siteData.matchResults
-      ? (shouldShowAllStandingsData()
-        ? getCurrentNationsLeagueRows(siteData.matchResults)
-        : getCurrentDraftedNationsLeagueRows(siteData.matchResults))
-      : [];
-    const winner = displayRows.find((row) => row.rank === 1) ??
-      getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
+    const winner = getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
 
     if (!winner) {
       return null;
@@ -3980,7 +3965,7 @@ function renderAwardCard(award, context = "standings-summary") {
   const image = award.image
     ? `<img class="award-card-image" src="${escapeHtml(award.image)}" alt="">`
     : `<span class="award-card-fallback">${escapeHtml(award.abbreviation || "AW")}</span>`;
-  const secondary = context === "manager" ? "" : [award.entityName, award.competition].filter(Boolean).join(" - ");
+  const secondary = getAwardSecondaryText(award, context);
 
   return `
     <article class="award-card award-card--${escapeHtml(context)}">
@@ -3991,6 +3976,18 @@ function renderAwardCard(award, context = "standings-summary") {
       </div>
     </article>
   `;
+}
+
+function getAwardSecondaryText(award, context) {
+  if (context === "manager") {
+    return "";
+  }
+
+  if (award.manager?.displayName) {
+    return award.manager.displayName;
+  }
+
+  return award.manager?.name || "";
 }
 
 function renderAwardBadge(award, context = "standings") {

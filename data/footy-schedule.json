@@ -1,12 +1,37 @@
 {
-  "generatedAt": "2026-07-21T19:10:23.091Z",
+  "generatedAt": "2026-07-21T19:53:55.874Z",
   "source": "TheSportsDB",
   "coverage": {
-    "mode": "limited-next-events",
+    "mode": "league-season-free",
     "notes": [
-      "Arsenal: Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured.",
-      "Barcelona: Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured.",
-      "Wrexham: Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured."
+      "Arsenal: Loaded 1 matching events from English Premier League 2026-2027.",
+      "Arsenal: Loaded 0 matching events from English Premier League 2026.",
+      "Arsenal: Loaded 0 matching events from FA Cup 2026-2027.",
+      "Arsenal: Loaded 0 matching events from FA Cup 2026.",
+      "Arsenal: Loaded 0 matching events from EFL Cup 2026-2027.",
+      "Arsenal: Loaded 0 matching events from EFL Cup 2026.",
+      "Arsenal: Loaded 0 matching events from UEFA Champions League 2026-2027.",
+      "Arsenal: Loaded 0 matching events from UEFA Champions League 2026.",
+      "Arsenal: Loaded 0 matching events from Emirates Cup 2026-2027.",
+      "Arsenal: Loaded 0 matching events from Emirates Cup 2026.",
+      "Arsenal: Merged 1 direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.",
+      "Arsenal: Using free v1 API key; TheSportsDB documents lower schedule limits for free calls.",
+      "Barcelona: Loaded 0 matching events from Spanish La Liga 2026-2027.",
+      "Barcelona: Loaded 0 matching events from Spanish La Liga 2026.",
+      "Barcelona: Loaded 0 matching events from Copa del Rey 2026-2027.",
+      "Barcelona: Loaded 0 matching events from Copa del Rey 2026.",
+      "Barcelona: Loaded 0 matching events from Supercopa de Espana 2026-2027.",
+      "Barcelona: Loaded 0 matching events from Supercopa de Espana 2026.",
+      "Barcelona: Loaded 0 matching events from UEFA Champions League 2026-2027.",
+      "Barcelona: Loaded 0 matching events from UEFA Champions League 2026.",
+      "Barcelona: Merged 1 direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.",
+      "Barcelona: Using free v1 API key; TheSportsDB documents lower schedule limits for free calls.",
+      "Wrexham: Loaded 0 matching events from English League Championship 2026-2027.",
+      "Wrexham: Loaded 0 matching events from FA Cup 2026-2027.",
+      "Wrexham: Loaded 0 matching events from FA Cup 2026.",
+      "Wrexham: Loaded 2 matching events from English Premier League Summer Series 2026.",
+      "Wrexham: Merged 1 direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.",
+      "Wrexham: Using free v1 API key; TheSportsDB documents lower schedule limits for free calls."
     ]
   },
   "teams": [
@@ -14,6 +39,28 @@
       "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
       "id": "1",
       "league": "Premier League",
+      "providerLeagues": [
+        {
+          "id": "4328",
+          "name": "English Premier League"
+        },
+        {
+          "id": "4482",
+          "name": "FA Cup"
+        },
+        {
+          "id": "4570",
+          "name": "EFL Cup"
+        },
+        {
+          "id": "4480",
+          "name": "UEFA Champions League"
+        },
+        {
+          "id": "5648",
+          "name": "Emirates Cup"
+        }
+      ],
       "name": "Arsenal",
       "priority": "1",
       "provider": "TheSportsDB",
@@ -26,6 +73,24 @@
       "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
       "id": "2",
       "league": "La Liga",
+      "providerLeagues": [
+        {
+          "id": "4335",
+          "name": "Spanish La Liga"
+        },
+        {
+          "id": "4483",
+          "name": "Copa del Rey"
+        },
+        {
+          "id": "4511",
+          "name": "Supercopa de Espana"
+        },
+        {
+          "id": "4480",
+          "name": "UEFA Champions League"
+        }
+      ],
       "name": "Barcelona",
       "priority": "2",
       "provider": "TheSportsDB",
@@ -38,6 +103,20 @@
       "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
       "id": "3",
       "league": "Championship",
+      "providerLeagues": [
+        {
+          "id": "4329",
+          "name": "English League Championship"
+        },
+        {
+          "id": "4482",
+          "name": "FA Cup"
+        },
+        {
+          "id": "5647",
+          "name": "English Premier League Summer Series"
+        }
+      ],
       "name": "Wrexham",
       "priority": "3",
       "provider": "TheSportsDB",
@@ -55,9 +134,11 @@
       "home": "Barcelona",
       "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
       "id": "2521609",
+      "leagueId": "4569",
       "isHome": true,
       "league": "Club Friendlies",
       "opponent": "CE Europa",
+      "round": "0",
       "season": "2026",
       "source": "TheSportsDB",
       "status": "NS",
@@ -74,9 +155,11 @@
       "home": "Wrexham",
       "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
       "id": "2529345",
+      "leagueId": "5647",
       "isHome": true,
       "league": "English Premier League Summer Series",
       "opponent": "Leeds United",
+      "round": "1",
       "season": "2026",
       "source": "TheSportsDB",
       "status": "NS",
@@ -87,15 +170,38 @@
       "venue": "Raymond James Stadium"
     },
     {
+      "away": "Wrexham",
+      "awayBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
+      "date": "2026-07-29",
+      "home": "Liverpool",
+      "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/kfaher1737969724.png",
+      "id": "2529347",
+      "leagueId": "5647",
+      "isHome": false,
+      "league": "English Premier League Summer Series",
+      "opponent": "Liverpool",
+      "round": "2",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "status": "NS",
+      "teamId": "3",
+      "teamName": "Wrexham",
+      "time": "23:30:00",
+      "timestamp": "2026-07-29T23:30:00Z",
+      "venue": "Yankee Stadium"
+    },
+    {
       "away": "Arsenal",
       "awayBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
       "date": "2026-08-01",
       "home": "Girona",
       "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/kfu7zu1659897499.png",
       "id": "2521780",
+      "leagueId": "4569",
       "isHome": false,
       "league": "Club Friendlies",
       "opponent": "Girona",
+      "round": "0",
       "season": "2026",
       "source": "TheSportsDB",
       "status": "NS",
@@ -104,7 +210,31 @@
       "time": "18:00:00",
       "timestamp": "2026-08-01T18:00:00Z",
       "venue": "Estadi Municipal de Montilivi"
+    },
+    {
+      "away": "Coventry City",
+      "awayBadge": "https://r2.thesportsdb.com/images/media/team/badge/uxyqys1424033798.png",
+      "date": "2026-08-21",
+      "home": "Arsenal",
+      "homeBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+      "id": "2494000",
+      "leagueId": "4328",
+      "isHome": true,
+      "league": "English Premier League",
+      "opponent": "Coventry City",
+      "round": "1",
+      "season": "2026-2027",
+      "source": "TheSportsDB",
+      "status": "NS",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "19:00:00",
+      "timestamp": "2026-08-21T19:00:00Z",
+      "venue": "Emirates Stadium"
     }
   ],
-  "errors": []
+  "errors": [
+    "Wrexham: Unable to load English League Championship 2026: Failed to load JSON from https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4329&s=2026: 429",
+    "Wrexham: Unable to load English Premier League Summer Series 2026-2027: Failed to load JSON from https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=5647&s=2026-2027: 429"
+  ]
 }

@@ -1,13 +1,20 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const DEFAULT_FOOTBALL_TEAMS_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub?gid=1614272244&single=true&output=csv";
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const PROVIDER_NAME = "TheSportsDB";
-const THE_SPORTS_DB_BASE_URL = "https://www.thesportsdb.com/api/v1/json/3";
-const THE_SPORTS_DB_V2_BASE_URL = "https://www.thesportsdb.com/api/v2/json";
 const THE_SPORTS_DB_API_KEY = process.env.THE_SPORTS_DB_API_KEY || "";
+const THE_SPORTS_DB_V1_API_KEY = process.env.THE_SPORTS_DB_V1_API_KEY || THE_SPORTS_DB_API_KEY || "3";
+const THE_SPORTS_DB_BASE_URL = `https://www.thesportsdb.com/api/v1/json/${THE_SPORTS_DB_V1_API_KEY}`;
+const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(".cache", "footy-schedule-api"));
+const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 2200;
+const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
+const SHOULD_USE_API_CACHE = !isFalseValue(process.env.FOOTY_API_CACHE || "true");
+const leagueSeasonCache = new Map();
+let lastExternalRequestAt = 0;
 
 async function main() {
   const generatedAt = new Date().toISOString();
@@ -32,6 +39,7 @@ async function main() {
     try {
       const schedule = await loadTeamSchedule(teamRecord);
       coverageNotes.push(...schedule.notes.map((note) => `${teamRecord.name}: ${note}`));
+      errors.push(...schedule.errors.map((error) => `${teamRecord.name}: ${error}`));
       const events = schedule.events;
       fixtures.push(...events.map((event) => normalizeEvent(event, teamRecord)));
     } catch (error) {
@@ -45,7 +53,7 @@ async function main() {
     generatedAt,
     source: PROVIDER_NAME,
     coverage: {
-      mode: THE_SPORTS_DB_API_KEY ? "full-team-season" : "limited-next-events",
+      mode: THE_SPORTS_DB_API_KEY ? "league-season-premium" : "league-season-free",
       notes: [...new Set(coverageNotes)],
     },
     teams,
@@ -105,6 +113,7 @@ async function resolveTeam(team) {
     badge: providerTeam?.strBadge || "",
     id: getField(team, "ID"),
     league,
+    providerLeagues: getTeamProviderLeagues(team, providerTeam),
     name,
     priority: getField(team, "Priority"),
     provider: PROVIDER_NAME,
@@ -122,33 +131,67 @@ async function loadTeamDetails(providerTeamId) {
 }
 
 async function loadTeamSchedule(team) {
-  if (THE_SPORTS_DB_API_KEY) {
-    const fullSchedule = await loadFullTeamSchedule(team);
+  const seasons = getTeamScheduleSeasons(team);
+  const leagueSchedules = [];
+  const notes = [];
+  const errors = [];
 
-    return {
-      events: fullSchedule,
-      notes: ["Loaded full team season schedule from the v2 API."],
-    };
+  for (const league of team.providerLeagues) {
+    for (const season of seasons) {
+      let leagueEvents = [];
+
+      try {
+        leagueEvents = await loadLeagueSeasonEvents(league.id, season);
+      } catch (error) {
+        errors.push(`Unable to load ${league.name || `league ${league.id}`} ${season}: ${error.message}`);
+        continue;
+      }
+
+      const teamEvents = leagueEvents.filter((event) => isTeamEvent(event, team));
+      leagueSchedules.push(...teamEvents);
+      notes.push(
+        `Loaded ${teamEvents.length} matching events from ${league.name || `league ${league.id}`} ${season}.`,
+      );
+    }
   }
 
-  const nextEvents = await loadUpcomingEvents(team);
+  let nextEvents = [];
+
+  try {
+    nextEvents = await loadUpcomingEvents(team);
+  } catch (error) {
+    errors.push(`Unable to load direct team next events: ${error.message}`);
+  }
+
+  const events = dedupeEvents([...leagueSchedules, ...nextEvents]);
 
   return {
-    events: nextEvents,
+    events,
+    errors,
     notes: [
-      "Loaded limited upcoming events from the free v1 API because THE_SPORTS_DB_API_KEY is not configured.",
+      ...notes,
+      `Merged ${nextEvents.length} direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.`,
+      THE_SPORTS_DB_API_KEY
+        ? "Using configured API key for v1 schedule calls."
+        : "Using free v1 API key; TheSportsDB documents lower schedule limits for free calls.",
     ],
   };
 }
 
-async function loadFullTeamSchedule(team) {
-  const data = await loadJson(
-    `${THE_SPORTS_DB_V2_BASE_URL}/schedule/full/team/${encodeURIComponent(team.providerTeamId)}`,
-    { "X-API-KEY": THE_SPORTS_DB_API_KEY },
-  );
-  const eventLists = [data.events, data.event, data.schedule, data.data].filter(Array.isArray);
+async function loadLeagueSeasonEvents(leagueId, season) {
+  const cacheKey = `${leagueId}:${season}`;
 
-  return eventLists.flat();
+  if (leagueSeasonCache.has(cacheKey)) {
+    return leagueSeasonCache.get(cacheKey);
+  }
+
+  const data = await loadJson(
+    `${THE_SPORTS_DB_BASE_URL}/eventsseason.php?id=${encodeURIComponent(leagueId)}&s=${encodeURIComponent(season)}`,
+  );
+  const events = Array.isArray(data.events) ? data.events : [];
+  leagueSeasonCache.set(cacheKey, events);
+
+  return events;
 }
 
 async function loadUpcomingEvents(team) {
@@ -170,9 +213,11 @@ function normalizeEvent(event, team) {
     home: homeTeam,
     homeBadge: event.strHomeTeamBadge || "",
     id: event.idEvent || "",
+    leagueId: event.idLeague || "",
     isHome,
     league: event.strLeague || "",
     opponent: isHome ? awayTeam : homeTeam,
+    round: event.intRound || "",
     season: event.strSeason || "",
     source: PROVIDER_NAME,
     status: event.strStatus || "",
@@ -193,23 +238,92 @@ function buildTimestamp(date, time) {
 }
 
 async function loadCsv(url) {
-  const response = await fetch(url, { headers: { "user-agent": "boxthislap-footy-updater" } });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
-  }
-
-  return parseCsv(await response.text());
+  return parseCsv(await loadText(url, { extension: "csv" }));
 }
 
 async function loadJson(url, headers = {}) {
+  const text = await loadText(url, { extension: "json", headers });
+
+  return JSON.parse(text);
+}
+
+async function loadText(url, { extension, headers = {} }) {
+  const cachePath = getApiCachePath(url, extension);
+
+  if (SHOULD_USE_API_CACHE && !SHOULD_REFRESH_API_CACHE) {
+    const cachedText = await tryReadFile(cachePath);
+
+    if (cachedText !== null) {
+      return cachedText;
+    }
+  }
+
+  await waitForExternalRequestSlot();
   const response = await fetch(url, { headers: { "user-agent": "boxthislap-footy-updater", ...headers } });
 
   if (!response.ok) {
-    throw new Error(`Failed to load JSON from ${url}: ${response.status}`);
+    throw new Error(`Failed to load ${extension.toUpperCase()} from ${url}: ${response.status}`);
   }
 
-  return response.json();
+  const text = await response.text();
+
+  if (SHOULD_USE_API_CACHE) {
+    await writeApiCacheFile(cachePath, url, text);
+  }
+
+  return text;
+}
+
+async function waitForExternalRequestSlot() {
+  if (!EXTERNAL_REQUEST_INTERVAL_MS) {
+    return;
+  }
+
+  const now = Date.now();
+  const waitMs = Math.max(0, lastExternalRequestAt + EXTERNAL_REQUEST_INTERVAL_MS - now);
+
+  if (waitMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+
+  lastExternalRequestAt = Date.now();
+}
+
+async function tryReadFile(filePath) {
+  try {
+    return await readFile(filePath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function writeApiCacheFile(filePath, url, text) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, text, "utf8");
+  await writeFile(
+    `${filePath}.meta.json`,
+    `${JSON.stringify({
+      fetchedAt: new Date().toISOString(),
+      url,
+    }, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+function getApiCachePath(url, extension) {
+  const parsedUrl = new URL(url);
+  const readableName = [
+    parsedUrl.hostname.replace(/^www\./, ""),
+    ...parsedUrl.pathname.split("/").filter(Boolean).slice(-2),
+  ].join("-");
+  const safeName = readableName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const hash = createHash("sha256").update(url).digest("hex").slice(0, 12);
+
+  return path.join(API_CACHE_DIR, `${safeName}-${hash}.${extension}`);
 }
 
 function parseCsv(text) {
@@ -293,6 +407,114 @@ function getField(row, ...names) {
   return "";
 }
 
+function getTeamProviderLeagues(team, providerTeam) {
+  const configuredLeagueIds = parseList(getField(
+    team,
+    "Provider League IDs",
+    "Provider League ID",
+    "ProviderLeagueIDs",
+    "ProviderLeagueID",
+    "League IDs",
+    "League ID",
+    "LeagueIDs",
+    "LeagueID",
+  ));
+
+  if (configuredLeagueIds.length > 0) {
+    return configuredLeagueIds.map((id) => ({ id, name: "" }));
+  }
+
+  if (!providerTeam) {
+    return [];
+  }
+
+  const leagues = [];
+
+  for (let index = 1; index <= 7; index += 1) {
+    const suffix = index === 1 ? "" : String(index);
+    const id = String(providerTeam[`idLeague${suffix}`] || "").trim();
+    const name = String(providerTeam[`strLeague${suffix}`] || "").trim();
+
+    if (id) {
+      leagues.push({ id, name });
+    }
+  }
+
+  return dedupeBy(leagues, (league) => league.id);
+}
+
+function getTeamScheduleSeasons(team) {
+  const configuredSeasons = parseList(getField(
+    team,
+    "Schedule Seasons",
+    "Schedule Season",
+    "Seasons",
+    "Season",
+    "Provider Seasons",
+    "Provider Season",
+  ));
+
+  return configuredSeasons.length > 0 ? configuredSeasons : getDefaultScheduleSeasons();
+}
+
+function getDefaultScheduleSeasons(referenceDate = new Date()) {
+  const year = referenceDate.getUTCFullYear();
+  const seasonStartYear = referenceDate.getUTCMonth() >= 6 ? year : year - 1;
+
+  return [
+    `${seasonStartYear}-${seasonStartYear + 1}`,
+    String(year),
+  ];
+}
+
+function isTeamEvent(event, team) {
+  return event.idHomeTeam === team.providerTeamId ||
+    event.idAwayTeam === team.providerTeamId ||
+    normalizeText(event.strHomeTeam) === normalizeText(team.resolvedName || team.name) ||
+    normalizeText(event.strAwayTeam) === normalizeText(team.resolvedName || team.name);
+}
+
+function dedupeEvents(events) {
+  return dedupeBy(events, (event) => {
+    if (event.idEvent) {
+      return `id:${event.idEvent}`;
+    }
+
+    return [
+      event.dateEvent,
+      event.strTime,
+      normalizeText(event.strHomeTeam),
+      normalizeText(event.strAwayTeam),
+      normalizeText(event.strLeague),
+    ].join("|");
+  });
+}
+
+function dedupeBy(items, getKey) {
+  const seen = new Set();
+  const deduped = [];
+
+  for (const item of items) {
+    const key = getKey(item);
+
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  return deduped;
+}
+
+function parseList(value) {
+  return String(value ?? "")
+    .split(/[,;|\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function hasTeamIdentity(team) {
   return Boolean(getField(team, "Name", "Team").trim() || getField(team, "Provider Team ID", "ProviderTeamID").trim());
 }
@@ -303,6 +525,10 @@ function normalizeText(value) {
 
 function isFalseValue(value) {
   return ["false", "no", "n", "0"].includes(normalizeText(value));
+}
+
+function isTrueValue(value) {
+  return ["true", "yes", "y", "1"].includes(normalizeText(value));
 }
 
 function comparePriority(firstPriority, secondPriority) {

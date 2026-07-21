@@ -43,6 +43,7 @@ export const DATA_SOURCES = {
     bracketPicks: buildPublishedCsvUrl("1943594150"),
     portalManagers: buildManagerPortalCsvUrl("0"),
     portalDrafts: buildManagerPortalCsvUrl("1819817720"),
+    portalFootballTeams: buildManagerPortalCsvUrl("1614272244"),
     portalLogs: buildManagerPortalCsvUrl("121360226"),
   },
 };

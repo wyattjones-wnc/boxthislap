@@ -1,4 +1,4 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607140001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607210001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -60,6 +60,7 @@ import {
   standingsAwardsList,
   leagueYearSelect,
   leagueList,
+  footyScheduleList,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -93,7 +94,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607210002";
+} from "./modules/domRefs.js?v=202607210003";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607210001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -193,6 +194,93 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isF
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
+}
+
+function renderFootySchedule(schedule) {
+  if (!footyScheduleList) {
+    return;
+  }
+
+  const fixtures = Array.isArray(schedule?.fixtures) ? schedule.fixtures : [];
+  const errors = Array.isArray(schedule?.errors) ? schedule.errors.filter(Boolean) : [];
+  const generatedAt = formatFootyGeneratedAt(schedule?.generatedAt);
+
+  if (fixtures.length === 0) {
+    footyScheduleList.innerHTML = `
+      <p class="table-message">No upcoming football fixtures were loaded yet.</p>
+      ${generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : ""}
+      ${errors.length ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : ""}
+    `;
+    return;
+  }
+
+  footyScheduleList.innerHTML = `
+    <div class="footy-list">
+      ${fixtures.map(renderFootyFixture).join("")}
+    </div>
+    ${generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : ""}
+    ${errors.length ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : ""}
+  `;
+}
+
+function renderFootyFixture(fixture) {
+  const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
+  const sideLabel = fixture.isHome ? "Home" : "Away";
+  const badge = fixture.homeBadge || fixture.awayBadge || "";
+
+  return `
+    <article class="footy-fixture-card">
+      ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : ""}
+      <div>
+        <h2>${escapeHtml(fixture.home || "TBD")} v ${escapeHtml(fixture.away || "TBD")}</h2>
+        <p>${escapeHtml([fixture.teamName, sideLabel, fixture.league].filter(Boolean).join(" - "))}</p>
+        ${fixture.venue ? `<p>${escapeHtml(fixture.venue)}</p>` : ""}
+      </div>
+      <strong>${escapeHtml(dateLabel)}</strong>
+    </article>
+  `;
+}
+
+function renderFootyScheduleError(error) {
+  if (!footyScheduleList) {
+    return;
+  }
+
+  footyScheduleList.innerHTML = `<p class="table-message">Unable to load footy schedule: ${escapeHtml(error.message)}</p>`;
+}
+
+function formatFootyGeneratedAt(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatFootyFixtureDate(value) {
+  if (!value) {
+    return "TBD";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function renderFantasyCriticPage() {
@@ -3967,6 +4055,17 @@ loadFantasyCriticLeague("2026");
 syncThemeToggle();
 hydrateBracketSubmitter();
 hydrateManagerSession();
+
+loadJson("data/footy-schedule.json")
+  .then((schedule) => {
+    siteData.footySchedule = schedule;
+    renderFootySchedule(schedule);
+    console.info("Box This Lap footy schedule loaded", schedule);
+  })
+  .catch((error) => {
+    renderFootyScheduleError(error);
+    console.error("Box This Lap footy schedule failed to load", error);
+  });
 
 Promise.all([
   loadSheet("portalManagers"),

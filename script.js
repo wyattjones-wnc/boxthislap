@@ -130,7 +130,7 @@ const AWARD_DEFINITIONS = [
     abbreviation: "NL",
     competition: "2026 World Cup",
     id: "world-cup-2026-nations-league-winner",
-    image: "assets/awards/world-cup-2026-nations-league.jpg",
+    image: "assets/awards/world-cup-2026-nations-league.png",
     label: "2026 World Cup Nations League Champion",
     standings: "nations",
     year: "2026",
@@ -3921,7 +3921,7 @@ function renderStandingsAwards() {
 }
 
 function getActiveStandingsTab() {
-  return document.querySelector("[data-tab].is-active")?.dataset.tab || "players-championship";
+  return document.querySelector("#standings [data-tab].is-active")?.dataset.tab || "players-championship";
 }
 
 function getAwardsForStandingsTab(tabName) {
@@ -3980,7 +3980,7 @@ function renderAwardCard(award, context = "standings-summary") {
   const image = award.image
     ? `<img class="award-card-image" src="${escapeHtml(award.image)}" alt="">`
     : `<span class="award-card-fallback">${escapeHtml(award.abbreviation || "AW")}</span>`;
-  const secondary = [award.entityName, award.competition].filter(Boolean).join(" - ");
+  const secondary = context === "manager" ? "" : [award.entityName, award.competition].filter(Boolean).join(" - ");
 
   return `
     <article class="award-card award-card--${escapeHtml(context)}">

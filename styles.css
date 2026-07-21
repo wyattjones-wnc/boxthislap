@@ -625,9 +625,6 @@ body.has-shell-stale-warning .stale-shell-alert {
 .award-card-media {
   align-items: center;
   aspect-ratio: 1;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
   display: flex;
   justify-content: center;
   overflow: hidden;
@@ -711,8 +708,6 @@ body.has-shell-stale-warning .stale-shell-alert {
 .award-badge-mark {
   align-items: center;
   aspect-ratio: 1;
-  background: linear-gradient(135deg, #f6d365, #c78719);
-  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 999px;
   color: #111827;
   display: inline-flex;

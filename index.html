@@ -365,6 +365,17 @@
         </div>
 
         <div class="manager-hub-grid">
+          <section class="manager-hub-card manager-awards-card" aria-labelledby="manager-awards-heading">
+            <div class="manager-hub-card-heading">
+              <h2 id="manager-awards-heading">Awards</h2>
+            </div>
+            <div class="manager-awards-list" id="manager-awards-list">
+              <article class="workflow-item">
+                <p class="table-message">Log in to load awards.</p>
+              </article>
+            </div>
+          </section>
+
           <details class="manager-hub-card workflow-dropdown" aria-labelledby="workflow-heading">
             <summary class="manager-hub-card-heading workflow-summary">
               <h2 id="workflow-heading">Notifications</h2>
@@ -393,17 +404,6 @@
             <div class="manager-summary-list" id="manager-summary-list">
               <article class="workflow-item">
                 <p class="table-message">Log in to load manager results.</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="manager-hub-card" aria-labelledby="manager-awards-heading">
-            <div class="manager-hub-card-heading">
-              <h2 id="manager-awards-heading">Awards</h2>
-            </div>
-            <div class="manager-awards-list" id="manager-awards-list">
-              <article class="workflow-item">
-                <p class="table-message">Log in to load awards.</p>
               </article>
             </div>
           </section>
@@ -542,6 +542,13 @@
             Manager Results
           </button>
         </div>
+
+        <section class="standings-awards" id="standings-awards" hidden>
+          <div class="standings-awards-heading">
+            <h2>Awards</h2>
+          </div>
+          <div class="standings-awards-list" id="standings-awards-list"></div>
+        </section>
 
         <div class="tab-panel is-active" data-tab-panel="players-championship" role="tabpanel">
           <div class="standings-controls">
@@ -1161,6 +1168,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607200001"></script>
+    <script type="module" src="script.js?v=202607200002"></script>
   </body>
 </html>

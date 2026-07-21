@@ -33,6 +33,8 @@ const workflowList = document.querySelector("#workflow-list");
 const managerSummaryList = document.querySelector("#manager-summary-list");
 const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
 const managerAwardsList = document.querySelector("#manager-awards-list");
+const standingsAwards = document.querySelector("#standings-awards");
+const standingsAwardsList = document.querySelector("#standings-awards-list");
 const leagueYearSelect = document.querySelector("#league-year-select");
 const leagueList = document.querySelector("#league-list");
 const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
@@ -597,6 +599,10 @@ function showTab(tabName, options = {}) {
   tabPanels.forEach((panel) => {
     panel.classList.toggle("is-active", panel.dataset.tabPanel === tabName);
   });
+
+  if (["players-championship", "nations-league", "manager-results"].includes(tabName)) {
+    renderStandingsAwards();
+  }
 
   if (options.scrollToTop) {
     scrollToPageTop();
@@ -3866,15 +3872,7 @@ function renderManagerAwards(managerId) {
     return;
   }
 
-  managerAwardsList.innerHTML = awards.map((award) => `
-    <article class="award-card">
-      ${renderAwardBadge(award, "manager")}
-      <div>
-        <h3>${escapeHtml(award.label)}</h3>
-        <p>${escapeHtml([award.entityName, award.competition].filter(Boolean).join(" - "))}</p>
-      </div>
-    </article>
-  `).join("");
+  managerAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "manager")).join("");
 }
 
 function getManagerSummarySelectedYear() {
@@ -3904,6 +3902,36 @@ function hasManagerHubResultData() {
   );
 }
 
+function renderStandingsAwards() {
+  if (!standingsAwards || !standingsAwardsList) {
+    return;
+  }
+
+  const activeTab = getActiveStandingsTab();
+  const awards = getAwardsForStandingsTab(activeTab);
+
+  standingsAwards.hidden = awards.length === 0;
+
+  if (!awards.length) {
+    standingsAwardsList.innerHTML = "";
+    return;
+  }
+
+  standingsAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
+}
+
+function getActiveStandingsTab() {
+  return document.querySelector("[data-tab].is-active")?.dataset.tab || "players-championship";
+}
+
+function getAwardsForStandingsTab(tabName) {
+  if (tabName === "nations-league") {
+    return getResolvedAwards().filter((award) => award.standings === "nations");
+  }
+
+  return [];
+}
+
 function getResolvedAwards() {
   return AWARD_DEFINITIONS
     .map((definition) => resolveAward(definition))
@@ -3912,7 +3940,13 @@ function getResolvedAwards() {
 
 function resolveAward(definition) {
   if (definition.standings === "nations") {
-    const winner = getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
+    const displayRows = siteData.matchResults
+      ? (shouldShowAllStandingsData()
+        ? getCurrentNationsLeagueRows(siteData.matchResults)
+        : getCurrentDraftedNationsLeagueRows(siteData.matchResults))
+      : [];
+    const winner = displayRows.find((row) => row.rank === 1) ??
+      getNationsLeagueRows(siteData.matchResults || []).find((row) => row.rank === 1);
 
     if (!winner) {
       return null;
@@ -3940,6 +3974,23 @@ function getAwardsForNation(nationName) {
 
 function renderAwardBadges(awards = []) {
   return awards.map((award) => renderAwardBadge(award)).join("");
+}
+
+function renderAwardCard(award, context = "standings-summary") {
+  const image = award.image
+    ? `<img class="award-card-image" src="${escapeHtml(award.image)}" alt="">`
+    : `<span class="award-card-fallback">${escapeHtml(award.abbreviation || "AW")}</span>`;
+  const secondary = [award.entityName, award.competition].filter(Boolean).join(" - ");
+
+  return `
+    <article class="award-card award-card--${escapeHtml(context)}">
+      <div class="award-card-media">${image}</div>
+      <div class="award-card-copy">
+        <h3>${escapeHtml(award.label)}</h3>
+        ${secondary ? `<p>${escapeHtml(secondary)}</p>` : ""}
+      </div>
+    </article>
+  `;
 }
 
 function renderAwardBadge(award, context = "standings") {
@@ -4194,6 +4245,8 @@ function renderFilteredStandings() {
   if (siteData.managerResultsSource) {
     renderManagerResults(siteData.managerResultsSource);
   }
+
+  renderStandingsAwards();
 }
 
 function syncTestScoringUi() {
@@ -6586,6 +6639,8 @@ function renderNationsLeague(results) {
       </tr>
     `;
   }).join("");
+
+  renderStandingsAwards();
 }
 
 function filterStandingRowsByGameScope(rows, getManager) {

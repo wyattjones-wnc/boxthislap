@@ -407,6 +407,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 18px;
 }
 
+.manager-awards-card {
+  grid-column: 1 / -1;
+}
+
 .workflow-dropdown {
   align-self: start;
   padding: 0;
@@ -613,9 +617,31 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  gap: 12px;
-  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  grid-template-columns: 72px minmax(0, 1fr);
   padding: 12px;
+}
+
+.award-card-media {
+  align-items: center;
+  aspect-ratio: 1;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.award-card-image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.award-card-copy {
+  min-width: 0;
 }
 
 .award-card h3 {
@@ -627,6 +653,35 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--muted);
   font-weight: 800;
   margin: 3px 0 0;
+}
+
+.standings-awards {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.standings-awards-heading {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.standings-awards-heading h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.standings-awards-list {
+  display: grid;
+  gap: 10px;
+}
+
+.award-card--standings-summary {
+  grid-template-columns: 56px minmax(0, 1fr);
 }
 
 .standing-name-with-awards {

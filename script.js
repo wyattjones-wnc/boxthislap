@@ -4020,6 +4020,19 @@ function getAwardsForNation(nationName) {
   });
 }
 
+function getAwardsForManager(manager) {
+  const managerId = String(manager?.id ?? manager?.ID ?? manager?.["Manager ID"] ?? "").trim();
+  const managerName = normalizeLookupName(manager?.displayName || manager?.name || manager?.Name);
+
+  return getResolvedAwards().filter((award) => {
+    const awardManagerId = String(award.manager?.id ?? award.manager?.ID ?? award.manager?.["Manager ID"] ?? "").trim();
+    const awardManagerName = normalizeLookupName(award.manager?.displayName || award.manager?.name || award.manager?.Name);
+
+    return (managerId && awardManagerId && managerId === awardManagerId) ||
+      (managerName && awardManagerName && managerName === awardManagerName);
+  });
+}
+
 function renderAwardBadges(awards = []) {
   return awards.map((award) => renderAwardBadge(award)).join("");
 }
@@ -7054,11 +7067,17 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
 
   managerResultsRows.innerHTML = rows.map((manager, index) => {
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
+    const awards = getAwardsForManager(manager);
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(manager, index, rows))}</td>
-        <td data-label="Manager">${renderManagerChip(manager)}</td>
+        <td data-label="Manager">
+          <span class="manager-result-awards">
+            ${renderManagerChip(manager)}
+            ${renderAwardBadges(awards)}
+          </span>
+        </td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
       </tr>
       <tr class="manager-detail-row" id="${detailId}" hidden>

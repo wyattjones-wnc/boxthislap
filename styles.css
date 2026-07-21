@@ -688,6 +688,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 8px;
 }
 
+.manager-result-awards {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .award-badge {
   align-items: center;
   background: var(--soft);

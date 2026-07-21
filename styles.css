@@ -646,7 +646,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 .award-card-image {
   display: block;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   width: 100%;
 }
 
@@ -708,11 +709,19 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 8px;
 }
 
+.standing-manager-with-awards {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .award-badge {
   align-items: center;
   background: var(--soft);
   border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--line));
   border-radius: 999px;
+  box-sizing: border-box;
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
@@ -723,6 +732,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   max-width: 100%;
   padding: 3px 7px 3px 3px;
   vertical-align: middle;
+}
+
+.award-badge[aria-expanded="false"] {
+  height: 32px;
+  justify-content: center;
+  padding: 3px;
+  width: 32px;
 }
 
 .award-badge-mark {

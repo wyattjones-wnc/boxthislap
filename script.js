@@ -127,6 +127,16 @@ const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
 const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
 const AWARD_DEFINITIONS = [
   {
+    abbreviation: "PC",
+    competition: "2026 World Cup",
+    draftName: "2026 World Cup Players' Championship",
+    id: "world-cup-2026-players-championship-winner",
+    image: "assets/awards/world-cup-2026-players-championship.png",
+    label: "2026 World Cup Players' Championship",
+    standings: "players",
+    year: "2026",
+  },
+  {
     abbreviation: "NL",
     competition: "2026 World Cup",
     draftName: "2026 World Cup Nation's League",
@@ -4041,11 +4051,15 @@ function getAwardsForNation(nationName) {
   });
 }
 
-function getAwardsForManager(manager) {
+function getAwardsForManager(manager, options = {}) {
   const managerId = String(manager?.id ?? manager?.ID ?? manager?.["Manager ID"] ?? "").trim();
   const managerName = normalizeLookupName(manager?.displayName || manager?.name || manager?.Name);
 
   return getResolvedAwards().filter((award) => {
+    if (options.standings && award.standings !== options.standings) {
+      return false;
+    }
+
     const awardManagerId = String(award.manager?.id ?? award.manager?.ID ?? award.manager?.["Manager ID"] ?? "").trim();
     const awardManagerName = normalizeLookupName(award.manager?.displayName || award.manager?.name || award.manager?.Name);
 
@@ -6493,7 +6507,7 @@ function renderPlayerChampionship(performances) {
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(player, index, rows))}</td>
         <td data-label="Player">${renderPlayerNameWithPosition(player.name, player.position)}</td>
-        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
+        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager, { standings: "players" })}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
       </tr>
@@ -6723,7 +6737,7 @@ function renderNationsLeague(results) {
             ${renderAwardBadges(awards)}
           </span>
         </td>
-        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager)}</td>
+        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager, { standings: "nations" })}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>
       </tr>
@@ -7927,11 +7941,16 @@ function getManagerForDraft(draft) {
   return siteData.managerDrafts?.managersById.get(draft?.["Manager ID"]) ?? null;
 }
 
-function renderStandingDetail(value, manager) {
+function renderStandingDetail(value, manager, options = {}) {
   const parts = [`<span class="standing-detail-main">${escapeHtml(value)}</span>`];
 
   if (manager) {
-    parts.push(renderManagerChip(manager));
+    parts.push(`
+      <span class="standing-manager-with-awards">
+        ${renderManagerChip(manager)}
+        ${renderAwardBadges(getAwardsForManager(manager, { standings: options.standings }))}
+      </span>
+    `);
   }
 
   return `<span class="standing-detail">${parts.join("")}</span>`;

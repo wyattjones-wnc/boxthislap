@@ -95,6 +95,7 @@ import {
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210002";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607210001";
+import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -138,32 +139,10 @@ const router = createRouter({
 });
 const { showDraftView, showPage, showTab } = router;
 
-function getCurrentTheme() {
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
-}
-
-function setTheme(theme) {
-  const normalizedTheme = theme === "light" ? "light" : "dark";
-  document.documentElement.dataset.theme = normalizedTheme;
-
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
-  } catch (error) {
-    console.warn("Unable to save theme preference", error);
-  }
-
-  syncThemeToggle();
-}
-
-function syncThemeToggle() {
-  if (!themeToggle) {
-    return;
-  }
-
-  const theme = getCurrentTheme();
-  themeToggle.textContent = theme === "dark" ? "Dark" : "Light";
-  themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
-}
+const { syncThemeToggle } = createThemeController({
+  storageKey: THEME_STORAGE_KEY,
+  toggle: themeToggle,
+});
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -1767,10 +1746,6 @@ document.addEventListener("click", (event) => {
   event.preventDefault();
   event.stopPropagation();
   awardButton.setAttribute("aria-expanded", String(awardButton.getAttribute("aria-expanded") !== "true"));
-});
-
-themeToggle?.addEventListener("click", () => {
-  setTheme(getCurrentTheme() === "dark" ? "light" : "dark");
 });
 
 copyCurrentPageLinkButton?.addEventListener("click", () => {

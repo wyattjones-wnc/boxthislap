@@ -471,7 +471,7 @@ function showPage(pageName, options = {}) {
   const allowedPageName = pageAliases[pageName] || pageName;
   const testRulesBlocked = allowedPageName === "rules" && !shouldUseNationTestScoring();
   const pageExists = !testRulesBlocked && [...pages].some((page) => page.dataset.page === allowedPageName);
-  const activePageName = pageExists ? allowedPageName : "results";
+  const activePageName = pageExists ? allowedPageName : "footy";
 
   pages.forEach((page) => {
     page.classList.toggle("is-active", page.dataset.page === activePageName);
@@ -500,6 +500,10 @@ function showPage(pageName, options = {}) {
 }
 
 function getHeaderArtName(pageName) {
+  if (getNavScope(pageName) === "home") {
+    return "";
+  }
+
   if (pageName.startsWith("formula-1-2024")) {
     return "formula-one-2024";
   }
@@ -532,6 +536,10 @@ function getHeaderArtName(pageName) {
 }
 
 function getNavScope(pageName) {
+  if (["footy", "leagues", "login", "manager-hub"].includes(pageName)) {
+    return "home";
+  }
+
   if (pageName.startsWith("formula-1-2024")) {
     return "formula-one-2024";
   }
@@ -552,11 +560,11 @@ function getNavScope(pageName) {
     return "fantasy-office-2026";
   }
 
-  if (pageName === "leagues") {
-    return sessionStorage.getItem("boxThisLapActiveNavScope") || "world-cup";
+  if (isWorldCupPage(pageName)) {
+    return "world-cup";
   }
 
-  return "world-cup";
+  return "home";
 }
 
 function rememberNavScope(pageName) {
@@ -585,9 +593,18 @@ function rememberNavScope(pageName) {
     return;
   }
 
-  if (pageName !== "leagues") {
+  if (isWorldCupPage(pageName)) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "world-cup");
+    return;
   }
+
+  if (["footy", "leagues", "login", "manager-hub"].includes(pageName)) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "home");
+  }
+}
+
+function isWorldCupPage(pageName) {
+  return ["today", "tomorrow", "results", "draft", "standings", "rules", "matches", "bracket", "testing"].includes(pageName);
 }
 
 function showTab(tabName, options = {}) {
@@ -2998,8 +3015,8 @@ function signOutManager() {
   profileMenuButton?.setAttribute("aria-expanded", "false");
   renderLoginState();
   renderManagerHub();
-  showPage("results", { scrollToTop: true });
-  window.location.hash = "results";
+  showPage("footy", { scrollToTop: true });
+  window.location.hash = "footy";
 }
 
 async function copyCurrentPageUrl() {
@@ -3859,7 +3876,7 @@ function renderManagerAwards(managerId) {
     return;
   }
 
-  if (!siteData.matchResults || !siteData.managerDrafts) {
+  if (!siteData.portalDrafts) {
     managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
     return;
   }
@@ -3918,6 +3935,10 @@ function renderStandingsAwards() {
   }
 
   standingsAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
+
+  if (siteData.managerSession?.managerId) {
+    renderManagerAwards(siteData.managerSession.managerId);
+  }
 }
 
 function getAwardsForCurrentStandings() {
@@ -4790,15 +4811,15 @@ function renderRulesNationBreakdownRow(row) {
 }
 
 window.addEventListener("hashchange", () => {
-  showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
+  showPage(window.location.hash.replace("#", "") || "footy", { scrollToTop: true });
 });
 
 window.addEventListener("popstate", () => {
-  showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
+  showPage(window.location.hash.replace("#", "") || "footy", { scrollToTop: true });
 });
 
 syncTestScoringUi();
-showPage(window.location.hash.replace("#", "") || "results");
+showPage(window.location.hash.replace("#", "") || "footy");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
 loadFantasyCriticLeague("2025");

@@ -407,6 +407,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 18px;
 }
 
+.content-shell {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px var(--shadow);
+  padding: 18px;
+}
+
 .manager-awards-card {
   grid-column: 1 / -1;
 }

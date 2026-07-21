@@ -202,7 +202,7 @@
     </div>
     <header class="site-header">
       <nav class="topbar" aria-label="Primary">
-        <a class="brand" href="#results" data-page-link="results">
+        <a class="brand" href="#footy" data-page-link="footy">
           <img src="assets/box-this-lap-logo.jpg" alt="Box This Lap">
         </a>
         <div class="header-page-art" data-header-art="world-cup" aria-hidden="true">
@@ -259,7 +259,11 @@
             <img src="assets/final/2025-fantasy-office-header.jpg?v=202607120001" alt="">
           </picture>
         </div>
-        <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="Site sections">
+        <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
+          <a href="#footy" data-page-link="footy" role="tab">Footy</a>
+          <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+        <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="World Cup sections" hidden>
           <a href="#today" data-page-link="today" role="tab">Today</a>
           <a href="#tomorrow" data-page-link="tomorrow" role="tab">Tomorrow</a>
           <a href="#results" data-page-link="results" role="tab">Results</a>
@@ -365,17 +369,6 @@
         </div>
 
         <div class="manager-hub-grid">
-          <section class="manager-hub-card manager-awards-card" aria-labelledby="manager-awards-heading">
-            <div class="manager-hub-card-heading">
-              <h2 id="manager-awards-heading">Awards</h2>
-            </div>
-            <div class="manager-awards-list" id="manager-awards-list">
-              <article class="workflow-item">
-                <p class="table-message">Log in to load awards.</p>
-              </article>
-            </div>
-          </section>
-
           <details class="manager-hub-card workflow-dropdown" aria-labelledby="workflow-heading">
             <summary class="manager-hub-card-heading workflow-summary">
               <h2 id="workflow-heading">Notifications</h2>
@@ -387,6 +380,17 @@
               </article>
             </div>
           </details>
+
+          <section class="manager-hub-card manager-awards-card" aria-labelledby="manager-awards-heading">
+            <div class="manager-hub-card-heading">
+              <h2 id="manager-awards-heading">Awards</h2>
+            </div>
+            <div class="manager-awards-list" id="manager-awards-list">
+              <article class="workflow-item">
+                <p class="table-message">Log in to load awards.</p>
+              </article>
+            </div>
+          </section>
 
           <section class="manager-hub-card" aria-labelledby="manager-summary-heading">
             <div class="manager-hub-card-heading">
@@ -407,6 +411,15 @@
               </article>
             </div>
           </section>
+        </div>
+      </section>
+
+      <section class="page is-active" id="footy" data-page="footy">
+        <div class="section-heading">
+          <h1>Footy</h1>
+        </div>
+        <div class="content-shell">
+          <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
         </div>
       </section>
 
@@ -456,7 +469,7 @@
         </div>
       </section>
 
-      <section class="page is-active" id="results" data-page="results">
+      <section class="page" id="results" data-page="results">
         <div class="section-heading page-heading-with-action results-heading">
           <a class="action-button secondary-action" href="#draft" data-page-link="draft">Draft</a>
           <div>
@@ -1168,6 +1181,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607200009"></script>
+    <script type="module" src="script.js?v=202607210001"></script>
   </body>
 </html>

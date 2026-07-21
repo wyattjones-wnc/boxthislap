@@ -425,6 +425,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-past-toggle {
+  white-space: nowrap;
+}
+
 .footy-fixture-card {
   align-items: center;
   background: var(--soft);

@@ -60,6 +60,7 @@ import {
   standingsAwardsList,
   leagueYearSelect,
   leagueList,
+  footyPastToggle,
   footyScheduleList,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
@@ -117,6 +118,7 @@ const formulaOneResultsMode = {
   2026: "yearly",
 };
 let bracketPicksFallback = {};
+let shouldShowPastFootyFixtures = false;
 const siteData = {};
 window.boxThisLapData = siteData;
 
@@ -202,12 +204,18 @@ function renderFootySchedule(schedule) {
   }
 
   const fixtures = Array.isArray(schedule?.fixtures) ? schedule.fixtures : [];
+  const visibleFixtures = getVisibleFootyFixtures(fixtures);
   const errors = Array.isArray(schedule?.errors) ? schedule.errors.filter(Boolean) : [];
   const generatedAt = formatFootyGeneratedAt(schedule?.generatedAt);
+  const emptyMessage = shouldShowPastFootyFixtures
+    ? "No past football fixtures were loaded yet."
+    : "No upcoming football fixtures were loaded yet.";
 
-  if (fixtures.length === 0) {
+  syncFootyPastToggle(fixtures);
+
+  if (visibleFixtures.length === 0) {
     footyScheduleList.innerHTML = `
-      <p class="table-message">No upcoming football fixtures were loaded yet.</p>
+      <p class="table-message">${emptyMessage}</p>
       ${generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : ""}
       ${errors.length ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : ""}
     `;
@@ -216,11 +224,60 @@ function renderFootySchedule(schedule) {
 
   footyScheduleList.innerHTML = `
     <div class="footy-list">
-      ${fixtures.map(renderFootyFixture).join("")}
+      ${visibleFixtures.map(renderFootyFixture).join("")}
     </div>
     ${generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : ""}
     ${errors.length ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : ""}
   `;
+}
+
+function getVisibleFootyFixtures(fixtures) {
+  const now = Date.now();
+
+  return fixtures.filter((fixture) => {
+    const fixtureTime = getFootyFixtureComparableTime(fixture);
+
+    if (!Number.isFinite(fixtureTime)) {
+      return !shouldShowPastFootyFixtures;
+    }
+
+    return shouldShowPastFootyFixtures ? fixtureTime < now : fixtureTime >= now;
+  });
+}
+
+function getFootyFixtureComparableTime(fixture) {
+  const timestamp = String(fixture?.timestamp || "").trim();
+  const date = String(fixture?.date || "").trim();
+  const time = String(fixture?.time || "").trim();
+  const parsedTimestamp = timestamp ? Date.parse(timestamp) : Number.NaN;
+
+  if (time && Number.isFinite(parsedTimestamp)) {
+    return parsedTimestamp;
+  }
+
+  if (date) {
+    return Date.parse(`${date}T23:59:59`);
+  }
+
+  return parsedTimestamp;
+}
+
+function syncFootyPastToggle(fixtures = []) {
+  if (!footyPastToggle) {
+    return;
+  }
+
+  const now = Date.now();
+  const pastCount = fixtures.filter((fixture) => {
+    const fixtureTime = getFootyFixtureComparableTime(fixture);
+
+    return Number.isFinite(fixtureTime) && fixtureTime < now;
+  }).length;
+
+  footyPastToggle.hidden = fixtures.length === 0;
+  footyPastToggle.textContent = shouldShowPastFootyFixtures ? "Upcoming Matches" : "Past Matches";
+  footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
+  footyPastToggle.disabled = !shouldShowPastFootyFixtures && pastCount === 0;
 }
 
 function renderFootyFixture(fixture) {
@@ -1886,6 +1943,11 @@ document.addEventListener("click", (event) => {
 
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
+});
+
+footyPastToggle?.addEventListener("click", () => {
+  shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
+  renderFootySchedule(siteData.footySchedule);
 });
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {

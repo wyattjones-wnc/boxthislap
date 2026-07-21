@@ -13,7 +13,6 @@ const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 2200;
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
 const SHOULD_USE_API_CACHE = !isFalseValue(process.env.FOOTY_API_CACHE || "true");
-const SHOULD_USE_CONFIGURED_SEASONS = isTrueValue(process.env.FOOTY_USE_CONFIGURED_SEASONS);
 const leagueSeasonCache = new Map();
 let lastExternalRequestAt = 0;
 
@@ -133,27 +132,33 @@ async function loadTeamDetails(providerTeamId) {
 }
 
 async function loadTeamSchedule(team) {
-  const seasons = getTeamScheduleSeasons(team);
   const leagueSchedules = [];
   const notes = [];
   const errors = [];
 
   for (const league of team.providerLeagues) {
-    for (const season of seasons) {
-      let leagueEvents = [];
+    let leagueHadMatchingEvents = false;
 
+    for (const season of getCurrentScheduleSeasonCandidates()) {
       try {
-        leagueEvents = await loadLeagueSeasonEvents(league.id, season);
+        const leagueEvents = await loadLeagueSeasonEvents(league.id, season);
+        const teamEvents = leagueEvents.filter((event) => isTeamEvent(event, team));
+        leagueSchedules.push(...teamEvents);
+        notes.push(
+          `Loaded ${teamEvents.length} matching events from ${league.name || `league ${league.id}`} ${season}.`,
+        );
+
+        if (teamEvents.length > 0) {
+          leagueHadMatchingEvents = true;
+          break;
+        }
       } catch (error) {
         errors.push(`Unable to load ${league.name || `league ${league.id}`} ${season}: ${error.message}`);
-        continue;
       }
+    }
 
-      const teamEvents = leagueEvents.filter((event) => isTeamEvent(event, team));
-      leagueSchedules.push(...teamEvents);
-      notes.push(
-        `Loaded ${teamEvents.length} matching events from ${league.name || `league ${league.id}`} ${season}.`,
-      );
+    if (!leagueHadMatchingEvents) {
+      notes.push(`${league.name || `league ${league.id}`} did not expose matching events in current season data.`);
     }
   }
 
@@ -419,7 +424,7 @@ function isLeaguesSection(headers) {
   const normalizedHeaders = headers.map(normalizeText);
 
   return normalizedHeaders.includes("team id") &&
-    normalizedHeaders.includes("provider team id");
+    (normalizedHeaders.includes("provider league id") || normalizedHeaders.includes("provider team id"));
 }
 
 function parseCsvRows(text) {
@@ -543,24 +548,6 @@ function getTeamProviderLeagues(team, configuredLeagueRows, providerTeam) {
   return dedupeBy(leagues, (league) => league.id);
 }
 
-function getTeamScheduleSeasons(team) {
-  if (!SHOULD_USE_CONFIGURED_SEASONS) {
-    return getDefaultScheduleSeasons();
-  }
-
-  const configuredSeasons = parseList(getField(
-    team,
-    "Schedule Seasons",
-    "Schedule Season",
-    "Seasons",
-    "Season",
-    "Provider Seasons",
-    "Provider Season",
-  ));
-
-  return configuredSeasons.length > 0 ? configuredSeasons : getDefaultScheduleSeasons();
-}
-
 function groupRowsByField(rows, ...fieldNames) {
   const groupedRows = new Map();
 
@@ -579,14 +566,12 @@ function groupRowsByField(rows, ...fieldNames) {
   return groupedRows;
 }
 
-function getDefaultScheduleSeasons(referenceDate = new Date()) {
+function getCurrentScheduleSeasonCandidates(referenceDate = new Date()) {
   const year = referenceDate.getUTCFullYear();
   const seasonStartYear = referenceDate.getUTCMonth() >= 6 ? year : year - 1;
+  const seasonCandidates = [`${seasonStartYear}-${seasonStartYear + 1}`, String(year)];
 
-  return [
-    `${seasonStartYear}-${seasonStartYear + 1}`,
-    String(year),
-  ];
+  return dedupeBy(seasonCandidates, (season) => season);
 }
 
 function isTeamEvent(event, team) {

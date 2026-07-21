@@ -35,6 +35,7 @@ export const standingsAwards = document.querySelector("#standings-awards");
 export const standingsAwardsList = document.querySelector("#standings-awards-list");
 export const leagueYearSelect = document.querySelector("#league-year-select");
 export const leagueList = document.querySelector("#league-list");
+export const footyPastToggle = document.querySelector("#footy-past-toggle");
 export const footyScheduleList = document.querySelector("#footy-schedule-list");
 export const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
 export const fantasyCritic2026Content = document.querySelector("#fantasy-critic-2026-content");

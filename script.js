@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220002";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220001";
+} from "./modules/siteConfig.js?v=202607220002";
 
 import {
   pageLinks,
@@ -4748,18 +4748,23 @@ Promise.allSettled([
     siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
     renderLoginManagerOptions();
     renderLoginState();
-    renderManagerHub();
-    renderStandingsAwards();
-    renderFantasyCriticViews();
-    if (siteData.fantasyOffice2025?.results?.length) {
-      renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
-    }
-    if (siteData.fantasyOffice2026?.results?.length) {
-      renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
-    }
-    renderFormulaOneResults("2024");
-    renderFormulaOneResults("2025");
-    renderFormulaOneResults("2026");
+
+    runPortalRender("manager hub", renderManagerHub);
+    runPortalRender("standings awards", renderStandingsAwards);
+    runPortalRender("Fantasy Critic awards", renderFantasyCriticViews);
+    runPortalRender("2025 Fantasy Office awards", () => {
+      if (siteData.fantasyOffice2025?.results?.length) {
+        renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+      }
+    });
+    runPortalRender("2026 Fantasy Office awards", () => {
+      if (siteData.fantasyOffice2026?.results?.length) {
+        renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+      }
+    });
+    runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
+    runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
+    runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
 
     if (managersResult.status !== "fulfilled" || draftsResult.status !== "fulfilled" || logsResult.status !== "fulfilled") {
       console.warn("Box This Lap manager portal optional data partially failed", {
@@ -4786,6 +4791,14 @@ Promise.allSettled([
 
     console.error("Box This Lap manager portal data failed to load", error);
   });
+
+function runPortalRender(label, render) {
+  try {
+    render();
+  } catch (error) {
+    console.error(`Box This Lap ${label} failed to render`, error);
+  }
+}
 
 loadPlayers()
   .then((players) => {

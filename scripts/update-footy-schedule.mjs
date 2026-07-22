@@ -181,6 +181,13 @@ async function main() {
   fixtures.push(...calendarSchedules.fixtures);
 
   const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
+  const teamSchedules = buildTeamSchedules({
+    errors,
+    fixtures: dedupedFixtures,
+    generatedAt,
+    notes: coverageNotes,
+    teams,
+  });
   const payload = {
     generatedAt,
     source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
@@ -190,6 +197,7 @@ async function main() {
     },
     prioritySets,
     teams,
+    teamSchedules,
     fixtures: dedupedFixtures,
     errors,
   };
@@ -1025,6 +1033,84 @@ function mergeFixtures(fixtures) {
   }
 
   return [...fixtureMap.values()];
+}
+
+function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [], teams = [] }) {
+  const fixturesByTeamId = groupBy(fixtures, (fixture) => String(fixture.teamId || "").trim());
+
+  return teams.map((team) => {
+    const teamFixtures = (fixturesByTeamId.get(String(team.id || "").trim()) || []).sort(compareFixtures);
+    const teamNotes = getMessagesForTeam(team, notes);
+    const teamErrors = getMessagesForTeam(team, errors);
+    const sourceNames = teamFixtures.flatMap((fixture) => {
+      return Array.isArray(fixture.sources) ? fixture.sources : [fixture.source].filter(Boolean);
+    });
+
+    return {
+      updatedAt: generatedAt,
+      status: getTeamScheduleStatus(teamFixtures, teamErrors),
+      team: {
+        badge: team.badge || "",
+        id: team.id || "",
+        league: team.league || "",
+        name: team.name || "",
+        priority: team.priority || "",
+      },
+      sources: [...new Set(sourceNames)].sort(),
+      fixtureCount: teamFixtures.length,
+      fixtures: teamFixtures,
+      notes: [...new Set(teamNotes)],
+      errors: [...new Set(teamErrors)],
+    };
+  });
+}
+
+function getTeamScheduleStatus(fixtures = [], errors = []) {
+  if (errors.length > 0 && fixtures.length === 0) {
+    return "error";
+  }
+
+  if (errors.length > 0) {
+    return "partial";
+  }
+
+  if (fixtures.length === 0) {
+    return "no-fixtures";
+  }
+
+  return "updated";
+}
+
+function getMessagesForTeam(team, messages = []) {
+  const teamName = String(team.name || "").trim();
+  const normalizedTeamName = normalizeText(teamName);
+  const prefixedMessage = `${normalizedTeamName}:`;
+  const unablePrefix = `unable to load fixtures for ${normalizedTeamName}:`;
+
+  return messages
+    .map((message) => String(message || "").trim())
+    .filter((message) => {
+      const normalizedMessage = normalizeText(message);
+
+      return normalizedMessage.startsWith(prefixedMessage) || normalizedMessage.startsWith(unablePrefix);
+    })
+    .map((message) => stripTeamMessagePrefix(teamName, message))
+    .filter(Boolean);
+}
+
+function stripTeamMessagePrefix(teamName, message) {
+  const directPrefix = `${teamName}:`;
+  const unablePrefix = `Unable to load fixtures for ${teamName}:`;
+
+  if (message.startsWith(directPrefix)) {
+    return message.slice(directPrefix.length).trim();
+  }
+
+  if (message.startsWith(unablePrefix)) {
+    return message.slice(unablePrefix.length).trim();
+  }
+
+  return message;
 }
 
 function getFixtureMergeKey(fixture) {

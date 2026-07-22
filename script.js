@@ -210,24 +210,28 @@ function renderFootySchedule(schedule) {
   const emptyMessage = shouldShowPastFootyFixtures
     ? "No past football fixtures were loaded yet."
     : "No upcoming football fixtures were loaded yet.";
+  const updatedMarkup = generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : "";
+  const errorsMarkup = errors.length
+    ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>`
+    : "";
 
   syncFootyPastToggle(fixtures);
 
   if (visibleFixtures.length === 0) {
     footyScheduleList.innerHTML = `
+      ${updatedMarkup}
       <p class="table-message">${emptyMessage}</p>
-      ${generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : ""}
-      ${errors.length ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : ""}
+      ${errorsMarkup}
     `;
     return;
   }
 
   footyScheduleList.innerHTML = `
+    ${updatedMarkup}
     <div class="footy-list">
       ${visibleFixtures.map(renderFootyFixture).join("")}
     </div>
-    ${generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : ""}
-    ${errors.length ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : ""}
+    ${errorsMarkup}
   `;
 }
 
@@ -267,30 +271,27 @@ function syncFootyPastToggle(fixtures = []) {
     return;
   }
 
-  const now = Date.now();
-  const pastCount = fixtures.filter((fixture) => {
-    const fixtureTime = getFootyFixtureComparableTime(fixture);
-
-    return Number.isFinite(fixtureTime) && fixtureTime < now;
-  }).length;
-
   footyPastToggle.hidden = fixtures.length === 0;
   footyPastToggle.textContent = shouldShowPastFootyFixtures ? "Upcoming Matches" : "Past Matches";
   footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
-  footyPastToggle.disabled = !shouldShowPastFootyFixtures && pastCount === 0;
+  footyPastToggle.disabled = false;
 }
 
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
-  const sideLabel = fixture.isHome ? "Home" : "Away";
-  const badge = fixture.homeBadge || fixture.awayBadge || "";
+  const sideLabel = fixture.isHome ? "H" : "A";
+  const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
 
   return `
     <article class="footy-fixture-card">
       ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : ""}
       <div>
         <h2>${escapeHtml(fixture.home || "TBD")} v ${escapeHtml(fixture.away || "TBD")}</h2>
-        <p>${escapeHtml([fixture.teamName, sideLabel, fixture.league].filter(Boolean).join(" - "))}</p>
+        <p class="footy-fixture-meta">
+          <span>${escapeHtml(fixture.teamName || "")}</span>
+          <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
+          ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
+        </p>
         ${fixture.venue ? `<p>${escapeHtml(fixture.venue)}</p>` : ""}
       </div>
       <strong>${escapeHtml(dateLabel)}</strong>

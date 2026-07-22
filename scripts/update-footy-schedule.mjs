@@ -228,6 +228,7 @@ function normalizeEvent(event, team) {
     season: event.strSeason || "",
     source: PROVIDER_NAME,
     status: event.strStatus || "",
+    teamBadge: team.badge || "",
     teamId: team.id,
     teamName: team.name,
     time: event.strTime || "",

@@ -426,6 +426,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-past-toggle {
+  justify-self: end;
   white-space: nowrap;
 }
 
@@ -459,6 +460,27 @@ body.has-shell-stale-warning .stale-shell-alert {
   margin: 0;
 }
 
+.footy-fixture-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footy-side-chip {
+  align-items: center;
+  background: var(--track);
+  border-radius: 999px;
+  color: var(--track-ink);
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 900;
+  height: 22px;
+  justify-content: center;
+  line-height: 1;
+  width: 22px;
+}
+
 .footy-fixture-card strong {
   color: var(--accent-dark);
   font-size: 0.9rem;
@@ -468,7 +490,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-updated,
 .footy-errors {
-  margin-top: 14px;
+  margin-bottom: 14px;
+  margin-top: 0;
 }
 
 .footy-errors {

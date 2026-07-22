@@ -106,7 +106,7 @@ export function scrollToPageTop() {
 
 function getHeaderArtName(pageName) {
   if (getNavScope(pageName) === "home") {
-    return "";
+    return "default";
   }
 
   if (pageName.startsWith("formula-1-2024")) {
@@ -137,7 +137,7 @@ function getHeaderArtName(pageName) {
     return "world-cup";
   }
 
-  return pageName;
+  return "default";
 }
 
 function getNavScope(pageName) {

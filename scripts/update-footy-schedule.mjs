@@ -9,6 +9,12 @@ const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
 const ICALENDAR_PROVIDER_NAME = "iCalendar";
+const SOURCE_PRIORITY = {
+  [PRIMARY_PROVIDER_NAME]: 40,
+  [ARSENAL_PROVIDER_NAME]: 30,
+  [SPORTDB_PROVIDER_NAME]: 20,
+  [ICALENDAR_PROVIDER_NAME]: 10,
+};
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
@@ -1160,8 +1166,12 @@ function buildTeamScheduleTeam(team, previousTeam = {}) {
 
 function getFixtureSources(fixtures = []) {
   return [...new Set(fixtures.flatMap((fixture) => {
-    return Array.isArray(fixture.sources) ? fixture.sources : [fixture.source].filter(Boolean);
+    return getSingleFixtureSources(fixture);
   }))].sort();
+}
+
+function getSingleFixtureSources(fixture = {}) {
+  return Array.isArray(fixture.sources) ? fixture.sources : [fixture.source].filter(Boolean);
 }
 
 function buildFileUpdateTracker({ generatedAt, teamSchedules = [] }) {
@@ -1249,7 +1259,7 @@ function getFixtureMergeKey(fixture) {
 }
 
 function mergeFixture(existingFixture, incomingFixture) {
-  const primaryFixture = isPrimarySource(existingFixture) ? existingFixture : incomingFixture;
+  const primaryFixture = getFixtureSourcePriority(existingFixture) > getFixtureSourcePriority(incomingFixture) ? existingFixture : incomingFixture;
   const secondaryFixture = primaryFixture === existingFixture ? incomingFixture : existingFixture;
   const sources = [...new Set([
     ...(Array.isArray(primaryFixture.sources) ? primaryFixture.sources : [primaryFixture.source].filter(Boolean)),
@@ -1274,8 +1284,10 @@ function mergeFixture(existingFixture, incomingFixture) {
   };
 }
 
-function isPrimarySource(fixture) {
-  return fixture.source === PRIMARY_PROVIDER_NAME || fixture.sources?.includes(PRIMARY_PROVIDER_NAME);
+function getFixtureSourcePriority(fixture) {
+  return getSingleFixtureSources(fixture).reduce((highestPriority, source) => {
+    return Math.max(highestPriority, SOURCE_PRIORITY[source] || 0);
+  }, 0);
 }
 
 function isSportDbTeamEvent(event, sportDbTeamId, team) {

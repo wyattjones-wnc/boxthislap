@@ -36,3 +36,20 @@ Optional settings:
 - `API_FOOTBALL_TEST_SEASON=2026` changes the season parameter.
 
 Responses are cached under `.cache/api-football-tests/`.
+
+## football-data.org Probe
+
+Use `scripts/test-football-data.mjs` to test football-data.org coverage. It reads the same Football sheet and supports an optional `Football-Data Team ID` column. If no column is present, it has fallback IDs for Arsenal, Barcelona, and Wrexham.
+
+```powershell
+$env:FOOTBALL_DATA_API_KEY='your-football-data-token'
+node scripts\test-football-data.mjs
+```
+
+Optional settings:
+
+- `FOOTBALL_DATA_TEST_REFRESH=1` ignores cached responses.
+- `FOOTBALL_DATA_TEST_LOOKAHEAD_DAYS=365` changes the fixture window.
+- `FOOTBALL_DATA_TEST_STATUS=SCHEDULED` changes the match status filter.
+
+Responses are cached under `.cache/football-data-tests/`.

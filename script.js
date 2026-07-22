@@ -3356,6 +3356,7 @@ function renderManagerSummary(managerId) {
     selectedYear === "all" || selectedYear === "2026" ? renderWorldCupManagerSummary(managerId, source) : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, "2025", "2025 Fantasy Critic") : "",
     selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, "2026", "2026 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2024" ? renderFormulaOneYearlyManagerSummary(managerId, "2024") : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneYearlyManagerSummary(managerId, "2025") : "",
     selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneYearlyManagerSummary(managerId, "2026") : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneWeeklyManagerSummary(managerId, "2025") : "",
@@ -3413,6 +3414,9 @@ function hasManagerHubResultData() {
   return Boolean(
     siteData.managerResultsSource ||
     Object.values(siteData.fantasyCritic || {}).some((state) => state.status !== "loading") ||
+    siteData.formulaOne2024?.standings?.length ||
+    siteData.formulaOne2025?.standings?.length ||
+    siteData.formulaOne2026?.standings?.length ||
     siteData.formulaOne2025Weekly?.standings?.length ||
     siteData.formulaOne2026Weekly?.standings?.length ||
     siteData.formulaOne2026WeeklyResults?.standings?.length
@@ -3473,6 +3477,14 @@ function getCurrentAwardsContext() {
       competition: "2026 World Cup",
       standings: getWorldCupAwardStandingsFilter(),
       year: "2026",
+    };
+  }
+
+  if (activePage.startsWith("formula-1-2024")) {
+    return {
+      competition: "2024 Formula 1",
+      standings: getFormulaOneAwardStandingsFilter("2024"),
+      year: "2024",
     };
   }
 
@@ -4477,6 +4489,7 @@ Promise.all([
     renderLoginState();
     renderManagerHub();
     renderStandingsAwards();
+    renderFormulaOneResults("2024");
     renderFormulaOneResults("2025");
     renderFormulaOneResults("2026");
     console.info("Box This Lap manager portal data loaded", { managers, drafts, logs });
@@ -4643,6 +4656,8 @@ loadSheetText("formulaOne2024")
     const data = parseFormulaOneSheet(csvText);
     siteData.formulaOne2024 = data;
     renderFormulaOneLeague("2024", data);
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2024 data loaded", data);
   })
   .catch((error) => {

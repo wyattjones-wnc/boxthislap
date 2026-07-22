@@ -35,6 +35,16 @@ export const AWARD_DEFINITIONS = [
   },
   {
     abbreviation: "F1",
+    competition: "2024 Formula 1",
+    draftName: "2024 Formula 1",
+    id: "formula-one-2024-bets-winner",
+    image: "assets/awards/formula-one-2024-bets.png",
+    label: "2024 Formula 1 Drivers' Championship",
+    standings: "formula-one-yearly",
+    year: "2024",
+  },
+  {
+    abbreviation: "F1",
     competition: "2025 Formula 1",
     draftName: "2025 Formula 1 Bets",
     id: "formula-one-2025-bets-winner",

@@ -10,9 +10,8 @@
     "teamCount": 7,
     "fixtureCount": 201,
     "statuses": {
-      "partial": 3,
-      "no-fixtures": 2,
-      "updated": 2
+      "updated": 5,
+      "no-fixtures": 2
     }
   },
   "prioritySets": [
@@ -44,7 +43,7 @@
       "attemptedAt": "2026-07-22T12:06:55.931Z",
       "updatedAt": "2026-07-22T12:06:55.931Z",
       "previousUpdatedAt": "2026-07-22T04:13:19.245Z",
-      "status": "partial",
+      "status": "updated",
       "team": {
         "badge": "",
         "id": "1",
@@ -1358,20 +1357,17 @@
         }
       ],
       "notes": [
-        "Skipped football-data.org team verification; missing FOOTBALL_DATA_API_KEY.",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
         "Loaded 43 Arsenal.com fixtures from monthly GraphQL windows.",
         "Loaded 44 iCalendar fixtures from calendar feed."
       ],
-      "errors": [
-        "Unable to load football-data.org fixtures: missing FOOTBALL_DATA_API_KEY."
-      ]
+      "errors": []
     },
     {
       "attemptedAt": "2026-07-22T12:06:55.931Z",
       "updatedAt": "2026-07-22T12:06:55.931Z",
       "previousUpdatedAt": "2026-07-22T04:13:19.245Z",
-      "status": "partial",
+      "status": "updated",
       "team": {
         "badge": "",
         "id": "2",
@@ -3081,20 +3077,16 @@
         }
       ],
       "notes": [
-        "Skipped football-data.org team verification; missing FOOTBALL_DATA_API_KEY.",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 39 iCalendar fixtures from calendar feed.",
-        "Preserved 23 previous fixtures while the current update had provider errors."
+        "Loaded 39 iCalendar fixtures from calendar feed."
       ],
-      "errors": [
-        "Unable to load football-data.org fixtures: missing FOOTBALL_DATA_API_KEY."
-      ]
+      "errors": []
     },
     {
       "attemptedAt": "2026-07-22T12:06:55.931Z",
       "updatedAt": "2026-07-22T12:06:55.931Z",
       "previousUpdatedAt": "2026-07-22T04:13:19.245Z",
-      "status": "partial",
+      "status": "updated",
       "team": {
         "badge": "",
         "id": "3",
@@ -4453,13 +4445,10 @@
         }
       ],
       "notes": [
-        "Skipped football-data.org team verification; missing FOOTBALL_DATA_API_KEY.",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 47 iCalendar fixtures from calendar feed."
       ],
-      "errors": [
-        "Unable to load football-data.org fixtures: missing FOOTBALL_DATA_API_KEY."
-      ]
+      "errors": []
     },
     {
       "attemptedAt": "2026-07-22T12:06:55.931Z",

@@ -16,6 +16,7 @@ const SOURCE_PRIORITY = {
   [ICALENDAR_PROVIDER_NAME]: 10,
 };
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
+const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
 const ARSENAL_GRAPHQL_URL = process.env.ARSENAL_GRAPHQL_URL || "https://afc-prd.graph.arsenal.com/graphql";
@@ -129,6 +130,9 @@ async function main() {
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
+
+  assertRequiredProviderConfiguration(activeTeams);
+
   const dateFrom = formatDate(new Date());
   const dateTo = formatDate(addDays(new Date(), LOOKAHEAD_DAYS));
   const teams = [];
@@ -1609,6 +1613,23 @@ function compareFixtures(first, second) {
   return String(first.timestamp || first.date).localeCompare(String(second.timestamp || second.date)) ||
     comparePriority(first.teamId, second.teamId) ||
     first.teamName.localeCompare(second.teamName);
+}
+
+function assertRequiredProviderConfiguration(activeTeams = []) {
+  const teamsUsingFootballData = activeTeams.filter((team) => getFootballDataTeamId(team));
+
+  if (FOOTBALL_DATA_API_KEY || SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY || teamsUsingFootballData.length === 0) {
+    return;
+  }
+
+  const teamNames = teamsUsingFootballData
+    .map((team) => getField(team, "Name", "Team").trim())
+    .filter(Boolean)
+    .join(", ");
+
+  throw new Error(
+    `Missing FOOTBALL_DATA_API_KEY; refusing to write a degraded schedule for football-data.org teams: ${teamNames}.`
+  );
 }
 
 main().catch((error) => {

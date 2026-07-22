@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-22T03:02:20.989Z",
-  "source": "football-data.org + TheSportsDB",
+  "generatedAt": "2026-07-22T03:13:38.955Z",
+  "source": "football-data.org + TheSportsDB + Arsenal.com",
   "coverage": {
     "mode": "team-scheduled-matches-merged-sources",
     "notes": [
@@ -12,7 +12,8 @@
       "Wrexham: Running competitions: Championship (ELC), Football League Cup (FLC).",
       "Arsenal: Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
       "Barcelona: Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-      "Wrexham: Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches."
+      "Wrexham: Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
+      "Arsenal: Loaded 43 Arsenal.com fixtures from monthly GraphQL windows."
     ]
   },
   "teams": [
@@ -146,25 +147,130 @@
       "date": "2026-08-01",
       "home": "Girona",
       "homeBadge": "",
-      "id": "TheSportsDB:2521780",
-      "leagueId": "4569",
+      "id": "Arsenal.com:8ew7n1ri67qmwp7v5lrcpk9hw",
+      "leagueId": "4nidzmunvpvxk1ir9b6m8mpay",
       "isHome": false,
       "league": "Club Friendlies",
       "opponent": "Girona",
       "round": "0",
       "season": "2026",
-      "source": "TheSportsDB",
+      "source": "Arsenal.com + TheSportsDB",
       "sources": [
+        "Arsenal.com",
         "TheSportsDB"
       ],
-      "sourceDetail": "team-upcoming",
-      "status": "NS",
+      "sourceDetail": "monthly-graphql",
+      "status": "Fixture",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "18:00:00",
-      "timestamp": "2026-08-01T18:00:00",
+      "timestamp": "2026-08-01T18:00:00Z",
       "venue": "Estadi Municipal de Montilivi"
+    },
+    {
+      "away": "Real Betis",
+      "awayBadge": "",
+      "date": "2026-08-05",
+      "home": "Arsenal",
+      "homeBadge": "",
+      "id": "Arsenal.com:7gtr3l35rew0sxv8w40ykk8wk",
+      "leagueId": "4nidzmunvpvxk1ir9b6m8mpay",
+      "isHome": true,
+      "league": "Club Friendlies",
+      "opponent": "Real Betis",
+      "round": "",
+      "season": "",
+      "source": "Arsenal.com",
+      "sources": [
+        "Arsenal.com"
+      ],
+      "sourceDetail": "monthly-graphql",
+      "status": "Fixture",
+      "teamBadge": "https://crests.football-data.org/57.png",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "18:30:00",
+      "timestamp": "2026-08-05T18:30:00Z",
+      "venue": "Aviva Stadium"
+    },
+    {
+      "away": "Borussia Dortmund",
+      "awayBadge": "",
+      "date": "2026-08-09",
+      "home": "Arsenal",
+      "homeBadge": "",
+      "id": "Arsenal.com:4p0u7hy8ly8dlo6njmupeswlw",
+      "leagueId": "bfbepcvvs13v9didqrb12rh05",
+      "isHome": true,
+      "league": "Emirates Cup",
+      "opponent": "Borussia Dortmund",
+      "round": "",
+      "season": "",
+      "source": "Arsenal.com",
+      "sources": [
+        "Arsenal.com"
+      ],
+      "sourceDetail": "monthly-graphql",
+      "status": "Fixture",
+      "teamBadge": "https://crests.football-data.org/57.png",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "13:00:00",
+      "timestamp": "2026-08-09T13:00:00Z",
+      "venue": "Emirates Stadium"
+    },
+    {
+      "away": "Como",
+      "awayBadge": "",
+      "date": "2026-08-12",
+      "home": "Arsenal",
+      "homeBadge": "",
+      "id": "Arsenal.com:6gyu74s227i9dg019sywkn9xw",
+      "leagueId": "4nidzmunvpvxk1ir9b6m8mpay",
+      "isHome": true,
+      "league": "Club Friendlies",
+      "opponent": "Como",
+      "round": "",
+      "season": "",
+      "source": "Arsenal.com",
+      "sources": [
+        "Arsenal.com"
+      ],
+      "sourceDetail": "monthly-graphql",
+      "status": "Fixture",
+      "teamBadge": "https://crests.football-data.org/57.png",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "18:30:00",
+      "timestamp": "2026-08-12T18:30:00Z",
+      "venue": "Emirates Stadium"
+    },
+    {
+      "away": "Manchester City",
+      "awayBadge": "",
+      "date": "2026-08-16",
+      "home": "Arsenal",
+      "homeBadge": "",
+      "id": "Arsenal.com:1sbjlm7uaxg4bkag084ow0178",
+      "leagueId": "dqr4zpn4l9x9br1c5qv1fb6v9",
+      "isHome": true,
+      "league": "Community Shield",
+      "opponent": "Manchester City",
+      "round": "",
+      "season": "",
+      "source": "Arsenal.com",
+      "sources": [
+        "Arsenal.com"
+      ],
+      "sourceDetail": "monthly-graphql",
+      "status": "Fixture",
+      "teamBadge": "https://crests.football-data.org/57.png",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "14:00:00",
+      "timestamp": "2026-08-16T14:00:00Z",
+      "venue": "Principality Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -204,10 +310,11 @@
       "opponent": "Coventry City FC",
       "round": "1",
       "season": "2026",
-      "source": "football-data.org + TheSportsDB",
+      "source": "football-data.org + TheSportsDB + Arsenal.com",
       "sources": [
         "football-data.org",
-        "TheSportsDB"
+        "TheSportsDB",
+        "Arsenal.com"
       ],
       "sourceDetail": "league-season",
       "status": "SCHEDULED",
@@ -331,17 +438,19 @@
       "opponent": "Aston Villa FC",
       "round": "2",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "19:00:00",
       "timestamp": "2026-08-31T19:00:00Z",
-      "venue": ""
+      "venue": "Villa Park"
     },
     {
       "away": "Rayo Vallecano de Madrid",
@@ -456,17 +565,19 @@
       "opponent": "Chelsea FC",
       "round": "3",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:30:00",
       "timestamp": "2026-09-06T15:30:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Burnley FC",
@@ -531,17 +642,19 @@
       "opponent": "Sunderland AFC",
       "round": "4",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "19:00:00",
       "timestamp": "2026-09-12T19:00:00Z",
-      "venue": ""
+      "venue": "Stadium of Light"
     },
     {
       "away": "FC Barcelona",
@@ -606,17 +719,19 @@
       "opponent": "Brighton & Hove Albion FC",
       "round": "5",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "14:00:00",
       "timestamp": "2026-09-19T14:00:00Z",
-      "venue": ""
+      "venue": "American Express Stadium"
     },
     {
       "away": "Southampton FC",
@@ -681,17 +796,19 @@
       "opponent": "Leeds United FC",
       "round": "6",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "14:00:00",
       "timestamp": "2026-10-10T14:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -781,17 +898,19 @@
       "opponent": "Nottingham Forest FC",
       "round": "7",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "14:00:00",
       "timestamp": "2026-10-17T14:00:00Z",
-      "venue": ""
+      "venue": "The City Ground"
     },
     {
       "away": "Preston North End FC",
@@ -856,17 +975,19 @@
       "opponent": "Everton FC",
       "round": "8",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "14:00:00",
       "timestamp": "2026-10-24T14:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -931,17 +1052,19 @@
       "opponent": "Liverpool FC",
       "round": "9",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-10-31T15:00:00Z",
-      "venue": ""
+      "venue": "Anfield"
     },
     {
       "away": "Wrexham AFC",
@@ -1031,17 +1154,19 @@
       "opponent": "Hull City AFC",
       "round": "10",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-11-07T15:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Wolverhampton Wanderers FC",
@@ -1106,17 +1231,19 @@
       "opponent": "Newcastle United FC",
       "round": "11",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-11-21T15:00:00Z",
-      "venue": ""
+      "venue": "St. James' Park"
     },
     {
       "away": "Wrexham AFC",
@@ -1206,17 +1333,19 @@
       "opponent": "Manchester City FC",
       "round": "12",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-11-28T15:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Portsmouth FC",
@@ -1281,17 +1410,19 @@
       "opponent": "Brentford FC",
       "round": "13",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "20:00:00",
       "timestamp": "2026-12-02T20:00:00Z",
-      "venue": ""
+      "venue": "Gtech Community Stadium"
     },
     {
       "away": "Arsenal FC",
@@ -1306,17 +1437,19 @@
       "opponent": "Tottenham Hotspur FC",
       "round": "14",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-12-05T15:00:00Z",
-      "venue": ""
+      "venue": "Tottenham Hotspur Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -1406,17 +1539,19 @@
       "opponent": "AFC Bournemouth",
       "round": "15",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-12-12T15:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -1481,17 +1616,19 @@
       "opponent": "Manchester United FC",
       "round": "16",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-12-19T15:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Queens Park Rangers FC",
@@ -1556,17 +1693,19 @@
       "opponent": "Crystal Palace FC",
       "round": "17",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "15:00:00",
       "timestamp": "2026-12-26T15:00:00Z",
-      "venue": ""
+      "venue": "Selhurst Park"
     },
     {
       "away": "Wrexham AFC",
@@ -1631,17 +1770,19 @@
       "opponent": "Fulham FC",
       "round": "18",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "20:00:00",
       "timestamp": "2026-12-30T20:00:00Z",
-      "venue": ""
+      "venue": "Craven Cottage"
     },
     {
       "away": "Bolton Wanderers FC",
@@ -1681,17 +1822,19 @@
       "opponent": "Ipswich Town FC",
       "round": "19",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-01-02T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "FC Barcelona",
@@ -1731,17 +1874,19 @@
       "opponent": "Brentford FC",
       "round": "20",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-01-06T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "FC Barcelona",
@@ -1781,17 +1926,19 @@
       "opponent": "Hull City AFC",
       "round": "21",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-01-16T12:00:00Z",
-      "venue": ""
+      "venue": "MKM Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -1856,17 +2003,19 @@
       "opponent": "Newcastle United FC",
       "round": "22",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-01-23T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Sheffield United FC",
@@ -1956,17 +2105,19 @@
       "opponent": "Manchester City FC",
       "round": "23",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-01-30T12:00:00Z",
-      "venue": ""
+      "venue": "Etihad Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -2031,17 +2182,19 @@
       "opponent": "Liverpool FC",
       "round": "24",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-02-06T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Lincoln City FC",
@@ -2106,17 +2259,19 @@
       "opponent": "Ipswich Town FC",
       "round": "25",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-02-10T12:00:00Z",
-      "venue": ""
+      "venue": "Portman Road"
     },
     {
       "away": "West Ham United FC",
@@ -2206,17 +2361,19 @@
       "opponent": "Fulham FC",
       "round": "26",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-02-20T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -2281,17 +2438,19 @@
       "opponent": "Manchester United FC",
       "round": "27",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-02-27T12:00:00Z",
-      "venue": ""
+      "venue": "Old Trafford"
     },
     {
       "away": "Derby County FC",
@@ -2381,17 +2540,19 @@
       "opponent": "Crystal Palace FC",
       "round": "28",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-03-03T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Cardiff City FC",
@@ -2456,17 +2617,19 @@
       "opponent": "Chelsea FC",
       "round": "29",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-03-13T12:00:00Z",
-      "venue": ""
+      "venue": "Stamford Bridge"
     },
     {
       "away": "Wrexham AFC",
@@ -2556,17 +2719,19 @@
       "opponent": "Sunderland AFC",
       "round": "30",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-03-20T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Stoke City FC",
@@ -2706,17 +2871,19 @@
       "opponent": "Coventry City FC",
       "round": "31",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-04-10T12:00:00Z",
-      "venue": ""
+      "venue": "Coventry Building Society Arena"
     },
     {
       "away": "Swansea City AFC",
@@ -2781,17 +2948,19 @@
       "opponent": "Aston Villa FC",
       "round": "32",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-04-17T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -2906,17 +3075,19 @@
       "opponent": "AFC Bournemouth",
       "round": "33",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-04-24T12:00:00Z",
-      "venue": ""
+      "venue": "Vitality Stadium"
     },
     {
       "away": "Wrexham AFC",
@@ -2956,17 +3127,19 @@
       "opponent": "Tottenham Hotspur FC",
       "round": "34",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-05-01T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "Bristol City FC",
@@ -3031,17 +3204,19 @@
       "opponent": "Leeds United FC",
       "round": "35",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-05-08T12:00:00Z",
-      "venue": ""
+      "venue": "Elland Road"
     },
     {
       "away": "FC Barcelona",
@@ -3081,17 +3256,19 @@
       "opponent": "Nottingham Forest FC",
       "round": "36",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-05-15T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "FC Barcelona",
@@ -3131,17 +3308,19 @@
       "opponent": "Everton FC",
       "round": "37",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-05-23T12:00:00Z",
-      "venue": ""
+      "venue": "Hill Dickinson Stadium"
     },
     {
       "away": "Málaga CF",
@@ -3181,17 +3360,19 @@
       "opponent": "Brighton & Hove Albion FC",
       "round": "38",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + Arsenal.com",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "Arsenal.com"
       ],
+      "sourceDetail": "monthly-graphql",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",
       "teamName": "Arsenal",
       "time": "12:00:00",
       "timestamp": "2027-05-30T12:00:00Z",
-      "venue": ""
+      "venue": "Emirates Stadium"
     },
     {
       "away": "FC Barcelona",

@@ -7,9 +7,11 @@ const DEFAULT_FOOTBALL_TEAMS_CSV_URL =
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
+const ARSENAL_PROVIDER_NAME = "Arsenal.com";
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
+const ARSENAL_GRAPHQL_URL = process.env.ARSENAL_GRAPHQL_URL || "https://afc-prd.graph.arsenal.com/graphql";
 const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(".cache", "footy-schedule-api"));
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 6500;
 const LOOKAHEAD_DAYS = Number(process.env.FOOTY_SCHEDULE_LOOKAHEAD_DAYS) || 365;
@@ -21,6 +23,88 @@ const FALLBACK_FOOTBALL_DATA_TEAM_IDS = {
   barcelona: "81",
   wrexham: "404",
 };
+const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
+  arsenal: "4dsgumo7d4zupm2ugsvm4zm4d",
+};
+const ARSENAL_FIXTURES_QUERY = `query FixturesByIds($date: String = "", $competitions: String = "", $rangeType: String = "", $teamIds: String = "", $timeOffset: Float) {
+  fixturesByIds(
+    date: $date
+    competitions: $competitions
+    rangeType: $rangeType
+    teamIds: $teamIds
+    timeOffset: $timeOffset
+  ) {
+    matches {
+      matchInfo {
+        id
+        date
+        time
+        localDate
+        localTime
+        competition {
+          id
+          name
+          competitionLogo
+          __typename
+        }
+        contestant {
+          id
+          name
+          code
+          clubLogo
+          __typename
+        }
+        venue {
+          longName
+          __typename
+        }
+        __typename
+      }
+      liveData {
+        matchDetails {
+          matchStatus
+          scores {
+            aggregate {
+              home
+              away
+              __typename
+            }
+            total {
+              home
+              away
+              __typename
+            }
+            pen {
+              home
+              away
+              __typename
+            }
+            et {
+              home
+              away
+              __typename
+            }
+            ft {
+              home
+              away
+              __typename
+            }
+            ht {
+              home
+              away
+              __typename
+            }
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+}`;
 let lastExternalRequestAt = 0;
 
 async function main() {
@@ -72,10 +156,15 @@ async function main() {
   errors.push(...sportDbSchedules.errors);
   fixtures.push(...sportDbSchedules.fixtures);
 
+  const arsenalSchedules = await loadArsenalSchedules({ dateFrom, dateTo, teamRowsById, teams });
+  coverageNotes.push(...arsenalSchedules.notes);
+  errors.push(...arsenalSchedules.errors);
+  fixtures.push(...arsenalSchedules.fixtures);
+
   const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
   const payload = {
     generatedAt,
-    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME}`,
+    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME}`,
     coverage: {
       mode: "team-scheduled-matches-merged-sources",
       notes: [...new Set(coverageNotes)],
@@ -278,6 +367,69 @@ async function loadSportDbLeagueSeason(leagueId, season) {
   return Array.isArray(data.events) ? data.events : [];
 }
 
+async function loadArsenalSchedules({ dateFrom, dateTo, teamRowsById, teams }) {
+  const errors = [];
+  const fixtures = [];
+  const notes = [];
+  const monthStarts = getMonthStarts(dateFrom, dateTo);
+
+  for (const team of teams) {
+    const teamRow = teamRowsById.get(String(team.id));
+    const arsenalTeamId = getArsenalGraphQlTeamId(teamRow || {});
+
+    if (!arsenalTeamId) {
+      continue;
+    }
+
+    let loadedCount = 0;
+
+    for (const monthStart of monthStarts) {
+      try {
+        const matches = await loadArsenalMonthFixtures(arsenalTeamId, monthStart);
+        const matchingMatches = matches
+          .filter((match) => isArsenalTeamMatch(match, arsenalTeamId, team))
+          .filter((match) => isArsenalMatchInRange(match, dateFrom, dateTo));
+        loadedCount += matchingMatches.length;
+        fixtures.push(...matchingMatches.map((match) => normalizeArsenalMatch(match, team, arsenalTeamId)));
+      } catch (error) {
+        errors.push(`${team.name}: Unable to load ${ARSENAL_PROVIDER_NAME} fixtures for ${monthStart}: ${error.message}`);
+      }
+    }
+
+    notes.push(`${team.name}: Loaded ${loadedCount} ${ARSENAL_PROVIDER_NAME} fixtures from monthly GraphQL windows.`);
+  }
+
+  return { errors, fixtures, notes };
+}
+
+async function loadArsenalMonthFixtures(teamId, monthStart) {
+  const body = JSON.stringify({
+    operationName: "FixturesByIds",
+    variables: {
+      competitions: "all",
+      date: monthStart,
+      rangeType: "month",
+      teamIds: teamId,
+      timeOffset: 240,
+    },
+    query: ARSENAL_FIXTURES_QUERY,
+  });
+  const data = JSON.parse(await loadText(ARSENAL_GRAPHQL_URL, {
+    body,
+    extension: "json",
+    headers: {
+      "Accept": "*/*",
+      "Content-Type": "application/json",
+      "x-arsenal-app-version": "2.7.87",
+      "x-arsenal-operation-name": "FixturesByIds",
+      "x-arsenal-request-source": "Arsenal-Web",
+    },
+    method: "POST",
+  }));
+
+  return Array.isArray(data.data?.fixturesByIds?.matches) ? data.data.fixturesByIds.matches : [];
+}
+
 function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
   const homeTeam = event.strHomeTeam || "";
   const awayTeam = event.strAwayTeam || "";
@@ -313,6 +465,43 @@ function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
   };
 }
 
+function normalizeArsenalMatch(match, team, arsenalTeamId) {
+  const matchInfo = match.matchInfo || {};
+  const contestants = Array.isArray(matchInfo.contestant) ? matchInfo.contestant : [];
+  const homeTeam = contestants[0]?.name || "";
+  const awayTeam = contestants[1]?.name || "";
+  const isHome = String(contestants[0]?.id || "") === String(arsenalTeamId) ||
+    normalizeText(homeTeam) === normalizeText(team.name) ||
+    normalizeText(homeTeam) === normalizeText(team.resolvedName);
+  const timestamp = getArsenalTimestamp(matchInfo);
+  const status = match.liveData?.matchDetails?.matchStatus || "";
+
+  return {
+    away: awayTeam,
+    awayBadge: "",
+    date: timestamp.slice(0, 10) || String(matchInfo.localDate || matchInfo.date || "").slice(0, 10),
+    home: homeTeam,
+    homeBadge: "",
+    id: matchInfo.id ? `${ARSENAL_PROVIDER_NAME}:${matchInfo.id}` : "",
+    leagueId: String(matchInfo.competition?.id || ""),
+    isHome,
+    league: matchInfo.competition?.name || "",
+    opponent: isHome ? awayTeam : homeTeam,
+    round: "",
+    season: "",
+    source: ARSENAL_PROVIDER_NAME,
+    sources: [ARSENAL_PROVIDER_NAME],
+    sourceDetail: "monthly-graphql",
+    status: status || "Fixture",
+    teamBadge: team.badge || "",
+    teamId: team.id,
+    teamName: team.name,
+    time: timestamp.slice(11, 19),
+    timestamp,
+    venue: matchInfo.venue?.longName || "",
+  };
+}
+
 async function loadFootballSheet(url) {
   const rows = parseCsvRows(stripBom(await loadText(url, { extension: "csv" })));
   const sections = splitCsvSections(rows);
@@ -342,8 +531,8 @@ async function loadFootballDataJson(endpoint) {
   }));
 }
 
-async function loadText(url, { extension, headers = {} }) {
-  const cachePath = getApiCachePath(url, extension);
+async function loadText(url, { body = "", extension, headers = {}, method = "GET" }) {
+  const cachePath = getApiCachePath(url, extension, { body, method });
 
   if (SHOULD_USE_API_CACHE && !SHOULD_REFRESH_API_CACHE) {
     const cachedText = await tryReadFile(cachePath);
@@ -354,7 +543,11 @@ async function loadText(url, { extension, headers = {} }) {
   }
 
   await waitForExternalRequestSlot();
-  const response = await fetch(url, { headers: { "user-agent": "boxthislap-footy-updater", ...headers } });
+  const response = await fetch(url, {
+    body: body || undefined,
+    headers: { "user-agent": "boxthislap-footy-updater", ...headers },
+    method,
+  });
   const text = await response.text();
 
   if (!response.ok) {
@@ -408,14 +601,17 @@ async function writeApiCacheFile(filePath, url, text) {
   );
 }
 
-function getApiCachePath(url, extension) {
+function getApiCachePath(url, extension, options = {}) {
   const parsedUrl = new URL(url);
   const readableName = [
     parsedUrl.hostname.replace(/^www\./, ""),
     ...parsedUrl.pathname.split("/").filter(Boolean).slice(-2),
   ].join("-");
   const safeName = readableName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const hash = createHash("sha256").update(url).digest("hex").slice(0, 12);
+  const cacheIdentity = (!options.body && (!options.method || options.method === "GET"))
+    ? url
+    : [options.method || "GET", url, options.body || ""].join("\n");
+  const hash = createHash("sha256").update(cacheIdentity).digest("hex").slice(0, 12);
 
   return path.join(API_CACHE_DIR, `${safeName}-${hash}.${extension}`);
 }
@@ -588,6 +784,18 @@ function getSportDbLeagueId(league) {
   ).trim();
 }
 
+function getArsenalGraphQlTeamId(team) {
+  const explicitId = getField(
+    team,
+    "Arsenal GraphQL Team ID",
+    "Arsenal GraphQl Team ID",
+    "Arsenal Team ID",
+    "ArsenalTeamID",
+  ).trim();
+
+  return explicitId || FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS[normalizeText(getField(team, "Name", "Team"))] || "";
+}
+
 function getScheduleSeasons(team) {
   const configuredSeasons = getField(team, "Schedule Seasons", "Schedule Season")
     .split(/[;,]/)
@@ -708,6 +916,23 @@ function isSportDbEventInRange(event, dateFrom, dateTo) {
   return eventDate >= dateFrom && eventDate <= dateTo && !isPastSportDbStatus(event);
 }
 
+function isArsenalTeamMatch(match, arsenalTeamId, team) {
+  const contestants = Array.isArray(match.matchInfo?.contestant) ? match.matchInfo.contestant : [];
+
+  return contestants.some((contestant) => {
+    return String(contestant.id || "") === String(arsenalTeamId) ||
+      normalizeText(contestant.name) === normalizeText(team.name) ||
+      normalizeText(contestant.name) === normalizeText(team.resolvedName);
+  });
+}
+
+function isArsenalMatchInRange(match, dateFrom, dateTo) {
+  const matchDate = String(match.matchInfo?.localDate || match.matchInfo?.date || "").slice(0, 10);
+  const status = normalizeText(match.liveData?.matchDetails?.matchStatus || "");
+
+  return matchDate >= dateFrom && matchDate <= dateTo && !["played", "full time", "ft", "post match"].includes(status);
+}
+
 function getSportDbTimestamp(event) {
   if (event.strTimestamp) {
     return event.strTimestamp;
@@ -726,6 +951,37 @@ function getSportDbTimestamp(event) {
   }
 
   return `${date}T${time.replace(/\+00:00$/, "")}Z`;
+}
+
+function getArsenalTimestamp(matchInfo) {
+  const rawDate = String(matchInfo.date || matchInfo.localDate || "").trim();
+  const date = rawDate.slice(0, 10);
+  const rawTime = String(matchInfo.time || matchInfo.localTime || "").trim();
+  const time = rawTime.replace(/Z$/, "");
+
+  if (!date) {
+    return "";
+  }
+
+  if (!time) {
+    return date;
+  }
+
+  return `${date}T${time}${rawTime.endsWith("Z") ? "Z" : ""}`;
+}
+
+function getMonthStarts(dateFrom, dateTo) {
+  const starts = [];
+  const current = new Date(`${dateFrom}T00:00:00Z`);
+  const end = new Date(`${dateTo}T00:00:00Z`);
+  current.setUTCDate(1);
+
+  while (current <= end) {
+    starts.push(formatDate(current));
+    current.setUTCMonth(current.getUTCMonth() + 1);
+  }
+
+  return starts;
 }
 
 function normalizeSportDbStatus(event) {

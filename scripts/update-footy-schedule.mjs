@@ -8,6 +8,7 @@ const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.
 const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
+const ICALENDAR_PROVIDER_NAME = "iCalendar";
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
@@ -25,6 +26,9 @@ const FALLBACK_FOOTBALL_DATA_TEAM_IDS = {
 };
 const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
   arsenal: "4dsgumo7d4zupm2ugsvm4zm4d",
+};
+const FALLBACK_ICALENDAR_URLS = {
+  barcelona: "webcal://ics.ecal.com/ecal-sub/6a60382d0d8ade00024d911f/FC%20Barcelona.ics",
 };
 const ARSENAL_FIXTURES_QUERY = `query FixturesByIds($date: String = "", $competitions: String = "", $rangeType: String = "", $teamIds: String = "", $timeOffset: Float) {
   fixturesByIds(
@@ -161,10 +165,15 @@ async function main() {
   errors.push(...arsenalSchedules.errors);
   fixtures.push(...arsenalSchedules.fixtures);
 
+  const calendarSchedules = await loadCalendarSchedules({ dateFrom, dateTo, teamRowsById, teams });
+  coverageNotes.push(...calendarSchedules.notes);
+  errors.push(...calendarSchedules.errors);
+  fixtures.push(...calendarSchedules.fixtures);
+
   const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
   const payload = {
     generatedAt,
-    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME}`,
+    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
     coverage: {
       mode: "team-scheduled-matches-merged-sources",
       notes: [...new Set(coverageNotes)],
@@ -430,6 +439,34 @@ async function loadArsenalMonthFixtures(teamId, monthStart) {
   return Array.isArray(data.data?.fixturesByIds?.matches) ? data.data.fixturesByIds.matches : [];
 }
 
+async function loadCalendarSchedules({ dateFrom, dateTo, teamRowsById, teams }) {
+  const errors = [];
+  const fixtures = [];
+  const notes = [];
+
+  for (const team of teams) {
+    const teamRow = teamRowsById.get(String(team.id));
+    const calendarUrl = getCalendarUrl(teamRow || {});
+
+    if (!calendarUrl) {
+      continue;
+    }
+
+    try {
+      const events = parseICalendarEvents(await loadText(normalizeCalendarUrl(calendarUrl), { extension: "ics" }));
+      const matchEvents = events
+        .filter((event) => isCalendarMatchEvent(event, team))
+        .filter((event) => isCalendarEventInRange(event, dateFrom, dateTo));
+      fixtures.push(...matchEvents.map((event) => normalizeCalendarMatch(event, team)));
+      notes.push(`${team.name}: Loaded ${matchEvents.length} ${ICALENDAR_PROVIDER_NAME} fixtures from calendar feed.`);
+    } catch (error) {
+      errors.push(`${team.name}: Unable to load ${ICALENDAR_PROVIDER_NAME} fixtures: ${error.message}`);
+    }
+  }
+
+  return { errors, fixtures, notes };
+}
+
 function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
   const homeTeam = event.strHomeTeam || "";
   const awayTeam = event.strAwayTeam || "";
@@ -499,6 +536,37 @@ function normalizeArsenalMatch(match, team, arsenalTeamId) {
     time: timestamp.slice(11, 19),
     timestamp,
     venue: matchInfo.venue?.longName || "",
+  };
+}
+
+function normalizeCalendarMatch(event, team) {
+  const parsedSummary = parseCalendarMatchSummary(event.SUMMARY || "", team);
+  const timestamp = getCalendarTimestamp(event.DTSTART || "");
+  const isTimeTbc = /\btime\s+tbc\b/i.test(event.SUMMARY || "");
+
+  return {
+    away: parsedSummary.away,
+    awayBadge: "",
+    date: timestamp.slice(0, 10),
+    home: parsedSummary.home,
+    homeBadge: "",
+    id: event.UID ? `${ICALENDAR_PROVIDER_NAME}:${event.UID}` : "",
+    leagueId: "",
+    isHome: parsedSummary.isHome,
+    league: getCalendarLeague(event.DESCRIPTION || ""),
+    opponent: parsedSummary.isHome ? parsedSummary.away : parsedSummary.home,
+    round: "",
+    season: "",
+    source: ICALENDAR_PROVIDER_NAME,
+    sources: [ICALENDAR_PROVIDER_NAME],
+    sourceDetail: "calendar-feed",
+    status: isTimeTbc ? "Time TBC" : "Scheduled",
+    teamBadge: team.badge || "",
+    teamId: team.id,
+    teamName: team.name,
+    time: isTimeTbc ? "" : timestamp.slice(11, 19),
+    timestamp,
+    venue: event.LOCATION || "",
   };
 }
 
@@ -796,6 +864,20 @@ function getArsenalGraphQlTeamId(team) {
   return explicitId || FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS[normalizeText(getField(team, "Name", "Team"))] || "";
 }
 
+function getCalendarUrl(team) {
+  const explicitUrl = getField(
+    team,
+    "Calendar URL",
+    "Calendar Feed URL",
+    "ICS URL",
+    "iCal URL",
+    "iCalendar URL",
+    "Webcal URL",
+  ).trim();
+
+  return explicitUrl || FALLBACK_ICALENDAR_URLS[normalizeText(getField(team, "Name", "Team"))] || "";
+}
+
 function getScheduleSeasons(team) {
   const configuredSeasons = getField(team, "Schedule Seasons", "Schedule Season")
     .split(/[;,]/)
@@ -933,6 +1015,18 @@ function isArsenalMatchInRange(match, dateFrom, dateTo) {
   return matchDate >= dateFrom && matchDate <= dateTo && !["played", "full time", "ft", "post match"].includes(status);
 }
 
+function isCalendarMatchEvent(event, team) {
+  const parsedSummary = parseCalendarMatchSummary(event.SUMMARY || "", team);
+
+  return Boolean(parsedSummary.home && parsedSummary.away && parsedSummary.isTeamMatch);
+}
+
+function isCalendarEventInRange(event, dateFrom, dateTo) {
+  const eventDate = getCalendarTimestamp(event.DTSTART || "").slice(0, 10);
+
+  return eventDate >= dateFrom && eventDate <= dateTo;
+}
+
 function getSportDbTimestamp(event) {
   if (event.strTimestamp) {
     return event.strTimestamp;
@@ -970,6 +1064,19 @@ function getArsenalTimestamp(matchInfo) {
   return `${date}T${time}${rawTime.endsWith("Z") ? "Z" : ""}`;
 }
 
+function getCalendarTimestamp(value) {
+  const rawDate = String(value || "").trim();
+  const match = rawDate.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})Z?)?$/);
+
+  if (!match) {
+    return "";
+  }
+
+  const [, year, month, day, hour = "00", minute = "00", second = "00"] = match;
+
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}${rawDate.endsWith("Z") ? "Z" : ""}`;
+}
+
 function getMonthStarts(dateFrom, dateTo) {
   const starts = [];
   const current = new Date(`${dateFrom}T00:00:00Z`);
@@ -998,6 +1105,104 @@ function isPastSportDbStatus(event) {
   const status = normalizeText(getField(event, "strStatus", "strProgress"));
 
   return ["match finished", "ft", "finished", "final", "aet", "pen"].includes(status);
+}
+
+function parseICalendarEvents(text) {
+  const unfoldedLines = String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .reduce((lines, line) => {
+      if (/^[ \t]/.test(line) && lines.length > 0) {
+        lines[lines.length - 1] += line.slice(1);
+      } else {
+        lines.push(line);
+      }
+
+      return lines;
+  }, []);
+  const events = [];
+  let currentEvent = null;
+  let nestedEventComponentDepth = 0;
+
+  for (const line of unfoldedLines) {
+    if (line === "BEGIN:VEVENT") {
+      currentEvent = {};
+      nestedEventComponentDepth = 0;
+      continue;
+    }
+
+    if (line === "END:VEVENT") {
+      if (currentEvent) {
+        events.push(currentEvent);
+      }
+
+      currentEvent = null;
+      nestedEventComponentDepth = 0;
+      continue;
+    }
+
+    if (currentEvent && line.startsWith("BEGIN:")) {
+      nestedEventComponentDepth += 1;
+      continue;
+    }
+
+    if (currentEvent && line.startsWith("END:") && nestedEventComponentDepth > 0) {
+      nestedEventComponentDepth -= 1;
+      continue;
+    }
+
+    if (nestedEventComponentDepth > 0) {
+      continue;
+    }
+
+    if (!currentEvent || !line.includes(":")) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf(":");
+    const rawKey = line.slice(0, separatorIndex).split(";")[0];
+    currentEvent[rawKey] = decodeICalendarText(line.slice(separatorIndex + 1));
+  }
+
+  return events;
+}
+
+function parseCalendarMatchSummary(summary, team) {
+  const cleanedSummary = String(summary || "")
+    .replace(/^[^\w]+/u, "")
+    .replace(/\s+\(Time TBC\)\s*$/i, "")
+    .trim();
+  const [home = "", away = ""] = cleanedSummary.split(/\s+vs\s+/i).map((value) => value.trim());
+  const teamNames = [team.name, team.resolvedName].filter(Boolean).map(normalizeTeamName);
+  const normalizedHome = normalizeTeamName(home);
+  const normalizedAway = normalizeTeamName(away);
+
+  return {
+    away,
+    home,
+    isHome: teamNames.includes(normalizedHome),
+    isTeamMatch: teamNames.includes(normalizedHome) || teamNames.includes(normalizedAway),
+  };
+}
+
+function getCalendarLeague(description) {
+  const firstLine = String(description || "").split(/\n/)[0] || "";
+  const [league = ""] = firstLine.split("|").map((value) => value.trim());
+
+  return league;
+}
+
+function decodeICalendarText(value) {
+  return String(value || "")
+    .replace(/\\n/g, "\n")
+    .replace(/\\,/g, ",")
+    .replace(/\\;/g, ";")
+    .replace(/\\\\/g, "\\");
+}
+
+function normalizeCalendarUrl(url) {
+  return String(url || "").replace(/^webcal:\/\//i, "https://");
 }
 
 function normalizeTeamName(value) {

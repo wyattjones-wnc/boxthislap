@@ -3840,10 +3840,18 @@ function getAwardManagerById(managerId) {
     getManagerMeta({ ID: id, Name: `Manager ${id}` });
 }
 
-function getAwardsForNation(nationName) {
+function getAwardsForNation(nationName, options = {}) {
   const nationKey = normalizeLookupName(normalizeNationName(nationName));
 
   return getResolvedAwards().filter((award) => {
+    if (options.competition && award.competition !== options.competition) {
+      return false;
+    }
+
+    if (options.year && String(award.year || "") !== String(options.year)) {
+      return false;
+    }
+
     return award.standings === "nations" &&
       normalizeLookupName(normalizeNationName(award.entityName)) === nationKey;
   });
@@ -3854,6 +3862,10 @@ function getAwardsForManager(manager, options = {}) {
   const managerName = normalizeLookupName(manager?.displayName || manager?.name || manager?.Name || manager?.manager);
 
   return getResolvedAwards().filter((award) => {
+    if (options.competition && award.competition !== options.competition) {
+      return false;
+    }
+
     if (options.standings && award.standings !== options.standings) {
       return false;
     }
@@ -3945,8 +3957,8 @@ function renderWorldCupManagerSummary(managerId, source) {
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks">
-        ${renderManagerSummaryRank("Players", managerSummary.players, formatPoints, { standings: "players" })}
-        ${renderManagerSummaryRank("Nations", managerSummary.nations, formatPoints, { standings: "nations" })}
+        ${renderManagerSummaryRank("Players", managerSummary.players, formatPoints, { competition: "2026 World Cup", standings: "players", year: "2026" })}
+        ${renderManagerSummaryRank("Nations", managerSummary.nations, formatPoints, { competition: "2026 World Cup", standings: "nations", year: "2026" })}
       </div>
       <a class="action-button" href="#standings" data-page-link="standings">Open Standings</a>
     </article>
@@ -4103,7 +4115,7 @@ function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, opt
 
   const points = pointFormatter(row.points);
   const awards = row.rank === 1 && options.standings
-    ? getAwardsForManager(row, { standings: options.standings, year: options.year })
+    ? getAwardsForManager(row, { competition: options.competition, standings: options.standings, year: options.year })
     : [];
 
   return `
@@ -6435,7 +6447,7 @@ function renderPlayerChampionship(performances) {
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(player, index, rows))}</td>
         <td data-label="Player">${renderPlayerNameWithPosition(player.name, player.position)}</td>
-        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager, { standings: "players" })}</td>
+        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager, { competition: "2026 World Cup", standings: "players", year: "2026" })}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
       </tr>
@@ -6654,7 +6666,7 @@ function renderNationsLeague(results) {
   nationsLeagueRows.innerHTML = rows.map((nation, index) => {
     const manager = nation.manager || getNationManager(nation.name);
     const detailId = `nation-standing-detail-${index}`;
-    const awards = getAwardsForNation(nation.name);
+    const awards = getAwardsForNation(nation.name, { competition: "2026 World Cup", year: "2026" });
 
     return `
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
@@ -6665,7 +6677,7 @@ function renderNationsLeague(results) {
             ${renderAwardBadges(awards)}
           </span>
         </td>
-        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager, { standings: "nations" })}</td>
+        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager, { competition: "2026 World Cup", standings: "nations", year: "2026" })}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>
       </tr>
@@ -7031,7 +7043,7 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
   managerResultsRows.innerHTML = rows.map((manager, index) => {
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
     const awardFilter = filter === "all" ? "" : filter;
-    const awards = getAwardsForManager(manager, { standings: awardFilter });
+    const awards = getAwardsForManager(manager, { competition: "2026 World Cup", standings: awardFilter, year: "2026" });
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
@@ -7873,7 +7885,7 @@ function renderStandingDetail(value, manager, options = {}) {
     parts.push(`
       <span class="standing-manager-with-awards">
         ${renderManagerChip(manager)}
-        ${renderAwardBadges(getAwardsForManager(manager, { standings: options.standings }))}
+        ${renderAwardBadges(getAwardsForManager(manager, options))}
       </span>
     `);
   }

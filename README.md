@@ -19,3 +19,20 @@ After the first commit is pushed to GitHub:
 5. Save.
 
 GitHub will publish the site after the Pages build completes.
+
+## API-Football Probe
+
+Use `scripts/test-api-football.mjs` to test whether API-Football's free plan has better fixture coverage for the teams listed on the Football sheet.
+
+```powershell
+$env:API_FOOTBALL_API_KEY='your-api-football-key'
+node scripts\test-api-football.mjs
+```
+
+Optional settings:
+
+- `API_FOOTBALL_TEST_REFRESH=1` ignores cached responses.
+- `API_FOOTBALL_TEST_LOOKAHEAD_DAYS=365` changes the fixture window.
+- `API_FOOTBALL_TEST_SEASON=2026` changes the season parameter.
+
+Responses are cached under `.cache/api-football-tests/`.

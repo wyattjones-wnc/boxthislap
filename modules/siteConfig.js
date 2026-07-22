@@ -53,6 +53,16 @@ export const AWARD_DEFINITIONS = [
     standings: "formula-one-yearly",
     year: "2025",
   },
+  {
+    abbreviation: "FC",
+    competition: "2025 Fantasy Critic",
+    draftName: "2025 Fantasy Critic",
+    id: "fantasy-critic-2025-winner",
+    image: "assets/awards/fantasy-critic-2025.png",
+    label: "2025 Fantasy Critic Champion",
+    standings: "fantasy-critic",
+    year: "2025",
+  },
 ];
 export const BEST_STANDING_PERFORMANCE_VALUE = "best";
 export const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";

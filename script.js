@@ -710,17 +710,40 @@ function renderFantasyCriticHeading(league) {
 }
 
 function renderFantasyCriticLeague(league) {
+  const awards = getAwardsForFantasyCriticYear(league.year);
+
   return `
     ${renderFantasyCriticHeading(league)}
+    ${renderFantasyCriticAwards(awards)}
 
     <div class="fantasy-critic-standings">
-      ${league.standings.map((entry) => renderFantasyCriticStanding(entry)).join("")}
+      ${league.standings.map((entry) => renderFantasyCriticStanding(entry, league.year)).join("")}
     </div>
   `;
 }
 
-function renderFantasyCriticStanding(entry) {
+function renderFantasyCriticAwards(awards = []) {
+  if (!awards.length) {
+    return "";
+  }
+
+  return `
+    <section class="standings-awards fantasy-critic-awards">
+      <div class="standings-awards-heading">
+        <h2>Awards</h2>
+      </div>
+      <div class="standings-awards-list">
+        ${awards.map((award) => renderAwardCard(award, "standings-summary")).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderFantasyCriticStanding(entry, year) {
   const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+  const awards = entry.rank === 1
+    ? getAwardsForManager(manager, { standings: "fantasy-critic", year })
+    : [];
 
   return `
     <article class="fantasy-critic-card">
@@ -730,7 +753,10 @@ function renderFantasyCriticStanding(entry) {
           <strong>${escapeHtml(entry.rank)}</strong>
         </div>
         <div class="fantasy-critic-manager">
-          ${renderManagerChip(manager)}
+          <span class="standing-manager-with-awards">
+            ${renderManagerChip(manager)}
+            ${renderAwardBadges(awards)}
+          </span>
           <small>${escapeHtml(entry.publisher)}</small>
         </div>
         <div class="fantasy-critic-points">
@@ -751,6 +777,13 @@ function renderFantasyCriticStanding(entry) {
       </div>
     </article>
   `;
+}
+
+function getAwardsForFantasyCriticYear(year) {
+  return getResolvedAwards().filter((award) => {
+    return award.standings === "fantasy-critic" &&
+      String(award.year || "") === String(year || "");
+  });
 }
 
 function renderFantasyCriticGame([game, critic, points]) {
@@ -3969,7 +4002,7 @@ function renderFantasyCriticManagerSummary(managerId, year, label) {
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks manager-summary-ranks--single">
-        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue)}
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "fantasy-critic", year })}
       </div>
       <a class="action-button" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open Fantasy Critic</a>
     </article>
@@ -4668,6 +4701,7 @@ Promise.all([
     renderLoginState();
     renderManagerHub();
     renderStandingsAwards();
+    renderFantasyCriticViews();
     renderFormulaOneResults("2024");
     renderFormulaOneResults("2025");
     renderFormulaOneResults("2026");

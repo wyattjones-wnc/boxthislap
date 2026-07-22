@@ -1078,15 +1078,27 @@ function renderFormulaOneResults(year) {
 
   view.resultsRows.innerHTML = standings.map((entry, index) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+    const awards = entry.rank === 1
+      ? getAwardsForManager(manager, { standings: getFormulaOneAwardStandingsForMode(mode) })
+      : [];
 
     return `
       <tr>
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
-        <td data-label="Manager">${renderManagerChip(manager)}</td>
+        <td data-label="Manager">
+          <span class="standing-manager-with-awards">
+            ${renderManagerChip(manager)}
+            ${renderAwardBadges(awards)}
+          </span>
+        </td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
     `;
   }).join("");
+}
+
+function getFormulaOneAwardStandingsForMode(mode) {
+  return mode === "weekly" ? "formula-one-weekly" : "formula-one-yearly";
 }
 
 function setFormulaOneResultsMode(year, mode) {
@@ -1100,6 +1112,7 @@ function setFormulaOneResultsMode(year, mode) {
 
   renderFormulaOneResults(year);
   renderStandingsAwards();
+  renderManagerHub();
 }
 
 function renderFormulaOneWeeklyForm(year, forms) {
@@ -3343,6 +3356,8 @@ function renderManagerSummary(managerId) {
     selectedYear === "all" || selectedYear === "2026" ? renderWorldCupManagerSummary(managerId, source) : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, "2025", "2025 Fantasy Critic") : "",
     selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, "2026", "2026 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneYearlyManagerSummary(managerId, "2025") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneYearlyManagerSummary(managerId, "2026") : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneWeeklyManagerSummary(managerId, "2025") : "",
     selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneWeeklyManagerSummary(managerId, "2026") : "",
   ].filter(Boolean);
@@ -3616,7 +3631,7 @@ function getAwardsForNation(nationName) {
 
 function getAwardsForManager(manager, options = {}) {
   const managerId = String(manager?.id ?? manager?.ID ?? manager?.["Manager ID"] ?? "").trim();
-  const managerName = normalizeLookupName(manager?.displayName || manager?.name || manager?.Name);
+  const managerName = normalizeLookupName(manager?.displayName || manager?.name || manager?.Name || manager?.manager);
 
   return getResolvedAwards().filter((award) => {
     if (options.standings && award.standings !== options.standings) {
@@ -3781,6 +3796,33 @@ function findFantasyCriticManagerRow(managerId, league) {
   return league.standings.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
 }
 
+function renderFormulaOneYearlyManagerSummary(managerId, year) {
+  const data = siteData[`formulaOne${year}`];
+  const row = findFormulaOneManagerRow(managerId, data?.standings ?? []);
+
+  if (!row) {
+    return "";
+  }
+
+  const manager = getManagerByName(row.manager) ?? { name: row.manager };
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(year)} Formula 1 Bets</h3>
+          <p>Yearly bet results</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks manager-summary-ranks--single">
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-yearly" })}
+      </div>
+      <a class="action-button" href="#formula-1-${escapeHtml(year)}-results" data-page-link="formula-1-${escapeHtml(year)}-results">Open Results</a>
+    </article>
+  `;
+}
+
 function renderFormulaOneWeeklyManagerSummary(managerId, year) {
   const data = year === "2026"
     ? siteData.formulaOne2026WeeklyResults ?? siteData.formulaOne2026Weekly
@@ -3803,7 +3845,7 @@ function renderFormulaOneWeeklyManagerSummary(managerId, year) {
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks manager-summary-ranks--single">
-        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue)}
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-weekly" })}
       </div>
       <a class="action-button" href="#formula-1-${escapeHtml(year)}-weekly" data-page-link="formula-1-${escapeHtml(year)}-weekly">Open Weekly</a>
     </article>
@@ -4435,6 +4477,8 @@ Promise.all([
     renderLoginState();
     renderManagerHub();
     renderStandingsAwards();
+    renderFormulaOneResults("2025");
+    renderFormulaOneResults("2026");
     console.info("Box This Lap manager portal data loaded", { managers, drafts, logs });
   })
   .catch((error) => {
@@ -4611,6 +4655,8 @@ loadSheetText("formulaOne2025")
     const data = parseFormulaOneSheet(csvText);
     siteData.formulaOne2025 = data;
     renderFormulaOneLeague("2025", data);
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2025 data loaded", data);
   })
   .catch((error) => {
@@ -4624,6 +4670,7 @@ loadSheetText("formulaOne2025Weekly")
     siteData.formulaOne2025Weekly = data;
     renderFormulaOneWeeklyPage("2025", data);
     renderFormulaOneResults("2025");
+    renderStandingsAwards();
     renderManagerHub();
     console.info("Box This Lap Formula 1 2025 weekly data loaded", data);
   })
@@ -4637,6 +4684,8 @@ loadSheetText("formulaOne2026")
     const data = parseFormulaOneSheet(csvText);
     siteData.formulaOne2026 = data;
     renderFormulaOneLeague("2026", data);
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 data loaded", data);
   })
   .catch((error) => {
@@ -4662,6 +4711,7 @@ loadSheetText("formulaOne2026WeeklyResults")
     const data = parseFormulaOneWeeklyResultsSheet(csvText);
     siteData.formulaOne2026WeeklyResults = data;
     renderFormulaOneResults("2026");
+    renderStandingsAwards();
     renderManagerHub();
     console.info("Box This Lap Formula 1 2026 weekly results loaded", data);
   })

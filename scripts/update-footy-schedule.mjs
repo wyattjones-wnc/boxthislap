@@ -28,6 +28,7 @@ const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
   arsenal: "4dsgumo7d4zupm2ugsvm4zm4d",
 };
 const FALLBACK_ICALENDAR_URLS = {
+  arsenal: "webcal://ics.ecal.com/ecal-sub/6a6038dce1c23100024c84fb/Arsenal%20FC.ics",
   barcelona: "webcal://ics.ecal.com/ecal-sub/6a60382d0d8ade00024d911f/FC%20Barcelona.ics",
 };
 const ARSENAL_FIXTURES_QUERY = `query FixturesByIds($date: String = "", $competitions: String = "", $rangeType: String = "", $teamIds: String = "", $timeOffset: Float) {
@@ -1172,8 +1173,9 @@ function parseCalendarMatchSummary(summary, team) {
   const cleanedSummary = String(summary || "")
     .replace(/^[^\w]+/u, "")
     .replace(/\s+\(Time TBC\)\s*$/i, "")
+    .replace(/\s+\([HAN]\)\s*$/i, "")
     .trim();
-  const [home = "", away = ""] = cleanedSummary.split(/\s+vs\s+/i).map((value) => value.trim());
+  const [home = "", away = ""] = cleanedSummary.split(/\s+v(?:s)?\.?\s+/i).map((value) => value.trim());
   const teamNames = [team.name, team.resolvedName].filter(Boolean).map(normalizeTeamName);
   const normalizedHome = normalizeTeamName(home);
   const normalizedAway = normalizeTeamName(away);
@@ -1190,7 +1192,7 @@ function getCalendarLeague(description) {
   const firstLine = String(description || "").split(/\n/)[0] || "";
   const [league = ""] = firstLine.split("|").map((value) => value.trim());
 
-  return league;
+  return normalizeText(league) === "manage my ecal" ? "Friendly" : league;
 }
 
 function decodeICalendarText(value) {
@@ -1210,6 +1212,7 @@ function normalizeTeamName(value) {
     .replace(/\bfc\b/g, "")
     .replace(/\bafc\b/g, "")
     .replace(/\bcf\b/g, "")
+    .replace(/\b(?:18|19|20)\d{2}\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }

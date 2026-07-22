@@ -125,6 +125,8 @@ const formulaOneResultsMode = {
 let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
+let shouldShowAllFootyFixtures = false;
+const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const siteData = {};
 window.boxThisLapData = siteData;
 
@@ -212,6 +214,10 @@ function renderFootySchedule(schedule) {
   const fixtures = Array.isArray(schedule?.fixtures) ? schedule.fixtures : [];
   syncFootyFilters(fixtures);
   const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
+  const renderedFixtures = shouldShowAllFootyFixtures
+    ? visibleFixtures
+    : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
+  const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
   const errors = Array.isArray(schedule?.errors) ? schedule.errors.filter(Boolean) : [];
   const generatedAt = formatFootyGeneratedAt(schedule?.generatedAt);
   const emptyMessage = hasActiveFootyFilters()
@@ -238,9 +244,24 @@ function renderFootySchedule(schedule) {
   footyScheduleList.innerHTML = `
     ${updatedMarkup}
     <div class="footy-list">
-      ${visibleFixtures.map(renderFootyFixture).join("")}
+      ${renderedFixtures.map(renderFootyFixture).join("")}
     </div>
+    ${renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
     ${errorsMarkup}
+  `;
+}
+
+function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {
+  if (hiddenFixtureCount <= 0) {
+    return "";
+  }
+
+  return `
+    <div class="footy-list-actions">
+      <button class="action-button footy-show-all-button" id="footy-show-all-button" type="button">
+        Show all ${escapeHtml(String(totalFixtureCount))} matches
+      </button>
+    </div>
   `;
 }
 
@@ -2048,6 +2069,12 @@ logoutButton?.addEventListener("click", () => {
 });
 
 document.addEventListener("click", (event) => {
+  if (event.target.closest("#footy-show-all-button")) {
+    shouldShowAllFootyFixtures = true;
+    renderFootySchedule(siteData.footySchedule);
+    return;
+  }
+
   if (!profileMenu || profileMenu.hidden || profileMenu.contains(event.target)) {
     return;
   }
@@ -2061,6 +2088,7 @@ leagueYearSelect?.addEventListener("change", () => {
 
 footyPastToggle?.addEventListener("click", () => {
   shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
+  shouldShowAllFootyFixtures = false;
   renderFootySchedule(siteData.footySchedule);
 });
 

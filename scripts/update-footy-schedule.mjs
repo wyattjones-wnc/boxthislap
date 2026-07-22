@@ -30,6 +30,7 @@ const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
 const FALLBACK_ICALENDAR_URLS = {
   arsenal: "webcal://ics.ecal.com/ecal-sub/6a6038dce1c23100024c84fb/Arsenal%20FC.ics",
   barcelona: "webcal://ics.ecal.com/ecal-sub/6a60382d0d8ade00024d911f/FC%20Barcelona.ics",
+  wrexham: "webcal://ics.ecal.com/ecal-sub/6a603a2c0d8ade00024d912f/Wrexham%20AFC.ics",
 };
 const ARSENAL_FIXTURES_QUERY = `query FixturesByIds($date: String = "", $competitions: String = "", $rangeType: String = "", $teamIds: String = "", $timeOffset: Float) {
   fixturesByIds(
@@ -554,7 +555,7 @@ function normalizeCalendarMatch(event, team) {
     id: event.UID ? `${ICALENDAR_PROVIDER_NAME}:${event.UID}` : "",
     leagueId: "",
     isHome: parsedSummary.isHome,
-    league: getCalendarLeague(event.DESCRIPTION || ""),
+    league: parsedSummary.league || getCalendarLeague(event.DESCRIPTION || ""),
     opponent: parsedSummary.isHome ? parsedSummary.away : parsedSummary.home,
     round: "",
     season: "",
@@ -1170,11 +1171,18 @@ function parseICalendarEvents(text) {
 }
 
 function parseCalendarMatchSummary(summary, team) {
-  const cleanedSummary = String(summary || "")
+  let cleanedSummary = String(summary || "")
     .replace(/^[^\w]+/u, "")
     .replace(/\s+\(Time TBC\)\s*$/i, "")
     .replace(/\s+\([HAN]\)\s*$/i, "")
     .trim();
+  const prefixedMatch = cleanedSummary.match(/^([^:]+):\s+(.+\s+v(?:s)?\.?\s+.+)$/i);
+  const league = prefixedMatch ? prefixedMatch[1].trim() : "";
+
+  if (prefixedMatch) {
+    cleanedSummary = prefixedMatch[2].trim();
+  }
+
   const [home = "", away = ""] = cleanedSummary.split(/\s+v(?:s)?\.?\s+/i).map((value) => value.trim());
   const teamNames = [team.name, team.resolvedName].filter(Boolean).map(normalizeTeamName);
   const normalizedHome = normalizeTeamName(home);
@@ -1185,14 +1193,24 @@ function parseCalendarMatchSummary(summary, team) {
     home,
     isHome: teamNames.includes(normalizedHome),
     isTeamMatch: teamNames.includes(normalizedHome) || teamNames.includes(normalizedAway),
+    league,
   };
 }
 
 function getCalendarLeague(description) {
   const firstLine = String(description || "").split(/\n/)[0] || "";
   const [league = ""] = firstLine.split("|").map((value) => value.trim());
+  const normalizedLeague = normalizeText(league);
 
-  return normalizeText(league) === "manage my ecal" ? "Friendly" : league;
+  if (normalizedLeague === "manage my ecal") {
+    return "Friendly";
+  }
+
+  if (normalizedLeague.startsWith("join in:")) {
+    return "";
+  }
+
+  return league;
 }
 
 function decodeICalendarText(value) {

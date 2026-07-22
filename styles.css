@@ -425,6 +425,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-list-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.footy-show-all-button {
+  min-width: 180px;
+}
+
 .footy-heading {
   align-items: center;
   display: grid;

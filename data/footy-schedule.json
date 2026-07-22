@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-22T03:31:24.853Z",
+  "generatedAt": "2026-07-22T03:36:58.531Z",
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "coverage": {
     "mode": "team-scheduled-matches-merged-sources",
@@ -15,7 +15,8 @@
       "Wrexham: Skipped TheSportsDB; no SportDB Team ID configured.",
       "Arsenal: Loaded 43 Arsenal.com fixtures from monthly GraphQL windows.",
       "Arsenal: Loaded 44 iCalendar fixtures from calendar feed.",
-      "Barcelona: Loaded 39 iCalendar fixtures from calendar feed."
+      "Barcelona: Loaded 39 iCalendar fixtures from calendar feed.",
+      "Wrexham: Loaded 47 iCalendar fixtures from calendar feed."
     ]
   },
   "teams": [
@@ -172,6 +173,32 @@
       "venue": "Aviva Stadium"
     },
     {
+      "away": "Wrexham",
+      "awayBadge": "",
+      "date": "2026-08-07",
+      "home": "Middlesbrough",
+      "homeBadge": "",
+      "id": "iCalendar:6a3d6ceb54aa884dbf1b5821",
+      "leagueId": "",
+      "isHome": false,
+      "league": "Carabao Cup",
+      "opponent": "Middlesbrough",
+      "round": "",
+      "season": "",
+      "source": "iCalendar",
+      "sources": [
+        "iCalendar"
+      ],
+      "sourceDetail": "calendar-feed",
+      "status": "Scheduled",
+      "teamBadge": "https://crests.football-data.org/404.png",
+      "teamId": "3",
+      "teamName": "Wrexham",
+      "time": "19:00:00",
+      "timestamp": "2026-08-07T19:00:00Z",
+      "venue": "Riverside Stadium, Middlesbrough"
+    },
+    {
       "away": "Borussia Dortmund",
       "awayBadge": "",
       "date": "2026-08-09",
@@ -291,17 +318,19 @@
       "opponent": "Cardiff City FC",
       "round": "1",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:00:00",
       "timestamp": "2026-08-17T19:00:00Z",
-      "venue": ""
+      "venue": "Cardiff City Stadium, Cardiff"
     },
     {
       "away": "Coventry City FC",
@@ -344,17 +373,19 @@
       "opponent": "Watford FC",
       "round": "2",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "14:00:00",
       "timestamp": "2026-08-22T14:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -421,17 +452,19 @@
       "opponent": "Birmingham City FC",
       "round": "3",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:00:00",
       "timestamp": "2026-08-28T19:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Rayo Vallecano",
@@ -525,17 +558,19 @@
       "opponent": "Millwall FC",
       "round": "4",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "18:45:00",
       "timestamp": "2026-09-02T18:45:00Z",
-      "venue": ""
+      "venue": "The Den, London"
     },
     {
       "away": "Wrexham AFC",
@@ -550,17 +585,19 @@
       "opponent": "Swansea City AFC",
       "round": "5",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:00:00",
       "timestamp": "2026-09-05T19:00:00Z",
-      "venue": ""
+      "venue": "Swansea.com Stadium, Swansea"
     },
     {
       "away": "FC Barcelona",
@@ -630,17 +667,19 @@
       "opponent": "Burnley FC",
       "round": "6",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "18:45:00",
       "timestamp": "2026-09-08T18:45:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Wrexham AFC",
@@ -655,17 +694,19 @@
       "opponent": "West Ham United FC",
       "round": "7",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:00:00",
       "timestamp": "2026-09-11T19:00:00Z",
-      "venue": ""
+      "venue": "London Stadium, London"
     },
     {
       "away": "Arsenal FC",
@@ -863,17 +904,19 @@
       "opponent": "Southampton FC",
       "round": "8",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "14:00:00",
       "timestamp": "2026-09-19T14:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -943,17 +986,19 @@
       "opponent": "Derby County FC",
       "round": "9",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "14:00:00",
       "timestamp": "2026-10-10T14:00:00Z",
-      "venue": ""
+      "venue": "Pride Park Stadium, Derby"
     },
     {
       "away": "Getafe CF",
@@ -995,17 +1040,19 @@
       "opponent": "West Bromwich Albion FC",
       "round": "10",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "18:45:00",
       "timestamp": "2026-10-13T18:45:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Arsenal FC",
@@ -1048,17 +1095,19 @@
       "opponent": "Preston North End FC",
       "round": "11",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "14:00:00",
       "timestamp": "2026-10-17T14:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -1152,17 +1201,19 @@
       "opponent": "Blackburn Rovers FC",
       "round": "12",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "14:00:00",
       "timestamp": "2026-10-24T14:00:00Z",
-      "venue": ""
+      "venue": "Ewood Park, Blackburn"
     },
     {
       "away": "Real Madrid CF",
@@ -1232,17 +1283,19 @@
       "opponent": "Sheffield United FC",
       "round": "13",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-10-31T15:00:00Z",
-      "venue": ""
+      "venue": "Bramall Lane, Sheffield"
     },
     {
       "away": "Alavés",
@@ -1308,17 +1361,19 @@
       "opponent": "Middlesbrough FC",
       "round": "14",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:45:00",
       "timestamp": "2026-11-04T19:45:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Hull City AFC",
@@ -1361,17 +1416,19 @@
       "opponent": "Wolverhampton Wanderers FC",
       "round": "15",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-11-07T15:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -1465,17 +1522,19 @@
       "opponent": "Lincoln City FC",
       "round": "16",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-11-21T15:00:00Z",
-      "venue": ""
+      "venue": "LNER Stadium, Lincoln"
     },
     {
       "away": "Villarreal CF",
@@ -1517,17 +1576,19 @@
       "opponent": "Bristol City FC",
       "round": "17",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:45:00",
       "timestamp": "2026-11-24T19:45:00Z",
-      "venue": ""
+      "venue": "Ashton Gate Stadium, Bristol"
     },
     {
       "away": "Manchester City FC",
@@ -1570,17 +1631,19 @@
       "opponent": "Portsmouth FC",
       "round": "18",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-11-28T15:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -1702,17 +1765,19 @@
       "opponent": "Norwich City FC",
       "round": "19",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-12-05T15:00:00Z",
-      "venue": ""
+      "venue": "Carrow Road, Norwich"
     },
     {
       "away": "Celta de Vigo",
@@ -1778,17 +1843,19 @@
       "opponent": "Charlton Athletic FC",
       "round": "20",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:45:00",
       "timestamp": "2026-12-08T19:45:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "AFC Bournemouth",
@@ -1831,17 +1898,19 @@
       "opponent": "Bolton Wanderers FC",
       "round": "21",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-12-12T15:00:00Z",
-      "venue": ""
+      "venue": "Toughsheet Community Stadium, Bolton"
     },
     {
       "away": "FC Barcelona",
@@ -1911,17 +1980,19 @@
       "opponent": "Queens Park Rangers FC",
       "round": "22",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-12-19T15:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Real Sociedad",
@@ -2015,17 +2086,19 @@
       "opponent": "Stoke City FC",
       "round": "23",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "15:00:00",
       "timestamp": "2026-12-26T15:00:00Z",
-      "venue": ""
+      "venue": "bet365 Stadium, Stoke"
     },
     {
       "away": "Blackburn Rovers FC",
@@ -2040,17 +2113,19 @@
       "opponent": "Blackburn Rovers FC",
       "round": "24",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "19:45:00",
       "timestamp": "2026-12-29T19:45:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Arsenal FC",
@@ -2093,17 +2168,19 @@
       "opponent": "Bolton Wanderers FC",
       "round": "25",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-01-01T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Ipswich Town FC",
@@ -2304,17 +2381,19 @@
       "opponent": "Preston North End FC",
       "round": "26",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-01-16T12:00:00Z",
-      "venue": ""
+      "venue": "Deepdale, Preston"
     },
     {
       "away": "Elche CF",
@@ -2384,17 +2463,19 @@
       "opponent": "Sheffield United FC",
       "round": "27",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-01-23T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -2460,17 +2541,19 @@
       "opponent": "Middlesbrough FC",
       "round": "28",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-01-27T12:00:00Z",
-      "venue": ""
+      "venue": "Riverside Stadium, Middlesbrough"
     },
     {
       "away": "Arsenal FC",
@@ -2513,17 +2596,19 @@
       "opponent": "Wolverhampton Wanderers FC",
       "round": "29",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-01-30T12:00:00Z",
-      "venue": ""
+      "venue": "Molineux Stadium, Wolverhampton"
     },
     {
       "away": "Valencia CF",
@@ -2593,17 +2678,19 @@
       "opponent": "Lincoln City FC",
       "round": "30",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-02-06T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Atlético de Madrid",
@@ -2697,17 +2784,19 @@
       "opponent": "West Ham United FC",
       "round": "31",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-02-13T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -2749,17 +2838,19 @@
       "opponent": "West Bromwich Albion FC",
       "round": "32",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-02-16T12:00:00Z",
-      "venue": ""
+      "venue": "The Hawthorns, West Bromwich"
     },
     {
       "away": "Fulham FC",
@@ -2802,17 +2893,19 @@
       "opponent": "Southampton FC",
       "round": "33",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-02-20T12:00:00Z",
-      "venue": ""
+      "venue": "St. Mary's Stadium, Southampton"
     },
     {
       "away": "Levante",
@@ -2906,17 +2999,19 @@
       "opponent": "Derby County FC",
       "round": "34",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-02-27T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -2958,17 +3053,19 @@
       "opponent": "Watford FC",
       "round": "35",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-03-02T12:00:00Z",
-      "venue": ""
+      "venue": "Vicarage Road, Watford"
     },
     {
       "away": "Crystal Palace FC",
@@ -3011,17 +3108,19 @@
       "opponent": "Cardiff City FC",
       "round": "36",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-03-06T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Real Betis",
@@ -3115,17 +3214,19 @@
       "opponent": "Portsmouth FC",
       "round": "37",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-03-13T12:00:00Z",
-      "venue": ""
+      "venue": "Fratton Park, Portsmouth"
     },
     {
       "away": "Deportivo de A Coruña",
@@ -3191,17 +3292,19 @@
       "opponent": "Norwich City FC",
       "round": "38",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-03-16T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Sunderland AFC",
@@ -3244,17 +3347,19 @@
       "opponent": "Stoke City FC",
       "round": "39",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-03-20T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -3320,17 +3425,19 @@
       "opponent": "Queens Park Rangers FC",
       "round": "40",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-04-03T12:00:00Z",
-      "venue": ""
+      "venue": "MATRADE Loftus Road, London"
     },
     {
       "away": "Sevilla FC",
@@ -3372,17 +3479,19 @@
       "opponent": "Burnley FC",
       "round": "41",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-04-06T12:00:00Z",
-      "venue": ""
+      "venue": "Turf Moor, Burnley"
     },
     {
       "away": "Arsenal FC",
@@ -3425,17 +3534,19 @@
       "opponent": "Swansea City AFC",
       "round": "42",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-04-10T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -3529,17 +3640,19 @@
       "opponent": "Birmingham City FC",
       "round": "43",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-04-17T12:00:00Z",
-      "venue": ""
+      "venue": "St. Andrew's @ Knighthead Park, Birmingham"
     },
     {
       "away": "Espanyol",
@@ -3605,17 +3718,19 @@
       "opponent": "Millwall FC",
       "round": "44",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-04-20T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "FC Barcelona",
@@ -3709,17 +3824,19 @@
       "opponent": "Charlton Athletic FC",
       "round": "45",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-04-24T12:00:00Z",
-      "venue": ""
+      "venue": "The Valley, London"
     },
     {
       "away": "Tottenham Hotspur FC",
@@ -3762,17 +3879,19 @@
       "opponent": "Bristol City FC",
       "round": "46",
       "season": "2026",
-      "source": "football-data.org",
+      "source": "football-data.org + iCalendar",
       "sources": [
-        "football-data.org"
+        "football-data.org",
+        "iCalendar"
       ],
+      "sourceDetail": "calendar-feed",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/404.png",
       "teamId": "3",
       "teamName": "Wrexham",
       "time": "12:00:00",
       "timestamp": "2027-05-01T12:00:00Z",
-      "venue": ""
+      "venue": "Racecourse Ground, Wrexham"
     },
     {
       "away": "Osasuna",

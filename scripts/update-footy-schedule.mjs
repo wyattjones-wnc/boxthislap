@@ -5,100 +5,95 @@ import path from "node:path";
 const DEFAULT_FOOTBALL_TEAMS_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub?gid=1614272244&single=true&output=csv";
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
-const PROVIDER_NAME = "TheSportsDB";
-const THE_SPORTS_DB_API_KEY = process.env.THE_SPORTS_DB_API_KEY || "";
-const THE_SPORTS_DB_V1_API_KEY = process.env.THE_SPORTS_DB_V1_API_KEY || THE_SPORTS_DB_API_KEY || "3";
-const THE_SPORTS_DB_BASE_URL = `https://www.thesportsdb.com/api/v1/json/${THE_SPORTS_DB_V1_API_KEY}`;
+const PROVIDER_NAME = "football-data.org";
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
+const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(".cache", "footy-schedule-api"));
-const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 2200;
+const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 6500;
+const LOOKAHEAD_DAYS = Number(process.env.FOOTY_SCHEDULE_LOOKAHEAD_DAYS) || 365;
+const MATCH_STATUS = process.env.FOOTY_SCHEDULE_MATCH_STATUS || "SCHEDULED";
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
 const SHOULD_USE_API_CACHE = !isFalseValue(process.env.FOOTY_API_CACHE || "true");
-const leagueSeasonCache = new Map();
+const FALLBACK_FOOTBALL_DATA_TEAM_IDS = {
+  arsenal: "57",
+  barcelona: "81",
+  wrexham: "404",
+};
 let lastExternalRequestAt = 0;
 
 async function main() {
+  if (!FOOTBALL_DATA_API_KEY) {
+    throw new Error("Missing FOOTBALL_DATA_API_KEY. Add it as a GitHub Actions repository secret.");
+  }
+
   const generatedAt = new Date().toISOString();
-  const footballData = await loadFootballData(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
-  const leagueRowsByTeamId = groupRowsByField(footballData.leagueRows, "Team ID", "TeamID");
+  const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
+  const dateFrom = formatDate(new Date());
+  const dateTo = formatDate(addDays(new Date(), LOOKAHEAD_DAYS));
   const teams = [];
   const fixtures = [];
   const errors = [];
   const coverageNotes = [];
 
   for (const team of activeTeams) {
-    const teamRecord = await resolveTeam(team, leagueRowsByTeamId.get(getField(team, "ID")) || []);
+    const teamRecord = await resolveTeam(team);
     teams.push(teamRecord);
 
     if (!teamRecord.providerTeamId) {
-      errors.push(`Unable to resolve team: ${teamRecord.name}`);
+      errors.push(`Unable to resolve football-data.org team ID for ${teamRecord.name}.`);
       continue;
     }
 
     try {
-      const schedule = await loadTeamSchedule(teamRecord);
+      const schedule = await loadTeamSchedule(teamRecord, { dateFrom, dateTo });
       coverageNotes.push(...schedule.notes.map((note) => `${teamRecord.name}: ${note}`));
       errors.push(...schedule.errors.map((error) => `${teamRecord.name}: ${error}`));
-      const events = schedule.events;
-      fixtures.push(...events.map((event) => normalizeEvent(event, teamRecord)));
+      fixtures.push(...schedule.matches.map((match) => normalizeMatch(match, teamRecord)));
     } catch (error) {
       errors.push(`Unable to load fixtures for ${teamRecord.name}: ${error.message}`);
     }
   }
 
-  fixtures.sort(compareFixtures);
-
+  const dedupedFixtures = dedupeFixtures(fixtures).sort(compareFixtures);
   const payload = {
     generatedAt,
     source: PROVIDER_NAME,
     coverage: {
-      mode: THE_SPORTS_DB_API_KEY ? "league-season-premium" : "league-season-free",
+      mode: "team-scheduled-matches",
       notes: [...new Set(coverageNotes)],
     },
     teams,
-    fixtures,
+    fixtures: dedupedFixtures,
     errors,
   };
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  console.log(`Wrote ${fixtures.length} fixtures for ${teams.length} teams to ${OUTPUT_PATH}`);
+  console.log(`Wrote ${dedupedFixtures.length} fixtures for ${teams.length} teams to ${OUTPUT_PATH}`);
 }
 
-async function resolveTeam(team, configuredLeagueRows = []) {
+async function resolveTeam(team) {
   const name = getField(team, "Name", "Team").trim();
-  const league = getField(team, "League").trim();
-  const explicitId = getField(
-    team,
-    "Provider Team ID",
-    "ProviderTeamID",
-    "TheSportsDB ID",
-    "TheSportsDBID",
-    "Source ID",
-    "SourceID",
-    "Provider ID",
-    "ProviderID",
-  ).trim();
+  const configuredId = getFootballDataTeamId(team);
 
   if (!name) {
     return {
       id: getField(team, "ID"),
-      league,
       name: "Unnamed team",
       priority: getField(team, "Priority"),
       provider: PROVIDER_NAME,
-      providerTeamId: explicitId,
+      providerTeamId: configuredId,
       resolvedName: "",
       status: "missing-name",
     };
   }
 
-  if (!explicitId) {
+  if (!configuredId) {
     return {
       id: getField(team, "ID"),
-      league,
       name,
       priority: getField(team, "Priority"),
       provider: PROVIDER_NAME,
@@ -108,148 +103,79 @@ async function resolveTeam(team, configuredLeagueRows = []) {
     };
   }
 
-  const providerTeam = await loadTeamDetails(explicitId);
+  const providerTeam = await loadFootballDataJson(`/teams/${encodeURIComponent(configuredId)}`);
 
   return {
-    badge: providerTeam?.strBadge || "",
+    badge: providerTeam.crest || "",
     id: getField(team, "ID"),
-    league,
-    providerLeagues: getTeamProviderLeagues(team, configuredLeagueRows, providerTeam),
+    league: getField(team, "League").trim(),
     name,
     priority: getField(team, "Priority"),
     provider: PROVIDER_NAME,
-    providerLeague: providerTeam?.strLeague || "",
-    providerTeamId: explicitId,
-    resolvedName: providerTeam?.strTeam || name,
-    status: providerTeam ? "configured" : "configured-unverified",
+    providerLeague: providerTeam.runningCompetitions?.[0]?.name || "",
+    providerLeagues: normalizeRunningCompetitions(providerTeam.runningCompetitions),
+    providerTeamId: String(providerTeam.id || configuredId),
+    resolvedName: providerTeam.name || name,
+    status: providerTeam.id ? "configured" : "configured-unverified",
   };
 }
 
-async function loadTeamDetails(providerTeamId) {
-  const data = await loadJson(`${THE_SPORTS_DB_BASE_URL}/lookupteam.php?id=${encodeURIComponent(providerTeamId)}`);
+async function loadTeamSchedule(team, { dateFrom, dateTo }) {
+  const query = new URLSearchParams({
+    dateFrom,
+    dateTo,
+    limit: "500",
+  });
 
-  return Array.isArray(data.teams) ? data.teams[0] : null;
-}
-
-async function loadTeamSchedule(team) {
-  const leagueSchedules = [];
-  const notes = [];
-  const errors = [];
-
-  for (const league of team.providerLeagues) {
-    let leagueHadMatchingEvents = false;
-
-    for (const season of getCurrentScheduleSeasonCandidates()) {
-      try {
-        const leagueEvents = await loadLeagueSeasonEvents(league.id, season);
-        const teamEvents = leagueEvents.filter((event) => isTeamEvent(event, team));
-        leagueSchedules.push(...teamEvents);
-        notes.push(
-          `Loaded ${teamEvents.length} matching events from ${league.name || `league ${league.id}`} ${season}.`,
-        );
-
-        if (teamEvents.length > 0) {
-          leagueHadMatchingEvents = true;
-          break;
-        }
-      } catch (error) {
-        errors.push(`Unable to load ${league.name || `league ${league.id}`} ${season}: ${error.message}`);
-      }
-    }
-
-    if (!leagueHadMatchingEvents) {
-      notes.push(`${league.name || `league ${league.id}`} did not expose matching events in current season data.`);
-    }
+  if (MATCH_STATUS) {
+    query.set("status", MATCH_STATUS);
   }
 
-  let nextEvents = [];
-
-  try {
-    nextEvents = await loadUpcomingEvents(team);
-  } catch (error) {
-    errors.push(`Unable to load direct team next events: ${error.message}`);
-  }
-
-  const events = dedupeEvents([...leagueSchedules, ...nextEvents]);
+  const data = await loadFootballDataJson(`/teams/${encodeURIComponent(team.providerTeamId)}/matches?${query.toString()}`);
+  const matches = Array.isArray(data.matches) ? data.matches : [];
 
   return {
-    events,
-    errors,
+    errors: getFootballDataErrorMessages(data),
+    matches,
     notes: [
-      ...notes,
-      `Merged ${nextEvents.length} direct team next-event records for near-term friendlies or fixtures not exposed through league-season calls.`,
-      THE_SPORTS_DB_API_KEY
-        ? "Using configured API key for v1 schedule calls."
-        : "Using free v1 API key; TheSportsDB documents lower schedule limits for free calls.",
+      `Loaded ${matches.length} ${MATCH_STATUS || "all-status"} matches from ${dateFrom} through ${dateTo}.`,
+      ...formatRunningCompetitionNotes(team.providerLeagues),
     ],
   };
 }
 
-async function loadLeagueSeasonEvents(leagueId, season) {
-  const cacheKey = `${leagueId}:${season}`;
-
-  if (leagueSeasonCache.has(cacheKey)) {
-    return leagueSeasonCache.get(cacheKey);
-  }
-
-  const data = await loadJson(
-    `${THE_SPORTS_DB_BASE_URL}/eventsseason.php?id=${encodeURIComponent(leagueId)}&s=${encodeURIComponent(season)}`,
-  );
-  const events = Array.isArray(data.events) ? data.events : [];
-  leagueSeasonCache.set(cacheKey, events);
-
-  return events;
-}
-
-async function loadUpcomingEvents(team) {
-  const data = await loadJson(`${THE_SPORTS_DB_BASE_URL}/eventsnext.php?id=${encodeURIComponent(team.providerTeamId)}`);
-
-  return Array.isArray(data.events) ? data.events : [];
-}
-
-function normalizeEvent(event, team) {
-  const homeTeam = event.strHomeTeam || "";
-  const awayTeam = event.strAwayTeam || "";
-  const isHome = normalizeText(homeTeam) === normalizeText(team.resolvedName || team.name);
-  const timestamp = event.strTimestamp ? `${event.strTimestamp}Z` : buildTimestamp(event.dateEvent, event.strTime);
+function normalizeMatch(match, team) {
+  const homeTeam = match.homeTeam?.name || "";
+  const awayTeam = match.awayTeam?.name || "";
+  const isHome = String(match.homeTeam?.id || "") === String(team.providerTeamId) ||
+    normalizeText(homeTeam) === normalizeText(team.resolvedName || team.name);
+  const timestamp = match.utcDate || "";
 
   return {
     away: awayTeam,
-    awayBadge: event.strAwayTeamBadge || "",
-    date: event.dateEvent || "",
+    awayBadge: "",
+    date: timestamp.slice(0, 10),
     home: homeTeam,
-    homeBadge: event.strHomeTeamBadge || "",
-    id: event.idEvent || "",
-    leagueId: event.idLeague || "",
+    homeBadge: "",
+    id: String(match.id || ""),
+    leagueId: String(match.competition?.id || ""),
     isHome,
-    league: event.strLeague || "",
+    league: match.competition?.name || "",
     opponent: isHome ? awayTeam : homeTeam,
-    round: event.intRound || "",
-    season: event.strSeason || "",
+    round: match.matchday ? String(match.matchday) : "",
+    season: match.season?.startDate ? match.season.startDate.slice(0, 4) : "",
     source: PROVIDER_NAME,
-    status: event.strStatus || "",
+    status: match.status || "",
     teamBadge: team.badge || "",
     teamId: team.id,
     teamName: team.name,
-    time: event.strTime || "",
+    time: timestamp.slice(11, 19),
     timestamp,
-    venue: event.strVenue || "",
+    venue: "",
   };
 }
 
-function buildTimestamp(date, time) {
-  if (!date) {
-    return "";
-  }
-
-  return `${date}T${time || "00:00:00"}Z`;
-}
-
-async function loadCsv(url) {
-  return parseCsv(await loadText(url, { extension: "csv" }));
-}
-
-async function loadFootballData(url) {
+async function loadFootballSheet(url) {
   const rows = parseCsvRows(stripBom(await loadText(url, { extension: "csv" })));
   const sections = splitCsvSections(rows);
   const teamRows = [];
@@ -271,10 +197,11 @@ async function loadFootballData(url) {
   return { leagueRows, teamRows };
 }
 
-async function loadJson(url, headers = {}) {
-  const text = await loadText(url, { extension: "json", headers });
-
-  return JSON.parse(text);
+async function loadFootballDataJson(endpoint) {
+  return JSON.parse(await loadText(`${FOOTBALL_DATA_BASE_URL}${endpoint}`, {
+    extension: "json",
+    headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY },
+  }));
 }
 
 async function loadText(url, { extension, headers = {} }) {
@@ -290,12 +217,11 @@ async function loadText(url, { extension, headers = {} }) {
 
   await waitForExternalRequestSlot();
   const response = await fetch(url, { headers: { "user-agent": "boxthislap-footy-updater", ...headers } });
+  const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(`Failed to load ${extension.toUpperCase()} from ${url}: ${response.status}`);
+    throw new Error(`Failed to load ${url}: ${response.status} ${getErrorMessageFromText(text)}`);
   }
-
-  const text = await response.text();
 
   if (SHOULD_USE_API_CACHE) {
     await writeApiCacheFile(cachePath, url, text);
@@ -354,16 +280,6 @@ function getApiCachePath(url, extension) {
   const hash = createHash("sha256").update(url).digest("hex").slice(0, 12);
 
   return path.join(API_CACHE_DIR, `${safeName}-${hash}.${extension}`);
-}
-
-function parseCsv(text) {
-  const rows = parseCsvRows(stripBom(text));
-
-  if (rows.length === 0) {
-    return [];
-  }
-
-  return recordsFromCsvSection({ headers: rows[0], rows: rows.slice(1) });
 }
 
 function splitCsvSections(rows) {
@@ -492,108 +408,64 @@ function getField(row, ...names) {
   return "";
 }
 
-function getTeamProviderLeagues(team, configuredLeagueRows, providerTeam) {
-  const configuredLeagueTableIds = configuredLeagueRows.map((league) => {
-    const id = getField(
-      league,
-      "Provider League ID",
-      "ProviderLeagueID",
-      "Provider Team ID",
-      "ProviderTeamID",
-      "League ID",
-      "LeagueID",
-    ).trim();
-
-    return {
-      id,
-      name: getField(league, "Name").trim(),
-    };
-  }).filter((league) => league.id);
-
-  if (configuredLeagueTableIds.length > 0) {
-    return dedupeBy(configuredLeagueTableIds, (league) => league.id);
-  }
-
-  const configuredLeagueIds = parseList(getField(
+function getFootballDataTeamId(team) {
+  const explicitId = getField(
     team,
-    "Provider League IDs",
-    "Provider League ID",
-    "ProviderLeagueIDs",
-    "ProviderLeagueID",
-    "League IDs",
-    "League ID",
-    "LeagueIDs",
-    "LeagueID",
-  ));
+    "Football-Data Team ID",
+    "Football Data Team ID",
+    "FootballData Team ID",
+    "FootballDataTeamID",
+  ).trim();
 
-  if (configuredLeagueIds.length > 0) {
-    return configuredLeagueIds.map((id) => ({ id, name: "" }));
-  }
+  return explicitId || FALLBACK_FOOTBALL_DATA_TEAM_IDS[normalizeText(getField(team, "Name", "Team"))] || "";
+}
 
-  if (!providerTeam) {
+function normalizeRunningCompetitions(competitions = []) {
+  return competitions.map((competition) => ({
+    id: String(competition.id || ""),
+    name: competition.name || "",
+    code: competition.code || "",
+  })).filter((competition) => competition.id || competition.name || competition.code);
+}
+
+function formatRunningCompetitionNotes(competitions = []) {
+  const names = competitions.map((competition) => {
+    return competition.code ? `${competition.name} (${competition.code})` : competition.name;
+  }).filter(Boolean);
+
+  return names.length > 0 ? [`Running competitions: ${names.join(", ")}.`] : [];
+}
+
+function getFootballDataErrorMessages(data) {
+  if (!data || !data.errorCode && !data.message) {
     return [];
   }
 
-  const leagues = [];
+  return [[data.errorCode, data.message].filter(Boolean).join(": ")].filter(Boolean);
+}
 
-  for (let index = 1; index <= 7; index += 1) {
-    const suffix = index === 1 ? "" : String(index);
-    const id = String(providerTeam[`idLeague${suffix}`] || "").trim();
-    const name = String(providerTeam[`strLeague${suffix}`] || "").trim();
-
-    if (id) {
-      leagues.push({ id, name });
-    }
+function getErrorMessageFromText(text) {
+  try {
+    const data = JSON.parse(text);
+    return [data.errorCode, data.message].filter(Boolean).join(": ");
+  } catch {
+    return text.slice(0, 180);
   }
-
-  return dedupeBy(leagues, (league) => league.id);
 }
 
-function groupRowsByField(rows, ...fieldNames) {
-  const groupedRows = new Map();
-
-  for (const row of rows) {
-    const key = getField(row, ...fieldNames).trim();
-
-    if (!key) {
-      continue;
-    }
-
-    const currentRows = groupedRows.get(key) || [];
-    currentRows.push(row);
-    groupedRows.set(key, currentRows);
-  }
-
-  return groupedRows;
-}
-
-function getCurrentScheduleSeasonCandidates(referenceDate = new Date()) {
-  const year = referenceDate.getUTCFullYear();
-  const seasonStartYear = referenceDate.getUTCMonth() >= 6 ? year : year - 1;
-  const seasonCandidates = [`${seasonStartYear}-${seasonStartYear + 1}`, String(year)];
-
-  return dedupeBy(seasonCandidates, (season) => season);
-}
-
-function isTeamEvent(event, team) {
-  return event.idHomeTeam === team.providerTeamId ||
-    event.idAwayTeam === team.providerTeamId ||
-    normalizeText(event.strHomeTeam) === normalizeText(team.resolvedName || team.name) ||
-    normalizeText(event.strAwayTeam) === normalizeText(team.resolvedName || team.name);
-}
-
-function dedupeEvents(events) {
-  return dedupeBy(events, (event) => {
-    if (event.idEvent) {
-      return `id:${event.idEvent}`;
+function dedupeFixtures(fixtures) {
+  return dedupeBy(fixtures, (fixture) => {
+    if (fixture.id) {
+      return `id:${fixture.id}:team:${fixture.teamId}`;
     }
 
     return [
-      event.dateEvent,
-      event.strTime,
-      normalizeText(event.strHomeTeam),
-      normalizeText(event.strAwayTeam),
-      normalizeText(event.strLeague),
+      fixture.date,
+      fixture.time,
+      normalizeText(fixture.home),
+      normalizeText(fixture.away),
+      normalizeText(fixture.league),
+      fixture.teamId,
     ].join("|");
   });
 }
@@ -616,15 +488,19 @@ function dedupeBy(items, getKey) {
   return deduped;
 }
 
-function parseList(value) {
-  return String(value ?? "")
-    .split(/[,;|\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+function hasTeamIdentity(team) {
+  return Boolean(getField(team, "Name", "Team").trim() || getFootballDataTeamId(team));
 }
 
-function hasTeamIdentity(team) {
-  return Boolean(getField(team, "Name", "Team").trim() || getField(team, "Provider Team ID", "ProviderTeamID").trim());
+function formatDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setUTCDate(copy.getUTCDate() + days);
+
+  return copy;
 }
 
 function normalizeText(value) {

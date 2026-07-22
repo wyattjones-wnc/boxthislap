@@ -26,7 +26,7 @@ jobs:
 
       - name: Update cached footy schedule
         env:
-          THE_SPORTS_DB_API_KEY: ${{ secrets.THE_SPORTS_DB_API_KEY }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
         run: node scripts/update-footy-schedule.mjs
 
       - name: Commit updated schedule

@@ -460,6 +460,9 @@ function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
   const sideLabel = fixture.isHome ? "H" : "A";
   const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+  const venueMarkup = shouldShowFootyFixtureVenue(fixture)
+    ? `<p>${escapeHtml(fixture.venue)}</p>`
+    : "";
 
   return `
     <article class="footy-fixture-card">
@@ -471,11 +474,27 @@ function renderFootyFixture(fixture) {
           <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
-        ${fixture.venue ? `<p>${escapeHtml(fixture.venue)}</p>` : ""}
+        ${venueMarkup}
       </div>
       <strong>${escapeHtml(dateLabel)}</strong>
     </article>
   `;
+}
+
+function shouldShowFootyFixtureVenue(fixture) {
+  if (!fixture?.venue) {
+    return false;
+  }
+
+  const league = normalizeLookupName(fixture.league || "");
+
+  if (league.includes("friendly")) {
+    return true;
+  }
+
+  const cupTerms = ["cup", "shield", "trophy", "supercopa", "super cup", "campeones"];
+
+  return cupTerms.some((term) => league.includes(term));
 }
 
 function renderFootyScheduleError(error) {

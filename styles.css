@@ -500,7 +500,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-filters input,
-.footy-filters select {
+.footy-filters select,
+.multi-filter-button {
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -512,6 +513,90 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-filters select {
   min-height: 96px;
+}
+
+.multi-filter {
+  position: relative;
+}
+
+.multi-filter-button {
+  cursor: pointer;
+  font-weight: 800;
+  padding-right: 34px;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.multi-filter-button::after {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  content: "";
+  height: 8px;
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-65%) rotate(45deg);
+  width: 8px;
+}
+
+.multi-filter-button[aria-expanded="true"]::after {
+  transform: translateY(-35%) rotate(225deg);
+}
+
+.multi-filter-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.multi-filter-options {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px var(--shadow);
+  left: 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+}
+
+.multi-filter-option {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  font-size: 0.95rem;
+  font-weight: 800;
+  gap: 8px;
+  grid-template-columns: auto 1fr;
+  padding: 9px 8px;
+}
+
+.multi-filter-option:hover {
+  background: var(--soft);
+}
+
+.multi-filter-option input {
+  accent-color: var(--track);
+  background: transparent;
+  border: 0;
+  height: 18px;
+  min-height: auto;
+  padding: 0;
+  width: 18px;
+}
+
+.multi-filter-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 0;
+  padding: 8px;
 }
 
 .footy-past-toggle {

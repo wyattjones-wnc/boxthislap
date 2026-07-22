@@ -446,9 +446,12 @@
           </label>
           <label>
             <span>Teams</span>
-            <select id="footy-team-filter" multiple size="3">
-              <option>Loading teams...</option>
-            </select>
+            <div class="multi-filter" id="footy-team-filter">
+              <button class="multi-filter-button" type="button" aria-expanded="false">
+                Loading teams...
+              </button>
+              <div class="multi-filter-options" hidden></div>
+            </div>
           </label>
         </div>
         <div class="content-shell" id="footy-schedule-list">

@@ -126,6 +126,7 @@ let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
+let shouldShowFootyTeamOptions = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const siteData = {};
 window.boxThisLapData = siteData;
@@ -336,7 +337,11 @@ function getSelectedFootyTeams() {
     return new Set();
   }
 
-  return new Set([...footyTeamFilter.selectedOptions].map((option) => normalizeLookupName(option.value)).filter(Boolean));
+  return new Set(
+    [...footyTeamFilter.querySelectorAll("input[type=\"checkbox\"]:checked")]
+      .map((input) => normalizeLookupName(input.value))
+      .filter(Boolean)
+  );
 }
 
 function getDefaultFootyPrioritySet() {
@@ -399,11 +404,35 @@ function syncFootyFilters(fixtures = []) {
   const selectedTeams = getSelectedFootyTeams();
   const teams = [...new Set(fixtures.map((fixture) => fixture.teamName).filter(Boolean))]
     .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
+  const button = footyTeamFilter.querySelector(".multi-filter-button");
+  const options = footyTeamFilter.querySelector(".multi-filter-options");
 
-  footyTeamFilter.innerHTML = teams.map((team) => {
-    const selected = selectedTeams.has(normalizeLookupName(team)) ? " selected" : "";
-    return `<option value="${escapeHtml(team)}"${selected}>${escapeHtml(team)}</option>`;
-  }).join("");
+  if (!button || !options) {
+    return;
+  }
+
+  const selectedCount = teams.filter((team) => selectedTeams.has(normalizeLookupName(team))).length;
+  button.textContent = teams.length === 0
+    ? "No teams loaded"
+    : selectedCount === 0
+    ? "Default priority teams"
+    : selectedCount === 1
+    ? teams.find((team) => selectedTeams.has(normalizeLookupName(team))) || "1 team selected"
+    : `${selectedCount} teams selected`;
+  button.disabled = teams.length === 0;
+  button.setAttribute("aria-expanded", String(shouldShowFootyTeamOptions));
+  options.hidden = !shouldShowFootyTeamOptions;
+  options.innerHTML = teams.length === 0
+    ? `<p class="multi-filter-empty">No teams loaded.</p>`
+    : teams.map((team) => {
+      const selected = selectedTeams.has(normalizeLookupName(team)) ? " checked" : "";
+      return `
+        <label class="multi-filter-option">
+          <input type="checkbox" value="${escapeHtml(team)}"${selected}>
+          <span>${escapeHtml(team)}</span>
+        </label>
+      `;
+    }).join("");
 }
 
 function getVisibleFootyFixtures(fixtures) {
@@ -2180,9 +2209,27 @@ footyFilterToggle?.addEventListener("click", () => {
   renderFootySchedule(siteData.footySchedule);
 });
 
+footyTeamFilter?.addEventListener("click", (event) => {
+  if (!event.target.closest(".multi-filter-button")) {
+    return;
+  }
+
+  shouldShowFootyTeamOptions = !shouldShowFootyTeamOptions;
+  renderFootySchedule(siteData.footySchedule);
+});
+
 [footySearchInput, footyDateFilter, footyTeamFilter].forEach((control) => {
   control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
+});
+
+document.addEventListener("click", (event) => {
+  if (!footyTeamFilter || !shouldShowFootyTeamOptions || footyTeamFilter.contains(event.target)) {
+    return;
+  }
+
+  shouldShowFootyTeamOptions = false;
+  renderFootySchedule(siteData.footySchedule);
 });
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {

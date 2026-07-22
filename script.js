@@ -64,7 +64,8 @@ import {
   footyFilterToggle,
   footyFilters,
   footySearchInput,
-  footyDateFilter,
+  footyDateFromFilter,
+  footyDateToFilter,
   footyTeamFilter,
   footyScheduleList,
   fantasyCritic2025Content,
@@ -338,12 +339,12 @@ function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {
 
 function getFilteredFootyFixtures(fixtures) {
   const searchTerm = normalizeLookupName(footySearchInput?.value || "");
-  const selectedDate = String(footyDateFilter?.value || "").trim();
+  const dateRange = getFootyDateFilterRange();
   const selectedTeams = getSelectedFootyTeams();
   const defaultPrioritySet = getDefaultFootyPrioritySet();
 
   return fixtures.filter((fixture) => {
-    if (selectedDate && getFootyFixtureDateKey(fixture) !== selectedDate) {
+    if (dateRange && !isFootyFixtureInDateRange(fixture, dateRange)) {
       return false;
     }
 
@@ -366,8 +367,35 @@ function getFilteredFootyFixtures(fixtures) {
 function hasActiveFootyFilters() {
   return Boolean(
     String(footySearchInput?.value || "").trim() ||
-    String(footyDateFilter?.value || "").trim() ||
+    String(footyDateFromFilter?.value || "").trim() ||
+    String(footyDateToFilter?.value || "").trim() ||
     getSelectedFootyTeams().size > 0
+  );
+}
+
+function getFootyDateFilterRange() {
+  const rawStart = String(footyDateFromFilter?.value || "").trim();
+  const rawEnd = String(footyDateToFilter?.value || "").trim();
+
+  if (!rawStart && !rawEnd) {
+    return null;
+  }
+
+  const start = rawStart || rawEnd;
+  const end = rawEnd || rawStart;
+
+  return start <= end
+    ? { start, end }
+    : { start: end, end: start };
+}
+
+function isFootyFixtureInDateRange(fixture, dateRange) {
+  const fixtureDate = getFootyFixtureDateKey(fixture);
+
+  return Boolean(
+    fixtureDate &&
+    fixtureDate >= dateRange.start &&
+    fixtureDate <= dateRange.end
   );
 }
 
@@ -2264,7 +2292,7 @@ footyTeamFilter?.addEventListener("click", (event) => {
   renderFootySchedule(siteData.footySchedule);
 });
 
-[footySearchInput, footyDateFilter, footyTeamFilter].forEach((control) => {
+[footySearchInput, footyDateFromFilter, footyDateToFilter, footyTeamFilter].forEach((control) => {
   control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });

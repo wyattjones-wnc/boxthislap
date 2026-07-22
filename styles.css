@@ -511,6 +511,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 9px 10px;
 }
 
+.footy-date-range {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.footy-date-range input {
+  min-width: 0;
+}
+
 .footy-filters select {
   min-height: 96px;
 }

@@ -1,7 +1,19 @@
 {
-  "generatedAt": "2026-07-22T04:05:13.419Z",
+  "generatedAt": "2026-07-22T04:13:19.245Z",
   "schemaVersion": 2,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
+  "updateTracker": {
+    "generatedAt": "2026-07-22T04:13:19.245Z",
+    "attemptedAt": "2026-07-22T04:13:19.245Z",
+    "updatedAt": "2026-07-22T04:13:19.245Z",
+    "oldestTeamUpdatedAt": "2026-07-22T04:13:19.245Z",
+    "teamCount": 7,
+    "fixtureCount": 201,
+    "statuses": {
+      "updated": 5,
+      "no-fixtures": 2
+    }
+  },
   "prioritySets": [
     {
       "set": "1",
@@ -28,7 +40,9 @@
   ],
   "teamSchedules": [
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/57.png",
@@ -1352,7 +1366,9 @@
       "errors": []
     },
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/81.png",
@@ -3071,7 +3087,9 @@
       "errors": []
     },
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/404.png",
@@ -4439,7 +4457,9 @@
       "errors": []
     },
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -4458,7 +4478,9 @@
       "errors": []
     },
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -4477,7 +4499,9 @@
       "errors": []
     },
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "updated",
       "team": {
         "badge": "",
@@ -5094,7 +5118,9 @@
       "errors": []
     },
     {
-      "updatedAt": "2026-07-22T04:05:13.419Z",
+      "attemptedAt": "2026-07-22T04:13:19.245Z",
+      "updatedAt": "2026-07-22T04:13:19.245Z",
+      "previousUpdatedAt": "2026-07-22T04:12:19.319Z",
       "status": "updated",
       "team": {
         "badge": "",

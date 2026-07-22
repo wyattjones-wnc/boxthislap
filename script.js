@@ -219,7 +219,7 @@ function renderFootySchedule(schedule) {
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
   const errors = getFootyScheduleErrors(schedule);
-  const generatedAt = formatFootyGeneratedAt(schedule?.generatedAt);
+  const generatedAt = formatFootyGeneratedAt(getFootyScheduleUpdatedAt(schedule));
   const emptyMessage = hasActiveFootyFilters()
     ? "No matches found for the current filters."
     : shouldShowPastFootyFixtures
@@ -276,6 +276,10 @@ function getFootyScheduleErrors(schedule) {
 
     return errors.map((error) => `${teamName}: ${error}`).filter(Boolean);
   });
+}
+
+function getFootyScheduleUpdatedAt(schedule) {
+  return schedule?.updateTracker?.updatedAt || schedule?.generatedAt || "";
 }
 
 function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {

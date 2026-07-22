@@ -117,11 +117,8 @@ const ARSENAL_FIXTURES_QUERY = `query FixturesByIds($date: String = "", $competi
 let lastExternalRequestAt = 0;
 
 async function main() {
-  if (!FOOTBALL_DATA_API_KEY) {
-    throw new Error("Missing FOOTBALL_DATA_API_KEY. Add it as a GitHub Actions repository secret.");
-  }
-
   const generatedAt = new Date().toISOString();
+  const previousPayload = await loadPreviousSchedulePayload();
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
@@ -146,6 +143,11 @@ async function main() {
 
     if (!teamRecord.providerTeamId) {
       coverageNotes.push(`${teamRecord.name}: Skipped football-data.org; no provider team ID configured.`);
+      continue;
+    }
+
+    if (!FOOTBALL_DATA_API_KEY) {
+      errors.push(`${teamRecord.name}: Unable to load ${PRIMARY_PROVIDER_NAME} fixtures: missing FOOTBALL_DATA_API_KEY.`);
       continue;
     }
 
@@ -186,19 +188,21 @@ async function main() {
     fixtures: dedupedFixtures,
     generatedAt,
     notes: coverageNotes,
+    previousSchedules: previousPayload?.teamSchedules,
     teams,
   });
   const payload = {
     generatedAt,
     schemaVersion: 2,
     source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
+    updateTracker: buildFileUpdateTracker({ generatedAt, teamSchedules }),
     prioritySets,
     teamSchedules,
   };
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  console.log(`Wrote ${dedupedFixtures.length} fixtures for ${teams.length} teams to ${OUTPUT_PATH}`);
+  console.log(`Wrote ${payload.updateTracker.fixtureCount} fixtures for ${teamSchedules.length} teams to ${OUTPUT_PATH}`);
 }
 
 async function resolveTeam(team) {
@@ -226,6 +230,24 @@ async function resolveTeam(team) {
       providerTeamId: "",
       resolvedName: "",
       status: "missing-provider-team-id",
+    };
+  }
+
+  if (!FOOTBALL_DATA_API_KEY) {
+    return {
+      badge: "",
+      id: getField(team, "ID"),
+      league: getField(team, "League").trim(),
+      name,
+      priority: getField(team, "Priority"),
+      provider: PRIMARY_PROVIDER_NAME,
+      providerLeague: "",
+      providerLeagues: [],
+      providerTeamId: configuredId,
+      resolvedName: name,
+      sportDbTeamId: getSportDbTeamId(team),
+      status: "configured-unverified",
+      warning: `Skipped ${PRIMARY_PROVIDER_NAME} team verification; missing FOOTBALL_DATA_API_KEY.`,
     };
   }
 
@@ -265,6 +287,23 @@ async function resolveTeam(team) {
     sportDbTeamId: getSportDbTeamId(team),
     status: providerTeam.id ? "configured" : "configured-unverified",
   };
+}
+
+async function loadPreviousSchedulePayload() {
+  const text = await tryReadFile(OUTPUT_PATH);
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(text);
+
+    return payload && typeof payload === "object" ? payload : null;
+  } catch (error) {
+    console.warn(`Unable to parse existing footy schedule for preservation: ${error.message}`);
+    return null;
+  }
 }
 
 async function loadTeamSchedule(team, { dateFrom, dateTo }) {
@@ -1029,34 +1068,127 @@ function mergeFixtures(fixtures) {
   return [...fixtureMap.values()];
 }
 
-function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [], teams = [] }) {
+function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [], previousSchedules = [], teams = [] }) {
   const fixturesByTeamId = groupBy(fixtures, (fixture) => String(fixture.teamId || "").trim());
+  const previousScheduleByTeamId = new Map(
+    (Array.isArray(previousSchedules) ? previousSchedules : [])
+      .filter((schedule) => schedule?.team?.id)
+      .map((schedule) => [String(schedule.team.id), schedule])
+  );
 
   return teams.map((team) => {
     const teamFixtures = (fixturesByTeamId.get(String(team.id || "").trim()) || []).sort(compareFixtures);
     const teamNotes = getMessagesForTeam(team, notes);
     const teamErrors = getMessagesForTeam(team, errors);
-    const sourceNames = teamFixtures.flatMap((fixture) => {
-      return Array.isArray(fixture.sources) ? fixture.sources : [fixture.source].filter(Boolean);
-    });
+    const previousSchedule = previousScheduleByTeamId.get(String(team.id || ""));
+    const previousFixtures = Array.isArray(previousSchedule?.fixtures) ? previousSchedule.fixtures : [];
+
+    if (shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors, teamFixtures })) {
+      return {
+        ...previousSchedule,
+        attemptedAt: generatedAt,
+        status: "stale-error",
+        team: buildTeamScheduleTeam(team, previousSchedule.team),
+        sources: Array.isArray(previousSchedule.sources) ? previousSchedule.sources : getFixtureSources(previousFixtures),
+        fixtureCount: previousFixtures.length,
+        fixtures: previousFixtures,
+        notes: [...new Set([
+          ...teamNotes,
+          `Preserved ${previousFixtures.length} fixtures from the previous successful update.`,
+        ])],
+        errors: [...new Set(teamErrors)],
+      };
+    }
+
+    const currentFixtures = getCurrentTeamFixtures({ previousFixtures, teamErrors, teamFixtures });
 
     return {
+      attemptedAt: generatedAt,
       updatedAt: generatedAt,
-      status: getTeamScheduleStatus(teamFixtures, teamErrors),
-      team: {
-        badge: team.badge || "",
-        id: team.id || "",
-        league: team.league || "",
-        name: team.name || "",
-        priority: team.priority || "",
-      },
-      sources: [...new Set(sourceNames)].sort(),
-      fixtureCount: teamFixtures.length,
-      fixtures: teamFixtures,
-      notes: [...new Set(teamNotes)],
+      previousUpdatedAt: previousSchedule?.updatedAt || "",
+      status: getTeamScheduleStatus(currentFixtures, teamErrors),
+      team: buildTeamScheduleTeam(team),
+      sources: getFixtureSources(currentFixtures),
+      fixtureCount: currentFixtures.length,
+      fixtures: currentFixtures,
+      notes: [...new Set([
+        ...teamNotes,
+        ...getPartialPreservationNotes({ previousFixtures, teamErrors, teamFixtures }),
+      ])],
       errors: [...new Set(teamErrors)],
     };
   });
+}
+
+function shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors = [], teamFixtures = [] }) {
+  return teamFixtures.length === 0 &&
+    teamErrors.length > 0 &&
+    Array.isArray(previousSchedule?.fixtures) &&
+    previousSchedule.fixtures.length > 0;
+}
+
+function getCurrentTeamFixtures({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
+  if (teamErrors.length === 0 || previousFixtures.length === 0) {
+    return teamFixtures;
+  }
+
+  return mergeFixtures([...previousFixtures, ...teamFixtures]).sort(compareFixtures);
+}
+
+function getPartialPreservationNotes({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
+  if (teamErrors.length === 0 || previousFixtures.length === 0 || teamFixtures.length === 0) {
+    return [];
+  }
+
+  const mergedCount = mergeFixtures([...previousFixtures, ...teamFixtures]).length;
+  const preservedCount = Math.max(0, mergedCount - teamFixtures.length);
+
+  return preservedCount > 0
+    ? [`Preserved ${preservedCount} previous fixtures while the current update had provider errors.`]
+    : [];
+}
+
+function buildTeamScheduleTeam(team, previousTeam = {}) {
+  return {
+    badge: team.badge || previousTeam.badge || "",
+    id: team.id || previousTeam.id || "",
+    league: team.league || previousTeam.league || "",
+    name: team.name || previousTeam.name || "",
+    priority: team.priority || previousTeam.priority || "",
+  };
+}
+
+function getFixtureSources(fixtures = []) {
+  return [...new Set(fixtures.flatMap((fixture) => {
+    return Array.isArray(fixture.sources) ? fixture.sources : [fixture.source].filter(Boolean);
+  }))].sort();
+}
+
+function buildFileUpdateTracker({ generatedAt, teamSchedules = [] }) {
+  const schedules = Array.isArray(teamSchedules) ? teamSchedules : [];
+  const updatedTimes = schedules
+    .map((schedule) => schedule.updatedAt)
+    .filter(Boolean)
+    .sort();
+  const attemptedTimes = schedules
+    .map((schedule) => schedule.attemptedAt)
+    .filter(Boolean)
+    .sort();
+  const statuses = schedules.reduce((counts, schedule) => {
+    const status = schedule.status || "unknown";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+
+  return {
+    generatedAt,
+    attemptedAt: attemptedTimes.at(-1) || generatedAt,
+    updatedAt: updatedTimes.at(-1) || generatedAt,
+    oldestTeamUpdatedAt: updatedTimes[0] || "",
+    teamCount: schedules.length,
+    fixtureCount: schedules.reduce((sum, schedule) => sum + (Number(schedule.fixtureCount) || 0), 0),
+    statuses,
+  };
 }
 
 function getTeamScheduleStatus(fixtures = [], errors = []) {

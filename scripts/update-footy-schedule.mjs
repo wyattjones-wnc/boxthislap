@@ -210,12 +210,19 @@ async function loadSportDbSchedules({ dateFrom, dateTo, leagueRowsByTeamId, team
       continue;
     }
 
-    if (sportDbLeagueRows.length === 0) {
-      notes.push(`${team.name}: Skipped ${SPORTDB_PROVIDER_NAME}; no SportDB League IDs configured.`);
-      continue;
-    }
+    let leagueLoadedCount = 0;
+    let teamLoadedCount = 0;
 
-    let loadedCount = 0;
+    try {
+      const teamEvents = await loadSportDbTeamUpcoming(sportDbTeamId);
+      const matchingTeamEvents = teamEvents
+        .filter((event) => isSportDbTeamEvent(event, sportDbTeamId, team))
+        .filter((event) => isSportDbEventInRange(event, dateFrom, dateTo));
+      teamLoadedCount = matchingTeamEvents.length;
+      fixtures.push(...matchingTeamEvents.map((event) => normalizeSportDbMatch(event, team, sportDbTeamId, "team-upcoming")));
+    } catch (error) {
+      errors.push(`${team.name}: Unable to load ${SPORTDB_PROVIDER_NAME} upcoming team matches: ${error.message}`);
+    }
 
     for (const leagueRow of sportDbLeagueRows) {
       const leagueId = getSportDbLeagueId(leagueRow);
@@ -238,15 +245,28 @@ async function loadSportDbSchedules({ dateFrom, dateTo, leagueRowsByTeamId, team
         const matchingEvents = events
           .filter((event) => isSportDbTeamEvent(event, sportDbTeamId, team))
           .filter((event) => isSportDbEventInRange(event, dateFrom, dateTo));
-        loadedCount += matchingEvents.length;
-        fixtures.push(...matchingEvents.map((event) => normalizeSportDbMatch(event, team, sportDbTeamId)));
+        leagueLoadedCount += matchingEvents.length;
+        fixtures.push(...matchingEvents.map((event) => normalizeSportDbMatch(event, team, sportDbTeamId, "league-season")));
       }
     }
 
-    notes.push(`${team.name}: Loaded ${loadedCount} ${SPORTDB_PROVIDER_NAME} matches from configured league seasons.`);
+    if (sportDbLeagueRows.length === 0) {
+      notes.push(`${team.name}: No ${SPORTDB_PROVIDER_NAME} League IDs configured; team-upcoming matches still checked.`);
+    }
+
+    notes.push(`${team.name}: Loaded ${teamLoadedCount} ${SPORTDB_PROVIDER_NAME} team-upcoming matches and ${leagueLoadedCount} league-season matches.`);
   }
 
   return { errors, fixtures, notes };
+}
+
+async function loadSportDbTeamUpcoming(teamId) {
+  const query = new URLSearchParams({ id: teamId });
+  const data = JSON.parse(await loadText(`${SPORTDB_BASE_URL}/eventsnext.php?${query.toString()}`, {
+    extension: "json",
+  }));
+
+  return Array.isArray(data.events) ? data.events : [];
 }
 
 async function loadSportDbLeagueSeason(leagueId, season) {
@@ -258,7 +278,7 @@ async function loadSportDbLeagueSeason(leagueId, season) {
   return Array.isArray(data.events) ? data.events : [];
 }
 
-function normalizeSportDbMatch(event, team, sportDbTeamId) {
+function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
   const homeTeam = event.strHomeTeam || "";
   const awayTeam = event.strAwayTeam || "";
   const isHome = String(event.idHomeTeam || "") === String(sportDbTeamId) ||
@@ -282,6 +302,7 @@ function normalizeSportDbMatch(event, team, sportDbTeamId) {
     season: event.strSeason || "",
     source: SPORTDB_PROVIDER_NAME,
     sources: [SPORTDB_PROVIDER_NAME],
+    sourceDetail: detailSource,
     status: normalizeSportDbStatus(event),
     teamBadge: team.badge || "",
     teamId: team.id,

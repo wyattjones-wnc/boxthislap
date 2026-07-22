@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-22T02:58:44.534Z",
+  "generatedAt": "2026-07-22T03:02:20.989Z",
   "source": "football-data.org + TheSportsDB",
   "coverage": {
     "mode": "team-scheduled-matches-merged-sources",
@@ -10,9 +10,9 @@
       "Barcelona: Running competitions: Primera Division (PD).",
       "Wrexham: Loaded 46 SCHEDULED matches from 2026-07-22 through 2027-07-22.",
       "Wrexham: Running competitions: Championship (ELC), Football League Cup (FLC).",
-      "Arsenal: Loaded 1 TheSportsDB matches from configured league seasons.",
-      "Barcelona: Loaded 0 TheSportsDB matches from configured league seasons.",
-      "Wrexham: Loaded 0 TheSportsDB matches from configured league seasons."
+      "Arsenal: Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
+      "Barcelona: Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
+      "Wrexham: Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches."
     ]
   },
   "teams": [
@@ -89,6 +89,84 @@
   ],
   "fixtures": [
     {
+      "away": "CE Europa",
+      "awayBadge": "",
+      "date": "2026-07-24",
+      "home": "Barcelona",
+      "homeBadge": "",
+      "id": "TheSportsDB:2521609",
+      "leagueId": "4569",
+      "isHome": true,
+      "league": "Club Friendlies",
+      "opponent": "CE Europa",
+      "round": "0",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "sources": [
+        "TheSportsDB"
+      ],
+      "sourceDetail": "team-upcoming",
+      "status": "NS",
+      "teamBadge": "https://crests.football-data.org/81.png",
+      "teamId": "2",
+      "teamName": "Barcelona",
+      "time": "12:00:00",
+      "timestamp": "2026-07-24T12:00:00",
+      "venue": "Spotify Camp Nou"
+    },
+    {
+      "away": "Leeds United",
+      "awayBadge": "",
+      "date": "2026-07-25",
+      "home": "Wrexham",
+      "homeBadge": "",
+      "id": "TheSportsDB:2529345",
+      "leagueId": "5647",
+      "isHome": true,
+      "league": "English Premier League Summer Series",
+      "opponent": "Leeds United",
+      "round": "1",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "sources": [
+        "TheSportsDB"
+      ],
+      "sourceDetail": "team-upcoming",
+      "status": "NS",
+      "teamBadge": "https://crests.football-data.org/404.png",
+      "teamId": "3",
+      "teamName": "Wrexham",
+      "time": "20:00:00",
+      "timestamp": "2026-07-25T20:00:00",
+      "venue": "Raymond James Stadium"
+    },
+    {
+      "away": "Arsenal",
+      "awayBadge": "",
+      "date": "2026-08-01",
+      "home": "Girona",
+      "homeBadge": "",
+      "id": "TheSportsDB:2521780",
+      "leagueId": "4569",
+      "isHome": false,
+      "league": "Club Friendlies",
+      "opponent": "Girona",
+      "round": "0",
+      "season": "2026",
+      "source": "TheSportsDB",
+      "sources": [
+        "TheSportsDB"
+      ],
+      "sourceDetail": "team-upcoming",
+      "status": "NS",
+      "teamBadge": "https://crests.football-data.org/57.png",
+      "teamId": "1",
+      "teamName": "Arsenal",
+      "time": "18:00:00",
+      "timestamp": "2026-08-01T18:00:00",
+      "venue": "Estadi Municipal de Montilivi"
+    },
+    {
       "away": "Wrexham AFC",
       "awayBadge": "",
       "date": "2026-08-17",
@@ -131,6 +209,7 @@
         "football-data.org",
         "TheSportsDB"
       ],
+      "sourceDetail": "league-season",
       "status": "SCHEDULED",
       "teamBadge": "https://crests.football-data.org/57.png",
       "teamId": "1",

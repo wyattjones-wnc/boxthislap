@@ -1027,6 +1027,7 @@ function setFormulaOneResultsMode(year, mode) {
   });
 
   renderFormulaOneResults(year);
+  renderStandingsAwards();
 }
 
 function renderFormulaOneWeeklyForm(year, forms) {
@@ -2291,6 +2292,8 @@ managerResultsFilter?.addEventListener("change", () => {
   if (siteData.managerResultsSource) {
     renderManagerResults(siteData.managerResultsSource);
   }
+
+  renderStandingsAwards();
 });
 
 managerSummaryYearSelect?.addEventListener("change", () => {
@@ -3344,7 +3347,96 @@ function renderStandingsAwards() {
 }
 
 function getAwardsForCurrentStandings() {
-  return getResolvedAwards();
+  const context = getCurrentAwardsContext();
+  const awards = getResolvedAwards();
+
+  if (!context) {
+    return [];
+  }
+
+  return awards.filter((award) => {
+    if (context.competition && award.competition !== context.competition) {
+      return false;
+    }
+
+    if (context.year && award.year !== context.year) {
+      return false;
+    }
+
+    if (context.standings?.length && !context.standings.includes(award.standings)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function getCurrentAwardsContext() {
+  const activePage = document.querySelector(".page.is-active")?.dataset.page || "";
+
+  if (activePage === "standings") {
+    return {
+      competition: "2026 World Cup",
+      standings: getWorldCupAwardStandingsFilter(),
+      year: "2026",
+    };
+  }
+
+  if (activePage.startsWith("formula-1-2025")) {
+    return {
+      competition: "2025 Formula 1",
+      standings: getFormulaOneAwardStandingsFilter("2025"),
+      year: "2025",
+    };
+  }
+
+  if (activePage.startsWith("formula-1-2026")) {
+    return {
+      competition: "2026 Formula 1",
+      standings: getFormulaOneAwardStandingsFilter("2026"),
+      year: "2026",
+    };
+  }
+
+  return null;
+}
+
+function getWorldCupAwardStandingsFilter() {
+  const activeTab = document.querySelector("#standings .tabs [data-tab].is-active")?.dataset.tab || "";
+
+  if (activeTab === "players-championship") {
+    return ["players"];
+  }
+
+  if (activeTab === "nations-league") {
+    return ["nations"];
+  }
+
+  if (activeTab === "manager-results") {
+    const filter = getManagerResultsFilter();
+
+    if (filter === "players") {
+      return ["players"];
+    }
+
+    if (filter === "nations") {
+      return ["nations"];
+    }
+
+    return ["players", "nations"];
+  }
+
+  return ["players", "nations"];
+}
+
+function getFormulaOneAwardStandingsFilter(year) {
+  const mode = formulaOneResultsMode[year] ?? "yearly";
+
+  if (mode === "weekly") {
+    return ["formula-one-weekly"];
+  }
+
+  return ["formula-one-yearly"];
 }
 
 function getResolvedAwards() {

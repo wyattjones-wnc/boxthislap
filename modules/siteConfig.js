@@ -33,6 +33,16 @@ export const AWARD_DEFINITIONS = [
     standings: "formula-one-weekly",
     year: "2025",
   },
+  {
+    abbreviation: "F1",
+    competition: "2025 Formula 1",
+    draftName: "2025 Formula 1 Bets",
+    id: "formula-one-2025-bets-winner",
+    image: "assets/awards/formula-one-2025-bets.png",
+    label: "2025 Formula 1 Drivers' Championship",
+    standings: "formula-one-yearly",
+    year: "2025",
+  },
 ];
 export const BEST_STANDING_PERFORMANCE_VALUE = "best";
 export const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";

@@ -4700,15 +4700,19 @@ loadJson("data/footy-schedule.json")
     console.error("Box This Lap footy schedule failed to load", error);
   });
 
-Promise.all([
+Promise.allSettled([
   loadSheet("portalManagers"),
   loadSheet("portalDrafts"),
   loadSheet("portalLogs"),
 ])
-  .then(([managers, drafts, logs]) => {
-    siteData.portalManagers = managers;
-    siteData.portalDrafts = drafts;
-    siteData.portalLogs = logs;
+  .then(([managersResult, draftsResult, logsResult]) => {
+    if (managersResult.status !== "fulfilled") {
+      throw managersResult.reason;
+    }
+
+    siteData.portalManagers = managersResult.value;
+    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
+    siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
     renderLoginManagerOptions();
     renderLoginState();
     renderManagerHub();
@@ -4717,7 +4721,19 @@ Promise.all([
     renderFormulaOneResults("2024");
     renderFormulaOneResults("2025");
     renderFormulaOneResults("2026");
-    console.info("Box This Lap manager portal data loaded", { managers, drafts, logs });
+
+    if (draftsResult.status !== "fulfilled" || logsResult.status !== "fulfilled") {
+      console.warn("Box This Lap manager portal optional data partially failed", {
+        drafts: draftsResult.status === "rejected" ? draftsResult.reason : null,
+        logs: logsResult.status === "rejected" ? logsResult.reason : null,
+      });
+    }
+
+    console.info("Box This Lap manager portal data loaded", {
+      drafts: siteData.portalDrafts,
+      logs: siteData.portalLogs,
+      managers: siteData.portalManagers,
+    });
   })
   .catch((error) => {
     if (loginManagerSelect) {

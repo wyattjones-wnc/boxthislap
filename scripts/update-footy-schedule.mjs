@@ -190,16 +190,10 @@ async function main() {
   });
   const payload = {
     generatedAt,
+    schemaVersion: 2,
     source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
-    coverage: {
-      mode: "team-scheduled-matches-merged-sources",
-      notes: [...new Set(coverageNotes)],
-    },
     prioritySets,
-    teams,
     teamSchedules,
-    fixtures: dedupedFixtures,
-    errors,
   };
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });

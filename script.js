@@ -211,14 +211,14 @@ function renderFootySchedule(schedule) {
     return;
   }
 
-  const fixtures = Array.isArray(schedule?.fixtures) ? schedule.fixtures : [];
+  const fixtures = getFootyScheduleFixtures(schedule);
   syncFootyFilters(fixtures);
   const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
   const renderedFixtures = shouldShowAllFootyFixtures
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
-  const errors = Array.isArray(schedule?.errors) ? schedule.errors.filter(Boolean) : [];
+  const errors = getFootyScheduleErrors(schedule);
   const generatedAt = formatFootyGeneratedAt(schedule?.generatedAt);
   const emptyMessage = hasActiveFootyFilters()
     ? "No matches found for the current filters."
@@ -249,6 +249,33 @@ function renderFootySchedule(schedule) {
     ${renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
     ${errorsMarkup}
   `;
+}
+
+function getFootyScheduleFixtures(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  return schedule.teamSchedules
+    .flatMap((teamSchedule) => Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [])
+    .sort((firstFixture, secondFixture) => {
+      return String(firstFixture.timestamp || firstFixture.date).localeCompare(String(secondFixture.timestamp || secondFixture.date)) ||
+        String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
+        String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
+    });
+}
+
+function getFootyScheduleErrors(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  return schedule.teamSchedules.flatMap((teamSchedule) => {
+    const teamName = teamSchedule?.team?.name || "Team";
+    const errors = Array.isArray(teamSchedule?.errors) ? teamSchedule.errors : [];
+
+    return errors.map((error) => `${teamName}: ${error}`).filter(Boolean);
+  });
 }
 
 function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {

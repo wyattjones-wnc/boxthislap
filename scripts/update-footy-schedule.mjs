@@ -31,6 +31,11 @@ const FALLBACK_FOOTBALL_DATA_TEAM_IDS = {
   barcelona: "81",
   wrexham: "404",
 };
+const FALLBACK_TEAM_BADGES = {
+  "charlotte fc": "assets/teams/charlotte-fc.svg",
+  "inter miami": "assets/teams/inter-miami-cf.webp",
+  "inter miami cf": "assets/teams/inter-miami-cf.webp",
+};
 const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
   arsenal: "4dsgumo7d4zupm2ugsvm4zm4d",
 };
@@ -245,7 +250,7 @@ async function resolveTeam(team) {
 
   if (!FOOTBALL_DATA_API_KEY) {
     return {
-      badge: "",
+      badge: getTeamBadge(team),
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
@@ -267,7 +272,7 @@ async function resolveTeam(team) {
     providerTeam = await loadFootballDataJson(`/teams/${encodeURIComponent(configuredId)}`);
   } catch (error) {
     return {
-      badge: "",
+      badge: getTeamBadge(team),
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
@@ -284,7 +289,7 @@ async function resolveTeam(team) {
   }
 
   return {
-    badge: providerTeam.crest || "",
+    badge: getTeamBadge(team) || providerTeam.crest || "",
     id: getField(team, "ID"),
     league: getField(team, "League").trim(),
     name,
@@ -963,6 +968,20 @@ function getFootballDataTeamId(team) {
   ).trim();
 
   return explicitId || FALLBACK_FOOTBALL_DATA_TEAM_IDS[normalizeText(getField(team, "Name", "Team"))] || "";
+}
+
+function getTeamBadge(team) {
+  const explicitBadge = getField(
+    team,
+    "Badge",
+    "Badge URL",
+    "Badge Path",
+    "Logo",
+    "Logo URL",
+    "Logo Path",
+  ).trim();
+
+  return explicitBadge || FALLBACK_TEAM_BADGES[normalizeText(getField(team, "Name", "Team"))] || "";
 }
 
 function getSportDbTeamId(team) {

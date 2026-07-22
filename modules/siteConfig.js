@@ -23,6 +23,16 @@ export const AWARD_DEFINITIONS = [
     standings: "nations",
     year: "2026",
   },
+  {
+    abbreviation: "F1W",
+    competition: "2025 Formula 1",
+    draftName: "2025 Formula 1 Weekly",
+    id: "formula-one-2025-weekly-winner",
+    image: "assets/awards/formula-one-2025-weekly-championship.png",
+    label: "2025 Formula 1 Weekly Championship",
+    standings: "formula-one-weekly",
+    year: "2025",
+  },
 ];
 export const BEST_STANDING_PERFORMANCE_VALUE = "best";
 export const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";

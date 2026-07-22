@@ -422,11 +422,34 @@
       </section>
 
       <section class="page is-active" id="footy" data-page="footy">
-        <div class="section-heading">
+        <div class="section-heading page-heading-with-action footy-heading">
           <h1>Footy</h1>
-          <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
-            Past Matches
-          </button>
+          <div class="heading-actions">
+            <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
+              Past Matches
+            </button>
+            <button class="icon-action-button footy-filter-toggle" id="footy-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-filters" aria-label="Show filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="footy-filters" id="footy-filters" hidden>
+          <label>
+            <span>Search</span>
+            <input id="footy-search" type="search" placeholder="Search" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <input id="footy-date-filter" type="date">
+          </label>
+          <label>
+            <span>Teams</span>
+            <select id="footy-team-filter" multiple size="3">
+              <option>Loading teams...</option>
+            </select>
+          </label>
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>

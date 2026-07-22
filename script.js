@@ -61,6 +61,11 @@ import {
   leagueYearSelect,
   leagueList,
   footyPastToggle,
+  footyFilterToggle,
+  footyFilters,
+  footySearchInput,
+  footyDateFilter,
+  footyTeamFilter,
   footyScheduleList,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
@@ -119,6 +124,7 @@ const formulaOneResultsMode = {
 };
 let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
+let shouldShowFootyFilters = false;
 const siteData = {};
 window.boxThisLapData = siteData;
 
@@ -204,10 +210,13 @@ function renderFootySchedule(schedule) {
   }
 
   const fixtures = Array.isArray(schedule?.fixtures) ? schedule.fixtures : [];
-  const visibleFixtures = getVisibleFootyFixtures(fixtures);
+  syncFootyFilters(fixtures);
+  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
   const errors = Array.isArray(schedule?.errors) ? schedule.errors.filter(Boolean) : [];
   const generatedAt = formatFootyGeneratedAt(schedule?.generatedAt);
-  const emptyMessage = shouldShowPastFootyFixtures
+  const emptyMessage = hasActiveFootyFilters()
+    ? "No matches found for the current filters."
+    : shouldShowPastFootyFixtures
     ? "No past football fixtures were loaded yet."
     : "No upcoming football fixtures were loaded yet.";
   const updatedMarkup = generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : "";
@@ -233,6 +242,96 @@ function renderFootySchedule(schedule) {
     </div>
     ${errorsMarkup}
   `;
+}
+
+function getFilteredFootyFixtures(fixtures) {
+  const searchTerm = normalizeLookupName(footySearchInput?.value || "");
+  const selectedDate = String(footyDateFilter?.value || "").trim();
+  const selectedTeams = getSelectedFootyTeams();
+
+  return fixtures.filter((fixture) => {
+    if (selectedDate && getFootyFixtureDateKey(fixture) !== selectedDate) {
+      return false;
+    }
+
+    if (selectedTeams.size > 0 && !selectedTeams.has(normalizeLookupName(fixture.teamName))) {
+      return false;
+    }
+
+    if (!searchTerm) {
+      return true;
+    }
+
+    return getFootyFixtureSearchText(fixture).includes(searchTerm);
+  });
+}
+
+function hasActiveFootyFilters() {
+  return Boolean(
+    String(footySearchInput?.value || "").trim() ||
+    String(footyDateFilter?.value || "").trim() ||
+    getSelectedFootyTeams().size > 0
+  );
+}
+
+function getSelectedFootyTeams() {
+  if (!footyTeamFilter) {
+    return new Set();
+  }
+
+  return new Set([...footyTeamFilter.selectedOptions].map((option) => normalizeLookupName(option.value)).filter(Boolean));
+}
+
+function getFootyFixtureSearchText(fixture) {
+  return normalizeLookupName([
+    fixture.home,
+    fixture.away,
+    fixture.league,
+    fixture.opponent,
+    fixture.teamName,
+    fixture.venue,
+  ].filter(Boolean).join(" "));
+}
+
+function getFootyFixtureDateKey(fixture) {
+  const date = String(fixture?.date || "").trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+
+  const timestamp = String(fixture?.timestamp || "").trim();
+  const parsedDate = timestamp ? new Date(timestamp) : null;
+
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function syncFootyFilters(fixtures = []) {
+  if (footyFilters) {
+    footyFilters.hidden = !shouldShowFootyFilters;
+  }
+
+  if (footyFilterToggle) {
+    footyFilterToggle.setAttribute("aria-expanded", String(shouldShowFootyFilters));
+    footyFilterToggle.classList.toggle("is-active", shouldShowFootyFilters);
+  }
+
+  if (!footyTeamFilter) {
+    return;
+  }
+
+  const selectedTeams = getSelectedFootyTeams();
+  const teams = [...new Set(fixtures.map((fixture) => fixture.teamName).filter(Boolean))]
+    .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
+
+  footyTeamFilter.innerHTML = teams.map((team) => {
+    const selected = selectedTeams.has(normalizeLookupName(team)) ? " selected" : "";
+    return `<option value="${escapeHtml(team)}"${selected}>${escapeHtml(team)}</option>`;
+  }).join("");
 }
 
 function getVisibleFootyFixtures(fixtures) {
@@ -1949,6 +2048,16 @@ leagueYearSelect?.addEventListener("change", () => {
 footyPastToggle?.addEventListener("click", () => {
   shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
   renderFootySchedule(siteData.footySchedule);
+});
+
+footyFilterToggle?.addEventListener("click", () => {
+  shouldShowFootyFilters = !shouldShowFootyFilters;
+  renderFootySchedule(siteData.footySchedule);
+});
+
+[footySearchInput, footyDateFilter, footyTeamFilter].forEach((control) => {
+  control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
+  control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {

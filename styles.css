@@ -425,6 +425,85 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-heading {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.footy-heading .heading-actions {
+  justify-self: end;
+  flex-wrap: nowrap;
+}
+
+.icon-action-button {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 900;
+  height: 44px;
+  justify-content: center;
+  line-height: 1;
+  width: 44px;
+}
+
+.icon-action-button svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 22px;
+}
+
+.icon-action-button.is-active,
+.icon-action-button:hover {
+  background: var(--track);
+  color: var(--track-ink);
+}
+
+.footy-filters {
+  align-items: end;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px var(--shadow);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(160px, 1.3fr) minmax(140px, 0.7fr) minmax(160px, 1fr);
+  margin: -8px 0 18px;
+  padding: 14px;
+}
+
+.footy-filters label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.footy-filters input,
+.footy-filters select {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 42px;
+  padding: 9px 10px;
+}
+
+.footy-filters select {
+  min-height: 96px;
+}
+
 .footy-past-toggle {
   justify-self: end;
   white-space: nowrap;
@@ -2965,6 +3044,14 @@ tr:last-child td {
   .action-button,
   .select-control {
     justify-self: start;
+  }
+
+  .footy-heading .heading-actions {
+    justify-self: end;
+  }
+
+  .footy-filters {
+    grid-template-columns: 1fr;
   }
 
   .rules-breakdown-heading,

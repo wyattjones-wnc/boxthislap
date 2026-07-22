@@ -257,13 +257,52 @@ function getFootyScheduleFixtures(schedule) {
     return [];
   }
 
-  return schedule.teamSchedules
-    .flatMap((teamSchedule) => Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [])
+  const fixtures = schedule.teamSchedules
+    .flatMap((teamSchedule) => {
+      const team = teamSchedule?.team || {};
+      const teamFixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+
+      return teamFixtures.map((fixture) => ({
+        ...fixture,
+        teamBadge: fixture.teamBadge || team.badge || "",
+      }));
+    });
+  const teamBadges = getFootyTeamBadgeMap(fixtures);
+
+  return fixtures
+    .map((fixture) => ({
+      ...fixture,
+      teamBadge: fixture.teamBadge || teamBadges.get(getFootyTeamBadgeKey(fixture)) || "",
+    }))
     .sort((firstFixture, secondFixture) => {
       return String(firstFixture.timestamp || firstFixture.date).localeCompare(String(secondFixture.timestamp || secondFixture.date)) ||
         String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
         String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
     });
+}
+
+function getFootyTeamBadgeMap(fixtures = []) {
+  const badgeMap = new Map();
+
+  fixtures.forEach((fixture) => {
+    const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+
+    if (!badge) {
+      return;
+    }
+
+    const key = getFootyTeamBadgeKey(fixture);
+
+    if (key && !badgeMap.has(key)) {
+      badgeMap.set(key, badge);
+    }
+  });
+
+  return badgeMap;
+}
+
+function getFootyTeamBadgeKey(fixture) {
+  return String(fixture?.teamId || normalizeLookupName(fixture?.teamName || "")).trim();
 }
 
 function getFootyScheduleErrors(schedule) {
@@ -489,13 +528,16 @@ function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
   const sideLabel = fixture.isHome ? "H" : "A";
   const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+  const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
   const venueMarkup = shouldShowFootyFixtureVenue(fixture)
     ? `<p>${escapeHtml(fixture.venue)}</p>`
     : "";
 
   return `
     <article class="footy-fixture-card">
-      ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : ""}
+      <div class="footy-fixture-badge" aria-hidden="true">
+        ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
+      </div>
       <div>
         <h2>${escapeHtml(fixture.home || "TBD")} v ${escapeHtml(fixture.away || "TBD")}</h2>
         <p class="footy-fixture-meta">
@@ -508,6 +550,10 @@ function renderFootyFixture(fixture) {
       <strong>${escapeHtml(dateLabel)}</strong>
     </article>
   `;
+}
+
+function getFootyFixtureFallbackBadge(fixture) {
+  return String(fixture?.teamName || fixture?.home || "?").trim().slice(0, 1).toUpperCase() || "?";
 }
 
 function shouldShowFootyFixtureVenue(fixture) {

@@ -30,6 +30,9 @@ const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
 const FALLBACK_ICALENDAR_URLS = {
   arsenal: "webcal://ics.ecal.com/ecal-sub/6a6038dce1c23100024c84fb/Arsenal%20FC.ics",
   barcelona: "webcal://ics.ecal.com/ecal-sub/6a60382d0d8ade00024d911f/FC%20Barcelona.ics",
+  "charlotte fc": "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/charlottefc.ics",
+  "inter miami": "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/intermiamicf.ics",
+  "inter miami cf": "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/intermiamicf.ics",
   wrexham: "webcal://ics.ecal.com/ecal-sub/6a603a2c0d8ade00024d912f/Wrexham%20AFC.ics",
 };
 const ARSENAL_FIXTURES_QUERY = `query FixturesByIds($date: String = "", $competitions: String = "", $rangeType: String = "", $teamIds: String = "", $timeOffset: Float) {
@@ -129,6 +132,7 @@ async function main() {
   const fixtures = [];
   const errors = [];
   const coverageNotes = [];
+  const prioritySets = normalizePrioritySets(footballData.prioritySetRows);
   const teamRowsById = new Map(activeTeams.map((team) => [getField(team, "ID").trim(), team]));
   const leagueRowsByTeamId = groupBy(footballData.leagueRows, (league) => getField(league, "Team ID").trim());
 
@@ -136,8 +140,12 @@ async function main() {
     const teamRecord = await resolveTeam(team);
     teams.push(teamRecord);
 
+    if (teamRecord.warning) {
+      coverageNotes.push(`${teamRecord.name}: ${teamRecord.warning}`);
+    }
+
     if (!teamRecord.providerTeamId) {
-      errors.push(`Unable to resolve football-data.org team ID for ${teamRecord.name}.`);
+      coverageNotes.push(`${teamRecord.name}: Skipped football-data.org; no provider team ID configured.`);
       continue;
     }
 
@@ -180,6 +188,7 @@ async function main() {
       mode: "team-scheduled-matches-merged-sources",
       notes: [...new Set(coverageNotes)],
     },
+    prioritySets,
     teams,
     fixtures: dedupedFixtures,
     errors,
@@ -218,7 +227,27 @@ async function resolveTeam(team) {
     };
   }
 
-  const providerTeam = await loadFootballDataJson(`/teams/${encodeURIComponent(configuredId)}`);
+  let providerTeam = null;
+
+  try {
+    providerTeam = await loadFootballDataJson(`/teams/${encodeURIComponent(configuredId)}`);
+  } catch (error) {
+    return {
+      badge: "",
+      id: getField(team, "ID"),
+      league: getField(team, "League").trim(),
+      name,
+      priority: getField(team, "Priority"),
+      provider: PRIMARY_PROVIDER_NAME,
+      providerLeague: "",
+      providerLeagues: [],
+      providerTeamId: configuredId,
+      resolvedName: name,
+      sportDbTeamId: getSportDbTeamId(team),
+      status: "configured-unverified",
+      warning: `Unable to verify football-data.org team ${configuredId}: ${error.message}`,
+    };
+  }
 
   return {
     badge: providerTeam.crest || "",
@@ -278,6 +307,7 @@ function normalizeFootballDataMatch(match, team) {
     isHome,
     league: match.competition?.name || "",
     opponent: isHome ? awayTeam : homeTeam,
+    priority: team.priority || "",
     round: match.matchday ? String(match.matchday) : "",
     season: match.season?.startDate ? match.season.startDate.slice(0, 4) : "",
     source: PRIMARY_PROVIDER_NAME,
@@ -489,6 +519,7 @@ function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
     isHome,
     league: event.strLeague || "",
     opponent: isHome ? awayTeam : homeTeam,
+    priority: team.priority || "",
     round: event.intRound ? String(event.intRound) : "",
     season: event.strSeason || "",
     source: SPORTDB_PROVIDER_NAME,
@@ -526,6 +557,7 @@ function normalizeArsenalMatch(match, team, arsenalTeamId) {
     isHome,
     league: matchInfo.competition?.name || "",
     opponent: isHome ? awayTeam : homeTeam,
+    priority: team.priority || "",
     round: "",
     season: "",
     source: ARSENAL_PROVIDER_NAME,
@@ -557,6 +589,7 @@ function normalizeCalendarMatch(event, team) {
     isHome: parsedSummary.isHome,
     league: parsedSummary.league || getCalendarLeague(event.DESCRIPTION || ""),
     opponent: parsedSummary.isHome ? parsedSummary.away : parsedSummary.home,
+    priority: team.priority || "",
     round: "",
     season: "",
     source: ICALENDAR_PROVIDER_NAME,
@@ -577,6 +610,7 @@ async function loadFootballSheet(url) {
   const sections = splitCsvSections(rows);
   const teamRows = [];
   const leagueRows = [];
+  const prioritySetRows = [];
 
   for (const section of sections) {
     const records = recordsFromCsvSection(section);
@@ -588,10 +622,15 @@ async function loadFootballSheet(url) {
 
     if (isLeaguesSection(section.headers)) {
       leagueRows.push(...records);
+      continue;
+    }
+
+    if (isPrioritySetsSection(section.headers)) {
+      prioritySetRows.push(...records);
     }
   }
 
-  return { leagueRows, teamRows };
+  return { leagueRows, prioritySetRows, teamRows };
 }
 
 async function loadFootballDataJson(endpoint) {
@@ -740,7 +779,10 @@ function isTeamsSection(headers) {
     (
       normalizedHeaders.includes("provider team id") ||
       normalizedHeaders.includes("football-data team id") ||
-      normalizedHeaders.includes("sportdb team id")
+      normalizedHeaders.includes("sportdb team id") ||
+      normalizedHeaders.includes("calendar url") ||
+      normalizedHeaders.includes("ics url") ||
+      normalizedHeaders.includes("webcal url")
     ) &&
     !normalizedHeaders.includes("team id");
 }
@@ -755,6 +797,44 @@ function isLeaguesSection(headers) {
       normalizedHeaders.includes("football-data league id") ||
       normalizedHeaders.includes("sportdb league id")
     );
+}
+
+function isPrioritySetsSection(headers) {
+  const normalizedHeaders = headers.map(normalizeText);
+  const nonEmptyHeaders = normalizedHeaders.filter(Boolean);
+
+  return normalizedHeaders.includes("priority") &&
+    (normalizedHeaders.includes("sets") || normalizedHeaders.includes("set")) &&
+    nonEmptyHeaders.length <= 3;
+}
+
+function normalizePrioritySets(rows = []) {
+  const setMap = new Map();
+
+  for (const row of rows) {
+    const priority = getField(row, "Priority").trim();
+    const sets = getField(row, "Sets", "Set")
+      .split(/[;,]/)
+      .map((set) => set.trim())
+      .filter(Boolean);
+
+    if (!priority || sets.length === 0) {
+      continue;
+    }
+
+    for (const set of sets) {
+      if (!setMap.has(set)) {
+        setMap.set(set, []);
+      }
+
+      setMap.get(set).push(priority);
+    }
+  }
+
+  return [...setMap.entries()].map(([set, priorities]) => ({
+    set,
+    priorities: [...new Set(priorities)].sort(comparePriority),
+  })).sort((first, second) => comparePriority(first.set, second.set));
 }
 
 function parseCsvRows(text) {
@@ -971,6 +1051,7 @@ function mergeFixture(existingFixture, incomingFixture) {
     homeBadge: primaryFixture.homeBadge || secondaryFixture.homeBadge || "",
     league: primaryFixture.league || secondaryFixture.league || "",
     leagueId: primaryFixture.leagueId || secondaryFixture.leagueId || "",
+    priority: primaryFixture.priority || secondaryFixture.priority || "",
     round: primaryFixture.round || secondaryFixture.round || "",
     season: primaryFixture.season || secondaryFixture.season || "",
     sources,

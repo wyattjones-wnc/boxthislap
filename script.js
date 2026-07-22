@@ -269,6 +269,7 @@ function getFilteredFootyFixtures(fixtures) {
   const searchTerm = normalizeLookupName(footySearchInput?.value || "");
   const selectedDate = String(footyDateFilter?.value || "").trim();
   const selectedTeams = getSelectedFootyTeams();
+  const defaultPrioritySet = getDefaultFootyPrioritySet();
 
   return fixtures.filter((fixture) => {
     if (selectedDate && getFootyFixtureDateKey(fixture) !== selectedDate) {
@@ -276,6 +277,10 @@ function getFilteredFootyFixtures(fixtures) {
     }
 
     if (selectedTeams.size > 0 && !selectedTeams.has(normalizeLookupName(fixture.teamName))) {
+      return false;
+    }
+
+    if (selectedTeams.size === 0 && defaultPrioritySet.size > 0 && !defaultPrioritySet.has(normalizeFootyPriority(fixture.priority))) {
       return false;
     }
 
@@ -301,6 +306,21 @@ function getSelectedFootyTeams() {
   }
 
   return new Set([...footyTeamFilter.selectedOptions].map((option) => normalizeLookupName(option.value)).filter(Boolean));
+}
+
+function getDefaultFootyPrioritySet() {
+  const setRecord = (siteData.footySchedule?.prioritySets || []).find((prioritySet) => {
+    return normalizeLookupName(prioritySet?.set) === "1";
+  });
+  const priorities = Array.isArray(setRecord?.priorities) && setRecord.priorities.length > 0
+    ? setRecord.priorities
+    : ["1"];
+
+  return new Set(priorities.map(normalizeFootyPriority).filter(Boolean));
+}
+
+function normalizeFootyPriority(priority) {
+  return String(priority || "").trim();
 }
 
 function getFootyFixtureSearchText(fixture) {

@@ -1924,8 +1924,13 @@ function renderFantasyOfficeResults(year, results) {
     return;
   }
 
-  view.resultList.innerHTML = results.map((entry, index) => {
+  const awards = getAwardsForFantasyOfficeYear(year);
+  const awardMarkup = renderFantasyOfficeAwards(awards);
+  const resultMarkup = results.map((entry, index) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+    const entryAwards = entry.rank === 1
+      ? getAwardsForManager(manager, { standings: "fantasy-office", year })
+      : [];
 
     return `
       <article class="office-result-card">
@@ -1935,7 +1940,10 @@ function renderFantasyOfficeResults(year, results) {
             <strong>${escapeHtml(formatRankDisplay(entry, index, results))}</strong>
           </div>
           <div class="fantasy-critic-manager">
-            ${renderManagerChip(manager)}
+            <span class="standing-manager-with-awards">
+              ${renderManagerChip(manager)}
+              ${renderAwardBadges(entryAwards)}
+            </span>
           </div>
           <div class="fantasy-critic-points">
             <span>Points</span>
@@ -1961,6 +1969,32 @@ function renderFantasyOfficeResults(year, results) {
       </article>
     `;
   }).join("");
+
+  view.resultList.innerHTML = `${awardMarkup}${resultMarkup}`;
+}
+
+function renderFantasyOfficeAwards(awards = []) {
+  if (!awards.length) {
+    return "";
+  }
+
+  return `
+    <section class="standings-awards fantasy-office-awards">
+      <div class="standings-awards-heading">
+        <h2>Awards</h2>
+      </div>
+      <div class="standings-awards-list">
+        ${awards.map((award) => renderAwardCard(award, "standings-summary")).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function getAwardsForFantasyOfficeYear(year) {
+  return getResolvedAwards().filter((award) => {
+    return award.standings === "fantasy-office" &&
+      String(award.year || "") === String(year || "");
+  });
 }
 
 function renderFantasyOfficeError(error) {
@@ -4718,6 +4752,12 @@ Promise.allSettled([
     renderManagerHub();
     renderStandingsAwards();
     renderFantasyCriticViews();
+    if (siteData.fantasyOffice2025?.results?.length) {
+      renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+    }
+    if (siteData.fantasyOffice2026?.results?.length) {
+      renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+    }
     renderFormulaOneResults("2024");
     renderFormulaOneResults("2025");
     renderFormulaOneResults("2026");

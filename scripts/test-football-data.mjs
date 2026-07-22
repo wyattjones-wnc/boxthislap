@@ -15,7 +15,7 @@ const TODAY = new Date();
 const FALLBACK_TEAM_IDS = {
   arsenal: "57",
   barcelona: "81",
-  wrexham: "744",
+  wrexham: "404",
 };
 
 async function main() {
@@ -50,13 +50,21 @@ async function main() {
       continue;
     }
 
-    const teamResult = await loadFootballDataTeam(footballDataId);
-    const matchResult = await loadFootballDataMatches({
-      dateFrom,
-      dateTo,
-      status: MATCH_STATUS,
-      teamId: footballDataId,
-    });
+    let teamResult = { errors: [], team: null };
+    let matchResult = { errors: [], fixtures: [] };
+
+    try {
+      teamResult = await loadFootballDataTeam(footballDataId);
+      matchResult = await loadFootballDataMatches({
+        dateFrom,
+        dateTo,
+        status: MATCH_STATUS,
+        teamId: footballDataId,
+      });
+    } catch (error) {
+      teamResult.errors.push(error.message);
+    }
+
     const errors = [
       ...teamResult.errors.map((error) => `Team lookup error: ${error}`),
       ...matchResult.errors.map((error) => `Match lookup error: ${error}`),

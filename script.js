@@ -4198,6 +4198,7 @@ loadSheet("matchResults")
     renderNationsLeague(results);
     renderDraftNations();
     renderCurrentMatchLists();
+    renderBracket(siteData.bracketMatches);
     renderRulesNationOptions();
     renderRulesNationBreakdown();
     console.info("Box This Lap match result data loaded", results);
@@ -4927,11 +4928,80 @@ function getResolvedBracketPicks(matches, matchById) {
 
 function getResolvedBracketState(matches, matchById) {
   const savedPicks = getBracketPicks();
-  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, savedPicks);
-  const picks = { ...savedPicks, ...inferredPicks };
-  const lockedMatches = new Set(Object.keys(inferredPicks));
+  const resultPicks = inferBracketPicksFromResults(matches, matchById);
+  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, { ...savedPicks, ...resultPicks });
+  const picks = { ...savedPicks, ...inferredPicks, ...resultPicks };
+  const lockedMatches = new Set([...Object.keys(resultPicks), ...Object.keys(inferredPicks)]);
 
   return { picks, lockedMatches };
+}
+
+function inferBracketPicksFromResults(matches, matchById) {
+  if (!siteData.matchResults) {
+    return {};
+  }
+
+  const bracketMatchIds = new Set(matches.map((match) => getMatchId(match)).filter(Boolean));
+  const picks = {};
+
+  for (const result of siteData.matchResults) {
+    if (!isLoggedNationResult(result)) {
+      continue;
+    }
+
+    const matchId = String(result["Match ID"] ?? "").trim();
+    const match = matchById.get(matchId);
+
+    if (!match || !bracketMatchIds.has(matchId)) {
+      continue;
+    }
+
+    const winner = getBracketResultWinner(result);
+    const winnerSide = getBracketTeamSide(match, winner);
+
+    if (winnerSide) {
+      picks[matchId] = winnerSide;
+    }
+  }
+
+  return picks;
+}
+
+function getBracketResultWinner(result) {
+  const outcome = String(result.Result ?? "").trim().toLowerCase();
+  const team = normalizeNationName(result.Team);
+  const opponent = normalizeNationName(result.Opponent);
+
+  if (outcome === "win") {
+    return team;
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    return opponent;
+  }
+
+  return "";
+}
+
+function getBracketTeamSide(match, teamName) {
+  const teamKey = normalizeLookupName(normalizeNationName(teamName));
+
+  if (!teamKey) {
+    return "";
+  }
+
+  const homeKey = normalizeLookupName(normalizeNationName(getField(match, "Home", "home")));
+  const awayKey = normalizeLookupName(normalizeNationName(getField(match, "Away", "away")));
+
+  if (teamKey === homeKey) {
+    return "home";
+  }
+
+  if (teamKey === awayKey) {
+    return "away";
+  }
+
+  return "";
 }
 
 function inferBracketPicksFromSchedule(matches, matchById, savedPicks = {}) {

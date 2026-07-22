@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607210001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -20,7 +20,8 @@ import {
   FANTASY_CRITIC_PROXY_URL,
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
-} from "./modules/siteConfig.js?v=202607210002";
+  DEFAULT_PORTAL_MANAGERS,
+} from "./modules/siteConfig.js?v=202607220001";
 
 import {
   pageLinks,
@@ -4740,11 +4741,9 @@ Promise.allSettled([
   loadSheet("portalLogs"),
 ])
   .then(([managersResult, draftsResult, logsResult]) => {
-    if (managersResult.status !== "fulfilled") {
-      throw managersResult.reason;
-    }
-
-    siteData.portalManagers = managersResult.value;
+    siteData.portalManagers = managersResult.status === "fulfilled"
+      ? managersResult.value
+      : [...DEFAULT_PORTAL_MANAGERS];
     siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
     siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
     renderLoginManagerOptions();
@@ -4762,8 +4761,9 @@ Promise.allSettled([
     renderFormulaOneResults("2025");
     renderFormulaOneResults("2026");
 
-    if (draftsResult.status !== "fulfilled" || logsResult.status !== "fulfilled") {
+    if (managersResult.status !== "fulfilled" || draftsResult.status !== "fulfilled" || logsResult.status !== "fulfilled") {
       console.warn("Box This Lap manager portal optional data partially failed", {
+        managers: managersResult.status === "rejected" ? managersResult.reason : null,
         drafts: draftsResult.status === "rejected" ? draftsResult.reason : null,
         logs: logsResult.status === "rejected" ? logsResult.reason : null,
       });

@@ -120,6 +120,15 @@ export const MANAGER_COLORS = {
   wyatt: "#96df7d",
 };
 
+export const DEFAULT_PORTAL_MANAGERS = [
+  { "Manager ID": "1", Name: "Jonathan Ramos", "Display Name": "Jonathan", Color: "000000", IsActive: "TRUE" },
+  { "Manager ID": "2", Name: "Jordan Swiezy", "Display Name": "Jordan", Color: "B4A7D6", IsActive: "TRUE" },
+  { "Manager ID": "3", Name: "Luisa Mauch", "Display Name": "Luisa", Color: "C10201", IsActive: "TRUE" },
+  { "Manager ID": "4", Name: "Michael Vargas", "Display Name": "Michael", Color: "003173", IsActive: "TRUE" },
+  { "Manager ID": "5", Name: "Sean Anderson", "Display Name": "Sean", Color: "FE9BCC", IsActive: "TRUE" },
+  { "Manager ID": "6", Name: "Wyatt Jones", "Display Name": "Wyatt", Color: "96DE77", IsActive: "TRUE" },
+];
+
 export const FANTASY_LEAGUES_BY_YEAR = {
   2024: ["Formula 1"],
   2025: ["Fantasy Critic", "Fantasy Office", "Formula 1"],

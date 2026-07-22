@@ -1079,7 +1079,7 @@ function renderFormulaOneResults(year) {
   view.resultsRows.innerHTML = standings.map((entry, index) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
     const awards = entry.rank === 1
-      ? getAwardsForManager(manager, { standings: getFormulaOneAwardStandingsForMode(mode) })
+      ? getAwardsForManager(manager, { standings: getFormulaOneAwardStandingsForMode(mode), year })
       : [];
 
     return `
@@ -3650,6 +3650,10 @@ function getAwardsForManager(manager, options = {}) {
       return false;
     }
 
+    if (options.year && String(award.year || "") !== String(options.year)) {
+      return false;
+    }
+
     const awardManagerId = String(award.manager?.id ?? award.manager?.ID ?? award.manager?.["Manager ID"] ?? "").trim();
     const awardManagerName = normalizeLookupName(award.manager?.displayName || award.manager?.name || award.manager?.Name);
 
@@ -3828,7 +3832,7 @@ function renderFormulaOneYearlyManagerSummary(managerId, year) {
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks manager-summary-ranks--single">
-        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-yearly" })}
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-yearly", year })}
       </div>
       <a class="action-button" href="#formula-1-${escapeHtml(year)}-results" data-page-link="formula-1-${escapeHtml(year)}-results">Open Results</a>
     </article>
@@ -3857,7 +3861,7 @@ function renderFormulaOneWeeklyManagerSummary(managerId, year) {
         ${renderManagerChip(manager)}
       </header>
       <div class="manager-summary-ranks manager-summary-ranks--single">
-        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-weekly" })}
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-weekly", year })}
       </div>
       <a class="action-button" href="#formula-1-${escapeHtml(year)}-weekly" data-page-link="formula-1-${escapeHtml(year)}-weekly">Open Weekly</a>
     </article>
@@ -3891,7 +3895,7 @@ function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, opt
 
   const points = pointFormatter(row.points);
   const awards = row.rank === 1 && options.standings
-    ? getAwardsForManager(row, { standings: options.standings })
+    ? getAwardsForManager(row, { standings: options.standings, year: options.year })
     : [];
 
   return `

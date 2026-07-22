@@ -376,6 +376,14 @@ function syncFootyPastToggle(fixtures = []) {
   footyPastToggle.disabled = false;
 }
 
+function closeProfileDropdown() {
+  profileMenuButton?.setAttribute("aria-expanded", "false");
+
+  if (profileDropdown) {
+    profileDropdown.hidden = true;
+  }
+}
+
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
   const sideLabel = fixture.isHome ? "H" : "A";
@@ -2028,6 +2036,12 @@ profileMenuButton?.addEventListener("click", () => {
   profileDropdown.hidden = isOpen;
 });
 
+profileDropdown?.addEventListener("click", (event) => {
+  if (event.target.closest("a, button")) {
+    closeProfileDropdown();
+  }
+});
+
 logoutButton?.addEventListener("click", () => {
   signOutManager();
 });
@@ -2037,8 +2051,7 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  profileMenuButton?.setAttribute("aria-expanded", "false");
-  profileDropdown.hidden = true;
+  closeProfileDropdown();
 });
 
 leagueYearSelect?.addEventListener("change", () => {
@@ -2401,8 +2414,7 @@ function signOutManager() {
     // Ignore storage failures; the in-memory session has already been cleared.
   }
 
-  profileDropdown.hidden = true;
-  profileMenuButton?.setAttribute("aria-expanded", "false");
+  closeProfileDropdown();
   renderLoginState();
   renderManagerHub();
   showPage("footy", { scrollToTop: true });

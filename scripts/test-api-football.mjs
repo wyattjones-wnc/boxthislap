@@ -45,22 +45,24 @@ async function main() {
       continue;
     }
 
-    const fixtures = await loadApiFootballFixtures({
+    const fixtureResult = await loadApiFootballFixtures({
       fromDate,
       season: SEASON,
       teamId: resolvedTeam.id,
       toDate,
     });
+    const apiErrors = getApiFootballErrorMessages(fixtureResult.errors);
 
     results.push({
       apiFootballId: resolvedTeam.id,
       name: team.name,
       resolvedName: resolvedTeam.name,
-      status: fixtures.length > 0 ? "ok" : "empty",
-      fixtures,
+      status: apiErrors.length > 0 ? "error" : fixtureResult.fixtures.length > 0 ? "ok" : "empty",
+      fixtures: fixtureResult.fixtures,
       notes: [
         `Resolved ${team.name} to API-Football team ${resolvedTeam.id} (${resolvedTeam.name}).`,
-        `Loaded ${fixtures.length} fixtures from ${fromDate} through ${toDate} for season ${SEASON}.`,
+        `Loaded ${fixtureResult.fixtures.length} fixtures from ${fromDate} through ${toDate} for season ${SEASON}.`,
+        ...apiErrors.map((error) => `API-Football error: ${error}`),
       ],
     });
   }
@@ -120,17 +122,20 @@ async function loadApiFootballFixtures({ fromDate, season, teamId, toDate }) {
   ].join(""));
   const fixtures = Array.isArray(data.response) ? data.response : [];
 
-  return fixtures.map((fixture) => ({
-    away: fixture.teams?.away?.name || "",
-    date: fixture.fixture?.date || "",
-    home: fixture.teams?.home?.name || "",
-    id: fixture.fixture?.id || "",
-    league: fixture.league?.name || "",
-    round: fixture.league?.round || "",
-    season: fixture.league?.season || "",
-    status: fixture.fixture?.status?.short || "",
-    timestamp: fixture.fixture?.timestamp || "",
-  })).sort((first, second) => String(first.date).localeCompare(String(second.date)));
+  return {
+    errors: data.errors,
+    fixtures: fixtures.map((fixture) => ({
+      away: fixture.teams?.away?.name || "",
+      date: fixture.fixture?.date || "",
+      home: fixture.teams?.home?.name || "",
+      id: fixture.fixture?.id || "",
+      league: fixture.league?.name || "",
+      round: fixture.league?.round || "",
+      season: fixture.league?.season || "",
+      status: fixture.fixture?.status?.short || "",
+      timestamp: fixture.fixture?.timestamp || "",
+    })).sort((first, second) => String(first.date).localeCompare(String(second.date))),
+  };
 }
 
 function normalizeApiFootballTeam(team) {
@@ -236,6 +241,24 @@ function printReport(results) {
 
     console.log("");
   }
+}
+
+function getApiFootballErrorMessages(errors) {
+  if (!errors) {
+    return [];
+  }
+
+  if (Array.isArray(errors)) {
+    return errors.map(String).filter(Boolean);
+  }
+
+  if (typeof errors === "object") {
+    return Object.entries(errors).map(([key, value]) => {
+      return `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`;
+    }).filter((error) => !error.endsWith(": "));
+  }
+
+  return [String(errors)].filter(Boolean);
 }
 
 function splitCsvSections(rows) {

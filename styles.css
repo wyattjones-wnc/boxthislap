@@ -1074,6 +1074,34 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 42px;
 }
 
+.status-pill {
+  align-items: center;
+  background: color-mix(in srgb, var(--accent) 12%, var(--soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 46%, var(--line));
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 900;
+  gap: 6px;
+  line-height: 1;
+  padding: 5px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-pill span {
+  background: var(--accent);
+  border-radius: 999px;
+  height: 7px;
+  width: 7px;
+}
+
+.status-pill strong {
+  color: var(--ink);
+  font: inherit;
+}
+
 main {
   margin: 0 auto;
   max-width: 1120px;

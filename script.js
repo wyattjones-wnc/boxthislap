@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220007";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220008";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220007";
+} from "./modules/siteConfig.js?v=202607220008";
 
 import {
   pageLinks,
@@ -747,6 +747,7 @@ function renderFantasyCriticStanding(entry, year) {
   const awards = entry.rank === 1
     ? getAwardsForManager(manager, { standings: "fantasy-critic", year })
     : [];
+  const status = renderInProgressMarker({ standings: "fantasy-critic", year });
 
   return `
     <article class="fantasy-critic-card">
@@ -759,6 +760,7 @@ function renderFantasyCriticStanding(entry, year) {
           <span class="standing-manager-with-awards">
             ${renderManagerChip(manager)}
             ${renderAwardBadges(awards)}
+            ${status}
           </span>
           <small>${escapeHtml(entry.publisher)}</small>
         </div>
@@ -1265,9 +1267,11 @@ function renderFormulaOneResults(year) {
 
   view.resultsRows.innerHTML = standings.map((entry, index) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+    const standingsKey = getFormulaOneAwardStandingsForMode(mode);
     const awards = entry.rank === 1
-      ? getAwardsForManager(manager, { standings: getFormulaOneAwardStandingsForMode(mode), year })
+      ? getAwardsForManager(manager, { standings: standingsKey, year })
       : [];
+    const status = renderInProgressMarker({ standings: standingsKey, year });
 
     return `
       <tr>
@@ -1276,6 +1280,7 @@ function renderFormulaOneResults(year) {
           <span class="standing-manager-with-awards">
             ${renderManagerChip(manager)}
             ${renderAwardBadges(awards)}
+            ${status}
           </span>
         </td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
@@ -1987,6 +1992,7 @@ function renderFantasyOfficeResults(year, results) {
     const entryAwards = entry.rank === 1
       ? getAwardsForManager(manager, { standings: "fantasy-office", year })
       : [];
+    const status = renderInProgressMarker({ standings: "fantasy-office", year });
 
     return `
       <article class="office-result-card">
@@ -1999,6 +2005,7 @@ function renderFantasyOfficeResults(year, results) {
             <span class="standing-manager-with-awards">
               ${renderManagerChip(manager)}
               ${renderAwardBadges(entryAwards)}
+              ${status}
             </span>
           </div>
           <div class="fantasy-critic-points">
@@ -3893,6 +3900,67 @@ function findCompletedAwardDraft(definition) {
   }) || null;
 }
 
+function renderInProgressMarker(options = {}) {
+  const draft = findResultStatusDraft(options);
+
+  if (!draft || isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"))) {
+    return "";
+  }
+
+  return `
+    <span class="status-pill status-pill--progress" title="This league is still in progress">
+      <span aria-hidden="true"></span>
+      <strong>In progress</strong>
+    </span>
+  `;
+}
+
+function findResultStatusDraft(options = {}) {
+  return (siteData.portalDrafts || []).find((draft) => isResultDraftMatch(draft, options)) || null;
+}
+
+function isResultDraftMatch(draft, options = {}) {
+  if (options.year && String(getField(draft, "Year")) !== String(options.year)) {
+    return false;
+  }
+
+  const draftName = normalizeAwardMatchName(getField(draft, "Name", "Draft", "Award Name", "Award"));
+  const league = normalizeAwardMatchName(getField(draft, "League"));
+  const standings = String(options.standings || "");
+
+  if (standings === "fantasy-critic") {
+    return league === "fantasy critic" || draftName.includes("fantasy critic");
+  }
+
+  if (standings === "fantasy-office") {
+    return league === "fantasy office" || draftName.includes("fantasy office");
+  }
+
+  if (standings === "formula-one-weekly") {
+    return draftName.includes("formula 1 weekly");
+  }
+
+  if (standings === "formula-one-yearly") {
+    return draftName.includes("formula 1 bets") && !draftName.includes("weekly");
+  }
+
+  if (standings === "players") {
+    return draftName.includes("players championship");
+  }
+
+  if (standings === "nations") {
+    return draftName.includes("nations league") || draftName.includes("nation league");
+  }
+
+  if (standings === "world-cup") {
+    return draftName.includes("players championship") ||
+      draftName.includes("nations league") ||
+      draftName.includes("nation league");
+  }
+
+  return false;
+}
+
 function isAwardDraftMatch(draft, definition) {
   const draftName = normalizeAwardMatchName(getField(draft, "Name", "Draft", "Award Name", "Award"));
   const expectedDraftName = normalizeAwardMatchName(definition.draftName || definition.label);
@@ -4212,6 +4280,7 @@ function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, opt
   const awards = row.rank === 1 && options.standings
     ? getAwardsForManager(row, { competition: options.competition, standings: options.standings, year: options.year })
     : [];
+  const status = options.standings ? renderInProgressMarker(options) : "";
 
   return `
     <span class="manager-summary-rank">
@@ -4219,6 +4288,7 @@ function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, opt
       <span class="manager-summary-rank-line">
         <strong>#${escapeHtml(row.rank)}</strong>
         ${renderAwardBadges(awards)}
+        ${status}
       </span>
       <em>${escapeHtml(points)} pts</em>
     </span>
@@ -7217,6 +7287,11 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
     const awardFilter = filter === "all" ? "" : filter;
     const awards = getAwardsForManager(manager, { competition: "2026 World Cup", standings: awardFilter, year: "2026" });
+    const status = renderInProgressMarker({
+      competition: "2026 World Cup",
+      standings: filter === "all" ? "world-cup" : filter,
+      year: "2026",
+    });
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
@@ -7225,6 +7300,7 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
           <span class="manager-result-awards">
             ${renderManagerChip(manager)}
             ${renderAwardBadges(awards)}
+            ${status}
           </span>
         </td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
@@ -8055,10 +8131,13 @@ function renderStandingDetail(value, manager, options = {}) {
   const parts = [`<span class="standing-detail-main">${escapeHtml(value)}</span>`];
 
   if (manager) {
+    const status = options.standings ? renderInProgressMarker(options) : "";
+
     parts.push(`
       <span class="standing-manager-with-awards">
         ${renderManagerChip(manager)}
         ${renderAwardBadges(getAwardsForManager(manager, options))}
+        ${status}
       </span>
     `);
   }

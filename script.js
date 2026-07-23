@@ -595,7 +595,7 @@ function isFootyFixtureToday(fixture) {
 }
 
 function getFootyFixtureTimingLabel(fixture) {
-  if (isFootyFixtureToday(fixture)) {
+  if (isFootyFixtureCurrent(fixture)) {
     return "Today";
   }
 
@@ -604,6 +604,18 @@ function getFootyFixtureTimingLabel(fixture) {
   }
 
   return "";
+}
+
+function isFootyFixtureCurrent(fixture) {
+  const fixtureTime = getFootyFixtureComparableTime(fixture);
+  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
+  const now = Date.now();
+
+  if (!Number.isFinite(fixtureTime) || !Number.isFinite(pastCutoffTime)) {
+    return isFootyFixtureToday(fixture);
+  }
+
+  return fixtureTime <= now && now <= pastCutoffTime;
 }
 
 function syncFootyPastToggle(fixtures = []) {

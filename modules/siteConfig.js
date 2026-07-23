@@ -54,6 +54,16 @@ export const AWARD_DEFINITIONS = [
     year: "2025",
   },
   {
+    abbreviation: "FC",
+    competition: "2025 Fantasy Critic",
+    draftName: "2025 Fantasy Critic",
+    id: "fantasy-critic-2025-winner",
+    image: "assets/awards/fantasy-critic-2025.png",
+    label: "2025 Fantasy Critic Winner",
+    standings: "fantasy-critic",
+    year: "2025",
+  },
+  {
     abbreviation: "FO",
     competition: "2025 Fantasy Office",
     draftName: "2025 Fantasy Office",

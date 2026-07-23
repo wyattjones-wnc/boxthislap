@@ -128,12 +128,16 @@ function getHeaderArtName(pageName) {
     return "fantasy-critic-2025";
   }
 
+  if (pageName.startsWith("fantasy-critic-2026")) {
+    return "fantasy-critic-2026";
+  }
+
   if (pageName.startsWith("fantasy-office-2025")) {
     return "fantasy-office-2025";
   }
 
   if (pageName.startsWith("fantasy-office-2026")) {
-    return "default";
+    return "fantasy-office-2026";
   }
 
   if (getNavScope(pageName) === "world-cup") {

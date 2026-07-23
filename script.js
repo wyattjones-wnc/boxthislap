@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220002";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220003";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220002";
+} from "./modules/siteConfig.js?v=202607220003";
 
 import {
   pageLinks,
@@ -2714,8 +2714,7 @@ function hideLoginPanel() {
   if (loginConfirmPassphraseInput) {
     loginConfirmPassphraseInput.value = "";
   }
-  loginFeedback.textContent = "";
-  loginFeedback.classList.remove("is-error");
+  setLoginFeedback("");
 }
 
 function hydrateManagerSession() {
@@ -4741,6 +4740,12 @@ Promise.allSettled([
   loadSheet("portalLogs"),
 ])
   .then(([managersResult, draftsResult, logsResult]) => {
+    console.info("Box This Lap manager portal load results", {
+      drafts: getSettledLog(draftsResult),
+      logs: getSettledLog(logsResult),
+      managers: getSettledLog(managersResult),
+    });
+
     siteData.portalManagers = managersResult.status === "fulfilled"
       ? managersResult.value
       : [...DEFAULT_PORTAL_MANAGERS];
@@ -4781,9 +4786,12 @@ Promise.allSettled([
     });
   })
   .catch((error) => {
-    if (loginManagerSelect) {
-      loginManagerSelect.innerHTML = `<option value="">Unable to load managers</option>`;
-    }
+    siteData.portalManagers = [...DEFAULT_PORTAL_MANAGERS];
+    siteData.portalDrafts = [];
+    siteData.portalLogs = [];
+    runPortalRender("fallback login managers", renderLoginManagerOptions);
+    runPortalRender("fallback login state", renderLoginState);
+    setLoginFeedback("Using fallback manager list. Check console logs for the manager portal load error.", true);
 
     if (workflowList) {
       workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load notifications: ${escapeHtml(error.message)}</p></article>`;
@@ -4791,6 +4799,20 @@ Promise.allSettled([
 
     console.error("Box This Lap manager portal data failed to load", error);
   });
+
+function getSettledLog(result) {
+  if (result.status === "fulfilled") {
+    return {
+      rows: Array.isArray(result.value) ? result.value.length : null,
+      status: "fulfilled",
+    };
+  }
+
+  return {
+    message: result.reason?.message || String(result.reason || "Unknown error"),
+    status: "rejected",
+  };
+}
 
 function runPortalRender(label, render) {
   try {

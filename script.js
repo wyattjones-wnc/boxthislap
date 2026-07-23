@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220006";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220007";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220006";
+} from "./modules/siteConfig.js?v=202607220007";
 
 import {
   pageLinks,
@@ -103,7 +103,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210003";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607210001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -145,6 +145,7 @@ const router = createRouter({
   draftViewButtons,
   headerArt,
   navGroups,
+  onPageShown: renderPageContext,
   onStandingsTabShown: () => renderStandingsAwards(),
   pageLinks,
   pages,
@@ -1245,9 +1246,16 @@ function renderFormulaOneResults(year) {
   const data = siteData[`formulaOne${year}`];
   const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
   const mode = formulaOneResultsMode[year] ?? "yearly";
+  const activeSource = mode === "weekly" ? weeklyData : data;
   const standings = mode === "weekly"
     ? weeklyData?.standings ?? []
     : data?.standings ?? [];
+
+  if (!activeSource) {
+    const label = mode === "weekly" ? "weekly" : "yearly";
+    view.resultsRows.innerHTML = `<tr><td class="table-message" colspan="3">Loading Formula 1 ${label} results...</td></tr>`;
+    return;
+  }
 
   if (standings.length === 0) {
     const label = mode === "weekly" ? "weekly" : "yearly";
@@ -1299,6 +1307,25 @@ function getAwardsForFormulaOneYear(year) {
     return award.competition === `${year} Formula 1` &&
       String(award.year || "") === String(year || "");
   });
+}
+
+function renderPageContext(pageName = "") {
+  renderStandingsAwards();
+
+  const formulaOneYear = getFormulaOneYearFromPage(pageName);
+
+  if (formulaOneYear) {
+    renderFormulaOneAwards(formulaOneYear);
+
+    if (pageName.endsWith("-results")) {
+      renderFormulaOneResults(formulaOneYear);
+    }
+  }
+}
+
+function getFormulaOneYearFromPage(pageName = "") {
+  const match = String(pageName).match(/^formula-1-(2024|2025|2026)(?:-|$)/);
+  return match?.[1] || "";
 }
 
 function getFormulaOneAwardStandingsForMode(mode) {
@@ -2915,7 +2942,7 @@ async function handleManagerLogin() {
       response = await submitManagerPortalPayload({
         action: "setupPassphrase",
         managerId,
-        passphrase,
+        passphrase: normalizeLoginInput(passphrase),
         recoveryAnswer: siteData.loginRecoveryAnswer || loginRecoveryAnswerInput?.value || "",
       });
     } else {
@@ -2928,7 +2955,7 @@ async function handleManagerLogin() {
       response = await submitManagerPortalPayload({
         action: "login",
         managerId,
-        passphrase,
+        passphrase: normalizeLoginInput(passphrase),
       });
     }
 
@@ -2996,10 +3023,16 @@ function validateNewPassphraseFields(passphrase) {
     throw new Error("Enter a new passphrase.");
   }
 
-  if (passphrase !== confirmation) {
+  if (normalizeLoginInput(passphrase) !== normalizeLoginInput(confirmation)) {
     loginConfirmPassphraseInput?.focus();
     throw new Error("Passphrases do not match.");
   }
+}
+
+function normalizeLoginInput(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function setLoginFeedback(message, isError = false) {

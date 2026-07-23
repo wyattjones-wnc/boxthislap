@@ -115,7 +115,7 @@ function handleManagerAuth_(payload) {
         return createPortalResponse_(payload, recoveryCheck);
       }
 
-      sheet.getRange(rowIndex + 2, passphraseColumn + 1).setValue(passphrase);
+      sheet.getRange(rowIndex + 2, passphraseColumn + 1).setValue(normalizePassphrase_(passphrase));
 
       if (mustResetColumn >= 0) {
         sheet.getRange(rowIndex + 2, mustResetColumn + 1).setValue(false);

@@ -17,6 +17,7 @@ export function createRouter({
   draftViewButtons,
   headerArt,
   navGroups,
+  onPageShown = () => {},
   onStandingsTabShown = () => {},
   pageLinks,
   pages,
@@ -54,6 +55,8 @@ export function createRouter({
     if (options.scrollToTop) {
       scrollToPageTop();
     }
+
+    onPageShown(activePageName);
   }
 
   function showTab(tabName, options = {}) {

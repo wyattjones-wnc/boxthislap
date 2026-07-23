@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220005";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220006";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220005";
+} from "./modules/siteConfig.js?v=202607220006";
 
 import {
   pageLinks,
@@ -1240,6 +1240,8 @@ function renderFormulaOneResults(year) {
     return;
   }
 
+  renderFormulaOneAwards(year);
+
   const data = siteData[`formulaOne${year}`];
   const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
   const mode = formulaOneResultsMode[year] ?? "yearly";
@@ -1272,6 +1274,31 @@ function renderFormulaOneResults(year) {
       </tr>
     `;
   }).join("");
+}
+
+function renderFormulaOneAwards(year) {
+  const view = formulaOneViews[year];
+
+  if (!view?.awards || !view?.awardsList) {
+    return;
+  }
+
+  const awards = getAwardsForFormulaOneYear(year);
+  view.awards.hidden = awards.length === 0;
+
+  if (!awards.length) {
+    view.awardsList.innerHTML = "";
+    return;
+  }
+
+  view.awardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
+}
+
+function getAwardsForFormulaOneYear(year) {
+  return getResolvedAwards().filter((award) => {
+    return award.competition === `${year} Formula 1` &&
+      String(award.year || "") === String(year || "");
+  });
 }
 
 function getFormulaOneAwardStandingsForMode(mode) {

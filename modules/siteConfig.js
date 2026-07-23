@@ -59,7 +59,7 @@ export const AWARD_DEFINITIONS = [
     draftName: "2025 Fantasy Office",
     id: "fantasy-office-2025-winner",
     image: "assets/awards/fantasy-office-2025.png",
-    label: "2025 Fantasy Office Champion",
+    label: "2025 Fantasy Office Winner",
     standings: "fantasy-office",
     year: "2025",
   },

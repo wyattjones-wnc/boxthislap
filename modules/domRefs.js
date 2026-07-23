@@ -47,12 +47,16 @@ export const fantasyCritic2025Content = document.querySelector("#fantasy-critic-
 export const fantasyCritic2026Content = document.querySelector("#fantasy-critic-2026-content");
 export const formulaOneViews = {
   2024: {
+    awards: document.querySelector("#formula-one-2024-awards"),
+    awardsList: document.querySelector("#formula-one-2024-awards-list"),
     questionSelect: document.querySelector("#formula-one-question-select"),
     questionFilter: document.querySelector("#formula-one-question-filter"),
     questionList: document.querySelector("#formula-one-question-list"),
     resultsRows: document.querySelector("#formula-one-results-rows"),
   },
   2025: {
+    awards: document.querySelector("#formula-one-2025-awards"),
+    awardsList: document.querySelector("#formula-one-2025-awards-list"),
     questionSelect: document.querySelector("#formula-one-2025-question-select"),
     questionFilter: document.querySelector("#formula-one-2025-question-filter"),
     questionList: document.querySelector("#formula-one-2025-question-list"),
@@ -62,6 +66,8 @@ export const formulaOneViews = {
     weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
   },
   2026: {
+    awards: document.querySelector("#formula-one-2026-awards"),
+    awardsList: document.querySelector("#formula-one-2026-awards-list"),
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),

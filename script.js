@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220004";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220005";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220004";
+} from "./modules/siteConfig.js?v=202607220005";
 
 import {
   pageLinks,
@@ -4757,7 +4757,7 @@ Promise.allSettled([
 
     runPortalRender("manager hub", renderManagerHub);
     runPortalRender("standings awards", renderStandingsAwards);
-    runPortalRender("Fantasy Critic awards", renderFantasyCriticViews);
+    runPortalRender("Fantasy Critic awards", renderFantasyCriticPage);
     runPortalRender("2025 Fantasy Office awards", () => {
       if (siteData.fantasyOffice2025?.results?.length) {
         renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);

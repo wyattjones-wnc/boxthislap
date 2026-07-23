@@ -590,6 +590,22 @@ function isFootyFixtureWithinNextDay(fixture) {
     fixtureTime <= now + 24 * 60 * 60 * 1000;
 }
 
+function isFootyFixtureToday(fixture) {
+  return getFootyFixtureDateKey(fixture) === getDateKey(0);
+}
+
+function getFootyFixtureTimingLabel(fixture) {
+  if (isFootyFixtureToday(fixture)) {
+    return "Today";
+  }
+
+  if (isFootyFixtureWithinNextDay(fixture)) {
+    return "Next 24h";
+  }
+
+  return "";
+}
+
 function syncFootyPastToggle(fixtures = []) {
   if (!footyPastToggle) {
     return;
@@ -614,13 +630,14 @@ function renderFootyFixture(fixture) {
   const sideLabel = fixture.isHome ? "H" : "A";
   const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
   const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
-  const isSoon = isFootyFixtureWithinNextDay(fixture);
+  const timingLabel = getFootyFixtureTimingLabel(fixture);
+  const isHighlighted = Boolean(timingLabel);
   const venueMarkup = shouldShowFootyFixtureVenue(fixture)
     ? `<p>${escapeHtml(fixture.venue)}</p>`
     : "";
 
   return `
-    <article class="footy-fixture-card${isSoon ? " footy-fixture-card--soon" : ""}">
+    <article class="footy-fixture-card${isHighlighted ? " footy-fixture-card--soon" : ""}">
       <div class="footy-fixture-badge" aria-hidden="true">
         ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
       </div>
@@ -629,7 +646,7 @@ function renderFootyFixture(fixture) {
         <p class="footy-fixture-meta">
           <span>${escapeHtml(fixture.teamName || "")}</span>
           <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
-          ${isSoon ? `<span class="footy-soon-chip">Next 24h</span>` : ""}
+          ${timingLabel ? `<span class="footy-soon-chip">${escapeHtml(timingLabel)}</span>` : ""}
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
         ${venueMarkup}

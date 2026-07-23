@@ -631,9 +631,9 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-card--soon {
-  background: color-mix(in srgb, var(--accent) 16%, var(--soft));
-  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
-  box-shadow: inset 5px 0 0 var(--accent), 0 10px 26px var(--shadow);
+  background: color-mix(in srgb, var(--accent) 22%, var(--soft));
+  border-color: color-mix(in srgb, var(--accent) 82%, var(--line));
+  box-shadow: inset 6px 0 0 var(--accent), 0 12px 28px var(--shadow);
 }
 
 .footy-fixture-badge {

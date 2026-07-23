@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220013";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220014";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220013";
+} from "./modules/siteConfig.js?v=202607220014";
 
 import {
   pageLinks,
@@ -103,7 +103,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210003";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220014";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -624,6 +624,7 @@ function renderFootyFixture(fixture) {
         <p class="footy-fixture-meta">
           <span>${escapeHtml(fixture.teamName || "")}</span>
           <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
+          ${isSoon ? `<span class="footy-soon-chip">Next 24h</span>` : ""}
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
         ${venueMarkup}

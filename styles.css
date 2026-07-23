@@ -626,9 +626,9 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-card--soon {
-  background: color-mix(in srgb, var(--accent) 9%, var(--soft));
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
-  box-shadow: inset 4px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--soft));
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  box-shadow: inset 5px 0 0 var(--accent), 0 10px 26px var(--shadow);
 }
 
 .footy-fixture-badge {
@@ -689,6 +689,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-content: center;
   line-height: 1;
   width: 22px;
+}
+
+.footy-soon-chip {
+  background: var(--accent);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 5px 8px;
+  text-transform: uppercase;
 }
 
 .footy-fixture-card strong {

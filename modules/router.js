@@ -133,7 +133,7 @@ function getHeaderArtName(pageName) {
   }
 
   if (pageName.startsWith("fantasy-office-2026")) {
-    return "world-cup";
+    return "default";
   }
 
   if (getNavScope(pageName) === "world-cup") {

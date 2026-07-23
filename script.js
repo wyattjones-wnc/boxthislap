@@ -129,6 +129,7 @@ let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
+let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const siteData = {};
 window.boxThisLapData = siteData;
@@ -213,6 +214,10 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isF
 
 function renderFootySchedule(schedule) {
   if (!footyScheduleList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection("footy")) {
     return;
   }
 
@@ -696,14 +701,23 @@ function formatFootyFixtureDate(value) {
   }).format(date);
 }
 
-function renderFantasyCriticPage() {
-  if (fantasyCritic2025Content) {
+function renderFantasyCriticPage(year = getActiveFantasyCriticYear()) {
+  const yearKey = String(year || "");
+
+  if (yearKey === "2025" && fantasyCritic2025Content) {
     fantasyCritic2025Content.innerHTML = renderFantasyCriticLeagueState("2025");
   }
 
-  if (fantasyCritic2026Content) {
+  if (yearKey === "2026" && fantasyCritic2026Content) {
     fantasyCritic2026Content.innerHTML = renderFantasyCriticLeagueState("2026");
   }
+}
+
+function getActiveFantasyCriticYear() {
+  const activePage = activePageName || document.querySelector(".page.is-active")?.dataset.page || "";
+  const match = activePage.match(/^fantasy-critic-(2025|2026)$/);
+
+  return match?.[1] || "";
 }
 
 function renderFantasyCriticLeagueState(year) {
@@ -1192,6 +1206,10 @@ function renderFormulaOneQuestions(year) {
     return;
   }
 
+  if (!shouldRenderPageSection(`formula-1-${year}-questions`)) {
+    return;
+  }
+
   const data = siteData[`formulaOne${year}`];
 
   if (!data) {
@@ -1272,6 +1290,10 @@ function renderFormulaOneResults(year) {
     return;
   }
 
+  if (!shouldRenderPageSection(`formula-1-${year}-results`)) {
+    return;
+  }
+
   renderFormulaOneAwards(year);
 
   const data = siteData[`formulaOne${year}`];
@@ -1342,17 +1364,82 @@ function getAwardsForFormulaOneYear(year) {
 }
 
 function renderPageContext(pageName = "") {
+  const previousPageName = activePageName;
+  activePageName = pageName;
+
+  if (previousPageName && previousPageName !== pageName) {
+    disposePageResources(previousPageName);
+  }
+
+  renderActivePageContent(pageName);
   renderStandingsAwards();
 
   const formulaOneYear = getFormulaOneYearFromPage(pageName);
 
   if (formulaOneYear) {
     renderFormulaOneAwards(formulaOneYear);
+  }
+}
+
+function shouldRenderPageSection(pageName) {
+  return !activePageName || activePageName === pageName;
+}
+
+function renderActivePageContent(pageName = "") {
+  if (pageName === "footy" && siteData.footySchedule) {
+    renderFootySchedule(siteData.footySchedule);
+    return;
+  }
+
+  if (pageName === "results" && siteData.resultImages) {
+    renderResultImages(siteData.resultImages);
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-critic-")) {
+    renderFantasyCriticPage();
+    return;
+  }
+
+  const formulaOneYear = getFormulaOneYearFromPage(pageName);
+
+  if (formulaOneYear) {
+    if (pageName.endsWith("-questions")) {
+      renderFormulaOneQuestions(formulaOneYear);
+      return;
+    }
+
+    if (pageName.endsWith("-weekly")) {
+      renderFormulaOneWeeklyPage(formulaOneYear, siteData[`formulaOne${formulaOneYear}Weekly`]);
+      renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
+      return;
+    }
 
     if (pageName.endsWith("-results")) {
       renderFormulaOneResults(formulaOneYear);
+      return;
     }
   }
+
+  const fantasyOfficeMatch = pageName.match(/^fantasy-office-(2025|2026)-(draft|movies|results)$/);
+
+  if (fantasyOfficeMatch) {
+    const [, year, view] = fantasyOfficeMatch;
+    const data = siteData[`fantasyOffice${year}`];
+
+    if (view === "draft") {
+      renderFantasyOfficeDraft(year, data?.draft ?? []);
+    } else if (view === "movies") {
+      renderFantasyOfficeMovies(year, data?.results ?? []);
+    } else if (view === "results") {
+      renderFantasyOfficeResults(year, data?.results ?? []);
+    }
+  }
+}
+
+function disposePageResources(pageName = "") {
+  disposeFormulaOneFormIframes();
+  disposeInactiveHeavyMarkup();
 }
 
 function getFormulaOneYearFromPage(pageName = "") {
@@ -1376,6 +1463,41 @@ function setFormulaOneResultsMode(year, mode) {
   renderFormulaOneResults(year);
   renderStandingsAwards();
   renderManagerHub();
+}
+
+function disposeFormulaOneFormIframes() {
+  document.querySelectorAll(".formula-one-form-embed iframe").forEach((iframe) => {
+    if (iframe.getAttribute("src")) {
+      iframe.removeAttribute("src");
+    }
+  });
+}
+
+function disposeInactiveHeavyMarkup() {
+  const activePage = activePageName || document.querySelector(".page.is-active")?.dataset.page || "";
+  const clearIfInactive = (pageName, element, fallbackMarkup = "") => {
+    if (activePage !== pageName && element) {
+      element.innerHTML = fallbackMarkup;
+    }
+  };
+
+  clearIfInactive("fantasy-critic-2025", fantasyCritic2025Content);
+  clearIfInactive("fantasy-critic-2026", fantasyCritic2026Content);
+
+  Object.entries(formulaOneViews).forEach(([year, view]) => {
+    clearIfInactive(`formula-1-${year}-questions`, view.questionList);
+    clearIfInactive(`formula-1-${year}-weekly`, view.weeklyList);
+
+    if (activePage !== `formula-1-${year}-weekly` && view.weeklyManagers) {
+      view.weeklyManagers.innerHTML = "";
+    }
+  });
+
+  Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
+    clearIfInactive(`fantasy-office-${year}-draft`, view.draftList);
+    clearIfInactive(`fantasy-office-${year}-movies`, view.movieList);
+    clearIfInactive(`fantasy-office-${year}-results`, view.resultList);
+  });
 }
 
 function renderFormulaOneWeeklyForm(year, forms) {
@@ -1409,12 +1531,13 @@ function renderFormulaOneWeeklyForm(year, forms) {
     ${renderFormulaOneFormEmbed(selectedForm)}
   `;
 
-  loadVisibleFormulaOneFormIframes(view.weeklyForm);
+  loadVisibleFormulaOneFormIframes(view.weeklyForm, year);
 }
 
 function renderFormulaOneFormEmbed(form) {
   const isCollapsed = isMobileSafari();
   const embedUrl = getGoogleFormEmbedUrl(form.formUrl);
+  const shouldLoadIframe = !isCollapsed && isFormulaOneWeeklyBetPanelActive();
 
   return `
     <details class="formula-one-form-embed"${isCollapsed ? "" : " open"}>
@@ -1422,7 +1545,7 @@ function renderFormulaOneFormEmbed(form) {
       <iframe
         title="${escapeHtml(`${form.name} bet form`)}"
         data-src="${escapeHtml(embedUrl)}"
-        src="${isCollapsed ? "" : escapeHtml(embedUrl)}"
+        src="${shouldLoadIframe ? escapeHtml(embedUrl) : ""}"
         loading="lazy"
       ></iframe>
     </details>
@@ -1461,12 +1584,24 @@ function getGoogleFormEmbedUrl(formUrl) {
   }
 }
 
-function loadVisibleFormulaOneFormIframes(container) {
+function loadVisibleFormulaOneFormIframes(container, year = getFormulaOneYearFromPage(activePageName)) {
+  if (!isFormulaOneWeeklyBetPanelActive(year)) {
+    return;
+  }
+
   container.querySelectorAll(".formula-one-form-embed[open] iframe[data-src]").forEach((iframe) => {
     if (!iframe.getAttribute("src")) {
       iframe.setAttribute("src", iframe.getAttribute("data-src"));
     }
   });
+}
+
+function isFormulaOneWeeklyBetPanelActive(year = getFormulaOneYearFromPage(activePageName)) {
+  if (!year || activePageName !== `formula-1-${year}-weekly`) {
+    return false;
+  }
+
+  return Boolean(document.querySelector(`[data-tab-panel="formula-one-${year}-weekly-bet"].is-active`));
 }
 
 function isMobileSafari() {
@@ -1481,6 +1616,10 @@ function renderFormulaOneWeeklyPage(year, data) {
   const view = formulaOneViews[year];
 
   if (!view?.weeklyList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection(`formula-1-${year}-weekly`)) {
     return;
   }
 
@@ -1882,6 +2021,10 @@ function renderFantasyOfficeDraft(year, draft) {
     return;
   }
 
+  if (!shouldRenderPageSection(`fantasy-office-${year}-draft`)) {
+    return;
+  }
+
   if (!draft.length) {
     view.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office draft data was loaded.</p></article>`;
     return;
@@ -1914,6 +2057,10 @@ function renderFantasyOfficeMovies(year, results) {
   const view = getFantasyOfficeView(year);
 
   if (!view?.movieList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection(`fantasy-office-${year}-movies`)) {
     return;
   }
 
@@ -2004,6 +2151,10 @@ function renderFantasyOfficeResults(year, results) {
   const view = getFantasyOfficeView(year);
 
   if (!view?.resultList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection(`fantasy-office-${year}-results`)) {
     return;
   }
 
@@ -2214,6 +2365,12 @@ function renderResultImages(resultImages) {
     return;
   }
 
+  if (!shouldRenderPageSection("results")) {
+    dynamicResultImages.hidden = true;
+    dynamicResultImages.innerHTML = "";
+    return;
+  }
+
   if (resultImages.length === 0) {
     dynamicResultImages.hidden = true;
     dynamicResultImages.innerHTML = "";
@@ -2391,6 +2548,7 @@ copyCurrentPageLinkButton?.addEventListener("click", () => {
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     showTab(tab.dataset.tab, { scrollToTop: true });
+    renderActivePageContent(activePageName);
   });
 });
 
@@ -2532,7 +2690,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       return;
     }
 
-    loadVisibleFormulaOneFormIframes(view.weeklyForm);
+    loadVisibleFormulaOneFormIframes(view.weeklyForm, year);
   }, true);
 
   view.weeklyList?.addEventListener("click", (event) => {

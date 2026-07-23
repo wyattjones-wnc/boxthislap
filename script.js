@@ -103,7 +103,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210003";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220016";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607230005";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,

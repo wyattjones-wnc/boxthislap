@@ -160,6 +160,14 @@ function getNavScope(pageName) {
     return "formula-one-2026";
   }
 
+  if (pageName.startsWith("fantasy-critic-2025")) {
+    return "fantasy-critic-2025";
+  }
+
+  if (pageName.startsWith("fantasy-critic-2026")) {
+    return "fantasy-critic-2026";
+  }
+
   if (pageName.startsWith("fantasy-office-2025")) {
     return "fantasy-office-2025";
   }
@@ -188,6 +196,16 @@ function rememberNavScope(pageName) {
 
   if (pageName.startsWith("formula-1-2026")) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2026");
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-critic-2025")) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-critic-2025");
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-critic-2026")) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-critic-2026");
     return;
   }
 

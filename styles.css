@@ -696,18 +696,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 22px;
 }
 
-.footy-soon-chip {
-  background: var(--accent);
-  border-radius: 999px;
-  color: #ffffff;
-  display: inline-flex;
-  font-size: 0.72rem;
-  font-weight: 900;
-  line-height: 1;
-  padding: 5px 8px;
-  text-transform: uppercase;
-}
-
 .footy-fixture-card strong {
   align-self: center;
   color: var(--accent-dark);

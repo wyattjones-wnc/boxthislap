@@ -658,7 +658,6 @@ function renderFootyFixture(fixture) {
         <p class="footy-fixture-meta">
           <span>${escapeHtml(fixture.teamName || "")}</span>
           <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
-          ${timingLabel ? `<span class="footy-soon-chip">${escapeHtml(timingLabel)}</span>` : ""}
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
         ${venueMarkup}

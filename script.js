@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220010";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220012";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220010";
+} from "./modules/siteConfig.js?v=202607220012";
 
 import {
   pageLinks,
@@ -777,7 +777,6 @@ function renderFantasyCriticStanding(entry, year) {
   const awards = entry.rank === 1
     ? getAwardsForManager(manager, { standings: "fantasy-critic", year })
     : [];
-  const status = renderInProgressMarker({ standings: "fantasy-critic", year });
 
   return `
     <article class="fantasy-critic-card">
@@ -790,7 +789,6 @@ function renderFantasyCriticStanding(entry, year) {
           <span class="standing-manager-with-awards">
             ${renderManagerChip(manager)}
             ${renderAwardBadges(awards)}
-            ${status}
           </span>
           <small>${escapeHtml(entry.publisher)}</small>
         </div>
@@ -1301,7 +1299,6 @@ function renderFormulaOneResults(year) {
     const awards = entry.rank === 1
       ? getAwardsForManager(manager, { standings: standingsKey, year })
       : [];
-    const status = renderInProgressMarker({ standings: standingsKey, year });
 
     return `
       <tr>
@@ -1310,7 +1307,6 @@ function renderFormulaOneResults(year) {
           <span class="standing-manager-with-awards">
             ${renderManagerChip(manager)}
             ${renderAwardBadges(awards)}
-            ${status}
           </span>
         </td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
@@ -2022,7 +2018,6 @@ function renderFantasyOfficeResults(year, results) {
     const entryAwards = entry.rank === 1
       ? getAwardsForManager(manager, { standings: "fantasy-office", year })
       : [];
-    const status = renderInProgressMarker({ standings: "fantasy-office", year });
 
     return `
       <article class="office-result-card">
@@ -2035,7 +2030,6 @@ function renderFantasyOfficeResults(year, results) {
             <span class="standing-manager-with-awards">
               ${renderManagerChip(manager)}
               ${renderAwardBadges(entryAwards)}
-              ${status}
             </span>
           </div>
           <div class="fantasy-critic-points">
@@ -4221,13 +4215,15 @@ function renderFantasyOfficeManagerSummary(managerId, year) {
   const data = siteData[`fantasyOffice${year}`];
   const row = findFantasyOfficeManagerRow(managerId, data?.results ?? []);
   const draft = findFantasyOfficeDraftManager(managerId, data?.draft ?? []);
+  const hasLeagueData = Boolean(data?.results?.length || data?.draft?.length);
 
-  if (!row && !draft) {
+  if (!row && !draft && !hasLeagueData) {
     return "";
   }
 
-  const managerName = row?.manager || draft?.manager || "";
-  const manager = getManagerByName(managerName) ?? { name: managerName };
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = row?.manager || draft?.manager || portalManager?.["Display Name"] || portalManager?.Name || "";
+  const manager = getManagerByName(managerName) ?? portalManager ?? { name: managerName };
   const rankMarkup = row
     ? renderManagerSummaryRank("Overall", row, formatPoints, { standings: "fantasy-office", year })
     : `
@@ -4237,7 +4233,7 @@ function renderFantasyOfficeManagerSummary(managerId, year) {
         <span class="manager-summary-rank-line">
           <strong>Pending</strong>
         </span>
-        <em>No result totals yet</em>
+        <em>${draft ? "No result totals yet" : "No matching result entry yet"}</em>
       </span>
     `;
 
@@ -4246,7 +4242,7 @@ function renderFantasyOfficeManagerSummary(managerId, year) {
       <header>
         <div>
           <h3>${escapeHtml(year)} Fantasy Office</h3>
-          <p>${row ? "Movie result totals" : "Draft loaded; results pending"}</p>
+          <p>${row ? "Movie result totals" : draft ? "Draft loaded; results pending" : "League loaded; manager entry pending"}</p>
         </div>
         ${renderManagerChip(manager)}
       </header>
@@ -4270,17 +4266,30 @@ function findFantasyCriticManagerRow(managerId, league) {
 }
 
 function findFantasyOfficeManagerRow(managerId, results) {
-  const portalManager = getPortalManagerById(managerId);
-  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+  const aliases = getManagerSummaryLookupNames(managerId);
 
-  return results.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+  return results.find((row) => aliases.has(normalizeLookupName(row.manager))) || null;
 }
 
 function findFantasyOfficeDraftManager(managerId, draftRows) {
-  const portalManager = getPortalManagerById(managerId);
-  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+  const aliases = getManagerSummaryLookupNames(managerId);
 
-  return draftRows.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+  return draftRows.find((row) => aliases.has(normalizeLookupName(row.manager))) || null;
+}
+
+function getManagerSummaryLookupNames(managerId) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerMeta = portalManager ? getManagerMeta(portalManager) : null;
+  const values = [
+    portalManager?.Name,
+    portalManager?.["Display Name"],
+    portalManager?.displayName,
+    portalManager?.name,
+    managerMeta?.name,
+    managerMeta?.displayName,
+  ];
+
+  return new Set(values.map(normalizeLookupName).filter(Boolean));
 }
 
 function renderFormulaOneManagerSummary(managerId, year) {
@@ -7363,11 +7372,6 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
     const awardFilter = filter === "all" ? "" : filter;
     const awards = getAwardsForManager(manager, { competition: "2026 World Cup", standings: awardFilter, year: "2026" });
-    const status = renderInProgressMarker({
-      competition: "2026 World Cup",
-      standings: filter === "all" ? "world-cup" : filter,
-      year: "2026",
-    });
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
@@ -7376,7 +7380,6 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
           <span class="manager-result-awards">
             ${renderManagerChip(manager)}
             ${renderAwardBadges(awards)}
-            ${status}
           </span>
         </td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
@@ -8207,13 +8210,10 @@ function renderStandingDetail(value, manager, options = {}) {
   const parts = [`<span class="standing-detail-main">${escapeHtml(value)}</span>`];
 
   if (manager) {
-    const status = options.standings ? renderInProgressMarker(options) : "";
-
     parts.push(`
       <span class="standing-manager-with-awards">
         ${renderManagerChip(manager)}
         ${renderAwardBadges(getAwardsForManager(manager, options))}
-        ${status}
       </span>
     `);
   }

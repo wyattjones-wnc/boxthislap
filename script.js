@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220014";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220015";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220014";
+} from "./modules/siteConfig.js?v=202607220015";
 
 import {
   pageLinks,
@@ -103,7 +103,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210003";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220014";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220015";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -4216,9 +4216,8 @@ function renderFantasyOfficeManagerSummary(managerId, year) {
   const data = siteData[`fantasyOffice${year}`];
   const row = findFantasyOfficeManagerRow(managerId, data?.results ?? []);
   const draft = findFantasyOfficeDraftManager(managerId, data?.draft ?? []);
-  const hasLeagueData = Boolean(data?.results?.length || data?.draft?.length);
 
-  if (!row && !draft && !hasLeagueData) {
+  if (!row && !draft) {
     return "";
   }
 
@@ -4292,26 +4291,31 @@ function getManagerSummaryLookupNames(managerId) {
 function renderFormulaOneManagerSummary(managerId, year) {
   const yearlyRow = getFormulaOneYearlyManagerSummaryRow(managerId, year);
   const weeklyRow = getFormulaOneWeeklyManagerSummaryRow(managerId, year);
+  const ranks = [
+    renderManagerSummaryRank("Bets", yearlyRow, formatFormulaOnePointValue, { standings: "formula-one-yearly", year }),
+    renderManagerSummaryRank("Weekly", weeklyRow, formatFormulaOnePointValue, { standings: "formula-one-weekly", year }),
+  ].filter(Boolean);
 
-  if (!yearlyRow && !weeklyRow) {
+  if (ranks.length === 0) {
     return "";
   }
 
   const managerName = yearlyRow?.manager || weeklyRow?.manager || "";
   const manager = getManagerByName(managerName) ?? { name: managerName };
+  const summaryLabel = ranks.length === 2 ? "Bets and Weekly bets" : yearlyRow ? "Bet results" : "Weekly bet results";
+  const rankClass = ranks.length === 1 ? "manager-summary-ranks--single" : "manager-summary-ranks--paired";
 
   return `
     <article class="workflow-item">
       <header>
         <div>
           <h3>${escapeHtml(year)} Formula 1</h3>
-          <p>Bets and Weekly bets</p>
+          <p>${escapeHtml(summaryLabel)}</p>
         </div>
         ${renderManagerChip(manager)}
       </header>
-      <div class="manager-summary-ranks manager-summary-ranks--paired">
-        ${renderManagerSummaryRank("Bets", yearlyRow, formatFormulaOnePointValue, { standings: "formula-one-yearly", year })}
-        ${renderManagerSummaryRank("Weekly", weeklyRow, formatFormulaOnePointValue, { standings: "formula-one-weekly", year })}
+      <div class="manager-summary-ranks ${rankClass}">
+        ${ranks.join("")}
       </div>
       <a class="action-button" href="#formula-1-${escapeHtml(year)}-results" data-page-link="formula-1-${escapeHtml(year)}-results">Open Results</a>
     </article>
@@ -4331,10 +4335,9 @@ function getFormulaOneWeeklyManagerSummaryRow(managerId, year) {
 }
 
 function findFormulaOneManagerRow(managerId, standings) {
-  const portalManager = getPortalManagerById(managerId);
-  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+  const aliases = getManagerSummaryLookupNames(managerId);
 
-  return standings.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+  return standings.find((row) => aliases.has(normalizeLookupName(row.manager))) || null;
 }
 
 function getManagerSummaryRanks(managerId, source) {

@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220009";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220010";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220009";
+} from "./modules/siteConfig.js?v=202607220010";
 
 import {
   pageLinks,
@@ -529,7 +529,7 @@ function getVisibleFootyFixtures(fixtures) {
   const now = Date.now();
 
   return fixtures.filter((fixture) => {
-    const fixtureTime = getFootyFixtureComparableTime(fixture);
+    const fixtureTime = getFootyFixturePastCutoffTime(fixture);
 
     if (!Number.isFinite(fixtureTime)) {
       return !shouldShowPastFootyFixtures;
@@ -537,6 +537,26 @@ function getVisibleFootyFixtures(fixtures) {
 
     return shouldShowPastFootyFixtures ? fixtureTime < now : fixtureTime >= now;
   });
+}
+
+function getFootyFixturePastCutoffTime(fixture) {
+  const matchTime = getFootyFixtureComparableTime(fixture);
+
+  if (!Number.isFinite(matchTime)) {
+    return Number.NaN;
+  }
+
+  const matchDate = new Date(matchTime);
+  const endOfDay = new Date(matchDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const nextDayStart = new Date(matchDate);
+  nextDayStart.setHours(24, 0, 0, 0);
+
+  const twelveHoursAfterMatch = matchTime + 12 * 60 * 60 * 1000;
+  const lessThanTwelveHoursToEndOfDay = endOfDay.getTime() - matchTime < 12 * 60 * 60 * 1000;
+
+  return lessThanTwelveHoursToEndOfDay ? twelveHoursAfterMatch : nextDayStart.getTime();
 }
 
 function getFootyFixtureComparableTime(fixture) {
@@ -554,6 +574,15 @@ function getFootyFixtureComparableTime(fixture) {
   }
 
   return parsedTimestamp;
+}
+
+function isFootyFixtureWithinNextDay(fixture) {
+  const fixtureTime = getFootyFixtureComparableTime(fixture);
+  const now = Date.now();
+
+  return Number.isFinite(fixtureTime) &&
+    fixtureTime >= now &&
+    fixtureTime <= now + 24 * 60 * 60 * 1000;
 }
 
 function syncFootyPastToggle(fixtures = []) {
@@ -580,12 +609,13 @@ function renderFootyFixture(fixture) {
   const sideLabel = fixture.isHome ? "H" : "A";
   const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
   const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
+  const isSoon = isFootyFixtureWithinNextDay(fixture);
   const venueMarkup = shouldShowFootyFixtureVenue(fixture)
     ? `<p>${escapeHtml(fixture.venue)}</p>`
     : "";
 
   return `
-    <article class="footy-fixture-card">
+    <article class="footy-fixture-card${isSoon ? " footy-fixture-card--soon" : ""}">
       <div class="footy-fixture-badge" aria-hidden="true">
         ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
       </div>
@@ -3267,7 +3297,8 @@ function renderManagerHub() {
 
   if (!session) {
     if (managerHubSubtitle) {
-      managerHubSubtitle.textContent = "Log in to see your open items and results.";
+      managerHubSubtitle.textContent = "";
+      managerHubSubtitle.hidden = true;
     }
 
     if (workflowCount) {
@@ -3289,11 +3320,9 @@ function renderManagerHub() {
     return;
   }
 
-  const manager = getPortalManagerById(session.managerId) ?? session.manager;
-  const managerMeta = getManagerMeta(manager);
-
   if (managerHubSubtitle) {
-    managerHubSubtitle.textContent = `${managerMeta.displayName}'s open items and result summary.`;
+    managerHubSubtitle.textContent = "";
+    managerHubSubtitle.hidden = true;
   }
 
   renderManagerWorkflow(session.managerId);
@@ -3335,7 +3364,7 @@ function renderManagerWorkflowLegacy(managerId) {
           <h3>${escapeHtml(draft.Name || "Untitled draft")}</h3>
           <p>${escapeHtml([draft.Year, draft.League, draft.Type].filter(Boolean).join(" · "))}</p>
         </div>
-        ${draft.Priority ? `<span class="workflow-priority">P${escapeHtml(draft.Priority)}</span>` : ""}
+        ${draft.Priority ? `<span class="workflow-priority" title="Priority ${escapeHtml(draft.Priority)}" aria-label="Priority ${escapeHtml(draft.Priority)}"></span>` : ""}
       </header>
       <div class="workflow-meta">
         ${draft["Due Date"] ? `<span>Due ${escapeHtml(draft["Due Date"])}</span>` : ""}
@@ -3533,7 +3562,7 @@ function renderWorkflowItem(item) {
           <h3>${escapeHtml(item.title || "Untitled notification")}</h3>
           ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
         </div>
-        ${item.priority ? `<span class="workflow-priority">P${escapeHtml(item.priority)}</span>` : ""}
+        ${item.priority ? `<span class="workflow-priority" title="Priority ${escapeHtml(item.priority)}" aria-label="Priority ${escapeHtml(item.priority)}"></span>` : ""}
       </header>
       <div class="workflow-meta">
         ${item.dueDate ? `<span>Due ${escapeHtml(item.dueDate)}</span>` : ""}
@@ -3789,7 +3818,7 @@ function getCurrentAwardsContext() {
   if (activePage === "standings") {
     return {
       competition: "2026 World Cup",
-      standings: getWorldCupAwardStandingsFilter(),
+      standings: ["players", "nations"],
       year: "2026",
     };
   }
@@ -4204,9 +4233,9 @@ function renderFantasyOfficeManagerSummary(managerId, year) {
     : `
       <span class="manager-summary-rank">
         <small>Overall</small>
+        <span class="manager-summary-status">${renderInProgressMarker({ standings: "fantasy-office", year })}</span>
         <span class="manager-summary-rank-line">
           <strong>Pending</strong>
-          ${renderInProgressMarker({ standings: "fantasy-office", year })}
         </span>
         <em>No result totals yet</em>
       </span>
@@ -4329,10 +4358,10 @@ function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, opt
   return `
     <span class="manager-summary-rank">
       <small>${escapeHtml(label)}</small>
+      ${status ? `<span class="manager-summary-status">${status}</span>` : ""}
       <span class="manager-summary-rank-line">
         <strong>#${escapeHtml(row.rank)}</strong>
         ${renderAwardBadges(awards)}
-        ${status}
       </span>
       <em>${escapeHtml(points)} pts</em>
     </span>

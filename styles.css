@@ -625,6 +625,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.footy-fixture-card--soon {
+  background: color-mix(in srgb, var(--accent) 9%, var(--soft));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
 .footy-fixture-badge {
   align-items: center;
   background: var(--panel);
@@ -847,11 +853,10 @@ body.has-shell-stale-warning .stale-shell-alert {
 .workflow-priority {
   background: var(--accent);
   border-radius: 999px;
-  color: #ffffff;
   flex: 0 0 auto;
-  font-size: 0.74rem;
-  font-weight: 900;
-  padding: 4px 8px;
+  height: 12px;
+  margin-top: 4px;
+  width: 12px;
 }
 
 .workflow-meta {
@@ -888,6 +893,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   display: grid;
   gap: 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   padding: 9px 10px;
 }
@@ -896,7 +902,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 900;
+  min-width: 0;
   text-transform: uppercase;
+}
+
+.manager-summary-status {
+  justify-self: end;
 }
 
 .manager-summary-rank strong {
@@ -910,6 +921,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;
+  grid-column: 1 / -1;
 }
 
 .manager-summary-rank em {
@@ -917,6 +929,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 900;
+  grid-column: 1 / -1;
 }
 
 .award-card {

@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220012";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220013";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220012";
+} from "./modules/siteConfig.js?v=202607220013";
 
 import {
   pageLinks,
@@ -4227,13 +4227,9 @@ function renderFantasyOfficeManagerSummary(managerId, year) {
   const rankMarkup = row
     ? renderManagerSummaryRank("Overall", row, formatPoints, { standings: "fantasy-office", year })
     : `
-      <span class="manager-summary-rank">
-        <small>Overall</small>
-        <span class="manager-summary-status">${renderInProgressMarker({ standings: "fantasy-office", year })}</span>
-        <span class="manager-summary-rank-line">
-          <strong>Pending</strong>
-        </span>
-        <em>${draft ? "No result totals yet" : "No matching result entry yet"}</em>
+      <span class="manager-summary-pending">
+        <span>${escapeHtml(draft ? "Results pending" : "Manager entry pending")}</span>
+        ${renderInProgressMarker({ standings: "fantasy-office", year })}
       </span>
     `;
 

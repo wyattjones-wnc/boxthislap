@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220008";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220009";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220008";
+} from "./modules/siteConfig.js?v=202607220009";
 
 import {
   pageLinks,
@@ -3666,11 +3666,11 @@ function renderManagerSummary(managerId) {
     selectedYear === "all" || selectedYear === "2026" ? renderWorldCupManagerSummary(managerId, source) : "",
     selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, "2025", "2025 Fantasy Critic") : "",
     selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, "2026", "2026 Fantasy Critic") : "",
-    selectedYear === "all" || selectedYear === "2024" ? renderFormulaOneYearlyManagerSummary(managerId, "2024") : "",
-    selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneYearlyManagerSummary(managerId, "2025") : "",
-    selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneYearlyManagerSummary(managerId, "2026") : "",
-    selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneWeeklyManagerSummary(managerId, "2025") : "",
-    selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneWeeklyManagerSummary(managerId, "2026") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFantasyOfficeManagerSummary(managerId, "2025") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFantasyOfficeManagerSummary(managerId, "2026") : "",
+    selectedYear === "all" || selectedYear === "2024" ? renderFormulaOneManagerSummary(managerId, "2024") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneManagerSummary(managerId, "2025") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneManagerSummary(managerId, "2026") : "",
   ].filter(Boolean);
 
   if (!resultCards.length) {
@@ -3729,7 +3729,11 @@ function hasManagerHubResultData() {
     siteData.formulaOne2026?.standings?.length ||
     siteData.formulaOne2025Weekly?.standings?.length ||
     siteData.formulaOne2026Weekly?.standings?.length ||
-    siteData.formulaOne2026WeeklyResults?.standings?.length
+    siteData.formulaOne2026WeeklyResults?.standings?.length ||
+    siteData.fantasyOffice2025?.results?.length ||
+    siteData.fantasyOffice2026?.results?.length ||
+    siteData.fantasyOffice2025?.draft?.length ||
+    siteData.fantasyOffice2026?.draft?.length
   );
 }
 
@@ -4184,6 +4188,47 @@ function renderFantasyCriticManagerSummary(managerId, year, label) {
   `;
 }
 
+function renderFantasyOfficeManagerSummary(managerId, year) {
+  const data = siteData[`fantasyOffice${year}`];
+  const row = findFantasyOfficeManagerRow(managerId, data?.results ?? []);
+  const draft = findFantasyOfficeDraftManager(managerId, data?.draft ?? []);
+
+  if (!row && !draft) {
+    return "";
+  }
+
+  const managerName = row?.manager || draft?.manager || "";
+  const manager = getManagerByName(managerName) ?? { name: managerName };
+  const rankMarkup = row
+    ? renderManagerSummaryRank("Overall", row, formatPoints, { standings: "fantasy-office", year })
+    : `
+      <span class="manager-summary-rank">
+        <small>Overall</small>
+        <span class="manager-summary-rank-line">
+          <strong>Pending</strong>
+          ${renderInProgressMarker({ standings: "fantasy-office", year })}
+        </span>
+        <em>No result totals yet</em>
+      </span>
+    `;
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(year)} Fantasy Office</h3>
+          <p>${row ? "Movie result totals" : "Draft loaded; results pending"}</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks manager-summary-ranks--single">
+        ${rankMarkup}
+      </div>
+      <a class="action-button" href="#fantasy-office-${escapeHtml(year)}-results" data-page-link="fantasy-office-${escapeHtml(year)}-results">Open Results</a>
+    </article>
+  `;
+}
+
 function findFantasyCriticManagerRow(managerId, league) {
   if (!league?.standings) {
     return null;
@@ -4195,60 +4240,59 @@ function findFantasyCriticManagerRow(managerId, league) {
   return league.standings.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
 }
 
-function renderFormulaOneYearlyManagerSummary(managerId, year) {
-  const data = siteData[`formulaOne${year}`];
-  const row = findFormulaOneManagerRow(managerId, data?.standings ?? []);
+function findFantasyOfficeManagerRow(managerId, results) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
 
-  if (!row) {
+  return results.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+}
+
+function findFantasyOfficeDraftManager(managerId, draftRows) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+
+  return draftRows.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+}
+
+function renderFormulaOneManagerSummary(managerId, year) {
+  const yearlyRow = getFormulaOneYearlyManagerSummaryRow(managerId, year);
+  const weeklyRow = getFormulaOneWeeklyManagerSummaryRow(managerId, year);
+
+  if (!yearlyRow && !weeklyRow) {
     return "";
   }
 
-  const manager = getManagerByName(row.manager) ?? { name: row.manager };
+  const managerName = yearlyRow?.manager || weeklyRow?.manager || "";
+  const manager = getManagerByName(managerName) ?? { name: managerName };
 
   return `
     <article class="workflow-item">
       <header>
         <div>
-          <h3>${escapeHtml(year)} Formula 1 Bets</h3>
-          <p>Yearly bet results</p>
+          <h3>${escapeHtml(year)} Formula 1</h3>
+          <p>Bets and Weekly bets</p>
         </div>
         ${renderManagerChip(manager)}
       </header>
-      <div class="manager-summary-ranks manager-summary-ranks--single">
-        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-yearly", year })}
+      <div class="manager-summary-ranks manager-summary-ranks--paired">
+        ${renderManagerSummaryRank("Bets", yearlyRow, formatFormulaOnePointValue, { standings: "formula-one-yearly", year })}
+        ${renderManagerSummaryRank("Weekly", weeklyRow, formatFormulaOnePointValue, { standings: "formula-one-weekly", year })}
       </div>
       <a class="action-button" href="#formula-1-${escapeHtml(year)}-results" data-page-link="formula-1-${escapeHtml(year)}-results">Open Results</a>
     </article>
   `;
 }
 
-function renderFormulaOneWeeklyManagerSummary(managerId, year) {
+function getFormulaOneYearlyManagerSummaryRow(managerId, year) {
+  const data = siteData[`formulaOne${year}`];
+  return findFormulaOneManagerRow(managerId, data?.standings ?? []);
+}
+
+function getFormulaOneWeeklyManagerSummaryRow(managerId, year) {
   const data = year === "2026"
     ? siteData.formulaOne2026WeeklyResults ?? siteData.formulaOne2026Weekly
     : siteData.formulaOne2025Weekly;
-  const row = findFormulaOneManagerRow(managerId, data?.standings ?? []);
-
-  if (!row) {
-    return "";
-  }
-
-  const manager = getManagerByName(row.manager) ?? { name: row.manager };
-
-  return `
-    <article class="workflow-item">
-      <header>
-        <div>
-          <h3>${escapeHtml(year)} Formula 1 Weekly</h3>
-          <p>Weekly bet results</p>
-        </div>
-        ${renderManagerChip(manager)}
-      </header>
-      <div class="manager-summary-ranks manager-summary-ranks--single">
-        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "formula-one-weekly", year })}
-      </div>
-      <a class="action-button" href="#formula-1-${escapeHtml(year)}-weekly" data-page-link="formula-1-${escapeHtml(year)}-weekly">Open Weekly</a>
-    </article>
-  `;
+  return findFormulaOneManagerRow(managerId, data?.standings ?? []);
 }
 
 function findFormulaOneManagerRow(managerId, standings) {
@@ -5225,6 +5269,7 @@ loadSheetText("fantasyOffice2025Draft")
   .then((draftCsv) => {
     siteData.fantasyOffice2025.draft = parseFantasyOfficeDraft(draftCsv);
     renderFantasyOfficeDraft(2025, siteData.fantasyOffice2025.draft);
+    renderManagerHub();
     console.info("Box This Lap Fantasy Office 2025 draft data loaded", siteData.fantasyOffice2025.draft);
   })
   .catch((error) => {
@@ -5237,6 +5282,7 @@ loadSheetText("fantasyOffice2025Results")
     siteData.fantasyOffice2025.results = parseFantasyOfficeResults(resultsCsv);
     renderFantasyOfficeMovies(2025, siteData.fantasyOffice2025.results);
     renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+    renderManagerHub();
     console.info("Box This Lap Fantasy Office 2025 results data loaded", siteData.fantasyOffice2025.results);
   })
   .catch((error) => {
@@ -5269,6 +5315,7 @@ loadSheetText("fantasyOffice2026Draft")
     renderFantasyOfficeDraft(2026, siteData.fantasyOffice2026.draft);
     renderFantasyOfficeMovies(2026, siteData.fantasyOffice2026.results);
     renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+    renderManagerHub();
     console.info("Box This Lap Fantasy Office 2026 draft data loaded", siteData.fantasyOffice2026.draft);
   })
   .catch((error) => {

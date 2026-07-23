@@ -878,6 +878,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.manager-summary-ranks--paired {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .manager-summary-rank {
   background: var(--panel);
   border: 1px solid var(--line);

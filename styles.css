@@ -835,9 +835,13 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .workflow-item header {
   align-items: start;
-  display: flex;
+  display: grid;
   gap: 10px;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.workflow-item header > div {
+  min-width: 0;
 }
 
 .workflow-item h3 {
@@ -855,6 +859,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 999px;
   flex: 0 0 auto;
   height: 12px;
+  justify-self: end;
   margin-top: 4px;
   width: 12px;
 }

@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220015";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220016";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220015";
+} from "./modules/siteConfig.js?v=202607220016";
 
 import {
   pageLinks,
@@ -103,7 +103,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202607210003";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220015";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607220016";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -4328,9 +4328,7 @@ function getFormulaOneYearlyManagerSummaryRow(managerId, year) {
 }
 
 function getFormulaOneWeeklyManagerSummaryRow(managerId, year) {
-  const data = year === "2026"
-    ? siteData.formulaOne2026WeeklyResults ?? siteData.formulaOne2026Weekly
-    : siteData.formulaOne2025Weekly;
+  const data = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
   return findFormulaOneManagerRow(managerId, data?.standings ?? []);
 }
 

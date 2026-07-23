@@ -138,7 +138,7 @@ function handleManagerAuth_(payload) {
       return createPortalResponse_(payload, { ok: false, error: "Passphrase reset is required for this manager." });
     }
 
-    if (storedPassphrase !== passphrase) {
+    if (!isPassphraseMatch_(passphrase, storedPassphrase)) {
       return createPortalResponse_(payload, { ok: false, error: "Passphrase did not match." });
     }
 
@@ -183,6 +183,19 @@ function normalizeRecoveryAnswer_(value) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function isPassphraseMatch_(submittedPassphrase, storedPassphrase) {
+  const submitted = normalizePassphrase_(submittedPassphrase);
+  const stored = normalizePassphrase_(storedPassphrase);
+
+  return Boolean(submitted && stored && submitted === stored);
+}
+
+function normalizePassphrase_(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function updateManagerSecretTimestamp_(sheet, rowIndex, updatedAtColumn) {

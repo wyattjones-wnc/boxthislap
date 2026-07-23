@@ -3160,6 +3160,7 @@ async function handleManagerLogin() {
       signedInAt: new Date().toISOString(),
     });
     setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });
+    document.activeElement?.blur?.();
     hideLoginPanel();
     showPage("manager-hub", { scrollToTop: true });
     window.location.hash = "manager-hub";
@@ -3602,7 +3603,7 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
   const logs = siteData.portalLogs || [];
   const nextForm = getUpcomingFormulaOneForm(forms);
 
-  if (!nextForm) {
+  if (!nextForm || isWorkflowLeagueCompleted({ league: "Formula 1", terms: ["weekly"], year: "2026" })) {
     return [];
   }
 
@@ -3635,6 +3636,10 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
 
 function buildFantasyCriticWorkflowItems(managerId) {
   return ["2025", "2026"].flatMap((year) => {
+    if (isWorkflowLeagueCompleted({ league: "Fantasy Critic", year })) {
+      return [];
+    }
+
     const state = getFantasyCriticLeagueState(year);
 
     if (state.status !== "loaded" || !state.league?.isDynamic) {
@@ -3668,6 +3673,33 @@ function formatNotificationCount(count) {
 
 function isWorkflowDraftCompleted(draft) {
   return isTruthy(getField(draft, "DraftCompleted", "Draft Completed", "IsCompleted", "Is Completed", "Completed"));
+}
+
+function isWorkflowLeagueCompleted({ league = "", terms = [], year = "" } = {}) {
+  return (siteData.portalDrafts || []).some((draft) => {
+    if (!isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"))) {
+      return false;
+    }
+
+    if (year && String(draft.Year || "").trim() !== String(year)) {
+      return false;
+    }
+
+    const draftText = normalizeLookupName([
+      draft.League,
+      draft.Name,
+      draft.Type,
+      draft.Category,
+      draft.Standings,
+    ].filter(Boolean).join(" "));
+    const leagueKey = normalizeLookupName(league);
+
+    if (leagueKey && !draftText.includes(leagueKey)) {
+      return false;
+    }
+
+    return terms.every((term) => draftText.includes(normalizeLookupName(term)));
+  });
 }
 
 function getUpcomingFormulaOneForm(forms) {

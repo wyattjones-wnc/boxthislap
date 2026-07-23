@@ -360,6 +360,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-weight: 900;
 }
 
+.login-panel input,
+.login-panel select {
+  font-size: 16px;
+}
+
 .icon-button {
   align-items: center;
   background: var(--soft);

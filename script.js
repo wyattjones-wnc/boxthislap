@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220003";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220004";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607220003";
+} from "./modules/siteConfig.js?v=202607220004";
 
 import {
   pageLinks,
@@ -132,6 +132,7 @@ let shouldShowFootyTeamOptions = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const siteData = {};
 window.boxThisLapData = siteData;
+window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
 
 siteData.fantasyCritic = {
@@ -4751,8 +4752,8 @@ Promise.allSettled([
       : [...DEFAULT_PORTAL_MANAGERS];
     siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
     siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
-    renderLoginManagerOptions();
-    renderLoginState();
+    runPortalRender("login manager options", renderLoginManagerOptions);
+    runPortalRender("login state", renderLoginState);
 
     runPortalRender("manager hub", renderManagerHub);
     runPortalRender("standings awards", renderStandingsAwards);
@@ -4791,13 +4792,14 @@ Promise.allSettled([
     siteData.portalLogs = [];
     runPortalRender("fallback login managers", renderLoginManagerOptions);
     runPortalRender("fallback login state", renderLoginState);
-    setLoginFeedback("Using fallback manager list. Check console logs for the manager portal load error.", true);
+    setLoginFeedback(`Using fallback manager list. ${getErrorMessage(error)}`, true);
 
     if (workflowList) {
       workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load notifications: ${escapeHtml(error.message)}</p></article>`;
     }
 
     console.error("Box This Lap manager portal data failed to load", error);
+    recordDiagnostic("manager portal data failed to load", error);
   });
 
 function getSettledLog(result) {
@@ -4814,11 +4816,31 @@ function getSettledLog(result) {
   };
 }
 
+function getErrorMessage(error) {
+  return error?.message || String(error || "Unknown error");
+}
+
+function recordDiagnostic(label, error, extra = {}) {
+  const detail = {
+    extra,
+    label,
+    message: getErrorMessage(error),
+    stack: error?.stack || "",
+    timestamp: new Date().toISOString(),
+  };
+
+  window.boxThisLapDiagnostics.push(detail);
+  console.error(`Box This Lap diagnostic: ${label}`, detail);
+
+  return detail;
+}
+
 function runPortalRender(label, render) {
   try {
     render();
   } catch (error) {
     console.error(`Box This Lap ${label} failed to render`, error);
+    recordDiagnostic(`${label} failed to render`, error);
   }
 }
 

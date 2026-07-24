@@ -8,14 +8,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-footy-schedule-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   update-footy-schedule:
     runs-on: ubuntu-latest
     steps:
       - name: Check out site
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'schedule' && 'dev' || github.ref_name }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -34,7 +36,6 @@ jobs:
       - name: Update cached footy schedule
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-          THE_SPORTS_DB_API_KEY: ${{ secrets.THE_SPORTS_DB_API_KEY }}
         run: node scripts/update-footy-schedule.mjs
 
       - name: Commit updated schedule
@@ -48,4 +49,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/footy-schedule.json
           git commit -m "Update footy schedule"
-          git push
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"

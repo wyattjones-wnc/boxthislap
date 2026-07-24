@@ -76,14 +76,27 @@
         window.boxThisLapMarkReady = () => {
           isShellReady = true;
           clearTimeout(staleTimer);
+          document.body?.classList.remove("is-routing");
           document.body?.classList.remove("has-shell-stale-warning");
           clearRefreshParam();
         };
 
+        function isCriticalShellResource(target) {
+          if (target instanceof HTMLScriptElement) {
+            return target.src.includes("script.js");
+          }
+
+          if (target instanceof HTMLLinkElement) {
+            return target.rel === "stylesheet";
+          }
+
+          return false;
+        }
+
         window.addEventListener("error", (event) => {
           const target = event.target;
 
-          if (target instanceof HTMLScriptElement || target instanceof HTMLLinkElement) {
+          if (isCriticalShellResource(target)) {
             showStaleWarning();
           }
         }, true);
@@ -115,6 +128,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
           staleTimer = window.setTimeout(showStaleWarning, 4500);
+          window.setTimeout(() => window.boxThisLapMarkReady?.(), 0);
 
           document.querySelector("[data-hard-refresh]")?.addEventListener("click", hardRefresh);
 
@@ -164,13 +178,21 @@
         });
       })();
     </script>
-    <link rel="manifest" href="manifest.webmanifest?v=202606300001">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001">
-    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001">
-    <link rel="stylesheet" href="styles.css?v=202607120001">
+    <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=202606300001" data-icon-192>
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=202606300001" data-icon-512>
+    <script>
+      if (location.pathname.includes("/dev/")) {
+        document.querySelector("[data-app-manifest]")?.setAttribute("href", "manifest-dev.webmanifest?v=202607140001");
+        document.querySelector("[data-apple-touch-icon]")?.setAttribute("href", "assets/dev-apple-touch-icon.png?v=202607140001");
+        document.querySelector("[data-icon-192]")?.setAttribute("href", "assets/dev-icon-192.png?v=202607140001");
+        document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css?v=202607230003">
   </head>
-  <body class="is-routing">
+  <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
       <span>Pull to refresh</span>
     </div>
@@ -180,9 +202,18 @@
     </div>
     <header class="site-header">
       <nav class="topbar" aria-label="Primary">
-        <a class="brand" href="#results" data-page-link="results">
+        <a class="brand" href="#footy" data-page-link="footy">
           <img src="assets/box-this-lap-logo.jpg" alt="Box This Lap">
         </a>
+        <div class="header-page-art" data-header-art="default" aria-hidden="true">
+          <picture>
+            <source
+              srcset="assets/final/default-header-small.jpg?v=202607210002"
+              media="(orientation: landscape) and (max-height: 520px)"
+            >
+            <img src="assets/final/default-header.jpg?v=202607210001" alt="">
+          </picture>
+        </div>
         <div class="header-page-art" data-header-art="world-cup" aria-hidden="true">
           <picture>
             <source
@@ -195,10 +226,19 @@
         <div class="header-page-art" data-header-art="fantasy-critic-2025" aria-hidden="true">
           <picture>
             <source
-              srcset="assets/final/2025-fantasy-critic-header-small.jpg?v=202607120001"
+              srcset="assets/fantasy-critic-2025-header-landscape.jpg?v=202607230004"
               media="(orientation: landscape) and (max-height: 520px)"
             >
-            <img src="assets/final/2025-fantasy-critic-header.jpg?v=202607120001" alt="">
+            <img src="assets/fantasy-critic-2025-header.jpg?v=202607230004" alt="">
+          </picture>
+        </div>
+        <div class="header-page-art" data-header-art="fantasy-critic-2026" aria-hidden="true">
+          <picture>
+            <source
+              srcset="assets/fantasy-critic-2026-header-landscape.png?v=202607230006"
+              media="(orientation: landscape) and (max-height: 520px)"
+            >
+            <img src="assets/fantasy-critic-2026-header.png?v=202607230006" alt="">
           </picture>
         </div>
         <div class="header-page-art" data-header-art="formula-one-2024" aria-hidden="true">
@@ -237,12 +277,24 @@
             <img src="assets/final/2025-fantasy-office-header.jpg?v=202607120001" alt="">
           </picture>
         </div>
-        <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="Site sections">
-          <a href="#today" data-page-link="today" role="tab">Today</a>
-          <a href="#tomorrow" data-page-link="tomorrow" role="tab">Tomorrow</a>
+        <div class="header-page-art" data-header-art="fantasy-office-2026" aria-hidden="true">
+          <picture>
+            <source
+              srcset="assets/fantasy-office-2026-header-landscape.png?v=202607230006"
+              media="(orientation: landscape) and (max-height: 520px)"
+            >
+            <img src="assets/fantasy-office-2026-header.png?v=202607230006" alt="">
+          </picture>
+        </div>
+        <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
+          <a href="#footy" data-page-link="footy" role="tab">Footy</a>
+          <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+        <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="World Cup sections" hidden>
           <a href="#results" data-page-link="results" role="tab">Results</a>
           <a href="#bracket" data-page-link="bracket" role="tab">Bracket</a>
           <a href="#standings" data-page-link="standings" role="tab">Standings</a>
+          <a href="#rules" data-page-link="rules" data-test-rules-link role="tab" hidden>Rules</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
         <div class="nav-links" data-nav-scope="formula-one-2024" role="tablist" aria-label="Formula 1 sections" hidden>
@@ -262,6 +314,12 @@
           <a href="#formula-1-2026-results" data-page-link="formula-1-2026-results" role="tab">Results</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
+        <div class="nav-links" data-nav-scope="fantasy-critic-2025" role="tablist" aria-label="Fantasy Critic sections" hidden>
+          <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+        <div class="nav-links" data-nav-scope="fantasy-critic-2026" role="tablist" aria-label="Fantasy Critic sections" hidden>
+          <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
         <div class="nav-links" data-nav-scope="fantasy-office-2025" role="tablist" aria-label="Fantasy Office sections" hidden>
           <a href="#fantasy-office-2025-draft" data-page-link="fantasy-office-2025-draft" role="tab">Draft</a>
           <a href="#fantasy-office-2025-movies" data-page-link="fantasy-office-2025-movies" role="tab">Movies</a>
@@ -275,9 +333,159 @@
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
       </nav>
+      <div class="login-row">
+        <div class="login-row-inner">
+          <div class="login-actions">
+            <a class="login-button" id="login-open-button" href="#login" data-page-link="login">Log In</a>
+            <div class="profile-menu" id="profile-menu" hidden>
+              <button class="profile-button" id="profile-menu-button" type="button" aria-expanded="false">
+                <span class="profile-avatar" aria-hidden="true">?</span>
+                <span id="profile-name">Manager</span>
+              </button>
+              <div class="profile-dropdown" id="profile-dropdown" hidden>
+                <a href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
+                <button id="logout-button" type="button">Sign Out</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main>
+      <section class="page login-page" id="login" data-page="login">
+        <div class="section-heading">
+          <h1>Manager Login</h1>
+        </div>
+        <form class="login-panel" id="login-panel">
+          <p>This passphrase is only a lightweight site check. Do not reuse an important password.</p>
+          <label class="select-control">
+            <span>Manager</span>
+            <select id="login-manager-select">
+              <option value="">Loading managers...</option>
+            </select>
+          </label>
+          <label class="filter-control" id="login-passphrase-group">
+            <span>Passphrase</span>
+            <input id="login-passphrase" type="text" autocomplete="off" placeholder="Passphrase">
+          </label>
+          <div class="login-setup-panel" id="login-recovery-panel" hidden>
+            <p class="login-recovery-question" id="login-recovery-question"></p>
+            <label class="filter-control">
+              <span>Recovery Answer</span>
+              <input id="login-recovery-answer" type="text" autocomplete="off" placeholder="Answer">
+            </label>
+          </div>
+          <div class="login-setup-panel" id="login-new-passphrase-panel" hidden>
+            <label class="filter-control">
+              <span>New Passphrase</span>
+              <input id="login-new-passphrase" type="text" autocomplete="off" placeholder="New passphrase">
+            </label>
+            <label class="filter-control">
+              <span>Confirm Passphrase</span>
+              <input id="login-confirm-passphrase" type="text" autocomplete="off" placeholder="Confirm passphrase">
+            </label>
+          </div>
+          <button class="action-button" id="login-submit-button" type="submit">Continue</button>
+          <p class="login-feedback" id="login-feedback" role="status"></p>
+        </form>
+      </section>
+
+      <section class="page manager-hub-page" id="manager-hub" data-page="manager-hub">
+        <div class="section-heading page-heading-with-action">
+          <div>
+            <h1>Manager Hub</h1>
+            <p class="manager-hub-subtitle" id="manager-hub-subtitle" hidden></p>
+          </div>
+        </div>
+
+        <div class="manager-hub-grid">
+          <details class="manager-hub-card workflow-dropdown" aria-labelledby="workflow-heading">
+            <summary class="manager-hub-card-heading workflow-summary">
+              <h2 id="workflow-heading">Notifications</h2>
+              <span id="workflow-count">0 notifications</span>
+            </summary>
+            <div class="workflow-list" id="workflow-list">
+              <article class="workflow-item">
+                <p class="table-message">Log in to load notifications.</p>
+              </article>
+            </div>
+          </details>
+
+          <section class="manager-hub-card manager-awards-card" aria-labelledby="manager-awards-heading">
+            <div class="manager-hub-card-heading">
+              <h2 id="manager-awards-heading">Awards</h2>
+            </div>
+            <div class="manager-awards-list" id="manager-awards-list">
+              <article class="workflow-item">
+                <p class="table-message">Log in to load awards.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="manager-hub-card" aria-labelledby="manager-summary-heading">
+            <div class="manager-hub-card-heading">
+              <h2 id="manager-summary-heading">Results</h2>
+              <label class="manager-summary-year-control">
+                <span>Year</span>
+                <select id="manager-summary-year-select">
+                  <option value="2026">2026</option>
+                  <option value="all">All</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                </select>
+              </label>
+            </div>
+            <div class="manager-summary-list" id="manager-summary-list">
+              <article class="workflow-item">
+                <p class="table-message">Log in to load manager results.</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page is-active" id="footy" data-page="footy">
+        <div class="section-heading page-heading-with-action footy-heading">
+          <h1>Footy</h1>
+          <div class="heading-actions">
+            <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
+              Past Matches
+            </button>
+            <button class="icon-action-button footy-filter-toggle" id="footy-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-filters" aria-label="Show filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="footy-filters" id="footy-filters" hidden>
+          <label>
+            <span>Search</span>
+            <input id="footy-search" type="search" placeholder="Search" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <div class="footy-date-range">
+              <input id="footy-date-from-filter" type="date" aria-label="Date from">
+              <input id="footy-date-to-filter" type="date" aria-label="Date to">
+            </div>
+          </label>
+          <label>
+            <span>Teams</span>
+            <div class="multi-filter" id="footy-team-filter">
+              <button class="multi-filter-button" type="button" aria-expanded="false">
+                Loading teams...
+              </button>
+              <div class="multi-filter-options" hidden></div>
+            </div>
+          </label>
+        </div>
+        <div class="content-shell" id="footy-schedule-list">
+          <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
+        </div>
+      </section>
+
       <section class="page" id="today" data-page="today">
         <div class="section-heading">
           <h1>Today</h1>
@@ -324,14 +532,15 @@
         </div>
       </section>
 
-      <section class="page is-active" id="results" data-page="results">
+      <section class="page" id="results" data-page="results">
         <div class="section-heading page-heading-with-action results-heading">
-          <a class="action-button secondary-action" href="#draft" data-page-link="draft">Draft</a>
-          <div>
+          <div class="heading-title">
             <h1>World Cup Results</h1>
             <p class="updated-time" data-updated-time>Updated June 19, 2026 12:06 AM ET</p>
           </div>
-          <a class="action-button" href="#matches" data-page-link="matches">Matches</a>
+          <div class="heading-actions heading-actions-right">
+            <a class="action-button" href="#matches" data-page-link="matches">Matches</a>
+          </div>
         </div>
 
 
@@ -398,6 +607,13 @@
             </label>
           </div>
         </div>
+
+        <section class="standings-awards" id="standings-awards" hidden>
+          <div class="standings-awards-heading">
+            <h2>Awards</h2>
+          </div>
+          <div class="standings-awards-list" id="standings-awards-list"></div>
+        </section>
 
         <div class="tabs" role="tablist" aria-label="Standings views">
           <button class="tab is-active" type="button" data-tab="players-championship" role="tab" aria-selected="true">
@@ -492,6 +708,79 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <section class="page rules-page" id="rules" data-page="rules">
+        <div class="league-detail-heading">
+          <div>
+            <h1>Test Rules</h1>
+            <p>Nation scoring proposal</p>
+          </div>
+        </div>
+
+        <section class="rules-breakdown-card" aria-labelledby="rules-nation-heading">
+          <div class="rules-breakdown-heading">
+            <div>
+              <h2 id="rules-nation-heading">Nation Breakdown</h2>
+              <p>Select a nation to see every scored match and how the Test value is calculated.</p>
+            </div>
+            <label class="select-control compact-select-control" for="rules-nation-select">
+              <span>Nation</span>
+              <select id="rules-nation-select">
+                <option value="">Loading nations...</option>
+              </select>
+            </label>
+          </div>
+          <div class="rules-breakdown" id="rules-nation-breakdown">
+            <p class="table-message">Select a nation to see the point breakdown.</p>
+          </div>
+        </section>
+
+        <div class="rules-grid">
+          <article class="rule-card">
+            <h2>Purpose</h2>
+            <p>The Test toggle recalculates nation points with a more aggressive reward for national team results and adds a simple appearance point for players.</p>
+          </article>
+
+          <article class="rule-card">
+            <h2>Base Results</h2>
+            <ul>
+              <li>Group stage win: 9 points.</li>
+              <li>Knockout stage win: 15 points.</li>
+              <li>Draw: 3 points.</li>
+              <li>Penalty shootout loss: 6 points.</li>
+            </ul>
+          </article>
+
+          <article class="rule-card">
+            <h2>Upsets</h2>
+            <p>A win over a nation from a higher pot earns an additional 3 points. A draw can also earn the upset bonus when the lower-pot nation is more than one pot below its opponent.</p>
+            <p>Example: Pot C drawing Pot A earns the draw points plus the upset bonus.</p>
+          </article>
+
+          <article class="rule-card">
+            <h2>Knockout Pot Bonus</h2>
+            <p>Knockout winners from lower pots receive an additional pot bonus. These bonuses are doubled from the original draft concept.</p>
+            <ul>
+              <li>Pot A: no bonus.</li>
+              <li>Pot B: +2 points.</li>
+              <li>Pot C: +4 points.</li>
+              <li>Pot D: +6 points.</li>
+              <li>Pot E: +8 points.</li>
+              <li>Pot G: +10 points.</li>
+            </ul>
+          </article>
+
+          <article class="rule-card">
+            <h2>Players</h2>
+            <p>Each Player Performance row earns 1 point for playing in that match. Any other points from the sheet are added on top of that appearance point.</p>
+          </article>
+
+          <article class="rule-card">
+            <h2>What Changes</h2>
+            <p>When Test is on, Nations League, Players' Championship, Manager Results, draft totals, and match-card points use these calculated values. Draft eligibility rules are unchanged.</p>
+          </article>
         </div>
       </section>
 
@@ -631,6 +920,13 @@
           </div>
         </div>
 
+        <section class="standings-awards formula-one-awards" id="formula-one-2024-awards" hidden>
+          <div class="standings-awards-heading">
+            <h2>Awards</h2>
+          </div>
+          <div class="standings-awards-list" id="formula-one-2024-awards-list"></div>
+        </section>
+
         <div class="table-wrap standings-table">
           <table>
             <thead>
@@ -688,6 +984,13 @@
           <button class="tab is-active" type="button" data-formula-one-results-year="2025" data-formula-one-results-mode="yearly" aria-pressed="true">Yearly</button>
           <button class="tab" type="button" data-formula-one-results-year="2025" data-formula-one-results-mode="weekly" aria-pressed="false">Weekly</button>
         </div>
+
+        <section class="standings-awards formula-one-awards" id="formula-one-2025-awards" hidden>
+          <div class="standings-awards-heading">
+            <h2>Awards</h2>
+          </div>
+          <div class="standings-awards-list" id="formula-one-2025-awards-list"></div>
+        </section>
 
         <div class="table-wrap standings-table">
           <table>
@@ -769,6 +1072,13 @@
           <button class="tab is-active" type="button" data-formula-one-results-year="2026" data-formula-one-results-mode="yearly" aria-pressed="true">Yearly</button>
           <button class="tab" type="button" data-formula-one-results-year="2026" data-formula-one-results-mode="weekly" aria-pressed="false">Weekly</button>
         </div>
+
+        <section class="standings-awards formula-one-awards" id="formula-one-2026-awards" hidden>
+          <div class="standings-awards-heading">
+            <h2>Awards</h2>
+          </div>
+          <div class="standings-awards-list" id="formula-one-2026-awards-list"></div>
+        </section>
 
         <div class="table-wrap standings-table">
           <table>
@@ -942,6 +1252,13 @@
           alt="Site view count"
         >
       </div>
+      <label class="footer-test-toggle">
+        <input id="nation-test-scoring-toggle" type="checkbox">
+        <span>Test</span>
+      </label>
+      <button class="footer-copy-link" type="button" id="copy-current-page-link" hidden>
+        Copy URL
+      </button>
       <div class="theme-control">
         <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="true">
           Dark
@@ -949,6 +1266,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607120001"></script>
+    <script type="module" src="script.js?v=202607230006"></script>
   </body>
 </html>

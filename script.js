@@ -1,56 +1,121 @@
-import { loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607120001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220016";
+import {
+  WORKFLOW_LOOKAHEAD_DAYS,
+  THEME_STORAGE_KEY,
+  MANAGER_SESSION_STORAGE_KEY,
+  MANAGER_PORTAL_ENDPOINT,
+  AWARD_DEFINITIONS,
+  BEST_STANDING_PERFORMANCE_VALUE,
+  BRACKET_STORAGE_KEY,
+  BRACKET_SUBMITTER_STORAGE_KEY,
+  BRACKET_SUBMISSION_ENDPOINT,
+  BRACKET_MANUAL_PICK_VALUE,
+  NATION_POT_RANKS,
+  TEST_KNOCKOUT_POT_BONUSES,
+  BRACKET_ROUNDS,
+  BRACKET_SLOT_REFERENCES,
+  MANAGER_COLORS,
+  FANTASY_LEAGUES_BY_YEAR,
+  FANTASY_CRITIC_LEAGUE_ID,
+  FANTASY_CRITIC_PROXY_URL,
+  FANTASY_CRITIC_LEAGUE_METADATA,
+  FANTASY_CRITIC_PUBLISHER_MANAGERS,
+  DEFAULT_PORTAL_MANAGERS,
+} from "./modules/siteConfig.js?v=202607230002";
 
-const pageLinks = document.querySelectorAll("[data-page-link]");
-const pages = document.querySelectorAll("[data-page]");
-const tabs = document.querySelectorAll("[data-tab]");
-const tabPanels = document.querySelectorAll("[data-tab-panel]");
-const headerArt = document.querySelectorAll("[data-header-art]");
-const navGroups = document.querySelectorAll("[data-nav-scope]");
-const themeToggle = document.querySelector("[data-theme-toggle]");
-const leagueYearSelect = document.querySelector("#league-year-select");
-const leagueList = document.querySelector("#league-list");
-const fantasyCritic2025Content = document.querySelector("#fantasy-critic-2025-content");
-const fantasyCritic2026Content = document.querySelector("#fantasy-critic-2026-content");
-const formulaOneViews = {
-  2024: {
-    questionSelect: document.querySelector("#formula-one-question-select"),
-    questionFilter: document.querySelector("#formula-one-question-filter"),
-    questionList: document.querySelector("#formula-one-question-list"),
-    resultsRows: document.querySelector("#formula-one-results-rows"),
-  },
-  2025: {
-    questionSelect: document.querySelector("#formula-one-2025-question-select"),
-    questionFilter: document.querySelector("#formula-one-2025-question-filter"),
-    questionList: document.querySelector("#formula-one-2025-question-list"),
-    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2025\"]"),
-    resultsRows: document.querySelector("#formula-one-2025-results-rows"),
-    weeklyList: document.querySelector("#formula-one-2025-weekly-list"),
-    weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
-  },
-  2026: {
-    questionSelect: document.querySelector("#formula-one-2026-question-select"),
-    questionFilter: document.querySelector("#formula-one-2026-question-filter"),
-    questionList: document.querySelector("#formula-one-2026-question-list"),
-    resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
-    resultsRows: document.querySelector("#formula-one-2026-results-rows"),
-    weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
-    weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
-    weeklyManagers: document.querySelector("#formula-one-2026-weekly-managers"),
-    weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),
-  },
-};
-const fantasyOfficeViews = {
-  2025: {
-    draftList: document.querySelector("#fantasy-office-2025-draft-list"),
-    movieList: document.querySelector("#fantasy-office-2025-movie-list"),
-    resultList: document.querySelector("#fantasy-office-2025-result-list"),
-  },
-  2026: {
-    draftList: document.querySelector("#fantasy-office-2026-draft-list"),
-    movieList: document.querySelector("#fantasy-office-2026-movie-list"),
-    resultList: document.querySelector("#fantasy-office-2026-result-list"),
-  },
-};
+import {
+  pageLinks,
+  pages,
+  tabs,
+  tabPanels,
+  headerArt,
+  navGroups,
+  themeToggle,
+  copyCurrentPageLinkButton,
+  testRulesLinks,
+  loginOpenButton,
+  loginPanel,
+  loginManagerSelect,
+  loginPassphraseGroup,
+  loginPassphraseInput,
+  loginRecoveryPanel,
+  loginRecoveryQuestion,
+  loginRecoveryAnswerInput,
+  loginNewPassphrasePanel,
+  loginNewPassphraseInput,
+  loginConfirmPassphraseInput,
+  loginSubmitButton,
+  loginFeedback,
+  profileMenu,
+  profileMenuButton,
+  profileDropdown,
+  profileName,
+  logoutButton,
+  managerHubSubtitle,
+  workflowCount,
+  workflowList,
+  managerSummaryList,
+  managerSummaryYearSelect,
+  managerAwardsList,
+  standingsAwards,
+  standingsAwardsList,
+  leagueYearSelect,
+  leagueList,
+  footyPastToggle,
+  footyFilterToggle,
+  footyFilters,
+  footySearchInput,
+  footyDateFromFilter,
+  footyDateToFilter,
+  footyTeamFilter,
+  footyScheduleList,
+  fantasyCritic2025Content,
+  fantasyCritic2026Content,
+  formulaOneViews,
+  fantasyOfficeViews,
+  resultsPage,
+  updatedTime,
+  dynamicResultImages,
+  todayMatchList,
+  tomorrowMatchList,
+  matchdaySelect,
+  matchdayMatchList,
+  bracketView,
+  bracketClearPicks,
+  bracketSubmissionSelect,
+  bracketSubmitterInput,
+  bracketSubmitButton,
+  bracketSubmitStatus,
+  draftViewButtons,
+  draftPanels,
+  draftNationsList,
+  draftPlayersList,
+  draftPlayerPositionFilter,
+  playerChampionshipRows,
+  playerPositionFilter,
+  nationsLeagueRows,
+  managerResultsRows,
+  managerResultsFilter,
+  standingsAllDataToggle,
+  standingsRoundSelect,
+  nationTestScoringToggle,
+  rulesNationSelect,
+  rulesNationBreakdown,
+  testingPlayerRows,
+} from "./modules/domRefs.js?v=202607210003";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607230006";
+import { createThemeController } from "./modules/theme.js?v=202607210001";
+import {
+  formatUpdatedTime,
+  normalizeLookupName,
+  parseCsvMatrix,
+  parseDraftRoundLimit,
+  parseRoundMappings,
+  parseRoundOptions,
+  parseScheduleMatches,
+  parseUpdatedTime,
+} from "./modules/tableUtils.js?v=202607210001";
+
 const fantasyOfficeMovieSort = {
   direction: "desc",
   key: "points",
@@ -60,504 +125,41 @@ const formulaOneResultsMode = {
   2026: "yearly",
 };
 let bracketPicksFallback = {};
-const resultsPage = document.querySelector("#results");
-const updatedTime = document.querySelector("[data-updated-time]");
-const dynamicResultImages = document.querySelector("#dynamic-result-images");
-const todayMatchList = document.querySelector("#today-match-list");
-const tomorrowMatchList = document.querySelector("#tomorrow-match-list");
-const matchdaySelect = document.querySelector("#matchday-select");
-const matchdayMatchList = document.querySelector("#matchday-match-list");
-const bracketView = document.querySelector("#bracket-view");
-const bracketClearPicks = document.querySelector("#bracket-clear-picks");
-const bracketSubmissionSelect = document.querySelector("#bracket-submission-select");
-const bracketSubmitterInput = document.querySelector("#bracket-submitter");
-const bracketSubmitButton = document.querySelector("#bracket-submit-picks");
-const bracketSubmitStatus = document.querySelector("#bracket-submit-status");
-const draftViewButtons = document.querySelectorAll("[data-draft-view]");
-const draftPanels = document.querySelectorAll("[data-draft-panel]");
-const draftNationsList = document.querySelector("#draft-nations-list");
-const draftPlayersList = document.querySelector("#draft-players-list");
-const draftPlayerPositionFilter = document.querySelector("#draft-player-position-filter");
-const playerChampionshipRows = document.querySelector("#player-championship-rows");
-const playerPositionFilter = document.querySelector("#player-position-filter");
-const nationsLeagueRows = document.querySelector("#nations-league-rows");
-const managerResultsRows = document.querySelector("#manager-results-rows");
-const managerResultsFilter = document.querySelector("#manager-results-filter");
-const standingsAllDataToggle = document.querySelector("#standings-all-data-toggle");
-const standingsRoundSelect = document.querySelector("#standings-round-select");
-const testingPlayerRows = document.querySelector("#testing-player-rows");
-
+let shouldShowPastFootyFixtures = false;
+let shouldShowFootyFilters = false;
+let shouldShowAllFootyFixtures = false;
+let shouldShowFootyTeamOptions = false;
+let activePageName = "";
+const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const siteData = {};
 window.boxThisLapData = siteData;
+window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
-const THEME_STORAGE_KEY = "boxThisLapTheme";
-const BEST_STANDING_PERFORMANCE_VALUE = "best";
-const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
-const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
-const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbzX29wZYzdCBW0pEwiJ_s22OGw-PpUJSBPQIXYxCaf9yHnFMCq9_r5z4nGfZaKk8fUF/exec";
-const BRACKET_MANUAL_PICK_VALUE = "";
-const BRACKET_ROUNDS = [
-  { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
-  { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
-  { id: "6", label: "Round 6", matchIds: [97, 98, 99, 100] },
-  { id: "7", label: "Round 7", matchIds: [101, 102] },
-  { id: "8", label: "Round 8", matchIds: [103] },
-  { id: "9", label: "Round 9", matchIds: [104] },
-];
-const BRACKET_SLOT_REFERENCES = {
-  89: { home: "Winner M73", away: "Winner M76" },
-  90: { home: "Winner M75", away: "Winner M78" },
-  91: { home: "Winner M74", away: "Winner M77" },
-  92: { home: "Winner M79", away: "Winner M80" },
-  93: { home: "Winner M83", away: "Winner M84" },
-  94: { home: "Winner M81", away: "Winner M82" },
-  95: { home: "Winner M86", away: "Winner M87" },
-  96: { home: "Winner M85", away: "Winner M88" },
-  97: { home: "Winner M89", away: "Winner M90" },
-  98: { home: "Winner M93", away: "Winner M94" },
-  99: { home: "Winner M91", away: "Winner M92" },
-  100: { home: "Winner M95", away: "Winner M96" },
-  101: { home: "Winner M97", away: "Winner M98" },
-  102: { home: "Winner M99", away: "Winner M100" },
-  103: { home: "Loser M101", away: "Loser M102" },
-  104: { home: "Winner M101", away: "Winner M102" },
+
+siteData.fantasyCritic = {
+  2025: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2025], status: "loading" },
+  2026: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2026], status: "loading" },
 };
 
-const MANAGER_COLORS = {
-  jonathan: "#000000",
-  jordan: "#b7a7dc",
-  luisa: "#df000b",
-  michael: "#123f7a",
-  sean: "#f783bd",
-  wyatt: "#96df7d",
-};
+const router = createRouter({
+  draftPanels,
+  draftViewButtons,
+  headerArt,
+  navGroups,
+  onPageShown: renderPageContext,
+  onStandingsTabShown: () => renderStandingsAwards(),
+  pageLinks,
+  pages,
+  shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
+  tabPanels,
+  tabs,
+});
+const { showDraftView, showPage, showTab } = router;
 
-const FANTASY_LEAGUES_BY_YEAR = {
-  2024: ["Formula 1"],
-  2025: ["Fantasy Critic", "Fantasy Office", "Formula 1"],
-  2026: ["Fantasy Critic", "Fantasy Office", "Formula 1", "World Cup"],
-};
-
-const FANTASY_CRITIC_2025 = {
-  title: "Fantasy Critic",
-  subtitle: "Best of the Rest",
-  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2025",
-  standings: [
-    {
-      rank: 1,
-      manager: "Wyatt",
-      publisher: "JonesSoft",
-      points: "169.79",
-      released: "12",
-      budget: "$0",
-      roster: [
-        ["Ghost of Yotei", "87", "17"],
-        ["Split Fiction", "91", "21"],
-        ["Sid Meier's Civilization VII", "79", "9"],
-        ["Death Stranding 2: On the Beach", "90", "20"],
-        ["Unannounced Mainline 3D Mario Platformer", "--", "0"],
-        ["Avowed", "80", "10"],
-        ["The Outer Worlds 2", "83", "13"],
-        ["Rift of the NecroDancer", "80", "10"],
-        ["Mario Kart World", "87", "17"],
-        ["Clair Obscur: Expedition 33", "92", "24"],
-        ["South of Midnight", "77", "7"],
-        ["Ninja Gaiden 4", "82", "12"],
-        ["Tails of Iron 2: Whiskers of Winter", "80", "10"],
-        ["CPK Coffee Talk Tokyo", "--", "0"],
-        ["CPK Arknights: Endfield", "--", "0"],
-      ],
-    },
-    {
-      rank: 2,
-      manager: "Sean",
-      publisher: "MicroHard Studios",
-      points: "155.86",
-      released: "12",
-      budget: "$11",
-      roster: [
-        ["Like a Dragon: Pirate Yakuza in Hawaii", "81", "11"],
-        ["Mafia: The Old Country", "74", "4"],
-        ["Assassin's Creed Shadows", "81", "11"],
-        ["Metroid Prime 4: Beyond", "81", "11"],
-        ["Pokemon Legends: Z-A", "79", "9"],
-        ["Wanderstop", "81", "11"],
-        ["Xenoblade Chronicles X: Definitive Edition", "87", "17"],
-        ["Ninja Gaiden: Ragebound", "86", "16"],
-        ["Tony Hawk's Pro Skater 3 + 4", "83", "13"],
-        ["Deltarune", "89", "19"],
-        ["Donkey Kong Bananza", "91", "23"],
-        ["The Elder Scrolls IV: Oblivion: Remastered", "82", "12"],
-        ["Mina the Hollower", "--", "0"],
-        ["CPK Subnautica 2", "--", "0"],
-        ["CPK Garfield Kart 2 - All You Can Drift", "--", "--"],
-      ],
-    },
-    {
-      rank: 3,
-      manager: "Michael",
-      publisher: "Amazon Web Services powered by Gemini powered by OpenAI",
-      points: "94.92",
-      released: "9",
-      budget: "$9",
-      roster: [
-        ["Monster Hunter Wilds", "89", "19"],
-        ["Doom: The Dark Ages", "86", "16"],
-        ["Kingdom Come: Deliverance II", "89", "19"],
-        ["Borderlands 4", "82", "12"],
-        ["Metal Gear Solid Delta: Snake Eater", "85", "15"],
-        ["Little Nightmares III", "71", "1"],
-        ["Subnautica 2", "--", "0"],
-        ["Wreckfest 2", "--", "0"],
-        ["Atomfall", "75", "5"],
-        ["Hollow Knight: Silksong", "91", "22"],
-        ["Garfield Kart 2 - All You Can Drift", "--", "--"],
-        ["CPK Unannounced Mainline 3D Mario Platformer", "--", "0"],
-        ["CPK", "--", "-15"],
-      ],
-    },
-    {
-      rank: 4,
-      manager: "Jonathan",
-      publisher: "Hispan!c Games",
-      points: "-7.53",
-      released: "3",
-      budget: "$100",
-      roster: [
-        ["Elden Ring Nightreign", "80", "10"],
-        ["Mewgenics", "--", "0"],
-        ["Coffee Talk Tokyo", "--", "0"],
-        ["The Bazaar", "--", "--"],
-        ["Slay the Spire 2", "--", "0"],
-        ["Citizen Sleeper 2: Starward Vector", "87", "17"],
-        ["Arknights: Endfield", "--", "0"],
-        ["CPK Death Stranding 2: On the Beach", "90", "-20"],
-        ["CPK", "--", "-15"],
-      ],
-    },
-  ],
-};
-
-const FANTASY_CRITIC_2026 = {
-  title: "Fantasy Critic",
-  subtitle: "Best of the Rest",
-  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2026",
-  standings: [
-    {
-      rank: 1,
-      manager: "Sean",
-      publisher: "Microhard Artisanal Studios",
-      points: "96.61",
-      projected: "160.98",
-      released: "7",
-      expecting: "4",
-      budget: "$79",
-      roster: [
-        ["Grand Theft Auto VI", "", ""],
-        ["007 First Light", "88", "18"],
-        ["LEGO Batman: Legacy of the Dark Knight", "84", "14"],
-        ["Fire Emblem: Fortune's Weave", "", ""],
-        ["Dragon Quest VII Reimagined", "83", "13"],
-        ["Phantom Blade Zero", "", ""],
-        ["REANIMAL", "80", "10"],
-        ["Silent Hill: Townfall", "", ""],
-        ["Vampire Crawlers", "84", "14"],
-        ["Yoshi and the Mysterious Book", "80", "10"],
-        ["Mixtape", "87", "17"],
-        ["CPK Fable", "--", "0"],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-    {
-      rank: 2,
-      manager: "Wyatt",
-      publisher: "Jones Public Investment Fund",
-      points: "88.77",
-      projected: "165.31",
-      released: "5",
-      expecting: "6",
-      budget: "$48",
-      roster: [
-        ["Resident Evil Requiem", "89", "19"],
-        ["Saros", "87", "17"],
-        ["Control Resonant", "", ""],
-        ["Pragmata", "86", "16"],
-        ["Crimson Desert", "79", "9"],
-        ["Marvel Tokon: Fighting Souls", "", ""],
-        ["Trails in the Sky 2nd Chapter", "", ""],
-        ["Fable", "--", "0"],
-        ["Mina the Hollower", "91", "23"],
-        ["Beast of Reincarnation", "", ""],
-        ["Denshattack!", "", ""],
-        ["Kena: Scars of Kosmora", "", ""],
-        ["CPK Pokemon Champions", "65", "5"],
-        ["CPK Tomb Raider: Legacy of Atlantis", "--", "0"],
-      ],
-    },
-    {
-      rank: 3,
-      manager: "Jordan",
-      publisher: "Pepper Publishing",
-      points: "78.8",
-      projected: "120.99",
-      released: "5",
-      expecting: "3",
-      budget: "$100",
-      roster: [
-        ["Pokemon Pokopia", "89", "19"],
-        ["Nioh 3", "85", "15"],
-        ["Monster Hunter Stories 3: Twisted Reflection", "85", "15"],
-        ["The Duskbloods", "", ""],
-        ["Slay the Spire 2", "", ""],
-        ["Gears of War: E-Day", "", ""],
-        ["Mio: Memories in Orbit", "83", "13"],
-        ["Cairn", "86", "16"],
-        ["CPK Star Wars: Galactic Racer", "", ""],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-    {
-      rank: 4,
-      manager: "Jonathan",
-      publisher: "Emo Girl! Emergencies",
-      points: "65.31",
-      projected: "75.58",
-      released: "8",
-      expecting: "0",
-      budget: "$100",
-      roster: [
-        ["Mewgenics", "89", "19"],
-        ["Yakuza Kiwami 3 & Dark Ties", "74", "4"],
-        ["High on Life 2", "73", "3"],
-        ["Code Vein II", "73", "3"],
-        ["Fatal Frame II: Crimson Butterfly Remake", "76", "6"],
-        ["Coffee Talk Tokyo", "82", "12"],
-        ["Mouse: P.I. For Hire", "81", "11"],
-        ["Tomodachi Life: Living the Dream", "79", "9"],
-        ["CPK Marvel Tokon: Fighting Souls", "", ""],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-    {
-      rank: 5,
-      manager: "Michael",
-      publisher: "Totalsoftware de Venezuela",
-      points: "16.9",
-      projected: "81",
-      released: "2",
-      expecting: "5",
-      budget: "$100",
-      roster: [
-        ["Forza Horizon 6", "91", "22"],
-        ["Star Wars: Galactic Racer", "", ""],
-        ["Marvel's Wolverine", "", ""],
-        ["Tomb Raider: Legacy of Atlantis", "--", "0"],
-        ["Halo: Campaign Evolved", "", ""],
-        ["Pokemon Champions", "65", "-5"],
-        ["Ace Combat 8: Wings of Theve", "", ""],
-        ["Unannounced Mainline 3D Mario Platformer", "", ""],
-        ["CPK Grand Theft Auto VI", "", ""],
-        ["CPK Warning!", "", ""],
-      ],
-    },
-  ],
-};
-
-function showPage(pageName, options = {}) {
-  const pageAliases = {
-    "formula-1-2024": "formula-1-2024-questions",
-    "formula-1-2025": "formula-1-2025-questions",
-    "formula-1-2026": "formula-1-2026-questions",
-    "fantasy-office-2025": "fantasy-office-2025-results",
-    "fantasy-office-2026": "fantasy-office-2026-draft",
-    "manager-scores": "standings",
-    "player-scores": "standings",
-  };
-  const resolvedPageName = pageAliases[pageName] || pageName;
-  const allowedPageName = pageAliases[pageName] || pageName;
-  const pageExists = [...pages].some((page) => page.dataset.page === allowedPageName);
-  const activePageName = pageExists ? allowedPageName : "results";
-
-  pages.forEach((page) => {
-    page.classList.toggle("is-active", page.dataset.page === activePageName);
-  });
-
-  pageLinks.forEach((link) => {
-    link.classList.toggle("is-active", link.dataset.pageLink === activePageName);
-  });
-
-  headerArt.forEach((art) => {
-    art.classList.toggle("is-active", art.dataset.headerArt === getHeaderArtName(activePageName));
-  });
-
-  rememberNavScope(activePageName);
-
-  navGroups.forEach((group) => {
-    group.hidden = group.dataset.navScope !== getNavScope(activePageName);
-  });
-
-  document.body.classList.remove("is-routing");
-  window.boxThisLapMarkReady?.();
-
-  if (options.scrollToTop) {
-    scrollToPageTop();
-  }
-}
-
-function getHeaderArtName(pageName) {
-  if (pageName.startsWith("formula-1-2024")) {
-    return "formula-one-2024";
-  }
-
-  if (pageName.startsWith("formula-1-2025")) {
-    return "formula-one-2025";
-  }
-
-  if (pageName.startsWith("formula-1-2026")) {
-    return "formula-one-2026";
-  }
-
-  if (pageName.startsWith("fantasy-critic-2025")) {
-    return "fantasy-critic-2025";
-  }
-
-  if (pageName.startsWith("fantasy-office-2025")) {
-    return "fantasy-office-2025";
-  }
-
-  if (pageName.startsWith("fantasy-office-2026")) {
-    return "world-cup";
-  }
-
-  if (getNavScope(pageName) === "world-cup") {
-    return "world-cup";
-  }
-
-  return pageName;
-}
-
-function getNavScope(pageName) {
-  if (pageName.startsWith("formula-1-2024")) {
-    return "formula-one-2024";
-  }
-
-  if (pageName.startsWith("formula-1-2025")) {
-    return "formula-one-2025";
-  }
-
-  if (pageName.startsWith("formula-1-2026")) {
-    return "formula-one-2026";
-  }
-
-  if (pageName.startsWith("fantasy-office-2025")) {
-    return "fantasy-office-2025";
-  }
-
-  if (pageName.startsWith("fantasy-office-2026")) {
-    return "fantasy-office-2026";
-  }
-
-  if (pageName === "leagues") {
-    return sessionStorage.getItem("boxThisLapActiveNavScope") || "world-cup";
-  }
-
-  return "world-cup";
-}
-
-function rememberNavScope(pageName) {
-  if (pageName.startsWith("formula-1-2024")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2024");
-    return;
-  }
-
-  if (pageName.startsWith("formula-1-2025")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2025");
-    return;
-  }
-
-  if (pageName.startsWith("formula-1-2026")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2026");
-    return;
-  }
-
-  if (pageName.startsWith("fantasy-office-2025")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2025");
-    return;
-  }
-
-  if (pageName.startsWith("fantasy-office-2026")) {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "fantasy-office-2026");
-    return;
-  }
-
-  if (pageName !== "leagues") {
-    sessionStorage.setItem("boxThisLapActiveNavScope", "world-cup");
-  }
-}
-
-function showTab(tabName, options = {}) {
-  tabs.forEach((tab) => {
-    const isActive = tab.dataset.tab === tabName;
-    tab.classList.toggle("is-active", isActive);
-    tab.setAttribute("aria-selected", String(isActive));
-  });
-
-  tabPanels.forEach((panel) => {
-    panel.classList.toggle("is-active", panel.dataset.tabPanel === tabName);
-  });
-
-  if (options.scrollToTop) {
-    scrollToPageTop();
-  }
-}
-
-function showDraftView(viewName) {
-  const activeView = viewName === "players" ? "players" : "nations";
-
-  draftViewButtons.forEach((button) => {
-    const isActive = button.dataset.draftView === activeView;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-selected", String(isActive));
-  });
-
-  draftPanels.forEach((panel) => {
-    panel.classList.toggle("is-active", panel.dataset.draftPanel === activeView);
-  });
-}
-
-function scrollToPageTop() {
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  });
-}
-
-function getCurrentTheme() {
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
-}
-
-function setTheme(theme) {
-  const normalizedTheme = theme === "light" ? "light" : "dark";
-  document.documentElement.dataset.theme = normalizedTheme;
-
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
-  } catch (error) {
-    console.warn("Unable to save theme preference", error);
-  }
-
-  syncThemeToggle();
-}
-
-function syncThemeToggle() {
-  if (!themeToggle) {
-    return;
-  }
-
-  const theme = getCurrentTheme();
-  themeToggle.textContent = theme === "dark" ? "Dark" : "Light";
-  themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
-}
+const { syncThemeToggle } = createThemeController({
+  storageKey: THEME_STORAGE_KEY,
+  toggle: themeToggle,
+});
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -610,17 +212,569 @@ function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isF
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
 }
 
-function renderFantasyCriticPage() {
-  if (fantasyCritic2025Content) {
-    fantasyCritic2025Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2025);
+function renderFootySchedule(schedule) {
+  if (!footyScheduleList) {
+    return;
   }
 
-  if (fantasyCritic2026Content) {
-    fantasyCritic2026Content.innerHTML = renderFantasyCriticLeague(FANTASY_CRITIC_2026);
+  if (!shouldRenderPageSection("footy")) {
+    return;
+  }
+
+  const fixtures = getFootyScheduleFixtures(schedule);
+  syncFootyFilters(fixtures);
+  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
+  const renderedFixtures = shouldShowAllFootyFixtures
+    ? visibleFixtures
+    : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
+  const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
+  const errors = getFootyScheduleErrors(schedule);
+  const generatedAt = formatFootyGeneratedAt(getFootyScheduleUpdatedAt(schedule));
+  const emptyMessage = hasActiveFootyFilters()
+    ? "No matches found for the current filters."
+    : shouldShowPastFootyFixtures
+    ? "No past football fixtures were loaded yet."
+    : "No upcoming football fixtures were loaded yet.";
+  const updatedMarkup = generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : "";
+  const errorsMarkup = errors.length
+    ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>`
+    : "";
+
+  syncFootyPastToggle(fixtures);
+
+  if (visibleFixtures.length === 0) {
+    footyScheduleList.innerHTML = `
+      ${updatedMarkup}
+      <p class="table-message">${emptyMessage}</p>
+      ${errorsMarkup}
+    `;
+    return;
+  }
+
+  footyScheduleList.innerHTML = `
+    ${updatedMarkup}
+    <div class="footy-list">
+      ${renderedFixtures.map(renderFootyFixture).join("")}
+    </div>
+    ${renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
+    ${errorsMarkup}
+  `;
+}
+
+function getFootyScheduleFixtures(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  const fixtures = schedule.teamSchedules
+    .flatMap((teamSchedule) => {
+      const team = teamSchedule?.team || {};
+      const teamFixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+
+      return teamFixtures.map((fixture) => ({
+        ...fixture,
+        teamBadge: fixture.teamBadge || team.badge || "",
+      }));
+    });
+  const teamBadges = getFootyTeamBadgeMap(fixtures);
+
+  return fixtures
+    .map((fixture) => ({
+      ...fixture,
+      teamBadge: fixture.teamBadge || teamBadges.get(getFootyTeamBadgeKey(fixture)) || "",
+    }))
+    .sort((firstFixture, secondFixture) => {
+      return String(firstFixture.timestamp || firstFixture.date).localeCompare(String(secondFixture.timestamp || secondFixture.date)) ||
+        String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
+        String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
+    });
+}
+
+function getFootyTeamBadgeMap(fixtures = []) {
+  const badgeMap = new Map();
+
+  fixtures.forEach((fixture) => {
+    const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+
+    if (!badge) {
+      return;
+    }
+
+    const key = getFootyTeamBadgeKey(fixture);
+
+    if (key && !badgeMap.has(key)) {
+      badgeMap.set(key, badge);
+    }
+  });
+
+  return badgeMap;
+}
+
+function getFootyTeamBadgeKey(fixture) {
+  return String(fixture?.teamId || normalizeLookupName(fixture?.teamName || "")).trim();
+}
+
+function getFootyScheduleErrors(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  return schedule.teamSchedules.flatMap((teamSchedule) => {
+    const teamName = teamSchedule?.team?.name || "Team";
+    const errors = Array.isArray(teamSchedule?.errors) ? teamSchedule.errors : [];
+
+    return errors.map((error) => `${teamName}: ${error}`).filter(Boolean);
+  });
+}
+
+function getFootyScheduleUpdatedAt(schedule) {
+  return schedule?.updateTracker?.updatedAt || schedule?.generatedAt || "";
+}
+
+function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {
+  if (hiddenFixtureCount <= 0) {
+    return "";
+  }
+
+  return `
+    <div class="footy-list-actions">
+      <button class="action-button footy-show-all-button" id="footy-show-all-button" type="button">
+        Show all ${escapeHtml(String(totalFixtureCount))} matches
+      </button>
+    </div>
+  `;
+}
+
+function getFilteredFootyFixtures(fixtures) {
+  const searchTerm = normalizeLookupName(footySearchInput?.value || "");
+  const dateRange = getFootyDateFilterRange();
+  const selectedTeams = getSelectedFootyTeams();
+  const defaultPrioritySet = getDefaultFootyPrioritySet();
+
+  return fixtures.filter((fixture) => {
+    if (dateRange && !isFootyFixtureInDateRange(fixture, dateRange)) {
+      return false;
+    }
+
+    if (selectedTeams.size > 0 && !selectedTeams.has(normalizeLookupName(fixture.teamName))) {
+      return false;
+    }
+
+    if (selectedTeams.size === 0 && defaultPrioritySet.size > 0 && !defaultPrioritySet.has(normalizeFootyPriority(fixture.priority))) {
+      return false;
+    }
+
+    if (!searchTerm) {
+      return true;
+    }
+
+    return getFootyFixtureSearchText(fixture).includes(searchTerm);
+  });
+}
+
+function hasActiveFootyFilters() {
+  return Boolean(
+    String(footySearchInput?.value || "").trim() ||
+    String(footyDateFromFilter?.value || "").trim() ||
+    String(footyDateToFilter?.value || "").trim() ||
+    getSelectedFootyTeams().size > 0
+  );
+}
+
+function getFootyDateFilterRange() {
+  const rawStart = String(footyDateFromFilter?.value || "").trim();
+  const rawEnd = String(footyDateToFilter?.value || "").trim();
+
+  if (!rawStart && !rawEnd) {
+    return null;
+  }
+
+  const start = rawStart || rawEnd;
+  const end = rawEnd || rawStart;
+
+  return start <= end
+    ? { start, end }
+    : { start: end, end: start };
+}
+
+function isFootyFixtureInDateRange(fixture, dateRange) {
+  const fixtureDate = getFootyFixtureDateKey(fixture);
+
+  return Boolean(
+    fixtureDate &&
+    fixtureDate >= dateRange.start &&
+    fixtureDate <= dateRange.end
+  );
+}
+
+function getSelectedFootyTeams() {
+  if (!footyTeamFilter) {
+    return new Set();
+  }
+
+  return new Set(
+    [...footyTeamFilter.querySelectorAll("input[type=\"checkbox\"]:checked")]
+      .filter((input) => input.dataset.defaultSelected !== "true")
+      .map((input) => normalizeLookupName(input.value))
+      .filter(Boolean)
+  );
+}
+
+function getDefaultFootyPrioritySet() {
+  const setRecord = (siteData.footySchedule?.prioritySets || []).find((prioritySet) => {
+    return normalizeLookupName(prioritySet?.set) === "1";
+  });
+  const priorities = Array.isArray(setRecord?.priorities) && setRecord.priorities.length > 0
+    ? setRecord.priorities
+    : ["1"];
+
+  return new Set(priorities.map(normalizeFootyPriority).filter(Boolean));
+}
+
+function normalizeFootyPriority(priority) {
+  return String(priority || "").trim();
+}
+
+function getFootyFixtureSearchText(fixture) {
+  return normalizeLookupName([
+    fixture.home,
+    fixture.away,
+    fixture.league,
+    fixture.opponent,
+    fixture.teamName,
+    fixture.venue,
+  ].filter(Boolean).join(" "));
+}
+
+function getFootyFixtureDateKey(fixture) {
+  const date = String(fixture?.date || "").trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+
+  const timestamp = String(fixture?.timestamp || "").trim();
+  const parsedDate = timestamp ? new Date(timestamp) : null;
+
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function syncFootyFilters(fixtures = []) {
+  if (footyFilters) {
+    footyFilters.hidden = !shouldShowFootyFilters;
+  }
+
+  if (footyFilterToggle) {
+    footyFilterToggle.setAttribute("aria-expanded", String(shouldShowFootyFilters));
+    footyFilterToggle.classList.toggle("is-active", shouldShowFootyFilters);
+  }
+
+  if (!footyTeamFilter) {
+    return;
+  }
+
+  const selectedTeams = getSelectedFootyTeams();
+  const defaultPrioritySet = getDefaultFootyPrioritySet();
+  const defaultTeams = getDefaultFootyTeams(fixtures, defaultPrioritySet);
+  const teams = [...new Set(fixtures.map((fixture) => fixture.teamName).filter(Boolean))]
+    .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
+  const button = footyTeamFilter.querySelector(".multi-filter-button");
+  const options = footyTeamFilter.querySelector(".multi-filter-options");
+
+  if (!button || !options) {
+    return;
+  }
+
+  const selectedCount = teams.filter((team) => selectedTeams.has(normalizeLookupName(team))).length;
+  button.textContent = teams.length === 0
+    ? "No teams loaded"
+    : selectedCount === 0
+    ? "Default priority teams"
+    : selectedCount === 1
+    ? teams.find((team) => selectedTeams.has(normalizeLookupName(team))) || "1 team selected"
+    : `${selectedCount} teams selected`;
+  button.disabled = teams.length === 0;
+  button.setAttribute("aria-expanded", String(shouldShowFootyTeamOptions));
+  options.hidden = !shouldShowFootyTeamOptions;
+  options.innerHTML = teams.length === 0
+    ? `<p class="multi-filter-empty">No teams loaded.</p>`
+    : teams.map((team) => {
+      const teamKey = normalizeLookupName(team);
+      const isDefaultSelected = selectedTeams.size === 0 && defaultTeams.has(teamKey);
+      const selected = selectedTeams.has(teamKey) || isDefaultSelected ? " checked" : "";
+      const defaultFlag = isDefaultSelected ? ` data-default-selected="true"` : "";
+
+      return `
+        <label class="multi-filter-option">
+          <input type="checkbox" value="${escapeHtml(team)}"${selected}${defaultFlag}>
+          <span>${escapeHtml(team)}</span>
+        </label>
+      `;
+    }).join("");
+}
+
+function getDefaultFootyTeams(fixtures = [], defaultPrioritySet = getDefaultFootyPrioritySet()) {
+  if (defaultPrioritySet.size === 0) {
+    return new Set();
+  }
+
+  return new Set(
+    fixtures
+      .filter((fixture) => defaultPrioritySet.has(normalizeFootyPriority(fixture.priority)))
+      .map((fixture) => normalizeLookupName(fixture.teamName))
+      .filter(Boolean)
+  );
+}
+
+function getVisibleFootyFixtures(fixtures) {
+  const now = Date.now();
+
+  return fixtures.filter((fixture) => {
+    const fixtureTime = getFootyFixturePastCutoffTime(fixture);
+
+    if (!Number.isFinite(fixtureTime)) {
+      return !shouldShowPastFootyFixtures;
+    }
+
+    return shouldShowPastFootyFixtures ? fixtureTime < now : fixtureTime >= now;
+  });
+}
+
+function getFootyFixturePastCutoffTime(fixture) {
+  const matchTime = getFootyFixtureComparableTime(fixture);
+
+  if (!Number.isFinite(matchTime)) {
+    return Number.NaN;
+  }
+
+  const matchDate = new Date(matchTime);
+  const endOfDay = new Date(matchDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const nextDayStart = new Date(matchDate);
+  nextDayStart.setHours(24, 0, 0, 0);
+
+  const twelveHoursAfterMatch = matchTime + 12 * 60 * 60 * 1000;
+  const lessThanTwelveHoursToEndOfDay = endOfDay.getTime() - matchTime < 12 * 60 * 60 * 1000;
+
+  return lessThanTwelveHoursToEndOfDay ? twelveHoursAfterMatch : nextDayStart.getTime();
+}
+
+function getFootyFixtureComparableTime(fixture) {
+  const timestamp = String(fixture?.timestamp || "").trim();
+  const date = String(fixture?.date || "").trim();
+  const time = String(fixture?.time || "").trim();
+  const parsedTimestamp = timestamp ? Date.parse(timestamp) : Number.NaN;
+
+  if (time && Number.isFinite(parsedTimestamp)) {
+    return parsedTimestamp;
+  }
+
+  if (date) {
+    return Date.parse(`${date}T23:59:59`);
+  }
+
+  return parsedTimestamp;
+}
+
+function isFootyFixtureWithinNextDay(fixture) {
+  const fixtureTime = getFootyFixtureComparableTime(fixture);
+  const now = Date.now();
+
+  return Number.isFinite(fixtureTime) &&
+    fixtureTime >= now &&
+    fixtureTime <= now + 24 * 60 * 60 * 1000;
+}
+
+function isFootyFixtureToday(fixture) {
+  return getFootyFixtureDateKey(fixture) === getDateKey(0);
+}
+
+function getFootyFixtureTimingLabel(fixture) {
+  if (isFootyFixtureCurrent(fixture)) {
+    return "Today";
+  }
+
+  if (isFootyFixtureWithinNextDay(fixture)) {
+    return "Next 24h";
+  }
+
+  return "";
+}
+
+function isFootyFixtureCurrent(fixture) {
+  const fixtureTime = getFootyFixtureComparableTime(fixture);
+  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
+  const now = Date.now();
+
+  if (!Number.isFinite(fixtureTime) || !Number.isFinite(pastCutoffTime)) {
+    return isFootyFixtureToday(fixture);
+  }
+
+  return fixtureTime <= now && now <= pastCutoffTime;
+}
+
+function syncFootyPastToggle(fixtures = []) {
+  if (!footyPastToggle) {
+    return;
+  }
+
+  footyPastToggle.hidden = fixtures.length === 0;
+  footyPastToggle.textContent = shouldShowPastFootyFixtures ? "Upcoming Matches" : "Past Matches";
+  footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
+  footyPastToggle.disabled = false;
+}
+
+function closeProfileDropdown() {
+  profileMenuButton?.setAttribute("aria-expanded", "false");
+
+  if (profileDropdown) {
+    profileDropdown.hidden = true;
   }
 }
 
-function renderFantasyCriticLeague(league) {
+function renderFootyFixture(fixture) {
+  const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
+  const sideLabel = fixture.isHome ? "H" : "A";
+  const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+  const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
+  const timingLabel = getFootyFixtureTimingLabel(fixture);
+  const isHighlighted = Boolean(timingLabel);
+  const venueMarkup = shouldShowFootyFixtureVenue(fixture)
+    ? `<p>${escapeHtml(fixture.venue)}</p>`
+    : "";
+
+  return `
+    <article class="footy-fixture-card${isHighlighted ? " footy-fixture-card--soon" : ""}">
+      <div class="footy-fixture-badge" aria-hidden="true">
+        ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
+      </div>
+      <div>
+        <h2>${escapeHtml(fixture.home || "TBD")} v ${escapeHtml(fixture.away || "TBD")}</h2>
+        <p class="footy-fixture-meta">
+          <span>${escapeHtml(fixture.teamName || "")}</span>
+          <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
+          ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
+        </p>
+        ${venueMarkup}
+      </div>
+      <strong>${escapeHtml(dateLabel)}</strong>
+    </article>
+  `;
+}
+
+function getFootyFixtureFallbackBadge(fixture) {
+  return String(fixture?.teamName || fixture?.home || "?").trim().slice(0, 1).toUpperCase() || "?";
+}
+
+function shouldShowFootyFixtureVenue(fixture) {
+  if (!fixture?.venue) {
+    return false;
+  }
+
+  const league = normalizeLookupName(fixture.league || "");
+
+  if (league.includes("friendly")) {
+    return true;
+  }
+
+  const cupTerms = ["cup", "shield", "trophy", "supercopa", "super cup", "campeones"];
+
+  return cupTerms.some((term) => league.includes(term));
+}
+
+function renderFootyScheduleError(error) {
+  if (!footyScheduleList) {
+    return;
+  }
+
+  footyScheduleList.innerHTML = `<p class="table-message">Unable to load footy schedule: ${escapeHtml(error.message)}</p>`;
+}
+
+function formatFootyGeneratedAt(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatFootyFixtureDate(value) {
+  if (!value) {
+    return "TBD";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function renderFantasyCriticPage(year = getActiveFantasyCriticYear()) {
+  const yearKey = String(year || "");
+
+  if (yearKey === "2025" && fantasyCritic2025Content) {
+    fantasyCritic2025Content.innerHTML = renderFantasyCriticLeagueState("2025");
+  }
+
+  if (yearKey === "2026" && fantasyCritic2026Content) {
+    fantasyCritic2026Content.innerHTML = renderFantasyCriticLeagueState("2026");
+  }
+}
+
+function getActiveFantasyCriticYear() {
+  const activePage = activePageName || document.querySelector(".page.is-active")?.dataset.page || "";
+  const match = activePage.match(/^fantasy-critic-(2025|2026)$/);
+
+  return match?.[1] || "";
+}
+
+function renderFantasyCriticLeagueState(year) {
+  const state = getFantasyCriticLeagueState(year);
+  const metadata = state.metadata || FANTASY_CRITIC_LEAGUE_METADATA[year];
+  const heading = renderFantasyCriticHeading(metadata);
+
+  if (state.status === "error") {
+    return `
+      ${heading}
+      <article class="fantasy-critic-card fantasy-critic-status-card">
+        <p class="table-message">Unable to load Fantasy Critic ${escapeHtml(year)} data: ${escapeHtml(state.errorMessage || "Unknown error")}</p>
+      </article>
+    `;
+  }
+
+  if (state.status !== "loaded" || !state.league) {
+    return `
+      ${heading}
+      <article class="fantasy-critic-card fantasy-critic-status-card">
+        <p class="table-message">Loading Fantasy Critic ${escapeHtml(year)} data...</p>
+      </article>
+    `;
+  }
+
+  return renderFantasyCriticLeague(state.league);
+}
+
+function renderFantasyCriticHeading(league) {
   return `
     <div class="league-detail-heading">
       <div>
@@ -628,15 +782,44 @@ function renderFantasyCriticLeague(league) {
         <p>${escapeHtml(league.subtitle)}</p>
       </div>
     </div>
+  `;
+}
+
+function renderFantasyCriticLeague(league) {
+  const awards = getAwardsForFantasyCriticYear(league.year);
+
+  return `
+    ${renderFantasyCriticHeading(league)}
+    ${renderFantasyCriticAwards(awards)}
 
     <div class="fantasy-critic-standings">
-      ${league.standings.map((entry) => renderFantasyCriticStanding(entry)).join("")}
+      ${league.standings.map((entry) => renderFantasyCriticStanding(entry, league.year)).join("")}
     </div>
   `;
 }
 
-function renderFantasyCriticStanding(entry) {
+function renderFantasyCriticAwards(awards = []) {
+  if (!awards.length) {
+    return "";
+  }
+
+  return `
+    <section class="standings-awards fantasy-critic-awards">
+      <div class="standings-awards-heading">
+        <h2>Awards</h2>
+      </div>
+      <div class="standings-awards-list">
+        ${awards.map((award) => renderAwardCard(award, "standings-summary")).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderFantasyCriticStanding(entry, year) {
   const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+  const awards = entry.rank === 1
+    ? getAwardsForManager(manager, { standings: "fantasy-critic", year })
+    : [];
 
   return `
     <article class="fantasy-critic-card">
@@ -646,7 +829,10 @@ function renderFantasyCriticStanding(entry) {
           <strong>${escapeHtml(entry.rank)}</strong>
         </div>
         <div class="fantasy-critic-manager">
-          ${renderManagerChip(manager)}
+          <span class="standing-manager-with-awards">
+            ${renderManagerChip(manager)}
+            ${renderAwardBadges(awards)}
+          </span>
           <small>${escapeHtml(entry.publisher)}</small>
         </div>
         <div class="fantasy-critic-points">
@@ -667,6 +853,13 @@ function renderFantasyCriticStanding(entry) {
       </div>
     </article>
   `;
+}
+
+function getAwardsForFantasyCriticYear(year) {
+  return getResolvedAwards().filter((award) => {
+    return award.standings === "fantasy-critic" &&
+      String(award.year || "") === String(year || "");
+  });
 }
 
 function renderFantasyCriticGame([game, critic, points]) {
@@ -912,9 +1105,11 @@ function parseFormulaOneRoundForms(rows) {
 
       return {
         date: parseFormulaOneFormDate(getField(row, "Date")),
+        dueEst: getField(row, "Due (est)", "Due (EST)", "Due EST", "Due"),
         formUrl,
         id: String(roundId ?? "").trim(),
         name,
+        priority: getField(row, "Priority"),
       };
     })
     .filter((form) => form.id && form.name && form.formUrl);
@@ -1039,6 +1234,10 @@ function renderFormulaOneQuestions(year) {
     return;
   }
 
+  if (!shouldRenderPageSection(`formula-1-${year}-questions`)) {
+    return;
+  }
+
   const data = siteData[`formulaOne${year}`];
 
   if (!data) {
@@ -1119,12 +1318,25 @@ function renderFormulaOneResults(year) {
     return;
   }
 
+  if (!shouldRenderPageSection(`formula-1-${year}-results`)) {
+    return;
+  }
+
+  renderFormulaOneAwards(year);
+
   const data = siteData[`formulaOne${year}`];
   const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
   const mode = formulaOneResultsMode[year] ?? "yearly";
+  const activeSource = mode === "weekly" ? weeklyData : data;
   const standings = mode === "weekly"
     ? weeklyData?.standings ?? []
     : data?.standings ?? [];
+
+  if (!activeSource) {
+    const label = mode === "weekly" ? "weekly" : "yearly";
+    view.resultsRows.innerHTML = `<tr><td class="table-message" colspan="3">Loading Formula 1 ${label} results...</td></tr>`;
+    return;
+  }
 
   if (standings.length === 0) {
     const label = mode === "weekly" ? "weekly" : "yearly";
@@ -1134,15 +1346,137 @@ function renderFormulaOneResults(year) {
 
   view.resultsRows.innerHTML = standings.map((entry, index) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+    const standingsKey = getFormulaOneAwardStandingsForMode(mode);
+    const awards = entry.rank === 1
+      ? getAwardsForManager(manager, { standings: standingsKey, year })
+      : [];
 
     return `
       <tr>
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
-        <td data-label="Manager">${renderManagerChip(manager)}</td>
+        <td data-label="Manager">
+          <span class="standing-manager-with-awards">
+            ${renderManagerChip(manager)}
+            ${renderAwardBadges(awards)}
+          </span>
+        </td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
     `;
   }).join("");
+}
+
+function renderFormulaOneAwards(year) {
+  const view = formulaOneViews[year];
+
+  if (!view?.awards || !view?.awardsList) {
+    return;
+  }
+
+  const awards = getAwardsForFormulaOneYear(year);
+  view.awards.hidden = awards.length === 0;
+
+  if (!awards.length) {
+    view.awardsList.innerHTML = "";
+    return;
+  }
+
+  view.awardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
+}
+
+function getAwardsForFormulaOneYear(year) {
+  return getResolvedAwards().filter((award) => {
+    return award.competition === `${year} Formula 1` &&
+      String(award.year || "") === String(year || "");
+  });
+}
+
+function renderPageContext(pageName = "") {
+  const previousPageName = activePageName;
+  activePageName = pageName;
+
+  if (previousPageName && previousPageName !== pageName) {
+    disposePageResources(previousPageName);
+  }
+
+  renderActivePageContent(pageName);
+  renderStandingsAwards();
+
+  const formulaOneYear = getFormulaOneYearFromPage(pageName);
+
+  if (formulaOneYear) {
+    renderFormulaOneAwards(formulaOneYear);
+  }
+}
+
+function shouldRenderPageSection(pageName) {
+  return !activePageName || activePageName === pageName;
+}
+
+function renderActivePageContent(pageName = "") {
+  if (pageName === "footy" && siteData.footySchedule) {
+    renderFootySchedule(siteData.footySchedule);
+    return;
+  }
+
+  if (pageName === "results" && siteData.resultImages) {
+    renderResultImages(siteData.resultImages);
+    return;
+  }
+
+  if (pageName.startsWith("fantasy-critic-")) {
+    renderFantasyCriticPage();
+    return;
+  }
+
+  const formulaOneYear = getFormulaOneYearFromPage(pageName);
+
+  if (formulaOneYear) {
+    if (pageName.endsWith("-questions")) {
+      renderFormulaOneQuestions(formulaOneYear);
+      return;
+    }
+
+    if (pageName.endsWith("-weekly")) {
+      renderFormulaOneWeeklyPage(formulaOneYear, siteData[`formulaOne${formulaOneYear}Weekly`]);
+      renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
+      return;
+    }
+
+    if (pageName.endsWith("-results")) {
+      renderFormulaOneResults(formulaOneYear);
+      return;
+    }
+  }
+
+  const fantasyOfficeMatch = pageName.match(/^fantasy-office-(2025|2026)-(draft|movies|results)$/);
+
+  if (fantasyOfficeMatch) {
+    const [, year, view] = fantasyOfficeMatch;
+    const data = siteData[`fantasyOffice${year}`];
+
+    if (view === "draft") {
+      renderFantasyOfficeDraft(year, data?.draft ?? []);
+    } else if (view === "movies") {
+      renderFantasyOfficeMovies(year, data?.results ?? []);
+    } else if (view === "results") {
+      renderFantasyOfficeResults(year, data?.results ?? []);
+    }
+  }
+}
+
+function disposePageResources(pageName = "") {
+  disposeFormulaOneFormIframes();
+  disposeInactiveHeavyMarkup();
+}
+
+function getFormulaOneYearFromPage(pageName = "") {
+  const match = String(pageName).match(/^formula-1-(2024|2025|2026)(?:-|$)/);
+  return match?.[1] || "";
+}
+
+function getFormulaOneAwardStandingsForMode(mode) {
+  return mode === "weekly" ? "formula-one-weekly" : "formula-one-yearly";
 }
 
 function setFormulaOneResultsMode(year, mode) {
@@ -1155,6 +1489,43 @@ function setFormulaOneResultsMode(year, mode) {
   });
 
   renderFormulaOneResults(year);
+  renderStandingsAwards();
+  renderManagerHub();
+}
+
+function disposeFormulaOneFormIframes() {
+  document.querySelectorAll(".formula-one-form-embed iframe").forEach((iframe) => {
+    if (iframe.getAttribute("src")) {
+      iframe.removeAttribute("src");
+    }
+  });
+}
+
+function disposeInactiveHeavyMarkup() {
+  const activePage = activePageName || document.querySelector(".page.is-active")?.dataset.page || "";
+  const clearIfInactive = (pageName, element, fallbackMarkup = "") => {
+    if (activePage !== pageName && element) {
+      element.innerHTML = fallbackMarkup;
+    }
+  };
+
+  clearIfInactive("fantasy-critic-2025", fantasyCritic2025Content);
+  clearIfInactive("fantasy-critic-2026", fantasyCritic2026Content);
+
+  Object.entries(formulaOneViews).forEach(([year, view]) => {
+    clearIfInactive(`formula-1-${year}-questions`, view.questionList);
+    clearIfInactive(`formula-1-${year}-weekly`, view.weeklyList);
+
+    if (activePage !== `formula-1-${year}-weekly` && view.weeklyManagers) {
+      view.weeklyManagers.innerHTML = "";
+    }
+  });
+
+  Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
+    clearIfInactive(`fantasy-office-${year}-draft`, view.draftList);
+    clearIfInactive(`fantasy-office-${year}-movies`, view.movieList);
+    clearIfInactive(`fantasy-office-${year}-results`, view.resultList);
+  });
 }
 
 function renderFormulaOneWeeklyForm(year, forms) {
@@ -1188,12 +1559,13 @@ function renderFormulaOneWeeklyForm(year, forms) {
     ${renderFormulaOneFormEmbed(selectedForm)}
   `;
 
-  loadVisibleFormulaOneFormIframes(view.weeklyForm);
+  loadVisibleFormulaOneFormIframes(view.weeklyForm, year);
 }
 
 function renderFormulaOneFormEmbed(form) {
   const isCollapsed = isMobileSafari();
   const embedUrl = getGoogleFormEmbedUrl(form.formUrl);
+  const shouldLoadIframe = !isCollapsed && isFormulaOneWeeklyBetPanelActive();
 
   return `
     <details class="formula-one-form-embed"${isCollapsed ? "" : " open"}>
@@ -1201,7 +1573,7 @@ function renderFormulaOneFormEmbed(form) {
       <iframe
         title="${escapeHtml(`${form.name} bet form`)}"
         data-src="${escapeHtml(embedUrl)}"
-        src="${isCollapsed ? "" : escapeHtml(embedUrl)}"
+        src="${shouldLoadIframe ? escapeHtml(embedUrl) : ""}"
         loading="lazy"
       ></iframe>
     </details>
@@ -1240,12 +1612,24 @@ function getGoogleFormEmbedUrl(formUrl) {
   }
 }
 
-function loadVisibleFormulaOneFormIframes(container) {
+function loadVisibleFormulaOneFormIframes(container, year = getFormulaOneYearFromPage(activePageName)) {
+  if (!isFormulaOneWeeklyBetPanelActive(year)) {
+    return;
+  }
+
   container.querySelectorAll(".formula-one-form-embed[open] iframe[data-src]").forEach((iframe) => {
     if (!iframe.getAttribute("src")) {
       iframe.setAttribute("src", iframe.getAttribute("data-src"));
     }
   });
+}
+
+function isFormulaOneWeeklyBetPanelActive(year = getFormulaOneYearFromPage(activePageName)) {
+  if (!year || activePageName !== `formula-1-${year}-weekly`) {
+    return false;
+  }
+
+  return Boolean(document.querySelector(`[data-tab-panel="formula-one-${year}-weekly-bet"].is-active`));
 }
 
 function isMobileSafari() {
@@ -1260,6 +1644,10 @@ function renderFormulaOneWeeklyPage(year, data) {
   const view = formulaOneViews[year];
 
   if (!view?.weeklyList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection(`formula-1-${year}-weekly`)) {
     return;
   }
 
@@ -1661,6 +2049,10 @@ function renderFantasyOfficeDraft(year, draft) {
     return;
   }
 
+  if (!shouldRenderPageSection(`fantasy-office-${year}-draft`)) {
+    return;
+  }
+
   if (!draft.length) {
     view.draftList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office draft data was loaded.</p></article>`;
     return;
@@ -1693,6 +2085,10 @@ function renderFantasyOfficeMovies(year, results) {
   const view = getFantasyOfficeView(year);
 
   if (!view?.movieList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection(`fantasy-office-${year}-movies`)) {
     return;
   }
 
@@ -1786,13 +2182,22 @@ function renderFantasyOfficeResults(year, results) {
     return;
   }
 
+  if (!shouldRenderPageSection(`fantasy-office-${year}-results`)) {
+    return;
+  }
+
   if (!results.length) {
     view.resultList.innerHTML = `<article class="fantasy-critic-card"><p class="table-message">No Fantasy Office results are available yet.</p></article>`;
     return;
   }
 
-  view.resultList.innerHTML = results.map((entry, index) => {
+  const awards = getAwardsForFantasyOfficeYear(year);
+  const awardMarkup = renderFantasyOfficeAwards(awards);
+  const resultMarkup = results.map((entry, index) => {
     const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+    const entryAwards = entry.rank === 1
+      ? getAwardsForManager(manager, { standings: "fantasy-office", year })
+      : [];
 
     return `
       <article class="office-result-card">
@@ -1802,7 +2207,10 @@ function renderFantasyOfficeResults(year, results) {
             <strong>${escapeHtml(formatRankDisplay(entry, index, results))}</strong>
           </div>
           <div class="fantasy-critic-manager">
-            ${renderManagerChip(manager)}
+            <span class="standing-manager-with-awards">
+              ${renderManagerChip(manager)}
+              ${renderAwardBadges(entryAwards)}
+            </span>
           </div>
           <div class="fantasy-critic-points">
             <span>Points</span>
@@ -1828,6 +2236,32 @@ function renderFantasyOfficeResults(year, results) {
       </article>
     `;
   }).join("");
+
+  view.resultList.innerHTML = `${awardMarkup}${resultMarkup}`;
+}
+
+function renderFantasyOfficeAwards(awards = []) {
+  if (!awards.length) {
+    return "";
+  }
+
+  return `
+    <section class="standings-awards fantasy-office-awards">
+      <div class="standings-awards-heading">
+        <h2>Awards</h2>
+      </div>
+      <div class="standings-awards-list">
+        ${awards.map((award) => renderAwardCard(award, "standings-summary")).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function getAwardsForFantasyOfficeYear(year) {
+  return getResolvedAwards().filter((award) => {
+    return award.standings === "fantasy-office" &&
+      String(award.year || "") === String(year || "");
+  });
 }
 
 function renderFantasyOfficeError(error) {
@@ -1860,347 +2294,12 @@ function renderFantasyOfficeResultsError(year, error) {
   }
 }
 
-function parseCsvMatrix(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-    const nextChar = text[index + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        field += '"';
-        index += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (char === "," && !inQuotes) {
-      row.push(field);
-      field = "";
-      continue;
-    }
-
-    if ((char === "\n" || char === "\r") && !inQuotes) {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-
-      if (char === "\r" && nextChar === "\n") {
-        index += 1;
-      }
-
-      continue;
-    }
-
-    field += char;
-  }
-
-  if (field !== "" || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-
-  return rows;
-}
-
-function parseRoundOptions(csvText) {
-  const table = getRoundsTable(csvText);
-
-  if (!table) {
-    return [];
-  }
-
-  const rounds = [];
-
-  for (const row of table.rows) {
-    const name = row[table.columns.round]?.trim() ?? "";
-    const id = row[table.columns.id]?.trim() ?? "";
-    const prettyName = row[table.columns.prettyName]?.trim() ?? "";
-
-    if (!name && !id) {
-      break;
-    }
-
-    if (!name || !id || normalizeLookupName(name) === "updated") {
-      continue;
-    }
-
-    rounds.push({ id, name, prettyName: prettyName || name });
-  }
-
-  return rounds;
-}
-
-function parseUpdatedTime(csvText) {
-  const table = getRoundsTable(csvText);
-
-  if (!table) {
-    return "";
-  }
-
-  for (const row of table.rows) {
-    const name = row[table.columns.round]?.trim() ?? "";
-    const id = row[table.columns.id]?.trim() ?? "";
-
-    if (!name && !id) {
-      break;
-    }
-
-    if (normalizeLookupName(name) === "updated") {
-      return id;
-    }
-  }
-
-  return "";
-}
-
-function parseRoundMappings(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerIndex = rows.findIndex((row) => {
-    const normalizedHeaders = row.map(normalizeLookupName);
-
-    return normalizedHeaders.includes("round") &&
-      normalizedHeaders.includes("player round") &&
-      normalizedHeaders.includes("nation round");
-  });
-
-  if (headerIndex === -1) {
-    return [];
-  }
-
-  const headerRow = rows[headerIndex];
-  const columns = Object.fromEntries(
-    headerRow.map((header, index) => [normalizeLookupName(header), index])
-  );
-  const mappings = [];
-
-  for (const row of rows.slice(headerIndex + 1)) {
-    const roundValue = row[columns.round]?.trim() ?? "";
-
-    if (!roundValue) {
-      break;
-    }
-
-    const range = parseRoundRange(roundValue);
-
-    if (!range) {
-      continue;
-    }
-
-    mappings.push({
-      end: range.end,
-      label: roundValue,
-      nationRound: parseDraftRoundLimit(row[columns["nation round"]]),
-      playerRound: parseDraftRoundLimit(row[columns["player round"]]),
-      start: range.start,
-    });
-  }
-
-  return mappings;
-}
-
-function parseRoundRange(value) {
-  const numbers = String(value ?? "").match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
-
-  if (numbers.length === 0) {
-    return null;
-  }
-
-  return {
-    end: numbers.length > 1 ? Math.max(numbers[0], numbers[1]) : numbers[0],
-    start: numbers.length > 1 ? Math.min(numbers[0], numbers[1]) : numbers[0],
-  };
-}
-
-function parseDraftRoundLimit(value) {
-  const numbers = String(value ?? "").match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
-
-  return numbers.length > 0 ? Math.max(...numbers) : null;
-}
-
-function parseScheduleMatches(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerIndex = rows.findIndex((row) => {
-    const normalizedHeaders = row.map(normalizeLookupName);
-
-    return normalizedHeaders.includes("date") &&
-      normalizedHeaders.includes("match #") &&
-      normalizedHeaders.includes("home") &&
-      normalizedHeaders.includes("away");
-  });
-
-  if (headerIndex === -1) {
-    return [];
-  }
-
-  const headerRow = rows[headerIndex];
-  const columns = Object.fromEntries(
-    headerRow.map((header, index) => [normalizeLookupName(header), index])
-  );
-  const matches = [];
-
-  for (const row of rows.slice(headerIndex + 1)) {
-    const isBlankRow = row.every((value) => !String(value ?? "").trim());
-
-    if (isBlankRow) {
-      break;
-    }
-
-    const id = row[columns["match #"]]?.trim() ?? "";
-    const home = row[columns.home]?.trim() ?? "";
-    const away = row[columns.away]?.trim() ?? "";
-
-    if (!id || !home || !away) {
-      continue;
-    }
-
-    matches.push({
-      Away: away,
-      Date: formatScheduleDate(row[columns.date]?.trim() ?? ""),
-      Home: home,
-      Id: id,
-      Time: row[columns.time]?.trim() ?? "",
-    });
-  }
-
-  return matches;
-}
-
-function formatScheduleDate(value) {
-  const text = String(value ?? "").trim();
-  const slashMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-
-  if (!slashMatch) {
-    return text;
-  }
-
-  const year = Number(slashMatch[3]) < 100 ? 2000 + Number(slashMatch[3]) : Number(slashMatch[3]);
-  const month = String(Number(slashMatch[1])).padStart(2, "0");
-  const day = String(Number(slashMatch[2])).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function getRoundsTable(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerRow = rows.find((row) => {
-    return row.some((value, index) => normalizeLookupName(value) === "round" && normalizeLookupName(row[index + 1]) === "id");
-  });
-
-  if (!headerRow) {
-    return null;
-  }
-
-  const roundColumn = headerRow.findIndex((value, index) => {
-    return normalizeLookupName(value) === "round" && normalizeLookupName(headerRow[index + 1]) === "id";
-  });
-  const prettyNameColumn = headerRow.findIndex((value) => normalizeLookupName(value) === "pretty name");
-  const startIndex = rows.indexOf(headerRow) + 1;
-
-  return {
-    columns: {
-      id: roundColumn + 1,
-      prettyName: prettyNameColumn,
-      round: roundColumn,
-    },
-    rows: rows.slice(startIndex),
-  };
-}
-
 function renderUpdatedTime(value) {
   if (!updatedTime || !value) {
     return;
   }
 
   updatedTime.textContent = `Updated ${formatUpdatedTime(value)}`;
-}
-
-function formatUpdatedTime(value) {
-  const text = String(value ?? "").trim().replace(/^updated\s+/i, "").replace(/\s+ET$/i, "");
-  const dateTime = parseUpdatedDateTime(text);
-
-  if (!dateTime) {
-    return `${text} ET`;
-  }
-
-  return `${dateTime.monthName} ${dateTime.day}, ${dateTime.year} ${formatUpdatedClockTime(dateTime.hour, dateTime.minute)} ET`;
-}
-
-function parseUpdatedDateTime(value) {
-  const slashMatch = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*(AM|PM)?)?$/i);
-
-  if (slashMatch) {
-    return buildUpdatedDateTime({
-      day: slashMatch[2],
-      hour: slashMatch[4],
-      meridiem: slashMatch[6],
-      minute: slashMatch[5],
-      month: slashMatch[1],
-      year: slashMatch[3],
-    });
-  }
-
-  const isoMatch = String(value).match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*(AM|PM)?)?$/i);
-
-  if (isoMatch) {
-    return buildUpdatedDateTime({
-      day: isoMatch[3],
-      hour: isoMatch[4],
-      meridiem: isoMatch[6],
-      minute: isoMatch[5],
-      month: isoMatch[2],
-      year: isoMatch[1],
-    });
-  }
-
-  return null;
-}
-
-function buildUpdatedDateTime({ day, hour, meridiem, minute, month, year }) {
-  const numericYear = Number(year) < 100 ? 2000 + Number(year) : Number(year);
-  const numericMonth = Number(month);
-  const numericDay = Number(day);
-  const numericMinute = minute === undefined ? 0 : Number(minute);
-  let numericHour = hour === undefined ? 0 : Number(hour);
-
-  if (!numericYear || numericMonth < 1 || numericMonth > 12 || numericDay < 1 || numericDay > 31 || numericMinute < 0 || numericMinute > 59) {
-    return null;
-  }
-
-  if (meridiem) {
-    const period = meridiem.toUpperCase();
-    numericHour = numericHour % 12;
-
-    if (period === "PM") {
-      numericHour += 12;
-    }
-  }
-
-  if (numericHour < 0 || numericHour > 23) {
-    return null;
-  }
-
-  return {
-    day: numericDay,
-    hour: numericHour,
-    minute: numericMinute,
-    monthName: new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(numericYear, numericMonth - 1, 1))),
-    year: numericYear,
-  };
-}
-
-function formatUpdatedClockTime(hour, minute) {
-  const period = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 || 12;
-
-  return `${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
 }
 
 function parseResultImages(csvText) {
@@ -2291,6 +2390,12 @@ function renderStandingsRoundOptions(rounds) {
 
 function renderResultImages(resultImages) {
   if (!dynamicResultImages) {
+    return;
+  }
+
+  if (!shouldRenderPageSection("results")) {
+    dynamicResultImages.hidden = true;
+    dynamicResultImages.innerHTML = "";
     return;
   }
 
@@ -2431,13 +2536,47 @@ pageLinks.forEach((link) => {
   });
 });
 
-themeToggle?.addEventListener("click", () => {
-  setTheme(getCurrentTheme() === "dark" ? "light" : "dark");
+workflowList?.addEventListener("click", (event) => {
+  const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
+
+  if (item) {
+    activateWorkflowItem(item);
+  }
+});
+
+workflowList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
+
+  if (item) {
+    event.preventDefault();
+    activateWorkflowItem(item);
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const awardButton = event.target.closest("[data-award-toggle]");
+
+  if (!awardButton) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  awardButton.setAttribute("aria-expanded", String(awardButton.getAttribute("aria-expanded") !== "true"));
+});
+
+copyCurrentPageLinkButton?.addEventListener("click", () => {
+  copyCurrentPageUrl();
 });
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     showTab(tab.dataset.tab, { scrollToTop: true });
+    renderActivePageContent(activePageName);
   });
 });
 
@@ -2451,8 +2590,96 @@ draftPlayerPositionFilter?.addEventListener("change", () => {
   renderDraftPlayers();
 });
 
+loginPanel?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  handleManagerLogin();
+});
+
+loginManagerSelect?.addEventListener("change", () => {
+  updateLoginModeForSelectedManager();
+});
+
+profileMenuButton?.addEventListener("click", () => {
+  const isOpen = profileMenuButton.getAttribute("aria-expanded") === "true";
+  profileMenuButton.setAttribute("aria-expanded", String(!isOpen));
+  profileDropdown.hidden = isOpen;
+});
+
+profileDropdown?.addEventListener("click", (event) => {
+  if (event.target.closest("a, button")) {
+    closeProfileDropdown();
+  }
+});
+
+logoutButton?.addEventListener("click", () => {
+  signOutManager();
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest("#footy-show-all-button")) {
+    shouldShowAllFootyFixtures = true;
+    renderFootySchedule(siteData.footySchedule);
+    return;
+  }
+
+  if (!profileMenu || profileMenu.hidden || profileMenu.contains(event.target)) {
+    return;
+  }
+
+  closeProfileDropdown();
+});
+
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
+});
+
+footyPastToggle?.addEventListener("click", () => {
+  shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
+  shouldShowAllFootyFixtures = false;
+  renderFootySchedule(siteData.footySchedule);
+});
+
+footyFilterToggle?.addEventListener("click", () => {
+  shouldShowFootyFilters = !shouldShowFootyFilters;
+  renderFootySchedule(siteData.footySchedule);
+});
+
+footyTeamFilter?.addEventListener("click", (event) => {
+  if (!event.target.closest(".multi-filter-button")) {
+    return;
+  }
+
+  shouldShowFootyTeamOptions = !shouldShowFootyTeamOptions;
+  renderFootySchedule(siteData.footySchedule);
+});
+
+function markFootyTeamSelectionExplicit(event) {
+  if (!event.target.matches("input[type=\"checkbox\"]")) {
+    return;
+  }
+
+  footyTeamFilter
+    .querySelectorAll("input[data-default-selected=\"true\"]")
+    .forEach((input) => {
+      delete input.dataset.defaultSelected;
+    });
+}
+
+footyTeamFilter?.addEventListener("input", markFootyTeamSelectionExplicit);
+footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
+
+[footySearchInput, footyDateFromFilter, footyDateToFilter, footyTeamFilter].forEach((control) => {
+  control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
+  control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
+});
+
+document.addEventListener("click", (event) => {
+  if (!footyTeamFilter || !shouldShowFootyTeamOptions || footyTeamFilter.contains(event.target)) {
+    return;
+  }
+
+  shouldShowFootyTeamOptions = false;
+  renderFootySchedule(siteData.footySchedule);
 });
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {
@@ -2491,7 +2718,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       return;
     }
 
-    loadVisibleFormulaOneFormIframes(view.weeklyForm);
+    loadVisibleFormulaOneFormIframes(view.weeklyForm, year);
   }, true);
 
   view.weeklyList?.addEventListener("click", (event) => {
@@ -2637,6 +2864,10 @@ playerChampionshipRows?.addEventListener("keydown", (event) => {
 });
 
 nationsLeagueRows?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-award-toggle]")) {
+    return;
+  }
+
   const standingRow = event.target.closest("[data-standing-result-row]");
 
   if (!standingRow) {
@@ -2648,6 +2879,10 @@ nationsLeagueRows?.addEventListener("click", (event) => {
 
 nationsLeagueRows?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  if (event.target.closest("[data-award-toggle]")) {
     return;
   }
 
@@ -2665,6 +2900,16 @@ managerResultsFilter?.addEventListener("change", () => {
   if (siteData.managerResultsSource) {
     renderManagerResults(siteData.managerResultsSource);
   }
+
+  renderStandingsAwards();
+});
+
+managerSummaryYearSelect?.addEventListener("change", () => {
+  const session = siteData.managerSession;
+
+  if (session) {
+    renderManagerSummary(session.managerId);
+  }
 });
 
 standingsAllDataToggle?.addEventListener("change", () => {
@@ -2673,6 +2918,19 @@ standingsAllDataToggle?.addEventListener("change", () => {
 
 standingsRoundSelect?.addEventListener("change", () => {
   renderFilteredStandings();
+});
+
+nationTestScoringToggle?.addEventListener("change", () => {
+  syncTestScoringUi();
+  renderFilteredStandings();
+  renderDraftPage();
+  renderCurrentMatchLists();
+  renderRulesNationOptions();
+  renderRulesNationBreakdown();
+});
+
+rulesNationSelect?.addEventListener("change", () => {
+  renderRulesNationBreakdown();
 });
 
 playerPositionFilter?.addEventListener("change", () => {
@@ -2712,6 +2970,1687 @@ bracketSubmitButton?.addEventListener("click", () => {
   submitBracketPicks();
 });
 
+function hideLoginPanel() {
+  if (!loginPanel) {
+    return;
+  }
+
+  if (loginPassphraseInput) {
+    loginPassphraseInput.value = "";
+  }
+  if (loginRecoveryAnswerInput) {
+    loginRecoveryAnswerInput.value = "";
+  }
+  if (loginNewPassphraseInput) {
+    loginNewPassphraseInput.value = "";
+  }
+  if (loginConfirmPassphraseInput) {
+    loginConfirmPassphraseInput.value = "";
+  }
+  setLoginFeedback("");
+}
+
+function hydrateManagerSession() {
+  try {
+    const rawSession = localStorage.getItem(MANAGER_SESSION_STORAGE_KEY);
+    siteData.managerSession = rawSession ? JSON.parse(rawSession) : null;
+  } catch {
+    siteData.managerSession = null;
+  }
+
+  renderLoginState();
+  renderManagerHub();
+}
+
+function saveManagerSession(session) {
+  siteData.managerSession = session;
+
+  try {
+    localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // Session persistence is helpful, but the in-memory session is enough for this visit.
+  }
+
+  renderLoginState();
+  renderManagerHub();
+}
+
+function signOutManager() {
+  siteData.managerSession = null;
+
+  try {
+    localStorage.removeItem(MANAGER_SESSION_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures; the in-memory session has already been cleared.
+  }
+
+  closeProfileDropdown();
+  renderLoginState();
+  renderManagerHub();
+  showPage("footy", { scrollToTop: true });
+  window.location.hash = "footy";
+}
+
+async function copyCurrentPageUrl() {
+  if (!copyCurrentPageLinkButton) {
+    return;
+  }
+
+  const url = window.location.href;
+  const originalText = copyCurrentPageLinkButton.textContent;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      copyTextWithFallback(url);
+    }
+
+    copyCurrentPageLinkButton.textContent = "Copied";
+  } catch (error) {
+    console.warn("Unable to copy current page URL", error);
+    copyCurrentPageLinkButton.textContent = "Copy failed";
+  }
+
+  window.setTimeout(() => {
+    copyCurrentPageLinkButton.textContent = originalText || "Copy URL";
+  }, 1600);
+}
+
+function copyTextWithFallback(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  textArea.style.top = "0";
+  document.body.append(textArea);
+  textArea.select();
+  document.execCommand("copy");
+  textArea.remove();
+}
+
+function renderLoginState() {
+  const session = siteData.managerSession;
+  const manager = session ? getPortalManagerById(session.managerId) ?? session.manager : null;
+  const managerMeta = manager ? getManagerMeta(manager) : null;
+
+  if (loginOpenButton) {
+    loginOpenButton.hidden = Boolean(managerMeta);
+  }
+
+  if (profileMenu) {
+    profileMenu.hidden = !managerMeta;
+  }
+
+  if (copyCurrentPageLinkButton) {
+    copyCurrentPageLinkButton.hidden = !managerMeta?.isAdmin;
+  }
+
+  if (profileName) {
+    profileName.textContent = managerMeta?.displayName || "Manager";
+  }
+
+  const avatar = profileMenu?.querySelector(".profile-avatar");
+  if (avatar) {
+    avatar.textContent = managerMeta?.displayName?.charAt(0)?.toUpperCase() || "?";
+    avatar.style.background = managerMeta?.color || "";
+    avatar.style.color = getContrastTextColor(managerMeta?.color);
+  }
+
+  if (session && managerMeta) {
+    siteData.managerSession = {
+      ...session,
+      isAdmin: managerMeta.isAdmin,
+      manager: {
+        ...manager,
+        isAdmin: managerMeta.isAdmin,
+      },
+    };
+  }
+
+}
+
+function renderLoginManagerOptions() {
+  if (!loginManagerSelect) {
+    return;
+  }
+
+  const selected = loginManagerSelect.value;
+  const managers = getPortalManagers();
+
+  loginManagerSelect.innerHTML = [
+    `<option value="">${managers.length ? "Choose manager" : "Loading managers..."}</option>`,
+    ...managers.map((manager) => {
+      const meta = getManagerMeta(manager);
+      const selectedAttribute = String(meta.id) === String(selected) ? " selected" : "";
+      return `<option value="${escapeHtml(meta.id)}"${selectedAttribute}>${escapeHtml(meta.displayName)}</option>`;
+    }),
+  ].join("");
+
+  updateLoginModeForSelectedManager({ skipRemoteCheck: true });
+}
+
+async function handleManagerLogin() {
+  const managerId = loginManagerSelect?.value || "";
+  const loginMode = getLoginMode();
+
+  if (!managerId) {
+    setLoginFeedback("Choose a manager.", true);
+    return;
+  }
+
+  if (loginMode === "setup-recovery") {
+    await handleManagerRecoveryCheck(managerId);
+    return;
+  }
+
+  const passphrase = loginMode === "setup-passphrase"
+    ? loginNewPassphraseInput?.value || ""
+    : loginPassphraseInput?.value || "";
+
+  loginSubmitButton.disabled = true;
+  setLoginFeedback(loginMode === "setup-passphrase" ? "Saving passphrase..." : "Checking passphrase...");
+
+  try {
+    let response;
+
+    if (loginMode === "setup-passphrase") {
+      validateNewPassphraseFields(passphrase);
+      response = await submitManagerPortalPayload({
+        action: "setupPassphrase",
+        managerId,
+        passphrase: normalizeLoginInput(passphrase),
+        recoveryAnswer: siteData.loginRecoveryAnswer || loginRecoveryAnswerInput?.value || "",
+      });
+    } else {
+      if (!passphrase.trim()) {
+        setLoginFeedback("Enter a passphrase.", true);
+        loginPassphraseInput?.focus();
+        return;
+      }
+
+      response = await submitManagerPortalPayload({
+        action: "login",
+        managerId,
+        passphrase: normalizeLoginInput(passphrase),
+      });
+    }
+
+    if (!response?.ok) {
+      throw new Error(response?.error || "Login was not accepted.");
+    }
+
+    const manager = getPortalManagerById(managerId) ?? response.manager ?? { id: managerId, name: response.displayName };
+    saveManagerSession({
+      manager,
+      managerId: String(managerId),
+      signedInAt: new Date().toISOString(),
+    });
+    setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });
+    document.activeElement?.blur?.();
+    hideLoginPanel();
+    showPage("manager-hub", { scrollToTop: true });
+    window.location.hash = "manager-hub";
+  } catch (error) {
+    setLoginFeedback(error.message, true);
+  } finally {
+    loginSubmitButton.disabled = false;
+  }
+}
+
+async function handleManagerRecoveryCheck(managerId) {
+  const recoveryAnswer = loginRecoveryAnswerInput?.value || "";
+
+  if (!recoveryAnswer.trim()) {
+    setLoginFeedback("Enter the recovery answer.", true);
+    loginRecoveryAnswerInput?.focus();
+    return;
+  }
+
+  loginSubmitButton.disabled = true;
+  setLoginFeedback("Checking recovery answer...");
+
+  try {
+    const response = await submitManagerPortalPayload({
+      action: "verifyRecovery",
+      managerId,
+      recoveryAnswer,
+    });
+
+    if (!response?.ok) {
+      throw new Error(response?.error || "Recovery answer was not accepted.");
+    }
+
+    siteData.loginRecoveryVerifiedManagerId = String(managerId);
+    siteData.loginRecoveryAnswer = recoveryAnswer;
+    renderLoginMode({ hasPassphrase: false, recoveryQuestion: response.recoveryQuestion || getCachedManagerAuthStatus(managerId)?.recoveryQuestion || "" });
+    setLoginFeedback("Answer accepted. Set your passphrase.");
+    loginNewPassphraseInput?.focus();
+  } catch (error) {
+    setLoginFeedback(error.message, true);
+  } finally {
+    loginSubmitButton.disabled = false;
+  }
+}
+
+function validateNewPassphraseFields(passphrase) {
+  const confirmation = loginConfirmPassphraseInput?.value || "";
+
+  if (!passphrase.trim()) {
+    loginNewPassphraseInput?.focus();
+    throw new Error("Enter a new passphrase.");
+  }
+
+  if (normalizeLoginInput(passphrase) !== normalizeLoginInput(confirmation)) {
+    loginConfirmPassphraseInput?.focus();
+    throw new Error("Passphrases do not match.");
+  }
+}
+
+function normalizeLoginInput(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function setLoginFeedback(message, isError = false) {
+  if (!loginFeedback) {
+    return;
+  }
+
+  loginFeedback.textContent = message;
+  loginFeedback.classList.toggle("is-error", isError);
+}
+
+async function updateLoginModeForSelectedManager(options = {}) {
+  const managerId = loginManagerSelect?.value || "";
+  siteData.loginRecoveryVerifiedManagerId = "";
+  siteData.loginRecoveryAnswer = "";
+  hideLoginPanel();
+  renderLoginMode({ isLoading: Boolean(managerId) && !options.skipRemoteCheck });
+
+  if (!managerId) {
+    renderLoginMode({ isIdle: true });
+    return;
+  }
+
+  if (options.skipRemoteCheck) {
+    renderLoginMode({ isIdle: true });
+    return;
+  }
+
+  loginSubmitButton.disabled = true;
+  setLoginFeedback("Checking manager setup...");
+
+  try {
+    const response = await submitManagerPortalPayload({
+      action: "authStatus",
+      managerId,
+    });
+
+    if (!response?.ok) {
+      throw new Error(response?.error || "Unable to check manager setup.");
+    }
+
+    if (loginManagerSelect?.value !== managerId) {
+      return;
+    }
+
+    const status = {
+      hasPassphrase: Boolean(response.hasPassphrase),
+      mustReset: Boolean(response.mustReset),
+      recoveryQuestion: response.recoveryQuestion || "",
+    };
+    setCachedManagerAuthStatus(managerId, status);
+    renderLoginMode(status);
+    setLoginFeedback("");
+  } catch (error) {
+    setLoginFeedback(error.message, true);
+  } finally {
+    loginSubmitButton.disabled = false;
+  }
+}
+
+function getLoginMode() {
+  const managerId = loginManagerSelect?.value || "";
+  const status = getCachedManagerAuthStatus(managerId);
+
+  if (!managerId || (!status?.mustReset && status?.hasPassphrase !== false)) {
+    return "login";
+  }
+
+  return siteData.loginRecoveryVerifiedManagerId === String(managerId) ? "setup-passphrase" : "setup-recovery";
+}
+
+function renderLoginMode(status = { hasPassphrase: true }) {
+  if (status.isLoading || status.isIdle) {
+    hideLoginInputs();
+
+    if (loginSubmitButton) {
+      loginSubmitButton.hidden = true;
+      loginSubmitButton.textContent = "Continue";
+    }
+
+    return;
+  }
+
+  if (loginSubmitButton) {
+    loginSubmitButton.hidden = false;
+  }
+
+  const loginMode = getLoginMode();
+  const isSetup = status.mustReset || status.hasPassphrase === false;
+  const isPassphraseSetup = isSetup && loginMode === "setup-passphrase";
+
+  if (loginPassphraseGroup) {
+    loginPassphraseGroup.hidden = isSetup;
+  }
+
+  if (loginRecoveryPanel) {
+    loginRecoveryPanel.hidden = !isSetup || isPassphraseSetup;
+  }
+
+  if (loginNewPassphrasePanel) {
+    loginNewPassphrasePanel.hidden = !isPassphraseSetup;
+  }
+
+  if (loginRecoveryQuestion) {
+    loginRecoveryQuestion.textContent = status.recoveryQuestion
+      ? `Recovery Question: ${status.recoveryQuestion}`
+      : "Recovery Question";
+  }
+
+  if (loginSubmitButton) {
+    loginSubmitButton.textContent = isPassphraseSetup ? "Save Passphrase" : isSetup ? "Check Answer" : "Log In";
+  }
+}
+
+function hideLoginInputs() {
+  if (loginPassphraseGroup) {
+    loginPassphraseGroup.hidden = true;
+  }
+
+  if (loginRecoveryPanel) {
+    loginRecoveryPanel.hidden = true;
+  }
+
+  if (loginNewPassphrasePanel) {
+    loginNewPassphrasePanel.hidden = true;
+  }
+}
+
+function getCachedManagerAuthStatus(managerId) {
+  return siteData.managerAuthStatus?.[String(managerId)] || null;
+}
+
+function setCachedManagerAuthStatus(managerId, status) {
+  siteData.managerAuthStatus = {
+    ...(siteData.managerAuthStatus || {}),
+    [String(managerId)]: status,
+  };
+}
+
+function submitManagerPortalPayload(payload) {
+  if (!MANAGER_PORTAL_ENDPOINT) {
+    return Promise.reject(new Error("Manager login endpoint is not configured yet."));
+  }
+
+  const callbackId = `manager-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const fullPayload = {
+    ...payload,
+    callbackId,
+    pageUrl: window.location.href,
+    browser: window.navigator.userAgent,
+  };
+
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener("message", handleMessage);
+      reject(new Error("No response from the login endpoint. Redeploy the Apps Script web app if the code changed."));
+    }, 12000);
+
+    function handleMessage(event) {
+      const data = parsePortalMessage(event.data);
+
+      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== callbackId) {
+        return;
+      }
+
+      window.clearTimeout(timeout);
+      window.removeEventListener("message", handleMessage);
+      resolve(data);
+    }
+
+    window.addEventListener("message", handleMessage);
+    submitManagerPortalPayloadWithForm(fullPayload);
+  });
+}
+
+function parsePortalMessage(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function submitManagerPortalPayloadWithForm(payload) {
+  const iframeName = "manager-portal-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
+  }
+
+  const form = document.createElement("form");
+  form.action = MANAGER_PORTAL_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
+function renderManagerHub() {
+  const session = siteData.managerSession;
+
+  if (!session) {
+    if (managerHubSubtitle) {
+      managerHubSubtitle.textContent = "";
+      managerHubSubtitle.hidden = true;
+    }
+
+    if (workflowCount) {
+      workflowCount.textContent = formatNotificationCount(0);
+    }
+
+    if (workflowList) {
+      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load notifications.</p></article>`;
+    }
+
+    if (managerSummaryList) {
+      managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load manager results.</p></article>`;
+    }
+
+    if (managerAwardsList) {
+      managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Log in to load awards.</p></article>`;
+    }
+
+    return;
+  }
+
+  if (managerHubSubtitle) {
+    managerHubSubtitle.textContent = "";
+    managerHubSubtitle.hidden = true;
+  }
+
+  renderManagerWorkflow(session.managerId);
+  renderManagerSummary(session.managerId);
+  renderManagerAwards(session.managerId);
+}
+
+function renderManagerWorkflowLegacy(managerId) {
+  if (!workflowList) {
+    return;
+  }
+
+  const drafts = siteData.portalDrafts || [];
+  const logs = siteData.portalLogs || [];
+
+  if (!drafts.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading workflow items...</p></article>`;
+    return;
+  }
+
+  const openItems = drafts
+    .filter((draft) => !isWorkflowDraftCompleted(draft))
+    .filter((draft) => !hasManagerCompletedDraft(logs, managerId, draft.ID))
+    .sort(compareWorkflowItems);
+
+  if (workflowCount) {
+    workflowCount.textContent = `${openItems.length} open`;
+  }
+
+  if (!openItems.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">No open manager items.</p></article>`;
+    return;
+  }
+
+  workflowList.innerHTML = openItems.map((draft) => `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(draft.Name || "Untitled draft")}</h3>
+          <p>${escapeHtml([draft.Year, draft.League, draft.Type].filter(Boolean).join(" · "))}</p>
+        </div>
+        ${draft.Priority ? `<span class="workflow-priority" title="Priority ${escapeHtml(draft.Priority)}" aria-label="Priority ${escapeHtml(draft.Priority)}"></span>` : ""}
+      </header>
+      <div class="workflow-meta">
+        ${draft["Due Date"] ? `<span>Due ${escapeHtml(draft["Due Date"])}</span>` : ""}
+        ${draft.Status ? `<span>${escapeHtml(draft.Status)}</span>` : ""}
+      </div>
+      ${renderWorkflowAction(draft)}
+    </article>
+  `).join("");
+}
+
+function renderWorkflowAction(draft) {
+  const target = draft["Target Page"] || "";
+  const url = draft["Target URL"] || "";
+
+  if (target) {
+    return `<a class="action-button" href="#${escapeHtml(target)}" data-page-link="${escapeHtml(target)}">Open</a>`;
+  }
+
+  if (url) {
+    return `<a class="action-button" href="${escapeHtml(url)}">Open</a>`;
+  }
+
+  return "";
+}
+
+function renderManagerWorkflow(managerId) {
+  if (!workflowList) {
+    return;
+  }
+
+  const drafts = siteData.portalDrafts || [];
+
+  if (!drafts.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading notifications...</p></article>`;
+    return;
+  }
+
+  const openItems = buildManagerWorkflowItems(managerId).sort(compareWorkflowItems);
+
+  if (workflowCount) {
+    workflowCount.textContent = formatNotificationCount(openItems.length);
+  }
+
+  if (!openItems.length) {
+    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">No notifications need attention.</p></article>`;
+    return;
+  }
+
+  workflowList.innerHTML = openItems.map(renderWorkflowItem).join("");
+}
+
+function buildManagerWorkflowItems(managerId) {
+  return [
+    ...buildDraftWorkflowItems(managerId),
+    ...buildFantasyCriticWorkflowItems(managerId),
+    ...buildFormulaOneWeeklyWorkflowItems(managerId),
+  ];
+}
+
+function buildDraftWorkflowItems(managerId) {
+  const drafts = siteData.portalDrafts || [];
+  const logs = siteData.portalLogs || [];
+
+  return drafts
+    .filter((draft) => !isWorkflowDraftCompleted(draft))
+    .filter((draft) => !hasManagerCompletedDraft(logs, managerId, draft.ID))
+    .map((draft) => ({
+      actionLabel: "Open",
+      description: [draft.Year, draft.League, draft.Type].filter(Boolean).join(" - "),
+      dueDate: draft["Due Date"] || "",
+      id: `draft-${draft.ID || draft.Name || ""}`,
+      priority: draft.Priority || "999",
+      status: draft.Status || "",
+      target: draft["Target Page"] || getWorkflowTargetFromDraft(draft),
+      title: draft.Name || "Untitled draft",
+      url: draft["Target URL"] || "",
+    }));
+}
+
+function buildFormulaOneWeeklyWorkflowItems(managerId) {
+  const forms = siteData.formulaOne2026RoundForms || [];
+  const logs = siteData.portalLogs || [];
+  const nextForm = getUpcomingFormulaOneForm(forms);
+
+  if (!nextForm || isWorkflowLeagueCompleted({ league: "Formula 1", terms: ["weekly"], year: "2026" })) {
+    return [];
+  }
+
+  const completionIds = [
+    `formula-one-2026-weekly-${nextForm.id}`,
+    `f1-2026-weekly-${nextForm.id}`,
+    `2026-f1-weekly-${nextForm.id}`,
+    nextForm.id,
+  ];
+
+  if (completionIds.some((id) => hasManagerCompletedDraft(logs, managerId, id))) {
+    return [];
+  }
+
+  return [{
+    actionLabel: "Open",
+    description: "2026 Formula 1 weekly bet",
+    dueDate: formatWorkflowDue(nextForm),
+    id: `formula-one-2026-weekly-${nextForm.id}`,
+    priority: nextForm.Priority || nextForm.priority || "1",
+    status: "Upcoming race",
+    tab: "formula-one-2026-weekly-bet",
+    target: "formula-1-2026-weekly",
+    title: nextForm.name,
+    url: "",
+    weeklyFormId: nextForm.id,
+    year: "2026",
+  }];
+}
+
+function buildFantasyCriticWorkflowItems(managerId) {
+  return ["2025", "2026"].flatMap((year) => {
+    if (isWorkflowLeagueCompleted({ league: "Fantasy Critic", year })) {
+      return [];
+    }
+
+    const state = getFantasyCriticLeagueState(year);
+
+    if (state.status !== "loaded" || !state.league?.isDynamic) {
+      return [];
+    }
+
+    const row = findFantasyCriticManagerRow(managerId, state.league);
+    const blankDrafts = row?.blankDrafts || [];
+
+    if (!blankDrafts.length) {
+      return [];
+    }
+
+    return [{
+      actionLabel: "Open",
+      description: `${blankDrafts.length} open ${blankDrafts.length === 1 ? "slot" : "slots"} in ${year} Fantasy Critic`,
+      dueDate: "",
+      id: `fantasy-critic-${year}-open-slots`,
+      priority: "2",
+      status: blankDrafts.map((slot) => slot.label).join(", "),
+      target: `fantasy-critic-${year}`,
+      title: `${year} Fantasy Critic draft`,
+      url: "",
+    }];
+  });
+}
+
+function formatNotificationCount(count) {
+  return `${count} ${count === 1 ? "notification" : "notifications"}`;
+}
+
+function isWorkflowDraftCompleted(draft) {
+  return isTruthy(getField(draft, "DraftCompleted", "Draft Completed", "IsCompleted", "Is Completed", "Completed"));
+}
+
+function isWorkflowLeagueCompleted({ league = "", terms = [], year = "" } = {}) {
+  return (siteData.portalDrafts || []).some((draft) => {
+    if (!isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"))) {
+      return false;
+    }
+
+    if (year && String(draft.Year || "").trim() !== String(year)) {
+      return false;
+    }
+
+    const draftText = normalizeLookupName([
+      draft.League,
+      draft.Name,
+      draft.Type,
+      draft.Category,
+      draft.Standings,
+    ].filter(Boolean).join(" "));
+    const leagueKey = normalizeLookupName(league);
+
+    if (leagueKey && !draftText.includes(leagueKey)) {
+      return false;
+    }
+
+    return terms.every((term) => draftText.includes(normalizeLookupName(term)));
+  });
+}
+
+function getUpcomingFormulaOneForm(forms) {
+  const today = getEasternTodayDate();
+  const lookaheadEnd = new Date(today);
+  lookaheadEnd.setUTCDate(lookaheadEnd.getUTCDate() + WORKFLOW_LOOKAHEAD_DAYS);
+
+  return forms
+    .filter((form) => form.date && form.date >= today && form.date <= lookaheadEnd)
+    .sort((firstForm, secondForm) => firstForm.date - secondForm.date)[0] || null;
+}
+
+function getWorkflowTargetFromDraft(draft) {
+  const league = normalizeLookupName(draft.League || draft.Name || "");
+  const year = String(draft.Year || "").trim();
+
+  if (league.includes("fantasycritic") || league.includes("fantasy critic")) {
+    return year === "2026" ? "fantasy-critic-2026" : "fantasy-critic-2025";
+  }
+
+  if (league.includes("formula1") || league.includes("formula 1")) {
+    return year === "2026" ? "formula-1-2026-weekly" : `formula-1-${year || "2025"}-questions`;
+  }
+
+  if (league.includes("worldcup") || league.includes("world cup")) {
+    return "standings";
+  }
+
+  return "";
+}
+
+function renderWorkflowItem(item) {
+  const targetAttrs = [
+    item.target ? `data-workflow-target="${escapeHtml(item.target)}"` : "",
+    item.url ? `data-workflow-url="${escapeHtml(item.url)}"` : "",
+    item.tab ? `data-workflow-tab="${escapeHtml(item.tab)}"` : "",
+    item.weeklyFormId ? `data-workflow-form-id="${escapeHtml(item.weeklyFormId)}"` : "",
+    item.year ? `data-workflow-year="${escapeHtml(item.year)}"` : "",
+  ].filter(Boolean).join(" ");
+
+  return `
+    <article class="workflow-item${targetAttrs ? " is-actionable" : ""}" ${targetAttrs} ${targetAttrs ? `role="button" tabindex="0"` : ""}>
+      <header>
+        <div>
+          <h3>${escapeHtml(item.title || "Untitled notification")}</h3>
+          ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}
+        </div>
+        ${item.priority ? `<span class="workflow-priority" title="Priority ${escapeHtml(item.priority)}" aria-label="Priority ${escapeHtml(item.priority)}"></span>` : ""}
+      </header>
+      <div class="workflow-meta">
+        ${item.dueDate ? `<span>Due ${escapeHtml(item.dueDate)}</span>` : ""}
+        ${item.status ? `<span>${escapeHtml(item.status)}</span>` : ""}
+      </div>
+      ${targetAttrs ? `<span class="action-button workflow-open-label">${escapeHtml(item.actionLabel || "Open")}</span>` : ""}
+    </article>
+  `;
+}
+
+function formatWorkflowDate(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "America/New_York",
+  }).format(date);
+}
+
+function formatWorkflowDue(form) {
+  const dueEst = String(form?.dueEst ?? "").trim();
+
+  if (dueEst) {
+    return formatPrettyEasternDateTime(dueEst);
+  }
+
+  return form?.date ? formatWorkflowDate(form.date) : "";
+}
+
+function formatPrettyEasternDateTime(value) {
+  const rawValue = String(value ?? "").trim();
+  const sheetDateMatch = rawValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*([ap]m)?)?(?:\s*(?:est|edt|et))?$/i);
+
+  if (sheetDateMatch) {
+    const month = Number(sheetDateMatch[1]);
+    const day = Number(sheetDateMatch[2]);
+    const year = Number(sheetDateMatch[3].length === 2 ? `20${sheetDateMatch[3]}` : sheetDateMatch[3]);
+    const hour = sheetDateMatch[4] ? Number(sheetDateMatch[4]) : null;
+    const minute = sheetDateMatch[5] ? sheetDateMatch[5].padStart(2, "0") : "00";
+    const period = sheetDateMatch[6] ? sheetDateMatch[6].toUpperCase() : "";
+    const dateLabel = new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(Date.UTC(year, month - 1, day)));
+
+    if (hour) {
+      return `${dateLabel} at ${hour}:${minute}${period ? ` ${period}` : ""} ET`;
+    }
+
+    return dateLabel;
+  }
+
+  const parsedDate = new Date(rawValue);
+
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      month: "short",
+      timeZone: "America/New_York",
+      timeZoneName: "short",
+      year: "numeric",
+    }).format(parsedDate);
+  }
+
+  return rawValue;
+}
+
+function activateWorkflowItem(item) {
+  const target = item.dataset.workflowTarget || "";
+  const url = item.dataset.workflowUrl || "";
+
+  if (target) {
+    const nextHash = `#${target}`;
+
+    if (window.location.hash !== nextHash) {
+      history.pushState(null, "", nextHash);
+    }
+
+    showPage(target, { scrollToTop: true });
+
+    if (item.dataset.workflowTab) {
+      showTab(item.dataset.workflowTab);
+    }
+
+    if (item.dataset.workflowFormId && item.dataset.workflowYear) {
+      selectFormulaOneWeeklyForm(item.dataset.workflowYear, item.dataset.workflowFormId);
+    }
+
+    return;
+  }
+
+  if (url) {
+    window.location.href = url;
+  }
+}
+
+function selectFormulaOneWeeklyForm(year, formId) {
+  const view = formulaOneViews[year];
+  const forms = siteData[`formulaOne${year}RoundForms`];
+
+  if (!view?.weeklyForm || !forms?.length) {
+    return;
+  }
+
+  const select = view.weeklyForm.querySelector("[data-formula-one-form-select]");
+
+  if (select) {
+    select.value = formId;
+  }
+
+  renderFormulaOneWeeklyForm(year, forms);
+}
+
+function renderManagerSummary(managerId) {
+  if (!managerSummaryList) {
+    return;
+  }
+
+  const source = siteData.managerResultsSource;
+
+  if (!source && !hasManagerHubResultData()) {
+    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
+    return;
+  }
+
+  const selectedYear = getManagerSummarySelectedYear();
+  const resultCards = [
+    selectedYear === "all" || selectedYear === "2026" ? renderWorldCupManagerSummary(managerId, source) : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFantasyCriticManagerSummary(managerId, "2025", "2025 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFantasyCriticManagerSummary(managerId, "2026", "2026 Fantasy Critic") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFantasyOfficeManagerSummary(managerId, "2025") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFantasyOfficeManagerSummary(managerId, "2026") : "",
+    selectedYear === "all" || selectedYear === "2024" ? renderFormulaOneManagerSummary(managerId, "2024") : "",
+    selectedYear === "all" || selectedYear === "2025" ? renderFormulaOneManagerSummary(managerId, "2025") : "",
+    selectedYear === "all" || selectedYear === "2026" ? renderFormulaOneManagerSummary(managerId, "2026") : "",
+  ].filter(Boolean);
+
+  if (!resultCards.length) {
+    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No ${escapeHtml(selectedYear === "all" ? "" : `${selectedYear} `)}result summary found for this manager yet.</p></article>`;
+    return;
+  }
+
+  managerSummaryList.innerHTML = resultCards.join("");
+}
+
+function renderManagerAwards(managerId) {
+  if (!managerAwardsList) {
+    return;
+  }
+
+  if (!siteData.portalDrafts) {
+    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
+    return;
+  }
+
+  const awards = getResolvedAwards().filter((award) => {
+    return String(award.manager?.id ?? "") === String(managerId);
+  });
+
+  if (!awards.length) {
+    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`;
+    return;
+  }
+
+  managerAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "manager")).join("");
+}
+
+function getManagerSummarySelectedYear() {
+  const value = managerSummaryYearSelect?.value || "current";
+
+  if (value === "all") {
+    return "all";
+  }
+
+  if (/^\d{4}$/.test(value)) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).format(new Date());
+}
+
+function hasManagerHubResultData() {
+  return Boolean(
+    siteData.managerResultsSource ||
+    Object.values(siteData.fantasyCritic || {}).some((state) => state.status !== "loading") ||
+    siteData.formulaOne2024?.standings?.length ||
+    siteData.formulaOne2025?.standings?.length ||
+    siteData.formulaOne2026?.standings?.length ||
+    siteData.formulaOne2025Weekly?.standings?.length ||
+    siteData.formulaOne2026Weekly?.standings?.length ||
+    siteData.formulaOne2026WeeklyResults?.standings?.length ||
+    siteData.fantasyOffice2025?.results?.length ||
+    siteData.fantasyOffice2026?.results?.length ||
+    siteData.fantasyOffice2025?.draft?.length ||
+    siteData.fantasyOffice2026?.draft?.length
+  );
+}
+
+function renderStandingsAwards() {
+  if (!standingsAwards || !standingsAwardsList) {
+    return;
+  }
+
+  const awards = getAwardsForCurrentStandings();
+
+  standingsAwards.hidden = awards.length === 0;
+
+  if (!awards.length) {
+    standingsAwardsList.innerHTML = "";
+    return;
+  }
+
+  standingsAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
+
+  if (siteData.managerSession?.managerId) {
+    renderManagerAwards(siteData.managerSession.managerId);
+  }
+}
+
+function getAwardsForCurrentStandings() {
+  const context = getCurrentAwardsContext();
+  const awards = getResolvedAwards();
+
+  if (!context) {
+    return [];
+  }
+
+  return awards.filter((award) => {
+    if (context.competition && award.competition !== context.competition) {
+      return false;
+    }
+
+    if (context.year && award.year !== context.year) {
+      return false;
+    }
+
+    if (context.standings?.length && !context.standings.includes(award.standings)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function getCurrentAwardsContext() {
+  const activePage = document.querySelector(".page.is-active")?.dataset.page || "";
+
+  if (activePage === "standings") {
+    return {
+      competition: "2026 World Cup",
+      standings: ["players", "nations"],
+      year: "2026",
+    };
+  }
+
+  if (activePage.startsWith("formula-1-2024")) {
+    return {
+      competition: "2024 Formula 1",
+      standings: getFormulaOneAwardStandingsFilter("2024"),
+      year: "2024",
+    };
+  }
+
+  if (activePage.startsWith("formula-1-2025")) {
+    return {
+      competition: "2025 Formula 1",
+      standings: getFormulaOneAwardStandingsFilter("2025"),
+      year: "2025",
+    };
+  }
+
+  if (activePage.startsWith("formula-1-2026")) {
+    return {
+      competition: "2026 Formula 1",
+      standings: getFormulaOneAwardStandingsFilter("2026"),
+      year: "2026",
+    };
+  }
+
+  return null;
+}
+
+function getWorldCupAwardStandingsFilter() {
+  const activeTab = document.querySelector("#standings .tabs [data-tab].is-active")?.dataset.tab || "";
+
+  if (activeTab === "players-championship") {
+    return ["players"];
+  }
+
+  if (activeTab === "nations-league") {
+    return ["nations"];
+  }
+
+  if (activeTab === "manager-results") {
+    const filter = getManagerResultsFilter();
+
+    if (filter === "players") {
+      return ["players"];
+    }
+
+    if (filter === "nations") {
+      return ["nations"];
+    }
+
+    return ["players", "nations"];
+  }
+
+  return ["players", "nations"];
+}
+
+function getFormulaOneAwardStandingsFilter(year) {
+  const mode = formulaOneResultsMode[year] ?? "yearly";
+
+  if (mode === "weekly") {
+    return ["formula-one-weekly"];
+  }
+
+  return ["formula-one-yearly"];
+}
+
+function getResolvedAwards() {
+  return AWARD_DEFINITIONS
+    .map((definition) => resolveAward(definition))
+    .filter(Boolean);
+}
+
+function resolveAward(definition) {
+  return resolveCompletedDraftAward(definition);
+}
+
+function resolveCompletedDraftAward(definition) {
+  const draft = findCompletedAwardDraft(definition);
+
+  if (!draft) {
+    return null;
+  }
+
+  const manager = getAwardManagerById(getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID"));
+
+  if (!manager) {
+    return null;
+  }
+
+  return {
+    ...definition,
+    entityName: getField(draft, "Winner", "Winner Name", "Winning Entity", "Winning Nation") || "",
+    manager,
+    points: null,
+  };
+}
+
+function findCompletedAwardDraft(definition) {
+  return (siteData.portalDrafts || []).find((draft) => {
+    if (!isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"))) {
+      return false;
+    }
+
+    if (!getField(draft, "Winner Manager ID", "Winner Manager Id", "WinnerManagerID", "Winner_Manager_ID")) {
+      return false;
+    }
+
+    return isAwardDraftMatch(draft, definition);
+  }) || null;
+}
+
+function renderInProgressMarker(options = {}) {
+  const draft = findResultStatusDraft(options);
+
+  if (!draft || isTruthy(getField(draft, "IsCompleted", "Is Completed", "Completed"))) {
+    return "";
+  }
+
+  return `
+    <span class="status-pill status-pill--progress" title="This league is still in progress">
+      <span aria-hidden="true"></span>
+      <strong>In progress</strong>
+    </span>
+  `;
+}
+
+function findResultStatusDraft(options = {}) {
+  return (siteData.portalDrafts || []).find((draft) => isResultDraftMatch(draft, options)) || null;
+}
+
+function isResultDraftMatch(draft, options = {}) {
+  if (options.year && String(getField(draft, "Year")) !== String(options.year)) {
+    return false;
+  }
+
+  const draftName = normalizeAwardMatchName(getField(draft, "Name", "Draft", "Award Name", "Award"));
+  const league = normalizeAwardMatchName(getField(draft, "League"));
+  const standings = String(options.standings || "");
+
+  if (standings === "fantasy-critic") {
+    return league === "fantasy critic" || draftName.includes("fantasy critic");
+  }
+
+  if (standings === "fantasy-office") {
+    return league === "fantasy office" || draftName.includes("fantasy office");
+  }
+
+  if (standings === "formula-one-weekly") {
+    return draftName.includes("formula 1 weekly");
+  }
+
+  if (standings === "formula-one-yearly") {
+    return draftName.includes("formula 1 bets") && !draftName.includes("weekly");
+  }
+
+  if (standings === "players") {
+    return draftName.includes("players championship");
+  }
+
+  if (standings === "nations") {
+    return draftName.includes("nations league") || draftName.includes("nation league");
+  }
+
+  if (standings === "world-cup") {
+    return draftName.includes("players championship") ||
+      draftName.includes("nations league") ||
+      draftName.includes("nation league");
+  }
+
+  return false;
+}
+
+function isAwardDraftMatch(draft, definition) {
+  const draftName = normalizeAwardMatchName(getField(draft, "Name", "Draft", "Award Name", "Award"));
+  const expectedDraftName = normalizeAwardMatchName(definition.draftName || definition.label);
+
+  if (draftName && expectedDraftName) {
+    return draftName === expectedDraftName;
+  }
+
+  const candidates = [
+    getField(draft, "Award ID", "AwardID", "Award Id"),
+    getField(draft, "Draft ID", "DraftID", "ID"),
+  ].map(normalizeLookupName).filter(Boolean);
+  const awardIds = [
+    definition.id,
+  ].map(normalizeLookupName).filter(Boolean);
+
+  return candidates.some((candidate) => {
+    return awardIds.some((awardId) => candidate === awardId);
+  });
+}
+
+function normalizeAwardMatchName(value) {
+  return normalizeLookupName(value)
+    .replace(/['’]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getAwardManagerById(managerId) {
+  const id = String(managerId ?? "").trim();
+
+  if (!id) {
+    return null;
+  }
+
+  return getPortalManagerById(id) ??
+    siteData.managerDrafts?.managersById.get(id) ??
+    getManagerMeta({ ID: id, Name: `Manager ${id}` });
+}
+
+function getAwardsForNation(nationName, options = {}) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+
+  return getResolvedAwards().filter((award) => {
+    if (options.competition && award.competition !== options.competition) {
+      return false;
+    }
+
+    if (options.year && String(award.year || "") !== String(options.year)) {
+      return false;
+    }
+
+    return award.standings === "nations" &&
+      normalizeLookupName(normalizeNationName(award.entityName)) === nationKey;
+  });
+}
+
+function getAwardsForManager(manager, options = {}) {
+  const managerId = String(manager?.id ?? manager?.ID ?? manager?.["Manager ID"] ?? "").trim();
+  const managerName = normalizeLookupName(manager?.displayName || manager?.name || manager?.Name || manager?.manager);
+
+  return getResolvedAwards().filter((award) => {
+    if (options.competition && award.competition !== options.competition) {
+      return false;
+    }
+
+    if (options.standings && award.standings !== options.standings) {
+      return false;
+    }
+
+    if (options.year && String(award.year || "") !== String(options.year)) {
+      return false;
+    }
+
+    const awardManagerId = String(award.manager?.id ?? award.manager?.ID ?? award.manager?.["Manager ID"] ?? "").trim();
+    const awardManagerName = normalizeLookupName(award.manager?.displayName || award.manager?.name || award.manager?.Name);
+
+    return (managerId && awardManagerId && managerId === awardManagerId) ||
+      (managerName && awardManagerName && managerName === awardManagerName);
+  });
+}
+
+function renderAwardBadges(awards = []) {
+  return awards.map((award) => renderAwardBadge(award)).join("");
+}
+
+function renderAwardCard(award, context = "standings-summary") {
+  const image = award.image
+    ? `<img class="award-card-image" src="${escapeHtml(award.image)}" alt="">`
+    : `<span class="award-card-fallback">${escapeHtml(award.abbreviation || "AW")}</span>`;
+  const secondary = getAwardSecondaryText(award, context);
+
+  return `
+    <article class="award-card award-card--${escapeHtml(context)}">
+      <div class="award-card-media">${image}</div>
+      <div class="award-card-copy">
+        <h3>${escapeHtml(award.label)}</h3>
+        ${secondary ? `<p>${escapeHtml(secondary)}</p>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function getAwardSecondaryText(award, context) {
+  if (context === "manager") {
+    return "";
+  }
+
+  if (award.manager?.displayName) {
+    return award.manager.displayName;
+  }
+
+  return award.manager?.name || "";
+}
+
+function renderAwardBadge(award, context = "standings") {
+  const label = award.label || "Award";
+  const mark = award.image
+    ? `<img src="${escapeHtml(award.image)}" alt="">`
+    : escapeHtml(award.abbreviation || "AW");
+
+  return `
+    <button
+      class="award-badge award-badge--${escapeHtml(context)}"
+      type="button"
+      data-award-toggle
+      aria-expanded="false"
+      aria-label="${escapeHtml(label)}"
+    >
+      <span class="award-badge-mark">${mark}</span>
+      <span class="award-badge-label">${escapeHtml(label)}</span>
+    </button>
+  `;
+}
+
+function renderWorldCupManagerSummary(managerId, source) {
+  if (!source) {
+    return "";
+  }
+
+  const managerSummary = getManagerSummaryRanks(managerId, source);
+  const manager = managerSummary.players || managerSummary.nations;
+
+  if (!manager) {
+    return "";
+  }
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>World Cup</h3>
+          <p>Players' Championship and Nations League</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks">
+        ${renderManagerSummaryRank("Players", managerSummary.players, formatPoints, { competition: "2026 World Cup", standings: "players", year: "2026" })}
+        ${renderManagerSummaryRank("Nations", managerSummary.nations, formatPoints, { competition: "2026 World Cup", standings: "nations", year: "2026" })}
+      </div>
+      <a class="action-button" href="#standings" data-page-link="standings">Open Standings</a>
+    </article>
+  `;
+}
+
+function renderFantasyCriticManagerSummary(managerId, year, label) {
+  const state = getFantasyCriticLeagueState(year);
+
+  if (state.status === "loading") {
+    return `
+      <article class="workflow-item">
+        <header>
+          <div>
+            <h3>${escapeHtml(label)}</h3>
+            <p>Loading Fantasy Critic results...</p>
+          </div>
+        </header>
+      </article>
+    `;
+  }
+
+  if (state.status === "error") {
+    return `
+      <article class="workflow-item">
+        <header>
+          <div>
+            <h3>${escapeHtml(label)}</h3>
+            <p>Unable to load Fantasy Critic results: ${escapeHtml(state.errorMessage || "Unknown error")}</p>
+          </div>
+        </header>
+        <a class="action-button" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open Fantasy Critic</a>
+      </article>
+    `;
+  }
+
+  const league = getFantasyCriticLeague(year);
+  const row = findFantasyCriticManagerRow(managerId, league);
+
+  if (!row) {
+    return "";
+  }
+
+  const manager = getManagerByName(row.manager) ?? { name: row.manager };
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(label)}</h3>
+          <p>${escapeHtml(row.publisher || "Fantasy Critic")}</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks manager-summary-ranks--single">
+        ${renderManagerSummaryRank("Overall", row, formatFormulaOnePointValue, { standings: "fantasy-critic", year })}
+      </div>
+      <a class="action-button" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open Fantasy Critic</a>
+    </article>
+  `;
+}
+
+function renderFantasyOfficeManagerSummary(managerId, year) {
+  const data = siteData[`fantasyOffice${year}`];
+  const row = findFantasyOfficeManagerRow(managerId, data?.results ?? []);
+  const draft = findFantasyOfficeDraftManager(managerId, data?.draft ?? []);
+
+  if (!row && !draft) {
+    return "";
+  }
+
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = row?.manager || draft?.manager || portalManager?.["Display Name"] || portalManager?.Name || "";
+  const manager = getManagerByName(managerName) ?? portalManager ?? { name: managerName };
+  const rankMarkup = row
+    ? renderManagerSummaryRank("Overall", row, formatPoints, { standings: "fantasy-office", year })
+    : `
+      <span class="manager-summary-pending">
+        <span>${escapeHtml(draft ? "Results pending" : "Manager entry pending")}</span>
+        ${renderInProgressMarker({ standings: "fantasy-office", year })}
+      </span>
+    `;
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(year)} Fantasy Office</h3>
+          <p>${row ? "Movie result totals" : draft ? "Draft loaded; results pending" : "League loaded; manager entry pending"}</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks manager-summary-ranks--single">
+        ${rankMarkup}
+      </div>
+      <a class="action-button" href="#fantasy-office-${escapeHtml(year)}-results" data-page-link="fantasy-office-${escapeHtml(year)}-results">Open Results</a>
+    </article>
+  `;
+}
+
+function findFantasyCriticManagerRow(managerId, league) {
+  if (!league?.standings) {
+    return null;
+  }
+
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+
+  return league.standings.find((row) => normalizeLookupName(row.manager) === normalizeLookupName(managerName)) || null;
+}
+
+function findFantasyOfficeManagerRow(managerId, results) {
+  const aliases = getManagerSummaryLookupNames(managerId);
+
+  return results.find((row) => aliases.has(normalizeLookupName(row.manager))) || null;
+}
+
+function findFantasyOfficeDraftManager(managerId, draftRows) {
+  const aliases = getManagerSummaryLookupNames(managerId);
+
+  return draftRows.find((row) => aliases.has(normalizeLookupName(row.manager))) || null;
+}
+
+function getManagerSummaryLookupNames(managerId) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerMeta = portalManager ? getManagerMeta(portalManager) : null;
+  const values = [
+    portalManager?.Name,
+    portalManager?.["Display Name"],
+    portalManager?.displayName,
+    portalManager?.name,
+    managerMeta?.name,
+    managerMeta?.displayName,
+  ];
+
+  return new Set(values.map(normalizeLookupName).filter(Boolean));
+}
+
+function renderFormulaOneManagerSummary(managerId, year) {
+  const yearlyRow = getFormulaOneYearlyManagerSummaryRow(managerId, year);
+  const weeklyRow = getFormulaOneWeeklyManagerSummaryRow(managerId, year);
+  const ranks = [
+    renderManagerSummaryRank("Bets", yearlyRow, formatFormulaOnePointValue, { standings: "formula-one-yearly", year }),
+    renderManagerSummaryRank("Weekly", weeklyRow, formatFormulaOnePointValue, { standings: "formula-one-weekly", year }),
+  ].filter(Boolean);
+
+  if (ranks.length === 0) {
+    return "";
+  }
+
+  const managerName = yearlyRow?.manager || weeklyRow?.manager || "";
+  const manager = getManagerByName(managerName) ?? { name: managerName };
+  const summaryLabel = ranks.length === 2 ? "Bets and Weekly bets" : yearlyRow ? "Bet results" : "Weekly bet results";
+  const rankClass = ranks.length === 1 ? "manager-summary-ranks--single" : "manager-summary-ranks--paired";
+
+  return `
+    <article class="workflow-item">
+      <header>
+        <div>
+          <h3>${escapeHtml(year)} Formula 1</h3>
+          <p>${escapeHtml(summaryLabel)}</p>
+        </div>
+        ${renderManagerChip(manager)}
+      </header>
+      <div class="manager-summary-ranks ${rankClass}">
+        ${ranks.join("")}
+      </div>
+      <a class="action-button" href="#formula-1-${escapeHtml(year)}-results" data-page-link="formula-1-${escapeHtml(year)}-results">Open Results</a>
+    </article>
+  `;
+}
+
+function getFormulaOneYearlyManagerSummaryRow(managerId, year) {
+  const data = siteData[`formulaOne${year}`];
+  return findFormulaOneManagerRow(managerId, data?.standings ?? []);
+}
+
+function getFormulaOneWeeklyManagerSummaryRow(managerId, year) {
+  const data = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
+  return findFormulaOneManagerRow(managerId, data?.standings ?? []);
+}
+
+function findFormulaOneManagerRow(managerId, standings) {
+  const aliases = getManagerSummaryLookupNames(managerId);
+
+  return standings.find((row) => aliases.has(normalizeLookupName(row.manager))) || null;
+}
+
+function getManagerSummaryRanks(managerId, source) {
+  const portalManager = getPortalManagerById(managerId);
+  const managerName = portalManager?.["Display Name"] || portalManager?.Name || "";
+  const findManager = (rows) => rows.find((row) => String(row.id) === String(managerId)) ??
+    rows.find((row) => normalizeLookupName(row.displayName || row.name) === normalizeLookupName(managerName));
+
+  return {
+    nations: findManager(getManagerResultRows({ ...source, filter: "nations" })),
+    overall: findManager(getManagerResultRows({ ...source, filter: "all" })),
+    players: findManager(getManagerResultRows({ ...source, filter: "players" })),
+  };
+}
+
+function renderManagerSummaryRank(label, row, pointFormatter = formatPoints, options = {}) {
+  if (!row) {
+    return "";
+  }
+
+  const points = pointFormatter(row.points);
+  const awards = row.rank === 1 && options.standings
+    ? getAwardsForManager(row, { competition: options.competition, standings: options.standings, year: options.year })
+    : [];
+  const status = options.standings ? renderInProgressMarker(options) : "";
+
+  return `
+    <span class="manager-summary-rank">
+      <small>${escapeHtml(label)}</small>
+      ${status ? `<span class="manager-summary-status">${status}</span>` : ""}
+      <span class="manager-summary-rank-line">
+        <strong>#${escapeHtml(row.rank)}</strong>
+        ${renderAwardBadges(awards)}
+      </span>
+      <em>${escapeHtml(points)} pts</em>
+    </span>
+  `;
+}
+
+function getPortalManagers() {
+  return (siteData.portalManagers || [])
+    .filter((manager) => !manager.IsActive || isTruthy(manager.IsActive))
+    .map((manager) => ({
+      ...manager,
+      id: manager["Manager ID"] || manager.ID,
+      name: manager.Name,
+      displayName: manager["Display Name"] || getManagerDisplayName(manager.Name),
+      color: manager.Color ? `#${String(manager.Color).replace(/^#/, "")}` : undefined,
+    }));
+}
+
+function getPortalManagerById(managerId) {
+  return getPortalManagers().find((manager) => String(manager.id) === String(managerId)) || null;
+}
+
+function hasManagerCompletedDraft(logs, managerId, draftId) {
+  const completedStatuses = new Set(["complete", "completed", "done", "submitted"]);
+
+  return logs.some((log) => {
+    return String(log["Manager ID"]) === String(managerId) &&
+      String(log["Draft ID"]) === String(draftId) &&
+      completedStatuses.has(normalizeLookupName(log.Status));
+  });
+}
+
+function compareWorkflowItems(first, second) {
+  const firstPriority = first.priority ?? first.Priority ?? "999";
+  const secondPriority = second.priority ?? second.Priority ?? "999";
+  const priorityCompare = compareNumericLike(firstPriority, secondPriority);
+
+  if (priorityCompare !== 0) {
+    return priorityCompare;
+  }
+
+  const firstDue = parseWorkflowSortDate(first.dueDate || first["Due Date"]);
+  const secondDue = parseWorkflowSortDate(second.dueDate || second["Due Date"]);
+
+  if (firstDue !== secondDue) {
+    return firstDue - secondDue;
+  }
+
+  return String(first.title || first.Name || "").localeCompare(String(second.title || second.Name || ""));
+}
+
+function parseWorkflowSortDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.getTime();
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+}
+
+function isTruthy(value) {
+  return ["true", "yes", "y", "1"].includes(normalizeLookupName(value));
+}
+
 function renderFilteredStandings() {
   if (siteData.playerPerformances) {
     renderPlayerChampionship(siteData.playerPerformances);
@@ -2724,21 +4663,614 @@ function renderFilteredStandings() {
   if (siteData.managerResultsSource) {
     renderManagerResults(siteData.managerResultsSource);
   }
+
+  renderStandingsAwards();
+}
+
+function syncTestScoringUi() {
+  const isTestMode = shouldUseNationTestScoring();
+
+  testRulesLinks.forEach((link) => {
+    link.hidden = !isTestMode;
+  });
+
+  document.body.classList.toggle("is-test-scoring", isTestMode);
+
+  if (!isTestMode && window.location.hash.replace("#", "") === "rules") {
+    showPage("standings", { scrollToTop: true });
+  }
+
+  renderRulesNationOptions();
+  renderRulesNationBreakdown();
+}
+
+function renderRulesNationOptions() {
+  if (!rulesNationSelect) {
+    return;
+  }
+
+  const selected = rulesNationSelect.value;
+  const nationsByKey = new Map();
+
+  (siteData.teams || []).forEach((team) => {
+    const nation = normalizeNationName(team.Team || team.Nation || team.Name);
+
+    if (nation) {
+      nationsByKey.set(normalizeLookupName(nation), nation);
+    }
+  });
+
+  (siteData.matchResults || []).forEach((result) => {
+    [result.Team, result.Opponent].forEach((team) => {
+      const nation = normalizeNationName(team);
+
+      if (nation) {
+        nationsByKey.set(normalizeLookupName(nation), nation);
+      }
+    });
+  });
+
+  const nations = [...nationsByKey.values()].sort((a, b) => a.localeCompare(b));
+  const selectedStillExists = selected && nations.some((nation) => normalizeLookupName(nation) === normalizeLookupName(selected));
+
+  rulesNationSelect.innerHTML = [
+    `<option value="">${nations.length ? "Select a nation" : "No nations loaded"}</option>`,
+    ...nations.map((nation) => `<option value="${escapeHtml(nation)}"${selectedStillExists && normalizeLookupName(nation) === normalizeLookupName(selected) ? " selected" : ""}>${escapeHtml(nation)}</option>`),
+  ].join("");
+}
+
+function renderRulesNationBreakdown() {
+  if (!rulesNationBreakdown) {
+    return;
+  }
+
+  if (!shouldUseNationTestScoring()) {
+    rulesNationBreakdown.innerHTML = `<p class="table-message">Turn on Test in the footer to inspect the proposed nation scoring.</p>`;
+    return;
+  }
+
+  const nation = rulesNationSelect?.value || "";
+
+  if (!nation) {
+    rulesNationBreakdown.innerHTML = `<p class="table-message">Select a nation to see the point breakdown.</p>`;
+    return;
+  }
+
+  const rows = getRulesNationBreakdownRows(nation);
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+
+  if (!rows.length) {
+    rulesNationBreakdown.innerHTML = `
+      <div class="rules-breakdown-summary">
+        <strong>${escapeHtml(nation)}</strong>
+        <span>0 pts</span>
+      </div>
+      <p class="table-message">No logged nation results were found for this nation.</p>
+    `;
+    return;
+  }
+
+  rulesNationBreakdown.innerHTML = `
+    <div class="rules-breakdown-summary">
+      <strong>${escapeHtml(nation)}</strong>
+      <span>${formatPoints(total)} pts</span>
+    </div>
+    <div class="rules-breakdown-list">
+      ${rows.map(renderRulesNationBreakdownRow).join("")}
+    </div>
+  `;
+}
+
+function getFantasyCriticLeagueState(year) {
+  return siteData.fantasyCritic?.[String(year)] || {
+    metadata: FANTASY_CRITIC_LEAGUE_METADATA[year],
+    status: "loading",
+  };
+}
+
+function getFantasyCriticLeague(year) {
+  return getFantasyCriticLeagueState(year).league || null;
+}
+
+async function loadFantasyCriticLeague(year) {
+  const yearKey = String(year);
+
+  siteData.fantasyCritic = {
+    ...(siteData.fantasyCritic || {}),
+    [yearKey]: {
+      metadata: FANTASY_CRITIC_LEAGUE_METADATA[yearKey],
+      status: "loading",
+    },
+  };
+  renderFantasyCriticPage();
+  renderManagerHub();
+
+  try {
+    const json = await loadFantasyCriticJsonp(yearKey);
+    const league = parseFantasyCriticApiLeague(json, yearKey);
+
+    siteData.fantasyCritic = {
+      ...(siteData.fantasyCritic || {}),
+      [yearKey]: {
+        league,
+        metadata: FANTASY_CRITIC_LEAGUE_METADATA[yearKey],
+        status: "loaded",
+      },
+    };
+
+    renderFantasyCriticPage();
+    renderManagerHub();
+    console.info(`Box This Lap Fantasy Critic ${yearKey} data loaded`, league);
+  } catch (error) {
+    siteData.fantasyCritic = {
+      ...(siteData.fantasyCritic || {}),
+      [yearKey]: {
+        error,
+        errorMessage: error.message,
+        metadata: FANTASY_CRITIC_LEAGUE_METADATA[yearKey],
+        status: "error",
+      },
+    };
+
+    renderFantasyCriticPage();
+    renderManagerHub();
+    console.error(`Box This Lap Fantasy Critic ${yearKey} data failed to load`, error);
+  }
+}
+
+function loadFantasyCriticJsonp(year) {
+  return new Promise((resolve, reject) => {
+    if (!FANTASY_CRITIC_PROXY_URL) {
+      reject(new Error("Fantasy Critic proxy endpoint is not configured."));
+      return;
+    }
+
+    const callbackName = `boxThisLapFantasyCritic${year}${Date.now()}${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Fantasy Critic proxy did not respond."));
+    }, 20000);
+
+    window[callbackName] = (payload) => {
+      window.clearTimeout(timeout);
+      cleanup();
+
+      if (payload?.ok === false) {
+        reject(new Error(payload?.error || "Fantasy Critic proxy returned an error."));
+        return;
+      }
+
+      try {
+        resolve(normalizeFantasyCriticProxyPayload(payload));
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    script.onerror = () => {
+      window.clearTimeout(timeout);
+      cleanup();
+      reject(new Error("Unable to load Fantasy Critic proxy. Confirm the Apps Script Web App is deployed with access set to Anyone and that it is using the JSONP proxy code."));
+    };
+
+    const params = new URLSearchParams({
+      callback: callbackName,
+      leagueID: FANTASY_CRITIC_LEAGUE_ID,
+      nonce: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      year: String(year),
+    });
+    script.async = true;
+    script.src = `${FANTASY_CRITIC_PROXY_URL}?${params.toString()}`;
+    document.body.appendChild(script);
+  });
+}
+
+function normalizeFantasyCriticProxyPayload(payload) {
+  if (!payload) {
+    throw new Error("Fantasy Critic proxy returned no payload.");
+  }
+
+  if (typeof payload === "string") {
+    try {
+      return JSON.parse(payload);
+    } catch (error) {
+      throw new Error("Fantasy Critic proxy returned text that was not JSON.");
+    }
+  }
+
+  const candidate = payload.data || payload.payload || payload.result || payload;
+
+  if (typeof candidate === "string") {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      throw new Error("Fantasy Critic proxy data was text that was not JSON.");
+    }
+  }
+
+  if (!candidate || typeof candidate !== "object") {
+    throw new Error("Fantasy Critic proxy returned data in an unexpected format.");
+  }
+
+  return candidate;
+}
+
+function getFantasyCriticJsonKeys(json) {
+  return Object.keys(json || {}).slice(0, 8).join(", ") || "none";
+}
+
+function getFantasyCriticPublishers(json) {
+  if (Array.isArray(json.publishers)) {
+    return json.publishers;
+  }
+
+  if (Array.isArray(json.leagueYear?.publishers)) {
+    return json.leagueYear.publishers;
+  }
+
+  if (Array.isArray(json.data?.publishers)) {
+    return json.data.publishers;
+  }
+
+  return [];
+}
+
+function getFantasyCriticPlayers(json) {
+  if (Array.isArray(json.players)) {
+    return json.players;
+  }
+
+  if (Array.isArray(json.leagueYear?.players)) {
+    return json.leagueYear.players;
+  }
+
+  if (Array.isArray(json.data?.players)) {
+    return json.data.players;
+  }
+
+  return [];
+}
+
+function getFantasyCriticSettings(json) {
+  return json.settings || json.leagueYear?.settings || json.data?.settings || {};
+}
+
+function parseFantasyCriticApiLeague(json, year) {
+  const metadata = FANTASY_CRITIC_LEAGUE_METADATA[year] || {};
+  const publisherRows = getFantasyCriticPublishers(json);
+  const leaguePlayers = getFantasyCriticPlayers(json);
+  const playerRowsByPublisherId = new Map(
+    leaguePlayers
+      .filter((player) => player?.publisher?.publisherID)
+      .map((player) => [player.publisher.publisherID, player])
+  );
+  const settings = getFantasyCriticSettings(json);
+  const standardSlots = Number(settings.standardGames) || 0;
+  const counterSlots = Number(settings.counterPicks) || 0;
+
+  if (!publisherRows.length) {
+    throw new Error(`Fantasy Critic API did not return publishers. Top-level keys: ${getFantasyCriticJsonKeys(json)}.`);
+  }
+
+  const standings = publisherRows
+    .map((publisher) => parseFantasyCriticPublisher(publisher, playerRowsByPublisherId.get(publisher.publisherID), {
+      counterSlots,
+      standardSlots,
+    }))
+    .sort((firstEntry, secondEntry) => {
+      if (secondEntry.pointsValue !== firstEntry.pointsValue) {
+        return secondEntry.pointsValue - firstEntry.pointsValue;
+      }
+
+      return firstEntry.publisher.localeCompare(secondEntry.publisher);
+    });
+
+  return {
+    isDynamic: true,
+    sourceUrl: metadata.sourceUrl,
+    standings: rankRows(standings).map(({ pointsValue, ...entry }) => entry),
+    subtitle: metadata.subtitle || json.league?.leagueName || "Fantasy Critic",
+    title: metadata.title || "Fantasy Critic",
+    year,
+  };
+}
+
+function parseFantasyCriticPublisher(publisher, playerRow, slotCounts) {
+  const publisherName = publisher.publisherName || playerRow?.publisher?.publisherName || "Unknown Publisher";
+  const games = Array.isArray(publisher.games) ? publisher.games.filter((game) => !game.removedTimestamp) : [];
+  const standardGames = games.filter((game) => !game.counterPick);
+  const counterPicks = games.filter((game) => game.counterPick);
+  const blankDrafts = [
+    ...buildFantasyCriticOpenSlots("Draft", slotCounts.standardSlots - standardGames.length, false),
+    ...buildFantasyCriticOpenSlots("Counterpick", slotCounts.counterSlots - counterPicks.length, true),
+  ];
+  const roster = [
+    ...standardGames,
+    ...counterPicks,
+  ]
+    .sort((firstGame, secondGame) => {
+      const firstSlot = Number(firstGame.slotNumber ?? firstGame.overallDraftPosition ?? 999);
+      const secondSlot = Number(secondGame.slotNumber ?? secondGame.overallDraftPosition ?? 999);
+
+      return firstSlot - secondSlot;
+    })
+    .map((game) => parseFantasyCriticGame(game));
+  const pointsValue = Number(playerRow?.totalFantasyPoints ?? publisher.totalFantasyPoints ?? 0);
+
+  return {
+    blankDrafts,
+    budget: formatFantasyCriticBudget(publisher.budget ?? playerRow?.publisher?.budget),
+    expecting: formatFantasyCriticInteger(publisher.gamesWillRelease ?? playerRow?.publisher?.gamesWillRelease),
+    manager: getFantasyCriticManagerName(publisherName, publisher.playerName || playerRow?.user?.displayName),
+    points: formatFantasyCriticNumber(pointsValue),
+    pointsValue,
+    projected: formatFantasyCriticNumber(playerRow?.projectedFantasyPoints ?? publisher.totalProjectedPoints),
+    publisher: publisherName,
+    released: formatFantasyCriticInteger(publisher.gamesReleased ?? playerRow?.publisher?.gamesReleased),
+    roster: [
+      ...roster,
+      ...blankDrafts.map((slot) => [slot.label, "", "", slot]),
+    ],
+  };
+}
+
+function parseFantasyCriticGame(game) {
+  const prefix = game.counterPick ? "CPK " : "";
+
+  return [
+    `${prefix}${game.gameName || "Untitled Game"}`,
+    formatFantasyCriticNumber(game.criticScore ?? game.masterGame?.criticScore),
+    formatFantasyCriticNumber(game.fantasyPoints ?? game.masterGame?.fantasyPoints),
+  ];
+}
+
+function buildFantasyCriticOpenSlots(label, count, isCounterPick) {
+  return Array.from({ length: Math.max(0, count) }, (_, index) => ({
+    isBlank: true,
+    isCounterPick,
+    label: `${label} Slot ${index + 1}`,
+  }));
+}
+
+function getFantasyCriticManagerName(publisherName, playerName = "") {
+  return FANTASY_CRITIC_PUBLISHER_MANAGERS[normalizeLookupName(publisherName)] ||
+    FANTASY_CRITIC_PUBLISHER_MANAGERS[normalizeLookupName(playerName)] ||
+    playerName ||
+    publisherName;
+}
+
+function formatFantasyCriticBudget(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? `$${formatFantasyCriticNumber(number)}` : "--";
+}
+
+function formatFantasyCriticInteger(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? String(Math.round(number)) : "--";
+}
+
+function formatFantasyCriticNumber(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "";
+  }
+
+  return number.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  });
+}
+
+function getRulesNationBreakdownRows(nationName) {
+  return (siteData.matchResults || [])
+    .filter(isLoggedNationResult)
+    .map((result) => getTestNationPointBreakdown(result, nationName))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const roundCompare = compareNumericLike(a.roundId, b.roundId);
+
+      if (roundCompare !== 0) {
+        return roundCompare;
+      }
+
+      return compareNumericLike(a.matchId, b.matchId);
+    });
+}
+
+function compareNumericLike(firstValue, secondValue) {
+  const firstNumber = Number(firstValue);
+  const secondNumber = Number(secondValue);
+
+  if (Number.isFinite(firstNumber) && Number.isFinite(secondNumber)) {
+    return firstNumber - secondNumber;
+  }
+
+  return String(firstValue ?? "").localeCompare(String(secondValue ?? ""), undefined, { numeric: true });
+}
+
+function renderRulesNationBreakdownRow(row) {
+  const roundLabel = row.roundLabel ? `<span>${escapeHtml(row.roundLabel)}</span>` : "";
+  const partsHtml = row.parts.length
+    ? row.parts.map((part) => `
+        <div class="rules-breakdown-part">
+          <span>${escapeHtml(part.label)}${part.detail ? ` <small>${escapeHtml(part.detail)}</small>` : ""}</span>
+          <strong>${formatPoints(part.points)}</strong>
+        </div>
+      `).join("")
+    : `<p class="rules-breakdown-empty">No points earned.</p>`;
+
+  return `
+    <article class="rules-breakdown-row">
+      <header>
+        <div>
+          <strong>${escapeHtml(row.matchLabel)}</strong>
+          <span>${escapeHtml(row.resultLabel)}</span>
+        </div>
+        <div class="rules-breakdown-meta">
+          ${roundLabel}
+          ${row.matchId ? `<span>M${escapeHtml(row.matchId)}</span>` : ""}
+        </div>
+      </header>
+      <div class="rules-breakdown-pots">
+        <span>${escapeHtml(row.team)}: Pot ${escapeHtml(row.teamPot || "?")}</span>
+        <span>${escapeHtml(row.opponent)}: Pot ${escapeHtml(row.opponentPot || "?")}</span>
+      </div>
+      <div class="rules-breakdown-parts">
+        ${partsHtml}
+      </div>
+      <div class="rules-breakdown-total">
+        <span>Match Total</span>
+        <strong>${formatPoints(row.total)} pts</strong>
+      </div>
+    </article>
+  `;
 }
 
 window.addEventListener("hashchange", () => {
-  showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
+  showPage(window.location.hash.replace("#", "") || "footy", { scrollToTop: true });
 });
 
 window.addEventListener("popstate", () => {
-  showPage(window.location.hash.replace("#", "") || "results", { scrollToTop: true });
+  showPage(window.location.hash.replace("#", "") || "footy", { scrollToTop: true });
 });
 
-showPage(window.location.hash.replace("#", "") || "results");
+syncTestScoringUi();
+showPage(window.location.hash.replace("#", "") || "footy");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
+loadFantasyCriticLeague("2025");
+loadFantasyCriticLeague("2026");
 syncThemeToggle();
 hydrateBracketSubmitter();
+hydrateManagerSession();
+
+loadJson("data/footy-schedule.json")
+  .then((schedule) => {
+    siteData.footySchedule = schedule;
+    renderFootySchedule(schedule);
+    console.info("Box This Lap footy schedule loaded", schedule);
+  })
+  .catch((error) => {
+    renderFootyScheduleError(error);
+    console.error("Box This Lap footy schedule failed to load", error);
+  });
+
+Promise.allSettled([
+  loadSheet("portalManagers"),
+  loadSheet("portalDrafts"),
+  loadSheet("portalLogs"),
+])
+  .then(([managersResult, draftsResult, logsResult]) => {
+    console.info("Box This Lap manager portal load results", {
+      drafts: getSettledLog(draftsResult),
+      logs: getSettledLog(logsResult),
+      managers: getSettledLog(managersResult),
+    });
+
+    siteData.portalManagers = managersResult.status === "fulfilled"
+      ? managersResult.value
+      : [...DEFAULT_PORTAL_MANAGERS];
+    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
+    siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
+    runPortalRender("login manager options", renderLoginManagerOptions);
+    runPortalRender("login state", renderLoginState);
+
+    runPortalRender("manager hub", renderManagerHub);
+    runPortalRender("standings awards", renderStandingsAwards);
+    runPortalRender("Fantasy Critic awards", renderFantasyCriticPage);
+    runPortalRender("2025 Fantasy Office awards", () => {
+      if (siteData.fantasyOffice2025?.results?.length) {
+        renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+      }
+    });
+    runPortalRender("2026 Fantasy Office awards", () => {
+      if (siteData.fantasyOffice2026?.results?.length) {
+        renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+      }
+    });
+    runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
+    runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
+    runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
+
+    if (managersResult.status !== "fulfilled" || draftsResult.status !== "fulfilled" || logsResult.status !== "fulfilled") {
+      console.warn("Box This Lap manager portal optional data partially failed", {
+        managers: managersResult.status === "rejected" ? managersResult.reason : null,
+        drafts: draftsResult.status === "rejected" ? draftsResult.reason : null,
+        logs: logsResult.status === "rejected" ? logsResult.reason : null,
+      });
+    }
+
+    console.info("Box This Lap manager portal data loaded", {
+      drafts: siteData.portalDrafts,
+      logs: siteData.portalLogs,
+      managers: siteData.portalManagers,
+    });
+  })
+  .catch((error) => {
+    siteData.portalManagers = [...DEFAULT_PORTAL_MANAGERS];
+    siteData.portalDrafts = [];
+    siteData.portalLogs = [];
+    runPortalRender("fallback login managers", renderLoginManagerOptions);
+    runPortalRender("fallback login state", renderLoginState);
+    setLoginFeedback(`Using fallback manager list. ${getErrorMessage(error)}`, true);
+
+    if (workflowList) {
+      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load notifications: ${escapeHtml(error.message)}</p></article>`;
+    }
+
+    console.error("Box This Lap manager portal data failed to load", error);
+    recordDiagnostic("manager portal data failed to load", error);
+  });
+
+function getSettledLog(result) {
+  if (result.status === "fulfilled") {
+    return {
+      rows: Array.isArray(result.value) ? result.value.length : null,
+      status: "fulfilled",
+    };
+  }
+
+  return {
+    message: result.reason?.message || String(result.reason || "Unknown error"),
+    status: "rejected",
+  };
+}
+
+function getErrorMessage(error) {
+  return error?.message || String(error || "Unknown error");
+}
+
+function recordDiagnostic(label, error, extra = {}) {
+  const detail = {
+    extra,
+    label,
+    message: getErrorMessage(error),
+    stack: error?.stack || "",
+    timestamp: new Date().toISOString(),
+  };
+
+  window.boxThisLapDiagnostics.push(detail);
+  console.error(`Box This Lap diagnostic: ${label}`, detail);
+
+  return detail;
+}
+
+function runPortalRender(label, render) {
+  try {
+    render();
+  } catch (error) {
+    console.error(`Box This Lap ${label} failed to render`, error);
+    recordDiagnostic(`${label} failed to render`, error);
+  }
+}
 
 loadPlayers()
   .then((players) => {
@@ -2781,6 +5313,9 @@ loadSheet("matchResults")
     renderNationsLeague(results);
     renderDraftNations();
     renderCurrentMatchLists();
+    renderBracket(siteData.bracketMatches);
+    renderRulesNationOptions();
+    renderRulesNationBreakdown();
     console.info("Box This Lap match result data loaded", results);
   })
   .catch((error) => {
@@ -2791,7 +5326,12 @@ loadSheet("matchResults")
 loadSheet("teams")
   .then((teams) => {
     siteData.teams = teams;
+    siteData.teamPots = buildTeamPotLookup(teams);
     renderDraftPage();
+    renderFilteredStandings();
+    renderCurrentMatchLists();
+    renderRulesNationOptions();
+    renderRulesNationBreakdown();
     console.info("Box This Lap team data loaded", teams);
   })
   .catch((error) => {
@@ -2869,6 +5409,7 @@ Promise.all([
 
     renderCurrentMatchLists();
     renderManagerResults(siteData.managerResultsSource);
+    renderManagerHub();
     console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
   })
   .catch((error) => {
@@ -2879,7 +5420,10 @@ Promise.all([
 loadSheetText("formulaOne2024")
   .then((csvText) => {
     const data = parseFormulaOneSheet(csvText);
+    siteData.formulaOne2024 = data;
     renderFormulaOneLeague("2024", data);
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2024 data loaded", data);
   })
   .catch((error) => {
@@ -2890,7 +5434,10 @@ loadSheetText("formulaOne2024")
 loadSheetText("formulaOne2025")
   .then((csvText) => {
     const data = parseFormulaOneSheet(csvText);
+    siteData.formulaOne2025 = data;
     renderFormulaOneLeague("2025", data);
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2025 data loaded", data);
   })
   .catch((error) => {
@@ -2904,6 +5451,8 @@ loadSheetText("formulaOne2025Weekly")
     siteData.formulaOne2025Weekly = data;
     renderFormulaOneWeeklyPage("2025", data);
     renderFormulaOneResults("2025");
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2025 weekly data loaded", data);
   })
   .catch((error) => {
@@ -2914,7 +5463,10 @@ loadSheetText("formulaOne2025Weekly")
 loadSheetText("formulaOne2026")
   .then((csvText) => {
     const data = parseFormulaOneSheet(csvText);
+    siteData.formulaOne2026 = data;
     renderFormulaOneLeague("2026", data);
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 data loaded", data);
   })
   .catch((error) => {
@@ -2927,6 +5479,7 @@ loadSheetText("formulaOne2026Weekly")
     const data = parseFormulaOneWeeklySheet(csvText);
     siteData.formulaOne2026Weekly = data;
     renderFormulaOneWeeklyPage("2026", data);
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 weekly data loaded", data);
   })
   .catch((error) => {
@@ -2939,6 +5492,8 @@ loadSheetText("formulaOne2026WeeklyResults")
     const data = parseFormulaOneWeeklyResultsSheet(csvText);
     siteData.formulaOne2026WeeklyResults = data;
     renderFormulaOneResults("2026");
+    renderStandingsAwards();
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 weekly results loaded", data);
   })
   .catch((error) => {
@@ -2950,6 +5505,7 @@ loadSheet("formulaOne2026RoundForms")
     const forms = parseFormulaOneRoundForms(rows);
     siteData.formulaOne2026RoundForms = forms;
     renderFormulaOneWeeklyForm("2026", forms);
+    renderManagerHub();
     console.info("Box This Lap Formula 1 2026 round forms loaded", forms);
   })
   .catch((error) => {
@@ -2967,6 +5523,7 @@ loadSheetText("fantasyOffice2025Draft")
   .then((draftCsv) => {
     siteData.fantasyOffice2025.draft = parseFantasyOfficeDraft(draftCsv);
     renderFantasyOfficeDraft(2025, siteData.fantasyOffice2025.draft);
+    renderManagerHub();
     console.info("Box This Lap Fantasy Office 2025 draft data loaded", siteData.fantasyOffice2025.draft);
   })
   .catch((error) => {
@@ -2979,6 +5536,7 @@ loadSheetText("fantasyOffice2025Results")
     siteData.fantasyOffice2025.results = parseFantasyOfficeResults(resultsCsv);
     renderFantasyOfficeMovies(2025, siteData.fantasyOffice2025.results);
     renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+    renderManagerHub();
     console.info("Box This Lap Fantasy Office 2025 results data loaded", siteData.fantasyOffice2025.results);
   })
   .catch((error) => {
@@ -3011,6 +5569,7 @@ loadSheetText("fantasyOffice2026Draft")
     renderFantasyOfficeDraft(2026, siteData.fantasyOffice2026.draft);
     renderFantasyOfficeMovies(2026, siteData.fantasyOffice2026.results);
     renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
+    renderManagerHub();
     console.info("Box This Lap Fantasy Office 2026 draft data loaded", siteData.fantasyOffice2026.draft);
   })
   .catch((error) => {
@@ -3495,11 +6054,80 @@ function getResolvedBracketPicks(matches, matchById) {
 
 function getResolvedBracketState(matches, matchById) {
   const savedPicks = getBracketPicks();
-  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, savedPicks);
-  const picks = { ...savedPicks, ...inferredPicks };
-  const lockedMatches = new Set(Object.keys(inferredPicks));
+  const resultPicks = inferBracketPicksFromResults(matches, matchById);
+  const inferredPicks = inferBracketPicksFromSchedule(matches, matchById, { ...savedPicks, ...resultPicks });
+  const picks = { ...savedPicks, ...inferredPicks, ...resultPicks };
+  const lockedMatches = new Set([...Object.keys(resultPicks), ...Object.keys(inferredPicks)]);
 
   return { picks, lockedMatches };
+}
+
+function inferBracketPicksFromResults(matches, matchById) {
+  if (!siteData.matchResults) {
+    return {};
+  }
+
+  const bracketMatchIds = new Set(matches.map((match) => getMatchId(match)).filter(Boolean));
+  const picks = {};
+
+  for (const result of siteData.matchResults) {
+    if (!isLoggedNationResult(result)) {
+      continue;
+    }
+
+    const matchId = String(result["Match ID"] ?? "").trim();
+    const match = matchById.get(matchId);
+
+    if (!match || !bracketMatchIds.has(matchId)) {
+      continue;
+    }
+
+    const winner = getBracketResultWinner(result);
+    const winnerSide = getBracketTeamSide(match, winner);
+
+    if (winnerSide) {
+      picks[matchId] = winnerSide;
+    }
+  }
+
+  return picks;
+}
+
+function getBracketResultWinner(result) {
+  const outcome = String(result.Result ?? "").trim().toLowerCase();
+  const team = normalizeNationName(result.Team);
+  const opponent = normalizeNationName(result.Opponent);
+
+  if (outcome === "win") {
+    return team;
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    return opponent;
+  }
+
+  return "";
+}
+
+function getBracketTeamSide(match, teamName) {
+  const teamKey = normalizeLookupName(normalizeNationName(teamName));
+
+  if (!teamKey) {
+    return "";
+  }
+
+  const homeKey = normalizeLookupName(normalizeNationName(getField(match, "Home", "home")));
+  const awayKey = normalizeLookupName(normalizeNationName(getField(match, "Away", "away")));
+
+  if (teamKey === homeKey) {
+    return "home";
+  }
+
+  if (teamKey === awayKey) {
+    return "away";
+  }
+
+  return "";
 }
 
 function inferBracketPicksFromSchedule(matches, matchById, savedPicks = {}) {
@@ -4054,7 +6682,7 @@ function getPlayerDraftMatchPoints(draft, match) {
     return hasLoggedMatchResult(match) ? 0 : null;
   }
 
-  const points = parsePoints(performance.Points);
+  const points = getPlayerPerformancePoints(performance);
   return Number.isFinite(points) ? points : null;
 }
 
@@ -4137,7 +6765,7 @@ function getPlayerMatchPoints(matchId, draftName) {
     return null;
   }
 
-  const points = parsePoints(performance.Points);
+  const points = getPlayerPerformancePoints(performance);
   return Number.isFinite(points) ? points : null;
 }
 
@@ -4228,32 +6856,14 @@ function getNationPointsForResult(result, nationName) {
   const nationKey = normalizeLookupName(normalizeNationName(nationName));
   const teamKey = normalizeLookupName(normalizeNationName(result.Team));
   const opponentKey = normalizeLookupName(normalizeNationName(result.Opponent));
-  const outcome = String(result.Result || "").trim().toLowerCase();
-  const winnerPoints = getWinnerPoints(result);
-  const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+  const points = getNationResultPoints(result);
 
-  if (outcome === "draw" || outcome === "tie") {
-    return nationKey === teamKey || nationKey === opponentKey ? 1 : null;
+  if (nationKey === teamKey) {
+    return points.team;
   }
 
-  if (outcome === "win") {
-    if (nationKey === teamKey) {
-      return winnerPoints;
-    }
-
-    if (nationKey === opponentKey) {
-      return penaltyLoserPoints;
-    }
-  }
-
-  if (outcome === "lose" || outcome === "loss") {
-    if (nationKey === teamKey) {
-      return penaltyLoserPoints;
-    }
-
-    if (nationKey === opponentKey) {
-      return winnerPoints;
-    }
+  if (nationKey === opponentKey) {
+    return points.opponent;
   }
 
   return null;
@@ -4381,7 +6991,7 @@ function renderPlayerChampionship(performances) {
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(player, index, rows))}</td>
         <td data-label="Player">${renderPlayerNameWithPosition(player.name, player.position)}</td>
-        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager)}</td>
+        <td data-label="Team / Manager">${renderStandingDetail(player.team, manager, { competition: "2026 World Cup", standings: "players", year: "2026" })}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(player.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(player.points))}</td>
       </tr>
@@ -4419,7 +7029,7 @@ function getPlayerChampionshipRows(performances) {
 
   for (const performance of performances) {
     const playerId = performance["Player ID"] || performance.Name;
-    const points = parsePoints(performance.Points);
+    const points = getPlayerPerformancePoints(performance);
 
     if (!playerId || !Number.isFinite(points)) {
       continue;
@@ -4483,7 +7093,7 @@ function getDraftedPlayerChampionshipRows(performances) {
   for (const performance of performances) {
     const draft = getActivePlayerDraftForPerformance(performance);
     const playerId = performance["Player ID"] || performance.Name;
-    const points = parsePoints(performance.Points);
+    const points = getPlayerPerformancePoints(performance);
 
     if (!draft || !playerId || !Number.isFinite(points)) {
       continue;
@@ -4600,12 +7210,18 @@ function renderNationsLeague(results) {
   nationsLeagueRows.innerHTML = rows.map((nation, index) => {
     const manager = nation.manager || getNationManager(nation.name);
     const detailId = `nation-standing-detail-${index}`;
+    const awards = getAwardsForNation(nation.name, { competition: "2026 World Cup", year: "2026" });
 
     return `
       <tr class="standing-result-row" data-standing-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(nation, index, rows))}</td>
-        <td data-label="Nation">${escapeHtml(nation.name)}</td>
-        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager)}</td>
+        <td data-label="Nation">
+          <span class="standing-name-with-awards">
+            <span>${escapeHtml(nation.name)}</span>
+            ${renderAwardBadges(awards)}
+          </span>
+        </td>
+        <td data-label="Record / Manager">${renderStandingDetail(nation.recordLabel || formatRecord(nation), manager, { competition: "2026 World Cup", standings: "nations", year: "2026" })}</td>
         <td data-label="Matches">${escapeHtml(formatMatchCount(nation.matches))}</td>
         <td data-label="Points">${escapeHtml(formatPoints(nation.points))}</td>
       </tr>
@@ -4616,6 +7232,8 @@ function renderNationsLeague(results) {
       </tr>
     `;
   }).join("");
+
+  renderStandingsAwards();
 }
 
 function filterStandingRowsByGameScope(rows, getManager) {
@@ -4768,8 +7386,7 @@ function getNationsLeagueRows(results) {
 
     const teamRow = getNationStanding(nations, team);
     const opponentRow = getNationStanding(nations, opponent);
-    const winnerPoints = getWinnerPoints(result);
-    const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+    const resultPoints = getNationResultPoints(result);
     let teamPoints = 0;
     let opponentPoints = 0;
 
@@ -4779,18 +7396,18 @@ function getNationsLeagueRows(results) {
     if (outcome === "win") {
       teamRow.wins += 1;
       opponentRow.losses += 1;
-      teamPoints = winnerPoints;
-      opponentPoints = penaltyLoserPoints;
+      teamPoints = resultPoints.team;
+      opponentPoints = resultPoints.opponent;
     } else if (outcome === "lose" || outcome === "loss") {
       teamRow.losses += 1;
       opponentRow.wins += 1;
-      teamPoints = penaltyLoserPoints;
-      opponentPoints = winnerPoints;
+      teamPoints = resultPoints.team;
+      opponentPoints = resultPoints.opponent;
     } else if (outcome === "draw" || outcome === "tie") {
       teamRow.draws += 1;
       opponentRow.draws += 1;
-      teamPoints = 1;
-      opponentPoints = 1;
+      teamPoints = resultPoints.team;
+      opponentPoints = resultPoints.opponent;
     }
 
     teamRow.points += teamPoints;
@@ -4969,11 +7586,18 @@ function renderManagerResults({ managers, teamDraft, playerDraft, playerPerforma
 
   managerResultsRows.innerHTML = rows.map((manager, index) => {
     const detailId = `manager-detail-${escapeHtml(manager.id)}`;
+    const awardFilter = filter === "all" ? "" : filter;
+    const awards = getAwardsForManager(manager, { competition: "2026 World Cup", standings: awardFilter, year: "2026" });
 
     return `
       <tr class="manager-result-row" data-manager-result-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(manager, index, rows))}</td>
-        <td data-label="Manager">${renderManagerChip(manager)}</td>
+        <td data-label="Manager">
+          <span class="manager-result-awards">
+            ${renderManagerChip(manager)}
+            ${renderAwardBadges(awards)}
+          </span>
+        </td>
         <td data-label="Points">${escapeHtml(formatPoints(manager.points))}</td>
       </tr>
       <tr class="manager-detail-row" id="${detailId}" hidden>
@@ -5295,7 +7919,7 @@ function getDraftPlayerPoints(draft, playerPerformances = []) {
       return total;
     }
 
-    const points = parsePoints(performance.Points);
+    const points = getPlayerPerformancePoints(performance);
     return total + (Number.isFinite(points) ? points : 0);
   }, 0);
 }
@@ -5396,6 +8020,16 @@ function parsePoints(value) {
   return Number(String(value).replace(/,/g, ""));
 }
 
+function getPlayerPerformancePoints(performance) {
+  const points = parsePoints(performance?.Points);
+
+  if (!Number.isFinite(points)) {
+    return points;
+  }
+
+  return points + (shouldUseNationTestScoring() ? 1 : 0);
+}
+
 function formatPoints(value) {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return String(value ?? "");
@@ -5422,8 +8056,236 @@ function isPenaltyResult(result) {
   return true;
 }
 
+function buildTeamPotLookup(teams = []) {
+  const lookup = new Map();
+
+  for (const team of teams) {
+    const name = normalizeNationName(team.Team || team.Nation || team.Name);
+    const pot = normalizePot(team.Pot);
+
+    if (name && pot) {
+      lookup.set(normalizeLookupName(name), pot);
+    }
+  }
+
+  return lookup;
+}
+
+function shouldUseNationTestScoring() {
+  return nationTestScoringToggle?.checked ?? false;
+}
+
+function getNationResultPoints(result) {
+  return shouldUseNationTestScoring()
+    ? getTestNationResultPoints(result)
+    : getSheetNationResultPoints(result);
+}
+
+function getSheetNationResultPoints(result) {
+  const outcome = String(result.Result || "").trim().toLowerCase();
+  const winnerPoints = getWinnerPoints(result);
+  const penaltyLoserPoints = isPenaltyResult(result) ? 2 : 0;
+
+  if (outcome === "win") {
+    return { opponent: penaltyLoserPoints, team: winnerPoints };
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    return { opponent: winnerPoints, team: penaltyLoserPoints };
+  }
+
+  if (outcome === "draw" || outcome === "tie") {
+    return { opponent: 1, team: 1 };
+  }
+
+  return { opponent: 0, team: 0 };
+}
+
+function getTestNationResultPoints(result) {
+  return {
+    opponent: sumTestNationPointParts(result, "opponent"),
+    team: sumTestNationPointParts(result, "team"),
+  };
+}
+
+function getTestNationPointBreakdown(result, nationName) {
+  const nationKey = normalizeLookupName(normalizeNationName(nationName));
+  const team = normalizeNationName(result.Team);
+  const opponent = normalizeNationName(result.Opponent);
+  const teamKey = normalizeLookupName(team);
+  const opponentKey = normalizeLookupName(opponent);
+  const side = nationKey === teamKey ? "team" : nationKey === opponentKey ? "opponent" : "";
+
+  if (!side) {
+    return null;
+  }
+
+  const parts = getTestNationPointParts(result, side);
+  const roundId = getStandingSourceRoundId(result);
+
+  return {
+    matchId: String(result["Match ID"] ?? "").trim(),
+    matchLabel: `${team} v ${opponent}`,
+    opponent,
+    opponentPot: getTeamPot(opponent),
+    parts,
+    resultLabel: formatNationResultLabel(result),
+    roundId,
+    roundLabel: getRoundPrettyName(roundId),
+    team,
+    teamPot: getTeamPot(team),
+    total: parts.reduce((sum, part) => sum + part.points, 0),
+  };
+}
+
+function sumTestNationPointParts(result, side) {
+  return getTestNationPointParts(result, side).reduce((sum, part) => sum + part.points, 0);
+}
+
+function getTestNationPointParts(result, side) {
+  const outcome = String(result.Result || "").trim().toLowerCase();
+  const teamPot = getTeamPot(result.Team);
+  const opponentPot = getTeamPot(result.Opponent);
+
+  if (outcome === "win") {
+    return side === "team"
+      ? getTestWinPointParts(result, teamPot, opponentPot)
+      : getTestPenaltyLoserPointParts(result);
+  }
+
+  if (outcome === "lose" || outcome === "loss") {
+    return side === "opponent"
+      ? getTestWinPointParts(result, opponentPot, teamPot)
+      : getTestPenaltyLoserPointParts(result);
+  }
+
+  if (outcome === "draw" || outcome === "tie") {
+    return getTestDrawPointParts(side === "team" ? teamPot : opponentPot, side === "team" ? opponentPot : teamPot);
+  }
+
+  return [];
+}
+
+function getTestWinPointParts(result, winnerPot, loserPot) {
+  const basePoints = isGroupStageResult(result) ? 9 : 15;
+  const parts = [
+    {
+      detail: isGroupStageResult(result) ? "Group stage win" : "Knockout stage win",
+      label: "Base result",
+      points: basePoints,
+    },
+  ];
+  const knockoutBonus = isGroupStageResult(result) ? 0 : getTestKnockoutPotBonus(winnerPot);
+  const upsetBonus = isUpsetPotResult(winnerPot, loserPot) ? 3 : 0;
+
+  if (knockoutBonus) {
+    parts.push({
+      detail: `Pot ${String(winnerPot).toUpperCase()} knockout win`,
+      label: "Knockout pot bonus",
+      points: knockoutBonus,
+    });
+  }
+
+  if (upsetBonus) {
+    parts.push({
+      detail: `Pot ${String(winnerPot).toUpperCase()} beat Pot ${String(loserPot).toUpperCase()}`,
+      label: "Upset win bonus",
+      points: upsetBonus,
+    });
+  }
+
+  return parts;
+}
+
+function getTestWinPoints(result, winnerPot, loserPot) {
+  return getTestWinPointParts(result, winnerPot, loserPot).reduce((sum, part) => sum + part.points, 0);
+}
+
+function getTestPenaltyLoserPointParts(result) {
+  return isPenaltyResult(result)
+    ? [{ detail: "Lost after penalties", label: "Penalty shootout loss", points: 6 }]
+    : [];
+}
+
+function getTestPenaltyLoserPoints(result) {
+  return getTestPenaltyLoserPointParts(result).reduce((sum, part) => sum + part.points, 0);
+}
+
+function getTestDrawPointParts(teamPot, opponentPot) {
+  const parts = [{ detail: "Draw", label: "Base result", points: 3 }];
+  const upsetBonus = isUpsetDrawPotResult(teamPot, opponentPot) ? 3 : 0;
+
+  if (upsetBonus) {
+    parts.push({
+      detail: `Pot ${String(teamPot).toUpperCase()} drew Pot ${String(opponentPot).toUpperCase()}`,
+      label: "Upset draw bonus",
+      points: upsetBonus,
+    });
+  }
+
+  return parts;
+}
+
+function getTestDrawPoints(teamPot, opponentPot) {
+  return getTestDrawPointParts(teamPot, opponentPot).reduce((sum, part) => sum + part.points, 0);
+}
+
+function formatNationResultLabel(result) {
+  const outcome = String(result.Result || "").trim();
+  const points = getNationResultPoints(result);
+  const teamPoints = formatPoints(points.team);
+  const opponentPoints = formatPoints(points.opponent);
+  const resultText = outcome ? `${outcome}: ` : "";
+
+  return `${resultText}${normalizeNationName(result.Team)} ${teamPoints} pts, ${normalizeNationName(result.Opponent)} ${opponentPoints} pts`;
+}
+
+function getTestKnockoutPotBonus(pot) {
+  return TEST_KNOCKOUT_POT_BONUSES[normalizePot(pot)] ?? 0;
+}
+
+function isGroupStageResult(result) {
+  const stage = String(result.Stage || "").toLowerCase();
+
+  if (stage) {
+    return stage.includes("group");
+  }
+
+  const roundId = Number(getStandingSourceRoundId(result));
+
+  return Number.isFinite(roundId) && roundId >= 1 && roundId <= 3;
+}
+
+function isUpsetPotResult(winnerPot, loserPot) {
+  const winnerRank = getPotRank(winnerPot);
+  const loserRank = getPotRank(loserPot);
+
+  return Boolean(winnerRank && loserRank && winnerRank > loserRank);
+}
+
+function isUpsetDrawPotResult(teamPot, opponentPot) {
+  const teamRank = getPotRank(teamPot);
+  const opponentRank = getPotRank(opponentPot);
+
+  return Boolean(teamRank && opponentRank && teamRank > opponentRank && teamRank - opponentRank > 1);
+}
+
+function getPotRank(pot) {
+  return NATION_POT_RANKS[normalizePot(pot)] ?? null;
+}
+
+function getTeamPot(teamName) {
+  const teamKey = normalizeLookupName(normalizeNationName(teamName));
+
+  return siteData.teamPots?.get(teamKey) ?? "";
+}
+
+function normalizePot(pot) {
+  return String(pot ?? "").trim().toLowerCase();
+}
+
 function getFallbackWinPoints(result) {
-  return String(result.Stage || "").toLowerCase().includes("group") ? 3 : 5;
+  return isGroupStageResult(result) ? 3 : 5;
 }
 
 function getWinnerPoints(result) {
@@ -5431,10 +8293,6 @@ function getWinnerPoints(result) {
   const points = parsePoints(rawPoints);
 
   return rawPoints && Number.isFinite(points) ? points : getFallbackWinPoints(result);
-}
-
-function normalizeLookupName(value) {
-  return String(value ?? "").trim().toLowerCase();
 }
 
 function normalizeNationName(value) {
@@ -5448,18 +8306,67 @@ function normalizeNationName(value) {
 
 function getManagerMeta(manager) {
   const name = manager.name || manager.Name || "";
-  const displayName = getManagerDisplayName(name);
+  const displayName = manager.displayName || manager["Display Name"] || getManagerDisplayName(name);
+  const explicitColor = manager.color || manager.Color;
+  const normalizedColor = explicitColor ? `#${String(explicitColor).replace(/^#/, "")}` : "";
+  const isAdmin = isAdminManager({ ...manager, displayName, name });
 
   return {
-    color: MANAGER_COLORS[normalizeLookupName(displayName)] || "#5f6978",
+    color: normalizedColor || MANAGER_COLORS[normalizeLookupName(displayName)] || "#5f6978",
     displayName,
-    id: manager.id || manager["Manager ID"],
+    id: manager.id || manager["Manager ID"] || manager.ID,
+    isAdmin,
     name,
   };
 }
 
 function getManagerDisplayName(name) {
   return String(name ?? "").trim().split(/\s+/)[0] || "Manager";
+}
+
+function isAdminManager(manager) {
+  const names = [
+    manager.displayName,
+    manager["Display Name"],
+    manager.name,
+    manager.Name,
+  ]
+    .filter(Boolean)
+    .flatMap((value) => {
+      const normalizedName = normalizeLookupName(value);
+      return [normalizedName, normalizedName.split(/\s+/)[0]];
+    });
+
+  return names.includes("wyatt");
+}
+
+function getContrastTextColor(color) {
+  const hex = normalizeHexColor(color);
+
+  if (!hex) {
+    return "#ffffff";
+  }
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const luminance = (red * 0.299 + green * 0.587 + blue * 0.114) / 255;
+
+  return luminance > 0.58 ? "#111827" : "#ffffff";
+}
+
+function normalizeHexColor(color) {
+  const raw = String(color || "").trim().replace(/^#/, "");
+
+  if (/^[0-9a-f]{3}$/i.test(raw)) {
+    return raw.split("").map((digit) => digit + digit).join("").toLowerCase();
+  }
+
+  if (/^[0-9a-f]{6}$/i.test(raw)) {
+    return raw.toLowerCase();
+  }
+
+  return "";
 }
 
 function getPlayerManager(player) {
@@ -5515,11 +8422,16 @@ function getManagerForDraft(draft) {
   return siteData.managerDrafts?.managersById.get(draft?.["Manager ID"]) ?? null;
 }
 
-function renderStandingDetail(value, manager) {
+function renderStandingDetail(value, manager, options = {}) {
   const parts = [`<span class="standing-detail-main">${escapeHtml(value)}</span>`];
 
   if (manager) {
-    parts.push(renderManagerChip(manager));
+    parts.push(`
+      <span class="standing-manager-with-awards">
+        ${renderManagerChip(manager)}
+        ${renderAwardBadges(getAwardsForManager(manager, options))}
+      </span>
+    `);
   }
 
   return `<span class="standing-detail">${parts.join("")}</span>`;

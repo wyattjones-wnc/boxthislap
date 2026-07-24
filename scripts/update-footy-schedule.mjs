@@ -203,7 +203,8 @@ async function main() {
   errors.push(...calendarSchedules.errors);
   fixtures.push(...calendarSchedules.fixtures);
 
-  const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
+  const registryHydratedFixtures = buildFixturesFromFootyMatchRows(footyMatchRows, teams);
+  const dedupedFixtures = mergeFixtures([...registryHydratedFixtures, ...fixtures]).sort(compareFixtures);
   const footyMatchRegistry = buildFootyMatchRegistry({
     fixtures: dedupedFixtures,
     generatedAt,
@@ -1243,7 +1244,7 @@ function buildFootyMatchRegistry({ fixtures = [], generatedAt, matchRows = [], m
       date: fixture.date || existingRow?.date || "",
       followedTeam: fixture.teamName || existingRow?.followedTeam || "",
       home: fixture.home || existingRow?.home || "",
-      lastSeen: generatedAt,
+      lastSeen: fixture.isRegistryFixture ? existingRow?.lastSeen || fixture.lastSeen || "" : generatedAt,
       matchId,
       away: fixture.away || existingRow?.away || "",
       sourceIds: mergeSourceIds(existingRow?.sourceIds, sourceIds),
@@ -1312,6 +1313,55 @@ function previousFootyMatchRows(previousSchedules = []) {
         time: fixture.time || "",
       }));
   });
+}
+
+function buildFixturesFromFootyMatchRows(rows = [], teams = []) {
+  const teamByName = new Map(
+    teams
+      .filter((team) => team?.name)
+      .map((team) => [normalizeText(team.name), team])
+  );
+
+  return normalizeFootyMatchRows(rows).map((row) => {
+    const team = teamByName.get(normalizeText(row.followedTeam)) || {};
+    const timestamp = buildFootyRegistryTimestamp(row.date, row.time);
+    const isHome = normalizeText(row.home) === normalizeText(row.followedTeam);
+    const opponent = isHome ? row.away : row.home;
+
+    return {
+      away: row.away,
+      awayBadge: "",
+      date: row.date,
+      home: row.home,
+      homeBadge: "",
+      id: row.matchId,
+      isRegistryFixture: true,
+      isHome,
+      lastSeen: row.lastSeen,
+      league: row.competition,
+      opponent,
+      priority: team.priority || "",
+      source: "Footy Matches",
+      sourceIds: row.sourceIds,
+      sources: ["Footy Matches"],
+      teamBadge: team.badge || "",
+      teamId: team.id || row.followedTeam,
+      teamName: team.name || row.followedTeam,
+      time: row.time,
+      timestamp,
+    };
+  });
+}
+
+function buildFootyRegistryTimestamp(date, time) {
+  const normalizedDate = String(date || "").trim();
+  const normalizedTime = String(time || "").trim();
+
+  if (!normalizedDate) {
+    return "";
+  }
+
+  return normalizedTime ? `${normalizedDate}T${normalizedTime}` : normalizedDate;
 }
 
 function registerFootyMatchRow(row, { entriesByFingerprint, entriesBySourceId, registryRowsById, usedMatchIds }) {
@@ -1617,7 +1667,7 @@ function shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors = [],
 }
 
 function getCurrentTeamFixtures({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
-  if (teamErrors.length === 0 || previousFixtures.length === 0) {
+  if (previousFixtures.length === 0) {
     return teamFixtures;
   }
 
@@ -1625,16 +1675,20 @@ function getCurrentTeamFixtures({ previousFixtures = [], teamErrors = [], teamFi
 }
 
 function getPartialPreservationNotes({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
-  if (teamErrors.length === 0 || previousFixtures.length === 0 || teamFixtures.length === 0) {
+  if (previousFixtures.length === 0 || teamFixtures.length === 0) {
     return [];
   }
 
   const mergedCount = mergeFixtures([...previousFixtures, ...teamFixtures]).length;
   const preservedCount = Math.max(0, mergedCount - teamFixtures.length);
 
-  return preservedCount > 0
+  if (preservedCount === 0) {
+    return [];
+  }
+
+  return teamErrors.length > 0
     ? [`Preserved ${preservedCount} previous fixtures while the current update had provider errors.`]
-    : [];
+    : [`Preserved ${preservedCount} registered fixtures that were not returned by providers this run.`];
 }
 
 function buildTeamScheduleTeam(team, previousTeam = {}) {

@@ -70,6 +70,17 @@ import {
   footyDateToFilter,
   footyTeamFilter,
   footyScheduleList,
+  footyGoalAssistsButton,
+  footyGoalAssistsBack,
+  footyGoalAssistsForm,
+  footyGoalAssistsAdd,
+  footyGoalAssistsCopy,
+  footyGoalAssistsClear,
+  footyGoalAssistsSaved,
+  footyGoalAssistsFeedback,
+  footyScorerNameInput,
+  footyAssisterNameInput,
+  footyPenaltyInput,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -132,6 +143,7 @@ let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const footyGoalAssistEntries = [];
 const siteData = {};
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
@@ -621,6 +633,7 @@ function isFootyFixtureCurrent(fixture) {
 
 function syncFootyPastToggle(fixtures = []) {
   if (!footyPastToggle) {
+    syncFootyGoalAssistsButton();
     return;
   }
 
@@ -628,6 +641,15 @@ function syncFootyPastToggle(fixtures = []) {
   footyPastToggle.textContent = shouldShowPastFootyFixtures ? "Upcoming Matches" : "Past Matches";
   footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
   footyPastToggle.disabled = false;
+  syncFootyGoalAssistsButton();
+}
+
+function syncFootyGoalAssistsButton() {
+  if (!footyGoalAssistsButton) {
+    return;
+  }
+
+  footyGoalAssistsButton.hidden = !isCurrentManagerAdmin() || !shouldShowPastFootyFixtures;
 }
 
 function closeProfileDropdown() {
@@ -716,6 +738,148 @@ function renderFootyGoalAssistEvents(label, events = []) {
       }).join("")}
     </div>
   `;
+}
+
+function saveFootyGoalAssistEntry() {
+  const scorer = String(footyScorerNameInput?.value || "").trim();
+  const assister = String(footyAssisterNameInput?.value || "").trim();
+  const penalty = Boolean(footyPenaltyInput?.checked);
+
+  if (!scorer && !assister && !penalty) {
+    setFootyGoalAssistsFeedback("Add a scorer, assister, or penalty before saving.", true);
+    return false;
+  }
+
+  footyGoalAssistEntries.push({
+    scorer,
+    assister,
+    penalty,
+  });
+
+  clearFootyGoalAssistInputs();
+  renderFootyGoalAssistsSaved();
+  setFootyGoalAssistsFeedback("Saved.");
+  return true;
+}
+
+function clearFootyGoalAssistInputs() {
+  if (footyScorerNameInput) {
+    footyScorerNameInput.value = "";
+  }
+
+  if (footyAssisterNameInput) {
+    footyAssisterNameInput.value = "";
+  }
+
+  if (footyPenaltyInput) {
+    footyPenaltyInput.checked = false;
+  }
+
+  footyScorerNameInput?.focus();
+}
+
+function renderFootyGoalAssistsSaved() {
+  if (!footyGoalAssistsSaved) {
+    return;
+  }
+
+  if (!footyGoalAssistEntries.length) {
+    footyGoalAssistsSaved.innerHTML = `<p class="table-message">No saved goal/assist entries.</p>`;
+    return;
+  }
+
+  footyGoalAssistsSaved.innerHTML = `
+    <ul class="footy-goal-assists-chip-list" aria-label="Saved goal assist entries">
+      ${footyGoalAssistEntries.map(renderFootyGoalAssistChip).join("")}
+    </ul>
+  `;
+}
+
+function renderFootyGoalAssistChip(entry, index) {
+  const title = getFootyGoalAssistLabel(entry, index);
+  const penaltyLabel = entry.penalty ? `<span class="footy-goal-assist-penalty">P</span>` : "";
+
+  return `
+    <li>
+      <span class="footy-goal-assist-chip" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+        <span class="footy-goal-assist-saved-icon" aria-hidden="true">&#10003;</span>
+        <span>${escapeHtml(getFootyGoalAssistChipText(entry, index))}</span>
+        ${penaltyLabel}
+      </span>
+      <button class="icon-action-button footy-goal-assist-delete" type="button" data-footy-ga-delete="${index}" aria-label="Delete ${escapeHtml(title)}">
+        &times;
+      </button>
+    </li>
+  `;
+}
+
+function getFootyGoalAssistLabel(entry, index) {
+  const parts = [];
+
+  if (entry.scorer) {
+    parts.push(`Scorer: ${entry.scorer}`);
+  }
+
+  if (entry.assister) {
+    parts.push(`Assister: ${entry.assister}`);
+  }
+
+  if (entry.penalty) {
+    parts.push("Penalty");
+  }
+
+  return parts.join(", ") || `Entry ${index + 1}`;
+}
+
+function getFootyGoalAssistChipText(entry, index) {
+  if (entry.scorer && entry.assister) {
+    return `${entry.scorer} / ${entry.assister}`;
+  }
+
+  return entry.scorer || entry.assister || `Entry ${index + 1}`;
+}
+
+function deleteFootyGoalAssistEntry(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= footyGoalAssistEntries.length) {
+    return;
+  }
+
+  footyGoalAssistEntries.splice(index, 1);
+  renderFootyGoalAssistsSaved();
+  setFootyGoalAssistsFeedback("Removed.");
+}
+
+function clearFootyGoalAssistEntries() {
+  footyGoalAssistEntries.splice(0, footyGoalAssistEntries.length);
+  clearFootyGoalAssistInputs();
+  renderFootyGoalAssistsSaved();
+  setFootyGoalAssistsFeedback("Cleared.");
+}
+
+async function copyFootyGoalAssistEntries() {
+  const json = JSON.stringify(footyGoalAssistEntries, null, 2);
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(json);
+    } else {
+      copyTextWithFallback(json);
+    }
+
+    setFootyGoalAssistsFeedback(`Copied ${footyGoalAssistEntries.length} ${footyGoalAssistEntries.length === 1 ? "entry" : "entries"}.`);
+  } catch (error) {
+    console.warn("Unable to copy footy goal assist JSON", error);
+    setFootyGoalAssistsFeedback("Unable to copy JSON.", true);
+  }
+}
+
+function setFootyGoalAssistsFeedback(message, isError = false) {
+  if (!footyGoalAssistsFeedback) {
+    return;
+  }
+
+  footyGoalAssistsFeedback.textContent = message;
+  footyGoalAssistsFeedback.classList.toggle("is-error", isError);
 }
 
 function getFootyFixtureFallbackBadge(fixture) {
@@ -1467,6 +1631,11 @@ function shouldRenderPageSection(pageName) {
 function renderActivePageContent(pageName = "") {
   if (pageName === "footy" && siteData.footySchedule) {
     renderFootySchedule(siteData.footySchedule);
+    return;
+  }
+
+  if (pageName === "footy-goal-assists") {
+    renderFootyGoalAssistsSaved();
     return;
   }
 
@@ -2690,6 +2859,43 @@ footyPastToggle?.addEventListener("click", () => {
   renderFootySchedule(siteData.footySchedule);
 });
 
+footyGoalAssistsButton?.addEventListener("click", () => {
+  showPage("footy-goal-assists", { scrollToTop: true });
+  window.location.hash = "footy-goal-assists";
+});
+
+footyGoalAssistsBack?.addEventListener("click", () => {
+  showPage("footy", { scrollToTop: true });
+  window.location.hash = "footy";
+});
+
+footyGoalAssistsForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveFootyGoalAssistEntry();
+});
+
+footyGoalAssistsAdd?.addEventListener("click", () => {
+  saveFootyGoalAssistEntry();
+});
+
+footyGoalAssistsCopy?.addEventListener("click", () => {
+  copyFootyGoalAssistEntries();
+});
+
+footyGoalAssistsClear?.addEventListener("click", () => {
+  clearFootyGoalAssistEntries();
+});
+
+footyGoalAssistsSaved?.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest("[data-footy-ga-delete]");
+
+  if (!deleteButton) {
+    return;
+  }
+
+  deleteFootyGoalAssistEntry(Number(deleteButton.getAttribute("data-footy-ga-delete")));
+});
+
 footyFilterToggle?.addEventListener("click", () => {
   shouldShowFootyFilters = !shouldShowFootyFilters;
   renderFootySchedule(siteData.footySchedule);
@@ -3141,6 +3347,7 @@ function renderLoginState() {
   adminOnlyElements.forEach((element) => {
     element.hidden = !managerMeta?.isAdmin;
   });
+  syncFootyGoalAssistsButton();
 
   if (!managerMeta?.isAdmin && nationTestScoringToggle?.checked) {
     nationTestScoringToggle.checked = false;

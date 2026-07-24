@@ -628,6 +628,155 @@ body.has-shell-stale-warning .stale-shell-alert {
   white-space: nowrap;
 }
 
+.footy-goal-assists-button {
+  white-space: nowrap;
+}
+
+.footy-goal-assists-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.footy-goal-assists-form {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+}
+
+.footy-goal-assists-form label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.footy-goal-assists-form input[type="text"] {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  min-height: 42px;
+  padding: 9px 10px;
+}
+
+.footy-penalty-toggle {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  display: inline-flex;
+  gap: 9px;
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.footy-penalty-toggle input {
+  accent-color: var(--accent-dark);
+  height: 18px;
+  width: 18px;
+}
+
+.footy-goal-assists-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.footy-goal-assists-status-row {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.footy-goal-assists-saved {
+  min-width: 0;
+}
+
+.footy-goal-assists-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footy-goal-assists-chip-list li {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.footy-goal-assist-chip {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 900;
+  gap: 7px;
+  max-width: min(100%, 340px);
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.footy-goal-assist-chip > span:not(.footy-goal-assist-saved-icon):not(.footy-goal-assist-penalty) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footy-goal-assist-saved-icon,
+.footy-goal-assist-penalty {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 900;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
+.footy-goal-assist-saved-icon {
+  background: rgba(36, 145, 78, 0.18);
+  color: #35b36f;
+}
+
+.footy-goal-assist-penalty {
+  background: rgba(188, 35, 71, 0.16);
+  color: var(--accent-dark);
+}
+
+.footy-goal-assist-delete {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  height: 30px;
+  width: 30px;
+}
+
+.footy-goal-assists-feedback {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin: 0;
+  min-height: 1.2em;
+}
+
+.footy-goal-assists-feedback.is-error {
+  color: var(--accent-dark);
+}
+
 .footy-fixture-card {
   align-items: center;
   background: var(--soft);
@@ -3196,6 +3345,28 @@ tr:last-child td {
     font-size: 0.875rem;
     padding: 7px 4px;
     white-space: nowrap;
+  }
+
+  .footy-goal-assists-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .footy-goal-assists-actions,
+  .footy-goal-assists-status-row {
+    grid-template-columns: 1fr;
+  }
+
+  .footy-goal-assists-actions {
+    display: grid;
+  }
+
+  .footy-goal-assists-actions .icon-action-button {
+    width: 100%;
+  }
+
+  .footy-goal-assists-status-row {
+    display: grid;
   }
 
   .brand {

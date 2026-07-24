@@ -449,6 +449,9 @@
         <div class="section-heading page-heading-with-action footy-heading">
           <h1>Footy</h1>
           <div class="heading-actions">
+            <button class="action-button footy-goal-assists-button" id="footy-goal-assists-button" type="button" data-admin-only hidden>
+              G/A'son
+            </button>
             <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
               Past Matches
             </button>
@@ -483,6 +486,58 @@
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
+        </div>
+      </section>
+
+      <section class="page" id="footy-goal-assists" data-page="footy-goal-assists">
+        <div class="section-heading page-heading-with-action">
+          <div>
+            <h1>G/A'son</h1>
+            <p class="body-copy">Build goal and assist JSON for match notes.</p>
+          </div>
+          <div class="heading-actions heading-actions-right">
+            <button class="action-button" id="footy-goal-assists-back" type="button">
+              Footy
+            </button>
+            <button class="action-button" id="footy-goal-assists-copy" type="button">
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="content-shell footy-goal-assists-shell">
+          <form class="footy-goal-assists-form" id="footy-goal-assists-form">
+            <label>
+              <span>Scorer Name</span>
+              <input id="footy-scorer-name" type="text" autocomplete="off" placeholder="Scorer Name">
+            </label>
+            <label>
+              <span>Assister Name</span>
+              <input id="footy-assister-name" type="text" autocomplete="off" placeholder="Assister Name">
+            </label>
+            <label class="footy-penalty-toggle">
+              <input id="footy-penalty" type="checkbox">
+              <span>Penalty</span>
+            </label>
+            <div class="footy-goal-assists-actions">
+              <button class="action-button" type="submit">
+                Save
+              </button>
+              <button class="icon-action-button" id="footy-goal-assists-add" type="button" aria-label="Save goal assist entry">
+                +
+              </button>
+            </div>
+          </form>
+
+          <div class="footy-goal-assists-status-row">
+            <div class="footy-goal-assists-saved" id="footy-goal-assists-saved" aria-live="polite">
+              <p class="table-message">No saved goal/assist entries.</p>
+            </div>
+            <button class="action-button" id="footy-goal-assists-clear" type="button">
+              Clear
+            </button>
+          </div>
+          <p class="footy-goal-assists-feedback" id="footy-goal-assists-feedback" aria-live="polite"></p>
         </div>
       </section>
 

@@ -841,6 +841,43 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-column: 1 / -1;
 }
 
+.footy-note-ga-builder {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.footy-note-ga-builder h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.footy-note-ga-fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.footy-note-ga-fields .footy-goal-assists-actions {
+  align-items: stretch;
+}
+
+.footy-note-ga-fields .icon-action-button {
+  width: 44px;
+}
+
+.footy-note-ga-saved {
+  min-width: 0;
+}
+
+.footy-note-ga-saved .table-message {
+  font-size: 0.85rem;
+}
+
 .footy-note-grid input,
 .footy-note-grid textarea {
   background: var(--soft);
@@ -852,6 +889,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-height: 42px;
   padding: 9px 10px;
   resize: vertical;
+}
+
+.footy-note-ga-builder input[type="text"] {
+  background: var(--panel);
 }
 
 .footy-note-grid textarea {

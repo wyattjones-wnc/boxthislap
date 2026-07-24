@@ -507,14 +507,62 @@
                 <span>Away Score</span>
                 <input id="footy-note-away-score" type="text" inputmode="numeric" autocomplete="off">
               </label>
-              <label>
-                <span>Follow G/A</span>
-                <textarea id="footy-note-follow-ga" rows="5" spellcheck="false"></textarea>
-              </label>
-              <label>
-                <span>Opp G/A</span>
-                <textarea id="footy-note-opp-ga" rows="5" spellcheck="false"></textarea>
-              </label>
+              <section class="footy-note-ga-builder" data-footy-note-ga-side="follow">
+                <h3>Follow G/A</h3>
+                <div class="footy-note-ga-fields">
+                  <label>
+                    <span>Scorer Name</span>
+                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" placeholder="Scorer Name">
+                  </label>
+                  <label>
+                    <span>Assister Name</span>
+                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                  </label>
+                  <label class="footy-penalty-toggle">
+                    <input type="checkbox" data-footy-note-ga-field="penalty">
+                    <span>Penalty</span>
+                  </label>
+                  <div class="footy-goal-assists-actions">
+                    <button class="action-button" type="button" data-footy-note-ga-save="follow">
+                      Save
+                    </button>
+                    <button class="icon-action-button" type="button" data-footy-note-ga-save="follow" aria-label="Save followed team goal assist entry">
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div class="footy-note-ga-saved" data-footy-note-ga-saved="follow">
+                  <p class="table-message">No saved followed-team entries.</p>
+                </div>
+              </section>
+              <section class="footy-note-ga-builder" data-footy-note-ga-side="opponent">
+                <h3>Opp G/A</h3>
+                <div class="footy-note-ga-fields">
+                  <label>
+                    <span>Scorer Name</span>
+                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" placeholder="Scorer Name">
+                  </label>
+                  <label>
+                    <span>Assister Name</span>
+                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                  </label>
+                  <label class="footy-penalty-toggle">
+                    <input type="checkbox" data-footy-note-ga-field="penalty">
+                    <span>Penalty</span>
+                  </label>
+                  <div class="footy-goal-assists-actions">
+                    <button class="action-button" type="button" data-footy-note-ga-save="opponent">
+                      Save
+                    </button>
+                    <button class="icon-action-button" type="button" data-footy-note-ga-save="opponent" aria-label="Save opponent goal assist entry">
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div class="footy-note-ga-saved" data-footy-note-ga-saved="opponent">
+                  <p class="table-message">No saved opponent entries.</p>
+                </div>
+              </section>
               <label class="footy-note-wide">
                 <span>Note</span>
                 <textarea id="footy-note-text" rows="3"></textarea>

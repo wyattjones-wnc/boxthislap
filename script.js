@@ -91,8 +91,6 @@ import {
   footyNoteTitle,
   footyNoteHomeScore,
   footyNoteAwayScore,
-  footyNoteFollowGa,
-  footyNoteOppGa,
   footyNoteText,
   footyNoteHighlightLink,
   footyNoteStatus,
@@ -160,6 +158,10 @@ let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
+const footyNoteGoalAssistEntries = {
+  follow: [],
+  opponent: [],
+};
 const siteData = {};
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
@@ -744,13 +746,12 @@ function openFootyNoteDialog(matchId) {
     footyNoteAwayScore.value = String(note.awayScore ?? "");
   }
 
-  if (footyNoteFollowGa) {
-    footyNoteFollowGa.value = formatGoalAssistEventsForTextarea(note.followGoalAssists);
-  }
-
-  if (footyNoteOppGa) {
-    footyNoteOppGa.value = formatGoalAssistEventsForTextarea(note.opponentGoalAssists);
-  }
+  footyNoteGoalAssistEntries.follow = normalizeFootyGoalAssistList(note.followGoalAssists);
+  footyNoteGoalAssistEntries.opponent = normalizeFootyGoalAssistList(note.opponentGoalAssists);
+  clearFootyNoteGoalAssistInputs("follow");
+  clearFootyNoteGoalAssistInputs("opponent");
+  renderFootyNoteGoalAssistEntries("follow");
+  renderFootyNoteGoalAssistEntries("opponent");
 
   if (footyNoteText) {
     footyNoteText.value = String(note.note || "");
@@ -795,56 +796,142 @@ function getFootyFixtureByMatchId(matchId) {
     .find((fixture) => String(fixture.matchId || "").trim() === normalizedId) || null;
 }
 
-function formatGoalAssistEventsForTextarea(events = []) {
-  return Array.isArray(events) && events.length
-    ? JSON.stringify(events.map(normalizeFootyGoalAssistForNote), null, 2)
-    : "";
-}
-
 function normalizeFootyGoalAssistForNote(event) {
-  return {
+  const normalized = {
     scorer: String(event?.scorer || "").trim(),
     assister: String(event?.assister || "").trim(),
     penalty: Boolean(event?.penalty),
-    minute: event?.minute ?? "",
   };
+
+  if (event?.minute !== undefined && event?.minute !== null && String(event.minute).trim()) {
+    normalized.minute = event.minute;
+  }
+
+  return normalized;
+}
+
+function normalizeFootyGoalAssistList(events = []) {
+  return Array.isArray(events)
+    ? events.map(normalizeFootyGoalAssistForNote)
+    : [];
 }
 
 function buildFootyMatchNoteFromDialog() {
-  const followGoalAssists = parseGoalAssistTextarea(footyNoteFollowGa?.value || "", "Follow G/A");
-  const opponentGoalAssists = parseGoalAssistTextarea(footyNoteOppGa?.value || "", "Opp G/A");
-
   return {
     matchId: activeFootyNoteMatchId,
     homeScore: String(footyNoteHomeScore?.value || "").trim(),
     awayScore: String(footyNoteAwayScore?.value || "").trim(),
-    followGoalAssists,
-    opponentGoalAssists,
+    followGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.follow),
+    opponentGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.opponent),
     note: String(footyNoteText?.value || "").trim(),
     highlightLink: String(footyNoteHighlightLink?.value || "").trim(),
   };
 }
 
-function parseGoalAssistTextarea(value, label) {
-  const text = String(value || "").trim();
-
-  if (!text) {
-    return [];
+function saveFootyNoteGoalAssistEntry(side) {
+  if (!isFootyNoteGoalAssistSide(side)) {
+    return;
   }
 
-  let parsed;
+  const builder = getFootyNoteGoalAssistBuilder(side);
+  const scorer = String(builder?.querySelector("[data-footy-note-ga-field=\"scorer\"]")?.value || "").trim();
+  const assister = String(builder?.querySelector("[data-footy-note-ga-field=\"assister\"]")?.value || "").trim();
+  const penalty = Boolean(builder?.querySelector("[data-footy-note-ga-field=\"penalty\"]")?.checked);
 
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error(`${label} must be valid JSON.`);
+  if (!scorer && !assister && !penalty) {
+    setFootyNoteStatus("Add a scorer, assister, or penalty before saving a G/A entry.", true);
+    return;
   }
 
-  if (!Array.isArray(parsed)) {
-    throw new Error(`${label} must be a JSON list.`);
+  footyNoteGoalAssistEntries[side].push({ scorer, assister, penalty });
+  clearFootyNoteGoalAssistInputs(side);
+  renderFootyNoteGoalAssistEntries(side);
+  setFootyNoteStatus("G/A entry saved.");
+}
+
+function renderFootyNoteGoalAssistEntries(side) {
+  if (!isFootyNoteGoalAssistSide(side)) {
+    return;
   }
 
-  return parsed.map(normalizeFootyGoalAssistForNote);
+  const savedList = document.querySelector(`[data-footy-note-ga-saved="${side}"]`);
+  const entries = footyNoteGoalAssistEntries[side];
+  const emptyLabel = side === "follow" ? "No saved followed-team entries." : "No saved opponent entries.";
+
+  if (!savedList) {
+    return;
+  }
+
+  if (!entries.length) {
+    savedList.innerHTML = `<p class="table-message">${emptyLabel}</p>`;
+    return;
+  }
+
+  savedList.innerHTML = `
+    <ul class="footy-goal-assists-chip-list" aria-label="${side === "follow" ? "Followed team" : "Opponent"} goal assist entries">
+      ${entries.map((entry, index) => renderFootyNoteGoalAssistChip(entry, side, index)).join("")}
+    </ul>
+  `;
+}
+
+function renderFootyNoteGoalAssistChip(entry, side, index) {
+  const title = getFootyGoalAssistLabel(entry, index);
+  const penaltyLabel = entry.penalty ? `<span class="footy-goal-assist-penalty">P</span>` : "";
+
+  return `
+    <li>
+      <span class="footy-goal-assist-chip" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+        <span class="footy-goal-assist-saved-icon" aria-hidden="true">&#10003;</span>
+        <span>${escapeHtml(getFootyGoalAssistChipText(entry, index))}</span>
+        ${penaltyLabel}
+      </span>
+      <button class="icon-action-button footy-goal-assist-delete" type="button" data-footy-note-ga-delete="${escapeHtml(side)}" data-footy-note-ga-index="${index}" aria-label="Delete ${escapeHtml(title)}">
+        &times;
+      </button>
+    </li>
+  `;
+}
+
+function deleteFootyNoteGoalAssistEntry(side, index) {
+  if (!isFootyNoteGoalAssistSide(side) || !Number.isInteger(index)) {
+    return;
+  }
+
+  footyNoteGoalAssistEntries[side].splice(index, 1);
+  renderFootyNoteGoalAssistEntries(side);
+  setFootyNoteStatus("G/A entry removed.");
+}
+
+function clearFootyNoteGoalAssistInputs(side) {
+  const builder = getFootyNoteGoalAssistBuilder(side);
+
+  if (!builder) {
+    return;
+  }
+
+  const scorer = builder.querySelector("[data-footy-note-ga-field=\"scorer\"]");
+  const assister = builder.querySelector("[data-footy-note-ga-field=\"assister\"]");
+  const penalty = builder.querySelector("[data-footy-note-ga-field=\"penalty\"]");
+
+  if (scorer) {
+    scorer.value = "";
+  }
+
+  if (assister) {
+    assister.value = "";
+  }
+
+  if (penalty) {
+    penalty.checked = false;
+  }
+}
+
+function getFootyNoteGoalAssistBuilder(side) {
+  return document.querySelector(`[data-footy-note-ga-side="${side}"]`);
+}
+
+function isFootyNoteGoalAssistSide(side) {
+  return side === "follow" || side === "opponent";
 }
 
 function saveFootyMatchNoteFromDialog() {
@@ -3163,6 +3250,24 @@ footyGoalAssistsSaved?.addEventListener("click", (event) => {
 footyNoteForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveFootyMatchNoteFromDialog();
+});
+
+footyNoteForm?.addEventListener("click", (event) => {
+  const saveButton = event.target.closest("[data-footy-note-ga-save]");
+
+  if (saveButton) {
+    saveFootyNoteGoalAssistEntry(saveButton.getAttribute("data-footy-note-ga-save"));
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-footy-note-ga-delete]");
+
+  if (deleteButton) {
+    deleteFootyNoteGoalAssistEntry(
+      deleteButton.getAttribute("data-footy-note-ga-delete"),
+      Number(deleteButton.getAttribute("data-footy-note-ga-index")),
+    );
+  }
 });
 
 [footyNoteClose, footyNoteCancel].forEach((button) => {

@@ -808,8 +808,9 @@ function getFootyFixtureResultClass(fixture) {
     return "";
   }
 
-  const followedScore = fixture.isHome ? homeScore : awayScore;
-  const opponentScore = fixture.isHome ? awayScore : homeScore;
+  const sides = getFootyFixtureSides(fixture);
+  const followedScore = sides.followed === "home" ? homeScore : awayScore;
+  const opponentScore = sides.followed === "home" ? awayScore : homeScore;
 
   if (followedScore > opponentScore) {
     return "footy-fixture-card--win";
@@ -823,15 +824,53 @@ function getFootyFixtureResultClass(fixture) {
 }
 
 function getFootyFollowedSideName(fixture) {
-  return fixture?.isHome
+  const sides = getFootyFixtureSides(fixture);
+
+  return sides.followed === "home"
     ? fixture?.home || fixture?.teamName || "Followed"
     : fixture?.away || fixture?.teamName || "Followed";
 }
 
 function getFootyOpponentSideName(fixture) {
+  const sides = getFootyFixtureSides(fixture);
+
+  return sides.opponent === "home"
+    ? fixture?.home || fixture?.opponent || "Opponent"
+    : fixture?.away || fixture?.opponent || "Opponent";
+}
+
+function getFootyFixtureSides(fixture) {
+  const followedTeam = String(fixture?.teamName || "").trim();
+  const homeTeam = String(fixture?.home || "").trim();
+  const awayTeam = String(fixture?.away || "").trim();
+
+  if (followedTeam) {
+    if (isSameFootyTeamName(followedTeam, homeTeam)) {
+      return { followed: "home", opponent: "away" };
+    }
+
+    if (isSameFootyTeamName(followedTeam, awayTeam)) {
+      return { followed: "away", opponent: "home" };
+    }
+  }
+
   return fixture?.isHome
-    ? fixture?.away || fixture?.opponent || "Opponent"
-    : fixture?.home || fixture?.opponent || "Opponent";
+    ? { followed: "home", opponent: "away" }
+    : { followed: "away", opponent: "home" };
+}
+
+function isSameFootyTeamName(firstName, secondName) {
+  const first = normalizeFootyClubName(firstName);
+  const second = normalizeFootyClubName(secondName);
+
+  return Boolean(first && second && first === second);
+}
+
+function normalizeFootyClubName(name) {
+  return normalizeLookupName(name)
+    .replace(/\b(afc|cf|fc|sc)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function openFootyNoteDialog(matchId) {

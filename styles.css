@@ -720,13 +720,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
+  cursor: pointer;
   display: inline-flex;
   font-size: 0.88rem;
+  font-family: inherit;
   font-weight: 900;
   gap: 7px;
   max-width: min(100%, 340px);
   min-height: 34px;
   padding: 6px 10px;
+  text-align: left;
 }
 
 .footy-goal-assist-chip > span:not(.footy-goal-assist-saved-icon):not(.footy-goal-assist-penalty) {
@@ -808,6 +811,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-content: space-between;
 }
 
+.footy-note-form header > div {
+  min-width: 0;
+}
+
+.footy-note-form header .icon-action-button {
+  flex: 0 0 auto;
+}
+
 .footy-note-form header span {
   color: var(--muted);
   display: block;
@@ -851,8 +862,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 12px;
 }
 
-.footy-note-ga-builder h3 {
+.footy-note-ga-builder summary {
+  cursor: pointer;
   font-size: 1rem;
+  font-weight: 900;
   margin: 0;
 }
 
@@ -864,10 +877,6 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-note-ga-fields .footy-goal-assists-actions {
   align-items: stretch;
-}
-
-.footy-note-ga-fields .icon-action-button {
-  width: 44px;
 }
 
 .footy-note-ga-saved {
@@ -923,10 +932,34 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.footy-fixture-card[role="button"] {
+  cursor: pointer;
+}
+
+.footy-fixture-card[role="button"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 3px;
+}
+
 .footy-fixture-card--soon {
   background: color-mix(in srgb, var(--accent) 22%, var(--soft));
   border-color: color-mix(in srgb, var(--accent) 82%, var(--line));
   box-shadow: inset 6px 0 0 var(--accent), 0 12px 28px var(--shadow);
+}
+
+.footy-fixture-card--win {
+  background: color-mix(in srgb, #2f9e44 18%, var(--soft));
+  border-color: color-mix(in srgb, #2f9e44 48%, var(--line));
+}
+
+.footy-fixture-card--draw {
+  background: color-mix(in srgb, #f2c94c 20%, var(--soft));
+  border-color: color-mix(in srgb, #f2c94c 48%, var(--line));
+}
+
+.footy-fixture-card--loss {
+  background: color-mix(in srgb, #d64545 18%, var(--soft));
+  border-color: color-mix(in srgb, #d64545 48%, var(--line));
 }
 
 .footy-fixture-badge {
@@ -997,6 +1030,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding-top: 10px;
 }
 
+.footy-fixture-details {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  padding-top: 12px;
+}
+
+.footy-match-note-empty {
+  margin: 0;
+}
+
 .footy-match-note .footy-match-score {
   color: var(--text);
   font-weight: 800;
@@ -1014,13 +1059,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
-.footy-highlight-link {
-  color: var(--accent-dark);
-  font-size: 0.86rem;
-  font-weight: 900;
-  text-decoration: none;
-}
-
 .footy-fixture-card strong {
   align-self: center;
   color: var(--accent-dark);
@@ -1035,6 +1073,23 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: grid;
   gap: 8px;
   justify-items: end;
+}
+
+.footy-highlight-button {
+  height: 34px;
+  min-height: 34px;
+  width: 34px;
+}
+
+.footy-highlight-button svg {
+  fill: currentColor;
+  height: 18px;
+  width: 18px;
+}
+
+.footy-fixture-detail-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .footy-note-edit-button {

@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607230004">
+    <link rel="stylesheet" href="styles.css?v=202607240001">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -449,9 +449,6 @@
         <div class="section-heading page-heading-with-action footy-heading">
           <h1>Footy</h1>
           <div class="heading-actions">
-            <button class="action-button footy-goal-assists-button" id="footy-goal-assists-button" type="button" data-admin-only hidden>
-              G/A'son
-            </button>
             <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
               Past Matches
             </button>
@@ -507,8 +504,8 @@
                 <span>Away Score</span>
                 <input id="footy-note-away-score" type="text" inputmode="numeric" autocomplete="off">
               </label>
-              <section class="footy-note-ga-builder" data-footy-note-ga-side="follow">
-                <h3>Follow G/A</h3>
+              <details class="footy-note-ga-builder" data-footy-note-ga-side="follow">
+                <summary>Follow G/A</summary>
                 <div class="footy-note-ga-fields">
                   <label>
                     <span>Scorer Name</span>
@@ -517,6 +514,10 @@
                   <label>
                     <span>Assister Name</span>
                     <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                  </label>
+                  <label>
+                    <span>Minute</span>
+                    <input type="number" data-footy-note-ga-field="minute" inputmode="numeric" min="0" autocomplete="off" placeholder="Minute">
                   </label>
                   <label class="footy-penalty-toggle">
                     <input type="checkbox" data-footy-note-ga-field="penalty">
@@ -526,17 +527,14 @@
                     <button class="action-button" type="button" data-footy-note-ga-save="follow">
                       Save
                     </button>
-                    <button class="icon-action-button" type="button" data-footy-note-ga-save="follow" aria-label="Save followed team goal assist entry">
-                      +
-                    </button>
                   </div>
                 </div>
                 <div class="footy-note-ga-saved" data-footy-note-ga-saved="follow">
                   <p class="table-message">No saved followed-team entries.</p>
                 </div>
-              </section>
-              <section class="footy-note-ga-builder" data-footy-note-ga-side="opponent">
-                <h3>Opp G/A</h3>
+              </details>
+              <details class="footy-note-ga-builder" data-footy-note-ga-side="opponent">
+                <summary>Opp G/A</summary>
                 <div class="footy-note-ga-fields">
                   <label>
                     <span>Scorer Name</span>
@@ -546,6 +544,10 @@
                     <span>Assister Name</span>
                     <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
                   </label>
+                  <label>
+                    <span>Minute</span>
+                    <input type="number" data-footy-note-ga-field="minute" inputmode="numeric" min="0" autocomplete="off" placeholder="Minute">
+                  </label>
                   <label class="footy-penalty-toggle">
                     <input type="checkbox" data-footy-note-ga-field="penalty">
                     <span>Penalty</span>
@@ -554,15 +556,12 @@
                     <button class="action-button" type="button" data-footy-note-ga-save="opponent">
                       Save
                     </button>
-                    <button class="icon-action-button" type="button" data-footy-note-ga-save="opponent" aria-label="Save opponent goal assist entry">
-                      +
-                    </button>
                   </div>
                 </div>
                 <div class="footy-note-ga-saved" data-footy-note-ga-saved="opponent">
                   <p class="table-message">No saved opponent entries.</p>
                 </div>
-              </section>
+              </details>
               <label class="footy-note-wide">
                 <span>Note</span>
                 <textarea id="footy-note-text" rows="3"></textarea>
@@ -1417,6 +1416,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607230007"></script>
+    <script type="module" src="script.js?v=202607240001"></script>
   </body>
 </html>

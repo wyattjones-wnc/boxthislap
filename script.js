@@ -156,6 +156,7 @@ let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
 const footyNoteGoalAssistEntries = {
@@ -685,39 +686,151 @@ function renderFootyFixture(fixture) {
   const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
   const timingLabel = getFootyFixtureTimingLabel(fixture);
   const isHighlighted = Boolean(timingLabel);
+  const matchId = String(fixture.matchId || "").trim();
+  const isExpanded = matchId && expandedFootyMatchIds.has(matchId);
+  const score = getFootyMatchScore(fixture);
+  const resultClass = getFootyFixtureResultClass(fixture);
+  const cardClasses = [
+    "footy-fixture-card",
+    isHighlighted ? "footy-fixture-card--soon" : "",
+    resultClass,
+    isExpanded ? "is-expanded" : "",
+  ].filter(Boolean).join(" ");
   const venueMarkup = shouldShowFootyFixtureVenue(fixture)
     ? `<p>${escapeHtml(fixture.venue)}</p>`
     : "";
-  const matchNoteMarkup = renderFootyMatchNote(fixture);
-  const editMarkup = shouldRenderFootyNoteEditButton(fixture)
-    ? `<button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>`
+  const titleMarkup = score
+    ? `${escapeHtml(fixture.home || "TBD")} ${escapeHtml(score.homeScore)} &middot; ${escapeHtml(fixture.away || "TBD")} ${escapeHtml(score.awayScore)}`
+    : `${escapeHtml(fixture.home || "TBD")} v ${escapeHtml(fixture.away || "TBD")}`;
+  const highlightMarkup = fixture.matchNote?.highlightLink
+    ? `
+      <a class="icon-action-button footy-highlight-button" href="${escapeHtml(fixture.matchNote.highlightLink)}" target="_blank" rel="noopener noreferrer" aria-label="Open match highlights">
+        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+          <path d="M8 5v14l11-7L8 5Z"></path>
+        </svg>
+      </a>
+    `
     : "";
+  const detailsMarkup = isExpanded ? renderFootyFixtureDetails(fixture) : "";
 
   return `
-    <article class="footy-fixture-card${isHighlighted ? " footy-fixture-card--soon" : ""}" data-footy-match-id="${escapeHtml(fixture.matchId || "")}">
+    <article class="${cardClasses}" data-footy-match-id="${escapeHtml(matchId)}" ${matchId ? `role="button" tabindex="0" aria-expanded="${String(Boolean(isExpanded))}"` : ""}>
       <div class="footy-fixture-badge" aria-hidden="true">
         ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
       </div>
       <div>
-        <h2>${escapeHtml(fixture.home || "TBD")} v ${escapeHtml(fixture.away || "TBD")}</h2>
+        <h2>${titleMarkup}</h2>
         <p class="footy-fixture-meta">
           <span>${escapeHtml(fixture.teamName || "")}</span>
           <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
         ${venueMarkup}
-        ${matchNoteMarkup}
       </div>
       <div class="footy-fixture-side-actions">
         <strong>${escapeHtml(dateLabel)}</strong>
-        ${editMarkup}
+        ${highlightMarkup}
       </div>
+      ${detailsMarkup}
     </article>
   `;
 }
 
 function shouldRenderFootyNoteEditButton(fixture) {
   return Boolean(isCurrentManagerAdmin() && shouldShowPastFootyFixtures && fixture?.matchId);
+}
+
+function toggleFootyFixtureExpansion(matchId) {
+  const normalizedId = String(matchId || "").trim();
+
+  if (!normalizedId) {
+    return;
+  }
+
+  if (expandedFootyMatchIds.has(normalizedId)) {
+    expandedFootyMatchIds.delete(normalizedId);
+  } else {
+    expandedFootyMatchIds.add(normalizedId);
+  }
+
+  renderFootySchedule(siteData.footySchedule);
+}
+
+function renderFootyFixtureDetails(fixture) {
+  const matchNoteMarkup = renderFootyMatchNote(fixture);
+  const editMarkup = shouldRenderFootyNoteEditButton(fixture)
+    ? `
+      <div class="footy-fixture-detail-actions">
+        <button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>
+      </div>
+    `
+    : "";
+  const emptyMarkup = !matchNoteMarkup
+    ? `<p class="table-message footy-match-note-empty">No match details saved yet.</p>`
+    : "";
+
+  return `
+    <div class="footy-fixture-details">
+      ${matchNoteMarkup}
+      ${emptyMarkup}
+      ${editMarkup}
+    </div>
+  `;
+}
+
+function getFootyMatchScore(fixture) {
+  const note = fixture?.matchNote || {};
+  const homeScore = String(note.homeScore ?? "").trim();
+  const awayScore = String(note.awayScore ?? "").trim();
+
+  if (!homeScore && !awayScore) {
+    return null;
+  }
+
+  return {
+    awayScore: awayScore || "-",
+    homeScore: homeScore || "-",
+  };
+}
+
+function getFootyFixtureResultClass(fixture) {
+  const score = getFootyMatchScore(fixture);
+
+  if (!score) {
+    return "";
+  }
+
+  const homeScore = Number(score.homeScore);
+  const awayScore = Number(score.awayScore);
+
+  if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) {
+    return "";
+  }
+
+  const followedScore = fixture.isHome ? homeScore : awayScore;
+  const opponentScore = fixture.isHome ? awayScore : homeScore;
+
+  if (followedScore > opponentScore) {
+    return "footy-fixture-card--win";
+  }
+
+  if (followedScore < opponentScore) {
+    return "footy-fixture-card--loss";
+  }
+
+  return "footy-fixture-card--draw";
+}
+
+function getFootyFollowedSideName(fixture) {
+  return fixture?.isHome
+    ? fixture?.home || fixture?.teamName || "Followed"
+    : fixture?.away || fixture?.teamName || "Followed";
+}
+
+function getFootyOpponentSideName(fixture) {
+  return fixture?.isHome
+    ? fixture?.away || fixture?.opponent || "Opponent"
+    : fixture?.home || fixture?.opponent || "Opponent";
 }
 
 function openFootyNoteDialog(matchId) {
@@ -836,14 +949,15 @@ function saveFootyNoteGoalAssistEntry(side) {
   const builder = getFootyNoteGoalAssistBuilder(side);
   const scorer = String(builder?.querySelector("[data-footy-note-ga-field=\"scorer\"]")?.value || "").trim();
   const assister = String(builder?.querySelector("[data-footy-note-ga-field=\"assister\"]")?.value || "").trim();
+  const minute = String(builder?.querySelector("[data-footy-note-ga-field=\"minute\"]")?.value || "").trim();
   const penalty = Boolean(builder?.querySelector("[data-footy-note-ga-field=\"penalty\"]")?.checked);
 
-  if (!scorer && !assister && !penalty) {
+  if (!scorer && !assister && !minute && !penalty) {
     setFootyNoteStatus("Add a scorer, assister, or penalty before saving a G/A entry.", true);
     return;
   }
 
-  footyNoteGoalAssistEntries[side].push({ scorer, assister, penalty });
+  footyNoteGoalAssistEntries[side].push({ scorer, assister, minute, penalty });
   clearFootyNoteGoalAssistInputs(side);
   renderFootyNoteGoalAssistEntries(side);
   setFootyNoteStatus("G/A entry saved.");
@@ -876,16 +990,14 @@ function renderFootyNoteGoalAssistEntries(side) {
 
 function renderFootyNoteGoalAssistChip(entry, side, index) {
   const title = getFootyGoalAssistLabel(entry, index);
-  const penaltyLabel = entry.penalty ? `<span class="footy-goal-assist-penalty">P</span>` : "";
+  const penaltyLabel = entry.penalty ? `<span class="footy-goal-assist-penalty">(P)</span>` : "";
 
   return `
     <li>
-      <span class="footy-goal-assist-chip" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+      <button class="footy-goal-assist-chip" type="button" data-footy-note-ga-delete="${escapeHtml(side)}" data-footy-note-ga-index="${index}" title="${escapeHtml(title)}" aria-label="Delete ${escapeHtml(title)}">
         <span class="footy-goal-assist-saved-icon" aria-hidden="true">&#10003;</span>
         <span>${escapeHtml(getFootyGoalAssistChipText(entry, index))}</span>
         ${penaltyLabel}
-      </span>
-      <button class="icon-action-button footy-goal-assist-delete" type="button" data-footy-note-ga-delete="${escapeHtml(side)}" data-footy-note-ga-index="${index}" aria-label="Delete ${escapeHtml(title)}">
         &times;
       </button>
     </li>
@@ -911,6 +1023,7 @@ function clearFootyNoteGoalAssistInputs(side) {
 
   const scorer = builder.querySelector("[data-footy-note-ga-field=\"scorer\"]");
   const assister = builder.querySelector("[data-footy-note-ga-field=\"assister\"]");
+  const minute = builder.querySelector("[data-footy-note-ga-field=\"minute\"]");
   const penalty = builder.querySelector("[data-footy-note-ga-field=\"penalty\"]");
 
   if (scorer) {
@@ -919,6 +1032,10 @@ function clearFootyNoteGoalAssistInputs(side) {
 
   if (assister) {
     assister.value = "";
+  }
+
+  if (minute) {
+    minute.value = "";
   }
 
   if (penalty) {
@@ -957,7 +1074,7 @@ function saveFootyMatchNoteFromDialog() {
   footyNoteSave && (footyNoteSave.disabled = true);
   setFootyNoteStatus("Saving match note...");
 
-  submitFootyDataPayloadWithForm({
+  submitFootyDataPayload({
     action: "saveFootyMatchNote",
     note,
     pageUrl: window.location.href,
@@ -968,8 +1085,40 @@ function saveFootyMatchNoteFromDialog() {
 
   window.setTimeout(() => {
     footyNoteSave && (footyNoteSave.disabled = false);
-    setFootyNoteStatus("Saved. The sheet may take a moment to update.", false);
+    setFootyNoteStatus("Sent. The sheet may take a moment to update.", false);
   }, 700);
+}
+
+function submitFootyDataPayload(payload) {
+  const body = new URLSearchParams({
+    payload: JSON.stringify(payload),
+  });
+
+  if (navigator.sendBeacon) {
+    const sent = navigator.sendBeacon(FOOTY_DATA_ENDPOINT, body);
+
+    if (sent) {
+      return;
+    }
+  }
+
+  if (window.fetch) {
+    window.fetch(FOOTY_DATA_ENDPOINT, {
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      keepalive: true,
+      method: "POST",
+      mode: "no-cors",
+    }).catch((error) => {
+      console.warn("Unable to submit footy match note with fetch; falling back to form.", error);
+      submitFootyDataPayloadWithForm(payload);
+    });
+    return;
+  }
+
+  submitFootyDataPayloadWithForm(payload);
 }
 
 function submitFootyDataPayloadWithForm(payload) {
@@ -1040,24 +1189,19 @@ function renderFootyMatchNote(fixture) {
     return "";
   }
 
-  const hasScore = String(note.homeScore || "").trim() || String(note.awayScore || "").trim();
-  const scoreMarkup = hasScore
-    ? `<p class="footy-match-score">${escapeHtml(fixture.home || "Home")} ${escapeHtml(note.homeScore || "-")} &middot; ${escapeHtml(fixture.away || "Away")} ${escapeHtml(note.awayScore || "-")}</p>`
-    : "";
-  const followEventsMarkup = renderFootyGoalAssistEvents(fixture.teamName || "Followed", note.followGoalAssists);
-  const opponentEventsMarkup = renderFootyGoalAssistEvents(fixture.opponent || "Opponent", note.opponentGoalAssists);
+  const followEventsMarkup = renderFootyGoalAssistEvents(getFootyFollowedSideName(fixture), note.followGoalAssists);
+  const opponentEventsMarkup = renderFootyGoalAssistEvents(getFootyOpponentSideName(fixture), note.opponentGoalAssists);
   const noteMarkup = note.note ? `<p>${escapeHtml(note.note)}</p>` : "";
-  const highlightMarkup = note.highlightLink
-    ? `<a class="footy-highlight-link" href="${escapeHtml(note.highlightLink)}" target="_blank" rel="noopener noreferrer">Highlights</a>`
-    : "";
+
+  if (!followEventsMarkup && !opponentEventsMarkup && !noteMarkup) {
+    return "";
+  }
 
   return `
     <div class="footy-match-note">
-      ${scoreMarkup}
       ${followEventsMarkup}
       ${opponentEventsMarkup}
       ${noteMarkup}
-      ${highlightMarkup}
     </div>
   `;
 }
@@ -1073,7 +1217,7 @@ function renderFootyGoalAssistEvents(label, events = []) {
       ${events.map((event) => {
         const minute = event.minute ? `${escapeHtml(event.minute)}'` : "";
         const assist = event.assister ? `, ${escapeHtml(event.assister)}` : "";
-        const penalty = event.penalty ? " pen" : "";
+        const penalty = event.penalty ? " (P)" : "";
 
         return `<p>${minute} ${escapeHtml(event.scorer || "Goal")}${assist}${penalty}</p>`;
       }).join("")}
@@ -3193,11 +3337,37 @@ document.addEventListener("click", (event) => {
 footyScheduleList?.addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-footy-note-edit]");
 
-  if (!editButton) {
+  if (editButton) {
+    openFootyNoteDialog(editButton.getAttribute("data-footy-note-edit"));
     return;
   }
 
-  openFootyNoteDialog(editButton.getAttribute("data-footy-note-edit"));
+  if (event.target.closest("a, button, input, select, textarea, label")) {
+    return;
+  }
+
+  const card = event.target.closest("[data-footy-match-id]");
+
+  if (!card) {
+    return;
+  }
+
+  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+});
+
+footyScheduleList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-footy-match-id]");
+
+  if (!card || event.target !== card) {
+    return;
+  }
+
+  event.preventDefault();
+  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
 });
 
 leagueYearSelect?.addEventListener("change", () => {

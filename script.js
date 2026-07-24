@@ -970,6 +970,8 @@ function normalizeFootyGoalAssistList(events = []) {
 }
 
 function buildFootyMatchNoteFromDialog() {
+  commitPendingFootyNoteGoalAssistEntries();
+
   return {
     matchId: activeFootyNoteMatchId,
     homeScore: String(footyNoteHomeScore?.value || "").trim(),
@@ -986,6 +988,24 @@ function saveFootyNoteGoalAssistEntry(side) {
     return;
   }
 
+  if (!commitPendingFootyNoteGoalAssistEntry(side)) {
+    setFootyNoteStatus("Add a scorer, assister, or penalty before saving a G/A entry.", true);
+    return;
+  }
+
+  setFootyNoteStatus("G/A entry saved.");
+}
+
+function commitPendingFootyNoteGoalAssistEntries() {
+  commitPendingFootyNoteGoalAssistEntry("follow");
+  commitPendingFootyNoteGoalAssistEntry("opponent");
+}
+
+function commitPendingFootyNoteGoalAssistEntry(side) {
+  if (!isFootyNoteGoalAssistSide(side)) {
+    return false;
+  }
+
   const builder = getFootyNoteGoalAssistBuilder(side);
   const scorer = String(builder?.querySelector("[data-footy-note-ga-field=\"scorer\"]")?.value || "").trim();
   const assister = String(builder?.querySelector("[data-footy-note-ga-field=\"assister\"]")?.value || "").trim();
@@ -993,14 +1013,13 @@ function saveFootyNoteGoalAssistEntry(side) {
   const penalty = Boolean(builder?.querySelector("[data-footy-note-ga-field=\"penalty\"]")?.checked);
 
   if (!scorer && !assister && !minute && !penalty) {
-    setFootyNoteStatus("Add a scorer, assister, or penalty before saving a G/A entry.", true);
-    return;
+    return false;
   }
 
   footyNoteGoalAssistEntries[side].push({ scorer, assister, minute, penalty });
   clearFootyNoteGoalAssistInputs(side);
   renderFootyNoteGoalAssistEntries(side);
-  setFootyNoteStatus("G/A entry saved.");
+  return true;
 }
 
 function renderFootyNoteGoalAssistEntries(side) {

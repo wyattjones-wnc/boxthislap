@@ -365,6 +365,15 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 16px;
 }
 
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea,
+  button {
+    font-size: max(16px, 1rem);
+  }
+}
+
 .icon-button {
   align-items: center;
   background: var(--soft);

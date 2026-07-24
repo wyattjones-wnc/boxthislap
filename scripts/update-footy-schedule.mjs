@@ -8,6 +8,7 @@ const DEFAULT_FOOTBALL_TEAMS_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=0
 const DEFAULT_FOOTY_MATCHES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=1436836758&single=true&output=csv`;
 const DEFAULT_FOOTY_MATCH_NOTES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=866481448&single=true&output=csv`;
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
+const FOOTY_MATCH_SEEDS_PATH = path.resolve(process.env.FOOTY_MATCH_SEEDS_PATH || path.join("data", "footy-match-seeds.json"));
 const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
@@ -137,6 +138,7 @@ async function main() {
   const previousPayload = await loadPreviousSchedulePayload();
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
+  const footyMatchSeedRows = await loadFootyMatchSeedRows();
   const footyMatchNotes = await loadFootyMatchNotesSheet(process.env.FOOTY_MATCH_NOTES_CSV_URL || DEFAULT_FOOTY_MATCH_NOTES_CSV_URL);
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
@@ -203,12 +205,13 @@ async function main() {
   errors.push(...calendarSchedules.errors);
   fixtures.push(...calendarSchedules.fixtures);
 
-  const registryHydratedFixtures = buildFixturesFromFootyMatchRows(footyMatchRows, teams);
+  const knownFootyMatchRows = [...footyMatchSeedRows, ...footyMatchRows];
+  const registryHydratedFixtures = buildFixturesFromFootyMatchRows(knownFootyMatchRows, teams);
   const dedupedFixtures = mergeFixtures([...registryHydratedFixtures, ...fixtures]).sort(compareFixtures);
   const footyMatchRegistry = buildFootyMatchRegistry({
     fixtures: dedupedFixtures,
     generatedAt,
-    matchRows: footyMatchRows,
+    matchRows: knownFootyMatchRows,
     matchNotes: footyMatchNotes,
     previousSchedules: previousPayload?.teamSchedules,
   });
@@ -259,12 +262,17 @@ async function resolveTeam(team) {
 
   if (!configuredId) {
     return {
+      badge: getTeamBadge(team),
       id: getField(team, "ID"),
+      league: getField(team, "League").trim(),
       name,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
+      providerLeague: "",
+      providerLeagues: [],
       providerTeamId: "",
       resolvedName: "",
+      sportDbTeamId: getSportDbTeamId(team),
       status: "missing-provider-team-id",
     };
   }
@@ -718,6 +726,23 @@ async function loadFootyMatchesSheet(url) {
   const section = await loadCsvTableSection(url, isFootyMatchesSection);
 
   return section ? recordsFromCsvSection(section) : [];
+}
+
+async function loadFootyMatchSeedRows() {
+  const text = await tryReadFile(FOOTY_MATCH_SEEDS_PATH);
+
+  if (!text) {
+    return [];
+  }
+
+  try {
+    const rows = JSON.parse(text);
+
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    console.warn(`Unable to parse footy match seed rows: ${error.message}`);
+    return [];
+  }
 }
 
 async function loadFootyMatchNotesSheet(url) {
@@ -1816,6 +1841,7 @@ function mergeFixture(existingFixture, incomingFixture) {
     sources,
     sourceIds: mergeSourceIds(secondaryFixture.sourceIds, primaryFixture.sourceIds),
     source: sources.join(" + "),
+    teamBadge: primaryFixture.teamBadge || secondaryFixture.teamBadge || "",
     time: primaryFixture.time || secondaryFixture.time || "",
     timestamp: primaryFixture.timestamp || secondaryFixture.timestamp || "",
     venue: primaryFixture.venue || secondaryFixture.venue || "",

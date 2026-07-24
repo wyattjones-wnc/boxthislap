@@ -1,0 +1,24 @@
+[
+  {
+    "Match ID": "footy_a77544dabd9d",
+    "Date": "2026-07-23",
+    "Time": "00:15:00",
+    "Followed Team": "Charlotte FC",
+    "Home": "Charlotte FC",
+    "Away": "Atlanta United",
+    "Competition": "MLS - Regular Season",
+    "Source IDs": "{\"iCalendar\":\"MLS-MAT-0009HE\"}",
+    "Last Seen": "2026-07-22T20:17:57.754Z"
+  },
+  {
+    "Match ID": "footy_7ae1228d436d",
+    "Date": "2026-07-22",
+    "Time": "23:30:00",
+    "Followed Team": "Inter Miami",
+    "Home": "Inter Miami CF",
+    "Away": "Chicago Fire FC",
+    "Competition": "MLS - Regular Season",
+    "Source IDs": "{\"iCalendar\":\"MLS-MAT-0009HM\"}",
+    "Last Seen": "2026-07-22T20:17:57.754Z"
+  }
+]

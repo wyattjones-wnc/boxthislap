@@ -21,6 +21,20 @@ const FOOTY_MATCH_NOTE_COLUMNS = [
   "Highlight Link",
 ];
 
+function doGet(e) {
+  try {
+    const action = String(e && e.parameter && e.parameter.action ? e.parameter.action : "").trim();
+
+    if (action === "listFootyMatchNotes") {
+      return webResponse(e, { ok: true, notes: listFootyMatchNotes() });
+    }
+
+    return webResponse(e, { ok: true, service: "boxthislap-footy-data" });
+  } catch (error) {
+    return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });
+  }
+}
+
 function doPost(e) {
   try {
     const payload = getPayload(e);
@@ -37,6 +51,23 @@ function doPost(e) {
   } catch (error) {
     return jsonResponse({ ok: false, error: String(error && error.message ? error.message : error) });
   }
+}
+
+function webResponse(e, response) {
+  const body = {
+    source: "boxthislap-footy-data",
+    callbackId: e && e.parameter && e.parameter.callbackId ? e.parameter.callbackId : "",
+    ...response,
+  };
+  const callback = String(e && e.parameter && e.parameter.callback ? e.parameter.callback : "").trim();
+
+  if (callback) {
+    return ContentService
+      .createTextOutput(`${callback}(${JSON.stringify(body)});`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return jsonResponse(body);
 }
 
 function getPayload(e) {
@@ -171,6 +202,47 @@ function saveFootyMatchNote(note) {
   }
 }
 
+function listFootyMatchNotes() {
+  const sheet = getFootySpreadsheet().getSheetByName("Match Notes");
+
+  if (!sheet) {
+    throw new Error('Sheet "Match Notes" was not found.');
+  }
+
+  const header = findHeaderRow(sheet, "Match ID");
+  const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columns = mapColumns(headerValues);
+  const missingColumns = FOOTY_MATCH_NOTE_COLUMNS.filter((column) => !columns[column]);
+
+  if (missingColumns.length > 0) {
+    throw new Error(`Match Notes table is missing columns: ${missingColumns.join(", ")}`);
+  }
+
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow <= header.row) {
+    return [];
+  }
+
+  const values = sheet.getRange(header.row + 1, 1, lastRow - header.row, sheet.getLastColumn()).getValues();
+
+  return values
+    .map((row) => normalizeFootyMatchNoteFromRow(row, columns))
+    .filter((note) => note.matchId);
+}
+
+function normalizeFootyMatchNoteFromRow(row, columns) {
+  return {
+    matchId: String(row[columns["Match ID"] - 1] || "").trim(),
+    homeScore: String(row[columns["Home Score"] - 1] || "").trim(),
+    awayScore: String(row[columns["Away Score"] - 1] || "").trim(),
+    followGoalAssists: parseGoalAssistEvents(row[columns["Follow G/A"] - 1]),
+    opponentGoalAssists: parseGoalAssistEvents(row[columns["Opp G/A"] - 1]),
+    note: String(row[columns["Note"] - 1] || "").trim(),
+    highlightLink: String(row[columns["Highlight Link"] - 1] || "").trim(),
+  };
+}
+
 function normalizeFootyMatchNote(note) {
   const followGoalAssists = note["Follow G/A"] || note.followGoalAssists || [];
   const opponentGoalAssists = note["Opp G/A"] || note.opponentGoalAssists || [];
@@ -208,6 +280,26 @@ function serializeGoalAssistEvents(value) {
   }
 
   return text;
+}
+
+function parseGoalAssistEvents(value) {
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+
+    if (Array.isArray(parsed)) {
+      return parsed.map(normalizeGoalAssistEvent);
+    }
+  } catch {
+    return [];
+  }
+
+  return [];
 }
 
 function normalizeGoalAssistEvent(event) {

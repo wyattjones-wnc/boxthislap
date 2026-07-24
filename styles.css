@@ -1023,11 +1023,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-match-note {
-  border-top: 1px solid var(--line);
   display: grid;
   gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
 }
 
 .footy-fixture-details {
@@ -1069,10 +1066,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-side-actions {
-  align-items: end;
-  display: grid;
+  align-items: center;
+  display: inline-flex;
   gap: 8px;
-  justify-items: end;
+  justify-content: flex-end;
+  justify-self: end;
 }
 
 .footy-highlight-button {
@@ -3578,8 +3576,8 @@ tr:last-child td {
 
   .footy-note-form header,
   .footy-note-form footer {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
   }
 
   .footy-note-grid {
@@ -3587,7 +3585,9 @@ tr:last-child td {
   }
 
   .footy-fixture-side-actions {
-    justify-items: start;
+    grid-column: 2;
+    justify-content: flex-end;
+    justify-self: stretch;
   }
 
   .brand {

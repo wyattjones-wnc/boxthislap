@@ -154,6 +154,7 @@ let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
+let shouldSuppressNextFootyDropdownClick = false;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const expandedFootyMatchIds = new Set();
@@ -1082,11 +1083,62 @@ function saveFootyMatchNoteFromDialog() {
   });
   updateFootyFixtureMatchNote(note);
   renderFootySchedule(siteData.footySchedule);
+  closeFootyNoteDialog();
+}
 
-  window.setTimeout(() => {
-    footyNoteSave && (footyNoteSave.disabled = false);
-    setFootyNoteStatus("Sent. The sheet may take a moment to update.", false);
-  }, 700);
+function loadFootyMatchNotes() {
+  if (!FOOTY_DATA_ENDPOINT) {
+    return Promise.resolve([]);
+  }
+
+  const callbackName = `boxThisLapFootyNotes${Date.now()}${Math.random().toString(36).slice(2)}`;
+  const callbackId = `footy-notes-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return new Promise((resolve, reject) => {
+    let script;
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("No response from the footy match notes endpoint."));
+    }, 12000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      delete window[callbackName];
+      script?.remove();
+    }
+
+    window[callbackName] = (data) => {
+      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
+        return;
+      }
+
+      cleanup();
+
+      if (!data.ok) {
+        reject(new Error(data.error || "Unable to load footy match notes."));
+        return;
+      }
+
+      resolve(Array.isArray(data.notes) ? data.notes : []);
+    };
+
+    const url = new URL(FOOTY_DATA_ENDPOINT);
+    url.searchParams.set("action", "listFootyMatchNotes");
+    url.searchParams.set("callback", callbackName);
+    url.searchParams.set("callbackId", callbackId);
+    script = document.createElement("script");
+    script.async = true;
+    script.src = url.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Unable to reach the footy match notes endpoint."));
+    };
+    document.head.append(script);
+  });
+}
+
+function mergeFootyMatchNotes(notes = []) {
+  notes.forEach((note) => updateFootyFixtureMatchNote(note));
 }
 
 function submitFootyDataPayload(payload) {
@@ -1215,11 +1267,11 @@ function renderFootyGoalAssistEvents(label, events = []) {
     <div class="footy-goal-events">
       <span>${escapeHtml(label)}</span>
       ${events.map((event) => {
-        const minute = event.minute ? `${escapeHtml(event.minute)}'` : "";
+        const minute = event.minute ? `${escapeHtml(event.minute)}' - ` : "";
         const assist = event.assister ? `, ${escapeHtml(event.assister)}` : "";
         const penalty = event.penalty ? " (P)" : "";
 
-        return `<p>${minute} ${escapeHtml(event.scorer || "Goal")}${assist}${penalty}</p>`;
+        return `<p>${minute}${escapeHtml(event.scorer || "Goal")}${assist}${penalty}</p>`;
       }).join("")}
     </div>
   `;
@@ -1317,11 +1369,13 @@ function getFootyGoalAssistLabel(entry, index) {
 }
 
 function getFootyGoalAssistChipText(entry, index) {
+  const minute = entry.minute ? `${entry.minute}' - ` : "";
+
   if (entry.scorer && entry.assister) {
-    return `${entry.scorer} / ${entry.assister}`;
+    return `${minute}${entry.scorer} / ${entry.assister}`;
   }
 
-  return entry.scorer || entry.assister || `Entry ${index + 1}`;
+  return `${minute}${entry.scorer || entry.assister || `Entry ${index + 1}`}`;
 }
 
 function deleteFootyGoalAssistEntry(index) {
@@ -3478,14 +3532,27 @@ footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });
 
-document.addEventListener("click", (event) => {
+document.addEventListener("pointerdown", (event) => {
   if (!footyTeamFilter || !shouldShowFootyTeamOptions || footyTeamFilter.contains(event.target)) {
     return;
   }
 
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  shouldSuppressNextFootyDropdownClick = true;
   shouldShowFootyTeamOptions = false;
   renderFootySchedule(siteData.footySchedule);
-});
+}, true);
+
+document.addEventListener("click", (event) => {
+  if (!shouldSuppressNextFootyDropdownClick) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  shouldSuppressNextFootyDropdownClick = false;
+}, true);
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {
   view.questionSelect?.addEventListener("change", () => {
@@ -6022,8 +6089,23 @@ loadJson("data/footy-schedule.json")
     siteData.footySchedule = schedule;
     renderFootySchedule(schedule);
     console.info("Box This Lap footy schedule loaded", schedule);
+    return loadFootyMatchNotes();
+  })
+  .then((notes) => {
+    if (!notes || !notes.length) {
+      return;
+    }
+
+    mergeFootyMatchNotes(notes);
+    renderFootySchedule(siteData.footySchedule);
+    console.info("Box This Lap footy match notes loaded", notes);
   })
   .catch((error) => {
+    if (siteData.footySchedule) {
+      console.warn("Box This Lap footy match notes failed to load", error);
+      return;
+    }
+
     renderFootyScheduleError(error);
     console.error("Box This Lap footy schedule failed to load", error);
   });

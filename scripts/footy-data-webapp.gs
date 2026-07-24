@@ -1,3 +1,5 @@
+const FOOTY_DATA_SPREADSHEET_ID = "10t5zr-2vM12MRLn1l58STCfJjlUZOGalzEOx-DgCpEQ";
+
 const FOOTY_MATCH_COLUMNS = [
   "Match ID",
   "Date",
@@ -95,7 +97,8 @@ function buildSheetRow(match, columns, rowWidth) {
 }
 
 function getFootySpreadsheet() {
-  const configuredId = PropertiesService.getScriptProperties().getProperty("FOOTY_DATA_SPREADSHEET_ID");
+  const configuredId = PropertiesService.getScriptProperties().getProperty("FOOTY_DATA_SPREADSHEET_ID") ||
+    FOOTY_DATA_SPREADSHEET_ID;
 
   if (configuredId) {
     return SpreadsheetApp.openById(configuredId);

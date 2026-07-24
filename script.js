@@ -32,6 +32,7 @@ import {
   navGroups,
   themeToggle,
   copyCurrentPageLinkButton,
+  adminOnlyElements,
   testRulesLinks,
   loginOpenButton,
   loginPanel,
@@ -102,7 +103,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607210003";
+} from "./modules/domRefs.js?v=202607230001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607230006";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -3085,6 +3086,15 @@ function renderLoginState() {
 
   if (copyCurrentPageLinkButton) {
     copyCurrentPageLinkButton.hidden = !managerMeta?.isAdmin;
+  }
+
+  adminOnlyElements.forEach((element) => {
+    element.hidden = !managerMeta?.isAdmin;
+  });
+
+  if (!managerMeta?.isAdmin && nationTestScoringToggle?.checked) {
+    nationTestScoringToggle.checked = false;
+    syncTestScoringUi();
   }
 
   if (profileName) {
@@ -8072,7 +8082,22 @@ function buildTeamPotLookup(teams = []) {
 }
 
 function shouldUseNationTestScoring() {
-  return nationTestScoringToggle?.checked ?? false;
+  return Boolean(nationTestScoringToggle?.checked && isCurrentManagerAdmin());
+}
+
+function isCurrentManagerAdmin() {
+  const session = siteData.managerSession;
+
+  if (!session) {
+    return false;
+  }
+
+  if (session.isAdmin) {
+    return true;
+  }
+
+  const manager = getPortalManagerById(session.managerId) ?? session.manager;
+  return Boolean(manager && getManagerMeta(manager).isAdmin);
 }
 
 function getNationResultPoints(result) {

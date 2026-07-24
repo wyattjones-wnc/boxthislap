@@ -3416,6 +3416,18 @@ function submitManagerPortalPayload(payload) {
     browser: window.navigator.userAgent,
   };
 
+  return submitManagerPortalPayloadWithCallback(fullPayload, callbackName)
+    .catch((error) => {
+      console.warn("Box This Lap manager portal callback request failed; trying form fallback.", error);
+      recordDiagnostic("manager portal callback request failed", error);
+
+      const fallbackPayload = { ...fullPayload };
+      delete fallbackPayload.callback;
+      return submitManagerPortalPayloadWithForm(fallbackPayload);
+    });
+}
+
+function submitManagerPortalPayloadWithCallback(fullPayload, callbackName) {
   return new Promise((resolve, reject) => {
     let script;
     const timeout = window.setTimeout(() => {
@@ -3473,30 +3485,53 @@ function parsePortalMessage(value) {
 }
 
 function submitManagerPortalPayloadWithForm(payload) {
-  const iframeName = "manager-portal-frame";
-  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+  const iframeName = `manager-portal-frame-${payload.callbackId || Date.now()}`;
 
-  if (!iframe) {
-    iframe = document.createElement("iframe");
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
     iframe.name = iframeName;
     iframe.hidden = true;
+
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("No response from the login endpoint. Redeploy the Apps Script web app if the code changed."));
+    }, 12000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      window.removeEventListener("message", handleMessage);
+      iframe.remove();
+    }
+
+    function handleMessage(event) {
+      const data = parsePortalMessage(event.data);
+
+      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== payload.callbackId) {
+        return;
+      }
+
+      cleanup();
+      resolve(data);
+    }
+
+    window.addEventListener("message", handleMessage);
     document.body.append(iframe);
-  }
 
-  const form = document.createElement("form");
-  form.action = MANAGER_PORTAL_ENDPOINT;
-  form.method = "POST";
-  form.target = iframeName;
-  form.hidden = true;
+    const form = document.createElement("form");
+    form.action = MANAGER_PORTAL_ENDPOINT;
+    form.method = "POST";
+    form.target = iframeName;
+    form.hidden = true;
 
-  const payloadInput = document.createElement("input");
-  payloadInput.name = "payload";
-  payloadInput.value = JSON.stringify(payload);
-  form.append(payloadInput);
+    const payloadInput = document.createElement("input");
+    payloadInput.name = "payload";
+    payloadInput.value = JSON.stringify(payload);
+    form.append(payloadInput);
 
-  document.body.append(form);
-  form.submit();
-  form.remove();
+    document.body.append(form);
+    form.submit();
+    form.remove();
+  });
 }
 
 function renderManagerHub() {

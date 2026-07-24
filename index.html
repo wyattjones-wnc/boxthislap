@@ -487,6 +487,54 @@
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
         </div>
+        <dialog class="footy-note-dialog" id="footy-note-dialog">
+          <form class="footy-note-form" id="footy-note-form" method="dialog">
+            <header>
+              <div>
+                <span id="footy-note-match-id"></span>
+                <h2 id="footy-note-title">Edit Match Notes</h2>
+              </div>
+              <button class="icon-action-button" id="footy-note-close" type="button" aria-label="Close match note editor">
+                &times;
+              </button>
+            </header>
+            <div class="footy-note-grid">
+              <label>
+                <span>Home Score</span>
+                <input id="footy-note-home-score" type="text" inputmode="numeric" autocomplete="off">
+              </label>
+              <label>
+                <span>Away Score</span>
+                <input id="footy-note-away-score" type="text" inputmode="numeric" autocomplete="off">
+              </label>
+              <label>
+                <span>Follow G/A</span>
+                <textarea id="footy-note-follow-ga" rows="5" spellcheck="false"></textarea>
+              </label>
+              <label>
+                <span>Opp G/A</span>
+                <textarea id="footy-note-opp-ga" rows="5" spellcheck="false"></textarea>
+              </label>
+              <label class="footy-note-wide">
+                <span>Note</span>
+                <textarea id="footy-note-text" rows="3"></textarea>
+              </label>
+              <label class="footy-note-wide">
+                <span>Highlight Link</span>
+                <input id="footy-note-highlight-link" type="url" autocomplete="off">
+              </label>
+            </div>
+            <p class="footy-note-status" id="footy-note-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="footy-note-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" id="footy-note-save" type="submit">
+                Save
+              </button>
+            </footer>
+          </form>
+        </dialog>
       </section>
 
       <section class="page" id="footy-goal-assists" data-page="footy-goal-assists">

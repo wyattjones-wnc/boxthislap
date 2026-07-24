@@ -777,6 +777,100 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--accent-dark);
 }
 
+.footy-note-dialog {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  max-width: min(760px, calc(100vw - 24px));
+  padding: 0;
+  width: 100%;
+}
+
+.footy-note-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.footy-note-form {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 46px var(--shadow);
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.footy-note-form header,
+.footy-note-form footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.footy-note-form header span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.footy-note-form h2 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.footy-note-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.footy-note-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.footy-note-wide {
+  grid-column: 1 / -1;
+}
+
+.footy-note-grid input,
+.footy-note-grid textarea {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  min-height: 42px;
+  padding: 9px 10px;
+  resize: vertical;
+}
+
+.footy-note-grid textarea {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  line-height: 1.45;
+}
+
+.footy-note-status {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin: 0;
+  min-height: 1.2em;
+}
+
+.footy-note-status.is-error {
+  color: var(--accent-dark);
+}
+
 .footy-fixture-card {
   align-items: center;
   background: var(--soft);
@@ -893,6 +987,19 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-self: end;
   text-align: right;
   white-space: nowrap;
+}
+
+.footy-fixture-side-actions {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.footy-note-edit-button {
+  font-size: 0.82rem;
+  min-height: 32px;
+  padding: 6px 10px;
 }
 
 .footy-updated,
@@ -3367,6 +3474,24 @@ tr:last-child td {
 
   .footy-goal-assists-status-row {
     display: grid;
+  }
+
+  .footy-note-form {
+    padding: 14px;
+  }
+
+  .footy-note-form header,
+  .footy-note-form footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .footy-note-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footy-fixture-side-actions {
+    justify-items: start;
   }
 
   .brand {

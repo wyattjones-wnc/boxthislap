@@ -11,19 +11,40 @@ const FOOTY_MATCH_COLUMNS = [
   "Source IDs",
   "Last Seen",
 ];
+const FOOTY_MATCH_NOTE_COLUMNS = [
+  "Match ID",
+  "Home Score",
+  "Away Score",
+  "Follow G/A",
+  "Opp G/A",
+  "Note",
+  "Highlight Link",
+];
 
 function doPost(e) {
   try {
-    const payload = JSON.parse(e.postData && e.postData.contents ? e.postData.contents : "{}");
+    const payload = getPayload(e);
 
     if (payload.action === "syncFootyMatches") {
       return jsonResponse(syncFootyMatches(payload.matches || []));
+    }
+
+    if (payload.action === "saveFootyMatchNote") {
+      return jsonResponse(saveFootyMatchNote(payload.note || {}));
     }
 
     return jsonResponse({ ok: false, error: "Unknown action." });
   } catch (error) {
     return jsonResponse({ ok: false, error: String(error && error.message ? error.message : error) });
   }
+}
+
+function getPayload(e) {
+  if (e.parameter && e.parameter.payload) {
+    return JSON.parse(e.parameter.payload);
+  }
+
+  return JSON.parse(e.postData && e.postData.contents ? e.postData.contents : "{}");
 }
 
 function syncFootyMatches(matches) {
@@ -94,6 +115,108 @@ function buildSheetRow(match, columns, rowWidth) {
   }
 
   return row;
+}
+
+function saveFootyMatchNote(note) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const sheet = getFootySpreadsheet().getSheetByName("Match Notes");
+
+    if (!sheet) {
+      throw new Error('Sheet "Match Notes" was not found.');
+    }
+
+    const header = findHeaderRow(sheet, "Match ID");
+    const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const columns = mapColumns(headerValues);
+    const rowWidth = headerValues.length;
+    const missingColumns = FOOTY_MATCH_NOTE_COLUMNS.filter((column) => !columns[column]);
+
+    if (missingColumns.length > 0) {
+      throw new Error(`Match Notes table is missing columns: ${missingColumns.join(", ")}`);
+    }
+
+    const matchId = String(note["Match ID"] || note.matchId || "").trim();
+
+    if (!matchId) {
+      throw new Error("Match ID is required.");
+    }
+
+    const rowValues = normalizeFootyMatchNote(note);
+    const existingRowsByMatchId = getExistingRowsByMatchId(sheet, header.row, columns["Match ID"]);
+    const rowNumber = existingRowsByMatchId[matchId];
+
+    if (rowNumber) {
+      for (let index = 0; index < FOOTY_MATCH_NOTE_COLUMNS.length; index += 1) {
+        sheet.getRange(rowNumber, columns[FOOTY_MATCH_NOTE_COLUMNS[index]]).setValue(rowValues[FOOTY_MATCH_NOTE_COLUMNS[index]]);
+      }
+
+      return { ok: true, matchId, status: "updated" };
+    }
+
+    const row = Array(rowWidth).fill("");
+
+    for (const column of FOOTY_MATCH_NOTE_COLUMNS) {
+      row[columns[column] - 1] = rowValues[column];
+    }
+
+    const startRow = Math.max(sheet.getLastRow() + 1, header.row + 1);
+    sheet.getRange(startRow, 1, 1, rowWidth).setValues([row]);
+
+    return { ok: true, matchId, status: "appended" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function normalizeFootyMatchNote(note) {
+  const followGoalAssists = note["Follow G/A"] || note.followGoalAssists || [];
+  const opponentGoalAssists = note["Opp G/A"] || note.opponentGoalAssists || [];
+
+  return {
+    "Match ID": String(note["Match ID"] || note.matchId || "").trim(),
+    "Home Score": String(note["Home Score"] || note.homeScore || "").trim(),
+    "Away Score": String(note["Away Score"] || note.awayScore || "").trim(),
+    "Follow G/A": serializeGoalAssistEvents(followGoalAssists),
+    "Opp G/A": serializeGoalAssistEvents(opponentGoalAssists),
+    "Note": String(note.Note || note.note || "").trim(),
+    "Highlight Link": String(note["Highlight Link"] || note.highlightLink || "").trim(),
+  };
+}
+
+function serializeGoalAssistEvents(value) {
+  if (Array.isArray(value)) {
+    return JSON.stringify(value.map(normalizeGoalAssistEvent));
+  }
+
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return "";
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+
+    if (Array.isArray(parsed)) {
+      return JSON.stringify(parsed.map(normalizeGoalAssistEvent));
+    }
+  } catch {
+    // Keep manually-entered text rather than rejecting the whole save.
+  }
+
+  return text;
+}
+
+function normalizeGoalAssistEvent(event) {
+  return {
+    scorer: String(event && event.scorer ? event.scorer : "").trim(),
+    assister: String(event && event.assister ? event.assister : "").trim(),
+    penalty: Boolean(event && event.penalty),
+    minute: event && event.minute !== undefined && event.minute !== null ? event.minute : "",
+  };
 }
 
 function getFootySpreadsheet() {

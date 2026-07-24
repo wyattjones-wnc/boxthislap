@@ -6,7 +6,18 @@ const MANAGER_AUTH_SHEET_NAMES = [
   "PRIVATE - IF AGENT CAN SEE ALERT",
 ];
 
-function doGet() {
+function doGet(event) {
+  const payload = parseManagerPayload_(event);
+
+  if (
+    payload.action === "authStatus" ||
+    payload.action === "login" ||
+    payload.action === "setupPassphrase" ||
+    payload.action === "verifyRecovery"
+  ) {
+    return handleManagerAuth_(payload);
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, service: "boxthislap-manager-portal" }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -271,6 +282,14 @@ function createPortalResponse_(payload, response) {
     callbackId: payload.callbackId || "",
     ...response,
   };
+  const callback = String(payload.callback || "").trim();
+
+  if (callback) {
+    return ContentService
+      .createTextOutput(`${callback}(${JSON.stringify(body)});`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
   const message = JSON.stringify(body);
   const script = `
     <!doctype html>

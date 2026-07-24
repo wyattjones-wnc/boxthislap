@@ -4212,33 +4212,48 @@ function submitManagerPortalPayload(payload) {
   }
 
   const callbackId = `manager-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const callbackName = `boxThisLapManagerPortal${Date.now()}${Math.random().toString(36).slice(2)}`;
   const fullPayload = {
     ...payload,
+    callback: callbackName,
     callbackId,
     pageUrl: window.location.href,
     browser: window.navigator.userAgent,
   };
 
   return new Promise((resolve, reject) => {
+    let script;
     const timeout = window.setTimeout(() => {
-      window.removeEventListener("message", handleMessage);
+      cleanup();
       reject(new Error("No response from the login endpoint. Redeploy the Apps Script web app if the code changed."));
     }, 12000);
 
-    function handleMessage(event) {
-      const data = parsePortalMessage(event.data);
+    function cleanup() {
+      window.clearTimeout(timeout);
+      delete window[callbackName];
+      script?.remove();
+    }
 
+    window[callbackName] = (data) => {
       if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== callbackId) {
         return;
       }
 
-      window.clearTimeout(timeout);
-      window.removeEventListener("message", handleMessage);
+      cleanup();
       resolve(data);
-    }
+    };
 
-    window.addEventListener("message", handleMessage);
-    submitManagerPortalPayloadWithForm(fullPayload);
+    const url = new URL(MANAGER_PORTAL_ENDPOINT);
+    url.searchParams.set("payload", JSON.stringify(fullPayload));
+    url.searchParams.set("callback", callbackName);
+    script = document.createElement("script");
+    script.async = true;
+    script.src = url.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Unable to reach the login endpoint."));
+    };
+    document.head.append(script);
   });
 }
 

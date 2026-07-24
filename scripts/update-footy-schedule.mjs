@@ -1157,7 +1157,7 @@ function shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors = [],
 }
 
 function getCurrentTeamFixtures({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
-  if (teamErrors.length === 0 || previousFixtures.length === 0) {
+  if (previousFixtures.length === 0) {
     return teamFixtures;
   }
 
@@ -1165,16 +1165,20 @@ function getCurrentTeamFixtures({ previousFixtures = [], teamErrors = [], teamFi
 }
 
 function getPartialPreservationNotes({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
-  if (teamErrors.length === 0 || previousFixtures.length === 0 || teamFixtures.length === 0) {
+  if (previousFixtures.length === 0 || teamFixtures.length === 0) {
     return [];
   }
 
   const mergedCount = mergeFixtures([...previousFixtures, ...teamFixtures]).length;
   const preservedCount = Math.max(0, mergedCount - teamFixtures.length);
 
-  return preservedCount > 0
+  if (preservedCount === 0) {
+    return [];
+  }
+
+  return teamErrors.length > 0
     ? [`Preserved ${preservedCount} previous fixtures while the current update had provider errors.`]
-    : [];
+    : [`Preserved ${preservedCount} previous fixtures that were not returned by providers this run.`];
 }
 
 function buildTeamScheduleTeam(team, previousTeam = {}) {

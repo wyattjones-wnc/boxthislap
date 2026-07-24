@@ -705,6 +705,38 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 22px;
 }
 
+.footy-match-note {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.footy-match-note .footy-match-score {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.footy-goal-events {
+  display: grid;
+  gap: 2px;
+}
+
+.footy-goal-events > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.footy-highlight-link {
+  color: var(--accent-dark);
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .footy-fixture-card strong {
   align-self: center;
   color: var(--accent-dark);

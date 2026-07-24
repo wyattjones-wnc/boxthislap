@@ -2,8 +2,11 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const DEFAULT_FOOTBALL_TEAMS_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub?gid=1614272244&single=true&output=csv";
+const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
+const DEFAULT_FOOTBALL_TEAMS_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=0&single=true&output=csv`;
+const DEFAULT_FOOTY_MATCHES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=1436836758&single=true&output=csv`;
+const DEFAULT_FOOTY_MATCH_NOTES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=866481448&single=true&output=csv`;
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
@@ -26,6 +29,7 @@ const LOOKAHEAD_DAYS = Number(process.env.FOOTY_SCHEDULE_LOOKAHEAD_DAYS) || 365;
 const MATCH_STATUS = process.env.FOOTY_SCHEDULE_MATCH_STATUS || "SCHEDULED";
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
 const SHOULD_USE_API_CACHE = !isFalseValue(process.env.FOOTY_API_CACHE || "true");
+const FOOTY_MATCH_SYNC_ENDPOINT = process.env.FOOTY_MATCH_SYNC_ENDPOINT || "";
 const FALLBACK_FOOTBALL_DATA_TEAM_IDS = {
   arsenal: "57",
   barcelona: "81",
@@ -132,6 +136,8 @@ async function main() {
   const generatedAt = new Date().toISOString();
   const previousPayload = await loadPreviousSchedulePayload();
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
+  const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
+  const footyMatchNotes = await loadFootyMatchNotesSheet(process.env.FOOTY_MATCH_NOTES_CSV_URL || DEFAULT_FOOTY_MATCH_NOTES_CSV_URL);
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
@@ -198,20 +204,34 @@ async function main() {
   fixtures.push(...calendarSchedules.fixtures);
 
   const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
+  const footyMatchRegistry = buildFootyMatchRegistry({
+    fixtures: dedupedFixtures,
+    generatedAt,
+    matchRows: footyMatchRows,
+    matchNotes: footyMatchNotes,
+    previousSchedules: previousPayload?.teamSchedules,
+  });
+  const enrichedFixtures = applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry).sort(compareFixtures);
   const teamSchedules = buildTeamSchedules({
     errors,
-    fixtures: dedupedFixtures,
+    fixtures: enrichedFixtures,
     generatedAt,
     notes: coverageNotes,
     previousSchedules: previousPayload?.teamSchedules,
     teams,
   });
+  const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
   const payload = {
     generatedAt,
     schemaVersion: 2,
     source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
     updateTracker: buildFileUpdateTracker({ generatedAt, teamSchedules }),
     prioritySets,
+    footyMatchRegistry: {
+      matchCount: footyMatchRegistry.rows.length,
+      noteCount: footyMatchNotes.size,
+      sync: footyMatchSync,
+    },
     teamSchedules,
   };
 
@@ -367,6 +387,7 @@ function normalizeFootballDataMatch(match, team) {
     round: match.matchday ? String(match.matchday) : "",
     season: match.season?.startDate ? match.season.startDate.slice(0, 4) : "",
     source: PRIMARY_PROVIDER_NAME,
+    sourceIds: buildSourceIds(PRIMARY_PROVIDER_NAME, match.id),
     sources: [PRIMARY_PROVIDER_NAME],
     status: match.status || "",
     teamBadge: team.badge || "",
@@ -579,6 +600,7 @@ function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
     round: event.intRound ? String(event.intRound) : "",
     season: event.strSeason || "",
     source: SPORTDB_PROVIDER_NAME,
+    sourceIds: buildSourceIds(SPORTDB_PROVIDER_NAME, event.idEvent),
     sources: [SPORTDB_PROVIDER_NAME],
     sourceDetail: detailSource,
     status: normalizeSportDbStatus(event),
@@ -617,6 +639,7 @@ function normalizeArsenalMatch(match, team, arsenalTeamId) {
     round: "",
     season: "",
     source: ARSENAL_PROVIDER_NAME,
+    sourceIds: buildSourceIds(ARSENAL_PROVIDER_NAME, matchInfo.id),
     sources: [ARSENAL_PROVIDER_NAME],
     sourceDetail: "monthly-graphql",
     status: status || "Fixture",
@@ -649,6 +672,7 @@ function normalizeCalendarMatch(event, team) {
     round: "",
     season: "",
     source: ICALENDAR_PROVIDER_NAME,
+    sourceIds: buildSourceIds(ICALENDAR_PROVIDER_NAME, event.UID),
     sources: [ICALENDAR_PROVIDER_NAME],
     sourceDetail: "calendar-feed",
     status: isTimeTbc ? "Time TBC" : "Scheduled",
@@ -687,6 +711,90 @@ async function loadFootballSheet(url) {
   }
 
   return { leagueRows, prioritySetRows, teamRows };
+}
+
+async function loadFootyMatchesSheet(url) {
+  const section = await loadCsvTableSection(url, isFootyMatchesSection);
+
+  return section ? recordsFromCsvSection(section) : [];
+}
+
+async function loadFootyMatchNotesSheet(url) {
+  const section = await loadCsvTableSection(url, isFootyMatchNotesSection);
+  const notesByMatchId = new Map();
+
+  if (!section) {
+    return notesByMatchId;
+  }
+
+  for (const row of recordsFromCsvSection(section)) {
+    const matchId = getField(row, "Match ID").trim();
+
+    if (!matchId) {
+      continue;
+    }
+
+    notesByMatchId.set(matchId, {
+      awayScore: getField(row, "Away Score").trim(),
+      followGoalAssists: parseGoalAssistEvents(getField(row, "Follow G/A")),
+      highlightLink: getField(row, "Highlight Link").trim(),
+      homeScore: getField(row, "Home Score").trim(),
+      note: getField(row, "Note").trim(),
+      opponentGoalAssists: parseGoalAssistEvents(getField(row, "Opp G/A", "Column 7")),
+    });
+  }
+
+  return notesByMatchId;
+}
+
+async function loadCsvTableSection(url, isTargetSection) {
+  const rows = parseCsvRows(stripBom(await loadText(url, { extension: "csv" })));
+  const sections = splitCsvSections(rows);
+
+  return sections.find((section) => isTargetSection(section.headers)) || null;
+}
+
+function isFootyMatchesSection(headers) {
+  const normalizedHeaders = headers.map(normalizeText);
+
+  return normalizedHeaders.includes("match id") &&
+    normalizedHeaders.includes("followed team") &&
+    normalizedHeaders.includes("source ids") &&
+    normalizedHeaders.includes("last seen");
+}
+
+function isFootyMatchNotesSection(headers) {
+  const normalizedHeaders = headers.map(normalizeText);
+
+  return normalizedHeaders.includes("match id") &&
+    normalizedHeaders.includes("home score") &&
+    normalizedHeaders.includes("away score") &&
+    normalizedHeaders.includes("highlight link");
+}
+
+function parseGoalAssistEvents(value) {
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map((event) => ({
+      assister: String(event?.assister || "").trim(),
+      minute: Number(event?.minute) || "",
+      penalty: Boolean(event?.penalty),
+      scorer: String(event?.scorer || "").trim(),
+    })).filter((event) => event.scorer || event.assister || event.minute || event.penalty);
+  } catch {
+    return [];
+  }
 }
 
 async function loadFootballDataJson(endpoint) {
@@ -1097,6 +1205,358 @@ function mergeFixtures(fixtures) {
   return [...fixtureMap.values()];
 }
 
+function buildFootyMatchRegistry({ fixtures = [], generatedAt, matchRows = [], matchNotes = new Map(), previousSchedules = [] }) {
+  const registryRowsById = new Map();
+  const entriesBySourceId = new Map();
+  const entriesByFingerprint = new Map();
+  const usedMatchIds = new Set();
+
+  for (const row of normalizeFootyMatchRows(matchRows)) {
+    registerFootyMatchRow(row, {
+      entriesByFingerprint,
+      entriesBySourceId,
+      registryRowsById,
+      usedMatchIds,
+    });
+  }
+
+  for (const row of previousFootyMatchRows(previousSchedules)) {
+    registerFootyMatchRow(row, {
+      entriesByFingerprint,
+      entriesBySourceId,
+      registryRowsById,
+      usedMatchIds,
+    });
+  }
+
+  const fixtureRowsByReference = new Map();
+
+  for (const fixture of fixtures) {
+    const sourceIds = getFixtureSourceIds(fixture);
+    const existingRow = findFootyMatchRegistryRow(fixture, sourceIds, {
+      entriesByFingerprint,
+      entriesBySourceId,
+    });
+    const matchId = existingRow?.matchId || createFootyMatchId(fixture, sourceIds, usedMatchIds);
+    const row = {
+      competition: fixture.league || existingRow?.competition || "",
+      date: fixture.date || existingRow?.date || "",
+      followedTeam: fixture.teamName || existingRow?.followedTeam || "",
+      home: fixture.home || existingRow?.home || "",
+      lastSeen: generatedAt,
+      matchId,
+      away: fixture.away || existingRow?.away || "",
+      sourceIds: mergeSourceIds(existingRow?.sourceIds, sourceIds),
+      time: fixture.time || existingRow?.time || "",
+    };
+
+    registerFootyMatchRow(row, {
+      entriesByFingerprint,
+      entriesBySourceId,
+      registryRowsById,
+      usedMatchIds,
+    });
+    fixtureRowsByReference.set(getFixtureReferenceKey(fixture), row);
+  }
+
+  return {
+    fixtureRowsByReference,
+    rows: [...registryRowsById.values()].sort(compareFootyMatchRows),
+    matchNotes,
+  };
+}
+
+function applyFootyMatchRegistry(fixtures = [], registry) {
+  return fixtures.map((fixture) => {
+    const row = registry.fixtureRowsByReference.get(getFixtureReferenceKey(fixture));
+    const matchNote = row ? registry.matchNotes.get(row.matchId) : null;
+    const enrichedFixture = {
+      ...fixture,
+      matchId: row?.matchId || fixture.matchId || "",
+      sourceIds: mergeSourceIds(row?.sourceIds, fixture.sourceIds),
+    };
+
+    return hasMatchNote(matchNote) ? { ...enrichedFixture, matchNote } : enrichedFixture;
+  });
+}
+
+function normalizeFootyMatchRows(rows = []) {
+  return rows.map((row) => ({
+    away: getField(row, "Away").trim(),
+    competition: getField(row, "Competition").trim(),
+    date: getField(row, "Date").trim(),
+    followedTeam: getField(row, "Followed Team").trim(),
+    home: getField(row, "Home").trim(),
+    lastSeen: getField(row, "Last Seen").trim(),
+    matchId: getField(row, "Match ID").trim(),
+    sourceIds: parseSourceIds(getField(row, "Source IDs")),
+    time: getField(row, "Time").trim(),
+  })).filter((row) => row.matchId);
+}
+
+function previousFootyMatchRows(previousSchedules = []) {
+  return (Array.isArray(previousSchedules) ? previousSchedules : []).flatMap((schedule) => {
+    const teamName = schedule?.team?.name || "";
+
+    return (Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
+      .filter((fixture) => fixture?.matchId)
+      .map((fixture) => ({
+        away: fixture.away || "",
+        competition: fixture.league || "",
+        date: fixture.date || "",
+        followedTeam: fixture.teamName || teamName,
+        home: fixture.home || "",
+        lastSeen: fixture.lastSeen || schedule.updatedAt || "",
+        matchId: fixture.matchId,
+        sourceIds: getFixtureSourceIds(fixture),
+        time: fixture.time || "",
+      }));
+  });
+}
+
+function registerFootyMatchRow(row, { entriesByFingerprint, entriesBySourceId, registryRowsById, usedMatchIds }) {
+  if (!row.matchId) {
+    return;
+  }
+
+  const existingRow = registryRowsById.get(row.matchId);
+  const mergedRow = existingRow ? {
+    ...existingRow,
+    ...row,
+    sourceIds: mergeSourceIds(existingRow.sourceIds, row.sourceIds),
+  } : row;
+
+  registryRowsById.set(row.matchId, mergedRow);
+  usedMatchIds.add(row.matchId);
+
+  for (const sourceKey of getSourceIdKeys(mergedRow.sourceIds)) {
+    entriesBySourceId.set(sourceKey, mergedRow);
+  }
+
+  entriesByFingerprint.set(getFootyMatchFingerprint(mergedRow), mergedRow);
+}
+
+function findFootyMatchRegistryRow(fixture, sourceIds, { entriesByFingerprint, entriesBySourceId }) {
+  for (const sourceKey of getSourceIdKeys(sourceIds)) {
+    const entry = entriesBySourceId.get(sourceKey);
+
+    if (entry) {
+      return entry;
+    }
+  }
+
+  return entriesByFingerprint.get(getFootyMatchFingerprint({
+    away: fixture.away,
+    competition: fixture.league,
+    date: fixture.date,
+    followedTeam: fixture.teamName,
+    home: fixture.home,
+  })) || null;
+}
+
+function buildFootyMatchSheetRows(rows = []) {
+  return rows.map((row) => ({
+    "Match ID": row.matchId,
+    Date: row.date,
+    Time: row.time,
+    "Followed Team": row.followedTeam,
+    Home: row.home,
+    Away: row.away,
+    Competition: row.competition,
+    "Source IDs": JSON.stringify(row.sourceIds || {}),
+    "Last Seen": row.lastSeen,
+  }));
+}
+
+async function syncFootyMatchesToSheet(rows = [], { generatedAt }) {
+  if (!FOOTY_MATCH_SYNC_ENDPOINT) {
+    console.log("Skipped Footy Matches sheet sync; FOOTY_MATCH_SYNC_ENDPOINT is not configured.");
+    return { status: "skipped", reason: "FOOTY_MATCH_SYNC_ENDPOINT is not configured." };
+  }
+
+  try {
+    const response = await fetch(FOOTY_MATCH_SYNC_ENDPOINT, {
+      body: JSON.stringify({
+        action: "syncFootyMatches",
+        generatedAt,
+        matches: buildFootyMatchSheetRows(rows),
+      }),
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      method: "POST",
+    });
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(`${response.status}: ${text.slice(0, 240)}`);
+    }
+
+    const data = JSON.parse(text);
+
+    if (!data.ok) {
+      throw new Error(data.error || "Footy Matches sheet sync returned ok=false.");
+    }
+
+    console.log(`Synced ${rows.length} Footy Matches rows.`);
+    return {
+      status: "synced",
+      rows: rows.length,
+      syncedAt: generatedAt,
+      appended: data.appended || 0,
+      updated: data.updated || 0,
+    };
+  } catch (error) {
+    console.warn(`Unable to sync Footy Matches sheet: ${error.message}`);
+    return {
+      status: "error",
+      error: error.message,
+    };
+  }
+}
+
+function createFootyMatchId(fixture, sourceIds, usedMatchIds) {
+  const sourceKey = getSourceIdKeys(sourceIds).join("|");
+  const seed = sourceKey || getFootyMatchFingerprint({
+    away: fixture.away,
+    competition: fixture.league,
+    date: fixture.date,
+    followedTeam: fixture.teamName,
+    home: fixture.home,
+  });
+  const baseId = `footy_${createShortHash(seed)}`;
+  let matchId = baseId;
+  let suffix = 2;
+
+  while (usedMatchIds.has(matchId)) {
+    matchId = `${baseId}_${suffix}`;
+    suffix += 1;
+  }
+
+  usedMatchIds.add(matchId);
+  return matchId;
+}
+
+function getFixtureReferenceKey(fixture) {
+  return [
+    fixture.teamId,
+    fixture.date,
+    normalizeTeamName(fixture.home),
+    normalizeTeamName(fixture.away),
+  ].join("|");
+}
+
+function getFootyMatchFingerprint(match) {
+  return [
+    normalizeText(match.followedTeam),
+    normalizeText(match.date),
+    normalizeTeamName(match.home),
+    normalizeTeamName(match.away),
+    normalizeText(match.competition),
+  ].join("|");
+}
+
+function compareFootyMatchRows(first, second) {
+  return String(first.date).localeCompare(String(second.date)) ||
+    String(first.time).localeCompare(String(second.time)) ||
+    normalizeText(first.followedTeam).localeCompare(normalizeText(second.followedTeam)) ||
+    normalizeText(first.home).localeCompare(normalizeText(second.home)) ||
+    normalizeText(first.away).localeCompare(normalizeText(second.away));
+}
+
+function hasMatchNote(note) {
+  return Boolean(note) && (
+    note.homeScore ||
+    note.awayScore ||
+    note.note ||
+    note.highlightLink ||
+    (Array.isArray(note.followGoalAssists) && note.followGoalAssists.length > 0) ||
+    (Array.isArray(note.opponentGoalAssists) && note.opponentGoalAssists.length > 0)
+  );
+}
+
+function buildSourceIds(source, id) {
+  const normalizedId = String(id || "").trim();
+
+  return normalizedId ? { [source]: normalizedId } : {};
+}
+
+function getFixtureSourceIds(fixture = {}) {
+  const sourceIds = parseSourceIds(fixture.sourceIds);
+
+  if (Object.keys(sourceIds).length > 0) {
+    return sourceIds;
+  }
+
+  const sources = getSingleFixtureSources(fixture);
+  const source = sources[0] || fixture.source || "";
+  const providerId = getProviderIdFromFixtureId(fixture.id, source);
+
+  return buildSourceIds(source, providerId);
+}
+
+function getProviderIdFromFixtureId(id, source) {
+  const text = String(id || "").trim();
+
+  if (!text || !source) {
+    return "";
+  }
+
+  const prefix = `${source}:`;
+
+  return text.startsWith(prefix) ? text.slice(prefix.length) : text;
+}
+
+function parseSourceIds(value) {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return Object.fromEntries(Object.entries(value)
+      .map(([source, id]) => [String(source || "").trim(), String(id || "").trim()])
+      .filter(([source, id]) => source && id));
+  }
+
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return parseSourceIds(JSON.parse(text));
+  } catch {
+    return Object.fromEntries(text
+      .split(/[;,]/)
+      .map((part) => part.split(/[:=]/).map((piece) => piece.trim()))
+      .filter(([source, id]) => source && id));
+  }
+}
+
+function mergeSourceIds(...sourceIdSets) {
+  return sourceIdSets.reduce((merged, sourceIdSet) => {
+    for (const [source, id] of Object.entries(parseSourceIds(sourceIdSet))) {
+      if (!merged[source] && id) {
+        merged[source] = id;
+      }
+    }
+
+    return merged;
+  }, {});
+}
+
+function getSourceIdKeys(sourceIds = {}) {
+  return Object.entries(parseSourceIds(sourceIds))
+    .filter(([source, id]) => source && id)
+    .map(([source, id]) => `${normalizeText(source)}:${String(id).trim()}`)
+    .sort();
+}
+
+function createShortHash(value) {
+  return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 12);
+}
+
 function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [], previousSchedules = [], teams = [] }) {
   const fixturesByTeamId = groupBy(fixtures, (fixture) => String(fixture.teamId || "").trim());
   const previousScheduleByTeamId = new Map(
@@ -1300,6 +1760,7 @@ function mergeFixture(existingFixture, incomingFixture) {
     round: primaryFixture.round || secondaryFixture.round || "",
     season: primaryFixture.season || secondaryFixture.season || "",
     sources,
+    sourceIds: mergeSourceIds(secondaryFixture.sourceIds, primaryFixture.sourceIds),
     source: sources.join(" + "),
     time: primaryFixture.time || secondaryFixture.time || "",
     timestamp: primaryFixture.timestamp || secondaryFixture.timestamp || "",

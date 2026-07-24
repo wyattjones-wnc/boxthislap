@@ -648,6 +648,7 @@ function renderFootyFixture(fixture) {
   const venueMarkup = shouldShowFootyFixtureVenue(fixture)
     ? `<p>${escapeHtml(fixture.venue)}</p>`
     : "";
+  const matchNoteMarkup = renderFootyMatchNote(fixture);
 
   return `
     <article class="footy-fixture-card${isHighlighted ? " footy-fixture-card--soon" : ""}">
@@ -662,9 +663,58 @@ function renderFootyFixture(fixture) {
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
         ${venueMarkup}
+        ${matchNoteMarkup}
       </div>
       <strong>${escapeHtml(dateLabel)}</strong>
     </article>
+  `;
+}
+
+function renderFootyMatchNote(fixture) {
+  const note = fixture?.matchNote;
+
+  if (!note) {
+    return "";
+  }
+
+  const hasScore = String(note.homeScore || "").trim() || String(note.awayScore || "").trim();
+  const scoreMarkup = hasScore
+    ? `<p class="footy-match-score">${escapeHtml(fixture.home || "Home")} ${escapeHtml(note.homeScore || "-")} &middot; ${escapeHtml(fixture.away || "Away")} ${escapeHtml(note.awayScore || "-")}</p>`
+    : "";
+  const followEventsMarkup = renderFootyGoalAssistEvents(fixture.teamName || "Followed", note.followGoalAssists);
+  const opponentEventsMarkup = renderFootyGoalAssistEvents(fixture.opponent || "Opponent", note.opponentGoalAssists);
+  const noteMarkup = note.note ? `<p>${escapeHtml(note.note)}</p>` : "";
+  const highlightMarkup = note.highlightLink
+    ? `<a class="footy-highlight-link" href="${escapeHtml(note.highlightLink)}" target="_blank" rel="noopener noreferrer">Highlights</a>`
+    : "";
+
+  return `
+    <div class="footy-match-note">
+      ${scoreMarkup}
+      ${followEventsMarkup}
+      ${opponentEventsMarkup}
+      ${noteMarkup}
+      ${highlightMarkup}
+    </div>
+  `;
+}
+
+function renderFootyGoalAssistEvents(label, events = []) {
+  if (!Array.isArray(events) || events.length === 0) {
+    return "";
+  }
+
+  return `
+    <div class="footy-goal-events">
+      <span>${escapeHtml(label)}</span>
+      ${events.map((event) => {
+        const minute = event.minute ? `${escapeHtml(event.minute)}'` : "";
+        const assist = event.assister ? `, ${escapeHtml(event.assister)}` : "";
+        const penalty = event.penalty ? " pen" : "";
+
+        return `<p>${minute} ${escapeHtml(event.scorer || "Goal")}${assist}${penalty}</p>`;
+      }).join("")}
+    </div>
   `;
 }
 

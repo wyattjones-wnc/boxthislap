@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-24T03:40:13.980Z",
+  "generatedAt": "2026-07-24T04:22:04.211Z",
   "schemaVersion": 2,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-07-24T03:40:13.980Z",
-    "attemptedAt": "2026-07-24T03:40:13.980Z",
-    "updatedAt": "2026-07-24T03:40:13.980Z",
-    "oldestTeamUpdatedAt": "2026-07-24T03:40:13.980Z",
+    "generatedAt": "2026-07-24T04:22:04.211Z",
+    "attemptedAt": "2026-07-24T04:22:04.211Z",
+    "updatedAt": "2026-07-24T04:22:04.211Z",
+    "oldestTeamUpdatedAt": "2026-07-24T04:22:04.211Z",
     "teamCount": 7,
     "fixtureCount": 199,
     "statuses": {
@@ -42,15 +42,18 @@
     "matchCount": 198,
     "noteCount": 0,
     "sync": {
-      "status": "error",
-      "error": "Set FOOTY_DATA_SPREADSHEET_ID or deploy this script bound to the Footy workbook."
+      "status": "synced",
+      "rows": 198,
+      "syncedAt": "2026-07-24T04:22:04.211Z",
+      "appended": 198,
+      "updated": 0
     }
   },
   "teamSchedules": [
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/57.png",
@@ -1635,9 +1638,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/81.png",
@@ -3623,9 +3626,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/404.png",
@@ -5231,9 +5234,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -5252,9 +5255,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -5273,9 +5276,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "updated",
       "team": {
         "badge": "",
@@ -5949,9 +5952,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T03:40:13.980Z",
-      "updatedAt": "2026-07-24T03:40:13.980Z",
-      "previousUpdatedAt": "2026-07-22T20:17:57.754Z",
+      "attemptedAt": "2026-07-24T04:22:04.211Z",
+      "updatedAt": "2026-07-24T04:22:04.211Z",
+      "previousUpdatedAt": "2026-07-24T03:40:13.980Z",
       "status": "updated",
       "team": {
         "badge": "",

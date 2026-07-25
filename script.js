@@ -99,6 +99,7 @@ import {
   nextSearchInput,
   nextNotCompletedFilter,
   nextCompletedFilter,
+  nextPreviousFilter,
   nextNonAdminFilter,
   nextDateFromFilter,
   nextDateToFilter,
@@ -140,7 +141,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607250001";
+} from "./modules/domRefs.js?v=202607250002";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607250001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -1560,6 +1561,8 @@ function renderNextList(items = siteData.nextItems || []) {
     return;
   }
 
+  syncNextFilterDependencies();
+
   if (!shouldRenderPageSection("next")) {
     syncNextFilters();
     return;
@@ -1620,6 +1623,7 @@ function getFilteredNextItems(items = []) {
   const priorityRange = getNextPriorityRange();
   const includeNotCompleted = Boolean(nextNotCompletedFilter?.checked);
   const includeCompleted = Boolean(nextCompletedFilter?.checked);
+  const showPrevious = Boolean(nextPreviousFilter?.checked);
   const nonAdminOnly = Boolean(nextNonAdminFilter?.checked);
   const isAdmin = isCurrentManagerAdmin();
   const todayKey = getDateKey(0);
@@ -1638,7 +1642,9 @@ function getFilteredNextItems(items = []) {
         return false;
       }
 
-      if (!dateRange && isNextItemPast(item, todayKey)) {
+      const isPast = isNextItemPast(item, todayKey);
+
+      if (showPrevious ? !isPast : isPast) {
         return false;
       }
 
@@ -1682,11 +1688,8 @@ function renderNextItem(item) {
   const timeMarkup = item.timeLabel
     ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
     : "";
-  const statusMarkup = item.completed
-    ? `<span class="next-status next-status--completed">Completed</span>`
-    : "";
-  const nonAdminMarkup = item.nonAdmin
-    ? `<span class="next-status">Public</span>`
+  const completedIcon = item.completed
+    ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
     : "";
   const classNames = [
     "next-card",
@@ -1696,18 +1699,14 @@ function renderNextItem(item) {
 
   return `
     <article class="${classNames}">
-      <div class="next-card-main">
+      <div class="next-card-main${item.completed ? " has-completed-icon" : ""}">
+        ${completedIcon}
         <div>
           <h2>${escapeHtml(item.thing)}</h2>
           <p class="next-card-date">
             <span>${escapeHtml(dateLabel)}</span>
             ${timeMarkup}
           </p>
-        </div>
-        <div class="next-card-side">
-          <span class="next-priority-chip">P${item.priority}</span>
-          ${statusMarkup}
-          ${nonAdminMarkup}
         </div>
       </div>
     </article>
@@ -1725,6 +1724,11 @@ function syncNextFilters() {
   }
 
   const range = getNextPriorityRange();
+  const minPercent = range.min * 10;
+  const maxPercent = range.max * 10;
+
+  document.documentElement.style.setProperty("--next-priority-min-percent", `${minPercent}%`);
+  document.documentElement.style.setProperty("--next-priority-max-percent", `${maxPercent}%`);
 
   if (nextPriorityMinValue) {
     nextPriorityMinValue.textContent = String(range.min);
@@ -1767,6 +1771,7 @@ function hasActiveNextFilters() {
     String(nextDateToFilter?.value || "").trim() ||
     !nextNotCompletedFilter?.checked ||
     Boolean(nextCompletedFilter?.checked) ||
+    Boolean(nextPreviousFilter?.checked) ||
     Boolean(nextNonAdminFilter?.checked) ||
     priorityRange.min !== 0 ||
     priorityRange.max !== 10
@@ -1865,10 +1870,10 @@ function formatNextTime(value) {
   const match = rawValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
 
   if (!match) {
-    return rawValue;
+    return rawValue.toUpperCase().includes("EST") ? rawValue : `${rawValue} EST`;
   }
 
-  return `${Number(match[1])}:${match[2]} ${match[3].toUpperCase()}`;
+  return `${Number(match[1])}:${match[2]} ${match[3].toUpperCase()} EST`;
 }
 
 function getNextTimeSortValue(value) {
@@ -1895,6 +1900,12 @@ function clampNextPriority(value) {
   }
 
   return Math.min(10, Math.max(0, Math.round(number)));
+}
+
+function syncNextFilterDependencies() {
+  if (nextCompletedFilter?.checked && nextPreviousFilter && !nextPreviousFilter.checked) {
+    nextPreviousFilter.checked = true;
+  }
 }
 
 function renderNextListError(error) {
@@ -3968,6 +3979,7 @@ nextFilterToggle?.addEventListener("click", () => {
   nextSearchInput,
   nextNotCompletedFilter,
   nextCompletedFilter,
+  nextPreviousFilter,
   nextNonAdminFilter,
   nextDateFromFilter,
   nextDateToFilter,

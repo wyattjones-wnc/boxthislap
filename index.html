@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607250001">
+    <link rel="stylesheet" href="styles.css?v=202607250002">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -612,6 +612,10 @@
             <span>Completed</span>
           </label>
           <label class="next-checkbox-control">
+            <input id="next-previous-filter" type="checkbox">
+            <span>Previous</span>
+          </label>
+          <label class="next-checkbox-control">
             <input id="next-non-admin-filter" type="checkbox">
             <span>Non-Admin Only</span>
           </label>
@@ -629,6 +633,7 @@
               <output id="next-priority-max-value" for="next-priority-max">10</output>
             </div>
             <div class="next-priority-sliders">
+              <div class="next-range-track" aria-hidden="true"></div>
               <input id="next-priority-min" type="range" min="0" max="10" step="1" value="0" aria-label="Minimum priority">
               <input id="next-priority-max" type="range" min="0" max="10" step="1" value="10" aria-label="Maximum priority">
             </div>
@@ -1471,6 +1476,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607250001"></script>
+    <script type="module" src="script.js?v=202607250002"></script>
   </body>
 </html>

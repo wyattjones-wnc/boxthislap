@@ -72,6 +72,7 @@ export const nextFilters = document.querySelector("#next-filters");
 export const nextSearchInput = document.querySelector("#next-search");
 export const nextNotCompletedFilter = document.querySelector("#next-not-completed-filter");
 export const nextCompletedFilter = document.querySelector("#next-completed-filter");
+export const nextPreviousFilter = document.querySelector("#next-previous-filter");
 export const nextNonAdminFilter = document.querySelector("#next-non-admin-filter");
 export const nextDateFromFilter = document.querySelector("#next-date-from-filter");
 export const nextDateToFilter = document.querySelector("#next-date-to-filter");

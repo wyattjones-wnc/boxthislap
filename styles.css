@@ -717,10 +717,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-weight: 900;
 }
 
-.next-item-dialog .next-dialog-checkbox {
-  align-self: end;
-}
-
 .footy-filters label {
   color: var(--muted);
   display: grid;
@@ -1056,7 +1052,8 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.footy-note-grid label {
+.footy-note-grid label,
+.next-item-fields label {
   color: var(--muted);
   display: grid;
   font-size: 0.85rem;
@@ -1064,8 +1061,30 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 6px;
 }
 
+.next-item-fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .footy-note-wide {
   grid-column: 1 / -1;
+}
+
+.next-item-wide,
+.next-dialog-checks {
+  grid-column: 1 / -1;
+}
+
+.next-dialog-checks {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.next-item-fields .next-dialog-checkbox {
+  align-items: center;
+  min-height: 46px;
 }
 
 .footy-note-ga-builder {
@@ -1104,7 +1123,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-note-grid input,
-.footy-note-grid textarea {
+.footy-note-grid textarea,
+.next-item-fields input:not([type="checkbox"]) {
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -3796,7 +3816,9 @@ tr:last-child td {
     flex-direction: row;
   }
 
-  .footy-note-grid {
+  .footy-note-grid,
+  .next-item-fields,
+  .next-dialog-checks {
     grid-template-columns: 1fr;
   }
 

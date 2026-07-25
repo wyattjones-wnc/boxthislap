@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607250003">
+    <link rel="stylesheet" href="styles.css?v=202607250004">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -658,8 +658,8 @@
               </button>
             </header>
             <input id="next-item-id" type="hidden">
-            <div class="footy-note-fields">
-              <label class="footy-note-wide">
+            <div class="next-item-fields">
+              <label class="next-item-wide">
                 <span>Thing</span>
                 <input id="next-thing" type="text" autocomplete="off" required>
               </label>
@@ -679,14 +679,16 @@
                 <span>Priority</span>
                 <input id="next-priority" type="number" min="0" max="10" step="1" value="5">
               </label>
-              <label class="next-checkbox-control next-dialog-checkbox">
-                <input id="next-item-completed" type="checkbox">
-                <span>Completed</span>
-              </label>
-              <label class="next-checkbox-control next-dialog-checkbox">
-                <input id="next-item-non-admin" type="checkbox">
-                <span>Show to non-admin</span>
-              </label>
+              <div class="next-dialog-checks">
+                <label class="next-checkbox-control next-dialog-checkbox">
+                  <input id="next-item-completed" type="checkbox">
+                  <span>Completed</span>
+                </label>
+                <label class="next-checkbox-control next-dialog-checkbox">
+                  <input id="next-item-non-admin" type="checkbox">
+                  <span>Show to non-admin</span>
+                </label>
+              </div>
             </div>
             <p class="footy-note-status" id="next-item-status" aria-live="polite"></p>
             <footer>

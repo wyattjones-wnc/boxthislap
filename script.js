@@ -749,7 +749,7 @@ function renderFootyFixture(fixture) {
   return `
     <article class="${cardClasses}" data-footy-match-id="${escapeHtml(matchId)}" ${matchId ? `role="button" tabindex="0" aria-expanded="${String(Boolean(isExpanded))}"` : ""}>
       <div class="footy-fixture-badge" aria-hidden="true">
-        ${badge ? `<img src="${escapeHtml(badge)}" alt="" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
+        ${badge ? `<img src="${escapeHtml(badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
       </div>
       <div>
         <h2>${titleMarkup}</h2>
@@ -1733,7 +1733,7 @@ function getDefaultNextPreviousTailItems(items = []) {
         return false;
       }
 
-      return item.priority >= 7 && isNextItemPast(item, todayKey);
+      return !item.completed && item.priority >= 7 && isNextItemPast(item, todayKey);
     })
     .sort(comparePreviousNextItems)
     .slice(0, 3);
@@ -4006,6 +4006,8 @@ function renderResultImageCard(result, shouldLoadImage = true) {
         class="result-image"
         ${sourceAttribute}
         alt="${escapeHtml(`${resultText} result`)}"
+        decoding="async"
+        loading="lazy"
       >
       <button class="result-overlay" type="button" data-result-toggle aria-label="${escapeHtml(`Show ${resultText} result`)}">
         ${formatResultOverlayMarkup(result)}
@@ -6087,7 +6089,7 @@ function renderAwardBadges(awards = []) {
 
 function renderAwardCard(award, context = "standings-summary") {
   const image = award.image
-    ? `<img class="award-card-image" src="${escapeHtml(award.image)}" alt="">`
+    ? `<img class="award-card-image" src="${escapeHtml(award.image)}" alt="" decoding="async" loading="lazy">`
     : `<span class="award-card-fallback">${escapeHtml(award.abbreviation || "AW")}</span>`;
   const secondary = getAwardSecondaryText(award, context);
 
@@ -6117,7 +6119,7 @@ function getAwardSecondaryText(award, context) {
 function renderAwardBadge(award, context = "standings") {
   const label = award.label || "Award";
   const mark = award.image
-    ? `<img src="${escapeHtml(award.image)}" alt="">`
+    ? `<img src="${escapeHtml(award.image)}" alt="" decoding="async" loading="lazy">`
     : escapeHtml(award.abbreviation || "AW");
 
   return `

@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607220016";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607250001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -94,6 +94,19 @@ import {
   footyNoteText,
   footyNoteHighlightLink,
   footyNoteStatus,
+  nextFilterToggle,
+  nextFilters,
+  nextSearchInput,
+  nextNotCompletedFilter,
+  nextCompletedFilter,
+  nextNonAdminFilter,
+  nextDateFromFilter,
+  nextDateToFilter,
+  nextPriorityMin,
+  nextPriorityMax,
+  nextPriorityMinValue,
+  nextPriorityMaxValue,
+  nextList,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -127,8 +140,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607230001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607230006";
+} from "./modules/domRefs.js?v=202607250001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607250001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -155,6 +168,7 @@ let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
+let shouldShowNextFilters = false;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const expandedFootyMatchIds = new Set();
@@ -1541,6 +1555,356 @@ function formatFootyFixtureDate(value) {
   }).format(date);
 }
 
+function renderNextList(items = siteData.nextItems || []) {
+  if (!nextList) {
+    return;
+  }
+
+  if (!shouldRenderPageSection("next")) {
+    syncNextFilters();
+    return;
+  }
+
+  syncNextFilters();
+
+  const normalizedItems = items.map(normalizeNextItem).filter(Boolean);
+  const visibleItems = getFilteredNextItems(normalizedItems);
+
+  if (!visibleItems.length) {
+    nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
+    return;
+  }
+
+  nextList.innerHTML = `
+    <div class="next-list">
+      ${visibleItems.map(renderNextItem).join("")}
+    </div>
+  `;
+}
+
+function normalizeNextItem(row) {
+  const thing = String(row?.Thing || "").trim();
+
+  if (!thing) {
+    return null;
+  }
+
+  const dateKey = parseNextDateKey(row.Date);
+  const endDateKey = parseNextDateKey(row["End Date"]);
+  const priority = clampNextPriority(row["Priority Level"]);
+  const completed = isTrueValue(row.Completed);
+  const nonAdmin = isTrueValue(row.NonAdmin);
+
+  return {
+    completed,
+    dateKey,
+    endDateKey,
+    nonAdmin,
+    priority,
+    raw: row,
+    searchText: normalizeLookupName([
+      thing,
+      row.Date,
+      row["End Date"],
+      row.Time,
+      row["Priority Level"],
+    ].filter(Boolean).join(" ")),
+    thing,
+    timeLabel: formatNextTime(row.Time),
+  };
+}
+
+function getFilteredNextItems(items = []) {
+  const searchTerm = normalizeLookupName(nextSearchInput?.value || "");
+  const dateRange = getNextDateFilterRange();
+  const priorityRange = getNextPriorityRange();
+  const includeNotCompleted = Boolean(nextNotCompletedFilter?.checked);
+  const includeCompleted = Boolean(nextCompletedFilter?.checked);
+  const nonAdminOnly = Boolean(nextNonAdminFilter?.checked);
+  const isAdmin = isCurrentManagerAdmin();
+  const todayKey = getDateKey(0);
+
+  return items
+    .filter((item) => {
+      if (!isAdmin && !item.nonAdmin) {
+        return false;
+      }
+
+      if (isAdmin && nonAdminOnly && !item.nonAdmin) {
+        return false;
+      }
+
+      if (item.completed ? !includeCompleted : !includeNotCompleted) {
+        return false;
+      }
+
+      if (!dateRange && isNextItemPast(item, todayKey)) {
+        return false;
+      }
+
+      if (dateRange && !isNextItemInDateRange(item, dateRange)) {
+        return false;
+      }
+
+      if (item.priority < priorityRange.min || item.priority > priorityRange.max) {
+        return false;
+      }
+
+      return !searchTerm || item.searchText.includes(searchTerm);
+    })
+    .sort(compareNextItems);
+}
+
+function compareNextItems(first, second) {
+  const firstDate = first.dateKey || "9999-12-31";
+  const secondDate = second.dateKey || "9999-12-31";
+
+  if (firstDate !== secondDate) {
+    return firstDate.localeCompare(secondDate);
+  }
+
+  const firstTime = getNextTimeSortValue(first.raw.Time);
+  const secondTime = getNextTimeSortValue(second.raw.Time);
+
+  if (firstTime !== secondTime) {
+    return firstTime - secondTime;
+  }
+
+  if (first.priority !== second.priority) {
+    return second.priority - first.priority;
+  }
+
+  return first.thing.localeCompare(second.thing);
+}
+
+function renderNextItem(item) {
+  const dateLabel = formatNextDateRange(item);
+  const timeMarkup = item.timeLabel
+    ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
+    : "";
+  const statusMarkup = item.completed
+    ? `<span class="next-status next-status--completed">Completed</span>`
+    : "";
+  const nonAdminMarkup = item.nonAdmin
+    ? `<span class="next-status">Public</span>`
+    : "";
+  const classNames = [
+    "next-card",
+    item.completed ? "next-card--completed" : "",
+    isNextItemPast(item, getDateKey(0)) ? "next-card--past" : "",
+  ].filter(Boolean).join(" ");
+
+  return `
+    <article class="${classNames}">
+      <div class="next-card-main">
+        <div>
+          <h2>${escapeHtml(item.thing)}</h2>
+          <p class="next-card-date">
+            <span>${escapeHtml(dateLabel)}</span>
+            ${timeMarkup}
+          </p>
+        </div>
+        <div class="next-card-side">
+          <span class="next-priority-chip">P${item.priority}</span>
+          ${statusMarkup}
+          ${nonAdminMarkup}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function syncNextFilters() {
+  if (nextFilters) {
+    nextFilters.hidden = !shouldShowNextFilters;
+  }
+
+  if (nextFilterToggle) {
+    nextFilterToggle.setAttribute("aria-expanded", String(shouldShowNextFilters));
+    nextFilterToggle.classList.toggle("is-active", shouldShowNextFilters);
+  }
+
+  const range = getNextPriorityRange();
+
+  if (nextPriorityMinValue) {
+    nextPriorityMinValue.textContent = String(range.min);
+  }
+
+  if (nextPriorityMaxValue) {
+    nextPriorityMaxValue.textContent = String(range.max);
+  }
+}
+
+function getNextDateFilterRange() {
+  const rawStart = String(nextDateFromFilter?.value || "").trim();
+  const rawEnd = String(nextDateToFilter?.value || "").trim();
+
+  if (!rawStart && !rawEnd) {
+    return null;
+  }
+
+  const start = rawStart || rawEnd;
+  const end = rawEnd || rawStart;
+
+  return start <= end
+    ? { start, end }
+    : { start: end, end: start };
+}
+
+function getNextPriorityRange() {
+  const min = clampNextPriority(nextPriorityMin?.value ?? 0);
+  const max = clampNextPriority(nextPriorityMax?.value ?? 10);
+
+  return min <= max ? { min, max } : { min: max, max: min };
+}
+
+function hasActiveNextFilters() {
+  const priorityRange = getNextPriorityRange();
+
+  return Boolean(
+    String(nextSearchInput?.value || "").trim() ||
+    String(nextDateFromFilter?.value || "").trim() ||
+    String(nextDateToFilter?.value || "").trim() ||
+    !nextNotCompletedFilter?.checked ||
+    Boolean(nextCompletedFilter?.checked) ||
+    Boolean(nextNonAdminFilter?.checked) ||
+    priorityRange.min !== 0 ||
+    priorityRange.max !== 10
+  );
+}
+
+function isNextItemPast(item, todayKey = getDateKey(0)) {
+  const lastDateKey = item.endDateKey || item.dateKey;
+  return Boolean(lastDateKey && lastDateKey < todayKey);
+}
+
+function isNextItemInDateRange(item, dateRange) {
+  const start = item.dateKey || item.endDateKey;
+  const end = item.endDateKey || item.dateKey;
+
+  if (!start || !end) {
+    return false;
+  }
+
+  return start <= dateRange.end && end >= dateRange.start;
+}
+
+function parseNextDateKey(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return "";
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+    return rawValue;
+  }
+
+  const slashMatch = rawValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+  if (slashMatch) {
+    const month = Number(slashMatch[1]);
+    const day = Number(slashMatch[2]);
+    const rawYear = Number(slashMatch[3]);
+    const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return [
+        year,
+        String(month).padStart(2, "0"),
+        String(day).padStart(2, "0"),
+      ].join("-");
+    }
+  }
+
+  const parsedDate = new Date(rawValue);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function formatNextDateRange(item) {
+  if (!item.dateKey && !item.endDateKey) {
+    return "Date TBD";
+  }
+
+  const startLabel = formatNextDateKey(item.dateKey || item.endDateKey);
+  const endLabel = item.endDateKey && item.endDateKey !== item.dateKey
+    ? formatNextDateKey(item.endDateKey)
+    : "";
+
+  return endLabel ? `${startLabel} - ${endLabel}` : startLabel;
+}
+
+function formatNextDateKey(dateKey) {
+  if (!dateKey) {
+    return "Date TBD";
+  }
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatNextTime(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return "";
+  }
+
+  const match = rawValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+
+  if (!match) {
+    return rawValue;
+  }
+
+  return `${Number(match[1])}:${match[2]} ${match[3].toUpperCase()}`;
+}
+
+function getNextTimeSortValue(value) {
+  const rawValue = String(value || "").trim();
+  const match = rawValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const period = match[3].toUpperCase();
+  const normalizedHour = period === "PM" && hour !== 12 ? hour + 12 : period === "AM" && hour === 12 ? 0 : hour;
+
+  return normalizedHour * 60 + minute;
+}
+
+function clampNextPriority(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.min(10, Math.max(0, Math.round(number)));
+}
+
+function renderNextListError(error) {
+  if (!nextList) {
+    return;
+  }
+
+  nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
+}
+
 function renderFantasyCriticPage(year = getActiveFantasyCriticYear()) {
   const yearKey = String(year || "");
 
@@ -2233,6 +2597,11 @@ function renderActivePageContent(pageName = "") {
 
   if (pageName === "footy-goal-assists") {
     renderFootyGoalAssistsSaved();
+    return;
+  }
+
+  if (pageName === "next") {
+    renderNextList();
     return;
   }
 
@@ -3590,6 +3959,25 @@ footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });
 
+nextFilterToggle?.addEventListener("click", () => {
+  shouldShowNextFilters = !shouldShowNextFilters;
+  renderNextList();
+});
+
+[
+  nextSearchInput,
+  nextNotCompletedFilter,
+  nextCompletedFilter,
+  nextNonAdminFilter,
+  nextDateFromFilter,
+  nextDateToFilter,
+  nextPriorityMin,
+  nextPriorityMax,
+].forEach((control) => {
+  control?.addEventListener("input", () => renderNextList());
+  control?.addEventListener("change", () => renderNextList());
+});
+
 document.addEventListener("pointerdown", (event) => {
   if (!footyTeamFilter || !shouldShowFootyTeamOptions || footyTeamFilter.contains(event.target)) {
     return;
@@ -4049,6 +4437,7 @@ function renderLoginState() {
     };
   }
 
+  renderNextList();
 }
 
 function renderLoginManagerOptions() {
@@ -6166,6 +6555,18 @@ loadJson("data/footy-schedule.json")
 
     renderFootyScheduleError(error);
     console.error("Box This Lap footy schedule failed to load", error);
+  });
+
+loadSheet("next")
+  .then((items) => {
+    siteData.nextItems = items;
+    renderNextList(items);
+    console.info("Box This Lap Next data loaded", items);
+  })
+  .catch((error) => {
+    siteData.nextItemsError = error;
+    renderNextListError(error);
+    console.error("Box This Lap Next data failed to load", error);
   });
 
 Promise.allSettled([

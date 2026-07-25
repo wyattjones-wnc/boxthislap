@@ -16,6 +16,8 @@ const FANTASY_OFFICE_2026_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQrjQ6L5xMBMnuDNrN95ngeKbTePfJeGltNCIVAai7bZKdgFG_Djj68OBZvK7B9VnREA-Ux4VbeaQZ-/pub";
 const MANAGER_PORTAL_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub";
+const NEXT_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRTQZAN1znMdqJ3eaU_FUtq-UM2HeaOISqqGuTidCE0tCoc8TzA5brhbO-fccCKt-sBOk3pY3Zg0YVW/pub";
 
 export const DATA_SOURCES = {
   sheets: {
@@ -45,6 +47,7 @@ export const DATA_SOURCES = {
     portalDrafts: buildManagerPortalCsvUrl("1819817720"),
     portalFootballTeams: buildManagerPortalCsvUrl("1614272244"),
     portalLogs: buildManagerPortalCsvUrl("121360226"),
+    next: `${NEXT_SHEET_BASE_URL}?output=csv`,
   },
 };
 

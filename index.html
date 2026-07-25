@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607240004">
+    <link rel="stylesheet" href="styles.css?v=202607250001">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -288,6 +288,7 @@
         </div>
         <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
           <a href="#footy" data-page-link="footy" role="tab">Footy</a>
+          <a href="#next" data-page-link="next" role="tab">Next</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
         <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="World Cup sections" hidden>
@@ -582,6 +583,60 @@
             </footer>
           </form>
         </dialog>
+      </section>
+
+      <section class="page" id="next" data-page="next">
+        <div class="section-heading page-heading-with-action footy-heading">
+          <h1>Next</h1>
+          <div class="heading-actions">
+            <button class="icon-action-button next-filter-toggle" id="next-filter-toggle" type="button" aria-expanded="false" aria-controls="next-filters" aria-label="Show filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="next-controls">
+          <label>
+            <span>Search</span>
+            <input id="next-search" type="search" placeholder="Search" autocomplete="off">
+          </label>
+        </div>
+        <div class="next-filters" id="next-filters" hidden>
+          <label class="next-checkbox-control">
+            <input id="next-not-completed-filter" type="checkbox" checked>
+            <span>Not Completed</span>
+          </label>
+          <label class="next-checkbox-control">
+            <input id="next-completed-filter" type="checkbox">
+            <span>Completed</span>
+          </label>
+          <label class="next-checkbox-control">
+            <input id="next-non-admin-filter" type="checkbox">
+            <span>Non-Admin Only</span>
+          </label>
+          <label class="next-date-filter">
+            <span>Date</span>
+            <div class="footy-date-range">
+              <input id="next-date-from-filter" type="date" aria-label="Date from">
+              <input id="next-date-to-filter" type="date" aria-label="Date to">
+            </div>
+          </label>
+          <div class="next-priority-filter" role="group" aria-labelledby="next-priority-label">
+            <span id="next-priority-label">Priority</span>
+            <div class="next-priority-values">
+              <output id="next-priority-min-value" for="next-priority-min">0</output>
+              <output id="next-priority-max-value" for="next-priority-max">10</output>
+            </div>
+            <div class="next-priority-sliders">
+              <input id="next-priority-min" type="range" min="0" max="10" step="1" value="0" aria-label="Minimum priority">
+              <input id="next-priority-max" type="range" min="0" max="10" step="1" value="10" aria-label="Maximum priority">
+            </div>
+          </div>
+        </div>
+        <div class="content-shell" id="next-list">
+          <p class="table-message">Next items will load here.</p>
+        </div>
       </section>
 
       <section class="page" id="footy-goal-assists" data-page="footy-goal-assists">
@@ -1416,6 +1471,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607240006"></script>
+    <script type="module" src="script.js?v=202607250001"></script>
   </body>
 </html>

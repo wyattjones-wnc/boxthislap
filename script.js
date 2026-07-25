@@ -1592,15 +1592,19 @@ function renderNextList(items = siteData.nextItems || []) {
 
   const normalizedItems = items.map(normalizeNextItem).filter(Boolean);
   const visibleItems = getFilteredNextItems(normalizedItems);
+  const previousTailItems = shouldRenderDefaultNextPreviousTail()
+    ? getDefaultNextPreviousTailItems(normalizedItems)
+    : [];
+  const renderedItems = [...visibleItems, ...previousTailItems];
 
-  if (!visibleItems.length) {
+  if (!renderedItems.length) {
     nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
     return;
   }
 
   nextList.innerHTML = `
     <div class="next-list">
-      ${visibleItems.map(renderNextItem).join("")}
+      ${renderedItems.map(renderNextItem).join("")}
     </div>
   `;
 }
@@ -1699,6 +1703,59 @@ function compareNextItems(first, second) {
 
   if (first.priority !== second.priority) {
     return second.priority - first.priority;
+  }
+
+  return first.thing.localeCompare(second.thing);
+}
+
+function shouldRenderDefaultNextPreviousTail() {
+  const priorityRange = getNextPriorityRange();
+
+  return Boolean(
+    !String(nextSearchInput?.value || "").trim() &&
+    !String(nextDateFromFilter?.value || "").trim() &&
+    !String(nextDateToFilter?.value || "").trim() &&
+    !nextCompletedFilter?.checked &&
+    !nextPreviousFilter?.checked &&
+    !nextNonAdminFilter?.checked &&
+    priorityRange.min === 0 &&
+    priorityRange.max === 10
+  );
+}
+
+function getDefaultNextPreviousTailItems(items = []) {
+  const todayKey = getDateKey(0);
+  const isAdmin = isCurrentManagerAdmin();
+
+  return items
+    .filter((item) => {
+      if (!isAdmin && !item.nonAdmin) {
+        return false;
+      }
+
+      return item.priority >= 7 && isNextItemPast(item, todayKey);
+    })
+    .sort(comparePreviousNextItems)
+    .slice(0, 3);
+}
+
+function comparePreviousNextItems(first, second) {
+  const firstDate = first.endDateKey || first.dateKey || "";
+  const secondDate = second.endDateKey || second.dateKey || "";
+
+  if (firstDate !== secondDate) {
+    return secondDate.localeCompare(firstDate);
+  }
+
+  if (first.priority !== second.priority) {
+    return second.priority - first.priority;
+  }
+
+  const firstTime = getNextTimeSortValue(first.raw.Time);
+  const secondTime = getNextTimeSortValue(second.raw.Time);
+
+  if (firstTime !== secondTime) {
+    return secondTime - firstTime;
   }
 
   return first.thing.localeCompare(second.thing);

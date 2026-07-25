@@ -1087,6 +1087,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-height: 46px;
 }
 
+.next-dialog-checkbox.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
 .footy-note-ga-builder {
   background: var(--soft);
   border: 1px solid var(--line);

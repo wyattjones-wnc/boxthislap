@@ -1683,7 +1683,7 @@ function getFilteredNextItems(items = []) {
 
       return !searchTerm || item.searchText.includes(searchTerm);
     })
-    .sort(compareNextItems);
+    .sort(showPrevious ? comparePreviousNextItems : compareNextItems);
 }
 
 function compareNextItems(first, second) {
@@ -1999,6 +1999,15 @@ function syncNextFilterDependencies() {
   }
 }
 
+function isNextDateSpanPast(dateKey, endDateKey = "") {
+  const lastDateKey = endDateKey || dateKey;
+  return Boolean(lastDateKey && lastDateKey < getDateKey(0));
+}
+
+function canCompleteNextItem(dateKey, endDateKey = "") {
+  return isNextDateSpanPast(dateKey, endDateKey);
+}
+
 function openNextItemDialog(itemId = "") {
   if (!isCurrentManagerAdmin() || !nextItemDialog) {
     return;
@@ -2044,6 +2053,7 @@ function openNextItemDialog(itemId = "") {
   }
 
   setNextItemStatus("");
+  updateNextCompletedControlAvailability();
 
   if (typeof nextItemDialog.showModal === "function") {
     nextItemDialog.showModal();
@@ -2099,6 +2109,23 @@ function buildNextItemPayloadFromForm() {
   };
 }
 
+function updateNextCompletedControlAvailability() {
+  if (!nextItemCompletedInput) {
+    return;
+  }
+
+  const dateKey = parseNextDateKey(nextStartDateInput?.value || "");
+  const endDateKey = parseNextDateKey(nextEndDateInput?.value || "");
+  const canComplete = canCompleteNextItem(dateKey, endDateKey);
+
+  nextItemCompletedInput.disabled = !canComplete;
+  nextItemCompletedInput.closest("label")?.classList.toggle("is-disabled", !canComplete);
+
+  if (!canComplete) {
+    nextItemCompletedInput.checked = false;
+  }
+}
+
 function createNextItemId() {
   return `next_${Date.now().toString(36)}_${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -2145,6 +2172,11 @@ function saveNextItemFromForm() {
 
   if (!item.Date) {
     setNextItemStatus("Date is required.", true);
+    return;
+  }
+
+  if (isTrueValue(item.Completed) && !canCompleteNextItem(parseNextDateKey(item.Date), parseNextDateKey(item["End Date"]))) {
+    setNextItemStatus("Only past items can be marked completed.", true);
     return;
   }
 
@@ -4384,6 +4416,11 @@ nextItemForm?.addEventListener("submit", (event) => {
 
 [nextItemClose, nextItemCancel].forEach((button) => {
   button?.addEventListener("click", closeNextItemDialog);
+});
+
+[nextStartDateInput, nextEndDateInput].forEach((control) => {
+  control?.addEventListener("input", updateNextCompletedControlAvailability);
+  control?.addEventListener("change", updateNextCompletedControlAvailability);
 });
 
 document.addEventListener("pointerdown", (event) => {

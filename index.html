@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607250005">
+    <link rel="stylesheet" href="styles.css?v=202607250006">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -606,7 +606,7 @@
           </label>
         </div>
         <div class="next-filters" id="next-filters" hidden>
-          <label class="next-checkbox-control">
+          <label class="next-checkbox-control" data-admin-only hidden>
             <input id="next-completed-filter" type="checkbox">
             <span>Completed</span>
           </label>
@@ -614,7 +614,7 @@
             <input id="next-previous-filter" type="checkbox">
             <span>Previous</span>
           </label>
-          <label class="next-checkbox-control">
+          <label class="next-checkbox-control" data-admin-only hidden>
             <input id="next-non-admin-filter" type="checkbox">
             <span>Non-Admin Only</span>
           </label>
@@ -629,7 +629,7 @@
               <input id="next-date-to-filter" type="date" aria-label="Date to">
             </div>
           </label>
-          <div class="next-priority-filter" role="group" aria-labelledby="next-priority-label">
+          <div class="next-priority-filter" role="group" aria-labelledby="next-priority-label" data-admin-only hidden>
             <span id="next-priority-label">Priority</span>
             <div class="next-priority-values">
               <output id="next-priority-min-value" for="next-priority-min">0</output>
@@ -1536,6 +1536,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607250006"></script>
+    <script type="module" src="script.js?v=202607250007"></script>
   </body>
 </html>

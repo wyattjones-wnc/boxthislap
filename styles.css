@@ -1092,6 +1092,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   opacity: 0.56;
 }
 
+.next-item-dialog .eyebrow {
+  display: none;
+}
+
 .footy-note-ga-builder {
   background: var(--soft);
   border: 1px solid var(--line);

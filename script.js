@@ -1646,11 +1646,11 @@ function normalizeNextItem(row) {
 function getFilteredNextItems(items = []) {
   const searchTerm = normalizeLookupName(nextSearchInput?.value || "");
   const dateRange = getNextDateFilterRange();
-  const priorityRange = getNextPriorityRange();
-  const includeCompleted = Boolean(nextCompletedFilter?.checked);
   const showPrevious = Boolean(nextPreviousFilter?.checked);
-  const nonAdminOnly = Boolean(nextNonAdminFilter?.checked);
   const isAdmin = isCurrentManagerAdmin();
+  const priorityRange = isAdmin ? getNextPriorityRange() : { min: 0, max: 10 };
+  const includeCompleted = isAdmin ? Boolean(nextCompletedFilter?.checked) : null;
+  const nonAdminOnly = isAdmin ? Boolean(nextNonAdminFilter?.checked) : false;
   const todayKey = getDateKey(0);
 
   return items
@@ -1663,7 +1663,7 @@ function getFilteredNextItems(items = []) {
         return false;
       }
 
-      if (item.completed !== includeCompleted) {
+      if (isAdmin && item.completed !== includeCompleted) {
         return false;
       }
 
@@ -1677,7 +1677,7 @@ function getFilteredNextItems(items = []) {
         return false;
       }
 
-      if (item.priority < priorityRange.min || item.priority > priorityRange.max) {
+      if (isAdmin && (item.priority < priorityRange.min || item.priority > priorityRange.max)) {
         return false;
       }
 
@@ -1709,6 +1709,10 @@ function compareNextItems(first, second) {
 }
 
 function shouldRenderDefaultNextPreviousTail() {
+  if (!isCurrentManagerAdmin()) {
+    return false;
+  }
+
   const priorityRange = getNextPriorityRange();
 
   return Boolean(
@@ -1762,11 +1766,12 @@ function comparePreviousNextItems(first, second) {
 }
 
 function renderNextItem(item) {
+  const isAdmin = isCurrentManagerAdmin();
   const dateLabel = formatNextDateRange(item);
   const timeMarkup = item.timeLabel
     ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
     : "";
-  const completedIcon = item.completed
+  const completedIcon = isAdmin && item.completed
     ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
     : "";
   const classNames = [
@@ -1785,7 +1790,7 @@ function renderNextItem(item) {
 
   return `
     <article class="${classNames}"${interactionAttributes}>
-      <div class="next-card-main${item.completed ? " has-completed-icon" : ""}">
+      <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
         ${completedIcon}
         <div>
           <h2>${escapeHtml(item.thing)}</h2>
@@ -1854,18 +1859,18 @@ function getNextPriorityRange() {
 }
 
 function hasActiveNextFilters() {
+  const isAdmin = isCurrentManagerAdmin();
   const priorityRange = getNextPriorityRange();
 
   return Boolean(
     String(nextSearchInput?.value || "").trim() ||
     String(nextDateFromFilter?.value || "").trim() ||
     String(nextDateToFilter?.value || "").trim() ||
-    Boolean(nextCompletedFilter?.checked) ||
+    (isAdmin && Boolean(nextCompletedFilter?.checked)) ||
     Boolean(nextPreviousFilter?.checked) ||
-    Boolean(nextNonAdminFilter?.checked) ||
-    Boolean(nextEditModeFilter?.checked) ||
-    priorityRange.min !== 0 ||
-    priorityRange.max !== 10
+    (isAdmin && Boolean(nextNonAdminFilter?.checked)) ||
+    (isAdmin && Boolean(nextEditModeFilter?.checked)) ||
+    (isAdmin && (priorityRange.min !== 0 || priorityRange.max !== 10))
   );
 }
 
@@ -4863,6 +4868,24 @@ function renderLoginState() {
   if (!managerMeta?.isAdmin && nextEditModeFilter?.checked) {
     nextEditModeFilter.checked = false;
     activeNextItemId = "";
+  }
+
+  if (!managerMeta?.isAdmin) {
+    if (nextCompletedFilter) {
+      nextCompletedFilter.checked = false;
+    }
+
+    if (nextNonAdminFilter) {
+      nextNonAdminFilter.checked = false;
+    }
+
+    if (nextPriorityMin) {
+      nextPriorityMin.value = "0";
+    }
+
+    if (nextPriorityMax) {
+      nextPriorityMax.value = "10";
+    }
   }
 
   if (profileName) {

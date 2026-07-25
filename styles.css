@@ -640,7 +640,19 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 10px 26px var(--shadow);
+  display: grid;
+  gap: 14px;
   padding: 16px;
+}
+
+.next-card--editable {
+  cursor: pointer;
+}
+
+.next-card--editable:hover,
+.next-card--editable:focus {
+  border-color: var(--accent);
+  outline: none;
 }
 
 .next-card--completed {
@@ -694,6 +706,19 @@ body.has-shell-stale-warning .stale-shell-alert {
   height: 32px;
   justify-content: center;
   width: 32px;
+}
+
+.next-edit-button {
+  justify-self: end;
+}
+
+.next-add-button {
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.next-item-dialog .next-dialog-checkbox {
+  align-self: end;
 }
 
 .footy-filters label {

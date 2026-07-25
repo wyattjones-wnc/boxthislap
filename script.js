@@ -5,6 +5,7 @@ import {
   MANAGER_SESSION_STORAGE_KEY,
   MANAGER_PORTAL_ENDPOINT,
   FOOTY_DATA_ENDPOINT,
+  NEXT_DATA_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
   BRACKET_STORAGE_KEY,
@@ -22,7 +23,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607230002";
+} from "./modules/siteConfig.js?v=202607250003";
 
 import {
   pageLinks,
@@ -97,10 +98,10 @@ import {
   nextFilterToggle,
   nextFilters,
   nextSearchInput,
-  nextNotCompletedFilter,
   nextCompletedFilter,
   nextPreviousFilter,
   nextNonAdminFilter,
+  nextEditModeFilter,
   nextDateFromFilter,
   nextDateToFilter,
   nextPriorityMin,
@@ -108,6 +109,21 @@ import {
   nextPriorityMinValue,
   nextPriorityMaxValue,
   nextList,
+  nextAddButton,
+  nextItemDialog,
+  nextItemForm,
+  nextItemDialogTitle,
+  nextItemId,
+  nextThingInput,
+  nextStartDateInput,
+  nextEndDateInput,
+  nextTimeInput,
+  nextPriorityInput,
+  nextItemCompletedInput,
+  nextItemNonAdminInput,
+  nextItemStatus,
+  nextItemClose,
+  nextItemCancel,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -141,7 +157,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607250002";
+} from "./modules/domRefs.js?v=202607250003";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607250001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -170,6 +186,7 @@ let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
 let shouldShowNextFilters = false;
+let activeNextItemId = "";
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const expandedFootyMatchIds = new Set();
@@ -1562,6 +1579,9 @@ function renderNextList(items = siteData.nextItems || []) {
   }
 
   syncNextFilterDependencies();
+  if (!isNextEditModeEnabled() && activeNextItemId) {
+    activeNextItemId = "";
+  }
 
   if (!shouldRenderPageSection("next")) {
     syncNextFilters();
@@ -1592,6 +1612,7 @@ function normalizeNextItem(row) {
     return null;
   }
 
+  const id = String(row?.ID || row?.Id || row?.id || "").trim();
   const dateKey = parseNextDateKey(row.Date);
   const endDateKey = parseNextDateKey(row["End Date"]);
   const priority = clampNextPriority(row["Priority Level"]);
@@ -1602,6 +1623,7 @@ function normalizeNextItem(row) {
     completed,
     dateKey,
     endDateKey,
+    id,
     nonAdmin,
     priority,
     raw: row,
@@ -1621,7 +1643,6 @@ function getFilteredNextItems(items = []) {
   const searchTerm = normalizeLookupName(nextSearchInput?.value || "");
   const dateRange = getNextDateFilterRange();
   const priorityRange = getNextPriorityRange();
-  const includeNotCompleted = Boolean(nextNotCompletedFilter?.checked);
   const includeCompleted = Boolean(nextCompletedFilter?.checked);
   const showPrevious = Boolean(nextPreviousFilter?.checked);
   const nonAdminOnly = Boolean(nextNonAdminFilter?.checked);
@@ -1638,7 +1659,7 @@ function getFilteredNextItems(items = []) {
         return false;
       }
 
-      if (item.completed ? !includeCompleted : !includeNotCompleted) {
+      if (item.completed !== includeCompleted) {
         return false;
       }
 
@@ -1694,11 +1715,19 @@ function renderNextItem(item) {
   const classNames = [
     "next-card",
     item.completed ? "next-card--completed" : "",
+    isNextEditModeEnabled() ? "next-card--editable" : "",
+    activeNextItemId === item.id ? "is-expanded" : "",
     isNextItemPast(item, getDateKey(0)) ? "next-card--past" : "",
   ].filter(Boolean).join(" ");
+  const editButton = isNextEditModeEnabled() && activeNextItemId === item.id
+    ? `<button class="action-button next-edit-button" type="button" data-next-edit="${escapeHtml(item.id)}">Edit</button>`
+    : "";
+  const interactionAttributes = isNextEditModeEnabled() && item.id
+    ? ` role="button" tabindex="0" aria-expanded="${String(activeNextItemId === item.id)}" data-next-item-id="${escapeHtml(item.id)}"`
+    : "";
 
   return `
-    <article class="${classNames}">
+    <article class="${classNames}"${interactionAttributes}>
       <div class="next-card-main${item.completed ? " has-completed-icon" : ""}">
         ${completedIcon}
         <div>
@@ -1709,8 +1738,13 @@ function renderNextItem(item) {
           </p>
         </div>
       </div>
+      ${editButton}
     </article>
   `;
+}
+
+function isNextEditModeEnabled() {
+  return Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
 }
 
 function syncNextFilters() {
@@ -1769,10 +1803,10 @@ function hasActiveNextFilters() {
     String(nextSearchInput?.value || "").trim() ||
     String(nextDateFromFilter?.value || "").trim() ||
     String(nextDateToFilter?.value || "").trim() ||
-    !nextNotCompletedFilter?.checked ||
     Boolean(nextCompletedFilter?.checked) ||
     Boolean(nextPreviousFilter?.checked) ||
     Boolean(nextNonAdminFilter?.checked) ||
+    Boolean(nextEditModeFilter?.checked) ||
     priorityRange.min !== 0 ||
     priorityRange.max !== 10
   );
@@ -1906,6 +1940,258 @@ function syncNextFilterDependencies() {
   if (nextCompletedFilter?.checked && nextPreviousFilter && !nextPreviousFilter.checked) {
     nextPreviousFilter.checked = true;
   }
+}
+
+function openNextItemDialog(itemId = "") {
+  if (!isCurrentManagerAdmin() || !nextItemDialog) {
+    return;
+  }
+
+  const item = itemId ? getNextItemById(itemId) : null;
+  activeNextItemId = String(itemId || "").trim();
+
+  if (nextItemDialogTitle) {
+    nextItemDialogTitle.textContent = item ? "Edit Next Item" : "Add Next Item";
+  }
+
+  if (nextItemId) {
+    nextItemId.value = item?.id || "";
+  }
+
+  if (nextThingInput) {
+    nextThingInput.value = item?.thing || "";
+  }
+
+  if (nextStartDateInput) {
+    nextStartDateInput.value = item?.dateKey || "";
+  }
+
+  if (nextEndDateInput) {
+    nextEndDateInput.value = item?.endDateKey || "";
+  }
+
+  if (nextTimeInput) {
+    nextTimeInput.value = formatNextTimeInputValue(item?.raw?.Time || "");
+  }
+
+  if (nextPriorityInput) {
+    nextPriorityInput.value = String(item?.priority ?? 5);
+  }
+
+  if (nextItemCompletedInput) {
+    nextItemCompletedInput.checked = Boolean(item?.completed);
+  }
+
+  if (nextItemNonAdminInput) {
+    nextItemNonAdminInput.checked = Boolean(item?.nonAdmin);
+  }
+
+  setNextItemStatus("");
+
+  if (typeof nextItemDialog.showModal === "function") {
+    nextItemDialog.showModal();
+  } else {
+    nextItemDialog.setAttribute("open", "");
+  }
+
+  nextThingInput?.focus();
+}
+
+function closeNextItemDialog() {
+  if (!nextItemDialog) {
+    return;
+  }
+
+  if (typeof nextItemDialog.close === "function") {
+    nextItemDialog.close();
+  } else {
+    nextItemDialog.removeAttribute("open");
+  }
+}
+
+function getNextItemById(itemId) {
+  const normalizedId = String(itemId || "").trim();
+
+  if (!normalizedId) {
+    return null;
+  }
+
+  return (siteData.nextItems || [])
+    .map(normalizeNextItem)
+    .filter(Boolean)
+    .find((item) => item.id === normalizedId) || null;
+}
+
+function buildNextItemPayloadFromForm() {
+  const existingId = String(nextItemId?.value || "").trim();
+  const thing = String(nextThingInput?.value || "").trim();
+  const date = String(nextStartDateInput?.value || "").trim();
+  const endDate = String(nextEndDateInput?.value || "").trim();
+  const time = String(nextTimeInput?.value || "").trim();
+  const priority = clampNextPriority(nextPriorityInput?.value ?? 5);
+
+  return {
+    ID: existingId || createNextItemId(),
+    Thing: thing,
+    Date: date,
+    "End Date": endDate,
+    Time: time ? formatNextTimeForSheet(time) : "",
+    "Priority Level": String(priority),
+    Completed: nextItemCompletedInput?.checked ? "TRUE" : "FALSE",
+    NonAdmin: nextItemNonAdminInput?.checked ? "TRUE" : "FALSE",
+  };
+}
+
+function createNextItemId() {
+  return `next_${Date.now().toString(36)}_${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function formatNextTimeForSheet(value) {
+  const rawValue = String(value || "").trim();
+  const match = rawValue.match(/^(\d{1,2}):(\d{2})$/);
+
+  if (!match) {
+    return rawValue;
+  }
+
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+
+  return `${displayHour}:${minute} ${period}`;
+}
+
+function formatNextTimeInputValue(value) {
+  const rawValue = String(value || "").trim();
+  const match = rawValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/i);
+
+  if (!match) {
+    return /^\d{1,2}:\d{2}$/.test(rawValue) ? rawValue : "";
+  }
+
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const period = match[3].toUpperCase();
+  const normalizedHour = period === "PM" && hour !== 12 ? hour + 12 : period === "AM" && hour === 12 ? 0 : hour;
+
+  return `${String(normalizedHour).padStart(2, "0")}:${minute}`;
+}
+
+function saveNextItemFromForm() {
+  const item = buildNextItemPayloadFromForm();
+
+  if (!item.Thing) {
+    setNextItemStatus("Thing is required.", true);
+    return;
+  }
+
+  if (!item.Date) {
+    setNextItemStatus("Date is required.", true);
+    return;
+  }
+
+  if (!submitNextItemPayload({ action: "saveNextItem", item })) {
+    setNextItemStatus("Next data endpoint is not configured yet.", true);
+    return;
+  }
+
+  upsertNextItemLocally(item);
+  renderNextList();
+  closeNextItemDialog();
+}
+
+function upsertNextItemLocally(item) {
+  const id = String(item.ID || "").trim();
+
+  if (!id) {
+    return;
+  }
+
+  const rows = Array.isArray(siteData.nextItems) ? siteData.nextItems : [];
+  const existingIndex = rows.findIndex((row) => String(row.ID || row.Id || row.id || "").trim() === id);
+
+  if (existingIndex >= 0) {
+    rows[existingIndex] = { ...rows[existingIndex], ...item };
+  } else {
+    rows.push(item);
+  }
+
+  siteData.nextItems = rows;
+}
+
+function submitNextItemPayload(payload) {
+  if (!NEXT_DATA_ENDPOINT) {
+    console.warn("Next data endpoint is not configured.", payload);
+    return false;
+  }
+
+  try {
+    const body = new URLSearchParams();
+    body.set("payload", JSON.stringify(payload));
+
+    if (navigator.sendBeacon) {
+      const sent = navigator.sendBeacon(NEXT_DATA_ENDPOINT, body);
+      if (sent) {
+        return true;
+      }
+    }
+
+    window.fetch(NEXT_DATA_ENDPOINT, {
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      keepalive: true,
+      method: "POST",
+      mode: "no-cors",
+    }).catch((error) => {
+      console.warn("Unable to submit Next item with fetch; falling back to form.", error);
+      submitNextItemPayloadWithForm(payload);
+    });
+    return true;
+  } catch (error) {
+    console.warn("Unable to submit Next item with beacon/fetch; falling back to form.", error);
+  }
+
+  submitNextItemPayloadWithForm(payload);
+  return true;
+}
+
+function submitNextItemPayloadWithForm(payload) {
+  const iframeName = "next-data-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
+  }
+
+  const form = document.createElement("form");
+  form.action = NEXT_DATA_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
+function setNextItemStatus(message, isError = false) {
+  if (!nextItemStatus) {
+    return;
+  }
+
+  nextItemStatus.textContent = message;
+  nextItemStatus.classList.toggle("is-error", isError);
 }
 
 function renderNextListError(error) {
@@ -3977,10 +4263,10 @@ nextFilterToggle?.addEventListener("click", () => {
 
 [
   nextSearchInput,
-  nextNotCompletedFilter,
   nextCompletedFilter,
   nextPreviousFilter,
   nextNonAdminFilter,
+  nextEditModeFilter,
   nextDateFromFilter,
   nextDateToFilter,
   nextPriorityMin,
@@ -3988,6 +4274,57 @@ nextFilterToggle?.addEventListener("click", () => {
 ].forEach((control) => {
   control?.addEventListener("input", () => renderNextList());
   control?.addEventListener("change", () => renderNextList());
+});
+
+nextList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-next-edit]");
+
+  if (editButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    openNextItemDialog(editButton.getAttribute("data-next-edit"));
+    return;
+  }
+
+  const card = event.target.closest("[data-next-item-id]");
+
+  if (!card || !isNextEditModeEnabled()) {
+    return;
+  }
+
+  const nextId = card.getAttribute("data-next-item-id") || "";
+  activeNextItemId = activeNextItemId === nextId ? "" : nextId;
+  renderNextList();
+});
+
+nextList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-next-item-id]");
+
+  if (!card || !isNextEditModeEnabled()) {
+    return;
+  }
+
+  event.preventDefault();
+  const nextId = card.getAttribute("data-next-item-id") || "";
+  activeNextItemId = activeNextItemId === nextId ? "" : nextId;
+  renderNextList();
+});
+
+nextAddButton?.addEventListener("click", () => {
+  openNextItemDialog();
+});
+
+nextItemForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveNextItemFromForm();
+});
+
+[nextItemClose, nextItemCancel].forEach((button) => {
+  button?.addEventListener("click", closeNextItemDialog);
 });
 
 document.addEventListener("pointerdown", (event) => {
@@ -4425,6 +4762,11 @@ function renderLoginState() {
   if (!managerMeta?.isAdmin && nationTestScoringToggle?.checked) {
     nationTestScoringToggle.checked = false;
     syncTestScoringUi();
+  }
+
+  if (!managerMeta?.isAdmin && nextEditModeFilter?.checked) {
+    nextEditModeFilter.checked = false;
+    activeNextItemId = "";
   }
 
   if (profileName) {

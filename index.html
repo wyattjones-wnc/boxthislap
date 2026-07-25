@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607250002">
+    <link rel="stylesheet" href="styles.css?v=202607250003">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -594,6 +594,9 @@
                 <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
               </svg>
             </button>
+            <button class="icon-action-button next-add-button" id="next-add-button" type="button" aria-label="Add Next item" data-admin-only hidden>
+              +
+            </button>
           </div>
         </div>
         <div class="next-controls">
@@ -603,10 +606,6 @@
           </label>
         </div>
         <div class="next-filters" id="next-filters" hidden>
-          <label class="next-checkbox-control">
-            <input id="next-not-completed-filter" type="checkbox" checked>
-            <span>Not Completed</span>
-          </label>
           <label class="next-checkbox-control">
             <input id="next-completed-filter" type="checkbox">
             <span>Completed</span>
@@ -618,6 +617,10 @@
           <label class="next-checkbox-control">
             <input id="next-non-admin-filter" type="checkbox">
             <span>Non-Admin Only</span>
+          </label>
+          <label class="next-checkbox-control" data-admin-only hidden>
+            <input id="next-edit-mode-filter" type="checkbox">
+            <span>Edit</span>
           </label>
           <label class="next-date-filter">
             <span>Date</span>
@@ -642,6 +645,60 @@
         <div class="content-shell" id="next-list">
           <p class="table-message">Next items will load here.</p>
         </div>
+
+        <dialog class="footy-note-dialog next-item-dialog" id="next-item-dialog">
+          <form class="footy-note-form next-item-form" id="next-item-form" method="dialog">
+            <header>
+              <div>
+                <p class="eyebrow">Next</p>
+                <h2 id="next-item-dialog-title">Add Next Item</h2>
+              </div>
+              <button class="icon-action-button footy-note-close" id="next-item-close" type="button" aria-label="Close Next item dialog">
+                &times;
+              </button>
+            </header>
+            <input id="next-item-id" type="hidden">
+            <div class="footy-note-fields">
+              <label class="footy-note-wide">
+                <span>Thing</span>
+                <input id="next-thing" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Date</span>
+                <input id="next-start-date" type="date" required>
+              </label>
+              <label>
+                <span>End Date</span>
+                <input id="next-end-date" type="date">
+              </label>
+              <label>
+                <span>Time</span>
+                <input id="next-time" type="time">
+              </label>
+              <label>
+                <span>Priority</span>
+                <input id="next-priority" type="number" min="0" max="10" step="1" value="5">
+              </label>
+              <label class="next-checkbox-control next-dialog-checkbox">
+                <input id="next-item-completed" type="checkbox">
+                <span>Completed</span>
+              </label>
+              <label class="next-checkbox-control next-dialog-checkbox">
+                <input id="next-item-non-admin" type="checkbox">
+                <span>Show to non-admin</span>
+              </label>
+            </div>
+            <p class="footy-note-status" id="next-item-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="next-item-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" type="submit">
+                Save
+              </button>
+            </footer>
+          </form>
+        </dialog>
       </section>
 
       <section class="page" id="footy-goal-assists" data-page="footy-goal-assists">
@@ -1476,6 +1533,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607250002"></script>
+    <script type="module" src="script.js?v=202607250003"></script>
   </body>
 </html>

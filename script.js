@@ -2132,7 +2132,12 @@ function updateNextCompletedControlAvailability() {
 }
 
 function createNextItemId() {
-  return `next_${Date.now().toString(36)}_${Math.random().toString(16).slice(2, 8)}`;
+  const nextNumericId = (siteData.nextItems || [])
+    .map((row) => Number(String(row?.ID || row?.Id || row?.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextNumericId);
 }
 
 function formatNextTimeForSheet(value) {

@@ -80,7 +80,9 @@ function saveNextItem(item) {
     }
 
     const rowValues = normalizeNextItem(item);
-    const id = rowValues.ID;
+    const existingRowsById = getExistingRowsById(sheet, header.row, columns.ID);
+    const id = rowValues.ID || getNextNumericId(existingRowsById);
+    rowValues.ID = id;
 
     if (!id) {
       throw new Error("ID is required.");
@@ -94,7 +96,6 @@ function saveNextItem(item) {
       throw new Error("Date is required.");
     }
 
-    const existingRowsById = getExistingRowsById(sheet, header.row, columns.ID);
     const rowNumber = existingRowsById[id];
 
     if (rowNumber) {
@@ -119,6 +120,15 @@ function saveNextItem(item) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function getNextNumericId(rowsById) {
+  const maxId = Object.keys(rowsById || {}).reduce((maxValue, id) => {
+    const numericId = Number(String(id || "").trim());
+    return Number.isInteger(numericId) && numericId > maxValue ? numericId : maxValue;
+  }, 0);
+
+  return String(maxId + 1);
 }
 
 function normalizeNextItem(item) {

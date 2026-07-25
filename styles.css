@@ -628,6 +628,299 @@ body.has-shell-stale-warning .stale-shell-alert {
   white-space: nowrap;
 }
 
+.footy-goal-assists-button {
+  white-space: nowrap;
+}
+
+.footy-goal-assists-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.footy-goal-assists-form {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+}
+
+.footy-goal-assists-form label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.footy-goal-assists-form input[type="text"] {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  min-height: 42px;
+  padding: 9px 10px;
+}
+
+.footy-penalty-toggle {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  display: inline-flex;
+  gap: 9px;
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.footy-penalty-toggle input {
+  accent-color: var(--accent-dark);
+  height: 18px;
+  width: 18px;
+}
+
+.footy-goal-assists-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.footy-goal-assists-status-row {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.footy-goal-assists-saved {
+  min-width: 0;
+}
+
+.footy-goal-assists-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footy-goal-assists-chip-list li {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.footy-goal-assist-chip {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 900;
+  gap: 7px;
+  max-width: min(100%, 340px);
+  min-height: 34px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.footy-goal-assist-chip > span:not(.footy-goal-assist-saved-icon):not(.footy-goal-assist-penalty) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footy-goal-assist-saved-icon,
+.footy-goal-assist-penalty {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 900;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
+.footy-goal-assist-saved-icon {
+  background: rgba(36, 145, 78, 0.18);
+  color: #35b36f;
+}
+
+.footy-goal-assist-penalty {
+  background: rgba(188, 35, 71, 0.16);
+  color: var(--accent-dark);
+}
+
+.footy-goal-assist-delete {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  height: 30px;
+  width: 30px;
+}
+
+.footy-goal-assists-feedback {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin: 0;
+  min-height: 1.2em;
+}
+
+.footy-goal-assists-feedback.is-error {
+  color: var(--accent-dark);
+}
+
+.footy-note-dialog {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  max-width: min(760px, calc(100vw - 24px));
+  padding: 0;
+  width: 100%;
+}
+
+.footy-note-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.footy-note-form {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 46px var(--shadow);
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.footy-note-form header,
+.footy-note-form footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.footy-note-form header > div {
+  min-width: 0;
+}
+
+.footy-note-form header .icon-action-button {
+  flex: 0 0 auto;
+}
+
+.footy-note-form header span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.footy-note-form h2 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.footy-note-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.footy-note-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.footy-note-wide {
+  grid-column: 1 / -1;
+}
+
+.footy-note-ga-builder {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.footy-note-ga-builder summary {
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.footy-note-ga-fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.footy-note-ga-fields .footy-goal-assists-actions {
+  align-items: stretch;
+}
+
+.footy-note-ga-saved {
+  min-width: 0;
+}
+
+.footy-note-ga-saved .table-message {
+  font-size: 0.85rem;
+}
+
+.footy-note-grid input,
+.footy-note-grid textarea {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  min-height: 42px;
+  padding: 9px 10px;
+  resize: vertical;
+}
+
+.footy-note-ga-builder input[type="text"] {
+  background: var(--panel);
+}
+
+.footy-note-grid textarea {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  line-height: 1.45;
+}
+
+.footy-note-status {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin: 0;
+  min-height: 1.2em;
+}
+
+.footy-note-status.is-error {
+  color: var(--accent-dark);
+}
+
 .footy-fixture-card {
   align-items: center;
   background: var(--soft);
@@ -639,10 +932,34 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.footy-fixture-card[role="button"] {
+  cursor: pointer;
+}
+
+.footy-fixture-card[role="button"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 3px;
+}
+
 .footy-fixture-card--soon {
   background: color-mix(in srgb, var(--accent) 22%, var(--soft));
   border-color: color-mix(in srgb, var(--accent) 82%, var(--line));
   box-shadow: inset 6px 0 0 var(--accent), 0 12px 28px var(--shadow);
+}
+
+.footy-fixture-card--win {
+  background: color-mix(in srgb, #2f9e44 18%, var(--soft));
+  border-color: color-mix(in srgb, #2f9e44 48%, var(--line));
+}
+
+.footy-fixture-card--draw {
+  background: color-mix(in srgb, #f2c94c 20%, var(--soft));
+  border-color: color-mix(in srgb, #f2c94c 48%, var(--line));
+}
+
+.footy-fixture-card--loss {
+  background: color-mix(in srgb, #d64545 18%, var(--soft));
+  border-color: color-mix(in srgb, #d64545 48%, var(--line));
 }
 
 .footy-fixture-badge {
@@ -705,6 +1022,40 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 22px;
 }
 
+.footy-match-note {
+  display: grid;
+  gap: 6px;
+}
+
+.footy-fixture-details {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  padding-top: 12px;
+}
+
+.footy-match-note-empty {
+  margin: 0;
+}
+
+.footy-match-note .footy-match-score {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.footy-goal-events {
+  display: grid;
+  gap: 2px;
+}
+
+.footy-goal-events > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .footy-fixture-card strong {
   align-self: center;
   color: var(--accent-dark);
@@ -712,6 +1063,37 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-self: end;
   text-align: right;
   white-space: nowrap;
+}
+
+.footy-fixture-side-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+.footy-highlight-button {
+  height: 34px;
+  min-height: 34px;
+  width: 34px;
+}
+
+.footy-highlight-button svg {
+  fill: currentColor;
+  height: 18px;
+  width: 18px;
+}
+
+.footy-fixture-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.footy-note-edit-button {
+  font-size: 0.82rem;
+  min-height: 32px;
+  padding: 6px 10px;
 }
 
 .footy-updated,
@@ -3164,6 +3546,48 @@ tr:last-child td {
     font-size: 0.875rem;
     padding: 7px 4px;
     white-space: nowrap;
+  }
+
+  .footy-goal-assists-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .footy-goal-assists-actions,
+  .footy-goal-assists-status-row {
+    grid-template-columns: 1fr;
+  }
+
+  .footy-goal-assists-actions {
+    display: grid;
+  }
+
+  .footy-goal-assists-actions .icon-action-button {
+    width: 100%;
+  }
+
+  .footy-goal-assists-status-row {
+    display: grid;
+  }
+
+  .footy-note-form {
+    padding: 14px;
+  }
+
+  .footy-note-form header,
+  .footy-note-form footer {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .footy-note-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footy-fixture-side-actions {
+    grid-column: 2;
+    justify-content: flex-end;
+    justify-self: stretch;
   }
 
   .brand {

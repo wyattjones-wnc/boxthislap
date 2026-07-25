@@ -2,6 +2,7 @@ export const WORKFLOW_LOOKAHEAD_DAYS = 7;
 export const THEME_STORAGE_KEY = "boxThisLapTheme";
 export const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
 export const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
+export const FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 export const AWARD_DEFINITIONS = [
   {
     abbreviation: "PC",

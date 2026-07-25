@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607230004">
+    <link rel="stylesheet" href="styles.css?v=202607240004">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -483,6 +483,156 @@
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
+        </div>
+        <dialog class="footy-note-dialog" id="footy-note-dialog">
+          <form class="footy-note-form" id="footy-note-form" method="dialog">
+            <header>
+              <div>
+                <span id="footy-note-match-id"></span>
+                <h2 id="footy-note-title">Edit Match Notes</h2>
+              </div>
+              <button class="icon-action-button" id="footy-note-close" type="button" aria-label="Close match note editor">
+                &times;
+              </button>
+            </header>
+            <div class="footy-note-grid">
+              <label>
+                <span>Home Score</span>
+                <input id="footy-note-home-score" type="text" inputmode="numeric" autocomplete="off">
+              </label>
+              <label>
+                <span>Away Score</span>
+                <input id="footy-note-away-score" type="text" inputmode="numeric" autocomplete="off">
+              </label>
+              <details class="footy-note-ga-builder" data-footy-note-ga-side="follow">
+                <summary>Follow G/A</summary>
+                <div class="footy-note-ga-fields">
+                  <label>
+                    <span>Scorer Name</span>
+                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" placeholder="Scorer Name">
+                  </label>
+                  <label>
+                    <span>Assister Name</span>
+                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                  </label>
+                  <label>
+                    <span>Minute</span>
+                    <input type="number" data-footy-note-ga-field="minute" inputmode="numeric" min="0" autocomplete="off" placeholder="Minute">
+                  </label>
+                  <label class="footy-penalty-toggle">
+                    <input type="checkbox" data-footy-note-ga-field="penalty">
+                    <span>Penalty</span>
+                  </label>
+                  <div class="footy-goal-assists-actions">
+                    <button class="action-button" type="button" data-footy-note-ga-save="follow">
+                      Save
+                    </button>
+                  </div>
+                </div>
+                <div class="footy-note-ga-saved" data-footy-note-ga-saved="follow">
+                  <p class="table-message">No saved followed-team entries.</p>
+                </div>
+              </details>
+              <details class="footy-note-ga-builder" data-footy-note-ga-side="opponent">
+                <summary>Opp G/A</summary>
+                <div class="footy-note-ga-fields">
+                  <label>
+                    <span>Scorer Name</span>
+                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" placeholder="Scorer Name">
+                  </label>
+                  <label>
+                    <span>Assister Name</span>
+                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                  </label>
+                  <label>
+                    <span>Minute</span>
+                    <input type="number" data-footy-note-ga-field="minute" inputmode="numeric" min="0" autocomplete="off" placeholder="Minute">
+                  </label>
+                  <label class="footy-penalty-toggle">
+                    <input type="checkbox" data-footy-note-ga-field="penalty">
+                    <span>Penalty</span>
+                  </label>
+                  <div class="footy-goal-assists-actions">
+                    <button class="action-button" type="button" data-footy-note-ga-save="opponent">
+                      Save
+                    </button>
+                  </div>
+                </div>
+                <div class="footy-note-ga-saved" data-footy-note-ga-saved="opponent">
+                  <p class="table-message">No saved opponent entries.</p>
+                </div>
+              </details>
+              <label class="footy-note-wide">
+                <span>Note</span>
+                <textarea id="footy-note-text" rows="3"></textarea>
+              </label>
+              <label class="footy-note-wide">
+                <span>Highlight Link</span>
+                <input id="footy-note-highlight-link" type="url" autocomplete="off">
+              </label>
+            </div>
+            <p class="footy-note-status" id="footy-note-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="footy-note-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" id="footy-note-save" type="submit">
+                Save
+              </button>
+            </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="page" id="footy-goal-assists" data-page="footy-goal-assists">
+        <div class="section-heading page-heading-with-action">
+          <div>
+            <h1>G/A'son</h1>
+            <p class="body-copy">Build goal and assist JSON for match notes.</p>
+          </div>
+          <div class="heading-actions heading-actions-right">
+            <button class="action-button" id="footy-goal-assists-back" type="button">
+              Footy
+            </button>
+            <button class="action-button" id="footy-goal-assists-copy" type="button">
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="content-shell footy-goal-assists-shell">
+          <form class="footy-goal-assists-form" id="footy-goal-assists-form">
+            <label>
+              <span>Scorer Name</span>
+              <input id="footy-scorer-name" type="text" autocomplete="off" placeholder="Scorer Name">
+            </label>
+            <label>
+              <span>Assister Name</span>
+              <input id="footy-assister-name" type="text" autocomplete="off" placeholder="Assister Name">
+            </label>
+            <label class="footy-penalty-toggle">
+              <input id="footy-penalty" type="checkbox">
+              <span>Penalty</span>
+            </label>
+            <div class="footy-goal-assists-actions">
+              <button class="action-button" type="submit">
+                Save
+              </button>
+              <button class="icon-action-button" id="footy-goal-assists-add" type="button" aria-label="Save goal assist entry">
+                +
+              </button>
+            </div>
+          </form>
+
+          <div class="footy-goal-assists-status-row">
+            <div class="footy-goal-assists-saved" id="footy-goal-assists-saved" aria-live="polite">
+              <p class="table-message">No saved goal/assist entries.</p>
+            </div>
+            <button class="action-button" id="footy-goal-assists-clear" type="button">
+              Clear
+            </button>
+          </div>
+          <p class="footy-goal-assists-feedback" id="footy-goal-assists-feedback" aria-live="polite"></p>
         </div>
       </section>
 
@@ -1266,6 +1416,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607240003"></script>
+    <script type="module" src="script.js?v=202607240006"></script>
   </body>
 </html>

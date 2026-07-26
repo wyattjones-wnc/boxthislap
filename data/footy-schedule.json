@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-07-24T13:51:17.838Z",
+  "generatedAt": "2026-07-26T11:38:57.762Z",
   "schemaVersion": 2,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-07-24T13:51:17.838Z",
-    "attemptedAt": "2026-07-24T13:51:17.838Z",
-    "updatedAt": "2026-07-24T13:51:17.838Z",
-    "oldestTeamUpdatedAt": "2026-07-24T13:51:17.838Z",
+    "generatedAt": "2026-07-26T11:38:57.762Z",
+    "attemptedAt": "2026-07-26T11:38:57.762Z",
+    "updatedAt": "2026-07-26T11:38:57.762Z",
+    "oldestTeamUpdatedAt": "2026-07-26T11:38:57.762Z",
     "teamCount": 7,
-    "fixtureCount": 202,
+    "fixtureCount": 203,
     "statuses": {
       "updated": 5,
       "no-fixtures": 2
@@ -39,21 +39,21 @@
     }
   ],
   "footyMatchRegistry": {
-    "matchCount": 201,
-    "noteCount": 0,
+    "matchCount": 202,
+    "noteCount": 3,
     "sync": {
       "status": "synced",
-      "rows": 201,
-      "syncedAt": "2026-07-24T13:51:17.838Z",
-      "appended": 2,
-      "updated": 199
+      "rows": 202,
+      "syncedAt": "2026-07-26T11:38:57.762Z",
+      "appended": 1,
+      "updated": 201
     }
   },
   "teamSchedules": [
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/57.png",
@@ -1765,7 +1765,7 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-07-24 through 2027-07-24.",
+        "Loaded 38 SCHEDULED matches from 2026-07-26 through 2027-07-26.",
         "Running competitions: FA Community Shield (COM), Premier League (PL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
         "Loaded 43 Arsenal.com fixtures from monthly GraphQL windows.",
@@ -1774,9 +1774,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/81.png",
@@ -1800,13 +1800,12 @@
           "home": "Barcelona",
           "homeBadge": "",
           "id": "TheSportsDB:2521609",
-          "leagueId": "4569",
+          "isRegistryFixture": true,
           "isHome": true,
+          "lastSeen": "2026-07-24T04:22:04.211Z",
           "league": "Club Friendlies",
           "opponent": "CE Europa",
           "priority": "2",
-          "round": "0",
-          "season": "2026",
           "source": "TheSportsDB + Footy Matches",
           "sourceIds": {
             "TheSportsDB": "2521609"
@@ -1815,48 +1814,51 @@
             "TheSportsDB",
             "Footy Matches"
           ],
-          "sourceDetail": "team-upcoming",
-          "status": "NS",
           "teamBadge": "https://crests.football-data.org/81.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "18:00:00",
           "timestamp": "2026-07-24T18:00:00",
-          "venue": "Spotify Camp Nou",
           "matchId": "footy_42cb3f6fa8a1",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "leagueId": "4569",
+          "round": "0",
+          "season": "2026",
+          "sourceDetail": "team-upcoming",
+          "status": "NS",
+          "venue": "Spotify Camp Nou"
         },
         {
-          "away": "FC Barcelona",
+          "away": "Barcelona",
           "awayBadge": "",
           "date": "2026-07-31",
           "home": "Birmingham City",
           "homeBadge": "",
-          "id": "iCalendar:6a4c6c6354aa884cc928e926",
-          "leagueId": "",
+          "id": "TheSportsDB:2521699",
+          "leagueId": "4569",
           "isHome": false,
-          "league": "Friendly",
+          "league": "Club Friendlies",
           "opponent": "Birmingham City",
           "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
+          "round": "0",
+          "season": "2026",
+          "source": "TheSportsDB + Footy Matches + iCalendar",
           "sourceIds": {
-            "iCalendar": "6a4c6c6354aa884cc928e926"
+            "iCalendar": "6a4c6c6354aa884cc928e926",
+            "TheSportsDB": "2521699"
           },
           "sources": [
-            "iCalendar",
-            "Footy Matches"
+            "TheSportsDB",
+            "Footy Matches",
+            "iCalendar"
           ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
+          "sourceDetail": "team-upcoming",
+          "status": "NS",
           "teamBadge": "https://crests.football-data.org/81.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "18:45:00",
-          "timestamp": "2026-07-31T18:45:00Z",
-          "venue": "Birmingham, Birmingham",
+          "timestamp": "2026-07-31T18:45:00",
+          "venue": "St Andrew's @ Knighthead Park",
           "matchId": "footy_81740d1206e3",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3079,7 +3081,7 @@
             "Footy Matches"
           ],
           "sourceDetail": "league-season",
-          "status": "SCHEDULED",
+          "status": "NS",
           "teamBadge": "https://crests.football-data.org/81.png",
           "teamId": "2",
           "teamName": "Barcelona",
@@ -3978,7 +3980,7 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-07-24 through 2027-07-24.",
+        "Loaded 38 SCHEDULED matches from 2026-07-26 through 2027-07-26.",
         "Running competitions: Primera Division (PD).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
         "Loaded 39 iCalendar fixtures from calendar feed."
@@ -3986,9 +3988,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/404.png",
@@ -4003,7 +4005,7 @@
         "football-data.org",
         "iCalendar"
       ],
-      "fixtureCount": 48,
+      "fixtureCount": 49,
       "fixtures": [
         {
           "away": "Leeds United",
@@ -4012,13 +4014,12 @@
           "home": "Wrexham",
           "homeBadge": "",
           "id": "TheSportsDB:2529345",
-          "leagueId": "5647",
+          "isRegistryFixture": true,
           "isHome": true,
+          "lastSeen": "2026-07-24T04:22:04.211Z",
           "league": "English Premier League Summer Series",
           "opponent": "Leeds United",
           "priority": "3",
-          "round": "1",
-          "season": "2026",
           "source": "TheSportsDB + Footy Matches",
           "sourceIds": {
             "TheSportsDB": "2529345"
@@ -4027,17 +4028,49 @@
             "TheSportsDB",
             "Footy Matches"
           ],
-          "sourceDetail": "team-upcoming",
-          "status": "NS",
           "teamBadge": "https://crests.football-data.org/404.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "20:00:00",
           "timestamp": "2026-07-25T20:00:00",
-          "venue": "Raymond James Stadium",
           "matchId": "footy_e4f0ddc8359e",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "leagueId": "5647",
+          "round": "1",
+          "season": "2026",
+          "sourceDetail": "team-upcoming",
+          "status": "NS",
+          "venue": "Raymond James Stadium"
+        },
+        {
+          "away": "Wrexham",
+          "awayBadge": "",
+          "date": "2026-07-29",
+          "home": "Liverpool",
+          "homeBadge": "",
+          "id": "TheSportsDB:2529347",
+          "leagueId": "5647",
+          "isHome": false,
+          "league": "English Premier League Summer Series",
+          "opponent": "Liverpool",
+          "priority": "3",
+          "round": "2",
+          "season": "2026",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2529347"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "team-upcoming",
+          "status": "NS",
+          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamId": "3",
+          "teamName": "Wrexham",
+          "time": "23:30:00",
+          "timestamp": "2026-07-29T23:30:00",
+          "venue": "Yankee Stadium",
+          "matchId": "footy_5359dd531f72"
         },
         {
           "away": "Wrexham",
@@ -5731,7 +5764,7 @@
         }
       ],
       "notes": [
-        "Loaded 46 SCHEDULED matches from 2026-07-24 through 2027-07-24.",
+        "Loaded 46 SCHEDULED matches from 2026-07-26 through 2027-07-26.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 47 iCalendar fixtures from calendar feed."
@@ -5739,9 +5772,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -5760,9 +5793,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -5781,9 +5814,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -5821,9 +5854,47 @@
           "teamBadge": "assets/teams/charlotte-fc.svg",
           "teamId": "6",
           "teamName": "Charlotte FC",
-          "time": "00:15:00",
-          "timestamp": "2026-07-23T00:15:00",
-          "matchId": "footy_a77544dabd9d"
+          "time": "0:15:00",
+          "timestamp": "2026-07-23T0:15:00",
+          "matchId": "footy_a77544dabd9d",
+          "leagueId": "",
+          "round": "",
+          "season": "",
+          "venue": "",
+          "matchNote": {
+            "awayScore": "2",
+            "followGoalAssists": [
+              {
+                "assister": "",
+                "minute": 16,
+                "penalty": false,
+                "scorer": "Kerwin Vargas"
+              },
+              {
+                "assister": "Pep Biel",
+                "minute": 45,
+                "penalty": false,
+                "scorer": "Liel Abada"
+              }
+            ],
+            "highlightLink": "https://youtu.be/L0G1Bc1ZmeI?is=xz9t-CMZDpFqlDMw",
+            "homeScore": "2",
+            "note": "",
+            "opponentGoalAssists": [
+              {
+                "assister": "Tomas Jacob",
+                "minute": 57,
+                "penalty": false,
+                "scorer": "Elias Baez"
+              },
+              {
+                "assister": "",
+                "minute": 76,
+                "penalty": false,
+                "scorer": "Miguel Almiron"
+              }
+            ]
+          }
         },
         {
           "away": "Charlotte FC",
@@ -5832,13 +5903,12 @@
           "home": "Red Bull New York",
           "homeBadge": "",
           "id": "iCalendar:MLS-MAT-0009I0",
-          "leagueId": "",
+          "isRegistryFixture": true,
           "isHome": false,
+          "lastSeen": "2026-07-24T04:22:04.211Z",
           "league": "MLS - Regular Season",
           "opponent": "Red Bull New York",
           "priority": "6",
-          "round": "",
-          "season": "",
           "source": "iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "MLS-MAT-0009I0"
@@ -5847,17 +5917,39 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
           "teamBadge": "assets/teams/charlotte-fc.svg",
           "teamId": "6",
           "teamName": "Charlotte FC",
           "time": "22:30:00",
           "timestamp": "2026-07-25T22:30:00Z",
-          "venue": "Sports Illustrated Stadium, Harrison, NJ",
           "matchId": "footy_5b8e26bf3181",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "matchNote": {
+            "awayScore": "2",
+            "followGoalAssists": [
+              {
+                "assister": "Kerwin Vargas",
+                "minute": 12,
+                "penalty": false,
+                "scorer": "Ashley Westwood"
+              },
+              {
+                "assister": "Liel Abada",
+                "minute": 7,
+                "penalty": false,
+                "scorer": "Pep Biel"
+              }
+            ],
+            "highlightLink": "https://youtu.be/6-VTm_fGlgU?is=CBpN1MNYnVS9uRIU",
+            "homeScore": "0",
+            "note": "",
+            "opponentGoalAssists": []
+          },
+          "leagueId": "",
+          "round": "",
+          "season": "",
+          "sourceDetail": "calendar-feed",
+          "status": "Scheduled",
+          "venue": "Sports Illustrated Stadium, Harrison, NJ"
         },
         {
           "away": "Charlotte FC",
@@ -6540,20 +6632,20 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 21 iCalendar fixtures from calendar feed."
+        "Loaded 20 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-24T13:51:17.838Z",
-      "updatedAt": "2026-07-24T13:51:17.838Z",
-      "previousUpdatedAt": "2026-07-24T13:33:58.404Z",
+      "attemptedAt": "2026-07-26T11:38:57.762Z",
+      "updatedAt": "2026-07-26T11:38:57.762Z",
+      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
         "id": "7",
         "league": "MLS",
-        "name": "Inter Miami",
+        "name": "Inter Miami CF",
         "priority": "7"
       },
       "sources": [
@@ -6649,7 +6741,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-01T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6683,7 +6775,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-05T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6717,7 +6809,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "00:00:00",
           "timestamp": "2026-08-09T00:00:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6751,7 +6843,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-12T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6785,7 +6877,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "00:30:00",
           "timestamp": "2026-08-16T00:30:00Z",
           "venue": "GEODIS Park, Nashville, TN",
@@ -6819,7 +6911,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-19T23:30:00Z",
           "venue": "Subaru Park, Chester, PA",
@@ -6853,7 +6945,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-22T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6887,7 +6979,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-29T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6921,7 +7013,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-09-05T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -6955,7 +7047,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "00:30:00",
           "timestamp": "2026-09-10T00:30:00Z",
           "venue": "Soldier Field, Chicago, IL",
@@ -6989,7 +7081,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-09-12T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7023,7 +7115,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "16:00:00",
           "timestamp": "2026-09-16T16:00:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7057,7 +7149,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:00:00",
           "timestamp": "2026-09-20T23:00:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7091,7 +7183,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:00:00",
           "timestamp": "2026-09-27T23:00:00Z",
           "venue": "ScottsMiracle-Gro Field, Columbus, OH",
@@ -7125,7 +7217,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-10-10T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7159,7 +7251,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-10-14T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7193,7 +7285,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-10-17T23:30:00Z",
           "venue": "Mercedes-Benz Stadium, Atlanta, GA",
@@ -7227,7 +7319,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "21:30:00",
           "timestamp": "2026-10-24T21:30:00Z",
           "venue": "Sports Illustrated Stadium, Harrison, NJ",
@@ -7261,7 +7353,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-10-28T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7295,7 +7387,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "00:00:00",
           "timestamp": "2026-11-02T00:00:00Z",
           "venue": "Gillette Stadium, Foxborough, MA",
@@ -7329,7 +7421,7 @@
           "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "21:00:00",
           "timestamp": "2026-11-07T21:00:00Z",
           "venue": "Nu Stadium, Miami, FL",
@@ -7341,7 +7433,8 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 22 iCalendar fixtures from calendar feed."
+        "Loaded 21 iCalendar fixtures from calendar feed.",
+        "Preserved 2 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     }

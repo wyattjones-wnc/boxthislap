@@ -22,11 +22,13 @@ const SOURCE_PRIORITY = {
 };
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
+const SHOULD_VERIFY_FOOTBALL_DATA_TEAMS = isTrueValue(process.env.FOOTY_VERIFY_FOOTBALL_DATA_TEAMS);
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
 const ARSENAL_GRAPHQL_URL = process.env.ARSENAL_GRAPHQL_URL || "https://afc-prd.graph.arsenal.com/graphql";
 const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(".cache", "footy-schedule-api"));
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 6500;
+const EXTERNAL_REQUEST_RETRY_LIMIT = Number(process.env.FOOTY_API_RETRY_LIMIT) || 3;
 const LOOKAHEAD_DAYS = Number(process.env.FOOTY_SCHEDULE_LOOKAHEAD_DAYS) || 365;
 const MATCH_STATUS = process.env.FOOTY_SCHEDULE_MATCH_STATUS || "SCHEDULED";
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
@@ -140,10 +142,10 @@ async function main() {
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
   const footyMatchSeedRows = await loadFootyMatchSeedRows();
-  const footyMatchNotes = await loadFootyMatchNotes();
+  const previousSchedulesByTeamId = getPreviousSchedulesByTeamId(previousPayload?.teamSchedules);
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
-    .sort((first, second) => comparePriority(first.Priority, second.Priority));
+    .sort((first, second) => compareTeamUpdateFreshness(first, second, previousSchedulesByTeamId));
 
   assertRequiredProviderConfiguration(activeTeams);
 
@@ -213,18 +215,18 @@ async function main() {
     fixtures: dedupedFixtures,
     generatedAt,
     matchRows: knownFootyMatchRows,
-    matchNotes: footyMatchNotes,
+    matchNotes: new Map(),
     previousSchedules: previousPayload?.teamSchedules,
   });
   const enrichedFixtures = mergeFixtures(applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry)).sort(compareFixtures);
-  const teamSchedules = buildTeamSchedules({
+  const teamSchedules = stripTeamScheduleMatchNotes(buildTeamSchedules({
     errors,
     fixtures: enrichedFixtures,
     generatedAt,
     notes: coverageNotes,
     previousSchedules: previousPayload?.teamSchedules,
     teams,
-  });
+  }));
   const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
   const payload = {
     generatedAt,
@@ -234,7 +236,6 @@ async function main() {
     prioritySets,
     footyMatchRegistry: {
       matchCount: footyMatchRegistry.rows.length,
-      noteCount: footyMatchNotes.size,
       sync: footyMatchSync,
     },
     teamSchedules,
@@ -293,6 +294,23 @@ async function resolveTeam(team) {
       sportDbTeamId: getSportDbTeamId(team),
       status: "configured-unverified",
       warning: `Skipped ${PRIMARY_PROVIDER_NAME} team verification; missing FOOTBALL_DATA_API_KEY.`,
+    };
+  }
+
+  if (!SHOULD_VERIFY_FOOTBALL_DATA_TEAMS) {
+    return {
+      badge: getTeamBadge(team),
+      id: getField(team, "ID"),
+      league: getField(team, "League").trim(),
+      name,
+      priority: getField(team, "Priority"),
+      provider: PRIMARY_PROVIDER_NAME,
+      providerLeague: getField(team, "League").trim(),
+      providerLeagues: [],
+      providerTeamId: configuredId,
+      resolvedName: name,
+      sportDbTeamId: getSportDbTeamId(team),
+      status: "configured",
     };
   }
 
@@ -906,16 +924,29 @@ async function loadText(url, { body = "", extension, headers = {}, method = "GET
     }
   }
 
-  await waitForExternalRequestSlot();
-  const response = await fetch(url, {
-    body: body || undefined,
-    headers: { "user-agent": "boxthislap-footy-updater", ...headers },
-    method,
-  });
-  const text = await response.text();
+  let response;
+  let text = "";
 
-  if (!response.ok) {
-    throw new Error(`Failed to load ${url}: ${response.status} ${getErrorMessageFromText(text)}`);
+  for (let attempt = 0; attempt <= EXTERNAL_REQUEST_RETRY_LIMIT; attempt += 1) {
+    await waitForExternalRequestSlot();
+    response = await fetch(url, {
+      body: body || undefined,
+      headers: { "user-agent": "boxthislap-footy-updater", ...headers },
+      method,
+    });
+    text = await response.text();
+
+    if (response.ok) {
+      break;
+    }
+
+    if (response.status !== 429 || attempt >= EXTERNAL_REQUEST_RETRY_LIMIT) {
+      throw new Error(`Failed to load ${url}: ${response.status} ${getErrorMessageFromText(text)}`);
+    }
+
+    const retryMs = getRateLimitRetryMs(response, text);
+    console.warn(`Rate limited loading ${url}; retrying in ${Math.round(retryMs / 1000)} seconds.`);
+    await sleep(retryMs);
   }
 
   if (SHOULD_USE_API_CACHE) {
@@ -923,6 +954,19 @@ async function loadText(url, { body = "", extension, headers = {}, method = "GET
   }
 
   return text;
+}
+
+function getRateLimitRetryMs(response, text) {
+  const retryAfter = Number(response.headers.get("retry-after"));
+
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return (retryAfter + 1) * 1000;
+  }
+
+  const waitMatch = String(text || "").match(/wait\s+(\d+)\s+seconds?/i);
+  const waitSeconds = waitMatch ? Number(waitMatch[1]) : 0;
+
+  return (Number.isFinite(waitSeconds) && waitSeconds > 0 ? waitSeconds + 1 : 20) * 1000;
 }
 
 async function waitForExternalRequestSlot() {
@@ -934,10 +978,14 @@ async function waitForExternalRequestSlot() {
   const waitMs = Math.max(0, lastExternalRequestAt + EXTERNAL_REQUEST_INTERVAL_MS - now);
 
   if (waitMs > 0) {
-    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    await sleep(waitMs);
   }
 
   lastExternalRequestAt = Date.now();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function tryReadFile(filePath) {
@@ -1807,6 +1855,17 @@ function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [
   });
 }
 
+function stripTeamScheduleMatchNotes(teamSchedules = []) {
+  return (Array.isArray(teamSchedules) ? teamSchedules : []).map((schedule) => ({
+    ...schedule,
+    fixtures: (Array.isArray(schedule.fixtures) ? schedule.fixtures : []).map((fixture) => {
+      const { matchNote, ...fixtureWithoutMatchNote } = fixture;
+
+      return fixtureWithoutMatchNote;
+    }),
+  }));
+}
+
 function shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors = [], teamFixtures = [] }) {
   return teamFixtures.length === 0 &&
     teamErrors.length > 0 &&
@@ -2318,6 +2377,37 @@ function isTrueValue(value) {
 
 function comparePriority(firstPriority, secondPriority) {
   return (Number(firstPriority) || 999) - (Number(secondPriority) || 999);
+}
+
+function getPreviousSchedulesByTeamId(previousSchedules = []) {
+  return new Map(
+    (Array.isArray(previousSchedules) ? previousSchedules : [])
+      .filter((schedule) => schedule?.team?.id)
+      .map((schedule) => [String(schedule.team.id), schedule])
+  );
+}
+
+function compareTeamUpdateFreshness(firstTeam, secondTeam, previousSchedulesByTeamId = new Map()) {
+  const firstSchedule = previousSchedulesByTeamId.get(getField(firstTeam, "ID").trim());
+  const secondSchedule = previousSchedulesByTeamId.get(getField(secondTeam, "ID").trim());
+
+  return compareScheduleFreshness(firstSchedule, secondSchedule) ||
+    comparePriority(firstTeam.Priority, secondTeam.Priority) ||
+    getField(firstTeam, "Name", "Team").localeCompare(getField(secondTeam, "Name", "Team"));
+}
+
+function compareScheduleFreshness(firstSchedule, secondSchedule) {
+  const firstValue = getScheduleFreshnessValue(firstSchedule);
+  const secondValue = getScheduleFreshnessValue(secondSchedule);
+
+  return firstValue - secondValue;
+}
+
+function getScheduleFreshnessValue(schedule) {
+  const timestamp = schedule?.updatedAt || schedule?.attemptedAt || "";
+  const parsed = timestamp ? Date.parse(timestamp) : Number.NaN;
+
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function compareFixtures(first, second) {

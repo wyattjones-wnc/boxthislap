@@ -2548,7 +2548,7 @@ function renderRankingItem(kind, item) {
     <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
       <span class="ranking-rank">${escapeHtml(String(item.rank))}</span>
       <strong>${escapeHtml(item.name)}</strong>
-      <span class="ranking-drag-handle" aria-hidden="true">::</span>
+      <span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>
     </article>
   `;
 }

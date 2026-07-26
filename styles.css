@@ -736,6 +736,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-list {
   display: grid;
   gap: 10px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .ranking-item {
@@ -748,6 +750,9 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
   grid-template-columns: 56px minmax(0, 1fr) auto;
   padding: 14px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .ranking-item[draggable="true"] {
@@ -783,7 +788,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   cursor: grab;
   font-weight: 900;
   touch-action: none;
-  user-select: none;
 }
 
 .ranking-item.is-dragging .ranking-drag-handle {

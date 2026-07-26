@@ -6679,7 +6679,47 @@
           "teamName": "Inter Miami",
           "time": "23:30:00",
           "timestamp": "2026-07-22T23:30:00",
-          "matchId": "footy_7ae1228d436d"
+          "matchId": "footy_7ae1228d436d",
+          "matchNote": {
+            "awayScore": "2",
+            "followGoalAssists": [
+              {
+                "assister": "",
+                "minute": 27,
+                "penalty": true,
+                "scorer": "Luis Suarez"
+              },
+              {
+                "assister": "German Berterame",
+                "minute": 51,
+                "penalty": false,
+                "scorer": "Luis Suarez"
+              },
+              {
+                "assister": "",
+                "minute": 87,
+                "penalty": false,
+                "scorer": "Preston Plambeck"
+              }
+            ],
+            "highlightLink": "https://wyattjones-wnc.github.io/boxthislap/#formula-1-2026-weekly",
+            "homeScore": "3",
+            "note": "",
+            "opponentGoalAssists": [
+              {
+                "assister": "",
+                "minute": 18,
+                "penalty": false,
+                "scorer": "(O.G.)"
+              },
+              {
+                "assister": "Maren Haile-Selassie",
+                "minute": 67,
+                "penalty": false,
+                "scorer": "Puso Dithejane"
+              }
+            ]
+          }
         },
         {
           "away": "Inter Miami CF",

@@ -7,6 +7,7 @@ const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
 const DEFAULT_FOOTBALL_TEAMS_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=0&single=true&output=csv`;
 const DEFAULT_FOOTY_MATCHES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=1436836758&single=true&output=csv`;
 const DEFAULT_FOOTY_MATCH_NOTES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=866481448&single=true&output=csv`;
+const DEFAULT_FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const FOOTY_MATCH_SEEDS_PATH = path.resolve(process.env.FOOTY_MATCH_SEEDS_PATH || path.join("data", "footy-match-seeds.json"));
 const PRIMARY_PROVIDER_NAME = "football-data.org";
@@ -139,7 +140,7 @@ async function main() {
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
   const footyMatchSeedRows = await loadFootyMatchSeedRows();
-  const footyMatchNotes = await loadFootyMatchNotesSheet(process.env.FOOTY_MATCH_NOTES_CSV_URL || DEFAULT_FOOTY_MATCH_NOTES_CSV_URL);
+  const footyMatchNotes = await loadFootyMatchNotes();
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
@@ -773,6 +774,57 @@ async function loadFootyMatchNotesSheet(url) {
   return notesByMatchId;
 }
 
+async function loadFootyMatchNotes() {
+  const notesFromSheet = await loadFootyMatchNotesSheet(process.env.FOOTY_MATCH_NOTES_CSV_URL || DEFAULT_FOOTY_MATCH_NOTES_CSV_URL);
+
+  if (notesFromSheet.size > 0) {
+    return notesFromSheet;
+  }
+
+  const endpoint = process.env.FOOTY_DATA_ENDPOINT || DEFAULT_FOOTY_DATA_ENDPOINT;
+
+  if (!endpoint) {
+    return notesFromSheet;
+  }
+
+  try {
+    return await loadFootyMatchNotesEndpoint(endpoint);
+  } catch (error) {
+    console.warn(`Unable to load Footy match notes from web app endpoint: ${error.message}`);
+    return notesFromSheet;
+  }
+}
+
+async function loadFootyMatchNotesEndpoint(endpoint) {
+  const url = new URL(endpoint);
+  url.searchParams.set("action", "listFootyMatchNotes");
+  const data = JSON.parse(await loadText(url.toString(), { extension: "json" }));
+  const notesByMatchId = new Map();
+
+  if (!data.ok || !Array.isArray(data.notes)) {
+    throw new Error(data.error || "Footy match notes endpoint returned no notes.");
+  }
+
+  data.notes.forEach((note) => {
+    const matchId = normalizeFootyMatchId(note.matchId || note["Match ID"]);
+
+    if (!matchId) {
+      return;
+    }
+
+    notesByMatchId.set(matchId, {
+      awayScore: String(note.awayScore ?? note["Away Score"] ?? "").trim(),
+      followGoalAssists: normalizeGoalAssistEvents(note.followGoalAssists ?? note["Follow G/A"]),
+      highlightLink: String(note.highlightLink ?? note["Highlight Link"] ?? "").trim(),
+      homeScore: String(note.homeScore ?? note["Home Score"] ?? "").trim(),
+      note: String(note.note ?? note.Note ?? "").trim(),
+      opponentGoalAssists: normalizeGoalAssistEvents(note.opponentGoalAssists ?? note["Opp G/A"]),
+    });
+  });
+
+  return notesByMatchId;
+}
+
 async function loadCsvTableSection(url, isTargetSection) {
   const rows = parseCsvRows(stripBom(await loadText(url, { extension: "csv" })));
   const sections = splitCsvSections(rows);
@@ -821,6 +873,19 @@ function parseGoalAssistEvents(value) {
   } catch {
     return [];
   }
+}
+
+function normalizeGoalAssistEvents(value) {
+  if (!Array.isArray(value)) {
+    return parseGoalAssistEvents(value);
+  }
+
+  return value.map((event) => ({
+    assister: String(event?.assister || "").trim(),
+    minute: Number(event?.minute) || "",
+    penalty: Boolean(event?.penalty),
+    scorer: String(event?.scorer || "").trim(),
+  })).filter((event) => event.scorer || event.assister || event.minute || event.penalty);
 }
 
 async function loadFootballDataJson(endpoint) {

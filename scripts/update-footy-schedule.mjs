@@ -142,9 +142,10 @@ async function main() {
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
   const footyMatchSeedRows = await loadFootyMatchSeedRows();
+  const previousSchedulesByTeamId = getPreviousSchedulesByTeamId(previousPayload?.teamSchedules);
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
-    .sort((first, second) => comparePriority(first.Priority, second.Priority));
+    .sort((first, second) => compareTeamUpdateFreshness(first, second, previousSchedulesByTeamId));
 
   assertRequiredProviderConfiguration(activeTeams);
 
@@ -2376,6 +2377,37 @@ function isTrueValue(value) {
 
 function comparePriority(firstPriority, secondPriority) {
   return (Number(firstPriority) || 999) - (Number(secondPriority) || 999);
+}
+
+function getPreviousSchedulesByTeamId(previousSchedules = []) {
+  return new Map(
+    (Array.isArray(previousSchedules) ? previousSchedules : [])
+      .filter((schedule) => schedule?.team?.id)
+      .map((schedule) => [String(schedule.team.id), schedule])
+  );
+}
+
+function compareTeamUpdateFreshness(firstTeam, secondTeam, previousSchedulesByTeamId = new Map()) {
+  const firstSchedule = previousSchedulesByTeamId.get(getField(firstTeam, "ID").trim());
+  const secondSchedule = previousSchedulesByTeamId.get(getField(secondTeam, "ID").trim());
+
+  return compareScheduleFreshness(firstSchedule, secondSchedule) ||
+    comparePriority(firstTeam.Priority, secondTeam.Priority) ||
+    getField(firstTeam, "Name", "Team").localeCompare(getField(secondTeam, "Name", "Team"));
+}
+
+function compareScheduleFreshness(firstSchedule, secondSchedule) {
+  const firstValue = getScheduleFreshnessValue(firstSchedule);
+  const secondValue = getScheduleFreshnessValue(secondSchedule);
+
+  return firstValue - secondValue;
+}
+
+function getScheduleFreshnessValue(schedule) {
+  const timestamp = schedule?.updatedAt || schedule?.attemptedAt || "";
+  const parsed = timestamp ? Date.parse(timestamp) : Number.NaN;
+
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function compareFixtures(first, second) {

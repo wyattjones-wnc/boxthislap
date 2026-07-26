@@ -568,7 +568,7 @@ function getFootyFixtureDateKey(fixture) {
   }
 
   const timestamp = String(fixture?.timestamp || "").trim();
-  const parsedDate = timestamp ? new Date(timestamp) : null;
+  const parsedDate = timestamp ? parseFootyDate(timestamp) : null;
 
   if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
     return "";
@@ -757,7 +757,7 @@ function getFootyFixtureComparableTime(fixture) {
   const timestamp = String(fixture?.timestamp || "").trim();
   const date = String(fixture?.date || "").trim();
   const time = String(fixture?.time || "").trim();
-  const parsedTimestamp = timestamp ? Date.parse(timestamp) : Number.NaN;
+  const parsedTimestamp = timestamp ? getFootyDateTimeValue(timestamp) : Number.NaN;
 
   if (time && Number.isFinite(parsedTimestamp)) {
     return parsedTimestamp;
@@ -1391,7 +1391,7 @@ function submitFootyDataPayloadWithForm(payload) {
 }
 
 function updateFootyFixtureMatchNote(note) {
-  const normalizedId = String(note.matchId || "").trim();
+  const normalizedId = normalizeFootyMatchId(note.matchId);
 
   if (!normalizedId || !Array.isArray(siteData.footySchedule?.teamSchedules)) {
     return;
@@ -1401,7 +1401,7 @@ function updateFootyFixtureMatchNote(note) {
     const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
 
     fixtures.forEach((fixture) => {
-      if (String(fixture.matchId || "").trim() === normalizedId) {
+      if (normalizeFootyMatchId(fixture.matchId) === normalizedId) {
         fixture.matchNote = {
           awayScore: note.awayScore,
           followGoalAssists: note.followGoalAssists,
@@ -1680,7 +1680,7 @@ function formatFootyFixtureDate(value) {
     return "TBD";
   }
 
-  const date = new Date(value);
+  const date = parseFootyDate(value);
 
   if (Number.isNaN(date.getTime())) {
     return String(value);
@@ -1690,6 +1690,30 @@ function formatFootyFixtureDate(value) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function parseFootyDate(value) {
+  const normalizedValue = normalizeFootyDateTimeValue(value);
+  return new Date(normalizedValue);
+}
+
+function getFootyDateTimeValue(value) {
+  const date = parseFootyDate(value);
+  return date.getTime();
+}
+
+function normalizeFootyDateTimeValue(value) {
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return "";
+  }
+
+  return text.replace(/T(\d)(?=:)/, "T0$1");
+}
+
+function normalizeFootyMatchId(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 function renderNextList(items = siteData.nextItems || []) {

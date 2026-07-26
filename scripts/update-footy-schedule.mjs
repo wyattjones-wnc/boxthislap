@@ -216,7 +216,7 @@ async function main() {
     matchNotes: footyMatchNotes,
     previousSchedules: previousPayload?.teamSchedules,
   });
-  const enrichedFixtures = applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry).sort(compareFixtures);
+  const enrichedFixtures = mergeFixtures(applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry)).sort(compareFixtures);
   const teamSchedules = buildTeamSchedules({
     errors,
     fixtures: enrichedFixtures,
@@ -1361,13 +1361,15 @@ function applyFootyMatchRegistry(fixtures = [], registry) {
   return fixtures.map((fixture) => {
     const row = registry.fixtureRowsByReference.get(getFixtureReferenceKey(fixture));
     const matchNote = row ? registry.matchNotes.get(normalizeFootyMatchId(row.matchId)) : null;
+    const existingMatchNote = hasMatchNote(fixture.matchNote) ? fixture.matchNote : null;
     const enrichedFixture = {
       ...fixture,
       matchId: row?.matchId || fixture.matchId || "",
       sourceIds: mergeSourceIds(row?.sourceIds, fixture.sourceIds),
     };
+    const preservedMatchNote = hasMatchNote(matchNote) ? matchNote : existingMatchNote;
 
-    return hasMatchNote(matchNote) ? { ...enrichedFixture, matchNote } : enrichedFixture;
+    return preservedMatchNote ? { ...enrichedFixture, matchNote: preservedMatchNote } : enrichedFixture;
   });
 }
 
@@ -1933,6 +1935,18 @@ function stripTeamMessagePrefix(teamName, message) {
 }
 
 function getFixtureMergeKey(fixture) {
+  const matchId = normalizeFootyMatchId(fixture.matchId);
+
+  if (matchId) {
+    return `match:${matchId}`;
+  }
+
+  const sourceKeys = getSourceIdKeys(getFixtureSourceIds(fixture));
+
+  if (sourceKeys.length > 0) {
+    return `sources:${sourceKeys.join("|")}`;
+  }
+
   return [
     fixture.teamId,
     fixture.date,
@@ -1944,6 +1958,8 @@ function getFixtureMergeKey(fixture) {
 function mergeFixture(existingFixture, incomingFixture) {
   const primaryFixture = getFixtureSourcePriority(existingFixture) > getFixtureSourcePriority(incomingFixture) ? existingFixture : incomingFixture;
   const secondaryFixture = primaryFixture === existingFixture ? incomingFixture : existingFixture;
+  const primaryMatchNote = hasMatchNote(primaryFixture.matchNote) ? primaryFixture.matchNote : null;
+  const secondaryMatchNote = hasMatchNote(secondaryFixture.matchNote) ? secondaryFixture.matchNote : null;
   const sources = [...new Set([
     ...(Array.isArray(primaryFixture.sources) ? primaryFixture.sources : [primaryFixture.source].filter(Boolean)),
     ...(Array.isArray(secondaryFixture.sources) ? secondaryFixture.sources : [secondaryFixture.source].filter(Boolean)),
@@ -1956,6 +1972,9 @@ function mergeFixture(existingFixture, incomingFixture) {
     homeBadge: primaryFixture.homeBadge || secondaryFixture.homeBadge || "",
     league: primaryFixture.league || secondaryFixture.league || "",
     leagueId: primaryFixture.leagueId || secondaryFixture.leagueId || "",
+    lastSeen: primaryFixture.lastSeen || secondaryFixture.lastSeen || "",
+    matchId: primaryFixture.matchId || secondaryFixture.matchId || "",
+    matchNote: primaryMatchNote || secondaryMatchNote || primaryFixture.matchNote || secondaryFixture.matchNote || null,
     priority: primaryFixture.priority || secondaryFixture.priority || "",
     round: primaryFixture.round || secondaryFixture.round || "",
     season: primaryFixture.season || secondaryFixture.season || "",

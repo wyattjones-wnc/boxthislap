@@ -871,13 +871,13 @@ function getFootyMatchScore(fixture) {
   const homeScore = String(note.homeScore ?? "").trim();
   const awayScore = String(note.awayScore ?? "").trim();
 
-  if (!homeScore && !awayScore) {
+  if (!homeScore || !awayScore) {
     return null;
   }
 
   return {
-    awayScore: awayScore || "-",
-    homeScore: homeScore || "-",
+    awayScore,
+    homeScore,
   };
 }
 
@@ -1037,6 +1037,14 @@ function getFootyFixtureByMatchId(matchId) {
 }
 
 function normalizeFootyGoalAssistForNote(event) {
+  if (typeof event === "string") {
+    return {
+      assister: "",
+      penalty: false,
+      scorer: event.trim(),
+    };
+  }
+
   const normalized = {
     scorer: String(event?.scorer || "").trim(),
     assister: String(event?.assister || "").trim(),
@@ -1044,16 +1052,29 @@ function normalizeFootyGoalAssistForNote(event) {
   };
 
   if (event?.minute !== undefined && event?.minute !== null && String(event.minute).trim()) {
-    normalized.minute = event.minute;
+    normalized.minute = String(event.minute).trim();
   }
 
   return normalized;
 }
 
 function normalizeFootyGoalAssistList(events = []) {
-  return Array.isArray(events)
-    ? events.map(normalizeFootyGoalAssistForNote)
-    : [];
+  if (Array.isArray(events)) {
+    return events.map(normalizeFootyGoalAssistForNote);
+  }
+
+  const text = String(events || "").trim();
+
+  if (!text) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed.map(normalizeFootyGoalAssistForNote) : [];
+  } catch {
+    return [];
+  }
 }
 
 function buildFootyMatchNoteFromDialog() {
@@ -1346,28 +1367,34 @@ function submitFootyDataPayloadWithForm(payload) {
 }
 
 function updateFootyFixtureMatchNote(note) {
-  const normalizedId = String(note.matchId || "").trim();
+  const normalizedId = String(note.matchId || note["Match ID"] || "").trim();
 
   if (!normalizedId || !Array.isArray(siteData.footySchedule?.teamSchedules)) {
     return;
   }
+
+  const normalizedNote = normalizeFootyMatchNoteForDisplay(note);
 
   siteData.footySchedule.teamSchedules.forEach((teamSchedule) => {
     const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
 
     fixtures.forEach((fixture) => {
       if (String(fixture.matchId || "").trim() === normalizedId) {
-        fixture.matchNote = {
-          awayScore: note.awayScore,
-          followGoalAssists: note.followGoalAssists,
-          highlightLink: note.highlightLink,
-          homeScore: note.homeScore,
-          note: note.note,
-          opponentGoalAssists: note.opponentGoalAssists,
-        };
+        fixture.matchNote = normalizedNote;
       }
     });
   });
+}
+
+function normalizeFootyMatchNoteForDisplay(note = {}) {
+  return {
+    awayScore: String(note.awayScore ?? note["Away Score"] ?? "").trim(),
+    followGoalAssists: normalizeFootyGoalAssistList(note.followGoalAssists ?? note["Follow G/A"]),
+    highlightLink: String(note.highlightLink ?? note["Highlight Link"] ?? "").trim(),
+    homeScore: String(note.homeScore ?? note["Home Score"] ?? "").trim(),
+    note: String(note.note ?? note.Note ?? "").trim(),
+    opponentGoalAssists: normalizeFootyGoalAssistList(note.opponentGoalAssists ?? note["Opp G/A"]),
+  };
 }
 
 function setFootyNoteStatus(message, isError = false) {

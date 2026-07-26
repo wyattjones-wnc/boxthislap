@@ -756,6 +756,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .ranking-item.is-dragging {
   opacity: 0.5;
+  pointer-events: none;
 }
 
 .ranking-rank {
@@ -779,7 +780,14 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .ranking-drag-handle {
   color: var(--muted);
+  cursor: grab;
   font-weight: 900;
+  touch-action: none;
+  user-select: none;
+}
+
+.ranking-item.is-dragging .ranking-drag-handle {
+  cursor: grabbing;
 }
 
 .footy-filters label {

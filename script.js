@@ -202,6 +202,8 @@ let shouldShowNextFilters = false;
 let activeNextItemId = "";
 let activeRankingKind = "games";
 let draggedRankingItemId = "";
+let draggedRankingKind = "";
+let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
@@ -2723,9 +2725,9 @@ function createRankingItemId(kind) {
   return String(nextId);
 }
 
-function moveRankingItem(kind, draggedId, targetId) {
+function moveRankingItem(kind, draggedId, targetId, options = {}) {
   if (!isCurrentManagerAdmin() || !draggedId || !targetId || draggedId === targetId) {
-    return;
+    return false;
   }
 
   const rows = getRankingRows(kind);
@@ -2733,14 +2735,26 @@ function moveRankingItem(kind, draggedId, targetId) {
   const toIndex = rows.findIndex((row) => row.id === targetId);
 
   if (fromIndex < 0 || toIndex < 0) {
-    return;
+    return false;
   }
 
   const [item] = rows.splice(fromIndex, 1);
   rows.splice(toIndex, 0, item);
   siteData.rankings[kind] = normalizeRankingOrder(rows);
   renderRankingList(kind);
-  submitRankingOrder(kind);
+  if (options.shouldSubmit !== false) {
+    submitRankingOrder(kind);
+  }
+
+  return true;
+}
+
+function getRankingItemElement(kind, itemId) {
+  return [...document.querySelectorAll("[data-ranking-id]")]
+    .find((item) =>
+      item.getAttribute("data-ranking-kind") === kind &&
+      item.getAttribute("data-ranking-id") === itemId
+    ) || null;
 }
 
 function submitRankingOrder(kind) {
@@ -5026,6 +5040,77 @@ document.addEventListener("drop", (event) => {
     target.getAttribute("data-ranking-id") || "",
   );
   draggedRankingItemId = "";
+  draggedRankingKind = "";
+});
+
+document.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest(".ranking-drag-handle");
+  const item = handle?.closest("[data-ranking-id]");
+
+  if (!item || !isCurrentManagerAdmin()) {
+    return;
+  }
+
+  draggedRankingItemId = item.getAttribute("data-ranking-id") || "";
+  draggedRankingKind = item.getAttribute("data-ranking-kind") || activeRankingKind;
+  didMoveRankingPointer = false;
+
+  if (!draggedRankingItemId || !RANKING_CONFIG[draggedRankingKind]) {
+    draggedRankingItemId = "";
+    draggedRankingKind = "";
+    return;
+  }
+
+  event.preventDefault();
+  item.classList.add("is-dragging");
+  handle.setPointerCapture?.(event.pointerId);
+}, true);
+
+document.addEventListener("pointermove", (event) => {
+  if (!draggedRankingItemId || !draggedRankingKind) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-ranking-id]");
+
+  if (!target || target.getAttribute("data-ranking-kind") !== draggedRankingKind) {
+    return;
+  }
+
+  const targetId = target.getAttribute("data-ranking-id") || "";
+
+  if (moveRankingItem(draggedRankingKind, draggedRankingItemId, targetId, { shouldSubmit: false })) {
+    didMoveRankingPointer = true;
+    getRankingItemElement(draggedRankingKind, draggedRankingItemId)?.classList.add("is-dragging");
+  }
+}, true);
+
+document.addEventListener("pointerup", () => {
+  if (!draggedRankingItemId || !draggedRankingKind) {
+    return;
+  }
+
+  getRankingItemElement(draggedRankingKind, draggedRankingItemId)?.classList.remove("is-dragging");
+
+  if (didMoveRankingPointer) {
+    submitRankingOrder(draggedRankingKind);
+  }
+
+  draggedRankingItemId = "";
+  draggedRankingKind = "";
+  didMoveRankingPointer = false;
+}, true);
+
+document.addEventListener("pointercancel", () => {
+  if (draggedRankingItemId) {
+    getRankingItemElement(draggedRankingKind, draggedRankingItemId)?.classList.remove("is-dragging");
+  }
+
+  draggedRankingItemId = "";
+  draggedRankingKind = "";
+  didMoveRankingPointer = false;
 });
 
 document.addEventListener("pointerdown", (event) => {

@@ -288,7 +288,8 @@ function renderFootySchedule(schedule) {
 
   const fixtures = getFootyScheduleFixtures(schedule);
   syncFootyFilters(fixtures);
-  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
+  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures))
+    .sort(compareVisibleFootyFixtures);
   const renderedFixtures = shouldShowAllFootyFixtures
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
@@ -596,17 +597,61 @@ function getDefaultFootyTeams(fixtures = [], defaultPrioritySet = getDefaultFoot
 }
 
 function getVisibleFootyFixtures(fixtures) {
-  const now = Date.now();
-
   return fixtures.filter((fixture) => {
-    const fixtureTime = getFootyFixturePastCutoffTime(fixture);
+    const isPast = isFootyFixturePast(fixture);
 
-    if (!Number.isFinite(fixtureTime)) {
-      return !shouldShowPastFootyFixtures;
-    }
-
-    return shouldShowPastFootyFixtures ? fixtureTime < now : fixtureTime >= now;
+    return shouldShowPastFootyFixtures ? isPast : !isPast;
   });
+}
+
+function compareVisibleFootyFixtures(firstFixture, secondFixture) {
+  return shouldShowPastFootyFixtures
+    ? compareFootyFixturesDescending(firstFixture, secondFixture)
+    : compareFootyFixturesAscending(firstFixture, secondFixture);
+}
+
+function compareFootyFixturesAscending(firstFixture, secondFixture) {
+  return getFootyFixtureSortTime(firstFixture) - getFootyFixtureSortTime(secondFixture) ||
+    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
+    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
+}
+
+function compareFootyFixturesDescending(firstFixture, secondFixture) {
+  return getFootyFixtureSortTime(secondFixture) - getFootyFixtureSortTime(firstFixture) ||
+    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
+    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
+}
+
+function getFootyFixtureSortTime(fixture) {
+  const comparableTime = getFootyFixtureComparableTime(fixture);
+  return Number.isFinite(comparableTime) ? comparableTime : Number.MAX_SAFE_INTEGER;
+}
+
+function isFootyFixturePast(fixture) {
+  if (hasFootyMatchNoteData(fixture)) {
+    return true;
+  }
+
+  const fixtureTime = getFootyFixtureComparableTime(fixture);
+
+  return Number.isFinite(fixtureTime) && fixtureTime < Date.now();
+}
+
+function hasFootyMatchNoteData(fixture) {
+  const note = fixture?.matchNote;
+
+  if (!note) {
+    return false;
+  }
+
+  return Boolean(
+    String(note.homeScore ?? "").trim() ||
+    String(note.awayScore ?? "").trim() ||
+    String(note.note ?? "").trim() ||
+    String(note.highlightLink ?? "").trim() ||
+    (Array.isArray(note.followGoalAssists) && note.followGoalAssists.length > 0) ||
+    (Array.isArray(note.opponentGoalAssists) && note.opponentGoalAssists.length > 0)
+  );
 }
 
 function getFootyFixturePastCutoffTime(fixture) {
@@ -770,7 +815,7 @@ function renderFootyFixture(fixture) {
 }
 
 function shouldRenderFootyNoteEditButton(fixture) {
-  return Boolean(isCurrentManagerAdmin() && shouldShowPastFootyFixtures && fixture?.matchId);
+  return Boolean(isCurrentManagerAdmin() && isFootyFixturePast(fixture) && fixture?.matchId);
 }
 
 function toggleFootyFixtureExpansion(matchId) {

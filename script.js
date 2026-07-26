@@ -1117,7 +1117,7 @@ function normalizeFootyGoalAssistForNote(event) {
   };
 
   if (event?.minute !== undefined && event?.minute !== null && String(event.minute).trim()) {
-    normalized.minute = event.minute;
+    normalized.minute = String(event.minute).trim();
   }
 
   return normalized;
@@ -1367,6 +1367,10 @@ function mergeFootyMatchNotes(notes = []) {
 }
 
 function submitFootyDataPayload(payload) {
+  if (payload?.action === "saveFootyMatchNote") {
+    return submitFootyDataPayloadWithFormAndPoll(payload);
+  }
+
   return submitFootyDataPayloadWithCallback(payload);
 }
 
@@ -1492,6 +1496,22 @@ function doesFootyMatchNoteMatch(expectedNote = {}, savedNote = {}) {
 
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function clearFootyScheduleMatchNotes(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return;
+  }
+
+  schedule.teamSchedules.forEach((teamSchedule) => {
+    const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+
+    fixtures.forEach((fixture) => {
+      if (Object.prototype.hasOwnProperty.call(fixture, "matchNote")) {
+        delete fixture.matchNote;
+      }
+    });
+  });
 }
 
 function updateFootyFixtureMatchNote(note) {
@@ -7817,6 +7837,7 @@ hydrateManagerSession();
 
 loadJson("data/footy-schedule.json")
   .then((schedule) => {
+    clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
     renderFootySchedule(schedule);
     console.info("Box This Lap footy schedule loaded", schedule);

@@ -140,7 +140,6 @@ async function main() {
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
   const footyMatchSeedRows = await loadFootyMatchSeedRows();
-  const footyMatchNotes = await loadFootyMatchNotes();
   const activeTeams = footballData.teamRows
     .filter((team) => hasTeamIdentity(team) && !isFalseValue(getField(team, "IsActive", "Active")))
     .sort((first, second) => comparePriority(first.Priority, second.Priority));
@@ -213,18 +212,18 @@ async function main() {
     fixtures: dedupedFixtures,
     generatedAt,
     matchRows: knownFootyMatchRows,
-    matchNotes: footyMatchNotes,
+    matchNotes: new Map(),
     previousSchedules: previousPayload?.teamSchedules,
   });
   const enrichedFixtures = mergeFixtures(applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry)).sort(compareFixtures);
-  const teamSchedules = buildTeamSchedules({
+  const teamSchedules = stripTeamScheduleMatchNotes(buildTeamSchedules({
     errors,
     fixtures: enrichedFixtures,
     generatedAt,
     notes: coverageNotes,
     previousSchedules: previousPayload?.teamSchedules,
     teams,
-  });
+  }));
   const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
   const payload = {
     generatedAt,
@@ -234,7 +233,6 @@ async function main() {
     prioritySets,
     footyMatchRegistry: {
       matchCount: footyMatchRegistry.rows.length,
-      noteCount: footyMatchNotes.size,
       sync: footyMatchSync,
     },
     teamSchedules,
@@ -1805,6 +1803,17 @@ function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [
       errors: [...new Set(teamErrors)],
     };
   });
+}
+
+function stripTeamScheduleMatchNotes(teamSchedules = []) {
+  return (Array.isArray(teamSchedules) ? teamSchedules : []).map((schedule) => ({
+    ...schedule,
+    fixtures: (Array.isArray(schedule.fixtures) ? schedule.fixtures : []).map((fixture) => {
+      const { matchNote, ...fixtureWithoutMatchNote } = fixture;
+
+      return fixtureWithoutMatchNote;
+    }),
+  }));
 }
 
 function shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors = [], teamFixtures = [] }) {

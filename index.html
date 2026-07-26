@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607250006">
+    <link rel="stylesheet" href="styles.css?v=202607260001">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -289,6 +289,7 @@
         <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
           <a href="#footy" data-page-link="footy" role="tab">Footy</a>
           <a href="#next" data-page-link="next" role="tab">Next</a>
+          <a href="#rankings" data-page-link="rankings" role="tab" data-admin-only hidden>Rankings</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
         <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="World Cup sections" hidden>
@@ -692,6 +693,79 @@
             <p class="footy-note-status" id="next-item-status" aria-live="polite"></p>
             <footer>
               <button class="action-button" id="next-item-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" type="submit">
+                Save
+              </button>
+            </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="page" id="rankings" data-page="rankings">
+        <div class="section-heading page-heading-with-action footy-heading">
+          <h1>Rankings</h1>
+          <div class="heading-actions">
+            <button class="icon-action-button ranking-add-button" id="ranking-add-button" type="button" aria-label="Add ranking item" data-admin-only hidden>
+              +
+            </button>
+          </div>
+        </div>
+        <div class="tabs ranking-tabs" role="tablist" aria-label="Ranking lists">
+          <button class="tab is-active" type="button" data-ranking-tab="games" aria-selected="true" role="tab">Games</button>
+          <button class="tab" type="button" data-ranking-tab="mcu" aria-selected="false" role="tab">MCU</button>
+          <button class="tab" type="button" data-ranking-tab="movies" aria-selected="false" role="tab">Movies</button>
+          <button class="tab" type="button" data-ranking-tab="tv" aria-selected="false" role="tab">TV</button>
+        </div>
+        <div class="content-shell ranking-shell">
+          <section class="ranking-panel is-active" data-ranking-panel="games" role="tabpanel">
+            <div class="ranking-list" id="ranking-list-games">
+              <p class="table-message">Game rankings will load here.</p>
+            </div>
+          </section>
+          <section class="ranking-panel" data-ranking-panel="mcu" role="tabpanel">
+            <div class="ranking-list" id="ranking-list-mcu">
+              <p class="table-message">MCU rankings will load here.</p>
+            </div>
+          </section>
+          <section class="ranking-panel" data-ranking-panel="movies" role="tabpanel">
+            <div class="ranking-list" id="ranking-list-movies">
+              <p class="table-message">Movie rankings will load here.</p>
+            </div>
+          </section>
+          <section class="ranking-panel" data-ranking-panel="tv" role="tabpanel">
+            <div class="ranking-list" id="ranking-list-tv">
+              <p class="table-message">TV rankings will load here.</p>
+            </div>
+          </section>
+        </div>
+
+        <dialog class="footy-note-dialog ranking-item-dialog" id="ranking-item-dialog">
+          <form class="footy-note-form ranking-item-form" id="ranking-item-form" method="dialog">
+            <header>
+              <div>
+                <h2 id="ranking-item-dialog-title">Add Ranking Item</h2>
+              </div>
+              <button class="icon-action-button footy-note-close" id="ranking-item-close" type="button" aria-label="Close ranking item dialog">
+                &times;
+              </button>
+            </header>
+            <input id="ranking-item-kind" type="hidden">
+            <input id="ranking-item-id" type="hidden">
+            <div class="next-item-fields">
+              <label class="next-item-wide">
+                <span>Name</span>
+                <input id="ranking-item-name" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Rank</span>
+                <input id="ranking-item-rank" type="number" min="1" step="1" required>
+              </label>
+            </div>
+            <p class="footy-note-status" id="ranking-item-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="ranking-item-cancel" type="button">
                 Cancel
               </button>
               <button class="action-button" type="submit">
@@ -1536,6 +1610,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607250008"></script>
+    <script type="module" src="script.js?v=202607260001"></script>
   </body>
 </html>

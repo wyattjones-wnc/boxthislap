@@ -717,6 +717,71 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-weight: 900;
 }
 
+.ranking-tabs {
+  margin-bottom: 18px;
+}
+
+.ranking-shell {
+  display: grid;
+}
+
+.ranking-panel {
+  display: none;
+}
+
+.ranking-panel.is-active {
+  display: block;
+}
+
+.ranking-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ranking-item {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px var(--shadow);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  padding: 14px;
+}
+
+.ranking-item[draggable="true"] {
+  cursor: grab;
+}
+
+.ranking-item.is-dragging {
+  opacity: 0.5;
+}
+
+.ranking-rank {
+  align-items: center;
+  background: var(--soft);
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 1.15rem;
+  font-weight: 900;
+  height: 44px;
+  justify-content: center;
+  min-width: 44px;
+  padding: 0 10px;
+}
+
+.ranking-item strong {
+  font-size: clamp(1rem, 2.6vw, 1.25rem);
+  line-height: 1.2;
+}
+
+.ranking-drag-handle {
+  color: var(--muted);
+  font-weight: 900;
+}
+
 .footy-filters label {
   color: var(--muted);
   display: grid;

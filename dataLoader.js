@@ -48,6 +48,10 @@ export const DATA_SOURCES = {
     portalFootballTeams: buildManagerPortalCsvUrl("1614272244"),
     portalLogs: buildManagerPortalCsvUrl("121360226"),
     next: `${NEXT_SHEET_BASE_URL}?output=csv`,
+    rankingGames: buildNextCsvUrl("1009577165"),
+    rankingMcu: buildNextCsvUrl("1257157651"),
+    rankingMovies: buildNextCsvUrl("449567167"),
+    rankingTv: buildNextCsvUrl("415412107"),
   },
 };
 
@@ -259,6 +263,10 @@ function buildFantasyOffice2026CsvUrl(gid) {
 
 function buildManagerPortalCsvUrl(gid) {
   return `${MANAGER_PORTAL_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
+}
+
+function buildNextCsvUrl(gid) {
+  return `${NEXT_SHEET_BASE_URL}?gid=${encodeURIComponent(gid)}&single=true&output=csv`;
 }
 
 function stripBom(text) {

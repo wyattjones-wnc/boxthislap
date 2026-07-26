@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607250001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607260001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -124,6 +124,19 @@ import {
   nextItemStatus,
   nextItemClose,
   nextItemCancel,
+  rankingTabs,
+  rankingPanels,
+  rankingAddButton,
+  rankingItemDialog,
+  rankingItemForm,
+  rankingItemDialogTitle,
+  rankingItemKind,
+  rankingItemId,
+  rankingItemName,
+  rankingItemRank,
+  rankingItemStatus,
+  rankingItemClose,
+  rankingItemCancel,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -157,8 +170,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607250003";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607250001";
+} from "./modules/domRefs.js?v=202607260001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607260001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -187,8 +200,41 @@ let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
+let activeRankingKind = "games";
+let draggedRankingItemId = "";
+let rankingsLoadPromise = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const RANKING_CONFIG = {
+  games: {
+    addLabel: "Add Game",
+    itemLabel: "Game",
+    list: () => document.querySelector("#ranking-list-games"),
+    sheetName: "VG Ranking",
+    source: "rankingGames",
+  },
+  mcu: {
+    addLabel: "Add MCU Entry",
+    itemLabel: "MCU",
+    list: () => document.querySelector("#ranking-list-mcu"),
+    sheetName: "MCU Ranking",
+    source: "rankingMcu",
+  },
+  movies: {
+    addLabel: "Add Movie",
+    itemLabel: "Movie",
+    list: () => document.querySelector("#ranking-list-movies"),
+    sheetName: "Movie Ranking",
+    source: "rankingMovies",
+  },
+  tv: {
+    addLabel: "Add TV Entry",
+    itemLabel: "TV",
+    list: () => document.querySelector("#ranking-list-tv"),
+    sheetName: "TV Ranking",
+    source: "rankingTv",
+  },
+};
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
@@ -288,7 +334,8 @@ function renderFootySchedule(schedule) {
 
   const fixtures = getFootyScheduleFixtures(schedule);
   syncFootyFilters(fixtures);
-  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
+  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures))
+    .sort(compareVisibleFootyFixtures);
   const renderedFixtures = shouldShowAllFootyFixtures
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
@@ -596,17 +643,61 @@ function getDefaultFootyTeams(fixtures = [], defaultPrioritySet = getDefaultFoot
 }
 
 function getVisibleFootyFixtures(fixtures) {
-  const now = Date.now();
-
   return fixtures.filter((fixture) => {
-    const fixtureTime = getFootyFixturePastCutoffTime(fixture);
+    const isPast = isFootyFixturePast(fixture);
 
-    if (!Number.isFinite(fixtureTime)) {
-      return !shouldShowPastFootyFixtures;
-    }
-
-    return shouldShowPastFootyFixtures ? fixtureTime < now : fixtureTime >= now;
+    return shouldShowPastFootyFixtures ? isPast : !isPast;
   });
+}
+
+function compareVisibleFootyFixtures(firstFixture, secondFixture) {
+  return shouldShowPastFootyFixtures
+    ? compareFootyFixturesDescending(firstFixture, secondFixture)
+    : compareFootyFixturesAscending(firstFixture, secondFixture);
+}
+
+function compareFootyFixturesAscending(firstFixture, secondFixture) {
+  return getFootyFixtureSortTime(firstFixture) - getFootyFixtureSortTime(secondFixture) ||
+    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
+    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
+}
+
+function compareFootyFixturesDescending(firstFixture, secondFixture) {
+  return getFootyFixtureSortTime(secondFixture) - getFootyFixtureSortTime(firstFixture) ||
+    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
+    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
+}
+
+function getFootyFixtureSortTime(fixture) {
+  const comparableTime = getFootyFixtureComparableTime(fixture);
+  return Number.isFinite(comparableTime) ? comparableTime : Number.MAX_SAFE_INTEGER;
+}
+
+function isFootyFixturePast(fixture) {
+  if (hasFootyMatchNoteData(fixture)) {
+    return true;
+  }
+
+  const fixtureTime = getFootyFixtureComparableTime(fixture);
+
+  return Number.isFinite(fixtureTime) && fixtureTime < Date.now();
+}
+
+function hasFootyMatchNoteData(fixture) {
+  const note = fixture?.matchNote;
+
+  if (!note) {
+    return false;
+  }
+
+  return Boolean(
+    String(note.homeScore ?? "").trim() ||
+    String(note.awayScore ?? "").trim() ||
+    String(note.note ?? "").trim() ||
+    String(note.highlightLink ?? "").trim() ||
+    (Array.isArray(note.followGoalAssists) && note.followGoalAssists.length > 0) ||
+    (Array.isArray(note.opponentGoalAssists) && note.opponentGoalAssists.length > 0)
+  );
 }
 
 function getFootyFixturePastCutoffTime(fixture) {
@@ -770,7 +861,7 @@ function renderFootyFixture(fixture) {
 }
 
 function shouldRenderFootyNoteEditButton(fixture) {
-  return Boolean(isCurrentManagerAdmin() && shouldShowPastFootyFixtures && fixture?.matchId);
+  return Boolean(isCurrentManagerAdmin() && isFootyFixturePast(fixture) && fixture?.matchId);
 }
 
 function toggleFootyFixtureExpansion(matchId) {
@@ -2301,6 +2392,415 @@ function renderNextListError(error) {
   nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
 }
 
+function renderRankingsPage() {
+  if (!shouldRenderPageSection("rankings")) {
+    return;
+  }
+
+  syncRankingTabs();
+
+  if (!isCurrentManagerAdmin()) {
+    renderRankingAdminMessage("Rankings are available for admin accounts.");
+    return;
+  }
+
+  ensureRankingsLoaded();
+  renderRankingLists();
+}
+
+function ensureRankingsLoaded() {
+  if (siteData.rankings) {
+    return Promise.resolve(siteData.rankings);
+  }
+
+  if (rankingsLoadPromise) {
+    return rankingsLoadPromise;
+  }
+
+  renderRankingAdminMessage("Loading rankings...");
+
+  rankingsLoadPromise = Promise.allSettled(
+    Object.entries(RANKING_CONFIG).map(async ([kind, config]) => {
+      const rows = await loadSheet(config.source);
+      return [kind, normalizeRankingRows(rows)];
+    })
+  ).then((results) => {
+    const rankings = {};
+    const errors = [];
+
+    results.forEach((result, index) => {
+      const kind = Object.keys(RANKING_CONFIG)[index];
+
+      if (result.status === "fulfilled") {
+        const [resultKind, rows] = result.value;
+        rankings[resultKind] = rows;
+      } else {
+        rankings[kind] = [];
+        errors.push(`${RANKING_CONFIG[kind].sheetName}: ${result.reason?.message || result.reason}`);
+      }
+    });
+
+    siteData.rankings = rankings;
+    siteData.rankingErrors = errors;
+    renderRankingLists();
+    return rankings;
+  }).catch((error) => {
+    siteData.rankingErrors = [error.message];
+    renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
+    throw error;
+  });
+
+  return rankingsLoadPromise;
+}
+
+function renderRankingAdminMessage(message) {
+  Object.keys(RANKING_CONFIG).forEach((kind) => {
+    const list = RANKING_CONFIG[kind].list();
+
+    if (list) {
+      list.innerHTML = `<p class="table-message">${escapeHtml(message)}</p>`;
+    }
+  });
+}
+
+function renderRankingLists() {
+  Object.keys(RANKING_CONFIG).forEach(renderRankingList);
+}
+
+function renderRankingList(kind) {
+  const config = RANKING_CONFIG[kind];
+  const list = config?.list();
+
+  if (!config || !list) {
+    return;
+  }
+
+  const rows = getRankingRows(kind);
+
+  if (!rows.length) {
+    list.innerHTML = `<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = rows.map((item) => renderRankingItem(kind, item)).join("");
+}
+
+function renderRankingItem(kind, item) {
+  const draggable = isCurrentManagerAdmin() ? ` draggable="true"` : "";
+
+  return `
+    <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
+      <span class="ranking-rank">${escapeHtml(String(item.rank))}</span>
+      <strong>${escapeHtml(item.name)}</strong>
+      <span class="ranking-drag-handle" aria-hidden="true">::</span>
+    </article>
+  `;
+}
+
+function normalizeRankingRows(rows = []) {
+  return rows
+    .map(normalizeRankingRow)
+    .filter(Boolean)
+    .sort(compareRankingRows)
+    .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function normalizeRankingRow(row) {
+  const id = String(row?.ID || row?.Id || row?.id || "").trim();
+  const nameKey = getRankingNameKey(row);
+  const name = String(row?.[nameKey] || "").trim();
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    nameKey,
+    rank: parseRankingRank(row?.Rank),
+    raw: row,
+  };
+}
+
+function getRankingNameKey(row) {
+  return Object.keys(row || {}).find((key) => {
+    const normalizedKey = normalizeLookupName(key);
+    return normalizedKey && normalizedKey !== "id" && normalizedKey !== "rank";
+  }) || "Name";
+}
+
+function parseRankingRank(value) {
+  const rank = Number(value);
+  return Number.isInteger(rank) && rank > 0 ? rank : Number.MAX_SAFE_INTEGER;
+}
+
+function compareRankingRows(first, second) {
+  return first.rank - second.rank ||
+    first.name.localeCompare(second.name, undefined, { numeric: true }) ||
+    String(first.id).localeCompare(String(second.id), undefined, { numeric: true });
+}
+
+function getRankingRows(kind = activeRankingKind) {
+  return [...(siteData.rankings?.[kind] || [])].sort(compareRankingRows);
+}
+
+function syncRankingTabs() {
+  rankingTabs?.forEach((tab) => {
+    const isActive = tab.dataset.rankingTab === activeRankingKind;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
+
+  rankingPanels?.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.rankingPanel === activeRankingKind);
+  });
+
+  if (rankingAddButton) {
+    const config = RANKING_CONFIG[activeRankingKind];
+    rankingAddButton.setAttribute("aria-label", config?.addLabel || "Add ranking item");
+  }
+}
+
+function setActiveRankingKind(kind) {
+  if (!RANKING_CONFIG[kind]) {
+    return;
+  }
+
+  activeRankingKind = kind;
+  syncRankingTabs();
+  renderRankingsPage();
+}
+
+function openRankingItemDialog(kind = activeRankingKind) {
+  if (!isCurrentManagerAdmin() || !rankingItemDialog || !RANKING_CONFIG[kind]) {
+    return;
+  }
+
+  const rows = getRankingRows(kind);
+  const config = RANKING_CONFIG[kind];
+
+  if (rankingItemDialogTitle) {
+    rankingItemDialogTitle.textContent = config.addLabel;
+  }
+
+  if (rankingItemKind) {
+    rankingItemKind.value = kind;
+  }
+
+  if (rankingItemId) {
+    rankingItemId.value = "";
+  }
+
+  if (rankingItemName) {
+    rankingItemName.value = "";
+  }
+
+  if (rankingItemRank) {
+    rankingItemRank.max = String(rows.length + 1);
+    rankingItemRank.value = String(rows.length + 1);
+  }
+
+  setRankingItemStatus("");
+
+  if (typeof rankingItemDialog.showModal === "function") {
+    rankingItemDialog.showModal();
+  } else {
+    rankingItemDialog.setAttribute("open", "");
+  }
+
+  rankingItemName?.focus();
+}
+
+function closeRankingItemDialog() {
+  if (!rankingItemDialog) {
+    return;
+  }
+
+  if (typeof rankingItemDialog.close === "function") {
+    rankingItemDialog.close();
+  } else {
+    rankingItemDialog.removeAttribute("open");
+  }
+}
+
+function saveRankingItemFromForm() {
+  const kind = String(rankingItemKind?.value || activeRankingKind).trim();
+  const config = RANKING_CONFIG[kind];
+
+  if (!config) {
+    setRankingItemStatus("Choose a ranking list.", true);
+    return;
+  }
+
+  const name = String(rankingItemName?.value || "").trim();
+
+  if (!name) {
+    setRankingItemStatus("Name is required.", true);
+    return;
+  }
+
+  const rows = getRankingRows(kind);
+  const rank = clampRankingRank(rankingItemRank?.value, rows.length + 1);
+  const item = {
+    id: createRankingItemId(kind),
+    name,
+    nameKey: config.itemLabel,
+    rank,
+  };
+
+  siteData.rankings = siteData.rankings || {};
+  siteData.rankings[kind] = insertRankingItem(rows, item, rank);
+  renderRankingList(kind);
+  submitRankingPayload({
+    action: "saveRankingItem",
+    item: {
+      ID: item.id,
+      Rank: item.rank,
+      Name: item.name,
+    },
+    ranking: kind,
+    sheetName: config.sheetName,
+  });
+  closeRankingItemDialog();
+}
+
+function insertRankingItem(rows, item, rank) {
+  const nextRows = rows.filter((row) => row.id !== item.id);
+  nextRows.splice(rank - 1, 0, item);
+  return normalizeRankingOrder(nextRows);
+}
+
+function normalizeRankingOrder(rows = []) {
+  return rows.map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function clampRankingRank(value, maxRank) {
+  const rank = Number(value);
+
+  if (!Number.isInteger(rank)) {
+    return maxRank;
+  }
+
+  return Math.min(Math.max(rank, 1), Math.max(maxRank, 1));
+}
+
+function createRankingItemId(kind) {
+  const nextId = getRankingRows(kind)
+    .map((row) => Number(String(row.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
+}
+
+function moveRankingItem(kind, draggedId, targetId) {
+  if (!isCurrentManagerAdmin() || !draggedId || !targetId || draggedId === targetId) {
+    return;
+  }
+
+  const rows = getRankingRows(kind);
+  const fromIndex = rows.findIndex((row) => row.id === draggedId);
+  const toIndex = rows.findIndex((row) => row.id === targetId);
+
+  if (fromIndex < 0 || toIndex < 0) {
+    return;
+  }
+
+  const [item] = rows.splice(fromIndex, 1);
+  rows.splice(toIndex, 0, item);
+  siteData.rankings[kind] = normalizeRankingOrder(rows);
+  renderRankingList(kind);
+  submitRankingOrder(kind);
+}
+
+function submitRankingOrder(kind) {
+  const config = RANKING_CONFIG[kind];
+  const items = getRankingRows(kind).map((item) => ({
+    ID: item.id,
+    Name: item.name,
+    Rank: item.rank,
+  }));
+
+  submitRankingPayload({
+    action: "saveRankingOrder",
+    items,
+    ranking: kind,
+    sheetName: config.sheetName,
+  });
+}
+
+function submitRankingPayload(payload) {
+  if (!NEXT_DATA_ENDPOINT) {
+    setRankingItemStatus("Ranking data endpoint is not configured yet.", true);
+    return false;
+  }
+
+  try {
+    const body = new URLSearchParams();
+    body.set("payload", JSON.stringify(payload));
+
+    if (navigator.sendBeacon && navigator.sendBeacon(NEXT_DATA_ENDPOINT, body)) {
+      return true;
+    }
+
+    window.fetch(NEXT_DATA_ENDPOINT, {
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      keepalive: true,
+      method: "POST",
+      mode: "no-cors",
+    }).catch((error) => {
+      console.warn("Unable to submit ranking data with fetch; falling back to form.", error);
+      submitRankingPayloadWithForm(payload);
+    });
+    return true;
+  } catch (error) {
+    console.warn("Unable to submit ranking data with beacon/fetch; falling back to form.", error);
+  }
+
+  submitRankingPayloadWithForm(payload);
+  return true;
+}
+
+function submitRankingPayloadWithForm(payload) {
+  const iframeName = "ranking-data-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
+  }
+
+  const form = document.createElement("form");
+  form.action = NEXT_DATA_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
+function setRankingItemStatus(message, isError = false) {
+  if (!rankingItemStatus) {
+    return;
+  }
+
+  rankingItemStatus.textContent = message;
+  rankingItemStatus.classList.toggle("is-error", isError);
+}
+
 function renderFantasyCriticPage(year = getActiveFantasyCriticYear()) {
   const yearKey = String(year || "");
 
@@ -2998,6 +3498,11 @@ function renderActivePageContent(pageName = "") {
 
   if (pageName === "next") {
     renderNextList();
+    return;
+  }
+
+  if (pageName === "rankings") {
+    renderRankingsPage();
     return;
   }
 
@@ -4433,6 +4938,67 @@ nextItemForm?.addEventListener("submit", (event) => {
   control?.addEventListener("change", updateNextCompletedControlAvailability);
 });
 
+rankingTabs?.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    setActiveRankingKind(tab.dataset.rankingTab);
+  });
+});
+
+rankingAddButton?.addEventListener("click", () => {
+  openRankingItemDialog(activeRankingKind);
+});
+
+rankingItemForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveRankingItemFromForm();
+});
+
+[rankingItemClose, rankingItemCancel].forEach((button) => {
+  button?.addEventListener("click", closeRankingItemDialog);
+});
+
+document.addEventListener("dragstart", (event) => {
+  const item = event.target.closest("[data-ranking-id]");
+
+  if (!item || !isCurrentManagerAdmin()) {
+    return;
+  }
+
+  draggedRankingItemId = item.getAttribute("data-ranking-id") || "";
+  event.dataTransfer?.setData("text/plain", draggedRankingItemId);
+  event.dataTransfer && (event.dataTransfer.effectAllowed = "move");
+  item.classList.add("is-dragging");
+});
+
+document.addEventListener("dragend", (event) => {
+  event.target.closest("[data-ranking-id]")?.classList.remove("is-dragging");
+  draggedRankingItemId = "";
+});
+
+document.addEventListener("dragover", (event) => {
+  if (!draggedRankingItemId || !event.target.closest("[data-ranking-id]")) {
+    return;
+  }
+
+  event.preventDefault();
+});
+
+document.addEventListener("drop", (event) => {
+  const target = event.target.closest("[data-ranking-id]");
+
+  if (!target || !draggedRankingItemId) {
+    return;
+  }
+
+  event.preventDefault();
+  moveRankingItem(
+    target.getAttribute("data-ranking-kind") || activeRankingKind,
+    draggedRankingItemId,
+    target.getAttribute("data-ranking-id") || "",
+  );
+  draggedRankingItemId = "";
+});
+
 document.addEventListener("pointerdown", (event) => {
   if (!footyTeamFilter || !shouldShowFootyTeamOptions || footyTeamFilter.contains(event.target)) {
     return;
@@ -4916,6 +5482,7 @@ function renderLoginState() {
   }
 
   renderNextList();
+  renderRankingsPage();
 }
 
 function renderLoginManagerOptions() {

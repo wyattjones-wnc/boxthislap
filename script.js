@@ -1460,8 +1460,9 @@ function submitFootyDataPayloadWithForm(payload) {
   form.remove();
 }
 
-async function waitForFootyMatchNoteSave(expectedNote, maxAttempts = 8) {
+async function waitForFootyMatchNoteSave(expectedNote, maxAttempts = 15) {
   const matchId = normalizeFootyMatchId(expectedNote?.matchId);
+  let lastSavedNote = null;
 
   if (!matchId) {
     throw new Error("No Match ID was available to confirm the saved note.");
@@ -1472,6 +1473,7 @@ async function waitForFootyMatchNoteSave(expectedNote, maxAttempts = 8) {
 
     const notes = await loadFootyMatchNotes();
     const savedNote = notes.find((note) => normalizeFootyMatchId(note.matchId) === matchId);
+    lastSavedNote = savedNote || lastSavedNote;
 
     if (savedNote && doesFootyMatchNoteMatch(expectedNote, savedNote)) {
       return {
@@ -1482,7 +1484,7 @@ async function waitForFootyMatchNoteSave(expectedNote, maxAttempts = 8) {
     }
   }
 
-  throw new Error("Footy data endpoint did not confirm the match note was saved.");
+  throw new Error(getFootyMatchNoteSaveConfirmationError(expectedNote, lastSavedNote));
 }
 
 function doesFootyMatchNoteMatch(expectedNote = {}, savedNote = {}) {
@@ -1492,6 +1494,39 @@ function doesFootyMatchNoteMatch(expectedNote = {}, savedNote = {}) {
     String(expectedNote.highlightLink || "").trim() === String(savedNote.highlightLink || "").trim() &&
     JSON.stringify(normalizeFootyGoalAssistList(expectedNote.followGoalAssists)) === JSON.stringify(normalizeFootyGoalAssistList(savedNote.followGoalAssists)) &&
     JSON.stringify(normalizeFootyGoalAssistList(expectedNote.opponentGoalAssists)) === JSON.stringify(normalizeFootyGoalAssistList(savedNote.opponentGoalAssists));
+}
+
+function getFootyMatchNoteSaveConfirmationError(expectedNote = {}, savedNote = null) {
+  if (!savedNote) {
+    return `Footy data endpoint did not confirm the match note was saved. No Match Notes row was found for ${expectedNote.matchId}.`;
+  }
+
+  const differences = getFootyMatchNoteDifferences(expectedNote, savedNote);
+
+  return `Footy data endpoint found ${expectedNote.matchId}, but the saved row did not match: ${differences.join(", ")}.`;
+}
+
+function getFootyMatchNoteDifferences(expectedNote = {}, savedNote = {}) {
+  const comparisons = [
+    ["home score", String(expectedNote.homeScore || "").trim(), String(savedNote.homeScore || "").trim()],
+    ["away score", String(expectedNote.awayScore || "").trim(), String(savedNote.awayScore || "").trim()],
+    ["note", String(expectedNote.note || "").trim(), String(savedNote.note || "").trim()],
+    ["highlight link", String(expectedNote.highlightLink || "").trim(), String(savedNote.highlightLink || "").trim()],
+    [
+      "follow G/A",
+      JSON.stringify(normalizeFootyGoalAssistList(expectedNote.followGoalAssists)),
+      JSON.stringify(normalizeFootyGoalAssistList(savedNote.followGoalAssists)),
+    ],
+    [
+      "opponent G/A",
+      JSON.stringify(normalizeFootyGoalAssistList(expectedNote.opponentGoalAssists)),
+      JSON.stringify(normalizeFootyGoalAssistList(savedNote.opponentGoalAssists)),
+    ],
+  ];
+
+  return comparisons
+    .filter(([, expected, actual]) => expected !== actual)
+    .map(([label, expected, actual]) => `${label} expected ${expected || "(blank)"} got ${actual || "(blank)"}`);
 }
 
 function wait(ms) {

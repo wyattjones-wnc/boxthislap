@@ -27,6 +27,7 @@ const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsd
 const ARSENAL_GRAPHQL_URL = process.env.ARSENAL_GRAPHQL_URL || "https://afc-prd.graph.arsenal.com/graphql";
 const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(".cache", "footy-schedule-api"));
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 6500;
+const EXTERNAL_REQUEST_RETRY_LIMIT = Number(process.env.FOOTY_API_RETRY_LIMIT) || 3;
 const LOOKAHEAD_DAYS = Number(process.env.FOOTY_SCHEDULE_LOOKAHEAD_DAYS) || 365;
 const MATCH_STATUS = process.env.FOOTY_SCHEDULE_MATCH_STATUS || "SCHEDULED";
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
@@ -904,16 +905,29 @@ async function loadText(url, { body = "", extension, headers = {}, method = "GET
     }
   }
 
-  await waitForExternalRequestSlot();
-  const response = await fetch(url, {
-    body: body || undefined,
-    headers: { "user-agent": "boxthislap-footy-updater", ...headers },
-    method,
-  });
-  const text = await response.text();
+  let response;
+  let text = "";
 
-  if (!response.ok) {
-    throw new Error(`Failed to load ${url}: ${response.status} ${getErrorMessageFromText(text)}`);
+  for (let attempt = 0; attempt <= EXTERNAL_REQUEST_RETRY_LIMIT; attempt += 1) {
+    await waitForExternalRequestSlot();
+    response = await fetch(url, {
+      body: body || undefined,
+      headers: { "user-agent": "boxthislap-footy-updater", ...headers },
+      method,
+    });
+    text = await response.text();
+
+    if (response.ok) {
+      break;
+    }
+
+    if (response.status !== 429 || attempt >= EXTERNAL_REQUEST_RETRY_LIMIT) {
+      throw new Error(`Failed to load ${url}: ${response.status} ${getErrorMessageFromText(text)}`);
+    }
+
+    const retryMs = getRateLimitRetryMs(response, text);
+    console.warn(`Rate limited loading ${url}; retrying in ${Math.round(retryMs / 1000)} seconds.`);
+    await sleep(retryMs);
   }
 
   if (SHOULD_USE_API_CACHE) {
@@ -921,6 +935,19 @@ async function loadText(url, { body = "", extension, headers = {}, method = "GET
   }
 
   return text;
+}
+
+function getRateLimitRetryMs(response, text) {
+  const retryAfter = Number(response.headers.get("retry-after"));
+
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return (retryAfter + 1) * 1000;
+  }
+
+  const waitMatch = String(text || "").match(/wait\s+(\d+)\s+seconds?/i);
+  const waitSeconds = waitMatch ? Number(waitMatch[1]) : 0;
+
+  return (Number.isFinite(waitSeconds) && waitSeconds > 0 ? waitSeconds + 1 : 20) * 1000;
 }
 
 async function waitForExternalRequestSlot() {
@@ -932,10 +959,14 @@ async function waitForExternalRequestSlot() {
   const waitMs = Math.max(0, lastExternalRequestAt + EXTERNAL_REQUEST_INTERVAL_MS - now);
 
   if (waitMs > 0) {
-    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    await sleep(waitMs);
   }
 
   lastExternalRequestAt = Date.now();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function tryReadFile(filePath) {

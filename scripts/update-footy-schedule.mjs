@@ -754,7 +754,7 @@ async function loadFootyMatchNotesSheet(url) {
   }
 
   for (const row of recordsFromCsvSection(section)) {
-    const matchId = getField(row, "Match ID").trim();
+    const matchId = normalizeFootyMatchId(getField(row, "Match ID"));
 
     if (!matchId) {
       continue;
@@ -1295,7 +1295,7 @@ function buildFootyMatchRegistry({ fixtures = [], generatedAt, matchRows = [], m
 function applyFootyMatchRegistry(fixtures = [], registry) {
   return fixtures.map((fixture) => {
     const row = registry.fixtureRowsByReference.get(getFixtureReferenceKey(fixture));
-    const matchNote = row ? registry.matchNotes.get(row.matchId) : null;
+    const matchNote = row ? registry.matchNotes.get(normalizeFootyMatchId(row.matchId)) : null;
     const enrichedFixture = {
       ...fixture,
       matchId: row?.matchId || fixture.matchId || "",
@@ -1314,7 +1314,7 @@ function normalizeFootyMatchRows(rows = []) {
     followedTeam: getField(row, "Followed Team").trim(),
     home: getField(row, "Home").trim(),
     lastSeen: getField(row, "Last Seen").trim(),
-    matchId: getField(row, "Match ID").trim(),
+    matchId: normalizeFootyMatchId(getField(row, "Match ID")),
     sourceIds: parseSourceIds(getField(row, "Source IDs")),
     time: getField(row, "Time").trim(),
   })).filter((row) => row.matchId);
@@ -1419,7 +1419,7 @@ function getFootballClubNameLookupKeys(name) {
 
 function buildFootyRegistryTimestamp(date, time) {
   const normalizedDate = String(date || "").trim();
-  const normalizedTime = String(time || "").trim();
+  const normalizedTime = normalizeFootyRegistryTime(time);
 
   if (!normalizedDate) {
     return "";
@@ -1428,20 +1428,37 @@ function buildFootyRegistryTimestamp(date, time) {
   return normalizedTime ? `${normalizedDate}T${normalizedTime}` : normalizedDate;
 }
 
+function normalizeFootyRegistryTime(time) {
+  const normalizedTime = String(time || "").trim();
+  const match = normalizedTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+
+  if (!match) {
+    return normalizedTime;
+  }
+
+  return [
+    match[1].padStart(2, "0"),
+    match[2],
+    match[3] || "00",
+  ].join(":");
+}
+
 function registerFootyMatchRow(row, { entriesByFingerprint, entriesBySourceId, registryRowsById, usedMatchIds }) {
   if (!row.matchId) {
     return;
   }
 
-  const existingRow = registryRowsById.get(row.matchId);
+  const normalizedMatchId = normalizeFootyMatchId(row.matchId);
+  const normalizedRow = { ...row, matchId: normalizedMatchId };
+  const existingRow = registryRowsById.get(normalizedMatchId);
   const mergedRow = existingRow ? {
     ...existingRow,
-    ...row,
-    sourceIds: mergeSourceIds(existingRow.sourceIds, row.sourceIds),
-  } : row;
+    ...normalizedRow,
+    sourceIds: mergeSourceIds(existingRow.sourceIds, normalizedRow.sourceIds),
+  } : normalizedRow;
 
-  registryRowsById.set(row.matchId, mergedRow);
-  usedMatchIds.add(row.matchId);
+  registryRowsById.set(normalizedMatchId, mergedRow);
+  usedMatchIds.add(normalizedMatchId);
 
   for (const sourceKey of getSourceIdKeys(mergedRow.sourceIds)) {
     entriesBySourceId.set(sourceKey, mergedRow);
@@ -2194,6 +2211,10 @@ function addDays(date, days) {
 
 function normalizeText(value) {
   return String(value ?? "").trim().toLowerCase();
+}
+
+function normalizeFootyMatchId(value) {
+  return normalizeText(value);
 }
 
 function normalizeFootballClubName(value) {

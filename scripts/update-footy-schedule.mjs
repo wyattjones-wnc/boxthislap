@@ -1341,16 +1341,13 @@ function previousFootyMatchRows(previousSchedules = []) {
 }
 
 function buildFixturesFromFootyMatchRows(rows = [], teams = []) {
-  const teamByName = new Map(
-    teams
-      .filter((team) => team?.name)
-      .map((team) => [normalizeText(team.name), team])
-  );
+  const teamByName = buildTeamNameLookup(teams);
 
   return normalizeFootyMatchRows(rows).map((row) => {
-    const team = teamByName.get(normalizeText(row.followedTeam)) || {};
+    const team = getTeamByName(teamByName, row.followedTeam) || {};
     const timestamp = buildFootyRegistryTimestamp(row.date, row.time);
-    const isHome = normalizeText(row.home) === normalizeText(row.followedTeam);
+    const followedTeamName = team.name || row.followedTeam;
+    const isHome = isSameFootballClubName(row.home, followedTeamName);
     const opponent = isHome ? row.away : row.home;
 
     return {
@@ -1371,11 +1368,53 @@ function buildFixturesFromFootyMatchRows(rows = [], teams = []) {
       sources: ["Footy Matches"],
       teamBadge: team.badge || "",
       teamId: team.id || row.followedTeam,
-      teamName: team.name || row.followedTeam,
+      teamName: followedTeamName,
       time: row.time,
       timestamp,
     };
   });
+}
+
+function buildTeamNameLookup(teams = []) {
+  const lookup = new Map();
+
+  teams
+    .filter((team) => team?.name)
+    .forEach((team) => {
+      getFootballClubNameLookupKeys(team.name).forEach((key) => {
+        if (key && !lookup.has(key)) {
+          lookup.set(key, team);
+        }
+      });
+    });
+
+  return lookup;
+}
+
+function getTeamByName(teamByName, name) {
+  for (const key of getFootballClubNameLookupKeys(name)) {
+    const team = teamByName.get(key);
+
+    if (team) {
+      return team;
+    }
+  }
+
+  return null;
+}
+
+function isSameFootballClubName(firstName, secondName) {
+  const first = normalizeFootballClubName(firstName);
+  const second = normalizeFootballClubName(secondName);
+
+  return Boolean(first && second && first === second);
+}
+
+function getFootballClubNameLookupKeys(name) {
+  return [
+    normalizeText(name),
+    normalizeFootballClubName(name),
+  ].filter(Boolean);
 }
 
 function buildFootyRegistryTimestamp(date, time) {
@@ -2155,6 +2194,13 @@ function addDays(date, days) {
 
 function normalizeText(value) {
   return String(value ?? "").trim().toLowerCase();
+}
+
+function normalizeFootballClubName(value) {
+  return normalizeText(value)
+    .replace(/\b(afc|cf|fc|sc)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isFalseValue(value) {

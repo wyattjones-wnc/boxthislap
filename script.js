@@ -422,7 +422,7 @@ function getFilteredFootyFixtures(fixtures) {
       return false;
     }
 
-    if (selectedTeams.size > 0 && !selectedTeams.has(normalizeLookupName(fixture.teamName))) {
+    if (selectedTeams.size > 0 && !selectedTeams.has(getFootyTeamFilterKey(fixture.teamName))) {
       return false;
     }
 
@@ -481,7 +481,7 @@ function getSelectedFootyTeams() {
   return new Set(
     [...footyTeamFilter.querySelectorAll("input[type=\"checkbox\"]:checked")]
       .filter((input) => input.dataset.defaultSelected !== "true")
-      .map((input) => normalizeLookupName(input.value))
+      .map((input) => getFootyTeamFilterKey(input.value))
       .filter(Boolean)
   );
 }
@@ -546,8 +546,7 @@ function syncFootyFilters(fixtures = []) {
   const selectedTeams = getSelectedFootyTeams();
   const defaultPrioritySet = getDefaultFootyPrioritySet();
   const defaultTeams = getDefaultFootyTeams(fixtures, defaultPrioritySet);
-  const teams = [...new Set(fixtures.map((fixture) => fixture.teamName).filter(Boolean))]
-    .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
+  const teams = getFootyFilterTeams(fixtures);
   const button = footyTeamFilter.querySelector(".multi-filter-button");
   const options = footyTeamFilter.querySelector(".multi-filter-options");
 
@@ -555,13 +554,13 @@ function syncFootyFilters(fixtures = []) {
     return;
   }
 
-  const selectedCount = teams.filter((team) => selectedTeams.has(normalizeLookupName(team))).length;
+  const selectedCount = teams.filter((team) => selectedTeams.has(getFootyTeamFilterKey(team))).length;
   button.textContent = teams.length === 0
     ? "No teams loaded"
     : selectedCount === 0
     ? "Default priority teams"
     : selectedCount === 1
-    ? teams.find((team) => selectedTeams.has(normalizeLookupName(team))) || "1 team selected"
+    ? teams.find((team) => selectedTeams.has(getFootyTeamFilterKey(team))) || "1 team selected"
     : `${selectedCount} teams selected`;
   button.disabled = teams.length === 0;
   button.setAttribute("aria-expanded", String(shouldShowFootyTeamOptions));
@@ -569,7 +568,7 @@ function syncFootyFilters(fixtures = []) {
   options.innerHTML = teams.length === 0
     ? `<p class="multi-filter-empty">No teams loaded.</p>`
     : teams.map((team) => {
-      const teamKey = normalizeLookupName(team);
+      const teamKey = getFootyTeamFilterKey(team);
       const isDefaultSelected = selectedTeams.size === 0 && defaultTeams.has(teamKey);
       const selected = selectedTeams.has(teamKey) || isDefaultSelected ? " checked" : "";
       const defaultFlag = isDefaultSelected ? ` data-default-selected="true"` : "";
@@ -591,9 +590,35 @@ function getDefaultFootyTeams(fixtures = [], defaultPrioritySet = getDefaultFoot
   return new Set(
     fixtures
       .filter((fixture) => defaultPrioritySet.has(normalizeFootyPriority(fixture.priority)))
-      .map((fixture) => normalizeLookupName(fixture.teamName))
+      .map((fixture) => getFootyTeamFilterKey(fixture.teamName))
       .filter(Boolean)
   );
+}
+
+function getFootyFilterTeams(fixtures = []) {
+  const teamsByKey = new Map();
+
+  fixtures.forEach((fixture) => {
+    const teamName = String(fixture?.teamName || "").trim();
+    const teamKey = getFootyTeamFilterKey(teamName);
+
+    if (!teamName || !teamKey) {
+      return;
+    }
+
+    const existingTeamName = teamsByKey.get(teamKey);
+
+    if (!existingTeamName || teamName.length > existingTeamName.length) {
+      teamsByKey.set(teamKey, teamName);
+    }
+  });
+
+  return [...teamsByKey.values()]
+    .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
+}
+
+function getFootyTeamFilterKey(teamName) {
+  return normalizeFootyClubName(teamName) || normalizeLookupName(teamName);
 }
 
 function getVisibleFootyFixtures(fixtures) {

@@ -1400,7 +1400,7 @@ function submitFootyDataPayloadWithCallback(payload) {
       }
 
       if (payload.action === "saveFootyMatchNote" && !["appended", "updated"].includes(data.status)) {
-        reject(new Error("Footy data endpoint did not confirm the match note was saved. Redeploy the Footy Apps Script web app."));
+        submitFootyDataPayloadWithFormAndPoll(payload).then(resolve, reject);
         return;
       }
 
@@ -1421,6 +1421,77 @@ function submitFootyDataPayloadWithCallback(payload) {
     };
     document.head.append(script);
   });
+}
+
+function submitFootyDataPayloadWithFormAndPoll(payload) {
+  submitFootyDataPayloadWithForm(payload);
+
+  return waitForFootyMatchNoteSave(payload.note);
+}
+
+function submitFootyDataPayloadWithForm(payload) {
+  const iframeName = "footy-data-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
+  }
+
+  const form = document.createElement("form");
+  form.action = FOOTY_DATA_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
+async function waitForFootyMatchNoteSave(expectedNote, maxAttempts = 8) {
+  const matchId = normalizeFootyMatchId(expectedNote?.matchId);
+
+  if (!matchId) {
+    throw new Error("No Match ID was available to confirm the saved note.");
+  }
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    await wait(1200);
+
+    const notes = await loadFootyMatchNotes();
+    const savedNote = notes.find((note) => normalizeFootyMatchId(note.matchId) === matchId);
+
+    if (savedNote && doesFootyMatchNoteMatch(expectedNote, savedNote)) {
+      return {
+        ok: true,
+        savedNote,
+        status: "confirmed-after-post",
+      };
+    }
+  }
+
+  throw new Error("Footy data endpoint did not confirm the match note was saved.");
+}
+
+function doesFootyMatchNoteMatch(expectedNote = {}, savedNote = {}) {
+  return String(expectedNote.homeScore || "").trim() === String(savedNote.homeScore || "").trim() &&
+    String(expectedNote.awayScore || "").trim() === String(savedNote.awayScore || "").trim() &&
+    String(expectedNote.note || "").trim() === String(savedNote.note || "").trim() &&
+    String(expectedNote.highlightLink || "").trim() === String(savedNote.highlightLink || "").trim() &&
+    JSON.stringify(normalizeFootyGoalAssistList(expectedNote.followGoalAssists)) === JSON.stringify(normalizeFootyGoalAssistList(savedNote.followGoalAssists)) &&
+    JSON.stringify(normalizeFootyGoalAssistList(expectedNote.opponentGoalAssists)) === JSON.stringify(normalizeFootyGoalAssistList(savedNote.opponentGoalAssists));
+}
+
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function updateFootyFixtureMatchNote(note) {

@@ -1408,10 +1408,12 @@ function renderFootyGoalAssistEvents(label, events = []) {
     return "";
   }
 
+  const sortedEvents = [...events].sort(compareFootyGoalAssistEvents);
+
   return `
     <div class="footy-goal-events">
       <span>${escapeHtml(label)}</span>
-      ${events.map((event) => {
+      ${sortedEvents.map((event) => {
         const minute = event.minute ? `${escapeHtml(event.minute)}' - ` : "";
         const assist = event.assister ? `, ${escapeHtml(event.assister)}` : "";
         const penalty = event.penalty ? " (P)" : "";
@@ -1420,6 +1422,23 @@ function renderFootyGoalAssistEvents(label, events = []) {
       }).join("")}
     </div>
   `;
+}
+
+function compareFootyGoalAssistEvents(firstEvent, secondEvent) {
+  return getFootyGoalAssistMinuteSortValue(firstEvent) - getFootyGoalAssistMinuteSortValue(secondEvent) ||
+    String(firstEvent?.scorer || "").localeCompare(String(secondEvent?.scorer || "")) ||
+    String(firstEvent?.assister || "").localeCompare(String(secondEvent?.assister || ""));
+}
+
+function getFootyGoalAssistMinuteSortValue(event) {
+  const minuteText = String(event?.minute || "").trim().replace("'", "");
+  const minuteMatch = minuteText.match(/^(\d+)(?:\s*\+\s*(\d+))?/);
+
+  if (!minuteMatch) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Number(minuteMatch[1]) + Number(minuteMatch[2] || 0) / 100;
 }
 
 function saveFootyGoalAssistEntry() {

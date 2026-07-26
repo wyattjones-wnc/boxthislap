@@ -1339,8 +1339,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-card p,
-.footy-updated,
-.footy-errors {
+.footy-updated {
   color: var(--muted);
   font-size: 0.88rem;
   margin: 0;
@@ -1443,12 +1442,30 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-updated,
-.footy-errors {
+.footy-admin-diagnostics {
   margin-bottom: 14px;
   margin-top: 0;
 }
 
-.footy-errors {
+.footy-admin-diagnostics {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  padding: 10px 12px;
+}
+
+.footy-admin-diagnostics summary {
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.footy-admin-diagnostics ul {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
   padding-left: 18px;
 }
 

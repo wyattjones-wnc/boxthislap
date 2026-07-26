@@ -22,6 +22,7 @@ const SOURCE_PRIORITY = {
 };
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
+const SHOULD_VERIFY_FOOTBALL_DATA_TEAMS = isTrueValue(process.env.FOOTY_VERIFY_FOOTBALL_DATA_TEAMS);
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
 const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
 const ARSENAL_GRAPHQL_URL = process.env.ARSENAL_GRAPHQL_URL || "https://afc-prd.graph.arsenal.com/graphql";
@@ -292,6 +293,23 @@ async function resolveTeam(team) {
       sportDbTeamId: getSportDbTeamId(team),
       status: "configured-unverified",
       warning: `Skipped ${PRIMARY_PROVIDER_NAME} team verification; missing FOOTBALL_DATA_API_KEY.`,
+    };
+  }
+
+  if (!SHOULD_VERIFY_FOOTBALL_DATA_TEAMS) {
+    return {
+      badge: getTeamBadge(team),
+      id: getField(team, "ID"),
+      league: getField(team, "League").trim(),
+      name,
+      priority: getField(team, "Priority"),
+      provider: PRIMARY_PROVIDER_NAME,
+      providerLeague: getField(team, "League").trim(),
+      providerLeagues: [],
+      providerTeamId: configuredId,
+      resolvedName: name,
+      sportDbTeamId: getSportDbTeamId(team),
+      status: "configured",
     };
   }
 

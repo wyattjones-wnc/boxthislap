@@ -343,6 +343,7 @@ function renderFootySchedule(schedule) {
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
   const generatedAt = formatFootyGeneratedAt(getFootyScheduleUpdatedAt(schedule));
+  const adminDiagnosticsMarkup = renderFootyAdminUpdateDiagnostics(schedule);
   const emptyMessage = hasActiveFootyFilters()
     ? "No matches found for the current filters."
     : shouldShowPastFootyFixtures
@@ -355,6 +356,7 @@ function renderFootySchedule(schedule) {
   if (visibleFixtures.length === 0) {
     footyScheduleList.innerHTML = `
       ${updatedMarkup}
+      ${adminDiagnosticsMarkup}
       <p class="table-message">${emptyMessage}</p>
     `;
     return;
@@ -362,6 +364,7 @@ function renderFootySchedule(schedule) {
 
   footyScheduleList.innerHTML = `
     ${updatedMarkup}
+    ${adminDiagnosticsMarkup}
     <div class="footy-list">
       ${renderedFixtures.map(renderFootyFixture).join("")}
     </div>
@@ -424,6 +427,47 @@ function getFootyTeamBadgeKey(fixture) {
 
 function getFootyScheduleUpdatedAt(schedule) {
   return schedule?.updateTracker?.updatedAt || schedule?.generatedAt || "";
+}
+
+function renderFootyAdminUpdateDiagnostics(schedule) {
+  if (!isCurrentManagerAdmin()) {
+    return "";
+  }
+
+  const issues = getFootyScheduleIssues(schedule);
+
+  if (issues.length === 0) {
+    return "";
+  }
+
+  return `
+    <details class="footy-admin-diagnostics">
+      <summary>Update issues (${escapeHtml(String(issues.length))})</summary>
+      <ul>
+        ${issues.map((issue) => `<li>${escapeHtml(issue)}</li>`).join("")}
+      </ul>
+    </details>
+  `;
+}
+
+function getFootyScheduleIssues(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  return schedule.teamSchedules.flatMap((teamSchedule) => {
+    const teamName = teamSchedule?.team?.name || "Team";
+    const status = String(teamSchedule?.status || "").trim();
+    const statusIssue = ["error", "partial", "stale-error"].includes(status)
+      ? [`${teamName}: update status ${status}`]
+      : [];
+    const errors = Array.isArray(teamSchedule?.errors) ? teamSchedule.errors : [];
+
+    return [
+      ...statusIssue,
+      ...errors.map((error) => `${teamName}: ${error}`),
+    ].filter(Boolean);
+  });
 }
 
 function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {

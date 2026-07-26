@@ -1360,34 +1360,6 @@ function mergeFootyMatchNotes(notes = []) {
 }
 
 function submitFootyDataPayload(payload) {
-  const body = new URLSearchParams({
-    payload: JSON.stringify(payload),
-  });
-
-  if (navigator.sendBeacon) {
-    const sent = navigator.sendBeacon(FOOTY_DATA_ENDPOINT, body);
-
-    if (sent) {
-      return;
-    }
-  }
-
-  if (window.fetch) {
-    window.fetch(FOOTY_DATA_ENDPOINT, {
-      body,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      keepalive: true,
-      method: "POST",
-      mode: "no-cors",
-    }).catch((error) => {
-      console.warn("Unable to submit footy match note with fetch; falling back to form.", error);
-      submitFootyDataPayloadWithForm(payload);
-    });
-    return;
-  }
-
   submitFootyDataPayloadWithForm(payload);
 }
 

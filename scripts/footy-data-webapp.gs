@@ -29,6 +29,10 @@ function doGet(e) {
       return webResponse(e, { ok: true, notes: listFootyMatchNotes() });
     }
 
+    if (action === "debugFootyMatchNote") {
+      return webResponse(e, { ok: true, rows: debugFootyMatchNote(e.parameter && e.parameter.matchId) });
+    }
+
     return webResponse(e, { ok: true, service: "boxthislap-footy-data" });
   } catch (error) {
     return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });
@@ -128,6 +132,8 @@ function syncFootyMatches(matches) {
       sheet.getRange(startRow, 1, rowsToAppend.length, rowWidth).setValues(rowsToAppend);
     }
 
+    SpreadsheetApp.flush();
+
     return {
       ok: true,
       appended: rowsToAppend.length,
@@ -142,7 +148,7 @@ function buildSheetRow(match, columns, rowWidth) {
   const row = Array(rowWidth).fill("");
 
   for (const column of FOOTY_MATCH_COLUMNS) {
-    row[columns[column] - 1] = String(match[column] || "");
+    row[columns[column] - 1] = String(getObjectValue(match, column));
   }
 
   return row;
@@ -184,7 +190,15 @@ function saveFootyMatchNote(note) {
         sheet.getRange(rowNumber, columns[FOOTY_MATCH_NOTE_COLUMNS[index]]).setValue(rowValues[FOOTY_MATCH_NOTE_COLUMNS[index]]);
       }
 
-      return { ok: true, matchId, status: "updated" };
+      SpreadsheetApp.flush();
+
+      return {
+        ok: true,
+        matchId,
+        rowNumber,
+        savedNote: getFootyMatchNoteAtRow(sheet, rowNumber, columns),
+        status: "updated",
+      };
     }
 
     const row = Array(rowWidth).fill("");
@@ -196,7 +210,15 @@ function saveFootyMatchNote(note) {
     const startRow = Math.max(sheet.getLastRow() + 1, header.row + 1);
     sheet.getRange(startRow, 1, 1, rowWidth).setValues([row]);
 
-    return { ok: true, matchId, status: "appended" };
+    SpreadsheetApp.flush();
+
+    return {
+      ok: true,
+      matchId,
+      rowNumber: startRow,
+      savedNote: getFootyMatchNoteAtRow(sheet, startRow, columns),
+      status: "appended",
+    };
   } finally {
     lock.releaseLock();
   }
@@ -243,19 +265,69 @@ function normalizeFootyMatchNoteFromRow(row, columns) {
   };
 }
 
+function getFootyMatchNoteAtRow(sheet, rowNumber, columns) {
+  const row = sheet.getRange(rowNumber, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  return normalizeFootyMatchNoteFromRow(row, columns);
+}
+
+function debugFootyMatchNote(matchId) {
+  const normalizedMatchId = String(matchId || "").trim();
+  const sheet = getFootySpreadsheet().getSheetByName("Match Notes");
+
+  if (!sheet) {
+    throw new Error('Sheet "Match Notes" was not found.');
+  }
+
+  const header = findHeaderRow(sheet, "Match ID");
+  const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columns = mapColumns(headerValues);
+  const lastRow = sheet.getLastRow();
+
+  if (!normalizedMatchId || lastRow <= header.row) {
+    return [];
+  }
+
+  const values = sheet.getRange(header.row + 1, 1, lastRow - header.row, sheet.getLastColumn()).getValues();
+
+  return values
+    .map((row, index) => ({
+      rowNumber: header.row + 1 + index,
+      note: normalizeFootyMatchNoteFromRow(row, columns),
+    }))
+    .filter((entry) => entry.note.matchId === normalizedMatchId);
+}
+
 function normalizeFootyMatchNote(note) {
   const followGoalAssists = note["Follow G/A"] || note.followGoalAssists || [];
   const opponentGoalAssists = note["Opp G/A"] || note.opponentGoalAssists || [];
 
   return {
-    "Match ID": String(note["Match ID"] || note.matchId || "").trim(),
-    "Home Score": String(note["Home Score"] || note.homeScore || "").trim(),
-    "Away Score": String(note["Away Score"] || note.awayScore || "").trim(),
+    "Match ID": String(getObjectValue(note, "Match ID", "matchId")).trim(),
+    "Home Score": String(getObjectValue(note, "Home Score", "homeScore")).trim(),
+    "Away Score": String(getObjectValue(note, "Away Score", "awayScore")).trim(),
     "Follow G/A": serializeGoalAssistEvents(followGoalAssists),
     "Opp G/A": serializeGoalAssistEvents(opponentGoalAssists),
-    "Note": String(note.Note || note.note || "").trim(),
-    "Highlight Link": String(note["Highlight Link"] || note.highlightLink || "").trim(),
+    "Note": String(getObjectValue(note, "Note", "note")).trim(),
+    "Highlight Link": String(getObjectValue(note, "Highlight Link", "highlightLink")).trim(),
   };
+}
+
+function getObjectValue(object) {
+  const keys = Array.prototype.slice.call(arguments, 1);
+
+  for (const key of keys) {
+    if (
+      object &&
+      Object.prototype.hasOwnProperty.call(object, key) &&
+      object[key] !== undefined &&
+      object[key] !== null
+    ) {
+      return object[key];
+    }
+  }
+
+  return "";
 }
 
 function serializeGoalAssistEvents(value) {

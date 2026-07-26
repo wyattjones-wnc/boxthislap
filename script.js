@@ -632,6 +632,12 @@ function isFootyFixturePast(fixture) {
     return true;
   }
 
+  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
+
+  return Number.isFinite(pastCutoffTime) && pastCutoffTime < Date.now();
+}
+
+function isFootyFixtureStarted(fixture) {
   const fixtureTime = getFootyFixtureComparableTime(fixture);
 
   return Number.isFinite(fixtureTime) && fixtureTime < Date.now();
@@ -815,7 +821,11 @@ function renderFootyFixture(fixture) {
 }
 
 function shouldRenderFootyNoteEditButton(fixture) {
-  return Boolean(isCurrentManagerAdmin() && isFootyFixturePast(fixture) && fixture?.matchId);
+  return Boolean(
+    isCurrentManagerAdmin() &&
+    fixture?.matchId &&
+    (isFootyFixtureStarted(fixture) || hasFootyMatchNoteData(fixture))
+  );
 }
 
 function toggleFootyFixtureExpansion(matchId) {

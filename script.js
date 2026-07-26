@@ -1270,7 +1270,7 @@ function isFootyNoteGoalAssistSide(side) {
   return side === "follow" || side === "opponent";
 }
 
-function saveFootyMatchNoteFromDialog() {
+async function saveFootyMatchNoteFromDialog() {
   if (!activeFootyNoteMatchId) {
     setFootyNoteStatus("No match is selected.", true);
     return;
@@ -1293,15 +1293,22 @@ function saveFootyMatchNoteFromDialog() {
   footyNoteSave && (footyNoteSave.disabled = true);
   setFootyNoteStatus("Saving match note...");
 
-  submitFootyDataPayload({
-    action: "saveFootyMatchNote",
-    note,
-    pageUrl: window.location.href,
-    submittedAt: new Date().toISOString(),
-  });
-  updateFootyFixtureMatchNote(note);
-  renderFootySchedule(siteData.footySchedule);
-  closeFootyNoteDialog();
+  try {
+    const response = await submitFootyDataPayload({
+      action: "saveFootyMatchNote",
+      note,
+      pageUrl: window.location.href,
+      submittedAt: new Date().toISOString(),
+    });
+    const savedNote = response.savedNote || note;
+
+    updateFootyFixtureMatchNote(savedNote);
+    renderFootySchedule(siteData.footySchedule);
+    closeFootyNoteDialog();
+  } catch (error) {
+    setFootyNoteStatus(error.message || "Unable to save match note.", true);
+    footyNoteSave && (footyNoteSave.disabled = false);
+  }
 }
 
 function loadFootyMatchNotes() {
@@ -1360,34 +1367,55 @@ function mergeFootyMatchNotes(notes = []) {
 }
 
 function submitFootyDataPayload(payload) {
-  submitFootyDataPayloadWithForm(payload);
+  return submitFootyDataPayloadWithCallback(payload);
 }
 
-function submitFootyDataPayloadWithForm(payload) {
-  const iframeName = "footy-data-frame";
-  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+function submitFootyDataPayloadWithCallback(payload) {
+  const callbackName = `boxThisLapFootySave${Date.now()}${Math.random().toString(36).slice(2)}`;
+  const callbackId = `footy-save-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-  if (!iframe) {
-    iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.hidden = true;
-    document.body.append(iframe);
-  }
+  return new Promise((resolve, reject) => {
+    let script;
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("No response from the footy data endpoint."));
+    }, 15000);
 
-  const form = document.createElement("form");
-  form.action = FOOTY_DATA_ENDPOINT;
-  form.method = "POST";
-  form.target = iframeName;
-  form.hidden = true;
+    function cleanup() {
+      window.clearTimeout(timeout);
+      delete window[callbackName];
+      script?.remove();
+    }
 
-  const payloadInput = document.createElement("input");
-  payloadInput.name = "payload";
-  payloadInput.value = JSON.stringify(payload);
-  form.append(payloadInput);
+    window[callbackName] = (data) => {
+      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
+        return;
+      }
 
-  document.body.append(form);
-  form.submit();
-  form.remove();
+      cleanup();
+
+      if (!data.ok) {
+        reject(new Error(data.error || "Unable to save match note."));
+        return;
+      }
+
+      resolve(data);
+    };
+
+    const url = new URL(FOOTY_DATA_ENDPOINT);
+    url.searchParams.set("action", payload.action || "");
+    url.searchParams.set("callback", callbackName);
+    url.searchParams.set("callbackId", callbackId);
+    url.searchParams.set("payload", JSON.stringify(payload));
+    script = document.createElement("script");
+    script.async = true;
+    script.src = url.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Unable to reach the footy data endpoint."));
+    };
+    document.head.append(script);
+  });
 }
 
 function updateFootyFixtureMatchNote(note) {

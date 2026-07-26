@@ -33,6 +33,12 @@ function doGet(e) {
       return webResponse(e, { ok: true, rows: debugFootyMatchNote(e.parameter && e.parameter.matchId) });
     }
 
+    if (action === "saveFootyMatchNote") {
+      const payload = getPayload(e);
+
+      return webResponse(e, saveFootyMatchNote(payload.note || {}));
+    }
+
     return webResponse(e, { ok: true, service: "boxthislap-footy-data" });
   } catch (error) {
     return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });

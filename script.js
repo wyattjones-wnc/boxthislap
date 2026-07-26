@@ -1399,6 +1399,11 @@ function submitFootyDataPayloadWithCallback(payload) {
         return;
       }
 
+      if (payload.action === "saveFootyMatchNote" && !["appended", "updated"].includes(data.status)) {
+        reject(new Error("Footy data endpoint did not confirm the match note was saved. Redeploy the Footy Apps Script web app."));
+        return;
+      }
+
       resolve(data);
     };
 

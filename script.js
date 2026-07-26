@@ -1134,12 +1134,12 @@ function buildFootyMatchNoteFromDialog() {
 
   return {
     matchId: activeFootyNoteMatchId,
-    homeScore: String(footyNoteHomeScore?.value || "").trim(),
-    awayScore: String(footyNoteAwayScore?.value || "").trim(),
+    homeScore: String(footyNoteHomeScore?.value ?? "").trim(),
+    awayScore: String(footyNoteAwayScore?.value ?? "").trim(),
     followGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.follow),
     opponentGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.opponent),
-    note: String(footyNoteText?.value || "").trim(),
-    highlightLink: String(footyNoteHighlightLink?.value || "").trim(),
+    note: String(footyNoteText?.value ?? "").trim(),
+    highlightLink: String(footyNoteHighlightLink?.value ?? "").trim(),
   };
 }
 
@@ -1367,70 +1367,41 @@ function mergeFootyMatchNotes(notes = []) {
 }
 
 function submitFootyDataPayload(payload) {
-  if (payload?.action === "saveFootyMatchNote") {
-    return submitFootyDataPayloadWithFormAndPoll(payload);
-  }
-
-  return submitFootyDataPayloadWithCallback(payload);
+  return submitFootyDataPayloadWithPost(payload);
 }
 
-function submitFootyDataPayloadWithCallback(payload) {
-  const callbackName = `boxThisLapFootySave${Date.now()}${Math.random().toString(36).slice(2)}`;
-  const callbackId = `footy-save-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+async function submitFootyDataPayloadWithPost(payload) {
+  let reachedEndpoint = false;
 
-  return new Promise((resolve, reject) => {
-    let script;
-    const timeout = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("No response from the footy data endpoint."));
-    }, 15000);
+  try {
+    const response = await window.fetch(FOOTY_DATA_ENDPOINT, {
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      method: "POST",
+    });
+    reachedEndpoint = true;
+    const data = await response.json();
 
-    function cleanup() {
-      window.clearTimeout(timeout);
-      delete window[callbackName];
-      script?.remove();
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.error || `Footy data endpoint returned ${response.status}.`);
     }
 
-    window[callbackName] = (data) => {
-      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
-        return;
-      }
+    return data;
+  } catch (error) {
+    if (reachedEndpoint) {
+      throw error;
+    }
 
-      cleanup();
-
-      if (!data.ok) {
-        reject(new Error(data.error || "Unable to save match note."));
-        return;
-      }
-
-      if (payload.action === "saveFootyMatchNote" && !["appended", "updated"].includes(data.status)) {
-        submitFootyDataPayloadWithFormAndPoll(payload).then(resolve, reject);
-        return;
-      }
-
-      resolve(data);
+    console.warn("Unable to submit Footy data with fetch; falling back to form post.", error);
+    submitFootyDataPayloadWithForm(payload);
+    return {
+      ok: true,
+      savedNote: payload.note,
+      status: "submitted",
     };
-
-    const url = new URL(FOOTY_DATA_ENDPOINT);
-    url.searchParams.set("action", payload.action || "");
-    url.searchParams.set("callback", callbackName);
-    url.searchParams.set("callbackId", callbackId);
-    url.searchParams.set("payload", JSON.stringify(payload));
-    script = document.createElement("script");
-    script.async = true;
-    script.src = url.toString();
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Unable to reach the footy data endpoint."));
-    };
-    document.head.append(script);
-  });
-}
-
-function submitFootyDataPayloadWithFormAndPoll(payload) {
-  submitFootyDataPayloadWithForm(payload);
-
-  return waitForFootyMatchNoteSave(payload.note);
+  }
 }
 
 function submitFootyDataPayloadWithForm(payload) {
@@ -1458,79 +1429,6 @@ function submitFootyDataPayloadWithForm(payload) {
   document.body.append(form);
   form.submit();
   form.remove();
-}
-
-async function waitForFootyMatchNoteSave(expectedNote, maxAttempts = 15) {
-  const matchId = normalizeFootyMatchId(expectedNote?.matchId);
-  let lastSavedNote = null;
-
-  if (!matchId) {
-    throw new Error("No Match ID was available to confirm the saved note.");
-  }
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    await wait(1200);
-
-    const notes = await loadFootyMatchNotes();
-    const savedNote = notes.find((note) => normalizeFootyMatchId(note.matchId) === matchId);
-    lastSavedNote = savedNote || lastSavedNote;
-
-    if (savedNote && doesFootyMatchNoteMatch(expectedNote, savedNote)) {
-      return {
-        ok: true,
-        savedNote,
-        status: "confirmed-after-post",
-      };
-    }
-  }
-
-  throw new Error(getFootyMatchNoteSaveConfirmationError(expectedNote, lastSavedNote));
-}
-
-function doesFootyMatchNoteMatch(expectedNote = {}, savedNote = {}) {
-  return String(expectedNote.homeScore || "").trim() === String(savedNote.homeScore || "").trim() &&
-    String(expectedNote.awayScore || "").trim() === String(savedNote.awayScore || "").trim() &&
-    String(expectedNote.note || "").trim() === String(savedNote.note || "").trim() &&
-    String(expectedNote.highlightLink || "").trim() === String(savedNote.highlightLink || "").trim() &&
-    JSON.stringify(normalizeFootyGoalAssistList(expectedNote.followGoalAssists)) === JSON.stringify(normalizeFootyGoalAssistList(savedNote.followGoalAssists)) &&
-    JSON.stringify(normalizeFootyGoalAssistList(expectedNote.opponentGoalAssists)) === JSON.stringify(normalizeFootyGoalAssistList(savedNote.opponentGoalAssists));
-}
-
-function getFootyMatchNoteSaveConfirmationError(expectedNote = {}, savedNote = null) {
-  if (!savedNote) {
-    return `Footy data endpoint did not confirm the match note was saved. No Match Notes row was found for ${expectedNote.matchId}.`;
-  }
-
-  const differences = getFootyMatchNoteDifferences(expectedNote, savedNote);
-
-  return `Footy data endpoint found ${expectedNote.matchId}, but the saved row did not match: ${differences.join(", ")}.`;
-}
-
-function getFootyMatchNoteDifferences(expectedNote = {}, savedNote = {}) {
-  const comparisons = [
-    ["home score", String(expectedNote.homeScore || "").trim(), String(savedNote.homeScore || "").trim()],
-    ["away score", String(expectedNote.awayScore || "").trim(), String(savedNote.awayScore || "").trim()],
-    ["note", String(expectedNote.note || "").trim(), String(savedNote.note || "").trim()],
-    ["highlight link", String(expectedNote.highlightLink || "").trim(), String(savedNote.highlightLink || "").trim()],
-    [
-      "follow G/A",
-      JSON.stringify(normalizeFootyGoalAssistList(expectedNote.followGoalAssists)),
-      JSON.stringify(normalizeFootyGoalAssistList(savedNote.followGoalAssists)),
-    ],
-    [
-      "opponent G/A",
-      JSON.stringify(normalizeFootyGoalAssistList(expectedNote.opponentGoalAssists)),
-      JSON.stringify(normalizeFootyGoalAssistList(savedNote.opponentGoalAssists)),
-    ],
-  ];
-
-  return comparisons
-    .filter(([, expected, actual]) => expected !== actual)
-    .map(([label, expected, actual]) => `${label} expected ${expected || "(blank)"} got ${actual || "(blank)"}`);
-}
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function clearFootyScheduleMatchNotes(schedule) {

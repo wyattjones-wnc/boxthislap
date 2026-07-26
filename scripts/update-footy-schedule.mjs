@@ -814,7 +814,7 @@ function parseGoalAssistEvents(value) {
 
     return parsed.map((event) => ({
       assister: String(event?.assister || "").trim(),
-      minute: event?.minute !== undefined && event?.minute !== null ? String(event.minute).trim() : "",
+      minute: Number(event?.minute) || "",
       penalty: Boolean(event?.penalty),
       scorer: String(event?.scorer || "").trim(),
     })).filter((event) => event.scorer || event.assister || event.minute || event.penalty);

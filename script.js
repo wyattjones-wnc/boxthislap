@@ -342,7 +342,6 @@ function renderFootySchedule(schedule) {
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
-  const errors = getFootyScheduleErrors(schedule);
   const generatedAt = formatFootyGeneratedAt(getFootyScheduleUpdatedAt(schedule));
   const emptyMessage = hasActiveFootyFilters()
     ? "No matches found for the current filters."
@@ -350,9 +349,6 @@ function renderFootySchedule(schedule) {
     ? "No past football fixtures were loaded yet."
     : "No upcoming football fixtures were loaded yet.";
   const updatedMarkup = generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : "";
-  const errorsMarkup = errors.length
-    ? `<ul class="footy-errors">${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>`
-    : "";
 
   syncFootyPastToggle(fixtures);
 
@@ -360,7 +356,6 @@ function renderFootySchedule(schedule) {
     footyScheduleList.innerHTML = `
       ${updatedMarkup}
       <p class="table-message">${emptyMessage}</p>
-      ${errorsMarkup}
     `;
     return;
   }
@@ -371,7 +366,6 @@ function renderFootySchedule(schedule) {
       ${renderedFixtures.map(renderFootyFixture).join("")}
     </div>
     ${renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
-    ${errorsMarkup}
   `;
 }
 
@@ -426,19 +420,6 @@ function getFootyTeamBadgeMap(fixtures = []) {
 
 function getFootyTeamBadgeKey(fixture) {
   return String(fixture?.teamId || normalizeLookupName(fixture?.teamName || "")).trim();
-}
-
-function getFootyScheduleErrors(schedule) {
-  if (!Array.isArray(schedule?.teamSchedules)) {
-    return [];
-  }
-
-  return schedule.teamSchedules.flatMap((teamSchedule) => {
-    const teamName = teamSchedule?.team?.name || "Team";
-    const errors = Array.isArray(teamSchedule?.errors) ? teamSchedule.errors : [];
-
-    return errors.map((error) => `${teamName}: ${error}`).filter(Boolean);
-  });
 }
 
 function getFootyScheduleUpdatedAt(schedule) {

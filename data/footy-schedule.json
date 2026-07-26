@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-26T11:38:57.762Z",
+  "generatedAt": "2026-07-26T17:57:35.073Z",
   "schemaVersion": 2,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-07-26T11:38:57.762Z",
-    "attemptedAt": "2026-07-26T11:38:57.762Z",
-    "updatedAt": "2026-07-26T11:38:57.762Z",
-    "oldestTeamUpdatedAt": "2026-07-26T11:38:57.762Z",
+    "generatedAt": "2026-07-26T17:57:35.073Z",
+    "attemptedAt": "2026-07-26T17:57:35.073Z",
+    "updatedAt": "2026-07-26T17:57:35.073Z",
+    "oldestTeamUpdatedAt": "2026-07-26T17:57:35.073Z",
     "teamCount": 7,
     "fixtureCount": 203,
     "statuses": {
@@ -39,21 +39,21 @@
     }
   ],
   "footyMatchRegistry": {
-    "matchCount": 202,
+    "matchCount": 203,
     "noteCount": 3,
     "sync": {
       "status": "synced",
-      "rows": 202,
-      "syncedAt": "2026-07-26T11:38:57.762Z",
+      "rows": 203,
+      "syncedAt": "2026-07-26T17:57:35.073Z",
       "appended": 1,
-      "updated": 201
+      "updated": 202
     }
   },
   "teamSchedules": [
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/57.png",
@@ -107,7 +107,8 @@
           "venue": "Estadi Municipal de Montilivi",
           "matchId": "footy_1de1093d4aae",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Betis",
@@ -143,7 +144,8 @@
           "venue": "Aviva Stadium",
           "matchId": "footy_063a95569d22",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Borussia Dortmund",
@@ -179,7 +181,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_6e7db37f9d3f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Como",
@@ -215,7 +218,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_8992bf2449ca",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Manchester City",
@@ -251,7 +255,8 @@
           "venue": "Principality Stadium",
           "matchId": "footy_336955d7bc6e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Coventry City FC",
@@ -267,7 +272,7 @@
           "priority": "1",
           "round": "1",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + TheSportsDB + Arsenal.com + iCalendar",
+          "source": "football-data.org + TheSportsDB + Footy Matches + Arsenal.com + iCalendar",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884ccf093af9",
             "Arsenal.com": "3vbv2xjkan2xyjoah3kjz7uok",
@@ -276,8 +281,8 @@
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
             "TheSportsDB",
+            "Footy Matches",
             "Arsenal.com",
             "iCalendar"
           ],
@@ -291,7 +296,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_8c14b40f0739",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -329,7 +335,8 @@
           "venue": "Villa Park",
           "matchId": "footy_5b3df6cc7493",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Chelsea FC",
@@ -367,7 +374,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_338d98d726b7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -405,7 +413,8 @@
           "venue": "Stadium of Light",
           "matchId": "footy_e5434cfc0251",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -441,7 +450,8 @@
           "venue": "American Express Stadium",
           "matchId": "footy_de8f7b459bb5",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal",
@@ -475,7 +485,8 @@
           "venue": "American Express Stadium, Falmer",
           "matchId": "footy_4b7b4d46aecf",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Leeds United FC",
@@ -513,7 +524,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_de2b62cce9c3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -551,7 +563,8 @@
           "venue": "The City Ground",
           "matchId": "footy_db640982a4a1",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Everton FC",
@@ -589,7 +602,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_1e687960579b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -627,7 +641,8 @@
           "venue": "Anfield",
           "matchId": "footy_775d38b756c5",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Hull City AFC",
@@ -665,7 +680,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_eaca5d9a2c3e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -703,7 +719,8 @@
           "venue": "St. James' Park",
           "matchId": "footy_c37276de968b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Manchester City FC",
@@ -741,7 +758,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_f1d43f044a8d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -779,7 +797,8 @@
           "venue": "Gtech Community Stadium",
           "matchId": "footy_fcfe1a707a9f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -817,7 +836,8 @@
           "venue": "Tottenham Hotspur Stadium",
           "matchId": "footy_12719cecbc9c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "AFC Bournemouth",
@@ -855,7 +875,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_e2fbc7ac730e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Manchester United FC",
@@ -893,7 +914,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_f8cd42a14544",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -931,7 +953,8 @@
           "venue": "Selhurst Park",
           "matchId": "footy_8aec9afb0622",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -969,7 +992,8 @@
           "venue": "Craven Cottage",
           "matchId": "footy_372f9c98907a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Ipswich Town FC",
@@ -1007,7 +1031,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_cc2f1cbb220c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Brentford FC",
@@ -1045,7 +1070,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_5502ac6f7335",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1083,7 +1109,8 @@
           "venue": "MKM Stadium",
           "matchId": "footy_7c8d394d087f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Newcastle United FC",
@@ -1121,7 +1148,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_6314e9da2b0c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1159,7 +1187,8 @@
           "venue": "Etihad Stadium",
           "matchId": "footy_a1c6d7043170",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Liverpool FC",
@@ -1197,7 +1226,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_ac01d8fd9fcf",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1235,7 +1265,8 @@
           "venue": "Portman Road",
           "matchId": "footy_7245e74fda4c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Fulham FC",
@@ -1273,7 +1304,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_72ff2e385bdb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1311,7 +1343,8 @@
           "venue": "Old Trafford",
           "matchId": "footy_d8cc7963d3a2",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Crystal Palace FC",
@@ -1349,7 +1382,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_484f5e302307",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1387,7 +1421,8 @@
           "venue": "Stamford Bridge",
           "matchId": "footy_562fd9ea4e7a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Sunderland AFC",
@@ -1425,7 +1460,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_47e9ca2cf328",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1463,7 +1499,8 @@
           "venue": "Coventry Building Society Arena",
           "matchId": "footy_7bf4e83cd821",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Aston Villa FC",
@@ -1501,7 +1538,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_67ba025a9319",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1539,7 +1577,8 @@
           "venue": "Vitality Stadium",
           "matchId": "footy_6f4960192ccd",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Tottenham Hotspur FC",
@@ -1577,7 +1616,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_532c5a14344e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1615,7 +1655,8 @@
           "venue": "Elland Road",
           "matchId": "footy_40f840a3862f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Nottingham Forest FC",
@@ -1653,7 +1694,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_dd887e014368",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Arsenal FC",
@@ -1691,7 +1733,8 @@
           "venue": "Hill Dickinson Stadium",
           "matchId": "footy_f809314e3194",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Brighton & Hove Albion FC",
@@ -1727,7 +1770,8 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_9b1299311e68",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Brighton and Hove Albion",
@@ -1761,7 +1805,8 @@
           "venue": "Emirates Stadium, London",
           "matchId": "footy_16b145f30e40",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         }
       ],
       "notes": [
@@ -1774,9 +1819,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/81.png",
@@ -1825,7 +1870,8 @@
           "season": "2026",
           "sourceDetail": "team-upcoming",
           "status": "NS",
-          "venue": "Spotify Camp Nou"
+          "venue": "Spotify Camp Nou",
+          "matchNote": null
         },
         {
           "away": "Barcelona",
@@ -1861,7 +1907,8 @@
           "venue": "St Andrew's @ Knighthead Park",
           "matchId": "footy_81740d1206e3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Athletic Club",
@@ -1895,7 +1942,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_c9a3f7a08c9a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -1911,15 +1959,15 @@
           "priority": "2",
           "round": "2",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baac3",
             "football-data.org": "564642"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -1931,7 +1979,8 @@
           "venue": "Elche, Elche",
           "matchId": "footy_57d0c2e5e6c3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Athletic Club",
@@ -1964,7 +2013,8 @@
           "venue": "",
           "matchId": "footy_0c88e0019fd1",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Rayo Vallecano",
@@ -1998,7 +2048,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_e0ee35091aee",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Rayo Vallecano de Madrid",
@@ -2031,7 +2082,8 @@
           "venue": "",
           "matchId": "footy_8fc604892c2e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2047,15 +2099,15 @@
           "priority": "2",
           "round": "4",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baac5",
             "football-data.org": "564659"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2067,7 +2119,8 @@
           "venue": "Valencia, Valencia",
           "matchId": "footy_a1e0bdafa15d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2101,7 +2154,8 @@
           "venue": "Valencia, Valencia",
           "matchId": "footy_72a8654283d6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2134,7 +2188,8 @@
           "venue": "",
           "matchId": "footy_a7ac6d0d7d69",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Racing de Santander",
@@ -2168,7 +2223,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_aeb44f1ace1f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Racing Club de Santander",
@@ -2201,7 +2257,8 @@
           "venue": "",
           "matchId": "footy_76fb319e0bc6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2217,15 +2274,15 @@
           "priority": "2",
           "round": "7",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baac8",
             "football-data.org": "564690"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2237,7 +2294,8 @@
           "venue": "Sevilla, Sevilla",
           "matchId": "footy_1548b5fb0796",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Getafe CF",
@@ -2253,15 +2311,15 @@
           "priority": "2",
           "round": "8",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baac9",
             "football-data.org": "564700"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2273,7 +2331,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_d41e6d566583",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2307,7 +2366,8 @@
           "venue": "Sevilla, Sevilla",
           "matchId": "footy_f730c2c13125",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2340,7 +2400,8 @@
           "venue": "",
           "matchId": "footy_1ba74c6488f3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Madrid CF",
@@ -2356,15 +2417,15 @@
           "priority": "2",
           "round": "10",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baacb",
             "football-data.org": "564723"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2376,7 +2437,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_95c5ec8b1d4d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Alavés",
@@ -2410,7 +2472,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_2d93fa416016",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Deportivo Alavés",
@@ -2443,7 +2506,8 @@
           "venue": "",
           "matchId": "footy_c1e303ae400b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2477,7 +2541,8 @@
           "venue": "Madrid, Madrid",
           "matchId": "footy_2d3258402841",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2510,7 +2575,8 @@
           "venue": "",
           "matchId": "footy_e459203932f7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Villarreal CF",
@@ -2526,15 +2592,15 @@
           "priority": "2",
           "round": "13",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baace",
             "football-data.org": "564749"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2546,7 +2612,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_b1afd3ced3ef",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2580,7 +2647,8 @@
           "venue": "La Coruña, La Coruña",
           "matchId": "footy_2400b52f881e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2613,7 +2681,8 @@
           "venue": "",
           "matchId": "footy_cac5a3e930ae",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Celta de Vigo",
@@ -2647,7 +2716,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_bf0e92db5fd1",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "RC Celta de Vigo",
@@ -2680,7 +2750,8 @@
           "venue": "",
           "matchId": "footy_4eb7bc3d5198",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2696,15 +2767,15 @@
           "priority": "2",
           "round": "16",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baad1",
             "football-data.org": "564779"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2716,7 +2787,8 @@
           "venue": "Málaga, Málaga",
           "matchId": "footy_80422df3842f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Sociedad",
@@ -2750,7 +2822,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_6a3f72de0744",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Sociedad de Fútbol",
@@ -2783,7 +2856,8 @@
           "venue": "",
           "matchId": "footy_f50ef9b4088d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2817,7 +2891,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_52a387e4fc9d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2850,7 +2925,8 @@
           "venue": "",
           "matchId": "footy_97059daaa2cb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2884,7 +2960,8 @@
           "venue": "Pamplona, Pamplona",
           "matchId": "footy_0a2cc332e43f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2917,7 +2994,8 @@
           "venue": "",
           "matchId": "footy_12e080bbf8c6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Elche CF",
@@ -2933,15 +3011,15 @@
           "priority": "2",
           "round": "20",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baad5",
             "football-data.org": "564819"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -2953,7 +3031,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_e914faac49f7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -2987,7 +3066,8 @@
           "venue": "Vitoria-Gasteiz, Vitoria-Gasteiz",
           "matchId": "footy_e8f69cd442d0",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3020,7 +3100,8 @@
           "venue": "",
           "matchId": "footy_f1f05095e89f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Valencia CF",
@@ -3036,15 +3117,15 @@
           "priority": "2",
           "round": "22",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baad7",
             "football-data.org": "564844"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3056,7 +3137,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_edcab34e15ab",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Atlético Madrid",
@@ -3090,7 +3172,8 @@
           "venue": "Spotify Camp Nou",
           "matchId": "footy_a5b59cc4e61f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T13:33:58.404Z"
+          "lastSeen": "2026-07-24T13:33:58.404Z",
+          "matchNote": null
         },
         {
           "away": "Atlético de Madrid",
@@ -3124,7 +3207,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_89ebd636b9f2",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Club Atlético de Madrid",
@@ -3157,7 +3241,8 @@
           "venue": "",
           "matchId": "footy_206cec2497ed",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3173,15 +3258,15 @@
           "priority": "2",
           "round": "24",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baad9",
             "football-data.org": "564861"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3193,7 +3278,8 @@
           "venue": "Villarreal, Villarreal",
           "matchId": "footy_38de849f857e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Levante",
@@ -3227,7 +3313,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_6be9b1cdf37a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Levante UD",
@@ -3260,7 +3347,8 @@
           "venue": "",
           "matchId": "footy_7dce92199a4b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3276,15 +3364,15 @@
           "priority": "2",
           "round": "26",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baadb",
             "football-data.org": "564884"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3296,7 +3384,8 @@
           "venue": "Bilbao, Bilbao",
           "matchId": "footy_6ebada99ec79",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Betis",
@@ -3330,7 +3419,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_efb70eaec446",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Real Betis Balompié",
@@ -3363,7 +3453,8 @@
           "venue": "",
           "matchId": "footy_765f30e45388",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Deportivo de A Coruña",
@@ -3397,7 +3488,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_d1117943fffe",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "RC Deportivo La Coruña",
@@ -3430,7 +3522,8 @@
           "venue": "",
           "matchId": "footy_de53901fd125",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3464,7 +3557,8 @@
           "venue": "Madrid, Madrid",
           "matchId": "footy_efb1278c3955",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3497,7 +3591,8 @@
           "venue": "",
           "matchId": "footy_31fa151419b6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Sevilla FC",
@@ -3513,15 +3608,15 @@
           "priority": "2",
           "round": "30",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baadf",
             "football-data.org": "564919"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3533,7 +3628,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_7f31045cacfb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3567,7 +3663,8 @@
           "venue": "Santander, Santander",
           "matchId": "footy_17ea25847a05",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3600,7 +3697,8 @@
           "venue": "",
           "matchId": "footy_b42ca2a0cb98",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Espanyol",
@@ -3634,7 +3732,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_561fc5f4cd12",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "RCD Espanyol de Barcelona",
@@ -3667,7 +3766,8 @@
           "venue": "",
           "matchId": "footy_2259478f23c8",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3701,7 +3801,8 @@
           "venue": "Vigo, Vigo",
           "matchId": "footy_aa256d7b5ac6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3734,7 +3835,8 @@
           "venue": "",
           "matchId": "footy_4285a763d411",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Osasuna",
@@ -3768,7 +3870,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_0d8be2301e29",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "CA Osasuna",
@@ -3801,7 +3904,8 @@
           "venue": "",
           "matchId": "footy_beaa3d2213fc",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3817,15 +3921,15 @@
           "priority": "2",
           "round": "35",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baae4",
             "football-data.org": "564975"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3837,7 +3941,8 @@
           "venue": "Madrid, Madrid",
           "matchId": "footy_dcf49c939538",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3871,7 +3976,8 @@
           "venue": "San Sebastián, San Sebastián",
           "matchId": "footy_e66ec65bbf9d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3904,7 +4010,8 @@
           "venue": "",
           "matchId": "footy_61fb817b021f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Málaga CF",
@@ -3920,15 +4027,15 @@
           "priority": "2",
           "round": "37",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baae6",
             "football-data.org": "564989"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3940,7 +4047,8 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_84c339af8d48",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Barcelona",
@@ -3956,15 +4064,15 @@
           "priority": "2",
           "round": "38",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baae7",
             "football-data.org": "565006"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -3976,7 +4084,8 @@
           "venue": "Getafe, Getafe",
           "matchId": "footy_e6f25184c25b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         }
       ],
       "notes": [
@@ -3988,9 +4097,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "updated",
       "team": {
         "badge": "https://crests.football-data.org/404.png",
@@ -4039,7 +4148,8 @@
           "season": "2026",
           "sourceDetail": "team-upcoming",
           "status": "NS",
-          "venue": "Raymond James Stadium"
+          "venue": "Raymond James Stadium",
+          "matchNote": null
         },
         {
           "away": "Wrexham",
@@ -4055,12 +4165,13 @@
           "priority": "3",
           "round": "2",
           "season": "2026",
-          "source": "TheSportsDB",
+          "source": "TheSportsDB + Footy Matches",
           "sourceIds": {
             "TheSportsDB": "2529347"
           },
           "sources": [
-            "TheSportsDB"
+            "TheSportsDB",
+            "Footy Matches"
           ],
           "sourceDetail": "team-upcoming",
           "status": "NS",
@@ -4070,7 +4181,10 @@
           "time": "23:30:00",
           "timestamp": "2026-07-29T23:30:00",
           "venue": "Yankee Stadium",
-          "matchId": "footy_5359dd531f72"
+          "matchId": "footy_5359dd531f72",
+          "isRegistryFixture": true,
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham",
@@ -4104,7 +4218,8 @@
           "venue": "Riverside Stadium, Middlesbrough",
           "matchId": "footy_01241be81c28",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4140,7 +4255,8 @@
           "venue": "Cardiff City Stadium, Cardiff",
           "matchId": "footy_e2ad01c9d243",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Watford FC",
@@ -4176,7 +4292,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_831108605d7c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Birmingham City FC",
@@ -4212,7 +4329,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_97ce389927cc",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4248,7 +4366,8 @@
           "venue": "The Den, London",
           "matchId": "footy_be40a774c3fe",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4284,7 +4403,8 @@
           "venue": "Swansea.com Stadium, Swansea",
           "matchId": "footy_1c02c9a7294f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Burnley FC",
@@ -4320,7 +4440,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_55de26f98aac",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4356,7 +4477,8 @@
           "venue": "London Stadium, London",
           "matchId": "footy_38976f33b59c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Southampton FC",
@@ -4392,7 +4514,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_a60a69651dc3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4428,7 +4551,8 @@
           "venue": "Pride Park Stadium, Derby",
           "matchId": "footy_279354acac55",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "West Bromwich Albion FC",
@@ -4464,7 +4588,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_41a84b30c80f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Preston North End FC",
@@ -4500,7 +4625,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_7cd0704036a6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4536,7 +4662,8 @@
           "venue": "Ewood Park, Blackburn",
           "matchId": "footy_97abb7605e23",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4572,7 +4699,8 @@
           "venue": "Bramall Lane, Sheffield",
           "matchId": "footy_98677653b3c9",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Middlesbrough FC",
@@ -4608,7 +4736,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_3f4fb5fa85d9",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wolverhampton Wanderers FC",
@@ -4644,7 +4773,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_7738e0cb65f7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4680,7 +4810,8 @@
           "venue": "LNER Stadium, Lincoln",
           "matchId": "footy_8c2b52394d77",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4716,7 +4847,8 @@
           "venue": "Ashton Gate Stadium, Bristol",
           "matchId": "footy_0dfb7c3bf311",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Portsmouth FC",
@@ -4752,7 +4884,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_3004a9b6303f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4788,7 +4921,8 @@
           "venue": "Carrow Road, Norwich",
           "matchId": "footy_07c41851fdeb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlton Athletic FC",
@@ -4824,7 +4958,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_4889e94627e9",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4860,7 +4995,8 @@
           "venue": "Toughsheet Community Stadium, Bolton",
           "matchId": "footy_c4f796ff681c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Queens Park Rangers FC",
@@ -4896,7 +5032,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_c7ba09dfc5ab",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -4932,7 +5069,8 @@
           "venue": "bet365 Stadium, Stoke",
           "matchId": "footy_b03def64967d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Blackburn Rovers FC",
@@ -4968,7 +5106,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_fbce91d39eea",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Bolton Wanderers FC",
@@ -5004,7 +5143,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_91f7743e3786",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5040,7 +5180,8 @@
           "venue": "Deepdale, Preston",
           "matchId": "footy_f4dec7833665",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Sheffield United FC",
@@ -5076,7 +5217,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_485b97463cfb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5112,7 +5254,8 @@
           "venue": "Riverside Stadium, Middlesbrough",
           "matchId": "footy_6bc4a5d45eba",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5148,7 +5291,8 @@
           "venue": "Molineux Stadium, Wolverhampton",
           "matchId": "footy_0994f5c12a17",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Lincoln City FC",
@@ -5184,7 +5328,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_78a364a0b606",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "West Ham United FC",
@@ -5220,7 +5365,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_edff4cf7a361",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5256,7 +5402,8 @@
           "venue": "The Hawthorns, West Bromwich",
           "matchId": "footy_11dcffdf9b04",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5292,7 +5439,8 @@
           "venue": "St. Mary's Stadium, Southampton",
           "matchId": "footy_78dba926a105",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Derby County FC",
@@ -5328,7 +5476,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_a054c81fd918",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5364,7 +5513,8 @@
           "venue": "Vicarage Road, Watford",
           "matchId": "footy_45ba673f6bb7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Cardiff City FC",
@@ -5400,7 +5550,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_65b220f2f531",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5436,7 +5587,8 @@
           "venue": "Fratton Park, Portsmouth",
           "matchId": "footy_78d28319db91",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Norwich City FC",
@@ -5472,7 +5624,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_a0c89de198b9",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Stoke City FC",
@@ -5508,7 +5661,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_fa85521b976d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5544,7 +5698,8 @@
           "venue": "MATRADE Loftus Road, London",
           "matchId": "footy_58281a364fde",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5580,7 +5735,8 @@
           "venue": "Turf Moor, Burnley",
           "matchId": "footy_97e0a6ece260",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Swansea City AFC",
@@ -5616,7 +5772,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_95eb0255777f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5652,7 +5809,8 @@
           "venue": "St. Andrew's @ Knighthead Park, Birmingham",
           "matchId": "footy_5c7c4c61f06e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Millwall FC",
@@ -5688,7 +5846,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_59659113e7e7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Wrexham AFC",
@@ -5724,7 +5883,8 @@
           "venue": "The Valley, London",
           "matchId": "footy_1280f00010b4",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Bristol City FC",
@@ -5740,15 +5900,15 @@
           "priority": "3",
           "round": "46",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + iCalendar",
+          "source": "football-data.org + iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a3d100c54aa884dbf1b575e",
             "football-data.org": "562307"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches",
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
@@ -5760,7 +5920,8 @@
           "venue": "Racecourse Ground, Wrexham",
           "matchId": "footy_e02bbe6d1567",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         }
       ],
       "notes": [
@@ -5772,9 +5933,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -5793,9 +5954,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "no-fixtures",
       "team": {
         "badge": "",
@@ -5814,9 +5975,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -5855,7 +6016,7 @@
           "teamId": "6",
           "teamName": "Charlotte FC",
           "time": "0:15:00",
-          "timestamp": "2026-07-23T0:15:00",
+          "timestamp": "2026-07-23T00:15:00",
           "matchId": "footy_a77544dabd9d",
           "leagueId": "",
           "round": "",
@@ -5983,7 +6144,8 @@
           "venue": "Soldier Field, Chicago, IL",
           "matchId": "footy_3c74ed3225b3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Pumas",
@@ -6017,7 +6179,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_556fbfa76e31",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Atlas FC",
@@ -6051,7 +6214,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_3f4f49313eaf",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Club de Fútbol Pachuca",
@@ -6085,7 +6249,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_5a181aba0a12",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Columbus Crew",
@@ -6119,7 +6284,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_2c901ed31b4f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6153,7 +6319,8 @@
           "venue": "BMO Field, Toronto, ON",
           "matchId": "footy_4dcc0a1cf9dc",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "D.C. United",
@@ -6187,7 +6354,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_680f7b1e8a4e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6221,7 +6389,8 @@
           "venue": "Mercedes-Benz Stadium, Atlanta, GA",
           "matchId": "footy_357b5741dbd5",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Houston Dynamo FC",
@@ -6255,7 +6424,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_44e5d809b7cd",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6289,7 +6459,8 @@
           "venue": "Stade Saputo, Montréal, QC",
           "matchId": "footy_4f591f675d38",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6323,7 +6494,8 @@
           "venue": "TQL Stadium, Cincinnati, OH",
           "matchId": "footy_5ec9211d04a6",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6357,7 +6529,8 @@
           "venue": "Audi Field, Washington D.C.",
           "matchId": "footy_f85fbafe2c4a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Chicago Fire FC",
@@ -6391,7 +6564,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_044dbcb34c33",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "FC Dallas",
@@ -6425,7 +6599,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_534ff7be17cf",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6459,7 +6634,8 @@
           "venue": "ScottsMiracle-Gro Field, Columbus, OH",
           "matchId": "footy_7b3b06d1cca1",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6493,7 +6669,8 @@
           "venue": "Subaru Park, Chester, PA",
           "matchId": "footy_1941207dafc3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6527,7 +6704,8 @@
           "venue": "Providence Park, Portland, OR",
           "matchId": "footy_55f0a4d5dacf",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "CF Montreal",
@@ -6561,7 +6739,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_aa6a0a5ecc31",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Orlando City",
@@ -6595,7 +6774,8 @@
           "venue": "Bank of America Stadium, Charlotte, NC",
           "matchId": "footy_c1e9af00dc98",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -6632,14 +6812,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 20 iCalendar fixtures from calendar feed."
+        "Loaded 20 iCalendar fixtures from calendar feed.",
+        "Preserved 1 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-07-26T11:38:57.762Z",
-      "updatedAt": "2026-07-26T11:38:57.762Z",
-      "previousUpdatedAt": "2026-07-24T13:51:17.838Z",
+      "attemptedAt": "2026-07-26T17:57:35.073Z",
+      "updatedAt": "2026-07-26T17:57:35.073Z",
+      "previousUpdatedAt": "2026-07-26T11:38:57.762Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -6662,10 +6843,10 @@
           "homeBadge": "",
           "id": "footy_7ae1228d436d",
           "isRegistryFixture": true,
-          "isHome": false,
+          "isHome": true,
           "lastSeen": "2026-07-22T20:17:57.754Z",
           "league": "MLS - Regular Season",
-          "opponent": "Inter Miami CF",
+          "opponent": "Chicago Fire FC",
           "priority": "7",
           "source": "Footy Matches",
           "sourceIds": {
@@ -6676,7 +6857,7 @@
           ],
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
-          "teamName": "Inter Miami",
+          "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-07-22T23:30:00",
           "matchId": "footy_7ae1228d436d",
@@ -6719,7 +6900,11 @@
                 "scorer": "Puso Dithejane"
               }
             ]
-          }
+          },
+          "leagueId": "",
+          "round": "",
+          "season": "",
+          "venue": ""
         },
         {
           "away": "Inter Miami CF",
@@ -6728,13 +6913,12 @@
           "home": "CF Montreal",
           "homeBadge": "",
           "id": "iCalendar:MLS-MAT-0009HX",
-          "leagueId": "",
+          "isRegistryFixture": true,
           "isHome": false,
+          "lastSeen": "2026-07-24T04:22:04.211Z",
           "league": "MLS - Regular Season",
           "opponent": "CF Montreal",
           "priority": "7",
-          "round": "",
-          "season": "",
           "source": "iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "MLS-MAT-0009HX"
@@ -6743,17 +6927,19 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
           "teamName": "Inter Miami",
           "time": "23:30:00",
           "timestamp": "2026-07-25T23:30:00Z",
-          "venue": "Stade Saputo, Montréal, QC",
           "matchId": "footy_75c835845244",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "leagueId": "",
+          "round": "",
+          "season": "",
+          "sourceDetail": "calendar-feed",
+          "status": "Scheduled",
+          "venue": "Stade Saputo, Montréal, QC",
+          "matchNote": null
         },
         {
           "away": "Columbus Crew",
@@ -6787,7 +6973,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_dbb18874b79f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Atlético de San Luis",
@@ -6821,7 +7008,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_a55418ab01c9",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Club de Fútbol Monterrey Rayados, A.C.",
@@ -6855,7 +7043,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_e497e3999b9f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Club León",
@@ -6889,7 +7078,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_099d775806b7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -6923,7 +7113,8 @@
           "venue": "GEODIS Park, Nashville, TN",
           "matchId": "footy_4f23955b07ad",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -6957,7 +7148,8 @@
           "venue": "Subaru Park, Chester, PA",
           "matchId": "footy_9f09e3550e00",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Toronto FC",
@@ -6991,7 +7183,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_d334d69bffb7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "CF Montreal",
@@ -7025,7 +7218,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_7b035a08e65e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Atlanta United",
@@ -7059,7 +7253,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_4c2982ce6ce0",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -7093,7 +7288,8 @@
           "venue": "Soldier Field, Chicago, IL",
           "matchId": "footy_c0fb8d3eca3c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Nashville SC",
@@ -7127,7 +7323,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_178babb52200",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "TBC Away",
@@ -7161,7 +7358,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_16cef9c9ede4",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "San Diego FC",
@@ -7195,7 +7393,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_46c43b6859a7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -7229,7 +7428,8 @@
           "venue": "ScottsMiracle-Gro Field, Columbus, OH",
           "matchId": "footy_49588f1fa817",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "D.C. United",
@@ -7263,7 +7463,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_530471365d06",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "New York City FC",
@@ -7297,7 +7498,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_cd5a9e4aff42",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -7331,7 +7533,8 @@
           "venue": "Mercedes-Benz Stadium, Atlanta, GA",
           "matchId": "footy_bfdd2c40b485",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -7365,7 +7568,8 @@
           "venue": "Sports Illustrated Stadium, Harrison, NJ",
           "matchId": "footy_3df128b63f2b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "FC Cincinnati",
@@ -7399,7 +7603,8 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_627ae6fc215e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Inter Miami CF",
@@ -7433,7 +7638,8 @@
           "venue": "Gillette Stadium, Foxborough, MA",
           "matchId": "footy_15d1c3b9797d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         },
         {
           "away": "Charlotte FC",
@@ -7467,14 +7673,14 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_a344cfa9dd73",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T13:33:58.404Z"
+          "lastSeen": "2026-07-26T11:38:57.762Z",
+          "matchNote": null
         }
       ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 21 iCalendar fixtures from calendar feed.",
-        "Preserved 2 registered fixtures that were not returned by providers this run."
+        "Loaded 21 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     }

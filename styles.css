@@ -733,20 +733,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: block;
 }
 
-.ranking-toolbar {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: space-between;
-  margin: 0 0 18px;
-}
-
-.ranking-mode-toggle,
-.ranking-value-toggle {
-  width: auto;
-}
-
 .ranking-list {
   display: grid;
   gap: 10px;
@@ -803,20 +789,56 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-width: 0;
 }
 
-.ranking-item-main small,
-.ranking-rating {
+.ranking-item-main small {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 
-.ranking-rating {
-  justify-self: end;
+.ranking-spacer {
+  min-width: 48px;
 }
 
 .ranking-warning {
   margin: 0 0 8px;
+}
+
+.ranking-filters {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px var(--shadow);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: -4px 0 18px;
+  padding: 14px;
+}
+
+.ranking-mode-toggle {
+  width: auto;
+}
+
+.ranking-checkbox-control {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 10px;
+  white-space: nowrap;
+}
+
+.ranking-checkbox-control input {
+  accent-color: var(--track);
+  height: 18px;
+  width: 18px;
 }
 
 .ranking-drag-handle {
@@ -870,12 +892,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   color: var(--ink);
   cursor: pointer;
-  display: grid;
+  align-items: center;
+  display: flex;
   font: inherit;
   gap: 8px;
+  justify-content: center;
   min-height: 132px;
   padding: 18px;
-  text-align: left;
+  text-align: center;
 }
 
 .ranking-battle-option:hover,
@@ -888,14 +912,6 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-battle-option strong {
   font-size: clamp(1.1rem, 3vw, 1.45rem);
   line-height: 1.15;
-}
-
-.ranking-battle-option span {
-  align-self: end;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-transform: uppercase;
 }
 
 @media (max-width: 640px) {

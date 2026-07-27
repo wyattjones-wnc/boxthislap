@@ -128,8 +128,10 @@ import {
   rankingPanels,
   rankingAddButton,
   rankingCompareButton,
+  rankingFilterToggle,
+  rankingFilters,
+  rankingMoreDataToggle,
   rankingViewModeButtons,
-  rankingValueModeButtons,
   rankingItemDialog,
   rankingItemForm,
   rankingItemDialogTitle,
@@ -180,7 +182,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607270001";
+} from "./modules/domRefs.js?v=202607270002";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607260001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -212,7 +214,8 @@ let shouldShowNextFilters = false;
 let activeNextItemId = "";
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
-let activeRankingValueMode = "rank";
+let shouldShowRankingFilters = false;
+let shouldShowRankingMoreData = false;
 let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
@@ -2783,7 +2786,7 @@ function renderRankingList(kind) {
 function renderRankingItem(kind, item) {
   const isManualView = activeRankingViewMode === "manual";
   const draggable = isCurrentManagerAdmin() && isManualView ? ` draggable="true"` : "";
-  const meta = getRankingItemMeta(item);
+  const meta = shouldShowRankingMoreData ? getRankingItemMeta(item) : "";
 
   return `
     <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
@@ -2792,7 +2795,7 @@ function renderRankingItem(kind, item) {
         <strong>${escapeHtml(item.name)}</strong>
         ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
       </span>
-      ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-rating">${escapeHtml(String(Math.round(item.rating || RANKING_BASE_RATING)))}</span>`}
+      ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
     </article>
   `;
 }
@@ -2916,25 +2919,13 @@ function getRankingEloForItem(kind, itemId) {
 }
 
 function getRankingItemMeta(item) {
-  if (activeRankingValueMode === "rating") {
-    return `${Math.round(item.rating || RANKING_BASE_RATING)} Elo · ${item.wins || 0}-${item.losses || 0}`;
-  }
-
   const diff = Number(item.rank || 0) - Number(item.calculatedRank || item.rank || 0);
+  const diffLabel = diff ? `${diff > 0 ? "+" : ""}${diff} vs manual` : "No change";
+  const rankLabel = activeRankingViewMode === "calculated"
+    ? `Manual #${item.rank}`
+    : `Calculated #${item.calculatedRank || item.rank}`;
 
-  if (activeRankingValueMode === "diff") {
-    if (!diff) {
-      return "No change";
-    }
-
-    return `${diff > 0 ? "+" : ""}${diff} vs manual`;
-  }
-
-  if (activeRankingViewMode === "calculated") {
-    return `Manual #${item.rank}`;
-  }
-
-  return `Elo #${item.calculatedRank || item.rank}`;
+  return `${Math.round(item.rating || RANKING_BASE_RATING)} Elo · ${item.wins || 0}-${item.losses || 0} · ${rankLabel} · ${diffLabel}`;
 }
 
 function getRankingType(kind = activeRankingKind) {
@@ -2942,14 +2933,21 @@ function getRankingType(kind = activeRankingKind) {
 }
 
 function syncRankingControls() {
+  if (rankingFilters) {
+    rankingFilters.hidden = !shouldShowRankingFilters;
+  }
+
+  if (rankingFilterToggle) {
+    rankingFilterToggle.setAttribute("aria-expanded", String(shouldShowRankingFilters));
+    rankingFilterToggle.classList.toggle("is-active", shouldShowRankingFilters);
+  }
+
+  if (rankingMoreDataToggle) {
+    rankingMoreDataToggle.checked = shouldShowRankingMoreData;
+  }
+
   rankingViewModeButtons?.forEach((button) => {
     const isActive = button.dataset.rankingViewMode === activeRankingViewMode;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-
-  rankingValueModeButtons?.forEach((button) => {
-    const isActive = button.dataset.rankingValueMode === activeRankingValueMode;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
@@ -3189,7 +3187,6 @@ function renderNextRankingBattle(kind = activeRankingKind) {
   rankingBattleOptions.innerHTML = [pair.itemA, pair.itemB].map((item) => `
     <button class="ranking-battle-option" type="button" data-ranking-battle-choice="${escapeHtml(item.id)}">
       <strong>${escapeHtml(item.name)}</strong>
-      <span>#${escapeHtml(String(item.rank))} manual · ${escapeHtml(String(Math.round(item.rating || RANKING_BASE_RATING)))} Elo</span>
     </button>
   `).join("");
 }
@@ -5601,6 +5598,16 @@ rankingCompareButton?.addEventListener("click", () => {
   openRankingBattleDialog(activeRankingKind);
 });
 
+rankingFilterToggle?.addEventListener("click", () => {
+  shouldShowRankingFilters = !shouldShowRankingFilters;
+  syncRankingControls();
+});
+
+rankingMoreDataToggle?.addEventListener("change", () => {
+  shouldShowRankingMoreData = Boolean(rankingMoreDataToggle.checked);
+  renderRankingLists();
+});
+
 rankingViewModeButtons?.forEach((button) => {
   button.addEventListener("click", () => {
     const mode = button.dataset.rankingViewMode;
@@ -5610,19 +5617,6 @@ rankingViewModeButtons?.forEach((button) => {
     }
 
     activeRankingViewMode = mode;
-    renderRankingLists();
-  });
-});
-
-rankingValueModeButtons?.forEach((button) => {
-  button.addEventListener("click", () => {
-    const mode = button.dataset.rankingValueMode;
-
-    if (!["rank", "rating", "diff"].includes(mode)) {
-      return;
-    }
-
-    activeRankingValueMode = mode;
     renderRankingLists();
   });
 });

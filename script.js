@@ -2557,12 +2557,11 @@ function renderRankingsPage() {
     return;
   }
 
-  syncRankingTabs();
-
   if (!isCurrentManagerAdmin()) {
-    renderRankingAdminMessage("Rankings are available for admin accounts.");
-    return;
+    activeRankingViewMode = "calculated";
   }
+
+  syncRankingTabs();
 
   ensureRankingsLoaded();
   renderRankingLists();
@@ -2818,8 +2817,9 @@ function renderRankingList(kind) {
 }
 
 function renderRankingItem(kind, item) {
-  const isManualView = activeRankingViewMode === "manual";
-  const draggable = isCurrentManagerAdmin() && isManualView ? ` draggable="true"` : "";
+  const isAdmin = isCurrentManagerAdmin();
+  const isManualView = isAdmin && activeRankingViewMode === "manual";
+  const draggable = isManualView ? ` draggable="true"` : "";
   const meta = shouldShowRankingMoreData ? getRankingItemMetaWithSeed(item) : "";
 
   return `
@@ -2890,11 +2890,50 @@ function getRankingRows(kind = activeRankingKind) {
 }
 
 function getDisplayedRankingRows(kind = activeRankingKind) {
+  if (!isCurrentManagerAdmin()) {
+    return getRandomizedRankingRows(kind);
+  }
+
   if (activeRankingViewMode === "calculated") {
     return getCalculatedRankingRows(kind);
   }
 
   return getManualRankingRowsWithElo(kind);
+}
+
+function getRandomizedRankingRows(kind = activeRankingKind) {
+  const rows = getCalculatedRankingRows(kind);
+  const randomOrder = getRankingRandomOrder(kind, rows);
+
+  return rows
+    .map((item) => ({
+      ...item,
+      displayRank: randomOrder.get(item.id) || item.displayRank || item.rank,
+    }))
+    .sort((first, second) =>
+      Number(first.displayRank || 0) - Number(second.displayRank || 0) ||
+      String(first.id).localeCompare(String(second.id), undefined, { numeric: true })
+    );
+}
+
+function getRankingRandomOrder(kind, rows) {
+  siteData.rankingRandomOrder = siteData.rankingRandomOrder || {};
+  const existing = siteData.rankingRandomOrder[kind] || {};
+  const ids = rows.map((item) => String(item.id));
+  const hasAllIds = ids.every((id) => existing[id]);
+  const hasOnlyCurrentIds = Object.keys(existing).every((id) => ids.includes(id));
+
+  if (hasAllIds && hasOnlyCurrentIds) {
+    return new Map(Object.entries(existing));
+  }
+
+  siteData.rankingRandomOrder[kind] = Object.fromEntries(
+    [...rows]
+      .sort(() => Math.random() - 0.5)
+      .map((item, index) => [String(item.id), index + 1])
+  );
+
+  return new Map(Object.entries(siteData.rankingRandomOrder[kind]));
 }
 
 function getManualRankingRowsWithElo(kind = activeRankingKind) {
@@ -2991,6 +3030,15 @@ function getRankingItemMetaWithSeed(item) {
     ? `Seeded from #${item.seed.seedRank}`
     : "";
 
+  if (!isCurrentManagerAdmin()) {
+    return [
+      `${Math.round(item.rating || RANKING_BASE_RATING)} Elo`,
+      `${item.wins || 0}-${item.losses || 0}`,
+      `Calculated #${item.calculatedRank || item.rank}`,
+      statusLabel,
+    ].filter(Boolean).join(" Â· ");
+  }
+
   return [
     `${Math.round(item.rating || RANKING_BASE_RATING)} Elo`,
     `${item.wins || 0}-${item.losses || 0}`,
@@ -3017,6 +3065,8 @@ function getRankingType(kind = activeRankingKind) {
 }
 
 function syncRankingControls() {
+  const isAdmin = isCurrentManagerAdmin();
+
   if (rankingFilters) {
     rankingFilters.hidden = !shouldShowRankingFilters;
   }
@@ -3032,6 +3082,12 @@ function syncRankingControls() {
 
   rankingViewModeButtons?.forEach((button) => {
     const isActive = button.dataset.rankingViewMode === activeRankingViewMode;
+    const container = button.closest(".ranking-mode-toggle");
+
+    if (container) {
+      container.hidden = !isAdmin;
+    }
+
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
@@ -3281,7 +3337,7 @@ function getRankingItemElement(kind, itemId) {
 }
 
 function openRankingBattleDialog(kind = activeRankingKind) {
-  if (!isCurrentManagerAdmin() || !rankingBattleDialog || !RANKING_CONFIG[kind]) {
+  if (!rankingBattleDialog || !RANKING_CONFIG[kind]) {
     return;
   }
 

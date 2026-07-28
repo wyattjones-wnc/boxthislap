@@ -818,7 +818,32 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-mode-toggle {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  padding: 4px;
   width: auto;
+}
+
+.ranking-mode-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  min-height: 36px;
+  padding: 8px 12px;
+}
+
+.ranking-mode-toggle button.is-active {
+  background: var(--accent);
+  color: var(--button-text);
+  box-shadow: 0 8px 18px var(--shadow);
 }
 
 .ranking-checkbox-control {
@@ -1287,7 +1312,20 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .next-item-fields .next-dialog-checkbox {
   align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 0.9rem;
   min-height: 46px;
+  white-space: nowrap;
+}
+
+.next-item-fields .next-dialog-checkbox input {
+  flex: 0 0 auto;
+}
+
+.next-item-fields .next-dialog-checkbox span {
+  min-width: 0;
 }
 
 .next-dialog-checkbox.is-disabled {

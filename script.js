@@ -6444,15 +6444,18 @@ function hideLoginPanel() {
 }
 
 function hydrateManagerSession() {
+  hydrateStoredManagerSession();
+  renderLoginState();
+  renderManagerHub();
+}
+
+function hydrateStoredManagerSession() {
   try {
     const rawSession = localStorage.getItem(MANAGER_SESSION_STORAGE_KEY);
     siteData.managerSession = rawSession ? JSON.parse(rawSession) : null;
   } catch {
     siteData.managerSession = null;
   }
-
-  renderLoginState();
-  renderManagerHub();
 }
 
 function saveManagerSession(session) {
@@ -8737,6 +8740,7 @@ window.addEventListener("popstate", () => {
 });
 
 syncTestScoringUi();
+hydrateStoredManagerSession();
 showPage(window.location.hash.replace("#", "") || "footy");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();

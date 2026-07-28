@@ -7,6 +7,7 @@ export const navGroups = document.querySelectorAll("[data-nav-scope]");
 export const themeToggle = document.querySelector("[data-theme-toggle]");
 export const copyCurrentPageLinkButton = document.querySelector("#copy-current-page-link");
 export const adminOnlyElements = document.querySelectorAll("[data-admin-only]");
+export const loginOnlyElements = document.querySelectorAll("[data-login-only]");
 export const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
 export const loginOpenButton = document.querySelector("#login-open-button");
 export const loginPanel = document.querySelector("#login-panel");

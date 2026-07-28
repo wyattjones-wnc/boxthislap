@@ -35,6 +35,7 @@ import {
   themeToggle,
   copyCurrentPageLinkButton,
   adminOnlyElements,
+  loginOnlyElements,
   testRulesLinks,
   loginOpenButton,
   loginPanel,
@@ -182,8 +183,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607270002";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607260001";
+} from "./modules/domRefs.js?v=202607280001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607280001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -289,6 +290,7 @@ const router = createRouter({
   onStandingsTabShown: () => renderStandingsAwards(),
   pageLinks,
   pages,
+  shouldBlockPage: (pageName) => pageName === "rankings" && !siteData.managerSession,
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -2891,7 +2893,9 @@ function getRankingRows(kind = activeRankingKind) {
 
 function getDisplayedRankingRows(kind = activeRankingKind) {
   if (!isCurrentManagerAdmin()) {
-    return getRandomizedRankingRows(kind);
+    return getCurrentManagerRankingChoices(kind).length
+      ? getCurrentManagerCalculatedRankingRows(kind)
+      : getRandomizedRankingRows(kind);
   }
 
   if (activeRankingViewMode === "calculated") {
@@ -2901,8 +2905,44 @@ function getDisplayedRankingRows(kind = activeRankingKind) {
   return getManualRankingRowsWithElo(kind);
 }
 
+function getCurrentManagerCalculatedRankingRows(kind = activeRankingKind) {
+  const eloMap = getChoiceDerivedRankingEloMap(kind, getCurrentManagerRankingChoices(kind));
+
+  return getRankingRows(kind)
+    .map((item) => {
+      const elo = eloMap.get(String(item.id)) || getSeededRankingEloForItem(getRankingType(kind), item.id);
+      const seed = getRankingSeedForItem(kind, item.id);
+      return {
+        ...item,
+        comparisons: elo.comparisons,
+        losses: elo.losses,
+        rating: elo.rating,
+        seed,
+        wins: elo.wins,
+      };
+    })
+    .sort(compareCalculatedRankingRows)
+    .map((item, index) => ({
+      ...item,
+      calculatedRank: index + 1,
+      displayRank: index + 1,
+    }));
+}
+
 function getRandomizedRankingRows(kind = activeRankingKind) {
-  const rows = getCalculatedRankingRows(kind);
+  const rows = getRankingRows(kind).map((item) => {
+    const elo = getSeededRankingEloForItem(getRankingType(kind), item.id);
+    const seed = getRankingSeedForItem(kind, item.id);
+    return {
+      ...item,
+      calculatedRank: item.rank,
+      comparisons: elo.comparisons,
+      losses: elo.losses,
+      rating: elo.rating,
+      seed,
+      wins: elo.wins,
+    };
+  });
   const randomOrder = getRankingRandomOrder(kind, rows);
 
   return rows
@@ -2934,6 +2974,77 @@ function getRankingRandomOrder(kind, rows) {
   );
 
   return new Map(Object.entries(siteData.rankingRandomOrder[kind]));
+}
+
+function getChoiceDerivedRankingEloMap(kind, choices = []) {
+  const type = getRankingType(kind);
+  const eloMap = new Map(
+    getRankingRows(kind).map((item) => [
+      String(item.id),
+      getSeededRankingEloForItem(type, item.id),
+    ])
+  );
+
+  [...choices]
+    .sort(compareRankingChoicesByTime)
+    .forEach((choice) => applyRankingChoiceToEloMap(choice, eloMap));
+
+  return eloMap;
+}
+
+function compareRankingChoicesByTime(first, second) {
+  const firstTime = Date.parse(first.createdAt || "");
+  const secondTime = Date.parse(second.createdAt || "");
+  const normalizedFirst = Number.isFinite(firstTime) ? firstTime : 0;
+  const normalizedSecond = Number.isFinite(secondTime) ? secondTime : 0;
+
+  return normalizedFirst - normalizedSecond ||
+    String(first.id || "").localeCompare(String(second.id || ""), undefined, { numeric: true });
+}
+
+function applyRankingChoiceToEloMap(choice, eloMap) {
+  const winner = eloMap.get(String(choice.winnerId));
+  const loser = eloMap.get(String(choice.loserId));
+
+  if (!winner || !loser) {
+    return;
+  }
+
+  const expectedWinner = getRankingExpectedScore(winner.rating, loser.rating);
+  const expectedLoser = getRankingExpectedScore(loser.rating, winner.rating);
+  const winnerKFactor = getRankingKFactor(winner);
+  const loserKFactor = getRankingKFactor(loser);
+
+  eloMap.set(String(choice.winnerId), {
+    ...winner,
+    lastChoiceId: choice.id,
+    rating: Math.round(winner.rating + winnerKFactor * (1 - expectedWinner)),
+    updatedAt: choice.createdAt,
+    wins: winner.wins + 1,
+  });
+  eloMap.set(String(choice.loserId), {
+    ...loser,
+    lastChoiceId: choice.id,
+    losses: loser.losses + 1,
+    rating: Math.round(loser.rating + loserKFactor * (0 - expectedLoser)),
+    updatedAt: choice.createdAt,
+  });
+}
+
+function getSeededRankingEloForItem(rankingType, itemId) {
+  const seed = getRankingSeedForItemByType(rankingType, itemId);
+  const rating = Number(seed?.seedRating || RANKING_BASE_RATING);
+
+  return {
+    comparisons: 0,
+    itemId: String(itemId || "").trim(),
+    lastChoiceId: "",
+    losses: 0,
+    rating: Number.isFinite(rating) ? rating : RANKING_BASE_RATING,
+    rankingType,
+    updatedAt: "",
+    wins: 0,
+  };
 }
 
 function getManualRankingRowsWithElo(kind = activeRankingKind) {
@@ -3394,13 +3505,15 @@ function renderNextRankingBattle(kind = activeRankingKind) {
 }
 
 function createRankingBattlePair(kind = activeRankingKind) {
-  const rows = getManualRankingRowsWithElo(kind);
+  const rows = isCurrentManagerAdmin()
+    ? getManualRankingRowsWithElo(kind)
+    : getDisplayedRankingRows(kind);
 
   if (rows.length < 2) {
     return null;
   }
 
-  const comparisonCounts = getRankingComparisonCounts(kind);
+  const comparisonCounts = getRankingComparisonCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
   const sortedRows = [...rows].sort((first, second) => {
     const firstCount = comparisonCounts.get(first.id) || 0;
     const secondCount = comparisonCounts.get(second.id) || 0;
@@ -3428,15 +3541,10 @@ function createRankingBattlePair(kind = activeRankingKind) {
   };
 }
 
-function getRankingComparisonCounts(kind = activeRankingKind) {
-  const type = normalizeLookupName(getRankingType(kind));
+function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
   const counts = new Map();
 
-  (siteData.rankingChoices || []).forEach((choice) => {
-    if (normalizeLookupName(choice.rankingType) !== type) {
-      return;
-    }
-
+  getRankingChoicesForKind(kind, options).forEach((choice) => {
     [choice.itemAId, choice.itemBId, choice.winnerId, choice.loserId].forEach((id) => {
       if (id) {
         counts.set(id, (counts.get(id) || 0) + 1);
@@ -3445,6 +3553,31 @@ function getRankingComparisonCounts(kind = activeRankingKind) {
   });
 
   return counts;
+}
+
+function getRankingChoicesForKind(kind = activeRankingKind, options = {}) {
+  const type = normalizeLookupName(getRankingType(kind));
+  const managerId = getCurrentManagerId();
+
+  return (siteData.rankingChoices || []).filter((choice) => {
+    if (normalizeLookupName(choice.rankingType) !== type) {
+      return false;
+    }
+
+    if (!options.managerScoped) {
+      return true;
+    }
+
+    return managerId && String(choice.managerId || "").trim() === managerId;
+  });
+}
+
+function getCurrentManagerRankingChoices(kind = activeRankingKind) {
+  return getRankingChoicesForKind(kind, { managerScoped: true });
+}
+
+function getCurrentManagerId() {
+  return String(siteData.managerSession?.managerId || "").trim();
 }
 
 function chooseRankingBattleWinner(winnerId) {
@@ -3473,7 +3606,9 @@ function chooseRankingBattleWinner(winnerId) {
   };
 
   siteData.rankingChoices = [...(siteData.rankingChoices || []), choice];
-  applyRankingChoiceToElo(choice);
+  if (isCurrentManagerAdmin()) {
+    applyRankingChoiceToElo(choice);
+  }
   submitRankingPayload({
     action: "saveRankingChoice",
     choice,
@@ -6408,7 +6543,14 @@ function renderLoginState() {
   adminOnlyElements.forEach((element) => {
     element.hidden = !managerMeta?.isAdmin;
   });
+  loginOnlyElements.forEach((element) => {
+    element.hidden = !managerMeta;
+  });
   syncFootyGoalAssistsButton();
+
+  if (!managerMeta && activePageName === "rankings") {
+    showPage("footy", { scrollToTop: true });
+  }
 
   if (!managerMeta?.isAdmin && nationTestScoringToggle?.checked) {
     nationTestScoringToggle.checked = false;
@@ -6418,6 +6560,12 @@ function renderLoginState() {
   if (!managerMeta?.isAdmin && nextEditModeFilter?.checked) {
     nextEditModeFilter.checked = false;
     activeNextItemId = "";
+  }
+
+  if (!managerMeta?.isAdmin) {
+    activeRankingViewMode = "calculated";
+    shouldShowRankingFilters = false;
+    shouldShowRankingMoreData = false;
   }
 
   if (!managerMeta?.isAdmin) {

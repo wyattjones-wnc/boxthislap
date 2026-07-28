@@ -16,6 +16,12 @@ const RANKING_SHEETS = {
   movies: "Movie Ranking",
   tv: "TV Ranking",
 };
+const RANKING_TYPES = {
+  games: "games",
+  mcu: "mcu",
+  movies: "movies",
+  tv: "tv",
+};
 const RANKING_CHOICE_COLUMNS = [
   "ID",
   "Ranking Type",
@@ -35,8 +41,18 @@ const RANKING_ELO_COLUMNS = [
   "Last Choice ID",
   "Updated At",
 ];
+const RANKING_SEED_COLUMNS = [
+  "Ranking Type",
+  "Item ID",
+  "Seed Rank",
+  "Seed Rating",
+  "Seeded At",
+  "Reason",
+];
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
+const RANKING_PROVISIONAL_COMPARISONS = 10;
+const RANKING_PROVISIONAL_K_FACTOR = 64;
 
 function doGet(e) {
   try {
@@ -48,6 +64,10 @@ function doGet(e) {
 
     if (action === "listRankingElo") {
       return webResponse(e, { ok: true, elo: listRankingElo() });
+    }
+
+    if (action === "listRankingSeeds") {
+      return webResponse(e, { ok: true, seeds: listRankingSeeds() });
     }
 
     return webResponse(e, { ok: true, service: "boxthislap-next-data" });
@@ -65,7 +85,7 @@ function doPost(e) {
     }
 
     if (payload.action === "saveRankingItem") {
-      return jsonResponse(saveRankingItem(payload.ranking, payload.sheetName, payload.item || {}));
+      return jsonResponse(saveRankingItem(payload.ranking, payload.sheetName, payload.item || {}, payload.seed || null));
     }
 
     if (payload.action === "saveRankingOrder") {
@@ -180,7 +200,7 @@ function getNextNumericId(rowsById) {
   return String(maxId + 1);
 }
 
-function saveRankingItem(ranking, sheetName, item) {
+function saveRankingItem(ranking, sheetName, item, seed) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
 
@@ -198,8 +218,21 @@ function saveRankingItem(ranking, sheetName, item) {
     const existingRows = rows.filter((row) => row.ID !== rowValues.ID);
     existingRows.splice(rank - 1, 0, rowValues);
     writeRankingRows(context, normalizeRankingOrder(existingRows));
+    const seedResult = seed
+      ? saveRankingSeedWithoutLock({
+        ...seed,
+        "Item ID": rowValues.ID,
+        "Ranking Type": getRankingTypeForKey(ranking),
+        "Seed Rank": rank,
+      })
+      : null;
 
-    return { ok: true, id: rowValues.ID, status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended" };
+    return {
+      ok: true,
+      id: rowValues.ID,
+      seed: seedResult,
+      status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended",
+    };
   } finally {
     lock.releaseLock();
   }
@@ -369,6 +402,11 @@ function compareRankingRows(first, second) {
     String(first.ID || "").localeCompare(String(second.ID || ""), undefined, { numeric: true });
 }
 
+function getRankingTypeForKey(ranking) {
+  const normalizedRanking = String(ranking || "").trim();
+  return RANKING_TYPES[normalizedRanking] || normalizedRanking;
+}
+
 function listRankingChoices() {
   const context = getSimpleTableContext("Ranking Choices", RANKING_CHOICE_COLUMNS, "ID");
   return readSimpleTableRows(context)
@@ -398,6 +436,82 @@ function listRankingElo() {
       Wins: row.Wins,
     }))
     .filter((row) => row["Ranking Type"] && row["Item ID"]);
+}
+
+function listRankingSeeds() {
+  const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      "Item ID": row["Item ID"],
+      Reason: row.Reason,
+      "Ranking Type": row["Ranking Type"],
+      "Seed Rank": row["Seed Rank"],
+      "Seed Rating": row["Seed Rating"],
+      "Seeded At": row["Seeded At"],
+    }))
+    .filter((row) => row["Ranking Type"] && row["Item ID"]);
+}
+
+function saveRankingSeedWithoutLock(seed) {
+  const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+  const rowValues = normalizeRankingSeed(seed);
+
+  if (!rowValues["Ranking Type"] || !rowValues["Item ID"]) {
+    throw new Error("Ranking Type and Item ID are required for Ranking Seeds.");
+  }
+
+  const existingRow = rows.find((row) =>
+    String(row["Ranking Type"] || "").trim().toLowerCase() === String(rowValues["Ranking Type"] || "").trim().toLowerCase() &&
+    String(row["Item ID"] || "").trim() === String(rowValues["Item ID"] || "").trim()
+  );
+
+  if (existingRow && existingRow.rowNumber) {
+    writeSimpleTableCells(context, existingRow.rowNumber, rowValues, RANKING_SEED_COLUMNS);
+    ensureRankingEloSeedRow(rowValues);
+    return { ok: true, itemId: rowValues["Item ID"], status: "updated" };
+  }
+
+  appendSimpleTableRow(context, rowValues, RANKING_SEED_COLUMNS);
+  ensureRankingEloSeedRow(rowValues);
+  return { ok: true, itemId: rowValues["Item ID"], status: "appended" };
+}
+
+function normalizeRankingSeed(seed) {
+  const seedRating = Number(seed["Seed Rating"] || seed.seedRating || RANKING_BASE_RATING);
+  const seedRank = Number(seed["Seed Rank"] || seed.seedRank || "");
+
+  return {
+    "Item ID": String(seed["Item ID"] || seed.itemId || "").trim(),
+    "Ranking Type": String(seed["Ranking Type"] || seed.rankingType || seed.ranking || "").trim(),
+    Reason: String(seed.Reason || seed.reason || "Initial rating from manual placement").trim(),
+    "Seed Rank": Number.isFinite(seedRank) && seedRank > 0 ? seedRank : "",
+    "Seed Rating": Number.isFinite(seedRating) ? Math.round(seedRating) : RANKING_BASE_RATING,
+    "Seeded At": String(seed["Seeded At"] || seed.seededAt || new Date().toISOString()).trim(),
+  };
+}
+
+function ensureRankingEloSeedRow(seed) {
+  const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+  const existingRow = rows.find((row) =>
+    String(row["Ranking Type"] || "").trim().toLowerCase() === String(seed["Ranking Type"] || "").trim().toLowerCase() &&
+    String(row["Item ID"] || "").trim() === String(seed["Item ID"] || "").trim()
+  );
+
+  if (existingRow) {
+    return;
+  }
+
+  appendSimpleTableRow(context, {
+    "Item ID": seed["Item ID"],
+    "Last Choice ID": "",
+    Losses: 0,
+    "Ranking Type": seed["Ranking Type"],
+    Rating: seed["Seed Rating"],
+    "Updated At": seed["Seeded At"],
+    Wins: 0,
+  }, RANKING_ELO_COLUMNS);
 }
 
 function saveRankingChoice(choice) {
@@ -448,11 +562,13 @@ function updateRankingEloRows(choice) {
   const loser = getRankingEloRow(rows, choice["Ranking Type"], choice["Loser ID"]);
   const expectedWinner = getRankingExpectedScore(winner.Rating, loser.Rating);
   const expectedLoser = getRankingExpectedScore(loser.Rating, winner.Rating);
+  const winnerKFactor = getRankingKFactor(winner);
+  const loserKFactor = getRankingKFactor(loser);
   const updatedAt = new Date().toISOString();
   const winnerNext = {
     ...winner,
     "Last Choice ID": choice.ID,
-    Rating: Math.round(winner.Rating + RANKING_ELO_K_FACTOR * (1 - expectedWinner)),
+    Rating: Math.round(winner.Rating + winnerKFactor * (1 - expectedWinner)),
     "Updated At": updatedAt,
     Wins: winner.Wins + 1,
   };
@@ -460,7 +576,7 @@ function updateRankingEloRows(choice) {
     ...loser,
     "Last Choice ID": choice.ID,
     Losses: loser.Losses + 1,
-    Rating: Math.round(loser.Rating + RANKING_ELO_K_FACTOR * (0 - expectedLoser)),
+    Rating: Math.round(loser.Rating + loserKFactor * (0 - expectedLoser)),
     "Updated At": updatedAt,
   };
 
@@ -475,17 +591,31 @@ function getRankingEloRow(rows, rankingType, itemId) {
     String(entry["Ranking Type"] || "").trim().toLowerCase() === String(rankingType || "").trim().toLowerCase() &&
     String(entry["Item ID"] || "").trim() === String(itemId || "").trim()
   );
+  const seed = row ? null : getRankingSeedRow(rankingType, itemId);
+  const wins = Number(row && row.Wins || 0);
+  const losses = Number(row && row.Losses || 0);
 
   return {
+    Comparisons: wins + losses,
     "Item ID": String(itemId || "").trim(),
     "Last Choice ID": String(row && row["Last Choice ID"] || "").trim(),
-    Losses: Number(row && row.Losses || 0),
+    Losses: losses,
     "Ranking Type": String(rankingType || "").trim(),
-    Rating: Number(row && row.Rating || RANKING_BASE_RATING),
+    Rating: Number(row && row.Rating || seed && seed["Seed Rating"] || RANKING_BASE_RATING),
     rowNumber: row && row.rowNumber,
     "Updated At": String(row && row["Updated At"] || "").trim(),
-    Wins: Number(row && row.Wins || 0),
+    Wins: wins,
   };
+}
+
+function getRankingSeedRow(rankingType, itemId) {
+  const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+
+  return rows.find((entry) =>
+    String(entry["Ranking Type"] || "").trim().toLowerCase() === String(rankingType || "").trim().toLowerCase() &&
+    String(entry["Item ID"] || "").trim() === String(itemId || "").trim()
+  ) || null;
 }
 
 function upsertRankingEloRow(context, rowValues) {
@@ -499,6 +629,12 @@ function upsertRankingEloRow(context, rowValues) {
 
 function getRankingExpectedScore(rating, opponentRating) {
   return 1 / (1 + Math.pow(10, (Number(opponentRating) - Number(rating)) / 400));
+}
+
+function getRankingKFactor(row) {
+  return Number(row && row.Comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS
+    ? RANKING_PROVISIONAL_K_FACTOR
+    : RANKING_ELO_K_FACTOR;
 }
 
 function normalizeNextItem(item) {

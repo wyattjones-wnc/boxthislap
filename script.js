@@ -223,6 +223,8 @@ let rankingsLoadPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
 const RANKING_PROVISIONAL_COMPARISONS = 10;
@@ -6575,8 +6577,15 @@ async function updateLoginModeForSelectedManager(options = {}) {
     return;
   }
 
-  loginSubmitButton.disabled = true;
-  setLoginFeedback("Checking manager setup...");
+  const cachedStatus = getCachedManagerAuthStatus(managerId);
+
+  if (cachedStatus && !isManagerAuthStatusExpired(cachedStatus)) {
+    renderLoginMode(cachedStatus);
+    setLoginFeedback("");
+  } else {
+    loginSubmitButton.disabled = true;
+    setLoginFeedback("Checking manager setup...");
+  }
 
   try {
     const response = await submitManagerPortalPayload({
@@ -6601,7 +6610,13 @@ async function updateLoginModeForSelectedManager(options = {}) {
     renderLoginMode(status);
     setLoginFeedback("");
   } catch (error) {
-    setLoginFeedback(error.message, true);
+    if (cachedStatus && !isManagerAuthStatusExpired(cachedStatus)) {
+      console.warn("Unable to refresh manager setup; using cached status.", error);
+      recordDiagnostic("manager auth status refresh failed", error);
+      setLoginFeedback("");
+    } else {
+      setLoginFeedback(error.message, true);
+    }
   } finally {
     loginSubmitButton.disabled = false;
   }
@@ -6680,10 +6695,40 @@ function getCachedManagerAuthStatus(managerId) {
 }
 
 function setCachedManagerAuthStatus(managerId, status) {
+  const statusWithCacheTime = {
+    ...status,
+    cachedAt: Date.now(),
+  };
   siteData.managerAuthStatus = {
     ...(siteData.managerAuthStatus || {}),
-    [String(managerId)]: status,
+    [String(managerId)]: statusWithCacheTime,
   };
+  persistManagerAuthStatusCache();
+}
+
+function isManagerAuthStatusExpired(status) {
+  const cachedAt = Number(status?.cachedAt || 0);
+  return !cachedAt || Date.now() - cachedAt > MANAGER_AUTH_STATUS_CACHE_MS;
+}
+
+function hydrateManagerAuthStatusCache() {
+  try {
+    const rawCache = localStorage.getItem(MANAGER_AUTH_STATUS_STORAGE_KEY);
+    const cache = rawCache ? JSON.parse(rawCache) : {};
+    siteData.managerAuthStatus = Object.fromEntries(
+      Object.entries(cache || {}).filter(([, status]) => !isManagerAuthStatusExpired(status))
+    );
+  } catch {
+    siteData.managerAuthStatus = {};
+  }
+}
+
+function persistManagerAuthStatusCache() {
+  try {
+    localStorage.setItem(MANAGER_AUTH_STATUS_STORAGE_KEY, JSON.stringify(siteData.managerAuthStatus || {}));
+  } catch {
+    // Auth status cache is only a speed hint; login itself still works without it.
+  }
 }
 
 function submitManagerPortalPayload(payload) {
@@ -6727,7 +6772,7 @@ function submitManagerPortalPayloadWithCallback(fullPayload, callbackName) {
     }
 
     window[callbackName] = (data) => {
-      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== callbackId) {
+      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== fullPayload.callbackId) {
         return;
       }
 
@@ -8495,6 +8540,7 @@ loadFantasyCriticLeague("2025");
 loadFantasyCriticLeague("2026");
 syncThemeToggle();
 hydrateBracketSubmitter();
+hydrateManagerAuthStatusCache();
 hydrateManagerSession();
 
 loadJson("data/footy-schedule.json")

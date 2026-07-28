@@ -113,6 +113,15 @@ function handleManagerAuth_(payload) {
 
     if (payload.action === "setupPassphrase") {
       if (storedPassphrase && !mustReset) {
+        if (isPassphraseMatch_(passphrase, storedPassphrase)) {
+          return createPortalResponse_(payload, {
+            ok: true,
+            managerId,
+            displayName: displayNameColumn >= 0 ? row[displayNameColumn] : "",
+            status: "already-set",
+          });
+        }
+
         return createPortalResponse_(payload, { ok: false, error: "A passphrase already exists for this manager." });
       }
 

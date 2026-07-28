@@ -2822,14 +2822,14 @@ function renderRankingItem(kind, item) {
   const isAdmin = isCurrentManagerAdmin();
   const isManualView = isAdmin && activeRankingViewMode === "manual";
   const draggable = isManualView ? ` draggable="true"` : "";
-  const meta = shouldShowRankingMoreData ? getRankingItemMetaWithSeed(item) : "";
+  const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
 
   return `
     <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
       <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
       <span class="ranking-item-main">
         <strong>${escapeHtml(item.name)}</strong>
-        ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+        ${meta}
       </span>
       ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
     </article>
@@ -3115,49 +3115,52 @@ function getRankingEloForItem(kind, itemId) {
   };
 }
 
-function getRankingItemMeta(item) {
-  const diff = Number(item.rank || 0) - Number(item.calculatedRank || item.rank || 0);
-  const diffLabel = diff ? `${diff > 0 ? "+" : ""}${diff} vs manual` : "No change";
-  const rankLabel = activeRankingViewMode === "calculated"
-    ? `Manual #${item.rank}`
-    : `Calculated #${item.calculatedRank || item.rank}`;
+function renderRankingItemMeta(item) {
+  const parts = getRankingItemMetaParts(item);
 
-  return `${Math.round(item.rating || RANKING_BASE_RATING)} Elo · ${item.wins || 0}-${item.losses || 0} · ${rankLabel} · ${diffLabel}`;
+  if (!parts.length) {
+    return "";
+  }
+
+  return `
+    <span class="ranking-item-meta">
+      ${parts.map((part) => `<span>${escapeHtml(part)}</span>`).join("")}
+    </span>
+  `;
 }
 
-function getRankingItemMetaWithSeed(item) {
-  const diff = Number(item.rank || 0) - Number(item.calculatedRank || item.rank || 0);
-  const diffLabel = diff ? `${diff > 0 ? "+" : ""}${diff} vs manual` : "No change";
-  const rankLabel = activeRankingViewMode === "calculated"
-    ? `Manual #${item.rank}`
-    : `Calculated #${item.calculatedRank || item.rank}`;
+function getRankingItemMetaParts(item) {
   const comparisonCount = Number(item.comparisons || 0);
   const statusLabel = comparisonCount <= 0
     ? "New"
     : comparisonCount < RANKING_PROVISIONAL_COMPARISONS
       ? "Provisional"
       : "";
+  const scoreParts = [
+    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+    `${item.wins || 0}-${item.losses || 0}`,
+    statusLabel,
+  ];
+
+  if (!isCurrentManagerAdmin()) {
+    return scoreParts.filter(Boolean);
+  }
+
+  const diff = Number(item.rank || 0) - Number(item.calculatedRank || item.rank || 0);
+  const diffLabel = diff ? `${diff > 0 ? "+" : ""}${diff} vs manual` : "No change";
+  const rankLabel = activeRankingViewMode === "calculated"
+    ? `Manual #${item.rank}`
+    : `Calculated #${item.calculatedRank || item.rank}`;
   const seedLabel = item.seed?.seedRank
     ? `Seeded from #${item.seed.seedRank}`
     : "";
 
-  if (!isCurrentManagerAdmin()) {
-    return [
-      `${Math.round(item.rating || RANKING_BASE_RATING)} Elo`,
-      `${item.wins || 0}-${item.losses || 0}`,
-      `Calculated #${item.calculatedRank || item.rank}`,
-      statusLabel,
-    ].filter(Boolean).join(" Â· ");
-  }
-
   return [
-    `${Math.round(item.rating || RANKING_BASE_RATING)} Elo`,
-    `${item.wins || 0}-${item.losses || 0}`,
+    ...scoreParts,
     rankLabel,
     diffLabel,
     seedLabel,
-    statusLabel,
-  ].filter(Boolean).join(" · ");
+  ].filter(Boolean);
 }
 
 function getRankingSeedForItem(kind, itemId) {

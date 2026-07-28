@@ -796,6 +796,25 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
+.ranking-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ranking-item-meta span {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 6px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .ranking-spacer {
   min-width: 48px;
 }

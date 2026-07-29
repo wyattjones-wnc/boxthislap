@@ -885,6 +885,39 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 18px;
 }
 
+.ranking-select-control {
+  align-items: start;
+  display: grid;
+  gap: 5px;
+  min-width: min(220px, 100%);
+}
+
+.ranking-select-control span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ranking-select-control select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 14px center / 7px 7px no-repeat,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) right 9px center / 7px 7px no-repeat,
+    var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 9px 32px 9px 10px;
+}
+
+.ranking-normalize-button {
+  min-height: 42px;
+}
+
 .ranking-drag-handle {
   align-items: center;
   align-self: stretch;

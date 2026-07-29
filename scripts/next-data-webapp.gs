@@ -49,6 +49,25 @@ const RANKING_SEED_COLUMNS = [
   "Seeded At",
   "Reason",
 ];
+const RANKING_SNAPSHOT_COLUMNS = [
+  "Snapshot ID",
+  "Ranking Type",
+  "Manager ID",
+  "Created At",
+  "Label",
+  "Reason",
+  "Source",
+];
+const RANKING_SNAPSHOT_ITEM_COLUMNS = [
+  "Snapshot ID",
+  "Item ID",
+  "Item Name",
+  "Rank",
+  "Rating",
+  "Wins",
+  "Losses",
+  "Games",
+];
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
 const RANKING_PROVISIONAL_COMPARISONS = 10;
@@ -68,6 +87,14 @@ function doGet(e) {
 
     if (action === "listRankingSeeds") {
       return webResponse(e, { ok: true, seeds: listRankingSeeds() });
+    }
+
+    if (action === "listRankingSnapshots") {
+      return webResponse(e, {
+        ok: true,
+        snapshotItems: listRankingSnapshotItems(),
+        snapshots: listRankingSnapshots(),
+      });
     }
 
     return webResponse(e, { ok: true, service: "boxthislap-next-data" });
@@ -94,6 +121,10 @@ function doPost(e) {
 
     if (payload.action === "saveRankingChoice") {
       return jsonResponse(saveRankingChoice(payload.choice || {}));
+    }
+
+    if (payload.action === "normalizeRanking") {
+      return jsonResponse(normalizeRanking(payload.normalization || {}));
     }
 
     return jsonResponse({ ok: false, error: "Unknown action." });
@@ -452,6 +483,38 @@ function listRankingSeeds() {
     .filter((row) => row["Ranking Type"] && row["Item ID"]);
 }
 
+function listRankingSnapshots() {
+  const context = getSimpleTableContext("Ranking Snapshots", RANKING_SNAPSHOT_COLUMNS, "Snapshot ID");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      "Created At": row["Created At"],
+      Label: row.Label,
+      "Manager ID": row["Manager ID"],
+      Ranking: row["Ranking Type"],
+      "Ranking Type": row["Ranking Type"],
+      Reason: row.Reason,
+      "Snapshot ID": row["Snapshot ID"],
+      Source: row.Source,
+    }))
+    .filter((row) => row["Snapshot ID"] && row["Ranking Type"]);
+}
+
+function listRankingSnapshotItems() {
+  const context = getSimpleTableContext("Ranking Snapshot Items", RANKING_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      Games: row.Games,
+      "Item ID": row["Item ID"],
+      "Item Name": row["Item Name"],
+      Losses: row.Losses,
+      Rank: row.Rank,
+      Rating: row.Rating,
+      "Snapshot ID": row["Snapshot ID"],
+      Wins: row.Wins,
+    }))
+    .filter((row) => row["Snapshot ID"] && row["Item ID"]);
+}
+
 function saveRankingSeedWithoutLock(seed) {
   const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
   const rows = readSimpleTableRows(context);
@@ -540,6 +603,115 @@ function saveRankingChoice(choice) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function normalizeRanking(normalization) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const rankingType = String(normalization.rankingType || "").trim();
+    const items = Array.isArray(normalization.items) ? normalization.items : [];
+    const createdAt = String(normalization.createdAt || new Date().toISOString()).trim();
+    const managerId = String(normalization.managerId || "").trim();
+    const reason = String(normalization.reason || "Normalized calculated rankings").trim();
+    const source = String(normalization.source || "calculated").trim();
+
+    if (!rankingType) {
+      throw new Error("Ranking Type is required.");
+    }
+
+    if (!items.length) {
+      throw new Error("At least one ranking item is required.");
+    }
+
+    const snapshotContext = getSimpleTableContext("Ranking Snapshots", RANKING_SNAPSHOT_COLUMNS, "Snapshot ID");
+    const snapshotRows = readSimpleTableRows(snapshotContext);
+    const snapshotId = String(normalization.snapshotId || getNextNumericIdFromRows(snapshotRows, "Snapshot ID"));
+    const label = String(normalization.label || formatSnapshotLabel(createdAt)).trim();
+
+    appendSimpleTableRow(snapshotContext, {
+      "Created At": createdAt,
+      Label: label,
+      "Manager ID": managerId,
+      "Ranking Type": rankingType,
+      Reason: reason,
+      "Snapshot ID": snapshotId,
+      Source: source,
+    }, RANKING_SNAPSHOT_COLUMNS);
+
+    const itemContext = getSimpleTableContext("Ranking Snapshot Items", RANKING_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+    items.forEach((item, index) => {
+      const rank = clampRankingRank(item.rank || item.Rank || index + 1, items.length);
+      appendSimpleTableRow(itemContext, {
+        Games: Number(item.games || item.Games || item.comparisons || 0),
+        "Item ID": String(item.itemId || item["Item ID"] || item.id || "").trim(),
+        "Item Name": String(item.itemName || item["Item Name"] || item.name || "").trim(),
+        Losses: Number(item.losses || item.Losses || 0),
+        Rank: rank,
+        Rating: Number(item.rating || item.Rating || RANKING_BASE_RATING),
+        "Snapshot ID": snapshotId,
+        Wins: Number(item.wins || item.Wins || 0),
+      }, RANKING_SNAPSHOT_ITEM_COLUMNS);
+    });
+
+    resetRankingEloFromItems(rankingType, items, createdAt);
+    clearRankingChoicesForType(rankingType);
+
+    return {
+      ok: true,
+      rankingType,
+      snapshotId,
+      status: "normalized",
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function resetRankingEloFromItems(rankingType, items, updatedAt) {
+  const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+  deleteSimpleTableRows(context, (row) =>
+    String(row["Ranking Type"] || "").trim().toLowerCase() === String(rankingType || "").trim().toLowerCase()
+  );
+
+  items.forEach((item) => {
+    appendSimpleTableRow(context, {
+      "Item ID": String(item.itemId || item["Item ID"] || item.id || "").trim(),
+      "Last Choice ID": "",
+      Losses: 0,
+      "Ranking Type": rankingType,
+      Rating: Number(item.normalizedRating || item.rating || item.Rating || RANKING_BASE_RATING),
+      "Updated At": updatedAt,
+      Wins: 0,
+    }, RANKING_ELO_COLUMNS);
+  });
+}
+
+function clearRankingChoicesForType(rankingType) {
+  const context = getSimpleTableContext("Ranking Choices", RANKING_CHOICE_COLUMNS, "ID");
+  deleteSimpleTableRows(context, (row) =>
+    String(row["Ranking Type"] || "").trim().toLowerCase() === String(rankingType || "").trim().toLowerCase()
+  );
+}
+
+function deleteSimpleTableRows(context, predicate) {
+  readSimpleTableRows(context)
+    .filter(predicate)
+    .sort((first, second) => second.rowNumber - first.rowNumber)
+    .forEach((row) => {
+      context.sheet.deleteRow(row.rowNumber);
+    });
+}
+
+function formatSnapshotLabel(value) {
+  const date = value ? new Date(value) : new Date();
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value || "Snapshot").trim();
+  }
+
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "MMM d, yyyy");
 }
 
 function normalizeRankingChoice(choice) {

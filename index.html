@@ -729,6 +729,21 @@
             <button class="is-active" type="button" data-ranking-view-mode="manual" aria-pressed="true">Manual</button>
             <button type="button" data-ranking-view-mode="calculated" aria-pressed="false">Calculated</button>
           </div>
+          <label class="ranking-select-control" data-admin-only hidden>
+            <span>Snapshot</span>
+            <select id="ranking-snapshot-select">
+              <option value="current">Current</option>
+            </select>
+          </label>
+          <label class="ranking-select-control" data-admin-only hidden>
+            <span>Compare</span>
+            <select id="ranking-compare-select">
+              <option value="">None</option>
+            </select>
+          </label>
+          <button class="action-button ranking-normalize-button" id="ranking-normalize-button" type="button" data-admin-only hidden>
+            Normalize
+          </button>
         </div>
         <div class="tabs ranking-tabs" role="tablist" aria-label="Ranking lists">
           <button class="tab is-active" type="button" data-ranking-tab="games" aria-selected="true" role="tab">Games</button>
@@ -811,6 +826,35 @@
               </button>
               <button class="action-button" id="ranking-battle-done" type="button">
                 Done
+              </button>
+            </footer>
+          </form>
+        </dialog>
+
+        <dialog class="footy-note-dialog ranking-normalize-dialog" id="ranking-normalize-dialog">
+          <form class="footy-note-form ranking-battle-form" method="dialog">
+            <header>
+              <div>
+                <h2>Normalize Rankings</h2>
+                <p id="ranking-normalize-status" class="footy-note-status" aria-live="polite"></p>
+              </div>
+              <button class="icon-action-button footy-note-close" id="ranking-normalize-close" type="button" aria-label="Close normalize dialog">
+                &times;
+              </button>
+            </header>
+            <p class="body-copy">
+              This saves the current calculated order as a snapshot, compresses Elo ratings into closer gaps, and clears old choices for this ranking list.
+            </p>
+            <label class="next-item-wide">
+              <span>Reason</span>
+              <input id="ranking-normalize-reason" type="text" value="Normalized calculated rankings" autocomplete="off">
+            </label>
+            <footer>
+              <button class="action-button" id="ranking-normalize-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" id="ranking-normalize-confirm" type="button">
+                Save Snapshot & Normalize
               </button>
             </footer>
           </form>

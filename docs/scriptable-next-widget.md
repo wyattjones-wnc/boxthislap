@@ -47,9 +47,9 @@ scriptable/box-this-lap-next-widget.js
 
 4. Save it as something like `Box This Lap Next`.
 5. Run the script inside Scriptable.
-6. Choose any item from the `Next` list.
+6. Choose any upcoming incomplete item from the `Next` list.
 
-That choice is saved locally on the phone. The widget will keep focusing on that item until you run the script again and choose a different one.
+That choice is saved locally on the phone. The widget will keep focusing on that item until it passes, you run the script again and choose a different one, or you set a widget parameter.
 
 ## 3. Add the widget
 
@@ -58,7 +58,7 @@ That choice is saved locally on the phone. The widget will keep focusing on that
 3. Choose the `Box This Lap Next` script.
 4. Leave the widget parameter blank if you want to use the saved focus item.
 
-If no saved focus item exists, blank means the widget shows the next upcoming incomplete item.
+If no saved focus item exists, or the saved focus item has passed, blank means the widget shows the next upcoming incomplete item.
 
 Optional widget parameters can override the saved choice:
 

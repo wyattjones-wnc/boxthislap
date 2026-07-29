@@ -4,7 +4,8 @@
 // focus on. That choice is saved locally on the phone.
 //
 // Optional widget parameter overrides:
-// - Leave blank: show the saved focus item, or the next upcoming incomplete item.
+// - Leave blank: show the saved focus item if it is still upcoming, or the next
+//   upcoming incomplete item.
 // - id:12: show the Next row with ID 12.
 // - Fantasy Critic: show the first incomplete item whose Thing contains that text.
 
@@ -69,10 +70,10 @@ async function loadNextItems() {
 }
 
 async function chooseFocusItem(items) {
-  const sortedItems = sortItemsForPicker(items);
+  const sortedItems = sortItemsForPicker(items.filter(isUpcomingItem));
   const alert = new Alert();
   alert.title = "Choose Next Widget Focus";
-  alert.message = "Pick any item from the Next list. The widget will keep showing this item until you choose another one or set a widget parameter.";
+  alert.message = "Pick any upcoming incomplete item from the Next list. The widget will keep showing this item until it passes, you choose another one, or set a widget parameter.";
 
   sortedItems.forEach((item) => {
     alert.addAction(`${item.thing} (${formatPickerDate(item)})`);
@@ -94,23 +95,21 @@ async function chooseFocusItem(items) {
 }
 
 function chooseItem(items, parameter, savedFocus) {
-  const incompleteItems = items.filter((item) => !item.completed);
+  const upcomingItems = items.filter(isUpcomingItem);
 
   if (parameter) {
-    return findItem(items, parameter, incompleteItems);
+    return findItem(upcomingItems, parameter, upcomingItems);
   }
 
   if (savedFocus && savedFocus.id) {
-    const savedItem = items.find((item) => item.id.toLowerCase() === savedFocus.id.toLowerCase());
+    const savedItem = upcomingItems.find((item) => item.id.toLowerCase() === savedFocus.id.toLowerCase());
 
     if (savedItem) {
       return savedItem;
     }
   }
 
-  const now = new Date();
-  return incompleteItems
-    .filter((item) => (item.endDate || item.startDate) >= now)
+  return upcomingItems
     .sort((first, second) => {
       const firstTime = first.startDate.getTime();
       const secondTime = second.startDate.getTime();
@@ -121,6 +120,21 @@ function chooseItem(items, parameter, savedFocus) {
 
       return Number(second.priorityLevel || 0) - Number(first.priorityLevel || 0);
     })[0] || null;
+}
+
+function isUpcomingItem(item) {
+  if (!item || item.completed || !item.startDate) {
+    return false;
+  }
+
+  const now = new Date();
+  const relevantEnd = item.endDate
+    ? endOfDay(item.endDate)
+    : item.time
+      ? item.startDate
+      : endOfDay(item.startDate);
+
+  return relevantEnd >= now;
 }
 
 function findItem(items, parameter, incompleteItems) {

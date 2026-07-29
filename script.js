@@ -233,6 +233,7 @@ let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
+let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
@@ -3843,12 +3844,13 @@ function getRankingItemElement(kind, itemId) {
     ) || null;
 }
 
-function openRankingBattleDialog(kind = activeRankingKind) {
+async function openRankingBattleDialog(kind = activeRankingKind) {
   if (!rankingBattleDialog || !RANKING_CONFIG[kind]) {
     return;
   }
 
   activeRankingBattle = null;
+  await ensureRankingAssetManifest();
   renderNextRankingBattle(kind);
 
   if (typeof rankingBattleDialog.showModal === "function") {
@@ -3895,9 +3897,54 @@ function renderNextRankingBattle(kind = activeRankingKind) {
 
   rankingBattleOptions.innerHTML = [pair.itemA, pair.itemB].map((item) => `
     <button class="ranking-battle-option" type="button" data-ranking-battle-choice="${escapeHtml(item.id)}">
+      ${renderRankingBattleImage(kind, item)}
       <strong>${escapeHtml(item.name)}</strong>
     </button>
   `).join("");
+}
+
+function renderRankingBattleImage(kind, item) {
+  const imagePath = getRandomRankingAssetPath(kind, item?.id);
+
+  if (!imagePath) {
+    return "";
+  }
+
+  return `
+    <span class="ranking-battle-image-frame" aria-hidden="true">
+      <img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy">
+    </span>
+  `;
+}
+
+async function ensureRankingAssetManifest() {
+  if (siteData.rankingAssets) {
+    return siteData.rankingAssets;
+  }
+
+  if (!rankingAssetManifestPromise) {
+    rankingAssetManifestPromise = loadJson("data/ranking-assets.json")
+      .then((manifest) => {
+        siteData.rankingAssets = manifest && typeof manifest === "object" ? manifest : {};
+        return siteData.rankingAssets;
+      })
+      .catch(() => {
+        siteData.rankingAssets = {};
+        return siteData.rankingAssets;
+      });
+  }
+
+  return rankingAssetManifestPromise;
+}
+
+function getRandomRankingAssetPath(kind, itemId) {
+  const images = siteData.rankingAssets?.[kind]?.[String(itemId || "")];
+
+  if (!Array.isArray(images) || images.length === 0) {
+    return "";
+  }
+
+  return images[Math.floor(Math.random() * images.length)];
 }
 
 function createRankingBattlePair(kind = activeRankingKind) {

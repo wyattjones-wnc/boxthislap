@@ -978,7 +978,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--ink);
   cursor: pointer;
   align-items: center;
-  display: flex;
+  display: grid;
   font: inherit;
   gap: 8px;
   justify-content: center;
@@ -997,6 +997,23 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-battle-option strong {
   font-size: clamp(1.1rem, 3vw, 1.45rem);
   line-height: 1.15;
+}
+
+.ranking-battle-image-frame {
+  aspect-ratio: 400 / 268;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: block;
+  overflow: hidden;
+  width: min(100%, 400px);
+}
+
+.ranking-battle-image-frame img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 @media (max-width: 640px) {

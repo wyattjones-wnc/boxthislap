@@ -35,6 +35,7 @@ import {
   themeToggle,
   copyCurrentPageLinkButton,
   adminOnlyElements,
+  loginOnlyElements,
   testRulesLinks,
   loginOpenButton,
   loginPanel,
@@ -127,6 +128,11 @@ import {
   rankingTabs,
   rankingPanels,
   rankingAddButton,
+  rankingCompareButton,
+  rankingFilterToggle,
+  rankingFilters,
+  rankingMoreDataToggle,
+  rankingViewModeButtons,
   rankingItemDialog,
   rankingItemForm,
   rankingItemDialogTitle,
@@ -137,6 +143,13 @@ import {
   rankingItemStatus,
   rankingItemClose,
   rankingItemCancel,
+  rankingBattleDialog,
+  rankingBattleTitle,
+  rankingBattleStatus,
+  rankingBattleOptions,
+  rankingBattleClose,
+  rankingBattleSkip,
+  rankingBattleDone,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -170,8 +183,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607260001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607260001";
+} from "./modules/domRefs.js?v=202607280001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607280001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -201,12 +214,22 @@ let shouldSuppressNextFootyDropdownClick = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
 let activeRankingKind = "games";
+let activeRankingViewMode = "manual";
+let shouldShowRankingFilters = false;
+let shouldShowRankingMoreData = false;
 let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
+let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
+const RANKING_BASE_RATING = 1500;
+const RANKING_ELO_K_FACTOR = 32;
+const RANKING_PROVISIONAL_COMPARISONS = 10;
+const RANKING_PROVISIONAL_K_FACTOR = 64;
 const RANKING_CONFIG = {
   games: {
     addLabel: "Add Game",
@@ -214,6 +237,7 @@ const RANKING_CONFIG = {
     list: () => document.querySelector("#ranking-list-games"),
     sheetName: "VG Ranking",
     source: "rankingGames",
+    type: "games",
   },
   mcu: {
     addLabel: "Add MCU Entry",
@@ -221,6 +245,7 @@ const RANKING_CONFIG = {
     list: () => document.querySelector("#ranking-list-mcu"),
     sheetName: "MCU Ranking",
     source: "rankingMcu",
+    type: "mcu",
   },
   movies: {
     addLabel: "Add Movie",
@@ -228,6 +253,7 @@ const RANKING_CONFIG = {
     list: () => document.querySelector("#ranking-list-movies"),
     sheetName: "Movie Ranking",
     source: "rankingMovies",
+    type: "movies",
   },
   tv: {
     addLabel: "Add TV Entry",
@@ -235,6 +261,7 @@ const RANKING_CONFIG = {
     list: () => document.querySelector("#ranking-list-tv"),
     sheetName: "TV Ranking",
     source: "rankingTv",
+    type: "tv",
   },
 };
 const expandedFootyMatchIds = new Set();
@@ -263,6 +290,7 @@ const router = createRouter({
   onStandingsTabShown: () => renderStandingsAwards(),
   pageLinks,
   pages,
+  shouldBlockPage: (pageName) => pageName === "rankings" && !siteData.managerSession,
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -2531,12 +2559,11 @@ function renderRankingsPage() {
     return;
   }
 
-  syncRankingTabs();
-
   if (!isCurrentManagerAdmin()) {
-    renderRankingAdminMessage("Rankings are available for admin accounts.");
-    return;
+    activeRankingViewMode = "calculated";
   }
+
+  syncRankingTabs();
 
   ensureRankingsLoaded();
   renderRankingLists();
@@ -2576,8 +2603,22 @@ function ensureRankingsLoaded() {
 
     siteData.rankings = rankings;
     siteData.rankingErrors = errors;
-    renderRankingLists();
-    return rankings;
+
+    return loadRankingSupplementalData()
+      .catch((error) => {
+        recordDiagnostic("ranking supplemental data failed to load", error);
+        siteData.rankingErrors = [
+          ...(siteData.rankingErrors || []),
+          `Ranking supplemental data: ${error.message}`,
+        ];
+        siteData.rankingChoices = [];
+        siteData.rankingElo = [];
+        siteData.rankingSeeds = [];
+      })
+      .then(() => {
+        renderRankingLists();
+        return rankings;
+      });
   }).catch((error) => {
     siteData.rankingErrors = [error.message];
     renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
@@ -2597,7 +2638,161 @@ function renderRankingAdminMessage(message) {
   });
 }
 
+async function loadRankingSupplementalData() {
+  if (!NEXT_DATA_ENDPOINT) {
+    siteData.rankingChoices = [];
+    siteData.rankingElo = [];
+    siteData.rankingSeeds = [];
+    return;
+  }
+
+  const [choicesResponse, eloResponse, seedsResponse] = await Promise.all([
+    loadNextDataEndpoint("listRankingChoices"),
+    loadNextDataEndpoint("listRankingElo"),
+    loadNextDataEndpoint("listRankingSeeds"),
+  ]);
+
+  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
+  siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
+  siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
+}
+
+function loadNextDataEndpoint(action, params = {}) {
+  const callbackName = `boxThisLapNextData${Date.now()}${Math.random().toString(36).slice(2)}`;
+  const callbackId = `next-data-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return new Promise((resolve, reject) => {
+    let script;
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error(`No response from the ${action} endpoint.`));
+    }, 12000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      delete window[callbackName];
+      script?.remove();
+    }
+
+    window[callbackName] = (data) => {
+      if (!data || data.source !== "boxthislap-next-data" || data.callbackId !== callbackId) {
+        return;
+      }
+
+      cleanup();
+
+      if (!data.ok) {
+        reject(new Error(data.error || `Unable to load ${action}.`));
+        return;
+      }
+
+      resolve(data);
+    };
+
+    const url = new URL(NEXT_DATA_ENDPOINT);
+    url.searchParams.set("action", action);
+    url.searchParams.set("callback", callbackName);
+    url.searchParams.set("callbackId", callbackId);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.set(key, String(value));
+      }
+    });
+
+    script = document.createElement("script");
+    script.async = true;
+    script.src = url.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error(`Unable to reach the ${action} endpoint.`));
+    };
+    document.head.append(script);
+  });
+}
+
+function normalizeRankingChoices(rows = []) {
+  return rows
+    .map(normalizeRankingChoice)
+    .filter(Boolean);
+}
+
+function normalizeRankingChoice(row) {
+  const id = String(getField(row, "ID", "Id", "id") || "").trim();
+  const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
+  const itemAId = String(getField(row, "Item A ID", "Item A", "itemAId") || "").trim();
+  const itemBId = String(getField(row, "Item B ID", "Item B", "itemBId") || "").trim();
+  const winnerId = String(getField(row, "Winner ID", "Winner", "winnerId") || "").trim();
+  const loserId = String(getField(row, "Loser ID", "Loser", "loserId") || "").trim();
+
+  if (!rankingType || !winnerId || !loserId) {
+    return null;
+  }
+
+  return {
+    createdAt: String(getField(row, "Created At", "createdAt") || "").trim(),
+    id,
+    itemAId,
+    itemBId,
+    loserId,
+    managerId: String(getField(row, "Manager ID", "Manager", "managerId") || "").trim(),
+    rankingType,
+    winnerId,
+  };
+}
+
+function normalizeRankingEloRows(rows = []) {
+  return rows
+    .map(normalizeRankingEloRow)
+    .filter(Boolean);
+}
+
+function normalizeRankingEloRow(row) {
+  const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
+  const itemId = String(getField(row, "Item ID", "Item", "itemId") || "").trim();
+
+  if (!rankingType || !itemId) {
+    return null;
+  }
+
+  return {
+    itemId,
+    lastChoiceId: String(getField(row, "Last Choice ID", "lastChoiceId") || "").trim(),
+    losses: Number(getField(row, "Losses", "losses") || 0),
+    rating: Number(getField(row, "Rating", "rating") || RANKING_BASE_RATING),
+    rankingType,
+    updatedAt: String(getField(row, "Updated At", "updatedAt") || "").trim(),
+    wins: Number(getField(row, "Wins", "wins") || 0),
+  };
+}
+
+function normalizeRankingSeedRows(rows = []) {
+  return rows
+    .map(normalizeRankingSeedRow)
+    .filter(Boolean);
+}
+
+function normalizeRankingSeedRow(row) {
+  const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
+  const itemId = String(getField(row, "Item ID", "Item", "itemId") || "").trim();
+
+  if (!rankingType || !itemId) {
+    return null;
+  }
+
+  const seedRating = Number(getField(row, "Seed Rating", "seedRating") || RANKING_BASE_RATING);
+
+  return {
+    itemId,
+    rankingType,
+    reason: String(getField(row, "Reason", "reason") || "").trim(),
+    seedRank: Number(getField(row, "Seed Rank", "seedRank") || 0),
+    seedRating: Number.isFinite(seedRating) ? seedRating : RANKING_BASE_RATING,
+    seededAt: String(getField(row, "Seeded At", "seededAt") || "").trim(),
+  };
+}
+
 function renderRankingLists() {
+  syncRankingControls();
   Object.keys(RANKING_CONFIG).forEach(renderRankingList);
 }
 
@@ -2609,24 +2804,34 @@ function renderRankingList(kind) {
     return;
   }
 
-  const rows = getRankingRows(kind);
+  const rows = getDisplayedRankingRows(kind);
 
   if (!rows.length) {
     list.innerHTML = `<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
     return;
   }
 
+  const errorMarkup = kind === activeRankingKind && siteData.rankingErrors?.length
+    ? `<p class="table-message ranking-warning">${siteData.rankingErrors.map(escapeHtml).join("<br>")}</p>`
+    : "";
   list.innerHTML = rows.map((item) => renderRankingItem(kind, item)).join("");
+  list.insertAdjacentHTML("afterbegin", errorMarkup);
 }
 
 function renderRankingItem(kind, item) {
-  const draggable = isCurrentManagerAdmin() ? ` draggable="true"` : "";
+  const isAdmin = isCurrentManagerAdmin();
+  const isManualView = isAdmin && activeRankingViewMode === "manual";
+  const draggable = isManualView ? ` draggable="true"` : "";
+  const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
 
   return `
     <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
-      <span class="ranking-rank">${escapeHtml(String(item.rank))}</span>
-      <strong>${escapeHtml(item.name)}</strong>
-      <span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>
+      <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
+      <span class="ranking-item-main">
+        <strong>${escapeHtml(item.name)}</strong>
+        ${meta}
+      </span>
+      ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
     </article>
   `;
 }
@@ -2675,8 +2880,331 @@ function compareRankingRows(first, second) {
     String(first.id).localeCompare(String(second.id), undefined, { numeric: true });
 }
 
+function compareCalculatedRankingRows(first, second) {
+  return Number(second.rating || RANKING_BASE_RATING) - Number(first.rating || RANKING_BASE_RATING) ||
+    Number(second.wins || 0) - Number(first.wins || 0) ||
+    Number(first.losses || 0) - Number(second.losses || 0) ||
+    compareRankingRows(first, second);
+}
+
 function getRankingRows(kind = activeRankingKind) {
   return [...(siteData.rankings?.[kind] || [])].sort(compareRankingRows);
+}
+
+function getDisplayedRankingRows(kind = activeRankingKind) {
+  if (!isCurrentManagerAdmin()) {
+    return getCurrentManagerRankingChoices(kind).length
+      ? getCurrentManagerCalculatedRankingRows(kind)
+      : getRandomizedRankingRows(kind);
+  }
+
+  if (activeRankingViewMode === "calculated") {
+    return getCalculatedRankingRows(kind);
+  }
+
+  return getManualRankingRowsWithElo(kind);
+}
+
+function getCurrentManagerCalculatedRankingRows(kind = activeRankingKind) {
+  const eloMap = getChoiceDerivedRankingEloMap(kind, getCurrentManagerRankingChoices(kind));
+
+  return getRankingRows(kind)
+    .map((item) => {
+      const elo = eloMap.get(String(item.id)) || getSeededRankingEloForItem(getRankingType(kind), item.id);
+      const seed = getRankingSeedForItem(kind, item.id);
+      return {
+        ...item,
+        comparisons: elo.comparisons,
+        losses: elo.losses,
+        rating: elo.rating,
+        seed,
+        wins: elo.wins,
+      };
+    })
+    .sort(compareCalculatedRankingRows)
+    .map((item, index) => ({
+      ...item,
+      calculatedRank: index + 1,
+      displayRank: index + 1,
+    }));
+}
+
+function getRandomizedRankingRows(kind = activeRankingKind) {
+  const rows = getRankingRows(kind).map((item) => {
+    const elo = getSeededRankingEloForItem(getRankingType(kind), item.id);
+    const seed = getRankingSeedForItem(kind, item.id);
+    return {
+      ...item,
+      calculatedRank: item.rank,
+      comparisons: elo.comparisons,
+      losses: elo.losses,
+      rating: elo.rating,
+      seed,
+      wins: elo.wins,
+    };
+  });
+  const randomOrder = getRankingRandomOrder(kind, rows);
+
+  return rows
+    .map((item) => ({
+      ...item,
+      displayRank: randomOrder.get(item.id) || item.displayRank || item.rank,
+    }))
+    .sort((first, second) =>
+      Number(first.displayRank || 0) - Number(second.displayRank || 0) ||
+      String(first.id).localeCompare(String(second.id), undefined, { numeric: true })
+    );
+}
+
+function getRankingRandomOrder(kind, rows) {
+  siteData.rankingRandomOrder = siteData.rankingRandomOrder || {};
+  const existing = siteData.rankingRandomOrder[kind] || {};
+  const ids = rows.map((item) => String(item.id));
+  const hasAllIds = ids.every((id) => existing[id]);
+  const hasOnlyCurrentIds = Object.keys(existing).every((id) => ids.includes(id));
+
+  if (hasAllIds && hasOnlyCurrentIds) {
+    return new Map(Object.entries(existing));
+  }
+
+  siteData.rankingRandomOrder[kind] = Object.fromEntries(
+    [...rows]
+      .sort(() => Math.random() - 0.5)
+      .map((item, index) => [String(item.id), index + 1])
+  );
+
+  return new Map(Object.entries(siteData.rankingRandomOrder[kind]));
+}
+
+function getChoiceDerivedRankingEloMap(kind, choices = []) {
+  const type = getRankingType(kind);
+  const eloMap = new Map(
+    getRankingRows(kind).map((item) => [
+      String(item.id),
+      getSeededRankingEloForItem(type, item.id),
+    ])
+  );
+
+  [...choices]
+    .sort(compareRankingChoicesByTime)
+    .forEach((choice) => applyRankingChoiceToEloMap(choice, eloMap));
+
+  return eloMap;
+}
+
+function compareRankingChoicesByTime(first, second) {
+  const firstTime = Date.parse(first.createdAt || "");
+  const secondTime = Date.parse(second.createdAt || "");
+  const normalizedFirst = Number.isFinite(firstTime) ? firstTime : 0;
+  const normalizedSecond = Number.isFinite(secondTime) ? secondTime : 0;
+
+  return normalizedFirst - normalizedSecond ||
+    String(first.id || "").localeCompare(String(second.id || ""), undefined, { numeric: true });
+}
+
+function applyRankingChoiceToEloMap(choice, eloMap) {
+  const winner = eloMap.get(String(choice.winnerId));
+  const loser = eloMap.get(String(choice.loserId));
+
+  if (!winner || !loser) {
+    return;
+  }
+
+  const expectedWinner = getRankingExpectedScore(winner.rating, loser.rating);
+  const expectedLoser = getRankingExpectedScore(loser.rating, winner.rating);
+  const winnerKFactor = getRankingKFactor(winner);
+  const loserKFactor = getRankingKFactor(loser);
+
+  eloMap.set(String(choice.winnerId), {
+    ...winner,
+    lastChoiceId: choice.id,
+    rating: Math.round(winner.rating + winnerKFactor * (1 - expectedWinner)),
+    updatedAt: choice.createdAt,
+    wins: winner.wins + 1,
+  });
+  eloMap.set(String(choice.loserId), {
+    ...loser,
+    lastChoiceId: choice.id,
+    losses: loser.losses + 1,
+    rating: Math.round(loser.rating + loserKFactor * (0 - expectedLoser)),
+    updatedAt: choice.createdAt,
+  });
+}
+
+function getSeededRankingEloForItem(rankingType, itemId) {
+  const seed = getRankingSeedForItemByType(rankingType, itemId);
+  const rating = Number(seed?.seedRating || RANKING_BASE_RATING);
+
+  return {
+    comparisons: 0,
+    itemId: String(itemId || "").trim(),
+    lastChoiceId: "",
+    losses: 0,
+    rating: Number.isFinite(rating) ? rating : RANKING_BASE_RATING,
+    rankingType,
+    updatedAt: "",
+    wins: 0,
+  };
+}
+
+function getManualRankingRowsWithElo(kind = activeRankingKind) {
+  const calculatedRanks = getCalculatedRankingRankMap(kind);
+
+  return getRankingRows(kind).map((item) => {
+    const elo = getRankingEloForItem(kind, item.id);
+    const seed = getRankingSeedForItem(kind, item.id);
+    return {
+      ...item,
+      calculatedRank: calculatedRanks.get(item.id) || item.rank,
+      comparisons: elo.comparisons,
+      displayRank: item.rank,
+      losses: elo.losses,
+      rating: elo.rating,
+      seed,
+      wins: elo.wins,
+    };
+  });
+}
+
+function getCalculatedRankingRows(kind = activeRankingKind) {
+  return getRankingRows(kind)
+    .map((item) => {
+      const elo = getRankingEloForItem(kind, item.id);
+      const seed = getRankingSeedForItem(kind, item.id);
+      return {
+        ...item,
+        comparisons: elo.comparisons,
+        losses: elo.losses,
+        rating: elo.rating,
+        seed,
+        wins: elo.wins,
+      };
+    })
+    .sort(compareCalculatedRankingRows)
+    .map((item, index) => ({
+      ...item,
+      calculatedRank: index + 1,
+      displayRank: index + 1,
+    }));
+}
+
+function getCalculatedRankingRankMap(kind = activeRankingKind) {
+  return new Map(getCalculatedRankingRows(kind).map((item) => [item.id, item.calculatedRank]));
+}
+
+function getRankingEloForItem(kind, itemId) {
+  const type = getRankingType(kind);
+  const row = (siteData.rankingElo || []).find((entry) =>
+    normalizeLookupName(entry.rankingType) === normalizeLookupName(type) &&
+    String(entry.itemId) === String(itemId)
+  );
+  const seed = getRankingSeedForItem(kind, itemId);
+  const rating = row
+    ? Number(row.rating || RANKING_BASE_RATING)
+    : Number(seed?.seedRating || RANKING_BASE_RATING);
+  const wins = Number(row?.wins || 0);
+  const losses = Number(row?.losses || 0);
+
+  return {
+    comparisons: wins + losses,
+    itemId: String(itemId || "").trim(),
+    losses,
+    rating,
+    rankingType: type,
+    wins,
+  };
+}
+
+function renderRankingItemMeta(item) {
+  const parts = getRankingItemMetaParts(item);
+
+  if (!parts.length) {
+    return "";
+  }
+
+  return `
+    <span class="ranking-item-meta">
+      ${parts.map((part) => `<span>${escapeHtml(part)}</span>`).join("")}
+    </span>
+  `;
+}
+
+function getRankingItemMetaParts(item) {
+  const comparisonCount = Number(item.comparisons || 0);
+  const statusLabel = comparisonCount <= 0
+    ? "New"
+    : comparisonCount < RANKING_PROVISIONAL_COMPARISONS
+      ? "Provisional"
+      : "";
+  const scoreParts = [
+    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+    `${item.wins || 0}-${item.losses || 0}`,
+    statusLabel,
+  ];
+
+  if (!isCurrentManagerAdmin()) {
+    return scoreParts.filter(Boolean);
+  }
+
+  const diff = Number(item.rank || 0) - Number(item.calculatedRank || item.rank || 0);
+  const diffLabel = diff ? `${diff > 0 ? "+" : ""}${diff} vs manual` : "No change";
+  const rankLabel = activeRankingViewMode === "calculated"
+    ? `Manual #${item.rank}`
+    : `Calculated #${item.calculatedRank || item.rank}`;
+  const seedLabel = item.seed?.seedRank
+    ? `Seeded from #${item.seed.seedRank}`
+    : "";
+
+  return [
+    ...scoreParts,
+    rankLabel,
+    diffLabel,
+    seedLabel,
+  ].filter(Boolean);
+}
+
+function getRankingSeedForItem(kind, itemId) {
+  return getRankingSeedForItemByType(getRankingType(kind), itemId);
+}
+
+function getRankingSeedForItemByType(rankingType, itemId) {
+  return (siteData.rankingSeeds || []).find((entry) =>
+    normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+    String(entry.itemId) === String(itemId)
+  ) || null;
+}
+
+function getRankingType(kind = activeRankingKind) {
+  return RANKING_CONFIG[kind]?.type || kind;
+}
+
+function syncRankingControls() {
+  const isAdmin = isCurrentManagerAdmin();
+
+  if (rankingFilters) {
+    rankingFilters.hidden = !shouldShowRankingFilters;
+  }
+
+  if (rankingFilterToggle) {
+    rankingFilterToggle.setAttribute("aria-expanded", String(shouldShowRankingFilters));
+    rankingFilterToggle.classList.toggle("is-active", shouldShowRankingFilters);
+  }
+
+  if (rankingMoreDataToggle) {
+    rankingMoreDataToggle.checked = shouldShowRankingMoreData;
+  }
+
+  rankingViewModeButtons?.forEach((button) => {
+    const isActive = button.dataset.rankingViewMode === activeRankingViewMode;
+    const container = button.closest(".ranking-mode-toggle");
+
+    if (container) {
+      container.hidden = !isAdmin;
+    }
+
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
 }
 
 function syncRankingTabs() {
@@ -2782,9 +3310,20 @@ function saveRankingItemFromForm() {
     nameKey: config.itemLabel,
     rank,
   };
+  const seed = createRankingSeedForNewItem(kind, item.id, rank);
 
   siteData.rankings = siteData.rankings || {};
   siteData.rankings[kind] = insertRankingItem(rows, item, rank);
+  upsertRankingSeed(seed);
+  upsertRankingEloRow({
+    itemId: item.id,
+    lastChoiceId: "",
+    losses: 0,
+    rating: seed.seedRating,
+    rankingType: seed.rankingType,
+    updatedAt: seed.seededAt,
+    wins: 0,
+  });
   renderRankingList(kind);
   submitRankingPayload({
     action: "saveRankingItem",
@@ -2794,9 +3333,60 @@ function saveRankingItemFromForm() {
       Name: item.name,
     },
     ranking: kind,
+    seed,
     sheetName: config.sheetName,
   });
   closeRankingItemDialog();
+}
+
+function createRankingSeedForNewItem(kind, itemId, seedRank) {
+  return {
+    itemId: String(itemId || "").trim(),
+    rankingType: getRankingType(kind),
+    reason: "Initial rating from manual placement",
+    seedRank: Number(seedRank || 0),
+    seedRating: calculateSeedRatingForRank(kind, seedRank),
+    seededAt: new Date().toISOString(),
+  };
+}
+
+function calculateSeedRatingForRank(kind, seedRank) {
+  const rows = getCalculatedRankingRows(kind)
+    .filter((item) => Number(item.comparisons || 0) > 0 || item.seed)
+    .sort((first, second) => Number(first.displayRank || first.rank) - Number(second.displayRank || second.rank));
+  const rank = clampRankingRank(seedRank, Math.max(rows.length + 1, 1));
+  const neighbors = rows
+    .filter((item) => Math.abs(Number(item.displayRank || item.rank || 0) - rank) <= 2)
+    .map((item) => Number(item.rating))
+    .filter(Number.isFinite);
+
+  if (neighbors.length > 0) {
+    return Math.round(neighbors.reduce((total, rating) => total + rating, 0) / neighbors.length);
+  }
+
+  const ratingStep = 12;
+  const midpoint = Math.max((getRankingRows(kind).length + 1) / 2, 1);
+  return Math.round(RANKING_BASE_RATING + ((midpoint - rank) * ratingStep));
+}
+
+function upsertRankingSeed(seed) {
+  if (!seed?.rankingType || !seed?.itemId) {
+    return;
+  }
+
+  const rows = siteData.rankingSeeds || [];
+  const index = rows.findIndex((entry) =>
+    normalizeLookupName(entry.rankingType) === normalizeLookupName(seed.rankingType) &&
+    String(entry.itemId) === String(seed.itemId)
+  );
+
+  if (index >= 0) {
+    rows[index] = seed;
+  } else {
+    rows.push(seed);
+  }
+
+  siteData.rankingSeeds = rows;
 }
 
 function insertRankingItem(rows, item, rank) {
@@ -2858,6 +3448,271 @@ function getRankingItemElement(kind, itemId) {
       item.getAttribute("data-ranking-kind") === kind &&
       item.getAttribute("data-ranking-id") === itemId
     ) || null;
+}
+
+function openRankingBattleDialog(kind = activeRankingKind) {
+  if (!rankingBattleDialog || !RANKING_CONFIG[kind]) {
+    return;
+  }
+
+  activeRankingBattle = null;
+  renderNextRankingBattle(kind);
+
+  if (typeof rankingBattleDialog.showModal === "function") {
+    rankingBattleDialog.showModal();
+  } else {
+    rankingBattleDialog.setAttribute("open", "");
+  }
+}
+
+function closeRankingBattleDialog() {
+  activeRankingBattle = null;
+
+  if (!rankingBattleDialog) {
+    return;
+  }
+
+  if (typeof rankingBattleDialog.close === "function") {
+    rankingBattleDialog.close();
+  } else {
+    rankingBattleDialog.removeAttribute("open");
+  }
+}
+
+function renderNextRankingBattle(kind = activeRankingKind) {
+  const pair = createRankingBattlePair(kind);
+  activeRankingBattle = pair;
+
+  if (rankingBattleTitle) {
+    rankingBattleTitle.textContent = pair
+      ? `Compare ${RANKING_CONFIG[kind].itemLabel}s`
+      : "Compare Rankings";
+  }
+
+  setRankingBattleStatus(pair ? "Choose the one you prefer." : "Add at least two ranking items first.");
+
+  if (!rankingBattleOptions) {
+    return;
+  }
+
+  if (!pair) {
+    rankingBattleOptions.innerHTML = "";
+    return;
+  }
+
+  rankingBattleOptions.innerHTML = [pair.itemA, pair.itemB].map((item) => `
+    <button class="ranking-battle-option" type="button" data-ranking-battle-choice="${escapeHtml(item.id)}">
+      <strong>${escapeHtml(item.name)}</strong>
+    </button>
+  `).join("");
+}
+
+function createRankingBattlePair(kind = activeRankingKind) {
+  const rows = isCurrentManagerAdmin()
+    ? getManualRankingRowsWithElo(kind)
+    : getDisplayedRankingRows(kind);
+
+  if (rows.length < 2) {
+    return null;
+  }
+
+  const comparisonCounts = getRankingComparisonCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
+  const sortedRows = [...rows].sort((first, second) => {
+    const firstCount = comparisonCounts.get(first.id) || 0;
+    const secondCount = comparisonCounts.get(second.id) || 0;
+
+    return firstCount - secondCount || Math.random() - 0.5;
+  });
+  const itemA = sortedRows[0];
+  const itemB = sortedRows
+    .slice(1)
+    .sort((first, second) => {
+      const firstDistance = Math.abs(Number(first.rating || RANKING_BASE_RATING) - Number(itemA.rating || RANKING_BASE_RATING));
+      const secondDistance = Math.abs(Number(second.rating || RANKING_BASE_RATING) - Number(itemA.rating || RANKING_BASE_RATING));
+      return firstDistance - secondDistance || Math.random() - 0.5;
+    })[0];
+
+  if (!itemA || !itemB) {
+    return null;
+  }
+
+  return {
+    itemA,
+    itemB,
+    kind,
+    rankingType: getRankingType(kind),
+  };
+}
+
+function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
+  const counts = new Map();
+
+  getRankingChoicesForKind(kind, options).forEach((choice) => {
+    [choice.itemAId, choice.itemBId, choice.winnerId, choice.loserId].forEach((id) => {
+      if (id) {
+        counts.set(id, (counts.get(id) || 0) + 1);
+      }
+    });
+  });
+
+  return counts;
+}
+
+function getRankingChoicesForKind(kind = activeRankingKind, options = {}) {
+  const type = normalizeLookupName(getRankingType(kind));
+  const managerId = getCurrentManagerId();
+
+  return (siteData.rankingChoices || []).filter((choice) => {
+    if (normalizeLookupName(choice.rankingType) !== type) {
+      return false;
+    }
+
+    if (!options.managerScoped) {
+      return true;
+    }
+
+    return managerId && String(choice.managerId || "").trim() === managerId;
+  });
+}
+
+function getCurrentManagerRankingChoices(kind = activeRankingKind) {
+  return getRankingChoicesForKind(kind, { managerScoped: true });
+}
+
+function getCurrentManagerId() {
+  return String(siteData.managerSession?.managerId || "").trim();
+}
+
+function chooseRankingBattleWinner(winnerId) {
+  const battle = activeRankingBattle;
+
+  if (!battle || !winnerId) {
+    return;
+  }
+
+  const winner = [battle.itemA, battle.itemB].find((item) => String(item.id) === String(winnerId));
+  const loser = [battle.itemA, battle.itemB].find((item) => String(item.id) !== String(winnerId));
+
+  if (!winner || !loser) {
+    return;
+  }
+
+  const choice = {
+    createdAt: new Date().toISOString(),
+    id: createRankingChoiceId(),
+    itemAId: battle.itemA.id,
+    itemBId: battle.itemB.id,
+    loserId: loser.id,
+    managerId: String(siteData.managerSession?.managerId || ""),
+    rankingType: battle.rankingType,
+    winnerId: winner.id,
+  };
+
+  siteData.rankingChoices = [...(siteData.rankingChoices || []), choice];
+  if (isCurrentManagerAdmin()) {
+    applyRankingChoiceToElo(choice);
+  }
+  submitRankingPayload({
+    action: "saveRankingChoice",
+    choice,
+  });
+  renderRankingLists();
+  setRankingBattleStatus(`${winner.name} saved.`);
+  renderNextRankingBattle(battle.kind);
+}
+
+function createRankingChoiceId() {
+  const nextId = (siteData.rankingChoices || [])
+    .map((choice) => Number(String(choice.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
+}
+
+function applyRankingChoiceToElo(choice) {
+  const winner = getRankingEloForItemByType(choice.rankingType, choice.winnerId);
+  const loser = getRankingEloForItemByType(choice.rankingType, choice.loserId);
+  const expectedWinner = getRankingExpectedScore(winner.rating, loser.rating);
+  const expectedLoser = getRankingExpectedScore(loser.rating, winner.rating);
+  const winnerKFactor = getRankingKFactor(winner);
+  const loserKFactor = getRankingKFactor(loser);
+  const nextWinner = {
+    ...winner,
+    lastChoiceId: choice.id,
+    rating: Math.round(winner.rating + winnerKFactor * (1 - expectedWinner)),
+    updatedAt: choice.createdAt,
+    wins: winner.wins + 1,
+  };
+  const nextLoser = {
+    ...loser,
+    lastChoiceId: choice.id,
+    losses: loser.losses + 1,
+    rating: Math.round(loser.rating + loserKFactor * (0 - expectedLoser)),
+    updatedAt: choice.createdAt,
+  };
+
+  upsertRankingEloRow(nextWinner);
+  upsertRankingEloRow(nextLoser);
+}
+
+function getRankingEloForItemByType(rankingType, itemId) {
+  const row = (siteData.rankingElo || []).find((entry) =>
+    normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+    String(entry.itemId) === String(itemId)
+  );
+  const seed = getRankingSeedForItemByType(rankingType, itemId);
+  const rating = row
+    ? Number(row.rating || RANKING_BASE_RATING)
+    : Number(seed?.seedRating || RANKING_BASE_RATING);
+  const wins = Number(row?.wins || 0);
+  const losses = Number(row?.losses || 0);
+
+  return {
+    comparisons: wins + losses,
+    itemId: String(itemId || "").trim(),
+    lastChoiceId: row?.lastChoiceId || "",
+    losses,
+    rating,
+    rankingType,
+    updatedAt: row?.updatedAt || "",
+    wins,
+  };
+}
+
+function upsertRankingEloRow(row) {
+  const rows = siteData.rankingElo || [];
+  const index = rows.findIndex((entry) =>
+    normalizeLookupName(entry.rankingType) === normalizeLookupName(row.rankingType) &&
+    String(entry.itemId) === String(row.itemId)
+  );
+
+  if (index >= 0) {
+    rows[index] = row;
+  } else {
+    rows.push(row);
+  }
+
+  siteData.rankingElo = rows;
+}
+
+function getRankingExpectedScore(rating, opponentRating) {
+  return 1 / (1 + (10 ** ((Number(opponentRating) - Number(rating)) / 400)));
+}
+
+function getRankingKFactor(item) {
+  return Number(item?.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS
+    ? RANKING_PROVISIONAL_K_FACTOR
+    : RANKING_ELO_K_FACTOR;
+}
+
+function setRankingBattleStatus(message, isError = false) {
+  if (!rankingBattleStatus) {
+    return;
+  }
+
+  rankingBattleStatus.textContent = message;
+  rankingBattleStatus.classList.toggle("is-error", isError);
 }
 
 function submitRankingOrder(kind) {
@@ -5094,6 +5949,33 @@ rankingAddButton?.addEventListener("click", () => {
   openRankingItemDialog(activeRankingKind);
 });
 
+rankingCompareButton?.addEventListener("click", () => {
+  openRankingBattleDialog(activeRankingKind);
+});
+
+rankingFilterToggle?.addEventListener("click", () => {
+  shouldShowRankingFilters = !shouldShowRankingFilters;
+  syncRankingControls();
+});
+
+rankingMoreDataToggle?.addEventListener("change", () => {
+  shouldShowRankingMoreData = Boolean(rankingMoreDataToggle.checked);
+  renderRankingLists();
+});
+
+rankingViewModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.rankingViewMode;
+
+    if (!["manual", "calculated"].includes(mode)) {
+      return;
+    }
+
+    activeRankingViewMode = mode;
+    renderRankingLists();
+  });
+});
+
 rankingItemForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveRankingItemFromForm();
@@ -5103,10 +5985,28 @@ rankingItemForm?.addEventListener("submit", (event) => {
   button?.addEventListener("click", closeRankingItemDialog);
 });
 
+[rankingBattleClose, rankingBattleDone].forEach((button) => {
+  button?.addEventListener("click", closeRankingBattleDialog);
+});
+
+rankingBattleSkip?.addEventListener("click", () => {
+  renderNextRankingBattle(activeRankingBattle?.kind || activeRankingKind);
+});
+
+rankingBattleOptions?.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-ranking-battle-choice]");
+
+  if (!option) {
+    return;
+  }
+
+  chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-choice") || "");
+});
+
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-ranking-id]");
 
-  if (!item || !isCurrentManagerAdmin()) {
+  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual") {
     return;
   }
 
@@ -5150,7 +6050,7 @@ document.addEventListener("pointerdown", (event) => {
   const handle = event.target.closest(".ranking-drag-handle");
   const item = handle?.closest("[data-ranking-id]");
 
-  if (!item || !isCurrentManagerAdmin()) {
+  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual") {
     return;
   }
 
@@ -5547,15 +6447,18 @@ function hideLoginPanel() {
 }
 
 function hydrateManagerSession() {
+  hydrateStoredManagerSession();
+  renderLoginState();
+  renderManagerHub();
+}
+
+function hydrateStoredManagerSession() {
   try {
     const rawSession = localStorage.getItem(MANAGER_SESSION_STORAGE_KEY);
     siteData.managerSession = rawSession ? JSON.parse(rawSession) : null;
   } catch {
     siteData.managerSession = null;
   }
-
-  renderLoginState();
-  renderManagerHub();
 }
 
 function saveManagerSession(session) {
@@ -5646,7 +6549,14 @@ function renderLoginState() {
   adminOnlyElements.forEach((element) => {
     element.hidden = !managerMeta?.isAdmin;
   });
+  loginOnlyElements.forEach((element) => {
+    element.hidden = !managerMeta;
+  });
   syncFootyGoalAssistsButton();
+
+  if (!managerMeta && activePageName === "rankings") {
+    showPage("footy", { scrollToTop: true });
+  }
 
   if (!managerMeta?.isAdmin && nationTestScoringToggle?.checked) {
     nationTestScoringToggle.checked = false;
@@ -5656,6 +6566,12 @@ function renderLoginState() {
   if (!managerMeta?.isAdmin && nextEditModeFilter?.checked) {
     nextEditModeFilter.checked = false;
     activeNextItemId = "";
+  }
+
+  if (!managerMeta?.isAdmin) {
+    activeRankingViewMode = "calculated";
+    shouldShowRankingFilters = false;
+    shouldShowRankingMoreData = false;
   }
 
   if (!managerMeta?.isAdmin) {
@@ -5871,8 +6787,15 @@ async function updateLoginModeForSelectedManager(options = {}) {
     return;
   }
 
-  loginSubmitButton.disabled = true;
-  setLoginFeedback("Checking manager setup...");
+  const cachedStatus = getCachedManagerAuthStatus(managerId);
+
+  if (cachedStatus && !isManagerAuthStatusExpired(cachedStatus)) {
+    renderLoginMode(cachedStatus);
+    setLoginFeedback("");
+  } else {
+    loginSubmitButton.disabled = true;
+    setLoginFeedback("Checking manager setup...");
+  }
 
   try {
     const response = await submitManagerPortalPayload({
@@ -5897,7 +6820,13 @@ async function updateLoginModeForSelectedManager(options = {}) {
     renderLoginMode(status);
     setLoginFeedback("");
   } catch (error) {
-    setLoginFeedback(error.message, true);
+    if (cachedStatus && !isManagerAuthStatusExpired(cachedStatus)) {
+      console.warn("Unable to refresh manager setup; using cached status.", error);
+      recordDiagnostic("manager auth status refresh failed", error);
+      setLoginFeedback("");
+    } else {
+      setLoginFeedback(error.message, true);
+    }
   } finally {
     loginSubmitButton.disabled = false;
   }
@@ -5976,10 +6905,40 @@ function getCachedManagerAuthStatus(managerId) {
 }
 
 function setCachedManagerAuthStatus(managerId, status) {
+  const statusWithCacheTime = {
+    ...status,
+    cachedAt: Date.now(),
+  };
   siteData.managerAuthStatus = {
     ...(siteData.managerAuthStatus || {}),
-    [String(managerId)]: status,
+    [String(managerId)]: statusWithCacheTime,
   };
+  persistManagerAuthStatusCache();
+}
+
+function isManagerAuthStatusExpired(status) {
+  const cachedAt = Number(status?.cachedAt || 0);
+  return !cachedAt || Date.now() - cachedAt > MANAGER_AUTH_STATUS_CACHE_MS;
+}
+
+function hydrateManagerAuthStatusCache() {
+  try {
+    const rawCache = localStorage.getItem(MANAGER_AUTH_STATUS_STORAGE_KEY);
+    const cache = rawCache ? JSON.parse(rawCache) : {};
+    siteData.managerAuthStatus = Object.fromEntries(
+      Object.entries(cache || {}).filter(([, status]) => !isManagerAuthStatusExpired(status))
+    );
+  } catch {
+    siteData.managerAuthStatus = {};
+  }
+}
+
+function persistManagerAuthStatusCache() {
+  try {
+    localStorage.setItem(MANAGER_AUTH_STATUS_STORAGE_KEY, JSON.stringify(siteData.managerAuthStatus || {}));
+  } catch {
+    // Auth status cache is only a speed hint; login itself still works without it.
+  }
 }
 
 function submitManagerPortalPayload(payload) {
@@ -6023,7 +6982,7 @@ function submitManagerPortalPayloadWithCallback(fullPayload, callbackName) {
     }
 
     window[callbackName] = (data) => {
-      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== callbackId) {
+      if (!data || data.source !== "boxthislap-manager-portal" || data.callbackId !== fullPayload.callbackId) {
         return;
       }
 
@@ -7784,6 +8743,7 @@ window.addEventListener("popstate", () => {
 });
 
 syncTestScoringUi();
+hydrateStoredManagerSession();
 showPage(window.location.hash.replace("#", "") || "footy");
 renderLeagueList(leagueYearSelect?.value || "2026");
 renderFantasyCriticPage();
@@ -7791,6 +8751,7 @@ loadFantasyCriticLeague("2025");
 loadFantasyCriticLeague("2026");
 syncThemeToggle();
 hydrateBracketSubmitter();
+hydrateManagerAuthStatusCache();
 hydrateManagerSession();
 
 loadJson("data/footy-schedule.json")

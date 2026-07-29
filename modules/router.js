@@ -21,6 +21,7 @@ export function createRouter({
   onStandingsTabShown = () => {},
   pageLinks,
   pages,
+  shouldBlockPage = () => false,
   shouldBlockRulesPage = () => false,
   tabPanels,
   tabs,
@@ -28,7 +29,8 @@ export function createRouter({
   function showPage(pageName, options = {}) {
     const allowedPageName = PAGE_ALIASES[pageName] || pageName;
     const testRulesBlocked = allowedPageName === "rules" && shouldBlockRulesPage();
-    const pageExists = !testRulesBlocked && [...pages].some((page) => page.dataset.page === allowedPageName);
+    const pageBlocked = testRulesBlocked || shouldBlockPage(allowedPageName);
+    const pageExists = !pageBlocked && [...pages].some((page) => page.dataset.page === allowedPageName);
     const activePageName = pageExists ? allowedPageName : "footy";
 
     pages.forEach((page) => {

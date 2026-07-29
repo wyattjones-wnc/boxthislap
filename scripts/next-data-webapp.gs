@@ -16,9 +16,60 @@ const RANKING_SHEETS = {
   movies: "Movie Ranking",
   tv: "TV Ranking",
 };
+const RANKING_TYPES = {
+  games: "games",
+  mcu: "mcu",
+  movies: "movies",
+  tv: "tv",
+};
+const RANKING_CHOICE_COLUMNS = [
+  "ID",
+  "Ranking Type",
+  "Item A ID",
+  "Item B ID",
+  "Winner ID",
+  "Loser ID",
+  "Manager ID",
+  "Created At",
+];
+const RANKING_ELO_COLUMNS = [
+  "Ranking Type",
+  "Item ID",
+  "Rating",
+  "Wins",
+  "Losses",
+  "Last Choice ID",
+  "Updated At",
+];
+const RANKING_SEED_COLUMNS = [
+  "Ranking Type",
+  "Item ID",
+  "Seed Rank",
+  "Seed Rating",
+  "Seeded At",
+  "Reason",
+];
+const RANKING_BASE_RATING = 1500;
+const RANKING_ELO_K_FACTOR = 32;
+const RANKING_PROVISIONAL_COMPARISONS = 10;
+const RANKING_PROVISIONAL_K_FACTOR = 64;
 
 function doGet(e) {
   try {
+    const action = String(e && e.parameter && e.parameter.action ? e.parameter.action : "").trim();
+
+    if (action === "listRankingChoices") {
+      return webResponse(e, { ok: true, choices: listRankingChoices() });
+    }
+
+    if (action === "listRankingElo") {
+      return webResponse(e, { ok: true, elo: listRankingElo() });
+    }
+
+    if (action === "listRankingSeeds") {
+      return webResponse(e, { ok: true, seeds: listRankingSeeds() });
+    }
+
     return webResponse(e, { ok: true, service: "boxthislap-next-data" });
   } catch (error) {
     return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });
@@ -34,11 +85,15 @@ function doPost(e) {
     }
 
     if (payload.action === "saveRankingItem") {
-      return jsonResponse(saveRankingItem(payload.ranking, payload.sheetName, payload.item || {}));
+      return jsonResponse(saveRankingItem(payload.ranking, payload.sheetName, payload.item || {}, payload.seed || null));
     }
 
     if (payload.action === "saveRankingOrder") {
       return jsonResponse(saveRankingOrder(payload.ranking, payload.sheetName, payload.items || []));
+    }
+
+    if (payload.action === "saveRankingChoice") {
+      return jsonResponse(saveRankingChoice(payload.choice || {}));
     }
 
     return jsonResponse({ ok: false, error: "Unknown action." });
@@ -145,7 +200,7 @@ function getNextNumericId(rowsById) {
   return String(maxId + 1);
 }
 
-function saveRankingItem(ranking, sheetName, item) {
+function saveRankingItem(ranking, sheetName, item, seed) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
 
@@ -163,8 +218,21 @@ function saveRankingItem(ranking, sheetName, item) {
     const existingRows = rows.filter((row) => row.ID !== rowValues.ID);
     existingRows.splice(rank - 1, 0, rowValues);
     writeRankingRows(context, normalizeRankingOrder(existingRows));
+    const seedResult = seed
+      ? saveRankingSeedWithoutLock({
+        ...seed,
+        "Item ID": rowValues.ID,
+        "Ranking Type": getRankingTypeForKey(ranking),
+        "Seed Rank": rank,
+      })
+      : null;
 
-    return { ok: true, id: rowValues.ID, status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended" };
+    return {
+      ok: true,
+      id: rowValues.ID,
+      seed: seedResult,
+      status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended",
+    };
   } finally {
     lock.releaseLock();
   }
@@ -334,6 +402,241 @@ function compareRankingRows(first, second) {
     String(first.ID || "").localeCompare(String(second.ID || ""), undefined, { numeric: true });
 }
 
+function getRankingTypeForKey(ranking) {
+  const normalizedRanking = String(ranking || "").trim();
+  return RANKING_TYPES[normalizedRanking] || normalizedRanking;
+}
+
+function listRankingChoices() {
+  const context = getSimpleTableContext("Ranking Choices", RANKING_CHOICE_COLUMNS, "ID");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      "Created At": row["Created At"],
+      ID: row.ID,
+      "Item A ID": row["Item A ID"],
+      "Item B ID": row["Item B ID"],
+      "Loser ID": row["Loser ID"],
+      "Manager ID": row["Manager ID"],
+      "Ranking Type": row["Ranking Type"],
+      "Winner ID": row["Winner ID"],
+    }))
+    .filter((row) => row["Ranking Type"] && row["Winner ID"] && row["Loser ID"]);
+}
+
+function listRankingElo() {
+  const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      "Item ID": row["Item ID"],
+      "Last Choice ID": row["Last Choice ID"],
+      Losses: row.Losses,
+      "Ranking Type": row["Ranking Type"],
+      Rating: row.Rating,
+      "Updated At": row["Updated At"],
+      Wins: row.Wins,
+    }))
+    .filter((row) => row["Ranking Type"] && row["Item ID"]);
+}
+
+function listRankingSeeds() {
+  const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      "Item ID": row["Item ID"],
+      Reason: row.Reason,
+      "Ranking Type": row["Ranking Type"],
+      "Seed Rank": row["Seed Rank"],
+      "Seed Rating": row["Seed Rating"],
+      "Seeded At": row["Seeded At"],
+    }))
+    .filter((row) => row["Ranking Type"] && row["Item ID"]);
+}
+
+function saveRankingSeedWithoutLock(seed) {
+  const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+  const rowValues = normalizeRankingSeed(seed);
+
+  if (!rowValues["Ranking Type"] || !rowValues["Item ID"]) {
+    throw new Error("Ranking Type and Item ID are required for Ranking Seeds.");
+  }
+
+  const existingRow = rows.find((row) =>
+    String(row["Ranking Type"] || "").trim().toLowerCase() === String(rowValues["Ranking Type"] || "").trim().toLowerCase() &&
+    String(row["Item ID"] || "").trim() === String(rowValues["Item ID"] || "").trim()
+  );
+
+  if (existingRow && existingRow.rowNumber) {
+    writeSimpleTableCells(context, existingRow.rowNumber, rowValues, RANKING_SEED_COLUMNS);
+    ensureRankingEloSeedRow(rowValues);
+    return { ok: true, itemId: rowValues["Item ID"], status: "updated" };
+  }
+
+  appendSimpleTableRow(context, rowValues, RANKING_SEED_COLUMNS);
+  ensureRankingEloSeedRow(rowValues);
+  return { ok: true, itemId: rowValues["Item ID"], status: "appended" };
+}
+
+function normalizeRankingSeed(seed) {
+  const seedRating = Number(seed["Seed Rating"] || seed.seedRating || RANKING_BASE_RATING);
+  const seedRank = Number(seed["Seed Rank"] || seed.seedRank || "");
+
+  return {
+    "Item ID": String(seed["Item ID"] || seed.itemId || "").trim(),
+    "Ranking Type": String(seed["Ranking Type"] || seed.rankingType || seed.ranking || "").trim(),
+    Reason: String(seed.Reason || seed.reason || "Initial rating from manual placement").trim(),
+    "Seed Rank": Number.isFinite(seedRank) && seedRank > 0 ? seedRank : "",
+    "Seed Rating": Number.isFinite(seedRating) ? Math.round(seedRating) : RANKING_BASE_RATING,
+    "Seeded At": String(seed["Seeded At"] || seed.seededAt || new Date().toISOString()).trim(),
+  };
+}
+
+function ensureRankingEloSeedRow(seed) {
+  const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+  const existingRow = rows.find((row) =>
+    String(row["Ranking Type"] || "").trim().toLowerCase() === String(seed["Ranking Type"] || "").trim().toLowerCase() &&
+    String(row["Item ID"] || "").trim() === String(seed["Item ID"] || "").trim()
+  );
+
+  if (existingRow) {
+    return;
+  }
+
+  appendSimpleTableRow(context, {
+    "Item ID": seed["Item ID"],
+    "Last Choice ID": "",
+    Losses: 0,
+    "Ranking Type": seed["Ranking Type"],
+    Rating: seed["Seed Rating"],
+    "Updated At": seed["Seeded At"],
+    Wins: 0,
+  }, RANKING_ELO_COLUMNS);
+}
+
+function saveRankingChoice(choice) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const choiceContext = getSimpleTableContext("Ranking Choices", RANKING_CHOICE_COLUMNS, "ID");
+    const choiceRows = readSimpleTableRows(choiceContext);
+    const rowValues = normalizeRankingChoice(choice);
+    rowValues.ID = rowValues.ID || getNextNumericIdFromRows(choiceRows, "ID");
+
+    if (!rowValues["Ranking Type"] || !rowValues["Winner ID"] || !rowValues["Loser ID"]) {
+      throw new Error("Ranking Type, Winner ID, and Loser ID are required.");
+    }
+
+    appendSimpleTableRow(choiceContext, rowValues, RANKING_CHOICE_COLUMNS);
+    const eloRows = updateRankingEloRows(rowValues);
+
+    return {
+      choice: rowValues,
+      elo: eloRows,
+      ok: true,
+      status: "appended",
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function normalizeRankingChoice(choice) {
+  return {
+    ID: String(choice.ID || choice.Id || choice.id || "").trim(),
+    "Ranking Type": String(choice["Ranking Type"] || choice.rankingType || choice.ranking || "").trim(),
+    "Item A ID": String(choice["Item A ID"] || choice.itemAId || "").trim(),
+    "Item B ID": String(choice["Item B ID"] || choice.itemBId || "").trim(),
+    "Winner ID": String(choice["Winner ID"] || choice.winnerId || "").trim(),
+    "Loser ID": String(choice["Loser ID"] || choice.loserId || "").trim(),
+    "Manager ID": String(choice["Manager ID"] || choice.managerId || "").trim(),
+    "Created At": String(choice["Created At"] || choice.createdAt || new Date().toISOString()).trim(),
+  };
+}
+
+function updateRankingEloRows(choice) {
+  const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+  const winner = getRankingEloRow(rows, choice["Ranking Type"], choice["Winner ID"]);
+  const loser = getRankingEloRow(rows, choice["Ranking Type"], choice["Loser ID"]);
+  const expectedWinner = getRankingExpectedScore(winner.Rating, loser.Rating);
+  const expectedLoser = getRankingExpectedScore(loser.Rating, winner.Rating);
+  const winnerKFactor = getRankingKFactor(winner);
+  const loserKFactor = getRankingKFactor(loser);
+  const updatedAt = new Date().toISOString();
+  const winnerNext = {
+    ...winner,
+    "Last Choice ID": choice.ID,
+    Rating: Math.round(winner.Rating + winnerKFactor * (1 - expectedWinner)),
+    "Updated At": updatedAt,
+    Wins: winner.Wins + 1,
+  };
+  const loserNext = {
+    ...loser,
+    "Last Choice ID": choice.ID,
+    Losses: loser.Losses + 1,
+    Rating: Math.round(loser.Rating + loserKFactor * (0 - expectedLoser)),
+    "Updated At": updatedAt,
+  };
+
+  upsertRankingEloRow(context, winnerNext);
+  upsertRankingEloRow(context, loserNext);
+
+  return [winnerNext, loserNext];
+}
+
+function getRankingEloRow(rows, rankingType, itemId) {
+  const row = rows.find((entry) =>
+    String(entry["Ranking Type"] || "").trim().toLowerCase() === String(rankingType || "").trim().toLowerCase() &&
+    String(entry["Item ID"] || "").trim() === String(itemId || "").trim()
+  );
+  const seed = row ? null : getRankingSeedRow(rankingType, itemId);
+  const wins = Number(row && row.Wins || 0);
+  const losses = Number(row && row.Losses || 0);
+
+  return {
+    Comparisons: wins + losses,
+    "Item ID": String(itemId || "").trim(),
+    "Last Choice ID": String(row && row["Last Choice ID"] || "").trim(),
+    Losses: losses,
+    "Ranking Type": String(rankingType || "").trim(),
+    Rating: Number(row && row.Rating || seed && seed["Seed Rating"] || RANKING_BASE_RATING),
+    rowNumber: row && row.rowNumber,
+    "Updated At": String(row && row["Updated At"] || "").trim(),
+    Wins: wins,
+  };
+}
+
+function getRankingSeedRow(rankingType, itemId) {
+  const context = getSimpleTableContext("Ranking Seeds", RANKING_SEED_COLUMNS, "Ranking Type");
+  const rows = readSimpleTableRows(context);
+
+  return rows.find((entry) =>
+    String(entry["Ranking Type"] || "").trim().toLowerCase() === String(rankingType || "").trim().toLowerCase() &&
+    String(entry["Item ID"] || "").trim() === String(itemId || "").trim()
+  ) || null;
+}
+
+function upsertRankingEloRow(context, rowValues) {
+  if (rowValues.rowNumber) {
+    writeSimpleTableCells(context, rowValues.rowNumber, rowValues, RANKING_ELO_COLUMNS);
+    return;
+  }
+
+  appendSimpleTableRow(context, rowValues, RANKING_ELO_COLUMNS);
+}
+
+function getRankingExpectedScore(rating, opponentRating) {
+  return 1 / (1 + Math.pow(10, (Number(opponentRating) - Number(rating)) / 400));
+}
+
+function getRankingKFactor(row) {
+  return Number(row && row.Comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS
+    ? RANKING_PROVISIONAL_K_FACTOR
+    : RANKING_ELO_K_FACTOR;
+}
+
 function normalizeNextItem(item) {
   return {
     ID: String(item.ID || item.Id || item.id || "").trim(),
@@ -371,6 +674,95 @@ function getExistingRowsById(sheet, headerRow, idColumn) {
   });
 
   return rowsById;
+}
+
+function getSimpleTableContext(sheetName, requiredColumns, requiredColumn) {
+  const sheet = getNextSpreadsheet().getSheetByName(sheetName);
+
+  if (!sheet) {
+    throw new Error(`Sheet "${sheetName}" was not found.`);
+  }
+
+  const header = findHeaderRow(sheet, requiredColumn);
+  const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columns = mapColumns(headerValues);
+  const missingColumns = requiredColumns.filter((column) => !columns[column]);
+
+  if (missingColumns.length > 0) {
+    throw new Error(`${sheetName} table is missing columns: ${missingColumns.join(", ")}`);
+  }
+
+  return {
+    columns,
+    headerRow: header.row,
+    rowWidth: headerValues.length,
+    sheet,
+    sheetName,
+  };
+}
+
+function readSimpleTableRows(context) {
+  const lastRow = context.sheet.getLastRow();
+
+  if (lastRow <= context.headerRow) {
+    return [];
+  }
+
+  const values = context.sheet.getRange(context.headerRow + 1, 1, lastRow - context.headerRow, context.rowWidth).getValues();
+  const headersByIndex = {};
+
+  Object.entries(context.columns).forEach(([column, index]) => {
+    headersByIndex[index - 1] = column;
+  });
+
+  return values
+    .map((row, index) => {
+      const mapped = { rowNumber: context.headerRow + 1 + index };
+      let hasValue = false;
+
+      row.forEach((value, cellIndex) => {
+        const header = headersByIndex[cellIndex];
+
+        if (!header) {
+          return;
+        }
+
+        mapped[header] = value;
+
+        if (String(value || "").trim()) {
+          hasValue = true;
+        }
+      });
+
+      return hasValue ? mapped : null;
+    })
+    .filter(Boolean);
+}
+
+function appendSimpleTableRow(context, rowValues, columnsToWrite) {
+  const row = Array(context.rowWidth).fill("");
+
+  columnsToWrite.forEach((column) => {
+    row[context.columns[column] - 1] = rowValues[column] === undefined ? "" : rowValues[column];
+  });
+
+  const startRow = Math.max(context.sheet.getLastRow() + 1, context.headerRow + 1);
+  context.sheet.getRange(startRow, 1, 1, context.rowWidth).setValues([row]);
+}
+
+function writeSimpleTableCells(context, rowNumber, rowValues, columnsToWrite) {
+  columnsToWrite.forEach((column) => {
+    context.sheet.getRange(rowNumber, context.columns[column]).setValue(rowValues[column] === undefined ? "" : rowValues[column]);
+  });
+}
+
+function getNextNumericIdFromRows(rows, idColumn) {
+  const maxId = rows.reduce((maxValue, row) => {
+    const numericId = Number(String(row[idColumn] || "").trim());
+    return Number.isInteger(numericId) && numericId > maxValue ? numericId : maxValue;
+  }, 0);
+
+  return String(maxId + 1);
 }
 
 function findHeaderRow(sheet, requiredColumn) {

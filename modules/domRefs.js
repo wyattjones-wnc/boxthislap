@@ -115,6 +115,7 @@ export const rankingItemKind = document.querySelector("#ranking-item-kind");
 export const rankingItemId = document.querySelector("#ranking-item-id");
 export const rankingItemName = document.querySelector("#ranking-item-name");
 export const rankingItemRank = document.querySelector("#ranking-item-rank");
+export const rankingItemNormalize = document.querySelector("#ranking-item-normalize");
 export const rankingItemStatus = document.querySelector("#ranking-item-status");
 export const rankingItemClose = document.querySelector("#ranking-item-close");
 export const rankingItemCancel = document.querySelector("#ranking-item-cancel");

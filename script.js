@@ -143,6 +143,7 @@ import {
   rankingItemId,
   rankingItemName,
   rankingItemRank,
+  rankingItemNormalize,
   rankingItemStatus,
   rankingItemClose,
   rankingItemCancel,
@@ -3494,6 +3495,10 @@ function openRankingItemDialog(kind = activeRankingKind) {
     rankingItemRank.value = String(rows.length + 1);
   }
 
+  if (rankingItemNormalize) {
+    rankingItemNormalize.checked = true;
+  }
+
   setRankingItemStatus("");
 
   if (typeof rankingItemDialog.showModal === "function") {
@@ -3665,6 +3670,10 @@ function saveRankingItemFromForm() {
 
   const rows = getRankingRows(kind);
   const rank = clampRankingRank(rankingItemRank?.value, rows.length + 1);
+  const shouldNormalizeAfterAdd = Boolean(rankingItemNormalize?.checked);
+  const preInsertSnapshotItems = shouldNormalizeAfterAdd
+    ? createRankingSnapshotItemsFromRows(getCalculatedRankingRows(kind))
+    : [];
   const item = {
     id: createRankingItemId(kind),
     name,
@@ -3672,19 +3681,30 @@ function saveRankingItemFromForm() {
     rank,
   };
   const seed = createRankingSeedForNewItem(kind, item.id, rank);
+  const createdAt = new Date().toISOString();
+  const snapshot = shouldNormalizeAfterAdd
+    ? createRankingSnapshotForKind(kind, createdAt, "Before adding ranking item", "pre-add calculated")
+    : null;
+  const normalizedItems = shouldNormalizeAfterAdd
+    ? createNormalizedRankingItemsAfterAdd(kind, item, rank)
+    : [];
 
   siteData.rankings = siteData.rankings || {};
   siteData.rankings[kind] = insertRankingItem(rows, item, rank);
   upsertRankingSeed(seed);
-  upsertRankingEloRow({
-    itemId: item.id,
-    lastChoiceId: "",
-    losses: 0,
-    rating: seed.seedRating,
-    rankingType: seed.rankingType,
-    updatedAt: seed.seededAt,
-    wins: 0,
-  });
+  if (shouldNormalizeAfterAdd) {
+    applyRankingNormalizationLocally(kind, snapshot, preInsertSnapshotItems, normalizedItems, createdAt);
+  } else {
+    upsertRankingEloRow({
+      itemId: item.id,
+      lastChoiceId: "",
+      losses: 0,
+      rating: seed.seedRating,
+      rankingType: seed.rankingType,
+      updatedAt: seed.seededAt,
+      wins: 0,
+    });
+  }
   renderRankingList(kind);
   submitRankingPayload({
     action: "saveRankingItem",
@@ -3693,6 +3713,17 @@ function saveRankingItemFromForm() {
       Rank: item.rank,
       Name: item.name,
     },
+    normalization: shouldNormalizeAfterAdd ? {
+      createdAt,
+      items: normalizedItems,
+      label: snapshot.label,
+      managerId: snapshot.managerId,
+      rankingType: snapshot.rankingType,
+      reason: snapshot.reason,
+      snapshotId: snapshot.id,
+      snapshotItems: preInsertSnapshotItems,
+      source: snapshot.source,
+    } : null,
     ranking: kind,
     seed,
     sheetName: config.sheetName,
@@ -3911,6 +3942,94 @@ function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
   });
 
   return counts;
+}
+
+function createRankingSnapshotForKind(kind, createdAt, reason, source) {
+  return {
+    createdAt,
+    id: createRankingSnapshotId(),
+    label: formatRankingSnapshotOptionLabel({ createdAt }),
+    managerId: getCurrentManagerId(),
+    rankingType: getRankingType(kind),
+    reason,
+    source,
+  };
+}
+
+function createRankingSnapshotItemsFromRows(rows = []) {
+  return rows.map((item, index) => ({
+    comparisons: Number(item.comparisons || 0),
+    id: item.id,
+    itemId: item.id,
+    itemName: item.name,
+    losses: Number(item.losses || 0),
+    rank: Number(item.displayRank || item.rank || index + 1),
+    rating: Math.round(item.rating || RANKING_BASE_RATING),
+    wins: Number(item.wins || 0),
+  }));
+}
+
+function createNormalizedRankingItemsAfterAdd(kind, item, rank) {
+  const calculatedRows = getCalculatedRankingRows(kind)
+    .filter((row) => String(row.id) !== String(item.id));
+  const insertedRows = [...calculatedRows];
+  insertedRows.splice(clampRankingRank(rank, insertedRows.length + 1) - 1, 0, {
+    ...item,
+    comparisons: 0,
+    losses: 0,
+    rating: calculateSeedRatingForRank(kind, rank),
+    wins: 0,
+  });
+
+  return insertedRows.map((row, index) => ({
+    comparisons: Number(row.comparisons || 0),
+    id: row.id,
+    itemId: row.id,
+    itemName: row.name,
+    losses: Number(row.losses || 0),
+    normalizedRating: calculateNormalizedRating(index + 1, insertedRows.length),
+    rank: index + 1,
+    rating: Math.round(row.rating || RANKING_BASE_RATING),
+    wins: Number(row.wins || 0),
+  }));
+}
+
+function applyRankingNormalizationLocally(kind, snapshot, snapshotItems, normalizedItems, createdAt) {
+  if (!snapshot) {
+    return;
+  }
+
+  siteData.rankingSnapshots = [snapshot, ...(siteData.rankingSnapshots || [])];
+  siteData.rankingSnapshotItems = [
+    ...(siteData.rankingSnapshotItems || []),
+    ...snapshotItems.map((item) => ({
+      comparisons: item.comparisons,
+      itemId: item.itemId,
+      itemName: item.itemName,
+      losses: item.losses,
+      rank: item.rank,
+      rating: item.rating,
+      snapshotId: snapshot.id,
+      wins: item.wins,
+    })),
+  ];
+  siteData.rankingChoices = (siteData.rankingChoices || [])
+    .filter((choice) => normalizeLookupName(choice.rankingType) !== normalizeLookupName(snapshot.rankingType));
+  siteData.rankingElo = [
+    ...(siteData.rankingElo || [])
+      .filter((row) => normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType)),
+    ...normalizedItems.map((item) => ({
+      itemId: item.itemId,
+      lastChoiceId: "",
+      losses: 0,
+      rating: item.normalizedRating,
+      rankingType: getRankingType(kind),
+      updatedAt: createdAt,
+      wins: 0,
+    })),
+  ];
+  activeRankingSnapshotId = "current";
+  activeRankingCompareSnapshotId = snapshot.id;
 }
 
 function getRankingPairCounts(kind = activeRankingKind, options = {}) {

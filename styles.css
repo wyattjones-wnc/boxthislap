@@ -918,6 +918,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-height: 42px;
 }
 
+.ranking-item-normalize-control {
+  margin-top: 12px;
+}
+
+.ranking-dialog-note {
+  margin: 8px 0 0;
+}
+
 .ranking-drag-handle {
   align-items: center;
   align-self: stretch;

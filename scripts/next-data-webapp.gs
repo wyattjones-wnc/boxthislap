@@ -112,7 +112,13 @@ function doPost(e) {
     }
 
     if (payload.action === "saveRankingItem") {
-      return jsonResponse(saveRankingItem(payload.ranking, payload.sheetName, payload.item || {}, payload.seed || null));
+      return jsonResponse(saveRankingItem(
+        payload.ranking,
+        payload.sheetName,
+        payload.item || {},
+        payload.seed || null,
+        payload.normalization || null
+      ));
     }
 
     if (payload.action === "saveRankingOrder") {
@@ -231,7 +237,7 @@ function getNextNumericId(rowsById) {
   return String(maxId + 1);
 }
 
-function saveRankingItem(ranking, sheetName, item, seed) {
+function saveRankingItem(ranking, sheetName, item, seed, normalization) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
 
@@ -257,10 +263,17 @@ function saveRankingItem(ranking, sheetName, item, seed) {
         "Seed Rank": rank,
       })
       : null;
+    const normalizeResult = normalization
+      ? normalizeRankingWithoutLock({
+        ...normalization,
+        rankingType: getRankingTypeForKey(ranking),
+      })
+      : null;
 
     return {
       ok: true,
       id: rowValues.ID,
+      normalize: normalizeResult,
       seed: seedResult,
       status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended",
     };
@@ -610,63 +623,68 @@ function normalizeRanking(normalization) {
   lock.waitLock(30000);
 
   try {
-    const rankingType = String(normalization.rankingType || "").trim();
-    const items = Array.isArray(normalization.items) ? normalization.items : [];
-    const createdAt = String(normalization.createdAt || new Date().toISOString()).trim();
-    const managerId = String(normalization.managerId || "").trim();
-    const reason = String(normalization.reason || "Normalized calculated rankings").trim();
-    const source = String(normalization.source || "calculated").trim();
-
-    if (!rankingType) {
-      throw new Error("Ranking Type is required.");
-    }
-
-    if (!items.length) {
-      throw new Error("At least one ranking item is required.");
-    }
-
-    const snapshotContext = getSimpleTableContext("Ranking Snapshots", RANKING_SNAPSHOT_COLUMNS, "Snapshot ID");
-    const snapshotRows = readSimpleTableRows(snapshotContext);
-    const snapshotId = String(normalization.snapshotId || getNextNumericIdFromRows(snapshotRows, "Snapshot ID"));
-    const label = String(normalization.label || formatSnapshotLabel(createdAt)).trim();
-
-    appendSimpleTableRow(snapshotContext, {
-      "Created At": createdAt,
-      Label: label,
-      "Manager ID": managerId,
-      "Ranking Type": rankingType,
-      Reason: reason,
-      "Snapshot ID": snapshotId,
-      Source: source,
-    }, RANKING_SNAPSHOT_COLUMNS);
-
-    const itemContext = getSimpleTableContext("Ranking Snapshot Items", RANKING_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
-    items.forEach((item, index) => {
-      const rank = clampRankingRank(item.rank || item.Rank || index + 1, items.length);
-      appendSimpleTableRow(itemContext, {
-        Games: Number(item.games || item.Games || item.comparisons || 0),
-        "Item ID": String(item.itemId || item["Item ID"] || item.id || "").trim(),
-        "Item Name": String(item.itemName || item["Item Name"] || item.name || "").trim(),
-        Losses: Number(item.losses || item.Losses || 0),
-        Rank: rank,
-        Rating: Number(item.rating || item.Rating || RANKING_BASE_RATING),
-        "Snapshot ID": snapshotId,
-        Wins: Number(item.wins || item.Wins || 0),
-      }, RANKING_SNAPSHOT_ITEM_COLUMNS);
-    });
-
-    resetRankingEloFromItems(rankingType, items, createdAt);
-    clearRankingChoicesForType(rankingType);
-
-    return {
-      ok: true,
-      rankingType,
-      snapshotId,
-      status: "normalized",
-    };
+    return normalizeRankingWithoutLock(normalization);
   } finally {
     lock.releaseLock();
   }
+}
+
+function normalizeRankingWithoutLock(normalization) {
+  const rankingType = String(normalization.rankingType || "").trim();
+  const items = Array.isArray(normalization.items) ? normalization.items : [];
+  const snapshotItems = Array.isArray(normalization.snapshotItems) ? normalization.snapshotItems : items;
+  const createdAt = String(normalization.createdAt || new Date().toISOString()).trim();
+  const managerId = String(normalization.managerId || "").trim();
+  const reason = String(normalization.reason || "Normalized calculated rankings").trim();
+  const source = String(normalization.source || "calculated").trim();
+
+  if (!rankingType) {
+    throw new Error("Ranking Type is required.");
+  }
+
+  if (!items.length) {
+    throw new Error("At least one ranking item is required.");
+  }
+
+  const snapshotContext = getSimpleTableContext("Ranking Snapshots", RANKING_SNAPSHOT_COLUMNS, "Snapshot ID");
+  const snapshotRows = readSimpleTableRows(snapshotContext);
+  const snapshotId = String(normalization.snapshotId || getNextNumericIdFromRows(snapshotRows, "Snapshot ID"));
+  const label = String(normalization.label || formatSnapshotLabel(createdAt)).trim();
+
+  appendSimpleTableRow(snapshotContext, {
+    "Created At": createdAt,
+    Label: label,
+    "Manager ID": managerId,
+    "Ranking Type": rankingType,
+    Reason: reason,
+    "Snapshot ID": snapshotId,
+    Source: source,
+  }, RANKING_SNAPSHOT_COLUMNS);
+
+  const itemContext = getSimpleTableContext("Ranking Snapshot Items", RANKING_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+  snapshotItems.forEach((item, index) => {
+    const rank = clampRankingRank(item.rank || item.Rank || index + 1, snapshotItems.length);
+    appendSimpleTableRow(itemContext, {
+      Games: Number(item.games || item.Games || item.comparisons || 0),
+      "Item ID": String(item.itemId || item["Item ID"] || item.id || "").trim(),
+      "Item Name": String(item.itemName || item["Item Name"] || item.name || "").trim(),
+      Losses: Number(item.losses || item.Losses || 0),
+      Rank: rank,
+      Rating: Number(item.rating || item.Rating || RANKING_BASE_RATING),
+      "Snapshot ID": snapshotId,
+      Wins: Number(item.wins || item.Wins || 0),
+    }, RANKING_SNAPSHOT_ITEM_COLUMNS);
+  });
+
+  resetRankingEloFromItems(rankingType, items, createdAt);
+  clearRankingChoicesForType(rankingType);
+
+  return {
+    ok: true,
+    rankingType,
+    snapshotId,
+    status: "normalized",
+  };
 }
 
 function resetRankingEloFromItems(rankingType, items, updatedAt) {

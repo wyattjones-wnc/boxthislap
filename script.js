@@ -238,6 +238,7 @@ let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
+const BRACKET_SUBMISSIONS_ARCHIVED = true;
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
 const RANKING_PROVISIONAL_COMPARISONS = 10;
@@ -10611,6 +10612,11 @@ function hydrateBracketSubmitter() {
 }
 
 function submitBracketPicks() {
+  if (BRACKET_SUBMISSIONS_ARCHIVED) {
+    setBracketSubmitStatus("Bracket submissions are archived.", "error");
+    return;
+  }
+
   const submitter = bracketSubmitterInput?.value.trim() ?? "";
   const picks = getBracketPicks();
   const selectedMatchIds = Object.keys(picks);

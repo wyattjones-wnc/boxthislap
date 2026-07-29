@@ -46,21 +46,21 @@ scriptable/box-this-lap-next-widget.js
 ```
 
 4. Save it as something like `Box This Lap Next`.
+5. Run the script inside Scriptable.
+6. Choose any item from the `Next` list.
+
+That choice is saved locally on the phone. The widget will keep focusing on that item until you run the script again and choose a different one.
 
 ## 3. Add the widget
 
 1. Add a Scriptable widget to the Home Screen.
 2. Edit the widget.
 3. Choose the `Box This Lap Next` script.
-4. Set the widget parameter:
+4. Leave the widget parameter blank if you want to use the saved focus item.
 
-```text
+If no saved focus item exists, blank means the widget shows the next upcoming incomplete item.
 
-```
-
-Blank means the widget shows the next upcoming incomplete item.
-
-Other useful parameters:
+Optional widget parameters can override the saved choice:
 
 ```text
 id:12

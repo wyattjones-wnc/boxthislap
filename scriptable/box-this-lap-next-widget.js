@@ -1,12 +1,16 @@
 // Box This Lap - Next Countdown Widget for Scriptable
 //
-// Widget parameter options:
-// - Leave blank: show the next upcoming incomplete item.
+// Run this script inside Scriptable to choose the Next item the widget should
+// focus on. That choice is saved locally on the phone.
+//
+// Optional widget parameter overrides:
+// - Leave blank: show the saved focus item, or the next upcoming incomplete item.
 // - id:12: show the Next row with ID 12.
 // - Fantasy Critic: show the first incomplete item whose Thing contains that text.
 
 const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
 const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/#next";
+const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
 
 const COLORS = {
@@ -20,7 +24,13 @@ const COLORS = {
 };
 
 const result = await loadNextItems();
-const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM) : null;
+
+if (result.ok && !config.runsInWidget) {
+  await chooseFocusItem(result.items);
+}
+
+const savedFocus = readSavedFocus();
+const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM, savedFocus) : null;
 const widget = createWidget(item, result);
 
 if (config.runsInWidget) {
@@ -58,22 +68,44 @@ async function loadNextItems() {
   }
 }
 
-function chooseItem(items, parameter) {
+async function chooseFocusItem(items) {
+  const sortedItems = sortItemsForPicker(items);
+  const alert = new Alert();
+  alert.title = "Choose Next Widget Focus";
+  alert.message = "Pick any item from the Next list. The widget will keep showing this item until you choose another one or set a widget parameter.";
+
+  sortedItems.forEach((item) => {
+    alert.addAction(`${item.thing} (${formatPickerDate(item)})`);
+  });
+
+  alert.addDestructiveAction("Clear saved focus");
+  alert.addCancelAction("Cancel");
+
+  const index = await alert.presentSheet();
+
+  if (index >= 0 && index < sortedItems.length) {
+    saveFocus(sortedItems[index]);
+    return;
+  }
+
+  if (index === sortedItems.length) {
+    clearSavedFocus();
+  }
+}
+
+function chooseItem(items, parameter, savedFocus) {
   const incompleteItems = items.filter((item) => !item.completed);
 
   if (parameter) {
-    const lowerParameter = parameter.toLowerCase();
-    const idMatch = lowerParameter.match(/^id\s*:\s*(.+)$/);
+    return findItem(items, parameter, incompleteItems);
+  }
 
-    if (idMatch) {
-      return incompleteItems.find((item) => item.id.toLowerCase() === idMatch[1].trim().toLowerCase()) ||
-        items.find((item) => item.id.toLowerCase() === idMatch[1].trim().toLowerCase()) ||
-        null;
+  if (savedFocus && savedFocus.id) {
+    const savedItem = items.find((item) => item.id.toLowerCase() === savedFocus.id.toLowerCase());
+
+    if (savedItem) {
+      return savedItem;
     }
-
-    return incompleteItems.find((item) => item.thing.toLowerCase().includes(lowerParameter)) ||
-      items.find((item) => item.thing.toLowerCase().includes(lowerParameter)) ||
-      null;
   }
 
   const now = new Date();
@@ -89,6 +121,34 @@ function chooseItem(items, parameter) {
 
       return Number(second.priorityLevel || 0) - Number(first.priorityLevel || 0);
     })[0] || null;
+}
+
+function findItem(items, parameter, incompleteItems) {
+  const lowerParameter = parameter.toLowerCase();
+  const idMatch = lowerParameter.match(/^id\s*:\s*(.+)$/);
+
+  if (idMatch) {
+    return incompleteItems.find((item) => item.id.toLowerCase() === idMatch[1].trim().toLowerCase()) ||
+      items.find((item) => item.id.toLowerCase() === idMatch[1].trim().toLowerCase()) ||
+      null;
+  }
+
+  return incompleteItems.find((item) => item.thing.toLowerCase().includes(lowerParameter)) ||
+    items.find((item) => item.thing.toLowerCase().includes(lowerParameter)) ||
+    null;
+}
+
+function sortItemsForPicker(items) {
+  return [...items].sort((first, second) => {
+    const firstTime = first.startDate ? first.startDate.getTime() : Number.MAX_SAFE_INTEGER;
+    const secondTime = second.startDate ? second.startDate.getTime() : Number.MAX_SAFE_INTEGER;
+
+    if (firstTime !== secondTime) {
+      return firstTime - secondTime;
+    }
+
+    return first.thing.localeCompare(second.thing);
+  });
 }
 
 function createWidget(item, result) {
@@ -145,6 +205,40 @@ function createWidget(item, result) {
   dateLine.lineLimit = 2;
 
   return widget;
+}
+
+function readSavedFocus() {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), SAVED_FOCUS_FILE);
+
+  if (!fileManager.fileExists(path)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fileManager.readString(path));
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveFocus(item) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), SAVED_FOCUS_FILE);
+  fileManager.writeString(path, JSON.stringify({
+    id: item.id,
+    thing: item.thing,
+    savedAt: new Date().toISOString(),
+  }));
+}
+
+function clearSavedFocus() {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), SAVED_FOCUS_FILE);
+
+  if (fileManager.fileExists(path)) {
+    fileManager.remove(path);
+  }
 }
 
 function addErrorState(widget, message) {
@@ -314,6 +408,16 @@ function formatDateRange(item) {
   }
 
   return `${start} to ${formatDate(item.endDate, false)}`;
+}
+
+function formatPickerDate(item) {
+  if (!item || !item.startDate) {
+    return "no date";
+  }
+
+  const formatter = new DateFormatter();
+  formatter.dateFormat = item.time ? "MMM d, h:mm a" : "MMM d";
+  return formatter.string(item.startDate);
 }
 
 function formatDate(date, includeTime) {

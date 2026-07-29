@@ -10198,7 +10198,7 @@ function renderBracketSubmissionOptions(submissions = []) {
   const selectedValue = bracketSubmissionSelect.value;
 
   bracketSubmissionSelect.innerHTML = `
-    <option value="${BRACKET_MANUAL_PICK_VALUE}">Make picks</option>
+    <option value="${BRACKET_MANUAL_PICK_VALUE}">Official</option>
     ${submissions.map((submission) => `
       <option value="${escapeHtml(submission.id)}">${escapeHtml(submission.label)}</option>
     `).join("")}
@@ -10230,7 +10230,8 @@ function syncBracketSubmissionControls() {
   }
 
   if (bracketClearPicks) {
-    bracketClearPicks.disabled = isViewingSubmission;
+    bracketClearPicks.hidden = BRACKET_SUBMISSIONS_ARCHIVED;
+    bracketClearPicks.disabled = BRACKET_SUBMISSIONS_ARCHIVED || isViewingSubmission;
   }
 
   if (!isViewingSubmission && bracketSubmitStatus?.textContent.startsWith("Viewing ")) {
@@ -10724,6 +10725,11 @@ function setBracketSubmitStatus(message, state = "") {
 }
 
 function clearBracketPicks() {
+  if (BRACKET_SUBMISSIONS_ARCHIVED) {
+    setBracketSubmitStatus("Bracket picks are archived.", "error");
+    return;
+  }
+
   bracketPicksFallback = {};
 
   try {

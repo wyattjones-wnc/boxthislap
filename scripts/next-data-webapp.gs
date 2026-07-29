@@ -97,6 +97,10 @@ function doGet(e) {
       });
     }
 
+    if (action === "listNextItems") {
+      return webResponse(e, { ok: true, items: listNextItems() });
+    }
+
     return webResponse(e, { ok: true, service: "boxthislap-next-data" });
   } catch (error) {
     return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });
@@ -226,6 +230,23 @@ function saveNextItem(item) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function listNextItems() {
+  const context = getSimpleTableContext("Next", NEXT_ITEM_COLUMNS, "ID");
+
+  return readSimpleTableDisplayRows(context)
+    .map((row) => ({
+      id: String(row.ID || "").trim(),
+      thing: String(row.Thing || "").trim(),
+      date: String(row.Date || "").trim(),
+      endDate: String(row["End Date"] || "").trim(),
+      time: String(row.Time || "").trim(),
+      priorityLevel: String(row["Priority Level"] || "").trim(),
+      completed: isTrueValue(row.Completed),
+      nonAdmin: isTrueValue(row.NonAdmin),
+    }))
+    .filter((row) => row.id && row.thing && row.date);
 }
 
 function getNextNumericId(rowsById) {
@@ -845,6 +866,11 @@ function normalizeBool(value) {
   return ["true", "yes", "y", "1", "checked"].indexOf(normalized) >= 0 ? "TRUE" : "FALSE";
 }
 
+function isTrueValue(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["true", "yes", "y", "1", "checked"].indexOf(normalized) >= 0;
+}
+
 function getExistingRowsById(sheet, headerRow, idColumn) {
   const lastRow = sheet.getLastRow();
   const rowsById = {};
@@ -864,6 +890,44 @@ function getExistingRowsById(sheet, headerRow, idColumn) {
   });
 
   return rowsById;
+}
+
+function readSimpleTableDisplayRows(context) {
+  const lastRow = context.sheet.getLastRow();
+
+  if (lastRow <= context.headerRow) {
+    return [];
+  }
+
+  const values = context.sheet.getRange(context.headerRow + 1, 1, lastRow - context.headerRow, context.rowWidth).getDisplayValues();
+  const headersByIndex = {};
+
+  Object.entries(context.columns).forEach(([column, index]) => {
+    headersByIndex[index - 1] = column;
+  });
+
+  return values
+    .map((row, index) => {
+      const mapped = { rowNumber: context.headerRow + 1 + index };
+      let hasValue = false;
+
+      row.forEach((value, cellIndex) => {
+        const header = headersByIndex[cellIndex];
+
+        if (!header) {
+          return;
+        }
+
+        mapped[header] = value;
+
+        if (String(value || "").trim()) {
+          hasValue = true;
+        }
+      });
+
+      return hasValue ? mapped : null;
+    })
+    .filter(Boolean);
 }
 
 function getSimpleTableContext(sheetName, requiredColumns, requiredColumn) {

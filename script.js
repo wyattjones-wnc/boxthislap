@@ -2586,7 +2586,7 @@ function renderRankingsPage() {
 }
 
 function ensureRankingsLoaded() {
-  if (siteData.rankings) {
+  if (siteData.rankingsLoaded) {
     return Promise.resolve(siteData.rankings);
   }
 
@@ -2594,55 +2594,56 @@ function ensureRankingsLoaded() {
     return rankingsLoadPromise;
   }
 
-  renderRankingAdminMessage("Loading rankings...");
+  siteData.rankings = {};
+  siteData.rankingErrors = [];
+  siteData.rankingErrorsByKind = {};
+  siteData.rankingLoading = Object.fromEntries(
+    Object.keys(RANKING_CONFIG).map((kind) => [kind, true])
+  );
+  renderRankingLists();
 
-  rankingsLoadPromise = Promise.allSettled(
-    Object.entries(RANKING_CONFIG).map(async ([kind, config]) => {
-      const rows = await loadSheet(config.source);
-      return [kind, normalizeRankingRows(rows)];
+  const supplementalPromise = loadRankingSupplementalData()
+    .catch((error) => {
+      recordDiagnostic("ranking supplemental data failed to load", error);
+      siteData.rankingErrors = [
+        ...(siteData.rankingErrors || []),
+        `Ranking supplemental data: ${error.message}`,
+      ];
+      siteData.rankingChoices = [];
+      siteData.rankingElo = [];
+      siteData.rankingExclusions = [];
+      siteData.rankingSeeds = [];
+      siteData.rankingSnapshots = [];
+      siteData.rankingSnapshotItems = [];
     })
-  ).then((results) => {
-    const rankings = {};
-    const errors = [];
+    .then(() => renderRankingLists());
 
-    results.forEach((result, index) => {
-      const kind = Object.keys(RANKING_CONFIG)[index];
-
-      if (result.status === "fulfilled") {
-        const [resultKind, rows] = result.value;
-        rankings[resultKind] = rows;
-      } else {
-        rankings[kind] = [];
-        errors.push(`${RANKING_CONFIG[kind].sheetName}: ${result.reason?.message || result.reason}`);
-      }
-    });
-
-    siteData.rankings = rankings;
-    siteData.rankingErrors = errors;
-
-    return loadRankingSupplementalData()
-      .catch((error) => {
-        recordDiagnostic("ranking supplemental data failed to load", error);
-        siteData.rankingErrors = [
-          ...(siteData.rankingErrors || []),
-          `Ranking supplemental data: ${error.message}`,
-        ];
-        siteData.rankingChoices = [];
-        siteData.rankingElo = [];
-        siteData.rankingExclusions = [];
-        siteData.rankingSeeds = [];
-        siteData.rankingSnapshots = [];
-        siteData.rankingSnapshotItems = [];
+  const rankingPromises = Object.entries(RANKING_CONFIG).map(([kind, config]) =>
+    loadSheet(config.source)
+      .then((rows) => {
+        siteData.rankings[kind] = normalizeRankingRows(rows);
       })
-      .then(() => {
-        renderRankingLists();
-        return rankings;
-      });
-  }).catch((error) => {
-    siteData.rankingErrors = [error.message];
-    renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
-    throw error;
-  });
+      .catch((error) => {
+        siteData.rankings[kind] = [];
+        siteData.rankingErrorsByKind[kind] = `${config.sheetName}: ${error.message || error}`;
+      })
+      .finally(() => {
+        siteData.rankingLoading[kind] = false;
+        renderRankingList(kind);
+      })
+  );
+
+  rankingsLoadPromise = Promise.allSettled([...rankingPromises, supplementalPromise])
+    .then(() => {
+      siteData.rankingsLoaded = true;
+      renderRankingLists();
+      return siteData.rankings;
+    })
+    .catch((error) => {
+      siteData.rankingErrors = [error.message];
+      renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
+      throw error;
+    });
 
   return rankingsLoadPromise;
 }
@@ -2652,7 +2653,7 @@ function renderRankingAdminMessage(message) {
     const list = RANKING_CONFIG[kind].list();
 
     if (list) {
-      list.innerHTML = `<p class="table-message">${escapeHtml(message)}</p>`;
+      list.innerHTML = renderLoadingMessage(message);
     }
   });
 }
@@ -2913,16 +2914,35 @@ function renderRankingList(kind) {
 
   const rows = getDisplayedRankingRows(kind);
 
-  if (!rows.length) {
-    list.innerHTML = `<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
+  if (siteData.rankingLoading?.[kind]) {
+    list.innerHTML = renderLoadingMessage(`Loading ${config.itemLabel.toLowerCase()} rankings...`);
     return;
   }
 
-  const errorMarkup = kind === activeRankingKind && siteData.rankingErrors?.length
-    ? `<p class="table-message ranking-warning">${siteData.rankingErrors.map(escapeHtml).join("<br>")}</p>`
+  const messages = [
+    ...(siteData.rankingErrorsByKind?.[kind] ? [siteData.rankingErrorsByKind[kind]] : []),
+    ...(kind === activeRankingKind ? siteData.rankingErrors || [] : []),
+  ];
+  const errorMarkup = messages.length
+    ? `<p class="table-message ranking-warning">${messages.map(escapeHtml).join("<br>")}</p>`
     : "";
+
+  if (!rows.length) {
+    list.innerHTML = `${errorMarkup}<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
+    return;
+  }
+
   list.innerHTML = rows.map((item) => renderRankingItem(kind, item)).join("");
   list.insertAdjacentHTML("afterbegin", errorMarkup);
+}
+
+function renderLoadingMessage(message = "Loading...") {
+  return `
+    <p class="table-message loading-message">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span>${escapeHtml(message)}</span>
+    </p>
+  `;
 }
 
 function renderRankingItem(kind, item) {
@@ -2959,6 +2979,9 @@ function renderRankingExclusionAction(kind, item) {
   const label = isExcluded ? "Include" : "Exclude";
 
   return `
+    <button class="ranking-action-trigger" type="button" data-ranking-actions-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}" aria-label="Show actions for ${escapeHtml(item.name)}">
+      ...
+    </button>
     <span class="ranking-item-actions">
       <button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
         ${escapeHtml(label)}
@@ -4273,7 +4296,7 @@ function isRankingItemExcluded(kind, itemId, managerId = getCurrentManagerId()) 
   return Boolean(getRankingExclusion(kind, itemId, managerId)?.excluded);
 }
 
-function setRankingItemExcluded(kind, itemId, excluded) {
+async function setRankingItemExcluded(kind, itemId, excluded) {
   const managerId = getCurrentManagerId();
   const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
 
@@ -4286,7 +4309,7 @@ function setRankingItemExcluded(kind, itemId, excluded) {
   const existing = getRankingExclusion(kind, itemId, managerId);
   const exclusion = {
     excluded: Boolean(excluded),
-    id: existing?.id || createRankingExclusionId(),
+    id: existing?.id || `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     itemId: item.id,
     managerId,
     rankingType,
@@ -4302,17 +4325,45 @@ function setRankingItemExcluded(kind, itemId, excluded) {
     exclusion,
   ];
 
-  submitRankingPayload({
-    action: "saveRankingExclusion",
-    exclusion: {
-      Excluded: exclusion.excluded,
-      ID: exclusion.id,
-      "Item ID": exclusion.itemId,
-      "Manager ID": exclusion.managerId,
-      "Ranking Type": exclusion.rankingType,
-      "Updated At": exclusion.updatedAt,
-    },
-  });
+  renderRankingLists();
+  setRankingItemStatus(`${item.name} ${excluded ? "excluded" : "included"}. Saving...`);
+
+  try {
+    const response = await loadNextDataEndpoint("saveRankingExclusion", {
+      excluded: exclusion.excluded ? "TRUE" : "FALSE",
+      itemId: exclusion.itemId,
+      managerId: exclusion.managerId,
+      rankingType: exclusion.rankingType,
+      updatedAt: exclusion.updatedAt,
+      ...(existing?.id ? { id: existing.id } : {}),
+    });
+    const saved = normalizeRankingExclusions(response.exclusion ? [response.exclusion] : [])[0];
+
+    if (saved) {
+      siteData.rankingExclusions = [
+        ...(siteData.rankingExclusions || []).filter((entry) =>
+          !(normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+            String(entry.itemId) === String(item.id) &&
+            String(entry.managerId) === String(managerId))
+        ),
+        saved,
+      ];
+    }
+
+    setRankingItemStatus(`${item.name} ${excluded ? "excluded" : "included"}.`);
+  } catch (error) {
+    siteData.rankingExclusions = (siteData.rankingExclusions || []).filter((entry) =>
+      !(normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+        String(entry.itemId) === String(item.id) &&
+        String(entry.managerId) === String(managerId))
+    );
+    if (existing) {
+      siteData.rankingExclusions = [...siteData.rankingExclusions, existing];
+    }
+    recordDiagnostic("ranking exclusion failed to save", error);
+    setRankingItemStatus(`Unable to save ${item.name}: ${error.message}`, true);
+  }
+
   renderRankingLists();
 
   if (activeRankingBattle?.kind === kind && activeRankingBattle && [activeRankingBattle.itemA, activeRankingBattle.itemB].some((battleItem) => String(battleItem.id) === String(itemId))) {
@@ -6800,9 +6851,30 @@ rankingBattleOptions?.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const actionsToggle = event.target.closest("[data-ranking-actions-toggle]");
+
+  if (actionsToggle) {
+    event.preventDefault();
+    event.stopPropagation();
+    const rankingItem = actionsToggle.closest(".ranking-item");
+
+    document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+      if (item !== rankingItem) {
+        item.classList.remove("is-actions-open");
+      }
+    });
+    rankingItem?.classList.toggle("is-actions-open");
+    return;
+  }
+
   const exclusionAction = event.target.closest("[data-ranking-exclusion-toggle]");
 
   if (!exclusionAction) {
+    if (!event.target.closest(".ranking-item")) {
+      document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+        item.classList.remove("is-actions-open");
+      });
+    }
     return;
   }
 
@@ -6811,21 +6883,6 @@ document.addEventListener("click", (event) => {
   const kind = exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind;
   const itemId = exclusionAction.getAttribute("data-ranking-exclusion-toggle") || "";
   setRankingItemExcluded(kind, itemId, !isRankingItemExcluded(kind, itemId));
-});
-
-document.addEventListener("click", (event) => {
-  const rankingItem = event.target.closest(".ranking-item");
-
-  if (!rankingItem || event.target.closest("button, a, input, select, textarea, [role='button']")) {
-    return;
-  }
-
-  document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
-    if (item !== rankingItem) {
-      item.classList.remove("is-actions-open");
-    }
-  });
-  rankingItem.classList.toggle("is-actions-open");
 });
 
 document.addEventListener("dragstart", (event) => {

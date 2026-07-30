@@ -101,6 +101,17 @@ function doGet(e) {
       return webResponse(e, { ok: true, exclusions: listRankingExclusions() });
     }
 
+    if (action === "saveRankingExclusion") {
+      return webResponse(e, saveRankingExclusion({
+        Excluded: e.parameter.excluded,
+        ID: e.parameter.id,
+        "Item ID": e.parameter.itemId,
+        "Manager ID": e.parameter.managerId,
+        "Ranking Type": e.parameter.rankingType,
+        "Updated At": e.parameter.updatedAt,
+      }));
+    }
+
     if (action === "listRankingSnapshots") {
       return webResponse(e, {
         ok: true,

@@ -2669,15 +2669,18 @@ async function loadRankingSupplementalData() {
     return;
   }
 
-  const [choicesResponse, eloResponse, seedsResponse, snapshotsResponse, exclusionsResponse] = await Promise.all([
-    loadNextDataEndpoint("listRankingChoices"),
-    loadNextDataEndpoint("listRankingElo"),
-    loadNextDataEndpoint("listRankingSeeds"),
-    loadNextDataEndpoint("listRankingSnapshots"),
-    loadNextDataEndpoint("listRankingExclusions").catch((error) => ({
-      exclusions: [],
-      warning: `Unable to load ranking exclusions: ${error.message}`,
-    })),
+  const [
+    choicesResponse,
+    eloResponse,
+    seedsResponse,
+    snapshotsResponse,
+    exclusionsResponse,
+  ] = await Promise.all([
+    loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }),
+    loadOptionalRankingEndpoint("listRankingElo", { elo: [] }),
+    loadOptionalRankingEndpoint("listRankingSeeds", { seeds: [] }),
+    loadOptionalRankingEndpoint("listRankingSnapshots", { snapshotItems: [], snapshots: [] }),
+    loadOptionalRankingEndpoint("listRankingExclusions", { exclusions: [] }),
   ]);
 
   siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
@@ -2686,8 +2689,14 @@ async function loadRankingSupplementalData() {
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
   siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
   siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
-  if (exclusionsResponse.warning) {
-    siteData.rankingErrors = [...(siteData.rankingErrors || []), exclusionsResponse.warning];
+}
+
+async function loadOptionalRankingEndpoint(action, fallback) {
+  try {
+    return await loadNextDataEndpoint(action);
+  } catch (error) {
+    recordDiagnostic(`${action} failed to load`, error);
+    return fallback;
   }
 }
 
@@ -2979,9 +2988,6 @@ function renderRankingExclusionAction(kind, item) {
   const label = isExcluded ? "Include" : "Exclude";
 
   return `
-    <button class="ranking-action-trigger" type="button" data-ranking-actions-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}" aria-label="Show actions for ${escapeHtml(item.name)}">
-      ...
-    </button>
     <span class="ranking-item-actions">
       <button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
         ${escapeHtml(label)}
@@ -6851,38 +6857,36 @@ rankingBattleOptions?.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-  const actionsToggle = event.target.closest("[data-ranking-actions-toggle]");
-
-  if (actionsToggle) {
-    event.preventDefault();
-    event.stopPropagation();
-    const rankingItem = actionsToggle.closest(".ranking-item");
-
-    document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
-      if (item !== rankingItem) {
-        item.classList.remove("is-actions-open");
-      }
-    });
-    rankingItem?.classList.toggle("is-actions-open");
-    return;
-  }
-
   const exclusionAction = event.target.closest("[data-ranking-exclusion-toggle]");
 
-  if (!exclusionAction) {
-    if (!event.target.closest(".ranking-item")) {
-      document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
-        item.classList.remove("is-actions-open");
-      });
-    }
+  if (exclusionAction) {
+    event.preventDefault();
+    event.stopPropagation();
+    const kind = exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind;
+    const itemId = exclusionAction.getAttribute("data-ranking-exclusion-toggle") || "";
+    setRankingItemExcluded(kind, itemId, !isRankingItemExcluded(kind, itemId));
     return;
   }
 
-  event.preventDefault();
-  event.stopPropagation();
-  const kind = exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind;
-  const itemId = exclusionAction.getAttribute("data-ranking-exclusion-toggle") || "";
-  setRankingItemExcluded(kind, itemId, !isRankingItemExcluded(kind, itemId));
+  const rankingItem = event.target.closest(".ranking-item");
+
+  if (!rankingItem) {
+    document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+      item.classList.remove("is-actions-open");
+    });
+    return;
+  }
+
+  if (event.target.closest("button, a, input, select, textarea, label, [role='button']")) {
+    return;
+  }
+
+  document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+    if (item !== rankingItem) {
+      item.classList.remove("is-actions-open");
+    }
+  });
+  rankingItem.classList.toggle("is-actions-open");
 });
 
 document.addEventListener("dragstart", (event) => {

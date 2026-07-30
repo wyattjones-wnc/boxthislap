@@ -810,31 +810,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--accent) !important;
 }
 
-.ranking-action-trigger {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: var(--muted);
-  cursor: pointer;
-  display: inline-flex;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 900;
-  height: 28px;
-  justify-content: center;
-  justify-self: start;
-  line-height: 1;
-  margin-top: 2px;
-  padding: 0 4px;
-  width: 36px;
-}
-
-.ranking-action-trigger:hover,
-.ranking-action-trigger:focus-visible {
-  color: var(--accent);
-  outline: none;
-}
-
 .ranking-item-actions {
   display: flex;
   flex-wrap: wrap;

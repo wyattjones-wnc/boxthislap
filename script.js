@@ -2609,7 +2609,6 @@ function ensureRankingsLoaded() {
         ...(siteData.rankingErrors || []),
         `Ranking supplemental data: ${error.message}`,
       ];
-      siteData.rankingChoices = [];
       siteData.rankingElo = [];
       siteData.rankingExclusions = [];
       siteData.rankingSeeds = [];
@@ -2660,7 +2659,6 @@ function renderRankingAdminMessage(message) {
 
 async function loadRankingSupplementalData() {
   if (!NEXT_DATA_ENDPOINT) {
-    siteData.rankingChoices = [];
     siteData.rankingElo = [];
     siteData.rankingExclusions = [];
     siteData.rankingSeeds = [];
@@ -2670,20 +2668,17 @@ async function loadRankingSupplementalData() {
   }
 
   const [
-    choicesResponse,
     eloResponse,
     seedsResponse,
     snapshotsResponse,
     exclusionsResponse,
   ] = await Promise.all([
-    loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }),
-    loadOptionalRankingEndpoint("listRankingElo", { elo: [] }),
+    loadOptionalRankingEndpoint("listRankingElo", { elo: [] }, { managerId: getCurrentManagerId() }),
     loadOptionalRankingEndpoint("listRankingSeeds", { seeds: [] }),
     loadOptionalRankingEndpoint("listRankingSnapshots", { snapshotItems: [], snapshots: [] }),
     loadOptionalRankingEndpoint("listRankingExclusions", { exclusions: [] }),
   ]);
 
-  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
   siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
   siteData.rankingExclusions = normalizeRankingExclusions(exclusionsResponse.exclusions || []);
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
@@ -2691,9 +2686,9 @@ async function loadRankingSupplementalData() {
   siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
 }
 
-async function loadOptionalRankingEndpoint(action, fallback) {
+async function loadOptionalRankingEndpoint(action, fallback, params = {}) {
   try {
-    return await loadNextDataEndpoint(action);
+    return await loadNextDataEndpoint(action, params);
   } catch (error) {
     recordDiagnostic(`${action} failed to load`, error);
     return fallback;
@@ -2790,6 +2785,8 @@ function normalizeRankingEloRows(rows = []) {
 }
 
 function normalizeRankingEloRow(row) {
+  const id = String(getField(row, "ID", "Id", "id") || "").trim();
+  const managerId = String(getField(row, "Manager ID", "Manager", "managerId") || "").trim();
   const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
   const itemId = String(getField(row, "Item ID", "Item", "itemId") || "").trim();
 
@@ -2798,9 +2795,11 @@ function normalizeRankingEloRow(row) {
   }
 
   return {
+    id,
     itemId,
     lastChoiceId: String(getField(row, "Last Choice ID", "lastChoiceId") || "").trim(),
     losses: Number(getField(row, "Losses", "losses") || 0),
+    managerId,
     rating: Number(getField(row, "Rating", "rating") || RANKING_BASE_RATING),
     rankingType,
     updatedAt: String(getField(row, "Updated At", "updatedAt") || "").trim(),
@@ -3083,9 +3082,7 @@ function getDisplayedRankingRows(kind = activeRankingKind) {
   }
 
   if (!isCurrentManagerAdmin()) {
-    return filterExcludedRows(getCurrentManagerRankingChoices(kind).length
-      ? getCurrentManagerCalculatedRankingRows(kind)
-      : getRandomizedRankingRows(kind));
+    return filterExcludedRows(getCalculatedRankingRows(kind));
   }
 
   if (activeRankingViewMode === "calculated") {
@@ -3185,30 +3182,6 @@ function formatRankingSnapshotOptionLabel(snapshot) {
   });
 }
 
-function getCurrentManagerCalculatedRankingRows(kind = activeRankingKind) {
-  const eloMap = getChoiceDerivedRankingEloMap(kind, getCurrentManagerRankingChoices(kind));
-
-  return getRankingRows(kind)
-    .map((item) => {
-      const elo = eloMap.get(String(item.id)) || getSeededRankingEloForItem(getRankingType(kind), item.id);
-      const seed = getRankingSeedForItem(kind, item.id);
-      return {
-        ...item,
-        comparisons: elo.comparisons,
-        losses: elo.losses,
-        rating: elo.rating,
-        seed,
-        wins: elo.wins,
-      };
-    })
-    .sort(compareCalculatedRankingRows)
-    .map((item, index) => ({
-      ...item,
-      calculatedRank: index + 1,
-      displayRank: index + 1,
-    }));
-}
-
 function getRandomizedRankingRows(kind = activeRankingKind) {
   const rows = getRankingRows(kind).map((item) => {
     const elo = getSeededRankingEloForItem(getRankingType(kind), item.id);
@@ -3256,70 +3229,17 @@ function getRankingRandomOrder(kind, rows) {
   return new Map(Object.entries(siteData.rankingRandomOrder[kind]));
 }
 
-function getChoiceDerivedRankingEloMap(kind, choices = []) {
-  const type = getRankingType(kind);
-  const eloMap = new Map(
-    getRankingRows(kind).map((item) => [
-      String(item.id),
-      getSeededRankingEloForItem(type, item.id),
-    ])
-  );
-
-  [...choices]
-    .sort(compareRankingChoicesByTime)
-    .forEach((choice) => applyRankingChoiceToEloMap(choice, eloMap));
-
-  return eloMap;
-}
-
-function compareRankingChoicesByTime(first, second) {
-  const firstTime = Date.parse(first.createdAt || "");
-  const secondTime = Date.parse(second.createdAt || "");
-  const normalizedFirst = Number.isFinite(firstTime) ? firstTime : 0;
-  const normalizedSecond = Number.isFinite(secondTime) ? secondTime : 0;
-
-  return normalizedFirst - normalizedSecond ||
-    String(first.id || "").localeCompare(String(second.id || ""), undefined, { numeric: true });
-}
-
-function applyRankingChoiceToEloMap(choice, eloMap) {
-  const winner = eloMap.get(String(choice.winnerId));
-  const loser = eloMap.get(String(choice.loserId));
-
-  if (!winner || !loser) {
-    return;
-  }
-
-  const expectedWinner = getRankingExpectedScore(winner.rating, loser.rating);
-  const expectedLoser = getRankingExpectedScore(loser.rating, winner.rating);
-  const winnerKFactor = getRankingKFactor(winner);
-  const loserKFactor = getRankingKFactor(loser);
-
-  eloMap.set(String(choice.winnerId), {
-    ...winner,
-    lastChoiceId: choice.id,
-    rating: Math.round(winner.rating + winnerKFactor * (1 - expectedWinner)),
-    updatedAt: choice.createdAt,
-    wins: winner.wins + 1,
-  });
-  eloMap.set(String(choice.loserId), {
-    ...loser,
-    lastChoiceId: choice.id,
-    losses: loser.losses + 1,
-    rating: Math.round(loser.rating + loserKFactor * (0 - expectedLoser)),
-    updatedAt: choice.createdAt,
-  });
-}
-
 function getSeededRankingEloForItem(rankingType, itemId) {
   const seed = getRankingSeedForItemByType(rankingType, itemId);
   const rating = Number(seed?.seedRating || RANKING_BASE_RATING);
+  const managerId = getCurrentManagerId();
 
   return {
     comparisons: 0,
     itemId: String(itemId || "").trim(),
     lastChoiceId: "",
     losses: 0,
+    managerId,
     rating: Number.isFinite(rating) ? rating : RANKING_BASE_RATING,
     rankingType,
     updatedAt: "",
@@ -3374,9 +3294,11 @@ function getCalculatedRankingRankMap(kind = activeRankingKind) {
 
 function getRankingEloForItem(kind, itemId) {
   const type = getRankingType(kind);
+  const managerId = getCurrentManagerId();
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(type) &&
-    String(entry.itemId) === String(itemId)
+    String(entry.itemId) === String(itemId) &&
+    String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItem(kind, itemId);
   const rating = row
@@ -3389,6 +3311,7 @@ function getRankingEloForItem(kind, itemId) {
     comparisons: wins + losses,
     itemId: String(itemId || "").trim(),
     losses,
+    managerId,
     rating,
     rankingType: type,
     wins,
@@ -3697,15 +3620,17 @@ function normalizeActiveRanking() {
       wins: item.wins,
     })),
   ];
-  siteData.rankingChoices = (siteData.rankingChoices || [])
-    .filter((choice) => normalizeLookupName(choice.rankingType) !== normalizeLookupName(snapshot.rankingType));
   siteData.rankingElo = [
     ...(siteData.rankingElo || [])
-      .filter((row) => normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType)),
+      .filter((row) =>
+        normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType) ||
+        String(row.managerId || "") !== String(snapshot.managerId || "")
+      ),
     ...items.map((item) => ({
       itemId: item.id,
       lastChoiceId: "",
       losses: 0,
+      managerId: snapshot.managerId,
       rating: item.normalizedRating,
       rankingType: snapshot.rankingType,
       updatedAt: createdAt,
@@ -3794,6 +3719,7 @@ function saveRankingItemFromForm() {
       itemId: item.id,
       lastChoiceId: "",
       losses: 0,
+      managerId: getCurrentManagerId(),
       rating: seed.seedRating,
       rankingType: seed.rankingType,
       updatedAt: seed.seededAt,
@@ -4087,18 +4013,13 @@ function createRankingBattlePair(kind = activeRankingKind) {
   };
 }
 
-function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
-  const counts = new Map();
-
-  getRankingChoicesForKind(kind, options).forEach((choice) => {
-    [choice.itemAId, choice.itemBId].forEach((id) => {
-      if (id) {
-        counts.set(id, (counts.get(id) || 0) + 1);
-      }
-    });
-  });
-
-  return counts;
+function getRankingComparisonCounts(kind = activeRankingKind) {
+  return new Map(
+    getRankingRows(kind).map((item) => {
+      const elo = getRankingEloForItem(kind, item.id);
+      return [String(item.id), Number(elo.comparisons || 0)];
+    })
+  );
 }
 
 function createRankingSnapshotForKind(kind, createdAt, reason, source) {
@@ -4170,15 +4091,17 @@ function applyRankingNormalizationLocally(kind, snapshot, snapshotItems, normali
       wins: item.wins,
     })),
   ];
-  siteData.rankingChoices = (siteData.rankingChoices || [])
-    .filter((choice) => normalizeLookupName(choice.rankingType) !== normalizeLookupName(snapshot.rankingType));
   siteData.rankingElo = [
     ...(siteData.rankingElo || [])
-      .filter((row) => normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType)),
+      .filter((row) =>
+        normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType) ||
+        String(row.managerId || "") !== String(snapshot.managerId || "")
+      ),
     ...normalizedItems.map((item) => ({
       itemId: item.itemId,
       lastChoiceId: "",
       losses: 0,
+      managerId: snapshot.managerId,
       rating: item.normalizedRating,
       rankingType: getRankingType(kind),
       updatedAt: createdAt,
@@ -4189,18 +4112,8 @@ function applyRankingNormalizationLocally(kind, snapshot, snapshotItems, normali
   activeRankingCompareSnapshotId = snapshot.id;
 }
 
-function getRankingPairCounts(kind = activeRankingKind, options = {}) {
-  const counts = new Map();
-
-  getRankingChoicesForKind(kind, options).forEach((choice) => {
-    const key = getRankingPairKey(choice.itemAId, choice.itemBId);
-
-    if (key) {
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-  });
-
-  return counts;
+function getRankingPairCounts() {
+  return new Map();
 }
 
 function createRankingPairCandidates(rows, comparisonCounts, pairCounts) {
@@ -4261,27 +4174,6 @@ function chooseRankingPairByScore(candidates, getScore) {
 function getRankingPairKey(firstId, secondId) {
   const ids = [String(firstId || "").trim(), String(secondId || "").trim()].filter(Boolean).sort();
   return ids.length === 2 ? ids.join("::") : "";
-}
-
-function getRankingChoicesForKind(kind = activeRankingKind, options = {}) {
-  const type = normalizeLookupName(getRankingType(kind));
-  const managerId = getCurrentManagerId();
-
-  return (siteData.rankingChoices || []).filter((choice) => {
-    if (normalizeLookupName(choice.rankingType) !== type) {
-      return false;
-    }
-
-    if (!options.managerScoped) {
-      return true;
-    }
-
-    return managerId && String(choice.managerId || "").trim() === managerId;
-  });
-}
-
-function getCurrentManagerRankingChoices(kind = activeRankingKind) {
-  return getRankingChoicesForKind(kind, { managerScoped: true });
 }
 
 function getCurrentManagerId() {
@@ -4412,10 +4304,7 @@ function chooseRankingBattleWinner(winnerId) {
     winnerId: winner.id,
   };
 
-  siteData.rankingChoices = [...(siteData.rankingChoices || []), choice];
-  if (isCurrentManagerAdmin()) {
-    applyRankingChoiceToElo(choice);
-  }
+  applyRankingChoiceToElo(choice);
   submitRankingPayload({
     action: "saveRankingChoice",
     choice,
@@ -4426,12 +4315,7 @@ function chooseRankingBattleWinner(winnerId) {
 }
 
 function createRankingChoiceId() {
-  const nextId = (siteData.rankingChoices || [])
-    .map((choice) => Number(String(choice.id || "").trim()))
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
-
-  return String(nextId);
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function applyRankingChoiceToElo(choice) {
@@ -4460,10 +4344,11 @@ function applyRankingChoiceToElo(choice) {
   upsertRankingEloRow(nextLoser);
 }
 
-function getRankingEloForItemByType(rankingType, itemId) {
+function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentManagerId()) {
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
-    String(entry.itemId) === String(itemId)
+    String(entry.itemId) === String(itemId) &&
+    String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItemByType(rankingType, itemId);
   const rating = row
@@ -4474,9 +4359,11 @@ function getRankingEloForItemByType(rankingType, itemId) {
 
   return {
     comparisons: wins + losses,
+    id: row?.id || "",
     itemId: String(itemId || "").trim(),
     lastChoiceId: row?.lastChoiceId || "",
     losses,
+    managerId,
     rating,
     rankingType,
     updatedAt: row?.updatedAt || "",
@@ -4488,7 +4375,8 @@ function upsertRankingEloRow(row) {
   const rows = siteData.rankingElo || [];
   const index = rows.findIndex((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(row.rankingType) &&
-    String(entry.itemId) === String(row.itemId)
+    String(entry.itemId) === String(row.itemId) &&
+    String(entry.managerId || "") === String(row.managerId || "")
   );
 
   if (index >= 0) {

@@ -95,6 +95,13 @@ function doGet(e) {
       return webResponse(e, { ok: true, elo: listRankingElo(e.parameter.managerId) });
     }
 
+    if (action === "repairRankingEloDuplicateManagers") {
+      return webResponse(e, repairRankingEloDuplicateManagers({
+        fromManagerId: e.parameter.fromManagerId || "6",
+        toManagerId: e.parameter.toManagerId || "8",
+      }));
+    }
+
     if (action === "listRankingSeeds") {
       return webResponse(e, { ok: true, seeds: listRankingSeeds() });
     }
@@ -538,6 +545,55 @@ function listRankingElo(managerId) {
       row["Manager ID"] &&
       (!normalizedManagerId || String(row["Manager ID"]).trim() === normalizedManagerId)
     );
+}
+
+function repairRankingEloDuplicateManagers(options) {
+  const fromManagerId = String(options && options.fromManagerId || "6").trim();
+  const toManagerId = String(options && options.toManagerId || "8").trim();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+    const groups = {};
+
+    readSimpleTableRows(context)
+      .filter((row) => row["Ranking Type"] && row["Item ID"])
+      .forEach((row) => {
+        const key = `${String(row["Ranking Type"]).trim().toLowerCase()}::${String(row["Item ID"]).trim()}`;
+        groups[key] = groups[key] || [];
+        groups[key].push(row);
+      });
+
+    const updatedRows = [];
+
+    Object.values(groups).forEach((rows) => {
+      const fromRows = rows
+        .filter((row) => String(row["Manager ID"] || "").trim() === fromManagerId)
+        .sort((first, second) => Number(first.rowNumber || 0) - Number(second.rowNumber || 0));
+
+      fromRows.slice(1).forEach((row) => {
+        context.sheet.getRange(row.rowNumber, context.columns["Manager ID"]).setValue(toManagerId);
+        updatedRows.push({
+          ID: row.ID,
+          "Item ID": row["Item ID"],
+          "Ranking Type": row["Ranking Type"],
+          rowNumber: row.rowNumber,
+        });
+      });
+    });
+
+    return {
+      fromManagerId,
+      ok: true,
+      status: "updated",
+      toManagerId,
+      updatedCount: updatedRows.length,
+      updatedRows,
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function listRankingSeeds() {

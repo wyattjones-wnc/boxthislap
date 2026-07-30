@@ -132,6 +132,7 @@ import {
   rankingFilterToggle,
   rankingFilters,
   rankingMoreDataToggle,
+  rankingShowExcludedToggle,
   rankingViewModeButtons,
   rankingSnapshotSelect,
   rankingCompareSelect,
@@ -229,6 +230,7 @@ let activeRankingSnapshotId = "current";
 let activeRankingCompareSnapshotId = "";
 let shouldShowRankingFilters = false;
 let shouldShowRankingMoreData = false;
+let shouldShowRankingExcluded = false;
 let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
@@ -2627,6 +2629,7 @@ function ensureRankingsLoaded() {
         ];
         siteData.rankingChoices = [];
         siteData.rankingElo = [];
+        siteData.rankingExclusions = [];
         siteData.rankingSeeds = [];
         siteData.rankingSnapshots = [];
         siteData.rankingSnapshotItems = [];
@@ -2658,24 +2661,33 @@ async function loadRankingSupplementalData() {
   if (!NEXT_DATA_ENDPOINT) {
     siteData.rankingChoices = [];
     siteData.rankingElo = [];
+    siteData.rankingExclusions = [];
     siteData.rankingSeeds = [];
     siteData.rankingSnapshots = [];
     siteData.rankingSnapshotItems = [];
     return;
   }
 
-  const [choicesResponse, eloResponse, seedsResponse, snapshotsResponse] = await Promise.all([
+  const [choicesResponse, eloResponse, seedsResponse, snapshotsResponse, exclusionsResponse] = await Promise.all([
     loadNextDataEndpoint("listRankingChoices"),
     loadNextDataEndpoint("listRankingElo"),
     loadNextDataEndpoint("listRankingSeeds"),
     loadNextDataEndpoint("listRankingSnapshots"),
+    loadNextDataEndpoint("listRankingExclusions").catch((error) => ({
+      exclusions: [],
+      warning: `Unable to load ranking exclusions: ${error.message}`,
+    })),
   ]);
 
   siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
   siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
+  siteData.rankingExclusions = normalizeRankingExclusions(exclusionsResponse.exclusions || []);
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
   siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
   siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
+  if (exclusionsResponse.warning) {
+    siteData.rankingErrors = [...(siteData.rankingErrors || []), exclusionsResponse.warning];
+  }
 }
 
 function loadNextDataEndpoint(action, params = {}) {
@@ -2812,6 +2824,29 @@ function normalizeRankingSeedRow(row) {
   };
 }
 
+function normalizeRankingExclusions(rows = []) {
+  return rows
+    .map((row) => {
+      const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
+      const itemId = String(getField(row, "Item ID", "Item", "itemId") || "").trim();
+      const managerId = String(getField(row, "Manager ID", "Manager", "managerId") || "").trim();
+
+      if (!rankingType || !itemId || !managerId) {
+        return null;
+      }
+
+      return {
+        excluded: isTrueValue(getField(row, "Excluded", "excluded")),
+        id: String(getField(row, "ID", "Id", "id") || "").trim(),
+        itemId,
+        managerId,
+        rankingType,
+        updatedAt: String(getField(row, "Updated At", "updatedAt") || "").trim(),
+      };
+    })
+    .filter(Boolean);
+}
+
 function normalizeRankingSnapshots(rows = []) {
   return rows
     .map((row) => {
@@ -2895,19 +2930,40 @@ function renderRankingItem(kind, item) {
   const isSnapshotView = isAdmin && activeRankingSnapshotId !== "current";
   const isManualView = isAdmin && activeRankingViewMode === "manual" && !isSnapshotView;
   const draggable = isManualView ? ` draggable="true"` : "";
+  const isExcluded = isRankingItemExcluded(kind, item.id);
   const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
   const movement = renderRankingMovement(kind, item);
+  const exclusionAction = renderRankingExclusionAction(kind, item);
 
   return `
-    <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
+    <article class="ranking-item${isExcluded ? " is-excluded" : ""}" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
       <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
       <span class="ranking-item-main">
         <strong>${escapeHtml(item.name)}</strong>
+        ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
         ${movement}
         ${meta}
+        ${exclusionAction}
       </span>
       ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
     </article>
+  `;
+}
+
+function renderRankingExclusionAction(kind, item) {
+  if (!siteData.managerSession || isCurrentManagerAdmin() && activeRankingSnapshotId !== "current") {
+    return "";
+  }
+
+  const isExcluded = isRankingItemExcluded(kind, item.id);
+  const label = isExcluded ? "Include" : "Exclude";
+
+  return `
+    <span class="ranking-item-actions">
+      <button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
+        ${escapeHtml(label)}
+      </button>
+    </span>
   `;
 }
 
@@ -2989,21 +3045,25 @@ function getRankingRows(kind = activeRankingKind) {
 }
 
 function getDisplayedRankingRows(kind = activeRankingKind) {
+  const filterExcludedRows = (rows) => shouldShowRankingExcluded
+    ? rows
+    : rows.filter((item) => !isRankingItemExcluded(kind, item.id));
+
   if (isCurrentManagerAdmin() && activeRankingSnapshotId !== "current") {
     return getRankingSnapshotRows(kind, activeRankingSnapshotId);
   }
 
   if (!isCurrentManagerAdmin()) {
-    return getCurrentManagerRankingChoices(kind).length
+    return filterExcludedRows(getCurrentManagerRankingChoices(kind).length
       ? getCurrentManagerCalculatedRankingRows(kind)
-      : getRandomizedRankingRows(kind);
+      : getRandomizedRankingRows(kind));
   }
 
   if (activeRankingViewMode === "calculated") {
-    return getCalculatedRankingRows(kind);
+    return filterExcludedRows(getCalculatedRankingRows(kind));
   }
 
-  return getManualRankingRowsWithElo(kind);
+  return filterExcludedRows(getManualRankingRowsWithElo(kind));
 }
 
 function getRankingSnapshotRows(kind = activeRankingKind, snapshotId = activeRankingSnapshotId) {
@@ -3383,6 +3443,10 @@ function syncRankingControls() {
 
   if (rankingMoreDataToggle) {
     rankingMoreDataToggle.checked = shouldShowRankingMoreData;
+  }
+
+  if (rankingShowExcludedToggle) {
+    rankingShowExcludedToggle.checked = shouldShowRankingExcluded;
   }
 
   syncRankingSnapshotControls();
@@ -3899,8 +3963,23 @@ function renderNextRankingBattle(kind = activeRankingKind) {
     <button class="ranking-battle-option" type="button" data-ranking-battle-choice="${escapeHtml(item.id)}">
       ${renderRankingBattleImage(kind, item)}
       <strong>${escapeHtml(item.name)}</strong>
+      ${renderRankingBattleExclusionAction(kind, item)}
     </button>
   `).join("");
+}
+
+function renderRankingBattleExclusionAction(kind, item) {
+  if (!siteData.managerSession) {
+    return "";
+  }
+
+  return `
+    <span class="ranking-battle-actions">
+      <span class="ranking-inline-action" data-ranking-battle-exclude="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
+        Exclude
+      </span>
+    </span>
+  `;
 }
 
 function renderRankingBattleImage(kind, item) {
@@ -3948,9 +4027,10 @@ function getRandomRankingAssetPath(kind, itemId) {
 }
 
 function createRankingBattlePair(kind = activeRankingKind) {
-  const rows = isCurrentManagerAdmin()
+  const rows = (isCurrentManagerAdmin()
     ? getManualRankingRowsWithElo(kind)
-    : getDisplayedRankingRows(kind);
+    : getDisplayedRankingRows(kind))
+    .filter((item) => !isRankingItemExcluded(kind, item.id));
 
   if (rows.length < 2) {
     return null;
@@ -4177,6 +4257,77 @@ function getCurrentManagerRankingChoices(kind = activeRankingKind) {
 
 function getCurrentManagerId() {
   return String(siteData.managerSession?.managerId || "").trim();
+}
+
+function getRankingExclusion(kind, itemId, managerId = getCurrentManagerId()) {
+  const rankingType = normalizeLookupName(getRankingType(kind));
+
+  return (siteData.rankingExclusions || []).find((entry) =>
+    normalizeLookupName(entry.rankingType) === rankingType &&
+    String(entry.itemId) === String(itemId) &&
+    String(entry.managerId) === String(managerId)
+  ) || null;
+}
+
+function isRankingItemExcluded(kind, itemId, managerId = getCurrentManagerId()) {
+  return Boolean(getRankingExclusion(kind, itemId, managerId)?.excluded);
+}
+
+function setRankingItemExcluded(kind, itemId, excluded) {
+  const managerId = getCurrentManagerId();
+  const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
+
+  if (!managerId || !item) {
+    return;
+  }
+
+  const rankingType = getRankingType(kind);
+  const updatedAt = new Date().toISOString();
+  const existing = getRankingExclusion(kind, itemId, managerId);
+  const exclusion = {
+    excluded: Boolean(excluded),
+    id: existing?.id || createRankingExclusionId(),
+    itemId: item.id,
+    managerId,
+    rankingType,
+    updatedAt,
+  };
+
+  siteData.rankingExclusions = [
+    ...(siteData.rankingExclusions || []).filter((entry) =>
+      !(normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+        String(entry.itemId) === String(item.id) &&
+        String(entry.managerId) === String(managerId))
+    ),
+    exclusion,
+  ];
+
+  submitRankingPayload({
+    action: "saveRankingExclusion",
+    exclusion: {
+      Excluded: exclusion.excluded,
+      ID: exclusion.id,
+      "Item ID": exclusion.itemId,
+      "Manager ID": exclusion.managerId,
+      "Ranking Type": exclusion.rankingType,
+      "Updated At": exclusion.updatedAt,
+    },
+  });
+  renderRankingLists();
+
+  if (activeRankingBattle?.kind === kind && activeRankingBattle && [activeRankingBattle.itemA, activeRankingBattle.itemB].some((battleItem) => String(battleItem.id) === String(itemId))) {
+    setRankingBattleStatus(`${item.name} ${excluded ? "excluded" : "included"}.`);
+    renderNextRankingBattle(kind);
+  }
+}
+
+function createRankingExclusionId() {
+  const nextId = (siteData.rankingExclusions || [])
+    .map((entry) => Number(String(entry.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
 }
 
 function chooseRankingBattleWinner(winnerId) {
@@ -6568,6 +6719,11 @@ rankingMoreDataToggle?.addEventListener("change", () => {
   renderRankingLists();
 });
 
+rankingShowExcludedToggle?.addEventListener("change", () => {
+  shouldShowRankingExcluded = Boolean(rankingShowExcludedToggle.checked);
+  renderRankingLists();
+});
+
 rankingSnapshotSelect?.addEventListener("change", () => {
   activeRankingSnapshotId = rankingSnapshotSelect.value || "current";
   renderRankingLists();
@@ -6621,6 +6777,19 @@ rankingBattleSkip?.addEventListener("click", () => {
 });
 
 rankingBattleOptions?.addEventListener("click", (event) => {
+  const exclusionAction = event.target.closest("[data-ranking-battle-exclude]");
+
+  if (exclusionAction) {
+    event.preventDefault();
+    event.stopPropagation();
+    setRankingItemExcluded(
+      exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind,
+      exclusionAction.getAttribute("data-ranking-battle-exclude") || "",
+      true
+    );
+    return;
+  }
+
   const option = event.target.closest("[data-ranking-battle-choice]");
 
   if (!option) {
@@ -6628,6 +6797,35 @@ rankingBattleOptions?.addEventListener("click", (event) => {
   }
 
   chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-choice") || "");
+});
+
+document.addEventListener("click", (event) => {
+  const exclusionAction = event.target.closest("[data-ranking-exclusion-toggle]");
+
+  if (!exclusionAction) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  const kind = exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind;
+  const itemId = exclusionAction.getAttribute("data-ranking-exclusion-toggle") || "";
+  setRankingItemExcluded(kind, itemId, !isRankingItemExcluded(kind, itemId));
+});
+
+document.addEventListener("click", (event) => {
+  const rankingItem = event.target.closest(".ranking-item");
+
+  if (!rankingItem || event.target.closest("button, a, input, select, textarea, [role='button']")) {
+    return;
+  }
+
+  document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+    if (item !== rankingItem) {
+      item.classList.remove("is-actions-open");
+    }
+  });
+  rankingItem.classList.toggle("is-actions-open");
 });
 
 document.addEventListener("dragstart", (event) => {

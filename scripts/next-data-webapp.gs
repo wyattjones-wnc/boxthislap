@@ -49,6 +49,14 @@ const RANKING_SEED_COLUMNS = [
   "Seeded At",
   "Reason",
 ];
+const RANKING_EXCLUSION_COLUMNS = [
+  "ID",
+  "Ranking Type",
+  "Item ID",
+  "Manager ID",
+  "Excluded",
+  "Updated At",
+];
 const RANKING_SNAPSHOT_COLUMNS = [
   "Snapshot ID",
   "Ranking Type",
@@ -87,6 +95,10 @@ function doGet(e) {
 
     if (action === "listRankingSeeds") {
       return webResponse(e, { ok: true, seeds: listRankingSeeds() });
+    }
+
+    if (action === "listRankingExclusions") {
+      return webResponse(e, { ok: true, exclusions: listRankingExclusions() });
     }
 
     if (action === "listRankingSnapshots") {
@@ -131,6 +143,10 @@ function doPost(e) {
 
     if (payload.action === "saveRankingChoice") {
       return jsonResponse(saveRankingChoice(payload.choice || {}));
+    }
+
+    if (payload.action === "saveRankingExclusion") {
+      return jsonResponse(saveRankingExclusion(payload.exclusion || {}));
     }
 
     if (payload.action === "normalizeRanking") {
@@ -517,6 +533,20 @@ function listRankingSeeds() {
     .filter((row) => row["Ranking Type"] && row["Item ID"]);
 }
 
+function listRankingExclusions() {
+  const context = getSimpleTableContext("Ranking Exclusions", RANKING_EXCLUSION_COLUMNS, "ID");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      Excluded: row.Excluded,
+      ID: row.ID,
+      "Item ID": row["Item ID"],
+      "Manager ID": row["Manager ID"],
+      "Ranking Type": row["Ranking Type"],
+      "Updated At": row["Updated At"],
+    }))
+    .filter((row) => row["Ranking Type"] && row["Item ID"] && row["Manager ID"]);
+}
+
 function listRankingSnapshots() {
   const context = getSimpleTableContext("Ranking Snapshots", RANKING_SNAPSHOT_COLUMNS, "Snapshot ID");
   return readSimpleTableRows(context)
@@ -547,6 +577,49 @@ function listRankingSnapshotItems() {
       Wins: row.Wins,
     }))
     .filter((row) => row["Snapshot ID"] && row["Item ID"]);
+}
+
+function saveRankingExclusion(exclusion) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const context = getSimpleTableContext("Ranking Exclusions", RANKING_EXCLUSION_COLUMNS, "ID");
+    const rows = readSimpleTableRows(context);
+    const rowValues = normalizeRankingExclusion(exclusion);
+    const existingRow = rows.find((row) =>
+      String(row["Ranking Type"] || "").trim().toLowerCase() === String(rowValues["Ranking Type"] || "").trim().toLowerCase() &&
+      String(row["Item ID"] || "").trim() === String(rowValues["Item ID"] || "").trim() &&
+      String(row["Manager ID"] || "").trim() === String(rowValues["Manager ID"] || "").trim()
+    );
+
+    if (!rowValues["Ranking Type"] || !rowValues["Item ID"] || !rowValues["Manager ID"]) {
+      throw new Error("Ranking Type, Item ID, and Manager ID are required for Ranking Exclusions.");
+    }
+
+    if (existingRow && existingRow.rowNumber) {
+      rowValues.ID = String(existingRow.ID || "").trim() || rowValues.ID || getNextNumericIdFromRows(rows, "ID");
+      writeSimpleTableCells(context, existingRow.rowNumber, rowValues, RANKING_EXCLUSION_COLUMNS);
+      return { ok: true, exclusion: rowValues, status: "updated" };
+    }
+
+    rowValues.ID = rowValues.ID || getNextNumericIdFromRows(rows, "ID");
+    appendSimpleTableRow(context, rowValues, RANKING_EXCLUSION_COLUMNS);
+    return { ok: true, exclusion: rowValues, status: "appended" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function normalizeRankingExclusion(exclusion) {
+  return {
+    Excluded: normalizeBool(exclusion.Excluded || exclusion.excluded),
+    ID: String(exclusion.ID || exclusion.Id || exclusion.id || "").trim(),
+    "Item ID": String(exclusion["Item ID"] || exclusion.itemId || "").trim(),
+    "Manager ID": String(exclusion["Manager ID"] || exclusion.managerId || "").trim(),
+    "Ranking Type": String(exclusion["Ranking Type"] || exclusion.rankingType || exclusion.ranking || "").trim(),
+    "Updated At": String(exclusion["Updated At"] || exclusion.updatedAt || new Date().toISOString()).trim(),
+  };
 }
 
 function saveRankingSeedWithoutLock(seed) {

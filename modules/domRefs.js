@@ -104,6 +104,7 @@ export const rankingCompareButton = document.querySelector("#ranking-compare-but
 export const rankingFilterToggle = document.querySelector("#ranking-filter-toggle");
 export const rankingFilters = document.querySelector("#ranking-filters");
 export const rankingMoreDataToggle = document.querySelector("#ranking-more-data-toggle");
+export const rankingShowExcludedToggle = document.querySelector("#ranking-show-excluded-toggle");
 export const rankingViewModeButtons = document.querySelectorAll("[data-ranking-view-mode]");
 export const rankingSnapshotSelect = document.querySelector("#ranking-snapshot-select");
 export const rankingCompareSelect = document.querySelector("#ranking-compare-select");

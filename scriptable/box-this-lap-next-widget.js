@@ -359,13 +359,24 @@ function parseDateParts(value) {
 }
 
 function parseTimeParts(value) {
-  const text = String(value || "").trim();
+  const text = String(value || "")
+    .trim()
+    .replace(/\b(Eastern|EST|EDT|ET)\b/ig, "")
+    .trim();
 
   if (!text) {
     return { hour: 0, minute: 0 };
   }
 
-  const match = text.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  const timestampMatch = text.match(/T(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (timestampMatch) {
+    return {
+      hour: Number(timestampMatch[1]),
+      minute: Number(timestampMatch[2] || 0),
+    };
+  }
+
+  const match = text.match(/^(\d{1,2})(?::(\d{2})(?::\d{2})?)?\s*(AM|PM)?$/i);
 
   if (!match) {
     return { hour: 0, minute: 0 };

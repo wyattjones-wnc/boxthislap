@@ -764,6 +764,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   pointer-events: none;
 }
 
+.ranking-item.is-excluded {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.ranking-item.is-excluded .ranking-rank,
+.ranking-item.is-excluded strong {
+  color: var(--muted);
+}
+
 .ranking-rank {
   align-items: center;
   background: var(--soft);
@@ -794,6 +804,48 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.ranking-excluded-label {
+  color: var(--accent) !important;
+}
+
+.ranking-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.18s ease, opacity 0.18s ease;
+}
+
+.ranking-item:hover .ranking-item-actions,
+.ranking-item:focus-within .ranking-item-actions,
+.ranking-item.is-actions-open .ranking-item-actions {
+  max-height: 48px;
+  opacity: 1;
+}
+
+.ranking-inline-action {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 7px 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ranking-inline-action:hover,
+.ranking-inline-action:focus-visible {
+  border-color: var(--accent);
+  outline: none;
 }
 
 .ranking-item-meta {
@@ -997,6 +1049,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-battle-option strong {
   font-size: clamp(1.1rem, 3vw, 1.45rem);
   line-height: 1.15;
+}
+
+.ranking-battle-actions {
+  display: flex;
+  justify-content: center;
 }
 
 .ranking-battle-image-frame {

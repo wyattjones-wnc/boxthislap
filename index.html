@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607310003">
+    <link rel="stylesheet" href="styles.css?v=202607310004">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -511,11 +511,11 @@
                 <div class="footy-note-ga-fields">
                   <label>
                     <span>Scorer Name</span>
-                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Scorer Name">
+                    <input type="text" data-footy-note-ga-field="scorer" list="footy-note-follow-player-options" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Scorer Name">
                   </label>
                   <label>
                     <span>Assister Name</span>
-                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Assister Name">
+                    <input type="text" data-footy-note-ga-field="assister" list="footy-note-follow-player-options" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Assister Name">
                   </label>
                   <label>
                     <span>Minute</span>
@@ -540,11 +540,11 @@
                 <div class="footy-note-ga-fields">
                   <label>
                     <span>Scorer Name</span>
-                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Scorer Name">
+                    <input type="text" data-footy-note-ga-field="scorer" list="footy-note-opponent-player-options" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Scorer Name">
                   </label>
                   <label>
                     <span>Assister Name</span>
-                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Assister Name">
+                    <input type="text" data-footy-note-ga-field="assister" list="footy-note-opponent-player-options" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Assister Name">
                   </label>
                   <label>
                     <span>Minute</span>
@@ -574,6 +574,8 @@
               </label>
             </div>
             <p class="footy-note-status" id="footy-note-status" aria-live="polite"></p>
+            <datalist id="footy-note-follow-player-options"></datalist>
+            <datalist id="footy-note-opponent-player-options"></datalist>
             <footer>
               <button class="action-button" id="footy-note-cancel" type="button">
                 Cancel
@@ -1701,6 +1703,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607310003"></script>
+    <script type="module" src="script.js?v=202607310004"></script>
   </body>
 </html>

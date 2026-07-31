@@ -8,7 +8,7 @@ const PAGE_ALIASES = {
   "player-scores": "standings",
 };
 
-const HOME_PAGES = ["footy", "next", "rankings", "footy-goal-assists", "leagues", "login", "manager-hub"];
+const HOME_PAGES = ["footy", "footy-team", "next", "rankings", "footy-goal-assists", "leagues", "login", "manager-hub"];
 const STANDINGS_TABS = ["players-championship", "nations-league", "manager-results"];
 const WORLD_CUP_PAGES = ["today", "tomorrow", "results", "draft", "standings", "rules", "matches", "bracket", "testing"];
 
@@ -28,13 +28,15 @@ export function createRouter({
 }) {
   function showPage(pageName, options = {}) {
     const allowedPageName = PAGE_ALIASES[pageName] || pageName;
+    const renderedPageName = getRenderedPageName(allowedPageName);
     const testRulesBlocked = allowedPageName === "rules" && shouldBlockRulesPage();
     const pageBlocked = testRulesBlocked || shouldBlockPage(allowedPageName);
-    const pageExists = !pageBlocked && [...pages].some((page) => page.dataset.page === allowedPageName);
+    const pageExists = !pageBlocked && [...pages].some((page) => page.dataset.page === renderedPageName);
     const activePageName = pageExists ? allowedPageName : "footy";
+    const activeRenderedPageName = pageExists ? renderedPageName : "footy";
 
     pages.forEach((page) => {
-      page.classList.toggle("is-active", page.dataset.page === activePageName);
+      page.classList.toggle("is-active", page.dataset.page === activeRenderedPageName);
     });
 
     pageLinks.forEach((link) => {
@@ -150,7 +152,9 @@ function getHeaderArtName(pageName) {
 }
 
 function getNavScope(pageName) {
-  if (HOME_PAGES.includes(pageName)) {
+  const renderedPageName = getRenderedPageName(pageName);
+
+  if (HOME_PAGES.includes(renderedPageName)) {
     return "home";
   }
 
@@ -230,11 +234,15 @@ function rememberNavScope(pageName) {
     return;
   }
 
-  if (HOME_PAGES.includes(pageName)) {
+  if (HOME_PAGES.includes(getRenderedPageName(pageName))) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "home");
   }
 }
 
 function isWorldCupPage(pageName) {
   return WORLD_CUP_PAGES.includes(pageName);
+}
+
+function getRenderedPageName(pageName) {
+  return String(pageName || "").startsWith("footy-team-") ? "footy-team" : pageName;
 }

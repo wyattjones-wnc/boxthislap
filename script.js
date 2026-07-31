@@ -55,6 +55,7 @@ import {
   profileDropdown,
   profileName,
   logoutButton,
+  followedTeamShortcuts,
   managerHubSubtitle,
   workflowCount,
   workflowList,
@@ -73,6 +74,8 @@ import {
   footyDateToFilter,
   footyTeamFilter,
   footyScheduleList,
+  footyTeamTitle,
+  footyTeamContent,
   footyGoalAssistsButton,
   footyGoalAssistsBack,
   footyGoalAssistsForm,
@@ -194,8 +197,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607280001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607280001";
+} from "./modules/domRefs.js?v=202607310001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -416,6 +419,169 @@ function renderFootySchedule(schedule) {
       ${renderedFixtures.map(renderFootyFixture).join("")}
     </div>
     ${renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
+  `;
+}
+
+function renderFollowedTeamShortcuts(schedule) {
+  if (!followedTeamShortcuts) {
+    return;
+  }
+
+  const teams = getFootyShortcutTeams(schedule);
+  followedTeamShortcuts.hidden = teams.length === 0;
+
+  if (teams.length === 0) {
+    followedTeamShortcuts.innerHTML = "";
+    return;
+  }
+
+  followedTeamShortcuts.innerHTML = teams.map((team) => {
+    const slug = getFootyTeamSlug(team.name);
+    const fallback = getFootyTeamFallbackBadge(team.name);
+
+    return `
+      <a class="followed-team-shortcut" href="#footy-team-${escapeHtml(slug)}" data-page-link="footy-team-${escapeHtml(slug)}" aria-label="${escapeHtml(team.name)}">
+        ${team.badge ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallback)}</span>`}
+      </a>
+    `;
+  }).join("");
+}
+
+function getFootyShortcutTeams(schedule) {
+  return getAllFootyScheduleTeams(schedule);
+}
+
+function normalizeFootyScheduleTeam(teamSchedule = {}) {
+  const team = teamSchedule.team || {};
+
+  return {
+    badge: String(team.badge || "").trim(),
+    fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
+    id: String(team.id || "").trim(),
+    name: String(team.name || "").trim(),
+    priority: normalizeFootyPriority(team.priority),
+    status: String(teamSchedule.status || "").trim(),
+    updatedAt: String(teamSchedule.updatedAt || teamSchedule.attemptedAt || "").trim(),
+  };
+}
+
+function uniqueFootyTeams(teams = []) {
+  const teamsByKey = new Map();
+
+  teams.forEach((team) => {
+    const key = getFootyTeamFilterKey(team.name);
+    const existing = teamsByKey.get(key);
+
+    if (!key || (existing?.badge && !team.badge)) {
+      return;
+    }
+
+    teamsByKey.set(key, {
+      ...existing,
+      ...team,
+      badge: team.badge || existing?.badge || "",
+      fixtureCount: (existing?.fixtureCount || 0) + (team.fixtureCount || 0),
+    });
+  });
+
+  return [...teamsByKey.values()];
+}
+
+function compareFootyTeamsByPriorityThenName(firstTeam, secondTeam) {
+  return Number(firstTeam.priority || Number.MAX_SAFE_INTEGER) - Number(secondTeam.priority || Number.MAX_SAFE_INTEGER) ||
+    String(firstTeam.name || "").localeCompare(String(secondTeam.name || ""));
+}
+
+function getFootyTeamSlug(teamName) {
+  return normalizeLookupName(teamName).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "team";
+}
+
+function getFootyTeamFromSlug(slug) {
+  const normalizedSlug = String(slug || "").trim();
+
+  return getFootyShortcutTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+    getAllFootyScheduleTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+    null;
+}
+
+function getAllFootyScheduleTeams(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  return uniqueFootyTeams(schedule.teamSchedules.map((teamSchedule) => normalizeFootyScheduleTeam(teamSchedule)))
+    .sort(compareFootyTeamsByPriorityThenName);
+}
+
+function getFootyTeamFallbackBadge(teamName) {
+  return String(teamName || "?").trim().slice(0, 1).toUpperCase() || "?";
+}
+
+function renderFootyTeamPage(pageName = activePageName) {
+  if (!footyTeamTitle || !footyTeamContent) {
+    return;
+  }
+
+  const slug = String(pageName || "").replace(/^footy-team-/, "");
+  const team = getFootyTeamFromSlug(slug);
+
+  if (!siteData.footySchedule) {
+    footyTeamTitle.textContent = "Team";
+    footyTeamContent.innerHTML = `<p class="table-message">Loading team...</p>`;
+    return;
+  }
+
+  if (!team) {
+    footyTeamTitle.textContent = "Team";
+    footyTeamContent.innerHTML = `<p class="table-message">Unable to find that followed team.</p>`;
+    return;
+  }
+
+  const fixtures = getFootyScheduleFixtures(siteData.footySchedule)
+    .filter((fixture) => isSameFootyTeamName(fixture.teamName, team.name));
+  const upcomingFixtures = fixtures.filter((fixture) => !isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures);
+  const pastFixtures = fixtures.filter((fixture) => isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures).reverse();
+  const nextFixtures = upcomingFixtures.slice(0, 5);
+  const recentFixtures = pastFixtures.slice(0, 3);
+  const updatedAt = formatFootyGeneratedAt(team.updatedAt || getFootyScheduleUpdatedAt(siteData.footySchedule));
+  const badgeMarkup = team.badge
+    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">`
+    : `<span>${escapeHtml(getFootyTeamFallbackBadge(team.name))}</span>`;
+
+  footyTeamTitle.textContent = team.name;
+  footyTeamContent.innerHTML = `
+    <section class="footy-team-summary-card">
+      <div class="footy-team-summary-badge" aria-hidden="true">
+        ${badgeMarkup}
+      </div>
+      <div>
+        <h2>${escapeHtml(team.name)}</h2>
+        ${updatedAt ? `<p>Updated ${escapeHtml(updatedAt)}</p>` : ""}
+      </div>
+      <dl class="footy-team-stat-grid">
+        <div>
+          <dt>Upcoming</dt>
+          <dd>${escapeHtml(String(upcomingFixtures.length))}</dd>
+        </div>
+        <div>
+          <dt>Past</dt>
+          <dd>${escapeHtml(String(pastFixtures.length))}</dd>
+        </div>
+      </dl>
+    </section>
+    ${renderFootyTeamFixtureSection("Next Matches", nextFixtures)}
+    ${renderFootyTeamFixtureSection("Recent Matches", recentFixtures)}
+  `;
+}
+
+function renderFootyTeamFixtureSection(title, fixtures = []) {
+  return `
+    <section class="footy-team-fixture-section">
+      <h2>${escapeHtml(title)}</h2>
+      ${fixtures.length
+        ? `<div class="footy-list footy-team-fixture-list">${fixtures.map(renderFootyFixture).join("")}</div>`
+        : `<p class="table-message">No ${escapeHtml(title.toLowerCase())} loaded.</p>`}
+    </section>
   `;
 }
 
@@ -987,6 +1153,7 @@ function toggleFootyFixtureExpansion(matchId) {
   }
 
   renderFootySchedule(siteData.footySchedule);
+  renderFootyTeamPage();
 }
 
 function renderFootyFixtureDetails(fixture) {
@@ -5448,6 +5615,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName.startsWith("footy-team-")) {
+    renderFootyTeamPage(pageName);
+    return;
+  }
+
   if (pageName === "footy-goal-assists") {
     renderFootyGoalAssistsSaved();
     return;
@@ -6582,6 +6754,24 @@ pageLinks.forEach((link) => {
   });
 });
 
+followedTeamShortcuts?.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-page-link]");
+
+  if (!link) {
+    return;
+  }
+
+  event.preventDefault();
+  const pageName = link.dataset.pageLink;
+  const nextHash = `#${pageName}`;
+
+  if (window.location.hash !== nextHash) {
+    history.pushState(null, "", nextHash);
+  }
+
+  showPage(pageName, { scrollToTop: true });
+});
+
 workflowList?.addEventListener("click", (event) => {
   const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
 
@@ -6675,7 +6865,7 @@ document.addEventListener("click", (event) => {
   closeProfileDropdown();
 });
 
-footyScheduleList?.addEventListener("click", (event) => {
+function handleFootyFixtureListClick(event) {
   const editButton = event.target.closest("[data-footy-note-edit]");
 
   if (editButton) {
@@ -6694,9 +6884,9 @@ footyScheduleList?.addEventListener("click", (event) => {
   }
 
   toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
-});
+}
 
-footyScheduleList?.addEventListener("keydown", (event) => {
+function handleFootyFixtureListKeydown(event) {
   if (event.key !== "Enter" && event.key !== " ") {
     return;
   }
@@ -6709,6 +6899,11 @@ footyScheduleList?.addEventListener("keydown", (event) => {
 
   event.preventDefault();
   toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+}
+
+[footyScheduleList, footyTeamContent].forEach((container) => {
+  container?.addEventListener("click", handleFootyFixtureListClick);
+  container?.addEventListener("keydown", handleFootyFixtureListKeydown);
 });
 
 leagueYearSelect?.addEventListener("change", () => {
@@ -9844,7 +10039,9 @@ loadJson("data/footy-schedule.json")
   .then((schedule) => {
     clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
+    renderFollowedTeamShortcuts(schedule);
     renderFootySchedule(schedule);
+    renderFootyTeamPage();
     console.info("Box This Lap footy schedule loaded", schedule);
     return loadFootyMatchNotes();
   })
@@ -9855,6 +10052,7 @@ loadJson("data/footy-schedule.json")
 
     mergeFootyMatchNotes(notes);
     renderFootySchedule(siteData.footySchedule);
+    renderFootyTeamPage();
     console.info("Box This Lap footy match notes loaded", notes);
   })
   .catch((error) => {

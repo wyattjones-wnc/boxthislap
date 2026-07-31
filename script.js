@@ -283,11 +283,13 @@ const RANKING_CONFIG = {
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
+let activeFootyPlayerSuggestionInput = null;
 let footyRosterLoadPromise = null;
 const footyNoteGoalAssistEntries = {
   follow: [],
   opponent: [],
 };
+const FOOTY_PLAYER_SUGGESTION_LIMIT = 8;
 const siteData = {};
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
@@ -1163,6 +1165,7 @@ function openFootyNoteDialog(matchId) {
 
 function closeFootyNoteDialog() {
   activeFootyNoteMatchId = "";
+  closeFootyPlayerSuggestions();
 
   if (!footyNoteDialog) {
     return;
@@ -1538,6 +1541,10 @@ function normalizeFootyRosterPlayer(player = {}) {
 function applyFootyNoteRosterOptions(fixture) {
   updateFootyPlayerDatalist("footy-note-follow-player-options", getFootyRosterPlayersForTeam(fixture?.teamName));
   updateFootyPlayerDatalist("footy-note-opponent-player-options", getFootyRosterPlayersForTeam(getFootyFixtureOpponentRosterName(fixture)));
+
+  if (activeFootyPlayerSuggestionInput) {
+    renderFootyPlayerSuggestions(activeFootyPlayerSuggestionInput);
+  }
 }
 
 function updateFootyPlayerDatalist(datalistId, players = []) {
@@ -1567,6 +1574,106 @@ function getFootyRosterPlayersForTeam(teamName) {
   return [...roster.players].sort((first, second) =>
     first.name.localeCompare(second.name, undefined, { sensitivity: "base" })
   );
+}
+
+function isFootyPlayerAutocompleteInput(input) {
+  return Boolean(input?.matches?.("[data-footy-note-ga-field=\"scorer\"], [data-footy-note-ga-field=\"assister\"]"));
+}
+
+function getFootyPlayerSuggestionsForInput(input) {
+  if (!isFootyPlayerAutocompleteInput(input)) {
+    return [];
+  }
+
+  const side = input.closest("[data-footy-note-ga-side]")?.getAttribute("data-footy-note-ga-side");
+  const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
+  const teamName = side === "opponent"
+    ? getFootyFixtureOpponentRosterName(fixture)
+    : fixture?.teamName;
+  const players = getFootyRosterPlayersForTeam(teamName);
+  const searchValue = normalizeLookupName(input.value);
+
+  if (!searchValue) {
+    return players.slice(0, FOOTY_PLAYER_SUGGESTION_LIMIT);
+  }
+
+  return players
+    .filter((player) => normalizeLookupName(player.name).includes(searchValue))
+    .slice(0, FOOTY_PLAYER_SUGGESTION_LIMIT);
+}
+
+function ensureFootyPlayerSuggestionList(input) {
+  const label = input?.closest?.("label");
+
+  if (!label) {
+    return null;
+  }
+
+  let list = label.querySelector(".footy-player-suggestions");
+
+  if (!list) {
+    list = document.createElement("div");
+    list.className = "footy-player-suggestions";
+    list.setAttribute("role", "listbox");
+    input.insertAdjacentElement("afterend", list);
+  }
+
+  return list;
+}
+
+function renderFootyPlayerSuggestions(input) {
+  if (!isFootyPlayerAutocompleteInput(input)) {
+    closeFootyPlayerSuggestions();
+    return;
+  }
+
+  activeFootyPlayerSuggestionInput = input;
+  const list = ensureFootyPlayerSuggestionList(input);
+
+  if (!list) {
+    return;
+  }
+
+  const players = getFootyPlayerSuggestionsForInput(input);
+
+  if (!players.length) {
+    list.innerHTML = `<p class="footy-player-suggestions-empty">No roster matches</p>`;
+    list.classList.add("is-open");
+    return;
+  }
+
+  list.innerHTML = players
+    .map((player) => {
+      const meta = [player.position, player.number ? `#${player.number}` : ""].filter(Boolean).join(" ");
+
+      return `
+        <button class="footy-player-suggestion" type="button" data-footy-player-suggestion="${escapeHtml(player.name)}">
+          <span>${escapeHtml(player.name)}</span>
+          ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+        </button>
+      `;
+    })
+    .join("");
+  list.classList.add("is-open");
+}
+
+function closeFootyPlayerSuggestions() {
+  document.querySelectorAll(".footy-player-suggestions.is-open").forEach((list) => {
+    list.classList.remove("is-open");
+    list.innerHTML = "";
+  });
+  activeFootyPlayerSuggestionInput = null;
+}
+
+function selectFootyPlayerSuggestion(input, playerName) {
+  if (!input) {
+    return;
+  }
+
+  input.value = playerName;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  closeFootyPlayerSuggestions();
+  input.focus();
 }
 
 function getFootyRosterForTeam(teamName) {
@@ -6679,6 +6786,16 @@ footyNoteForm?.addEventListener("submit", (event) => {
 });
 
 footyNoteForm?.addEventListener("click", (event) => {
+  const suggestionButton = event.target.closest("[data-footy-player-suggestion]");
+
+  if (suggestionButton) {
+    selectFootyPlayerSuggestion(
+      activeFootyPlayerSuggestionInput,
+      suggestionButton.getAttribute("data-footy-player-suggestion") || "",
+    );
+    return;
+  }
+
   const saveButton = event.target.closest("[data-footy-note-ga-save]");
 
   if (saveButton) {
@@ -6693,6 +6810,39 @@ footyNoteForm?.addEventListener("click", (event) => {
       deleteButton.getAttribute("data-footy-note-ga-delete"),
       Number(deleteButton.getAttribute("data-footy-note-ga-index")),
     );
+  }
+});
+
+footyNoteForm?.addEventListener("focusin", (event) => {
+  if (!isFootyPlayerAutocompleteInput(event.target)) {
+    closeFootyPlayerSuggestions();
+    return;
+  }
+
+  activeFootyPlayerSuggestionInput = event.target;
+  renderFootyPlayerSuggestions(event.target);
+
+  ensureFootyRosters()
+    .then(() => {
+      if (activeFootyPlayerSuggestionInput === event.target) {
+        renderFootyPlayerSuggestions(event.target);
+      }
+    })
+    .catch((error) => {
+      recordDiagnostic("footy rosters failed to load", error);
+      console.warn("Box This Lap footy rosters failed to load", error);
+    });
+});
+
+footyNoteForm?.addEventListener("input", (event) => {
+  if (isFootyPlayerAutocompleteInput(event.target)) {
+    renderFootyPlayerSuggestions(event.target);
+  }
+});
+
+footyNoteForm?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeFootyPlayerSuggestions();
   }
 });
 

@@ -283,11 +283,13 @@ const RANKING_CONFIG = {
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
+let activeAutocompleteInput = null;
 let footyRosterLoadPromise = null;
 const footyNoteGoalAssistEntries = {
   follow: [],
   opponent: [],
 };
+const AUTOCOMPLETE_OPTION_LIMIT = 8;
 const siteData = {};
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
@@ -1163,6 +1165,7 @@ function openFootyNoteDialog(matchId) {
 
 function closeFootyNoteDialog() {
   activeFootyNoteMatchId = "";
+  closeAutocompleteDropdown();
 
   if (!footyNoteDialog) {
     return;
@@ -1536,25 +1539,107 @@ function normalizeFootyRosterPlayer(player = {}) {
 }
 
 function applyFootyNoteRosterOptions(fixture) {
-  updateFootyPlayerDatalist("footy-note-follow-player-options", getFootyRosterPlayersForTeam(fixture?.teamName));
-  updateFootyPlayerDatalist("footy-note-opponent-player-options", getFootyRosterPlayersForTeam(getFootyFixtureOpponentRosterName(fixture)));
+  if (activeAutocompleteInput) {
+    renderFootyPlayerAutocomplete(activeAutocompleteInput);
+  }
 }
 
-function updateFootyPlayerDatalist(datalistId, players = []) {
-  const datalist = document.getElementById(datalistId);
+function isFootyPlayerAutocompleteInput(input) {
+  return Boolean(input?.matches?.("[data-footy-note-ga-field=\"scorer\"], [data-footy-note-ga-field=\"assister\"]"));
+}
 
-  if (!datalist) {
+function getFootyPlayerAutocompleteOptions(input) {
+  if (!isFootyPlayerAutocompleteInput(input)) {
+    return [];
+  }
+
+  const side = input.closest("[data-footy-note-ga-side]")?.getAttribute("data-footy-note-ga-side");
+  const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
+  const teamName = side === "opponent"
+    ? getFootyFixtureOpponentRosterName(fixture)
+    : fixture?.teamName;
+
+  return getFootyRosterPlayersForTeam(teamName).map((player) => ({
+    label: player.name,
+    meta: [player.position, player.number ? `#${player.number}` : ""].filter(Boolean).join(" "),
+    value: player.name,
+  }));
+}
+
+function ensureAutocompleteDropdown(input) {
+  const label = input?.closest?.("label");
+
+  if (!label) {
+    return null;
+  }
+
+  let dropdown = label.querySelector(".autocomplete-dropdown");
+
+  if (!dropdown) {
+    dropdown = document.createElement("div");
+    dropdown.className = "autocomplete-dropdown";
+    input.insertAdjacentElement("afterend", dropdown);
+  }
+
+  return dropdown;
+}
+
+function renderAutocompleteDropdown(input, options = [], emptyMessage = "No matches") {
+  const dropdown = ensureAutocompleteDropdown(input);
+
+  if (!dropdown) {
     return;
   }
 
-  datalist.innerHTML = players
-    .map((player) => {
-      const labelParts = [player.position, player.number ? `#${player.number}` : ""].filter(Boolean);
-      const label = labelParts.length ? ` label="${escapeHtml(labelParts.join(" - "))}"` : "";
+  const searchValue = normalizeLookupName(input.value);
+  const filteredOptions = options
+    .filter((option) => !searchValue || normalizeLookupName(option.label).includes(searchValue))
+    .slice(0, AUTOCOMPLETE_OPTION_LIMIT);
 
-      return `<option value="${escapeHtml(player.name)}"${label}></option>`;
-    })
+  if (!filteredOptions.length) {
+    dropdown.innerHTML = `<p class="autocomplete-empty">${escapeHtml(emptyMessage)}</p>`;
+    dropdown.classList.add("is-open");
+    return;
+  }
+
+  dropdown.innerHTML = filteredOptions
+    .map((option) => `
+      <button class="autocomplete-option" type="button" data-autocomplete-value="${escapeHtml(option.value)}">
+        <span>${escapeHtml(option.label)}</span>
+        ${option.meta ? `<small>${escapeHtml(option.meta)}</small>` : ""}
+      </button>
+    `)
     .join("");
+  dropdown.classList.add("is-open");
+}
+
+function closeAutocompleteDropdown() {
+  document.querySelectorAll(".autocomplete-dropdown.is-open").forEach((dropdown) => {
+    dropdown.classList.remove("is-open");
+    dropdown.innerHTML = "";
+  });
+  activeAutocompleteInput = null;
+}
+
+function selectAutocompleteOption(input, value) {
+  if (!input) {
+    return;
+  }
+
+  input.value = value;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  closeAutocompleteDropdown();
+  input.focus({ preventScroll: true });
+}
+
+function renderFootyPlayerAutocomplete(input) {
+  if (!isFootyPlayerAutocompleteInput(input)) {
+    closeAutocompleteDropdown();
+    return;
+  }
+
+  activeAutocompleteInput = input;
+  renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "No roster matches");
 }
 
 function getFootyRosterPlayersForTeam(teamName) {
@@ -6678,7 +6763,31 @@ footyNoteForm?.addEventListener("submit", (event) => {
   saveFootyMatchNoteFromDialog();
 });
 
+footyNoteForm?.addEventListener("pointerdown", (event) => {
+  const optionButton = event.target.closest("[data-autocomplete-value]");
+
+  if (!optionButton) {
+    if (!isFootyPlayerAutocompleteInput(event.target) && !event.target.closest(".autocomplete-dropdown")) {
+      closeAutocompleteDropdown();
+    }
+
+    return;
+  }
+
+  event.preventDefault();
+  selectAutocompleteOption(
+    activeAutocompleteInput,
+    optionButton.getAttribute("data-autocomplete-value") || "",
+  );
+});
+
 footyNoteForm?.addEventListener("click", (event) => {
+  const optionButton = event.target.closest("[data-autocomplete-value]");
+
+  if (optionButton) {
+    return;
+  }
+
   const saveButton = event.target.closest("[data-footy-note-ga-save]");
 
   if (saveButton) {
@@ -6693,6 +6802,39 @@ footyNoteForm?.addEventListener("click", (event) => {
       deleteButton.getAttribute("data-footy-note-ga-delete"),
       Number(deleteButton.getAttribute("data-footy-note-ga-index")),
     );
+  }
+});
+
+footyNoteForm?.addEventListener("focusin", (event) => {
+  if (!isFootyPlayerAutocompleteInput(event.target)) {
+    closeAutocompleteDropdown();
+    return;
+  }
+
+  activeAutocompleteInput = event.target;
+  renderFootyPlayerAutocomplete(event.target);
+
+  ensureFootyRosters()
+    .then(() => {
+      if (activeAutocompleteInput === event.target) {
+        renderFootyPlayerAutocomplete(event.target);
+      }
+    })
+    .catch((error) => {
+      recordDiagnostic("footy rosters failed to load", error);
+      console.warn("Box This Lap footy rosters failed to load", error);
+    });
+});
+
+footyNoteForm?.addEventListener("input", (event) => {
+  if (isFootyPlayerAutocompleteInput(event.target)) {
+    renderFootyPlayerAutocomplete(event.target);
+  }
+});
+
+footyNoteForm?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeAutocompleteDropdown();
   }
 });
 

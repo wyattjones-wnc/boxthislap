@@ -19,6 +19,8 @@
   --strong-shadow: rgba(0, 0, 0, 0.48);
   --accent-shadow: rgba(240, 82, 101, 0.12);
   --accent-border: rgba(240, 82, 101, 0.42);
+  --time: #5fd18a;
+  --time-strong: #86efac;
   --manager-dot-border: #303946;
   --manager-dot-ring: rgba(255, 255, 255, 0.26);
   --updated: rgba(166, 176, 192, 0.76);
@@ -44,6 +46,8 @@ html[data-theme="light"] {
   --strong-shadow: rgba(0, 0, 0, 0.19);
   --accent-shadow: rgba(194, 31, 50, 0.08);
   --accent-border: rgba(194, 31, 50, 0.42);
+  --time: #17633a;
+  --time-strong: #0f5132;
   --manager-dot-border: #ffffff;
   --manager-dot-ring: rgba(24, 33, 47, 0.18);
   --updated: rgba(95, 105, 120, 0.76);
@@ -692,7 +696,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .next-time {
-  color: var(--accent);
+  color: var(--time-strong);
 }
 
 .next-completed-icon {
@@ -1698,7 +1702,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-fixture-card strong {
   align-self: center;
-  color: var(--accent-dark);
+  color: var(--time-strong);
   font-size: 0.9rem;
   justify-self: end;
   text-align: right;
@@ -2790,7 +2794,7 @@ main {
 
 .formula-one-question-card header span,
 .formula-one-weekly-card header span {
-  color: var(--accent-dark);
+  color: var(--time-strong);
   font-size: 0.75rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -3380,7 +3384,7 @@ main {
 }
 
 .match-header p {
-  color: var(--accent-dark);
+  color: var(--time-strong);
   font-size: 1rem;
   font-weight: 800;
   margin: 0;

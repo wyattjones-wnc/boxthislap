@@ -20,6 +20,18 @@ const FOOTY_MATCH_NOTE_COLUMNS = [
   "Note",
   "Highlight Link",
 ];
+const FOOTY_ROSTER_COLUMNS = [
+  "Player",
+  "Position",
+  "New",
+  "#",
+  "App",
+  "Joined",
+  "Left",
+  "Home",
+  "Birthday",
+];
+const FOOTY_ROSTER_SHEET_NAME_PATTERN = /^\d{4}-\d{2}\s+(.+)$/;
 
 function doGet(e) {
   try {
@@ -27,6 +39,10 @@ function doGet(e) {
 
     if (action === "listFootyMatchNotes") {
       return webResponse(e, { ok: true, notes: listFootyMatchNotes() });
+    }
+
+    if (action === "listFootyRosters") {
+      return webResponse(e, { ok: true, rosters: listFootyRosters() });
     }
 
     if (action === "debugFootyMatchNote") {
@@ -302,6 +318,81 @@ function debugFootyMatchNote(matchId) {
       note: normalizeFootyMatchNoteFromRow(row, columns),
     }))
     .filter((entry) => entry.note.matchId === normalizedMatchId);
+}
+
+function listFootyRosters() {
+  const spreadsheet = getFootySpreadsheet();
+
+  return spreadsheet.getSheets()
+    .map((sheet) => getFootyRosterFromSheet(sheet))
+    .filter((roster) => roster && roster.players.length > 0);
+}
+
+function getFootyRosterFromSheet(sheet) {
+  const sheetName = sheet.getName();
+  const nameMatch = sheetName.match(FOOTY_ROSTER_SHEET_NAME_PATTERN);
+
+  if (!nameMatch) {
+    return null;
+  }
+
+  let header;
+
+  try {
+    header = findHeaderRow(sheet, "Player");
+  } catch {
+    return null;
+  }
+
+  const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columns = mapColumns(headerValues);
+
+  if (!columns.Player) {
+    return null;
+  }
+
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow <= header.row) {
+    return {
+      season: sheetName.split(" ")[0],
+      sheetName,
+      team: nameMatch[1].trim(),
+      players: [],
+    };
+  }
+
+  const values = sheet.getRange(header.row + 1, 1, lastRow - header.row, sheet.getLastColumn()).getValues();
+  const players = values
+    .map((row) => normalizeFootyRosterPlayer(row, columns))
+    .filter((player) => player.player);
+
+  return {
+    season: sheetName.split(" ")[0],
+    sheetName,
+    team: nameMatch[1].trim(),
+    players,
+  };
+}
+
+function normalizeFootyRosterPlayer(row, columns) {
+  const player = {};
+
+  for (const column of FOOTY_ROSTER_COLUMNS) {
+    player[column] = columns[column] ? stringifySheetValue(row[columns[column] - 1]) : "";
+  }
+
+  return {
+    app: player.App,
+    birthday: player.Birthday,
+    home: player.Home,
+    joined: player.Joined,
+    left: player.Left,
+    new: player.New,
+    number: player["#"],
+    player: player.Player,
+    position: player.Position,
+  };
 }
 
 function normalizeFootyMatchNote(note) {

@@ -283,6 +283,7 @@ const RANKING_CONFIG = {
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
+let footyRosterLoadPromise = null;
 const footyNoteGoalAssistEntries = {
   follow: [],
   opponent: [],
@@ -1134,6 +1135,13 @@ function openFootyNoteDialog(matchId) {
   clearFootyNoteGoalAssistInputs("opponent");
   renderFootyNoteGoalAssistEntries("follow");
   renderFootyNoteGoalAssistEntries("opponent");
+  applyFootyNoteRosterOptions(fixture);
+  ensureFootyRosters()
+    .then(() => applyFootyNoteRosterOptions(fixture))
+    .catch((error) => {
+      recordDiagnostic("footy rosters failed to load", error);
+      console.warn("Box This Lap footy rosters failed to load", error);
+    });
 
   if (footyNoteText) {
     footyNoteText.value = String(note.note || "");
@@ -1429,6 +1437,168 @@ function loadFootyMatchNotes() {
     };
     document.head.append(script);
   });
+}
+
+function ensureFootyRosters() {
+  if (Array.isArray(siteData.footyRosters)) {
+    return Promise.resolve(siteData.footyRosters);
+  }
+
+  if (footyRosterLoadPromise) {
+    return footyRosterLoadPromise;
+  }
+
+  footyRosterLoadPromise = loadFootyRosters()
+    .then((rosters) => {
+      siteData.footyRosters = normalizeFootyRosters(rosters);
+      return siteData.footyRosters;
+    })
+    .catch((error) => {
+      footyRosterLoadPromise = null;
+      throw error;
+    });
+
+  return footyRosterLoadPromise;
+}
+
+function loadFootyRosters() {
+  if (!FOOTY_DATA_ENDPOINT) {
+    return Promise.resolve([]);
+  }
+
+  const callbackName = `boxThisLapFootyRosters${Date.now()}${Math.random().toString(36).slice(2)}`;
+  const callbackId = `footy-rosters-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return new Promise((resolve, reject) => {
+    let script;
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("No response from the footy roster endpoint."));
+    }, 12000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      delete window[callbackName];
+      script?.remove();
+    }
+
+    window[callbackName] = (data) => {
+      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
+        return;
+      }
+
+      cleanup();
+
+      if (!data.ok) {
+        reject(new Error(data.error || "Unable to load footy rosters."));
+        return;
+      }
+
+      resolve(Array.isArray(data.rosters) ? data.rosters : []);
+    };
+
+    const url = new URL(FOOTY_DATA_ENDPOINT);
+    url.searchParams.set("action", "listFootyRosters");
+    url.searchParams.set("callback", callbackName);
+    url.searchParams.set("callbackId", callbackId);
+    script = document.createElement("script");
+    script.async = true;
+    script.src = url.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Unable to reach the footy roster endpoint."));
+    };
+    document.head.append(script);
+  });
+}
+
+function normalizeFootyRosters(rosters = []) {
+  return rosters
+    .map((roster) => ({
+      players: Array.isArray(roster.players)
+        ? roster.players
+            .map(normalizeFootyRosterPlayer)
+            .filter((player) => player.name)
+        : [],
+      season: String(roster.season || "").trim(),
+      sheetName: String(roster.sheetName || "").trim(),
+      team: String(roster.team || "").trim(),
+    }))
+    .filter((roster) => roster.team && roster.players.length > 0);
+}
+
+function normalizeFootyRosterPlayer(player = {}) {
+  return {
+    name: String(player.player || player.Player || player.name || "").trim(),
+    number: String(player.number || player["#"] || "").trim(),
+    position: String(player.position || player.Position || "").trim(),
+  };
+}
+
+function applyFootyNoteRosterOptions(fixture) {
+  updateFootyPlayerDatalist("footy-note-follow-player-options", getFootyRosterPlayersForTeam(fixture?.teamName));
+  updateFootyPlayerDatalist("footy-note-opponent-player-options", getFootyRosterPlayersForTeam(getFootyFixtureOpponentRosterName(fixture)));
+}
+
+function updateFootyPlayerDatalist(datalistId, players = []) {
+  const datalist = document.getElementById(datalistId);
+
+  if (!datalist) {
+    return;
+  }
+
+  datalist.innerHTML = players
+    .map((player) => {
+      const labelParts = [player.position, player.number ? `#${player.number}` : ""].filter(Boolean);
+      const label = labelParts.length ? ` label="${escapeHtml(labelParts.join(" - "))}"` : "";
+
+      return `<option value="${escapeHtml(player.name)}"${label}></option>`;
+    })
+    .join("");
+}
+
+function getFootyRosterPlayersForTeam(teamName) {
+  const roster = getFootyRosterForTeam(teamName);
+
+  if (!roster) {
+    return [];
+  }
+
+  return [...roster.players].sort((first, second) =>
+    first.name.localeCompare(second.name, undefined, { sensitivity: "base" })
+  );
+}
+
+function getFootyRosterForTeam(teamName) {
+  const normalizedTeam = normalizeFootyClubName(teamName);
+
+  if (!normalizedTeam) {
+    return null;
+  }
+
+  return (siteData.footyRosters || []).find((roster) =>
+    normalizeFootyClubName(roster.team) === normalizedTeam
+  ) || null;
+}
+
+function getFootyFixtureOpponentRosterName(fixture) {
+  if (!fixture) {
+    return "";
+  }
+
+  if (fixture.opponent) {
+    return fixture.opponent;
+  }
+
+  if (isSameFootyTeamName(fixture.teamName, fixture.home)) {
+    return fixture.away;
+  }
+
+  if (isSameFootyTeamName(fixture.teamName, fixture.away)) {
+    return fixture.home;
+  }
+
+  return "";
 }
 
 function mergeFootyMatchNotes(notes = []) {

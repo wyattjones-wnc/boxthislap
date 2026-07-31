@@ -1554,7 +1554,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   background: var(--panel);
 }
 
-.footy-player-suggestions {
+.autocomplete-dropdown {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1569,11 +1569,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   z-index: 25;
 }
 
-.footy-player-suggestions.is-open {
+.autocomplete-dropdown.is-open {
   display: grid;
 }
 
-.footy-player-suggestion {
+.autocomplete-option {
   align-items: center;
   background: transparent;
   border: 0;
@@ -1591,24 +1591,24 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-align: left;
 }
 
-.footy-player-suggestion:last-child {
+.autocomplete-option:last-child {
   border-bottom: 0;
 }
 
-.footy-player-suggestion:hover,
-.footy-player-suggestion:focus-visible {
+.autocomplete-option:hover,
+.autocomplete-option:focus-visible {
   background: var(--soft);
   outline: none;
 }
 
-.footy-player-suggestion small,
-.footy-player-suggestions-empty {
+.autocomplete-option small,
+.autocomplete-empty {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 900;
 }
 
-.footy-player-suggestions-empty {
+.autocomplete-empty {
   margin: 0;
   padding: 12px;
 }

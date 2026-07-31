@@ -1611,7 +1611,6 @@ function renderAutocompleteDropdown(input, options = [], emptyMessage = "No matc
   if (!filteredOptions.length) {
     list.innerHTML = `<p class="autocomplete-empty">${escapeHtml(emptyMessage)}</p>`;
     list.classList.add("is-open");
-    input.setAttribute("aria-expanded", "true");
     return;
   }
 
@@ -1624,16 +1623,12 @@ function renderAutocompleteDropdown(input, options = [], emptyMessage = "No matc
     `)
     .join("");
   list.classList.add("is-open");
-  input.setAttribute("aria-expanded", "true");
 }
 
 function closeAutocompleteDropdown() {
   document.querySelectorAll(".autocomplete-dropdown.is-open").forEach((list) => {
     list.classList.remove("is-open");
     list.innerHTML = "";
-  });
-  document.querySelectorAll("[aria-autocomplete=\"list\"][aria-expanded=\"true\"]").forEach((input) => {
-    input.setAttribute("aria-expanded", "false");
   });
   activeAutocompleteInput = null;
 }

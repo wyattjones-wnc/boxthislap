@@ -21,6 +21,8 @@ const FOOTY_MATCH_NOTE_COLUMNS = [
   "Highlight Link",
 ];
 const FOOTY_ROSTER_COLUMNS = [
+  "ID",
+  "Team ID",
   "Player",
   "Position",
   "New",
@@ -30,7 +32,10 @@ const FOOTY_ROSTER_COLUMNS = [
   "Left",
   "Home",
   "Birthday",
+  "FromAcademy",
+  "Transparent",
 ];
+const FOOTY_COMBINED_ROSTER_SHEET_NAME = "2026-27";
 const FOOTY_ROSTER_SHEET_NAME_PATTERN = /^\d{4}-\d{2}\s+(.+)$/;
 
 function doGet(e) {
@@ -322,10 +327,110 @@ function debugFootyMatchNote(matchId) {
 
 function listFootyRosters() {
   const spreadsheet = getFootySpreadsheet();
+  const combinedRosterSheet = spreadsheet.getSheetByName(FOOTY_COMBINED_ROSTER_SHEET_NAME);
+
+  if (combinedRosterSheet) {
+    const combinedRosters = getFootyRostersFromCombinedSheet(spreadsheet, combinedRosterSheet);
+
+    if (combinedRosters.length > 0) {
+      return combinedRosters;
+    }
+  }
 
   return spreadsheet.getSheets()
     .map((sheet) => getFootyRosterFromSheet(sheet))
     .filter((roster) => roster && roster.players.length > 0);
+}
+
+function getFootyRostersFromCombinedSheet(spreadsheet, sheet) {
+  let header;
+
+  try {
+    header = findHeaderRow(sheet, "Player");
+  } catch {
+    return [];
+  }
+
+  const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columns = mapColumns(headerValues);
+
+  if (!columns.Player || !columns["Team ID"]) {
+    return [];
+  }
+
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow <= header.row) {
+    return [];
+  }
+
+  const teamNamesById = getFootyTeamNamesById(spreadsheet);
+  const values = sheet.getRange(header.row + 1, 1, lastRow - header.row, sheet.getLastColumn()).getValues();
+  const rostersByTeamId = {};
+
+  values
+    .map((row) => normalizeFootyRosterPlayer(row, columns))
+    .filter((player) => player.player && player.teamId)
+    .forEach((player) => {
+      const teamId = player.teamId;
+      const team = teamNamesById[teamId] || player.team || teamId;
+
+      if (!rostersByTeamId[teamId]) {
+        rostersByTeamId[teamId] = {
+          season: FOOTY_COMBINED_ROSTER_SHEET_NAME,
+          sheetName: sheet.getName(),
+          team,
+          teamId,
+          players: [],
+        };
+      }
+
+      rostersByTeamId[teamId].players.push(player);
+    });
+
+  return Object.keys(rostersByTeamId).map((teamId) => rostersByTeamId[teamId]);
+}
+
+function getFootyTeamNamesById(spreadsheet) {
+  const sheet = spreadsheet.getSheetByName("Teams");
+
+  if (!sheet) {
+    return {};
+  }
+
+  let header;
+
+  try {
+    header = findHeaderRow(sheet, "ID");
+  } catch {
+    return {};
+  }
+
+  const headerValues = sheet.getRange(header.row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columns = mapColumns(headerValues);
+
+  if (!columns.ID || !columns.Name) {
+    return {};
+  }
+
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow <= header.row) {
+    return {};
+  }
+
+  const values = sheet.getRange(header.row + 1, 1, lastRow - header.row, sheet.getLastColumn()).getValues();
+
+  return values.reduce((teams, row) => {
+    const id = stringifySheetValue(row[columns.ID - 1]);
+    const name = stringifySheetValue(row[columns.Name - 1]);
+
+    if (id && name) {
+      teams[id] = name;
+    }
+
+    return teams;
+  }, {});
 }
 
 function getFootyRosterFromSheet(sheet) {
@@ -385,13 +490,17 @@ function normalizeFootyRosterPlayer(row, columns) {
   return {
     app: player.App,
     birthday: player.Birthday,
+    fromAcademy: player.FromAcademy,
     home: player.Home,
+    id: player.ID,
     joined: player.Joined,
     left: player.Left,
     new: player.New,
     number: player["#"],
     player: player.Player,
     position: player.Position,
+    teamId: player["Team ID"],
+    transparent: player.Transparent,
   };
 }
 

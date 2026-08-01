@@ -662,9 +662,13 @@ function renderFootyTeamPlayers(team) {
 }
 
 function renderFootyTeamPlayerCard(player) {
+  const imageMarkup = player.imagePath
+    ? `<img src="${escapeHtml(player.imagePath)}" alt="" loading="lazy" decoding="async">`
+    : "";
+
   return `
     <article class="footy-team-player-card">
-      <div class="footy-team-player-art" aria-hidden="true"></div>
+      <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
       <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
     </article>
   `;
@@ -1795,11 +1799,34 @@ function normalizeFootyRosters(rosters = []) {
 }
 
 function normalizeFootyRosterPlayer(player = {}) {
+  const id = String(player.id || player.ID || "").trim();
+  const teamId = String(player.teamId || player["Team ID"] || "").trim();
+  const transparent = String(player.transparent || player.Transparent || "").trim();
+
   return {
+    fromAcademy: normalizeBooleanish(player.fromAcademy || player.FromAcademy),
+    id,
+    imagePath: getFootyPlayerTransparentPath({ id, teamId, transparent }),
     name: String(player.player || player.Player || player.name || "").trim(),
     number: String(player.number || player["#"] || "").trim(),
     position: String(player.position || player.Position || "").trim(),
+    teamId,
+    transparent,
   };
+}
+
+function getFootyPlayerTransparentPath(player = {}) {
+  if (!player.id || !player.teamId || !player.transparent) {
+    return "";
+  }
+
+  return `assets/players/${encodeURIComponent(player.teamId)}/${encodeURIComponent(player.id)}/${encodeURIComponent(player.transparent)}`;
+}
+
+function normalizeBooleanish(value) {
+  const normalizedValue = normalizeLookupName(value);
+
+  return ["1", "true", "yes", "y"].includes(normalizedValue);
 }
 
 function applyFootyNoteRosterOptions(fixture) {

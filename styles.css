@@ -2004,9 +2004,20 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-team-player-art {
+  align-items: end;
+  display: flex;
   inset: 0;
+  justify-content: center;
   opacity: 0.7;
   position: absolute;
+}
+
+.footy-team-player-art img {
+  display: block;
+  height: 88%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
 }
 
 .footy-team-player-name {

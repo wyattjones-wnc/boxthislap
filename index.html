@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607310005">
+    <link rel="stylesheet" href="styles.css?v=202607310006">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -592,6 +592,16 @@
           <div>
             <a class="back-link" href="#footy" data-page-link="footy">Footy</a>
             <h1 id="footy-team-title">Team</h1>
+          </div>
+          <div class="heading-actions heading-actions-right">
+            <button class="icon-action-button" id="footy-team-player-toggle" type="button" aria-label="Show players" aria-pressed="false">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="10" cy="7" r="4"></circle>
+                <path d="M20 8v6"></path>
+                <path d="M23 11h-6"></path>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="content-shell" id="footy-team-content">
@@ -1714,6 +1724,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607310007"></script>
+    <script type="module" src="script.js?v=202607310008"></script>
   </body>
 </html>

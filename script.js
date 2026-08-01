@@ -76,6 +76,7 @@ import {
   footyScheduleList,
   footyTeamTitle,
   footyTeamContent,
+  footyTeamPlayerToggle,
   footyGoalAssistsButton,
   footyGoalAssistsBack,
   footyGoalAssistsForm,
@@ -197,7 +198,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607310001";
+} from "./modules/domRefs.js?v=202607310002";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -225,6 +226,7 @@ let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
+let shouldShowFootyTeamPlayers = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
 let activeRankingKind = "games";
@@ -560,12 +562,14 @@ function renderFootyTeamPage(pageName = activePageName) {
 
   if (!siteData.footySchedule) {
     footyTeamTitle.textContent = "Team";
+    syncFootyTeamPlayerToggle(false, true);
     footyTeamContent.innerHTML = `<p class="table-message">Loading team...</p>`;
     return;
   }
 
   if (!team) {
     footyTeamTitle.textContent = "Team";
+    syncFootyTeamPlayerToggle(false, true);
     footyTeamContent.innerHTML = `<p class="table-message">Unable to find that followed team.</p>`;
     return;
   }
@@ -582,6 +586,13 @@ function renderFootyTeamPage(pageName = activePageName) {
     : `<span>${escapeHtml(getFootyTeamFallbackBadge(team.name))}</span>`;
 
   footyTeamTitle.textContent = team.name;
+  syncFootyTeamPlayerToggle(shouldShowFootyTeamPlayers, false);
+
+  if (shouldShowFootyTeamPlayers) {
+    renderFootyTeamPlayers(team);
+    return;
+  }
+
   footyTeamContent.innerHTML = `
     <section class="footy-team-summary-card">
       <div class="footy-team-summary-badge" aria-hidden="true">
@@ -604,6 +615,58 @@ function renderFootyTeamPage(pageName = activePageName) {
     </section>
     ${renderFootyTeamFixtureSection("Next Matches", nextFixtures)}
     ${renderFootyTeamFixtureSection("Recent Matches", recentFixtures)}
+  `;
+}
+
+function syncFootyTeamPlayerToggle(isActive, isDisabled = false) {
+  if (!footyTeamPlayerToggle) {
+    return;
+  }
+
+  footyTeamPlayerToggle.disabled = isDisabled;
+  footyTeamPlayerToggle.classList.toggle("is-active", isActive);
+  footyTeamPlayerToggle.setAttribute("aria-pressed", String(isActive));
+  footyTeamPlayerToggle.setAttribute("aria-label", isActive ? "Show matches" : "Show players");
+}
+
+function renderFootyTeamPlayers(team) {
+  const roster = getFootyRosterForTeam(team.name);
+
+  if (!Array.isArray(siteData.footyRosters)) {
+    footyTeamContent.innerHTML = `<p class="table-message">Loading roster...</p>`;
+    ensureFootyRosters()
+      .then(() => {
+        if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && shouldShowFootyTeamPlayers) {
+          renderFootyTeamPage();
+        }
+      })
+      .catch((error) => {
+        footyTeamContent.innerHTML = `<p class="table-message">Unable to load roster: ${escapeHtml(error.message)}</p>`;
+      });
+    return;
+  }
+
+  if (!roster) {
+    footyTeamContent.innerHTML = `<p class="table-message">No roster loaded for ${escapeHtml(team.name)}.</p>`;
+    return;
+  }
+
+  const players = getFootyRosterPlayersForTeam(team.name);
+  footyTeamContent.innerHTML = `
+    <section class="footy-team-player-section">
+      <div class="footy-team-player-grid">
+        ${players.map(renderFootyTeamPlayerCard).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderFootyTeamPlayerCard(player) {
+  return `
+    <article class="footy-team-player-card">
+      <div class="footy-team-player-art" aria-hidden="true"></div>
+      <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
+    </article>
   `;
 }
 
@@ -7074,6 +7137,11 @@ footyNoteForm?.addEventListener("keydown", (event) => {
 footyFilterToggle?.addEventListener("click", () => {
   shouldShowFootyFilters = !shouldShowFootyFilters;
   renderFootySchedule(siteData.footySchedule);
+});
+
+footyTeamPlayerToggle?.addEventListener("click", () => {
+  shouldShowFootyTeamPlayers = !shouldShowFootyTeamPlayers;
+  renderFootyTeamPage();
 });
 
 footyTeamFilter?.addEventListener("click", (event) => {

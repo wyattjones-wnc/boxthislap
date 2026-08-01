@@ -48,6 +48,7 @@ export const footyTeamFilter = document.querySelector("#footy-team-filter");
 export const footyScheduleList = document.querySelector("#footy-schedule-list");
 export const footyTeamTitle = document.querySelector("#footy-team-title");
 export const footyTeamContent = document.querySelector("#footy-team-content");
+export const footyTeamPlayerToggle = document.querySelector("#footy-team-player-toggle");
 export const footyGoalAssistsButton = document.querySelector("#footy-goal-assists-button");
 export const footyGoalAssistsBack = document.querySelector("#footy-goal-assists-back");
 export const footyGoalAssistsForm = document.querySelector("#footy-goal-assists-form");

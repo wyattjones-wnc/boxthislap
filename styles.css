@@ -1104,12 +1104,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--ink);
   display: grid;
   font: inherit;
-  gap: 6px;
-  grid-template-rows: minmax(0, 200px) 54px auto;
-  height: 320px;
+  gap: 4px;
+  grid-template-rows: minmax(0, 218px) 44px auto;
+  height: 314px;
   justify-items: stretch;
   min-width: 0;
-  padding: 10px;
+  padding: 6px;
   text-align: center;
 }
 
@@ -1121,17 +1121,17 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-battle-option strong {
   align-items: center;
   display: flex;
-  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-size: clamp(1rem, 2.8vw, 1.32rem);
   justify-content: center;
   line-height: 1.15;
   overflow: hidden;
-  padding: 0 6px;
+  padding: 0 4px;
 }
 
 .ranking-battle-actions {
   align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 6px;
   grid-template-columns: minmax(0, 1fr) auto;
   width: 100%;
 }
@@ -1141,9 +1141,10 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-pick-button {
+  font-size: 0.86rem;
   justify-self: end;
-  min-height: 34px;
-  padding: 7px 12px;
+  min-height: 30px;
+  padding: 5px 10px;
 }
 
 .ranking-battle-image-frame {
@@ -1162,7 +1163,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-battle-image-frame img {
   display: block;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   width: 100%;
 }
 
@@ -1177,8 +1178,8 @@ body.has-shell-stale-warning .stale-shell-alert {
   }
 
   .ranking-battle-option {
-    grid-template-rows: minmax(0, 176px) 52px auto;
-    height: 300px;
+    grid-template-rows: minmax(0, 196px) 42px auto;
+    height: 292px;
   }
 }
 

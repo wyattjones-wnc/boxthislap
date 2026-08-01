@@ -1097,27 +1097,25 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-option {
+  align-items: center;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  cursor: pointer;
-  align-items: center;
   display: grid;
   font: inherit;
   gap: 8px;
   grid-template-rows: minmax(0, 1fr) 58px auto;
   height: 340px;
-  justify-content: center;
+  justify-items: stretch;
+  min-width: 0;
   padding: 18px;
   text-align: center;
 }
 
-.ranking-battle-option:hover,
-.ranking-battle-option:focus-visible {
+.ranking-battle-option:hover {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
-  outline: none;
 }
 
 .ranking-battle-option strong {
@@ -1130,8 +1128,21 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-actions {
-  display: flex;
-  justify-content: center;
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.ranking-battle-actions .ranking-inline-action {
+  justify-self: start;
+}
+
+.ranking-battle-pick-button {
+  justify-self: end;
+  min-height: 34px;
+  padding: 7px 12px;
 }
 
 .ranking-battle-image-frame {
@@ -1139,7 +1150,9 @@ body.has-shell-stale-warning .stale-shell-alert {
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 8px;
+  box-sizing: border-box;
   display: block;
+  max-width: 100%;
   overflow: hidden;
   width: 100%;
 }

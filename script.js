@@ -4461,11 +4461,11 @@ function renderNextRankingBattle(kind = activeRankingKind) {
   }
 
   rankingBattleOptions.innerHTML = [pair.itemA, pair.itemB].map((item) => `
-    <button class="ranking-battle-option" type="button" data-ranking-battle-choice="${escapeHtml(item.id)}">
+    <article class="ranking-battle-option">
       ${renderRankingBattleImage(kind, item)}
       <strong>${escapeHtml(item.name)}</strong>
       ${renderRankingBattleExclusionAction(kind, item)}
-    </button>
+    </article>
   `).join("");
 }
 
@@ -4476,9 +4476,12 @@ function renderRankingBattleExclusionAction(kind, item) {
 
   return `
     <span class="ranking-battle-actions">
-      <span class="ranking-inline-action" data-ranking-battle-exclude="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
+      <button class="ranking-inline-action" type="button" data-ranking-battle-exclude="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
         Exclude
-      </span>
+      </button>
+      <button class="action-button ranking-battle-pick-button" type="button" data-ranking-battle-pick="${escapeHtml(item.id)}">
+        Pick
+      </button>
     </span>
   `;
 }
@@ -7370,13 +7373,13 @@ rankingBattleOptions?.addEventListener("click", (event) => {
     return;
   }
 
-  const option = event.target.closest("[data-ranking-battle-choice]");
+  const option = event.target.closest("[data-ranking-battle-pick]");
 
   if (!option) {
     return;
   }
 
-  chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-choice") || "");
+  chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-pick") || "");
 });
 
 document.addEventListener("click", (event) => {

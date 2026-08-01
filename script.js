@@ -3218,11 +3218,13 @@ async function loadRankingSupplementalData() {
     seedsResponse,
     snapshotsResponse,
     exclusionsResponse,
+    choicesResponse,
   ] = await Promise.all([
     loadOptionalRankingEndpoint("listRankingElo", { elo: [] }, { managerId: getCurrentManagerId() }),
     loadOptionalRankingEndpoint("listRankingSeeds", { seeds: [] }),
     loadOptionalRankingEndpoint("listRankingSnapshots", { snapshotItems: [], snapshots: [] }),
     loadOptionalRankingEndpoint("listRankingExclusions", { exclusions: [] }),
+    loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
   ]);
 
   siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
@@ -3230,6 +3232,7 @@ async function loadRankingSupplementalData() {
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
   siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
   siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
+  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
 }
 
 async function loadOptionalRankingEndpoint(action, fallback, params = {}) {
@@ -3838,9 +3841,8 @@ function getCalculatedRankingRankMap(kind = activeRankingKind) {
   return new Map(getCalculatedRankingRows(kind).map((item) => [item.id, item.calculatedRank]));
 }
 
-function getRankingEloForItem(kind, itemId) {
+function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
   const type = getRankingType(kind);
-  const managerId = getCurrentManagerId();
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(type) &&
     String(entry.itemId) === String(itemId) &&
@@ -4553,18 +4555,23 @@ function createRankingBattlePair(kind = activeRankingKind) {
     return null;
   }
 
+  const [displayItemA, displayItemB] = Math.random() < 0.5
+    ? [itemA, itemB]
+    : [itemB, itemA];
+
   return {
-    itemA,
-    itemB,
+    itemA: displayItemA,
+    itemB: displayItemB,
     kind,
     rankingType: getRankingType(kind),
   };
 }
 
-function getRankingComparisonCounts(kind = activeRankingKind) {
+function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
+  const managerId = String(options.managerId || getCurrentManagerId()).trim();
   return new Map(
     getRankingRows(kind).map((item) => {
-      const elo = getRankingEloForItem(kind, item.id);
+      const elo = getRankingEloForItem(kind, item.id, managerId);
       return [String(item.id), Number(elo.comparisons || 0)];
     })
   );
@@ -4660,8 +4667,30 @@ function applyRankingNormalizationLocally(kind, snapshot, snapshotItems, normali
   activeRankingCompareSnapshotId = snapshot.id;
 }
 
-function getRankingPairCounts() {
-  return new Map();
+function getRankingPairCounts(kind = activeRankingKind, options = {}) {
+  const rankingType = normalizeLookupName(getRankingType(kind));
+  const managerId = String(options.managerId || getCurrentManagerId()).trim();
+  const counts = new Map();
+
+  (siteData.rankingChoices || []).forEach((choice) => {
+    if (normalizeLookupName(choice.rankingType) !== rankingType) {
+      return;
+    }
+
+    if (managerId && String(choice.managerId || "") !== managerId) {
+      return;
+    }
+
+    const pairKey = getRankingPairKey(choice.itemAId || choice.winnerId, choice.itemBId || choice.loserId);
+
+    if (!pairKey) {
+      return;
+    }
+
+    counts.set(pairKey, (counts.get(pairKey) || 0) + 1);
+  });
+
+  return counts;
 }
 
 function createRankingPairCandidates(rows, comparisonCounts, pairCounts) {

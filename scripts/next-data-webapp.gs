@@ -88,7 +88,7 @@ function doGet(e) {
     const action = String(e && e.parameter && e.parameter.action ? e.parameter.action : "").trim();
 
     if (action === "listRankingChoices") {
-      return webResponse(e, { ok: true, choices: listRankingChoices() });
+      return webResponse(e, { ok: true, choices: listRankingChoices(e.parameter.managerId) });
     }
 
     if (action === "listRankingElo") {
@@ -508,7 +508,8 @@ function getRankingTypeForKey(ranking) {
   return RANKING_TYPES[normalizedRanking] || normalizedRanking;
 }
 
-function listRankingChoices() {
+function listRankingChoices(managerId) {
+  const normalizedManagerId = String(managerId || "").trim();
   const context = getSimpleTableContext("Ranking Choices", RANKING_CHOICE_COLUMNS, "ID");
   return readSimpleTableRows(context)
     .map((row) => ({
@@ -521,7 +522,12 @@ function listRankingChoices() {
       "Ranking Type": row["Ranking Type"],
       "Winner ID": row["Winner ID"],
     }))
-    .filter((row) => row["Ranking Type"] && row["Winner ID"] && row["Loser ID"]);
+    .filter((row) =>
+      row["Ranking Type"] &&
+      row["Winner ID"] &&
+      row["Loser ID"] &&
+      (!normalizedManagerId || String(row["Manager ID"] || "").trim() === normalizedManagerId)
+    );
 }
 
 function listRankingElo(managerId) {

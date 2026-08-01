@@ -2033,6 +2033,21 @@ body.has-shell-stale-warning .stale-shell-alert {
   object-position: bottom center;
 }
 
+.footy-team-player-number {
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 6px 8px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 1;
+}
+
 .footy-team-player-name {
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   color: var(--ink);

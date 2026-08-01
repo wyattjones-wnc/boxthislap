@@ -442,7 +442,7 @@ function renderFollowedTeamShortcuts(schedule) {
   }
 
   const teams = getFootyShortcutTeams(schedule);
-  followedTeamShortcuts.hidden = teams.length === 0;
+  followedTeamShortcuts.hidden = teams.length === 0 || !isFootyContextPage(activePageName);
 
   if (teams.length === 0) {
     followedTeamShortcuts.innerHTML = "";
@@ -459,6 +459,19 @@ function renderFollowedTeamShortcuts(schedule) {
       </a>
     `;
   }).join("");
+}
+
+function isFootyContextPage(pageName = activePageName) {
+  return pageName === "footy" || String(pageName || "").startsWith("footy-team-");
+}
+
+function syncFollowedTeamShortcutsVisibility(pageName = activePageName) {
+  if (!followedTeamShortcuts) {
+    return;
+  }
+
+  followedTeamShortcuts.hidden = !isFootyContextPage(pageName) ||
+    followedTeamShortcuts.children.length === 0;
 }
 
 function getFootyShortcutTeams(schedule) {
@@ -630,7 +643,7 @@ function syncFootyTeamPlayerToggle(isActive, isDisabled = false) {
 }
 
 function renderFootyTeamPlayers(team) {
-  const roster = getFootyRosterForTeam(team.name);
+  const roster = getFootyRosterForTeam(team);
 
   if (!Array.isArray(siteData.footyRosters)) {
     footyTeamContent.innerHTML = `<p class="table-message">Loading roster...</p>`;
@@ -651,7 +664,7 @@ function renderFootyTeamPlayers(team) {
     return;
   }
 
-  const players = getFootyRosterPlayersForTeam(team.name);
+  const players = getFootyRosterPlayersForTeam(team);
   footyTeamContent.innerHTML = `
     <section class="footy-team-player-section">
       <div class="footy-team-player-grid">
@@ -662,16 +675,25 @@ function renderFootyTeamPlayers(team) {
 }
 
 function renderFootyTeamPlayerCard(player) {
+  const fallbackSources = Array.isArray(player.imageFallbackPaths) ? player.imageFallbackPaths : [];
   const imageMarkup = player.imagePath
-    ? `<img src="${escapeHtml(player.imagePath)}" alt="" loading="lazy" decoding="async">`
+    ? `<img src="${escapeHtml(player.imagePath)}" alt="" loading="lazy" decoding="async"${fallbackSources.length ? ` data-fallback-srcs="${escapeHtml(JSON.stringify(fallbackSources))}"` : ""}>`
     : "";
+  const number = formatFootyPlayerNumber(player.number);
 
   return `
     <article class="footy-team-player-card">
       <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
+      ${number ? `<div class="footy-team-player-number">${escapeHtml(number)}</div>` : ""}
       <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
     </article>
   `;
+}
+
+function formatFootyPlayerNumber(number) {
+  const cleanNumber = String(number || "").trim().replace(/^#/, "");
+
+  return cleanNumber ? `#${cleanNumber}` : "";
 }
 
 function renderFootyTeamFixtureSection(title, fixtures = []) {
@@ -1785,28 +1807,35 @@ function loadFootyRosters() {
 
 function normalizeFootyRosters(rosters = []) {
   return rosters
-    .map((roster) => ({
-      players: Array.isArray(roster.players)
-        ? roster.players
-            .map(normalizeFootyRosterPlayer)
-            .filter((player) => player.name)
-        : [],
-      season: String(roster.season || "").trim(),
-      sheetName: String(roster.sheetName || "").trim(),
-      team: String(roster.team || "").trim(),
-    }))
-    .filter((roster) => roster.team && roster.players.length > 0);
+    .map((roster) => {
+      const teamId = String(roster.teamId || roster["Team ID"] || roster.id || roster.ID || "").trim();
+
+      return {
+        players: Array.isArray(roster.players)
+          ? roster.players
+              .map((player) => normalizeFootyRosterPlayer({ ...player, teamId: player.teamId || player["Team ID"] || teamId }))
+              .filter((player) => player.name)
+          : [],
+        season: String(roster.season || "").trim(),
+        sheetName: String(roster.sheetName || "").trim(),
+        team: String(roster.team || roster.name || "").trim(),
+        teamId,
+      };
+    })
+    .filter((roster) => (roster.team || roster.teamId) && roster.players.length > 0);
 }
 
 function normalizeFootyRosterPlayer(player = {}) {
   const id = String(player.id || player.ID || "").trim();
   const teamId = String(player.teamId || player["Team ID"] || "").trim();
   const transparent = String(player.transparent || player.Transparent || "").trim();
+  const imagePaths = getFootyPlayerTransparentPaths({ id, teamId, transparent });
 
   return {
     fromAcademy: normalizeBooleanish(player.fromAcademy || player.FromAcademy),
     id,
-    imagePath: getFootyPlayerTransparentPath({ id, teamId, transparent }),
+    imageFallbackPaths: imagePaths.slice(1),
+    imagePath: imagePaths[0] || "",
     name: String(player.player || player.Player || player.name || "").trim(),
     number: String(player.number || player["#"] || "").trim(),
     position: String(player.position || player.Position || "").trim(),
@@ -1815,12 +1844,30 @@ function normalizeFootyRosterPlayer(player = {}) {
   };
 }
 
-function getFootyPlayerTransparentPath(player = {}) {
-  if (!player.id || !player.teamId || !player.transparent) {
-    return "";
+function getFootyPlayerTransparentPaths(player = {}) {
+  const id = String(player.id || "").trim();
+  const teamId = String(player.teamId || "").trim();
+  const transparent = String(player.transparent || "").trim();
+
+  if (!teamId || !transparent) {
+    return [];
   }
 
-  return `assets/players/${encodeURIComponent(player.teamId)}/${encodeURIComponent(player.id)}/${encodeURIComponent(player.transparent)}`;
+  const encodedTeamId = encodeURIComponent(teamId);
+  const encodedTransparent = encodeURIComponent(transparent);
+  const paths = [];
+
+  if (id) {
+    paths.push(`assets/players/${encodedTeamId}/${encodeURIComponent(id)}/${encodedTransparent}`);
+  }
+
+  paths.push(
+    `assets/players/${encodedTeamId}/1/${encodedTransparent}`,
+    `assets/players/${encodedTeamId}/${encodedTransparent}`,
+    `assets/players/${encodedTransparent}`
+  );
+
+  return [...new Set(paths)];
 }
 
 function normalizeBooleanish(value) {
@@ -1933,8 +1980,8 @@ function renderFootyPlayerAutocomplete(input) {
   renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "No roster matches");
 }
 
-function getFootyRosterPlayersForTeam(teamName) {
-  const roster = getFootyRosterForTeam(teamName);
+function getFootyRosterPlayersForTeam(teamInput) {
+  const roster = getFootyRosterForTeam(teamInput);
 
   if (!roster) {
     return [];
@@ -1945,15 +1992,22 @@ function getFootyRosterPlayersForTeam(teamName) {
   );
 }
 
-function getFootyRosterForTeam(teamName) {
+function getFootyRosterForTeam(teamInput) {
+  const teamName = typeof teamInput === "object" && teamInput
+    ? teamInput.name
+    : teamInput;
+  const teamId = typeof teamInput === "object" && teamInput
+    ? String(teamInput.id || teamInput.teamId || "").trim()
+    : "";
   const normalizedTeam = normalizeFootyClubName(teamName);
 
-  if (!normalizedTeam) {
+  if (!normalizedTeam && !teamId) {
     return null;
   }
 
   return (siteData.footyRosters || []).find((roster) =>
-    normalizeFootyClubName(roster.team) === normalizedTeam
+    (teamId && String(roster.teamId || "").trim() === teamId) ||
+    (normalizedTeam && normalizeFootyClubName(roster.team) === normalizedTeam)
   ) || null;
 }
 
@@ -5752,6 +5806,7 @@ function renderPageContext(pageName = "") {
 
   renderActivePageContent(pageName);
   renderStandingsAwards();
+  syncFollowedTeamShortcutsVisibility(pageName);
 
   const formulaOneYear = getFormulaOneYearFromPage(pageName);
 
@@ -6959,6 +7014,32 @@ document.addEventListener("click", (event) => {
   event.stopPropagation();
   awardButton.setAttribute("aria-expanded", String(awardButton.getAttribute("aria-expanded") !== "true"));
 });
+
+document.addEventListener("error", (event) => {
+  const image = event.target;
+
+  if (!(image instanceof HTMLImageElement) || !image.dataset.fallbackSrcs) {
+    return;
+  }
+
+  let fallbacks = [];
+
+  try {
+    fallbacks = JSON.parse(image.dataset.fallbackSrcs);
+  } catch {
+    fallbacks = [];
+  }
+
+  const [nextSource, ...remainingSources] = Array.isArray(fallbacks) ? fallbacks : [];
+
+  if (!nextSource) {
+    image.removeAttribute("data-fallback-srcs");
+    return;
+  }
+
+  image.dataset.fallbackSrcs = JSON.stringify(remainingSources);
+  image.src = nextSource;
+}, true);
 
 copyCurrentPageLinkButton?.addEventListener("click", () => {
   copyCurrentPageUrl();

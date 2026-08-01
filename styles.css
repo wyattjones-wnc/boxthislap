@@ -1090,6 +1090,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-options {
+  align-items: stretch;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1105,8 +1106,9 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: grid;
   font: inherit;
   gap: 8px;
+  grid-template-rows: minmax(0, 1fr) 58px auto;
+  height: 340px;
   justify-content: center;
-  min-height: 132px;
   padding: 18px;
   text-align: center;
 }
@@ -1119,8 +1121,12 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-option strong {
+  align-items: center;
+  display: flex;
   font-size: clamp(1.1rem, 3vw, 1.45rem);
+  justify-content: center;
   line-height: 1.15;
+  overflow: hidden;
 }
 
 .ranking-battle-actions {
@@ -1135,7 +1141,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   display: block;
   overflow: hidden;
-  width: min(100%, 400px);
+  width: 100%;
 }
 
 .ranking-battle-image-frame img {
@@ -1145,9 +1151,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 100%;
 }
 
+.ranking-battle-image-frame.is-empty {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--panel) 72%, transparent), var(--soft));
+}
+
 @media (max-width: 640px) {
   .ranking-battle-options {
     grid-template-columns: 1fr;
+  }
+
+  .ranking-battle-option {
+    height: 320px;
   }
 }
 

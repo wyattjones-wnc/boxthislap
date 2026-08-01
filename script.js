@@ -4458,14 +4458,13 @@ function renderRankingBattleExclusionAction(kind, item) {
 
 function renderRankingBattleImage(kind, item) {
   const imagePath = getRandomRankingAssetPath(kind, item?.id);
-
-  if (!imagePath) {
-    return "";
-  }
+  const imageMarkup = imagePath
+    ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
+    : "";
 
   return `
-    <span class="ranking-battle-image-frame" aria-hidden="true">
-      <img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy">
+    <span class="ranking-battle-image-frame${imagePath ? "" : " is-empty"}" aria-hidden="true">
+      ${imageMarkup}
     </span>
   `;
 }

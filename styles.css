@@ -1104,12 +1104,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--ink);
   display: grid;
   font: inherit;
-  gap: 8px;
-  grid-template-rows: minmax(0, 1fr) 58px auto;
-  height: 340px;
+  gap: 6px;
+  grid-template-rows: minmax(0, 200px) 54px auto;
+  height: 320px;
   justify-items: stretch;
   min-width: 0;
-  padding: 18px;
+  padding: 10px;
   text-align: center;
 }
 
@@ -1125,6 +1125,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-content: center;
   line-height: 1.15;
   overflow: hidden;
+  padding: 0 6px;
 }
 
 .ranking-battle-actions {
@@ -1146,12 +1147,13 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-image-frame {
-  aspect-ratio: 400 / 268;
+  align-self: stretch;
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
   display: block;
+  height: 100%;
   max-width: 100%;
   overflow: hidden;
   width: 100%;
@@ -1175,7 +1177,8 @@ body.has-shell-stale-warning .stale-shell-alert {
   }
 
   .ranking-battle-option {
-    height: 320px;
+    grid-template-rows: minmax(0, 176px) 52px auto;
+    height: 300px;
   }
 }
 

@@ -1149,9 +1149,6 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .ranking-battle-image-frame {
   align-self: stretch;
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 8px;
   box-sizing: border-box;
   display: block;
   height: 100%;
@@ -1168,8 +1165,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-image-frame.is-empty {
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--panel) 72%, transparent), var(--soft));
+  background: transparent;
 }
 
 @media (max-width: 640px) {

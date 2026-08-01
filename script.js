@@ -242,6 +242,18 @@ let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const FOOTY_LOCAL_TEAM_BADGES = {
+  "charlotte": "assets/teams/charlotte-fc.svg",
+  "charlotte fc": "assets/teams/charlotte-fc.svg",
+  "inter miami": "assets/teams/inter-miami-cf.webp",
+  "inter miami cf": "assets/teams/inter-miami-cf.webp",
+  usmnt: "assets/teams/usmnt.svg",
+  uswmt: "assets/teams/uswnt.svg",
+  uswnt: "assets/teams/uswnt.svg",
+};
+const FOOTY_DISPLAY_TEAM_NAMES = {
+  uswmt: "USWNT",
+};
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
 const BRACKET_SUBMISSIONS_ARCHIVED = true;
@@ -453,12 +465,14 @@ function getFootyShortcutTeams(schedule) {
 
 function normalizeFootyScheduleTeam(teamSchedule = {}) {
   const team = teamSchedule.team || {};
+  const name = getFootyDisplayTeamName(team.name);
+  const badge = getFootyTeamBadge(name, team.badge);
 
   return {
-    badge: String(team.badge || "").trim(),
+    badge,
     fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
     id: String(team.id || "").trim(),
-    name: String(team.name || "").trim(),
+    name,
     priority: normalizeFootyPriority(team.priority),
     status: String(teamSchedule.status || "").trim(),
     updatedAt: String(teamSchedule.updatedAt || teamSchedule.attemptedAt || "").trim(),
@@ -515,6 +529,25 @@ function getAllFootyScheduleTeams(schedule) {
 
 function getFootyTeamFallbackBadge(teamName) {
   return String(teamName || "?").trim().slice(0, 1).toUpperCase() || "?";
+}
+
+function getFootyDisplayTeamName(teamName) {
+  const rawName = String(teamName || "").trim();
+  const displayName = FOOTY_DISPLAY_TEAM_NAMES[normalizeLookupName(rawName)];
+
+  return displayName || rawName;
+}
+
+function getFootyTeamBadge(teamName, explicitBadge = "") {
+  const badge = String(explicitBadge || "").trim();
+
+  if (badge) {
+    return badge;
+  }
+
+  return FOOTY_LOCAL_TEAM_BADGES[normalizeLookupName(teamName)] ||
+    FOOTY_LOCAL_TEAM_BADGES[normalizeFootyClubName(teamName)] ||
+    "";
 }
 
 function renderFootyTeamPage(pageName = activePageName) {
@@ -597,7 +630,8 @@ function getFootyScheduleFixtures(schedule) {
 
       return teamFixtures.map((fixture) => ({
         ...fixture,
-        teamBadge: fixture.teamBadge || team.badge || "",
+        teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge),
+        teamName: getFootyDisplayTeamName(fixture.teamName || team.name),
       }));
     });
   const teamBadges = getFootyTeamBadgeMap(fixtures);

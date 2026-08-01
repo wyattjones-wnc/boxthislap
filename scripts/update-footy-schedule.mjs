@@ -43,6 +43,12 @@ const FALLBACK_TEAM_BADGES = {
   "charlotte fc": "assets/teams/charlotte-fc.svg",
   "inter miami": "assets/teams/inter-miami-cf.webp",
   "inter miami cf": "assets/teams/inter-miami-cf.webp",
+  usmnt: "assets/teams/usmnt.svg",
+  uswmt: "assets/teams/uswnt.svg",
+  uswnt: "assets/teams/uswnt.svg",
+};
+const DISPLAY_TEAM_NAMES = {
+  uswmt: "USWNT",
 };
 const FALLBACK_ARSENAL_GRAPHQL_TEAM_IDS = {
   arsenal: "4dsgumo7d4zupm2ugsvm4zm4d",
@@ -247,8 +253,10 @@ async function main() {
 }
 
 async function resolveTeam(team) {
-  const name = getField(team, "Name", "Team").trim();
+  const name = getTeamDisplayName(getField(team, "Name", "Team"));
   const configuredId = getFootballDataTeamId(team);
+  const badge = await resolveTeamBadge(team);
+  const sportDbTeamId = getSportDbTeamId(team);
 
   if (!name) {
     return {
@@ -264,7 +272,7 @@ async function resolveTeam(team) {
 
   if (!configuredId) {
     return {
-      badge: getTeamBadge(team),
+      badge,
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
@@ -274,14 +282,14 @@ async function resolveTeam(team) {
       providerLeagues: [],
       providerTeamId: "",
       resolvedName: "",
-      sportDbTeamId: getSportDbTeamId(team),
+      sportDbTeamId,
       status: "missing-provider-team-id",
     };
   }
 
   if (!FOOTBALL_DATA_API_KEY) {
     return {
-      badge: getTeamBadge(team),
+      badge,
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
@@ -291,7 +299,7 @@ async function resolveTeam(team) {
       providerLeagues: [],
       providerTeamId: configuredId,
       resolvedName: name,
-      sportDbTeamId: getSportDbTeamId(team),
+      sportDbTeamId,
       status: "configured-unverified",
       warning: `Skipped ${PRIMARY_PROVIDER_NAME} team verification; missing FOOTBALL_DATA_API_KEY.`,
     };
@@ -299,7 +307,7 @@ async function resolveTeam(team) {
 
   if (!SHOULD_VERIFY_FOOTBALL_DATA_TEAMS) {
     return {
-      badge: getTeamBadge(team),
+      badge,
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
@@ -309,7 +317,7 @@ async function resolveTeam(team) {
       providerLeagues: [],
       providerTeamId: configuredId,
       resolvedName: name,
-      sportDbTeamId: getSportDbTeamId(team),
+      sportDbTeamId,
       status: "configured",
     };
   }
@@ -320,7 +328,7 @@ async function resolveTeam(team) {
     providerTeam = await loadFootballDataJson(`/teams/${encodeURIComponent(configuredId)}`);
   } catch (error) {
     return {
-      badge: getTeamBadge(team),
+      badge,
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
@@ -330,14 +338,14 @@ async function resolveTeam(team) {
       providerLeagues: [],
       providerTeamId: configuredId,
       resolvedName: name,
-      sportDbTeamId: getSportDbTeamId(team),
+      sportDbTeamId,
       status: "configured-unverified",
       warning: `Unable to verify football-data.org team ${configuredId}: ${error.message}`,
     };
   }
 
   return {
-    badge: getTeamBadge(team) || providerTeam.crest || "",
+    badge: badge || providerTeam.crest || "",
     id: getField(team, "ID"),
     league: getField(team, "League").trim(),
     name,
@@ -347,7 +355,7 @@ async function resolveTeam(team) {
     providerLeagues: normalizeRunningCompetitions(providerTeam.runningCompetitions),
     providerTeamId: String(providerTeam.id || configuredId),
     resolvedName: providerTeam.name || name,
-    sportDbTeamId: getSportDbTeamId(team),
+    sportDbTeamId,
     status: providerTeam.id ? "configured" : "configured-unverified",
   };
 }
@@ -502,6 +510,15 @@ async function loadSportDbTeamUpcoming(teamId) {
   }));
 
   return Array.isArray(data.events) ? data.events : [];
+}
+
+async function loadSportDbTeamDetails(teamId) {
+  const query = new URLSearchParams({ id: teamId });
+  const data = JSON.parse(await loadText(`${SPORTDB_BASE_URL}/lookupteam.php?${query.toString()}`, {
+    extension: "json",
+  }));
+
+  return Array.isArray(data.teams) ? data.teams[0] || null : null;
 }
 
 async function loadSportDbLeagueSeason(leagueId, season) {
@@ -1217,6 +1234,12 @@ function getFootballDataTeamId(team) {
   return explicitId || FALLBACK_FOOTBALL_DATA_TEAM_IDS[normalizeText(getField(team, "Name", "Team"))] || "";
 }
 
+function getTeamDisplayName(teamName) {
+  const rawName = String(teamName || "").trim();
+
+  return DISPLAY_TEAM_NAMES[normalizeText(rawName)] || rawName;
+}
+
 function getTeamBadge(team) {
   const explicitBadge = getField(
     team,
@@ -1229,6 +1252,28 @@ function getTeamBadge(team) {
   ).trim();
 
   return explicitBadge || FALLBACK_TEAM_BADGES[normalizeText(getField(team, "Name", "Team"))] || "";
+}
+
+async function resolveTeamBadge(team) {
+  const configuredBadge = getTeamBadge(team);
+
+  if (configuredBadge) {
+    return configuredBadge;
+  }
+
+  const sportDbTeamId = getSportDbTeamId(team);
+
+  if (!sportDbTeamId) {
+    return "";
+  }
+
+  try {
+    const sportDbTeam = await loadSportDbTeamDetails(sportDbTeamId);
+
+    return String(sportDbTeam?.strBadge || sportDbTeam?.strLogo || "").trim();
+  } catch {
+    return "";
+  }
 }
 
 function getSportDbTeamId(team) {

@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202607260001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608020001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -249,6 +249,14 @@ let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const pageDataPromises = new Map();
+const sharedDataPromises = new Map();
+const fantasyCriticLoadPromises = new Map();
+const formulaOneDataPromises = new Map();
+const fantasyOfficeData = {
+  2025: { draft: [], movies: [], ordering: [], results: [] },
+  2026: { draft: [], movies: [], ordering: [], results: [] },
+};
 const FOOTY_LOCAL_TEAM_BADGES = {
   "charlotte": "assets/teams/charlotte-fc.svg",
   "charlotte fc": "assets/teams/charlotte-fc.svg",
@@ -321,6 +329,8 @@ siteData.fantasyCritic = {
   2025: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2025], status: "loading" },
   2026: { metadata: FANTASY_CRITIC_LEAGUE_METADATA[2026], status: "loading" },
 };
+siteData.fantasyOffice2025 = fantasyOfficeData[2025];
+siteData.fantasyOffice2026 = fantasyOfficeData[2026];
 
 const router = createRouter({
   draftPanels,
@@ -3316,7 +3326,7 @@ function renderNextListError(error) {
 }
 
 function renderRankingsPage() {
-  if (!shouldRenderPageSection("rankings")) {
+  if (activePageName !== "rankings" || !siteData.managerSession) {
     return;
   }
 
@@ -5958,6 +5968,8 @@ function renderPageContext(pageName = "") {
   if (formulaOneYear) {
     renderFormulaOneAwards(formulaOneYear);
   }
+
+  void ensurePageData(pageName);
 }
 
 function shouldRenderPageSection(pageName) {
@@ -5965,8 +5977,12 @@ function shouldRenderPageSection(pageName) {
 }
 
 function renderActivePageContent(pageName = "") {
-  if (pageName === "footy" && siteData.footySchedule) {
-    renderFootySchedule(siteData.footySchedule);
+  if (pageName === "footy") {
+    if (siteData.footySchedule) {
+      renderFootySchedule(siteData.footySchedule);
+    } else if (footyScheduleList) {
+      footyScheduleList.innerHTML = renderLoadingMessage("Loading Footy schedule...");
+    }
     return;
   }
 
@@ -5981,7 +5997,11 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "next") {
-    renderNextList();
+    if (Array.isArray(siteData.nextItems)) {
+      renderNextList();
+    } else if (nextList) {
+      nextList.innerHTML = renderLoadingMessage("Loading Next items...");
+    }
     return;
   }
 
@@ -5990,9 +6010,39 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
-  if (pageName === "results" && siteData.resultImages) {
-    renderResultImages(siteData.resultImages);
+  if (pageName === "results") {
+    if (siteData.resultImages) {
+      renderResultImages(siteData.resultImages);
+    } else if (dynamicResultImages) {
+      dynamicResultImages.innerHTML = renderLoadingMessage("Loading result images...");
+    }
     return;
+  }
+
+  if (["today", "tomorrow", "matches"].includes(pageName) && !siteData.matches) {
+    [todayMatchList, tomorrowMatchList, matchdayMatchList].forEach((container) => {
+      if (container) {
+        container.innerHTML = renderLoadingMessage("Loading match data...");
+      }
+    });
+    return;
+  }
+
+  if (pageName === "bracket" && !siteData.bracketMatches && bracketView) {
+    bracketView.innerHTML = renderLoadingMessage("Loading bracket data...");
+    return;
+  }
+
+  if (["standings", "rules", "testing"].includes(pageName) && !siteData.playerPerformances) {
+    if (playerChampionshipRows) {
+      playerChampionshipRows.innerHTML = `<tr><td colspan="5">${renderLoadingMessage("Loading standings data...")}</td></tr>`;
+    }
+    if (nationsLeagueRows) {
+      nationsLeagueRows.innerHTML = `<tr><td colspan="5">${renderLoadingMessage("Loading standings data...")}</td></tr>`;
+    }
+    if (managerResultsRows) {
+      managerResultsRows.innerHTML = `<tr><td colspan="3">${renderLoadingMessage("Loading manager results...")}</td></tr>`;
+    }
   }
 
   if (pageName.startsWith("fantasy-critic-")) {
@@ -6004,13 +6054,25 @@ function renderActivePageContent(pageName = "") {
 
   if (formulaOneYear) {
     if (pageName.endsWith("-questions")) {
-      renderFormulaOneQuestions(formulaOneYear);
+      if (siteData[`formulaOne${formulaOneYear}`]) {
+        renderFormulaOneQuestions(formulaOneYear);
+      } else if (formulaOneViews[formulaOneYear]?.questionList) {
+        formulaOneViews[formulaOneYear].questionList.innerHTML = renderLoadingMessage("Loading Formula 1 questions...");
+      }
       return;
     }
 
     if (pageName.endsWith("-weekly")) {
-      renderFormulaOneWeeklyPage(formulaOneYear, siteData[`formulaOne${formulaOneYear}Weekly`]);
-      renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
+      if (siteData[`formulaOne${formulaOneYear}Weekly`]) {
+        renderFormulaOneWeeklyPage(formulaOneYear, siteData[`formulaOne${formulaOneYear}Weekly`]);
+      } else if (formulaOneViews[formulaOneYear]?.weeklyList) {
+        formulaOneViews[formulaOneYear].weeklyList.innerHTML = renderLoadingMessage("Loading Formula 1 weekly picks...");
+      }
+      if (formulaOneYear === "2026" && !siteData.formulaOne2026RoundForms && formulaOneViews[2026]?.weeklyForm) {
+        formulaOneViews[2026].weeklyForm.innerHTML = renderLoadingMessage("Loading Formula 1 bet forms...");
+      } else {
+        renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
+      }
       return;
     }
 
@@ -6027,11 +6089,27 @@ function renderActivePageContent(pageName = "") {
     const data = siteData[`fantasyOffice${year}`];
 
     if (view === "draft") {
-      renderFantasyOfficeDraft(year, data?.draft ?? []);
+      if (data?.draft?.length || sharedDataPromises.has(`fantasy-office:${year}:draft`)) {
+        renderFantasyOfficeDraft(year, data?.draft ?? []);
+      } else {
+        fantasyOfficeViews[year]?.draftList && (fantasyOfficeViews[year].draftList.innerHTML = renderLoadingMessage(`Loading Fantasy Office ${year} draft...`));
+      }
     } else if (view === "movies") {
-      renderFantasyOfficeMovies(year, data?.results ?? []);
+      if (year === "2026") {
+        renderFantasyOfficeMovies(year, []);
+      } else if (data?.results?.length || sharedDataPromises.has(`fantasy-office:${year}:movies`)) {
+        renderFantasyOfficeMovies(year, data?.results ?? []);
+      } else {
+        fantasyOfficeViews[year]?.movieList && (fantasyOfficeViews[year].movieList.innerHTML = renderLoadingMessage(`Loading Fantasy Office ${year} movies...`));
+      }
     } else if (view === "results") {
-      renderFantasyOfficeResults(year, data?.results ?? []);
+      if (year === "2026") {
+        renderFantasyOfficeResults(year, []);
+      } else if (data?.results?.length || sharedDataPromises.has(`fantasy-office:${year}:results`)) {
+        renderFantasyOfficeResults(year, data?.results ?? []);
+      } else {
+        fantasyOfficeViews[year]?.resultList && (fantasyOfficeViews[year].resultList.innerHTML = renderLoadingMessage(`Loading Fantasy Office ${year} results...`));
+      }
     }
   }
 }
@@ -6062,6 +6140,7 @@ function setFormulaOneResultsMode(year, mode) {
   renderFormulaOneResults(year);
   renderStandingsAwards();
   renderManagerHub();
+  void ensureFormulaOneData(year, formulaOneResultsMode[year] === "weekly" ? "weekly-results" : "questions");
 }
 
 function disposeFormulaOneFormIframes() {
@@ -8191,6 +8270,12 @@ function saveManagerSession(session) {
 
   renderLoginState();
   renderManagerHub();
+
+  if (activePageName === "manager-hub") {
+    pageDataPromises.delete("manager-hub");
+    sharedDataPromises.delete("manager-hub");
+    void ensurePageData("manager-hub");
+  }
 }
 
 function signOutManager() {
@@ -10461,126 +10546,192 @@ window.addEventListener("popstate", () => {
   showPage(window.location.hash.replace("#", "") || "footy", { scrollToTop: true });
 });
 
-syncTestScoringUi();
-hydrateStoredManagerSession();
-showPage(window.location.hash.replace("#", "") || "footy");
-renderLeagueList(leagueYearSelect?.value || "2026");
-renderFantasyCriticPage();
-loadFantasyCriticLeague("2025");
-loadFantasyCriticLeague("2026");
-syncThemeToggle();
-hydrateBracketSubmitter();
-hydrateManagerAuthStatusCache();
-hydrateManagerSession();
 
-loadJson("data/footy-schedule.json")
-  .then((schedule) => {
-    clearFootyScheduleMatchNotes(schedule);
-    siteData.footySchedule = schedule;
-    renderFollowedTeamShortcuts(schedule);
-    renderFootySchedule(schedule);
-    renderFootyTeamPage();
-    console.info("Box This Lap footy schedule loaded", schedule);
-    return loadFootyMatchNotes();
-  })
-  .then((notes) => {
-    if (!notes || !notes.length) {
-      return;
-    }
+function getPageDataScope(pageName = "") {
+  const page = String(pageName || "");
 
-    mergeFootyMatchNotes(notes);
-    renderFootySchedule(siteData.footySchedule);
-    renderFootyTeamPage();
-    console.info("Box This Lap footy match notes loaded", notes);
-  })
-  .catch((error) => {
-    if (siteData.footySchedule) {
-      console.warn("Box This Lap footy match notes failed to load", error);
-      return;
-    }
+  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists") {
+    return "footy";
+  }
 
+  if (page === "next") {
+    return "next";
+  }
+
+  if (page === "rankings") {
+    return "rankings";
+  }
+
+  if (page === "login") {
+    return "login";
+  }
+
+  if (page === "manager-hub") {
+    return "manager-hub";
+  }
+
+  if (page === "results") {
+    return "world-cup-results";
+  }
+
+  if (["today", "tomorrow", "matches"].includes(page)) {
+    return "world-cup-matches";
+  }
+
+  if (["draft", "standings", "rules", "testing"].includes(page)) {
+    return "world-cup-standings";
+  }
+
+  if (page === "bracket") {
+    return "world-cup-bracket";
+  }
+
+  const fantasyCriticMatch = page.match(/^fantasy-critic-(2025|2026)$/);
+  if (fantasyCriticMatch) {
+    return `fantasy-critic-${fantasyCriticMatch[1]}`;
+  }
+
+  const formulaOneMatch = page.match(/^formula-1-(2024|2025|2026)-(questions|weekly|results)$/);
+  if (formulaOneMatch) {
+    const [, year, view] = formulaOneMatch;
+    return `formula-one-${year}-${view}`;
+  }
+
+  const fantasyOfficeMatch = page.match(/^fantasy-office-(2025|2026)-(draft|movies|results)$/);
+  if (fantasyOfficeMatch) {
+    const [, year, view] = fantasyOfficeMatch;
+    return `fantasy-office-${year}-${view}`;
+  }
+
+  return "";
+}
+
+function ensurePageData(pageName = activePageName) {
+  const scope = getPageDataScope(pageName);
+
+  if (!scope) {
+    return Promise.resolve();
+  }
+
+  const existingPromise = pageDataPromises.get(scope);
+  if (existingPromise) {
+    return existingPromise;
+  }
+
+  const promise = Promise.resolve()
+    .then(() => loadPageData(scope))
+    .catch((error) => {
+      recordDiagnostic(`${scope} page data failed to load`, error);
+      renderPageDataError(scope, error);
+      pageDataPromises.delete(scope);
+    });
+
+  pageDataPromises.set(scope, promise);
+  return promise;
+}
+
+function ensureSharedData(key, loader) {
+  const existingPromise = sharedDataPromises.get(key);
+  if (existingPromise) {
+    return existingPromise;
+  }
+
+  const promise = Promise.resolve()
+    .then(loader)
+    .catch((error) => {
+      sharedDataPromises.delete(key);
+      throw error;
+    });
+
+  sharedDataPromises.set(key, promise);
+  return promise;
+}
+
+function loadPageData(scope) {
+  if (scope === "footy") {
+    return ensureFootyData();
+  }
+
+  if (scope === "next") {
+    return ensureNextData();
+  }
+
+  if (scope === "rankings") {
+    return ensureRankingsLoaded();
+  }
+
+  if (scope === "login") {
+    return ensurePortalManagersData();
+  }
+
+  if (scope === "manager-hub") {
+    return ensureManagerHubData();
+  }
+
+  if (scope === "world-cup-results") {
+    return ensureWorldCupCoreData();
+  }
+
+  if (scope === "world-cup-matches") {
+    return ensureWorldCupMatchData();
+  }
+
+  if (scope === "world-cup-standings") {
+    return ensureWorldCupStandingsData();
+  }
+
+  if (scope === "world-cup-bracket") {
+    return ensureWorldCupBracketData();
+  }
+
+  const fantasyCriticMatch = scope.match(/^fantasy-critic-(2025|2026)$/);
+  if (fantasyCriticMatch) {
+    return Promise.allSettled([
+      ensureFantasyCriticData(fantasyCriticMatch[1]),
+      ensurePortalData(),
+    ]);
+  }
+
+  const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|results)$/);
+  if (formulaOneMatch) {
+    const [, year, view] = formulaOneMatch;
+    const dataView = view === "results"
+      ? (formulaOneResultsMode[year] === "weekly" ? "weekly-results" : "questions")
+      : view;
+    return ensureFormulaOneData(year, dataView);
+  }
+
+  const fantasyOfficeMatch = scope.match(/^fantasy-office-(2025|2026)-(draft|movies|results)$/);
+  if (fantasyOfficeMatch) {
+    const [, year, view] = fantasyOfficeMatch;
+    return Promise.allSettled([
+      ensureFantasyOfficeData(year, view),
+      ...(view === "results" ? [ensurePortalData()] : []),
+    ]);
+  }
+
+  return Promise.resolve();
+}
+
+function renderPageDataError(scope, error) {
+  const message = getErrorMessage(error);
+
+  if (scope === "footy" && !siteData.footySchedule && footyScheduleList) {
     renderFootyScheduleError(error);
-    console.error("Box This Lap footy schedule failed to load", error);
-  });
+  }
 
-loadSheet("next")
-  .then((items) => {
-    siteData.nextItems = items;
-    renderNextList(items);
-    console.info("Box This Lap Next data loaded", items);
-  })
-  .catch((error) => {
-    siteData.nextItemsError = error;
+  if (scope === "next") {
     renderNextListError(error);
-    console.error("Box This Lap Next data failed to load", error);
-  });
+  }
 
-Promise.allSettled([
-  loadSheet("portalManagers"),
-  loadSheet("portalDrafts"),
-  loadSheet("portalLogs"),
-])
-  .then(([managersResult, draftsResult, logsResult]) => {
-    console.info("Box This Lap manager portal load results", {
-      drafts: getSettledLog(draftsResult),
-      logs: getSettledLog(logsResult),
-      managers: getSettledLog(managersResult),
-    });
+  if (scope === "world-cup-results" && dynamicResultImages) {
+    dynamicResultImages.innerHTML = `<p class="table-message">Unable to load result images: ${escapeHtml(message)}</p>`;
+  }
 
-    siteData.portalManagers = managersResult.status === "fulfilled"
-      ? managersResult.value
-      : [...DEFAULT_PORTAL_MANAGERS];
-    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
-    siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
-    runPortalRender("login manager options", renderLoginManagerOptions);
-    runPortalRender("login state", renderLoginState);
-
-    runPortalRender("manager hub", renderManagerHub);
-    runPortalRender("standings awards", renderStandingsAwards);
-    runPortalRender("Fantasy Critic awards", renderFantasyCriticPage);
-    runPortalRender("2025 Fantasy Office awards", () => {
-      if (siteData.fantasyOffice2025?.results?.length) {
-        renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
-      }
-    });
-    runPortalRender("2026 Fantasy Office awards", () => {
-      if (siteData.fantasyOffice2026?.results?.length) {
-        renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
-      }
-    });
-    runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
-    runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
-    runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
-
-    if (managersResult.status !== "fulfilled" || draftsResult.status !== "fulfilled" || logsResult.status !== "fulfilled") {
-      console.warn("Box This Lap manager portal optional data partially failed", {
-        managers: managersResult.status === "rejected" ? managersResult.reason : null,
-        drafts: draftsResult.status === "rejected" ? draftsResult.reason : null,
-        logs: logsResult.status === "rejected" ? logsResult.reason : null,
-      });
-    }
-
-    console.info("Box This Lap manager portal data loaded", {
-      drafts: siteData.portalDrafts,
-      logs: siteData.portalLogs,
-      managers: siteData.portalManagers,
-    });
-  })
-  .catch((error) => {
-    siteData.portalManagers = [...DEFAULT_PORTAL_MANAGERS];
-    siteData.portalDrafts = [];
-    siteData.portalLogs = [];
-    runPortalRender("fallback login managers", renderLoginManagerOptions);
-    runPortalRender("fallback login state", renderLoginState);
-    setLoginFeedback(`Using fallback manager list. ${getErrorMessage(error)}`, true);
-
-    if (workflowList) {
-      workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Unable to load notifications: ${escapeHtml(error.message)}</p></article>`;
-    }
-
-    console.error("Box This Lap manager portal data failed to load", error);
-    recordDiagnostic("manager portal data failed to load", error);
-  });
+  if (scope === "world-cup-bracket") {
+    renderBracketError(error);
+  }
+}
 
 function getSettledLog(result) {
   if (result.status === "fulfilled") {
@@ -10591,7 +10742,7 @@ function getSettledLog(result) {
   }
 
   return {
-    message: result.reason?.message || String(result.reason || "Unknown error"),
+    message: getErrorMessage(result.reason),
     status: "rejected",
   };
 }
@@ -10611,7 +10762,6 @@ function recordDiagnostic(label, error, extra = {}) {
 
   window.boxThisLapDiagnostics.push(detail);
   console.error(`Box This Lap diagnostic: ${label}`, detail);
-
   return detail;
 }
 
@@ -10619,79 +10769,113 @@ function runPortalRender(label, render) {
   try {
     render();
   } catch (error) {
-    console.error(`Box This Lap ${label} failed to render`, error);
     recordDiagnostic(`${label} failed to render`, error);
   }
 }
 
-loadPlayers()
-  .then((players) => {
-    siteData.players = players;
-    siteData.playerPositionLookups = buildPlayerPositionLookups(players);
-    renderTestingPlayers(players);
-    renderDraftPlayers();
+function ensureFootyData() {
+  return ensureSharedData("footy", async () => {
+    const schedule = await loadJson("data/footy-schedule.json");
+    clearFootyScheduleMatchNotes(schedule);
+    siteData.footySchedule = schedule;
+    renderFollowedTeamShortcuts(schedule);
+    renderFootySchedule(schedule);
+    renderFootyTeamPage();
+    console.info("Box This Lap footy schedule loaded", schedule);
 
-    if (siteData.playerPerformances) {
-      renderPlayerChampionship(siteData.playerPerformances);
+    try {
+      const notes = await loadFootyMatchNotes();
+      if (notes.length) {
+        mergeFootyMatchNotes(notes);
+        renderFootySchedule(siteData.footySchedule);
+        renderFootyTeamPage();
+      }
+      console.info("Box This Lap footy match notes loaded", notes);
+    } catch (error) {
+      siteData.footyMatchNotesError = error;
+      recordDiagnostic("footy match notes failed to load", error);
     }
 
-    if (siteData.matches) {
-      renderCurrentMatchLists();
+    return schedule;
+  }).catch((error) => {
+    siteData.footyScheduleError = error;
+    throw error;
+  });
+}
+
+function ensureNextData() {
+  return ensureSharedData("next", async () => {
+    const items = await loadSheet("next");
+    siteData.nextItems = items;
+    renderNextList(items);
+    console.info("Box This Lap Next data loaded", items);
+    return items;
+  }).catch((error) => {
+    siteData.nextItemsError = error;
+    throw error;
+  });
+}
+
+function ensurePortalManagersData() {
+  return ensureSharedData("portal-managers", async () => {
+    try {
+      siteData.portalManagers = await loadSheet("portalManagers");
+    } catch (error) {
+      siteData.portalManagers = [...DEFAULT_PORTAL_MANAGERS];
+      siteData.portalManagersError = error;
+      recordDiagnostic("manager portal managers failed to load", error);
     }
 
-    console.info("Box This Lap player data loaded", players);
-  })
-  .catch((error) => {
-    renderTestingError(error);
-    console.error("Box This Lap player data failed to load", error);
+    renderLoginManagerOptions();
+    renderLoginState();
+    return siteData.portalManagers;
   });
+}
 
-loadSheet("playerPerformances")
-  .then((performances) => {
-    siteData.playerPerformances = performances;
-    renderPlayerChampionship(performances);
-    renderDraftPlayers();
-    renderCurrentMatchLists();
-    console.info("Box This Lap player performance data loaded", performances);
-  })
-  .catch((error) => {
-    renderPlayerChampionshipError(error);
-    console.error("Box This Lap player performance data failed to load", error);
+function ensurePortalData() {
+  return ensureSharedData("portal-data", async () => {
+    const [managersResult, draftsResult, logsResult] = await Promise.allSettled([
+      ensurePortalManagersData(),
+      loadSheet("portalDrafts"),
+      loadSheet("portalLogs"),
+    ]);
+
+    if (managersResult.status === "fulfilled") {
+      siteData.portalManagers = managersResult.value;
+    }
+    siteData.portalManagers ||= [...DEFAULT_PORTAL_MANAGERS];
+    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
+    siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
+
+    console.info("Box This Lap manager portal load results", {
+      drafts: getSettledLog(draftsResult),
+      logs: getSettledLog(logsResult),
+      managers: getSettledLog(managersResult),
+    });
+
+    [draftsResult, logsResult].forEach((result, index) => {
+      if (result.status === "rejected") {
+        recordDiagnostic(index === 0 ? "portal drafts failed to load" : "portal logs failed to load", result.reason);
+      }
+    });
+
+    runPortalRender("login manager options", renderLoginManagerOptions);
+    runPortalRender("login state", renderLoginState);
+    runPortalRender("manager hub", renderManagerHub);
+    runPortalRender("standings awards", renderStandingsAwards);
+    runPortalRender("Fantasy Critic awards", renderFantasyCriticPage);
+    runPortalRender("2025 Fantasy Office awards", () => renderFantasyOfficeResults(2025, siteData.fantasyOffice2025?.results || []));
+    runPortalRender("2026 Fantasy Office awards", () => renderFantasyOfficeResults(2026, siteData.fantasyOffice2026?.results || []));
+    runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
+    runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
+    runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
+    return siteData.portalDrafts;
   });
+}
 
-loadSheet("matchResults")
-  .then((results) => {
-    siteData.matchResults = results;
-    renderNationsLeague(results);
-    renderDraftNations();
-    renderCurrentMatchLists();
-    renderBracket(siteData.bracketMatches);
-    renderRulesNationOptions();
-    renderRulesNationBreakdown();
-    console.info("Box This Lap match result data loaded", results);
-  })
-  .catch((error) => {
-    renderNationsLeagueError(error);
-    console.error("Box This Lap match result data failed to load", error);
-  });
-
-loadSheet("teams")
-  .then((teams) => {
-    siteData.teams = teams;
-    siteData.teamPots = buildTeamPotLookup(teams);
-    renderDraftPage();
-    renderFilteredStandings();
-    renderCurrentMatchLists();
-    renderRulesNationOptions();
-    renderRulesNationBreakdown();
-    console.info("Box This Lap team data loaded", teams);
-  })
-  .catch((error) => {
-    console.error("Box This Lap team data failed to load", error);
-  });
-
-loadSheetText("data")
-  .then((csvText) => {
+function ensureWorldCupCoreData() {
+  return ensureSharedData("world-cup-core", async () => {
+    const csvText = await loadSheetText("data");
     siteData.rounds = parseRoundOptions(csvText);
     siteData.updatedTime = parseUpdatedTime(csvText);
     siteData.roundMappings = parseRoundMappings(csvText);
@@ -10707,227 +10891,338 @@ loadSheetText("data")
     renderFilteredStandings();
     console.info("Box This Lap data sheet loaded", {
       bracketMatches: siteData.bracketMatches,
-      matches: siteData.matches,
       resultImages: siteData.resultImages,
-      roundMappings: siteData.roundMappings,
       rounds: siteData.rounds,
       updatedTime: siteData.updatedTime,
     });
-  })
-  .catch((error) => {
+    return siteData.matches;
+  }).catch((error) => {
     siteData.matchesError = error;
     renderMatchError(todayMatchList, error);
     renderMatchError(tomorrowMatchList, error);
     renderMatchError(matchdayMatchList, error);
     renderBracketError(error);
-    console.error("Box This Lap data sheet failed to load", error);
+    throw error;
   });
+}
 
-loadSheet("bracketPicks")
-  .then((rows) => {
-    siteData.bracketSubmissions = parseBracketSubmissions(rows);
-    renderBracketSubmissionOptions(siteData.bracketSubmissions);
-    renderBracket(siteData.bracketMatches);
-    console.info("Box This Lap bracket submissions loaded", siteData.bracketSubmissions);
-  })
-  .catch((error) => {
-    siteData.bracketSubmissionsError = error;
-    renderBracketSubmissionOptions([]);
-    console.error("Box This Lap bracket submissions failed to load", error);
-  });
+function ensureWorldCupMatchData() {
+  return ensureSharedData("world-cup-match-data", async () => {
+    const results = await Promise.allSettled([
+      ensureWorldCupCoreData(),
+      loadPlayers(),
+      loadSheet("playerPerformances"),
+      loadSheet("matchResults"),
+      loadSheet("teams"),
+    ]);
 
-Promise.all([
-  loadSheet("managers"),
-  loadSheet("teamDraft"),
-  loadSheet("playerDraft"),
-  loadSheet("playerPerformances"),
-  loadSheet("matchResults"),
-])
-  .then(([managers, teamDraft, playerDraft, playerPerformances, matchResults]) => {
-    siteData.managers = managers;
-    siteData.teamDraft = teamDraft;
-    siteData.playerDraft = playerDraft;
-    siteData.managerResultsSource = { managers, teamDraft, playerDraft, playerPerformances, matchResults };
-    siteData.managerDrafts = buildManagerDraftLookups({ managers, teamDraft, playerDraft });
+    const [coreResult, playersResult, performancesResult, matchResultsResult, teamsResult] = results;
+
+    if (playersResult.status === "fulfilled") {
+      siteData.players = playersResult.value;
+      siteData.playerPositionLookups = buildPlayerPositionLookups(playersResult.value);
+      renderTestingPlayers(playersResult.value);
+    } else {
+      recordDiagnostic("World Cup player data failed to load", playersResult.reason);
+      renderTestingError(playersResult.reason);
+    }
+
+    if (performancesResult.status === "fulfilled") {
+      siteData.playerPerformances = performancesResult.value;
+      renderPlayerChampionship(performancesResult.value);
+    } else {
+      recordDiagnostic("World Cup player performance data failed to load", performancesResult.reason);
+      renderPlayerChampionshipError(performancesResult.reason);
+    }
+
+    if (matchResultsResult.status === "fulfilled") {
+      siteData.matchResults = matchResultsResult.value;
+      renderNationsLeague(matchResultsResult.value);
+    } else {
+      recordDiagnostic("World Cup match result data failed to load", matchResultsResult.reason);
+      renderNationsLeagueError(matchResultsResult.reason);
+    }
+
+    if (teamsResult.status === "fulfilled") {
+      siteData.teams = teamsResult.value;
+      siteData.teamPots = buildTeamPotLookup(teamsResult.value);
+    } else {
+      recordDiagnostic("World Cup team data failed to load", teamsResult.reason);
+    }
+
     renderDraftPage();
-
-    if (siteData.playerPerformances) {
-      renderPlayerChampionship(siteData.playerPerformances);
-    }
-
-    if (siteData.matchResults) {
-      renderNationsLeague(siteData.matchResults);
-    }
-
     renderCurrentMatchLists();
+    renderFilteredStandings();
+    renderRulesNationOptions();
+    renderRulesNationBreakdown();
+    renderBracket(siteData.bracketMatches);
+
+    if (coreResult.status === "rejected") {
+      throw coreResult.reason;
+    }
+
+    return siteData.matches;
+  });
+}
+
+function ensureWorldCupStandingsData() {
+  return ensureSharedData("world-cup-standings-data", async () => {
+    await ensureWorldCupMatchData();
+    const results = await Promise.allSettled([
+      loadSheet("managers"),
+      loadSheet("teamDraft"),
+      loadSheet("playerDraft"),
+    ]);
+    const [managersResult, teamDraftResult, playerDraftResult] = results;
+
+    siteData.managers = managersResult.status === "fulfilled" ? managersResult.value : [];
+    siteData.teamDraft = teamDraftResult.status === "fulfilled" ? teamDraftResult.value : [];
+    siteData.playerDraft = playerDraftResult.status === "fulfilled" ? playerDraftResult.value : [];
+    siteData.managerDrafts = buildManagerDraftLookups({
+      managers: siteData.managers,
+      teamDraft: siteData.teamDraft,
+      playerDraft: siteData.playerDraft,
+    });
+    siteData.managerResultsSource = {
+      managers: siteData.managers,
+      teamDraft: siteData.teamDraft,
+      playerDraft: siteData.playerDraft,
+      playerPerformances: siteData.playerPerformances || [],
+      matchResults: siteData.matchResults || [],
+    };
+
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        recordDiagnostic(["World Cup managers", "World Cup nation drafts", "World Cup player drafts"][index] + " failed to load", result.reason);
+      }
+    });
+
+    renderDraftPage();
+    renderPlayerChampionship(siteData.playerPerformances || []);
+    renderNationsLeague(siteData.matchResults || []);
     renderManagerResults(siteData.managerResultsSource);
     renderManagerHub();
-    console.info("Box This Lap manager result data loaded", { managers, teamDraft, playerDraft });
-  })
-  .catch((error) => {
-    renderManagerResultsError(error);
-    console.error("Box This Lap manager result data failed to load", error);
+    renderCurrentMatchLists();
+    return siteData.managerResultsSource;
   });
+}
 
-loadSheetText("formulaOne2024")
-  .then((csvText) => {
-    const data = parseFormulaOneSheet(csvText);
-    siteData.formulaOne2024 = data;
-    renderFormulaOneLeague("2024", data);
-    renderStandingsAwards();
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2024 data loaded", data);
-  })
-  .catch((error) => {
-    renderFormulaOneError("2024", error);
-    console.error("Box This Lap Formula 1 2024 data failed to load", error);
-  });
+function ensureWorldCupBracketData() {
+  return ensureSharedData("world-cup-bracket-data", async () => {
+    await ensureWorldCupCoreData();
+    const [matchResultsResult, bracketPicksResult] = await Promise.allSettled([
+      loadSheet("matchResults"),
+      loadSheet("bracketPicks"),
+    ]);
 
-loadSheetText("formulaOne2025")
-  .then((csvText) => {
-    const data = parseFormulaOneSheet(csvText);
-    siteData.formulaOne2025 = data;
-    renderFormulaOneLeague("2025", data);
-    renderStandingsAwards();
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2025 data loaded", data);
-  })
-  .catch((error) => {
-    renderFormulaOneError("2025", error);
-    console.error("Box This Lap Formula 1 2025 data failed to load", error);
-  });
+    siteData.matchResults = matchResultsResult.status === "fulfilled"
+      ? matchResultsResult.value
+      : [];
 
-loadSheetText("formulaOne2025Weekly")
-  .then((csvText) => {
-    const data = parseFormulaOneWeeklySheet(csvText);
-    siteData.formulaOne2025Weekly = data;
-    renderFormulaOneWeeklyPage("2025", data);
-    renderFormulaOneResults("2025");
-    renderStandingsAwards();
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2025 weekly data loaded", data);
-  })
-  .catch((error) => {
-    renderFormulaOneWeeklyError("2025", error);
-    console.error("Box This Lap Formula 1 2025 weekly data failed to load", error);
-  });
-
-loadSheetText("formulaOne2026")
-  .then((csvText) => {
-    const data = parseFormulaOneSheet(csvText);
-    siteData.formulaOne2026 = data;
-    renderFormulaOneLeague("2026", data);
-    renderStandingsAwards();
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2026 data loaded", data);
-  })
-  .catch((error) => {
-    renderFormulaOneError("2026", error);
-    console.error("Box This Lap Formula 1 2026 data failed to load", error);
-  });
-
-loadSheetText("formulaOne2026Weekly")
-  .then((csvText) => {
-    const data = parseFormulaOneWeeklySheet(csvText);
-    siteData.formulaOne2026Weekly = data;
-    renderFormulaOneWeeklyPage("2026", data);
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2026 weekly data loaded", data);
-  })
-  .catch((error) => {
-    renderFormulaOneWeeklyError("2026", error);
-    console.error("Box This Lap Formula 1 2026 weekly data failed to load", error);
-  });
-
-loadSheetText("formulaOne2026WeeklyResults")
-  .then((csvText) => {
-    const data = parseFormulaOneWeeklyResultsSheet(csvText);
-    siteData.formulaOne2026WeeklyResults = data;
-    renderFormulaOneResults("2026");
-    renderStandingsAwards();
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2026 weekly results loaded", data);
-  })
-  .catch((error) => {
-    console.error("Box This Lap Formula 1 2026 weekly results failed to load", error);
-  });
-
-loadSheet("formulaOne2026RoundForms")
-  .then((rows) => {
-    const forms = parseFormulaOneRoundForms(rows);
-    siteData.formulaOne2026RoundForms = forms;
-    renderFormulaOneWeeklyForm("2026", forms);
-    renderManagerHub();
-    console.info("Box This Lap Formula 1 2026 round forms loaded", forms);
-  })
-  .catch((error) => {
-    if (formulaOneViews[2026]?.weeklyForm) {
-      formulaOneViews[2026].weeklyForm.innerHTML = `<p class="table-message">Unable to load Formula 1 bet forms: ${escapeHtml(error.message)}</p>`;
+    if (matchResultsResult.status === "rejected") {
+      recordDiagnostic("World Cup bracket match results failed to load", matchResultsResult.reason);
     }
 
-    console.error("Box This Lap Formula 1 2026 round forms failed to load", error);
+    const result = await (bracketPicksResult.status === "fulfilled"
+      ? Promise.resolve(bracketPicksResult.value)
+      : Promise.reject(bracketPicksResult.reason))
+      .then((rows) => {
+        siteData.bracketSubmissions = parseBracketSubmissions(rows);
+        return siteData.bracketSubmissions;
+      })
+      .catch((error) => {
+        siteData.bracketSubmissionsError = error;
+        recordDiagnostic("World Cup bracket submissions failed to load", error);
+        siteData.bracketSubmissions = [];
+        return [];
+      });
+
+    renderBracketSubmissionOptions(result);
+    renderBracket(siteData.bracketMatches);
+    return result;
   });
+}
 
-siteData.fantasyOffice2025 = { draft: [], movies: [], ordering: [], results: [] };
-siteData.fantasyOffice2026 = { draft: [], movies: [], ordering: [], results: [] };
+function ensureFormulaOneSource(key, loader, onLoaded, onError) {
+  const cacheKey = `formula-one:${key}`;
+  const existingPromise = formulaOneDataPromises.get(cacheKey);
+  if (existingPromise) {
+    return existingPromise;
+  }
 
-loadSheetText("fantasyOffice2025Draft")
-  .then((draftCsv) => {
-    siteData.fantasyOffice2025.draft = parseFantasyOfficeDraft(draftCsv);
-    renderFantasyOfficeDraft(2025, siteData.fantasyOffice2025.draft);
+  const promise = Promise.resolve()
+    .then(loader)
+    .then((data) => {
+      onLoaded(data);
+      return data;
+    })
+    .catch((error) => {
+      onError?.(error);
+      recordDiagnostic(`${key} failed to load`, error);
+      formulaOneDataPromises.delete(cacheKey);
+      throw error;
+    });
+
+  formulaOneDataPromises.set(cacheKey, promise);
+  return promise;
+}
+
+function refreshFormulaOnePage(year) {
+  const page = activePageName;
+  if (page === `formula-1-${year}-questions`) {
+    renderFormulaOneQuestions(year);
+  } else if (page === `formula-1-${year}-weekly`) {
+    renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
+    renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+  } else if (page === `formula-1-${year}-results`) {
+    renderFormulaOneResults(year);
+  }
+  renderFormulaOneAwards(year);
+}
+
+function ensureFormulaOneData(year, view = "questions") {
+  const yearKey = String(year);
+  const sourceTasks = [ensureFormulaOneSource(
+    `formulaOne${yearKey}`,
+    () => loadSheetText(`formulaOne${yearKey}`),
+    (csvText) => {
+      const data = parseFormulaOneSheet(csvText);
+      siteData[`formulaOne${yearKey}`] = data;
+      renderFormulaOneLeague(yearKey, data);
+    },
+    (error) => renderFormulaOneError(yearKey, error)
+  )];
+
+  if ((view === "weekly" || view === "weekly-results") && ["2025", "2026"].includes(yearKey)) {
+    sourceTasks.push(ensureFormulaOneSource(
+      `formulaOne${yearKey}Weekly`,
+      () => loadSheetText(`formulaOne${yearKey}Weekly`),
+      (csvText) => {
+        const data = parseFormulaOneWeeklySheet(csvText);
+        siteData[`formulaOne${yearKey}Weekly`] = data;
+        renderFormulaOneWeeklyPage(yearKey, data);
+      },
+      (error) => renderFormulaOneWeeklyError(yearKey, error)
+    ));
+  }
+
+  if (view === "weekly-results" && yearKey === "2026") {
+    sourceTasks.push(ensureFormulaOneSource(
+      "formulaOne2026WeeklyResults",
+      () => loadSheetText("formulaOne2026WeeklyResults"),
+      (csvText) => {
+        siteData.formulaOne2026WeeklyResults = parseFormulaOneWeeklyResultsSheet(csvText);
+      }
+    ));
+  }
+
+  if (view === "weekly" && yearKey === "2026") {
+    sourceTasks.push(ensureFormulaOneSource(
+      "formulaOne2026RoundForms",
+      () => loadSheet("formulaOne2026RoundForms"),
+      (rows) => {
+        siteData.formulaOne2026RoundForms = parseFormulaOneRoundForms(rows);
+        renderFormulaOneWeeklyForm(yearKey, siteData.formulaOne2026RoundForms);
+      },
+      (error) => {
+        const form = formulaOneViews[2026]?.weeklyForm;
+        if (form) {
+          form.innerHTML = `<p class="table-message">Unable to load Formula 1 bet forms: ${escapeHtml(getErrorMessage(error))}</p>`;
+        }
+      }
+    ));
+  }
+
+  return Promise.allSettled(sourceTasks).then((results) => {
+    refreshFormulaOnePage(yearKey);
+    if (activePageName === "manager-hub") {
+      renderManagerHub();
+    }
+    return results;
+  });
+}
+
+function ensureFantasyCriticData(year) {
+  const yearKey = String(year);
+  const existingPromise = fantasyCriticLoadPromises.get(yearKey);
+  if (existingPromise) {
+    return existingPromise;
+  }
+
+  const promise = loadFantasyCriticLeague(yearKey);
+  fantasyCriticLoadPromises.set(yearKey, promise);
+  return promise;
+}
+
+function ensureFantasyOfficeData(year, view) {
+  const yearKey = String(year);
+  const sourceName = view === "draft" ? `fantasyOffice${yearKey}Draft` : `fantasyOffice${yearKey}Results`;
+
+  if (yearKey === "2026" && view !== "draft") {
+    return Promise.resolve([]);
+  }
+
+  return ensureSharedData(`fantasy-office:${yearKey}:${view}`, async () => {
+    if (view === "draft") {
+      const csvText = await loadSheetText(sourceName);
+      siteData[`fantasyOffice${yearKey}`].draft = parseFantasyOfficeDraft(csvText);
+    } else {
+      const csvText = await loadSheetText(sourceName);
+      siteData[`fantasyOffice${yearKey}`].results = parseFantasyOfficeResults(csvText);
+    }
+
+    const data = siteData[`fantasyOffice${yearKey}`];
+    if (view === "draft") {
+      renderFantasyOfficeDraft(yearKey, data.draft);
+    } else {
+      renderFantasyOfficeMovies(yearKey, data.results);
+      renderFantasyOfficeResults(yearKey, data.results);
+    }
     renderManagerHub();
-    console.info("Box This Lap Fantasy Office 2025 draft data loaded", siteData.fantasyOffice2025.draft);
-  })
-  .catch((error) => {
-    renderFantasyOfficeDraftError(2025, error);
-    console.error("Box This Lap Fantasy Office 2025 draft data failed to load", error);
+    return data;
+  }).catch((error) => {
+    if (view === "draft") {
+      renderFantasyOfficeDraftError(yearKey, error);
+    } else {
+      renderFantasyOfficeMovieError(yearKey, error);
+      renderFantasyOfficeResultsError(yearKey, error);
+    }
+    throw error;
   });
+}
 
-loadSheetText("fantasyOffice2025Results")
-  .then((resultsCsv) => {
-    siteData.fantasyOffice2025.results = parseFantasyOfficeResults(resultsCsv);
-    renderFantasyOfficeMovies(2025, siteData.fantasyOffice2025.results);
-    renderFantasyOfficeResults(2025, siteData.fantasyOffice2025.results);
+function ensureManagerHubData() {
+  if (!siteData.managerSession) {
+    return ensurePortalManagersData();
+  }
+
+  return ensureSharedData("manager-hub", async () => {
+    await Promise.allSettled([
+      ensurePortalData(),
+      ensureWorldCupStandingsData(),
+      ensureFantasyCriticData(2025),
+      ensureFantasyCriticData(2026),
+      ensureFantasyOfficeData(2025, "results"),
+      ensureFantasyOfficeData(2026, "results"),
+      ensureFormulaOneData(2024, "questions"),
+      ensureFormulaOneData(2025, "questions"),
+      ensureFormulaOneData(2026, "questions"),
+      ensureFormulaOneData(2025, "weekly-results"),
+      ensureFormulaOneData(2026, "weekly-results"),
+    ]);
     renderManagerHub();
-    console.info("Box This Lap Fantasy Office 2025 results data loaded", siteData.fantasyOffice2025.results);
-  })
-  .catch((error) => {
-    renderFantasyOfficeMovieError(2025, error);
-    renderFantasyOfficeResultsError(2025, error);
-    console.error("Box This Lap Fantasy Office 2025 results data failed to load", error);
+    return true;
   });
+}
 
-loadSheetText("fantasyOffice2025Movies")
-  .then((moviesCsv) => {
-    siteData.fantasyOffice2025.movies = parseFantasyOfficeMovies(moviesCsv);
-    console.info("Box This Lap Fantasy Office 2025 movie data loaded", siteData.fantasyOffice2025.movies);
-  })
-  .catch((error) => {
-    console.warn("Box This Lap Fantasy Office 2025 movie detail data failed to load", error);
-  });
-
-loadSheetText("fantasyOffice2025Ordering")
-  .then((orderingCsv) => {
-    siteData.fantasyOffice2025.ordering = parseCsvMatrix(orderingCsv);
-    console.info("Box This Lap Fantasy Office 2025 ordering data loaded", siteData.fantasyOffice2025.ordering);
-  })
-  .catch((error) => {
-    console.warn("Box This Lap Fantasy Office 2025 ordering data failed to load", error);
-  });
-
-loadSheetText("fantasyOffice2026Draft")
-  .then((draftCsv) => {
-    siteData.fantasyOffice2026.draft = parseFantasyOfficeDraft(draftCsv);
-    renderFantasyOfficeDraft(2026, siteData.fantasyOffice2026.draft);
-    renderFantasyOfficeMovies(2026, siteData.fantasyOffice2026.results);
-    renderFantasyOfficeResults(2026, siteData.fantasyOffice2026.results);
-    renderManagerHub();
-    console.info("Box This Lap Fantasy Office 2026 draft data loaded", siteData.fantasyOffice2026.draft);
-  })
-  .catch((error) => {
-    renderFantasyOfficeDraftError(2026, error);
-    console.error("Box This Lap Fantasy Office 2026 draft data failed to load", error);
-  });
+syncTestScoringUi();
+syncThemeToggle();
+hydrateStoredManagerSession();
+hydrateBracketSubmitter();
+hydrateManagerAuthStatusCache();
+hydrateManagerSession();
+renderLeagueList(leagueYearSelect?.value || "2026");
+showPage(window.location.hash.replace("#", "") || "footy");
 
 function renderMatchdayPicker(matches) {
   if (!matchdaySelect || !matchdayMatchList) {

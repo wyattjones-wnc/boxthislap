@@ -57,41 +57,48 @@ export const DATA_SOURCES = {
 
 const FETCH_TIMEOUT_MS = 12000;
 const FETCH_RETRY_DELAYS_MS = [350, 1200];
+const resourcePromises = new Map();
 
 export async function loadJson(path) {
-  const response = await fetchWithRetry(path, { cache: "no-store" });
+  return loadResource(`json:${path}`, async () => {
+    const response = await fetchWithRetry(path, { cache: "no-store" });
 
-  if (!response.ok) {
-    throw new Error(`Failed to load JSON from ${path}: ${response.status}`);
-  }
+    if (!response.ok) {
+      throw new Error(`Failed to load JSON from ${path}: ${response.status}`);
+    }
 
-  const text = await response.text();
+    const text = await response.text();
 
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    throw new Error(`Failed to parse JSON from ${path}: ${error.message}`);
-  }
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      throw new Error(`Failed to parse JSON from ${path}: ${error.message}`);
+    }
+  });
 }
 
 export async function loadCsv(url) {
-  const response = await fetchWithRetry(url, { cache: "no-store" });
+  return loadResource(`csv:${url}`, async () => {
+    const response = await fetchWithRetry(url, { cache: "no-store" });
 
-  if (!response.ok) {
-    throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
-  }
+    if (!response.ok) {
+      throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
+    }
 
-  return parseCsv(await response.text());
+    return parseCsv(await response.text());
+  });
 }
 
 export async function loadCsvText(url) {
-  const response = await fetchWithRetry(url, { cache: "no-store" });
+  return loadResource(`text:${url}`, async () => {
+    const response = await fetchWithRetry(url, { cache: "no-store" });
 
-  if (!response.ok) {
-    throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
-  }
+    if (!response.ok) {
+      throw new Error(`Failed to load CSV from ${url}: ${response.status}`);
+    }
 
-  return response.text();
+    return response.text();
+  });
 }
 
 export async function loadPlayers() {
@@ -117,6 +124,25 @@ export function loadSheetText(sheetName) {
   }
 
   return loadCsvText(url);
+}
+
+function loadResource(resource, request) {
+  const key = String(resource);
+  const existingPromise = resourcePromises.get(key);
+
+  if (existingPromise) {
+    return existingPromise;
+  }
+
+  const promise = Promise.resolve()
+    .then(request)
+    .catch((error) => {
+      resourcePromises.delete(key);
+      throw error;
+    });
+
+  resourcePromises.set(key, promise);
+  return promise;
 }
 
 export async function loadSheets(sheetNames = Object.keys(DATA_SOURCES.sheets)) {

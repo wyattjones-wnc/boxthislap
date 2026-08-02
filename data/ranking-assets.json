@@ -1,0 +1,727 @@
+{
+  "games": {
+    "1": [
+      "assets/ranking/games/1/1 - rdr2.webp",
+      "assets/ranking/games/1/2 - rdr2.webp",
+      "assets/ranking/games/1/3 - rdr2.webp",
+      "assets/ranking/games/1/4 - rdr2.webp",
+      "assets/ranking/games/1/5 - rdr2.webp",
+      "assets/ranking/games/1/6 - rdr2.webp",
+      "assets/ranking/games/1/7 - rdr2.webp"
+    ],
+    "2": [
+      "assets/ranking/games/2/1 - tlou2.webp",
+      "assets/ranking/games/2/2 - tlou2.webp",
+      "assets/ranking/games/2/3 - tlou2.webp",
+      "assets/ranking/games/2/4 - tlou2.webp",
+      "assets/ranking/games/2/5 - tlou2.webp",
+      "assets/ranking/games/2/6 - tlou2.webp",
+      "assets/ranking/games/2/7 - tlou2.webp",
+      "assets/ranking/games/2/8 - tlou2.webp"
+    ],
+    "3": [
+      "assets/ranking/games/3/1 - tlou.webp",
+      "assets/ranking/games/3/2 - tlou.webp",
+      "assets/ranking/games/3/3 - tlou.webp",
+      "assets/ranking/games/3/4 - tlou.webp",
+      "assets/ranking/games/3/5 - tlou.webp",
+      "assets/ranking/games/3/6 - tlou.webp",
+      "assets/ranking/games/3/7 - tlou.webp"
+    ],
+    "4": [
+      "assets/ranking/games/4/1 - me3.webp",
+      "assets/ranking/games/4/2 - me3.webp",
+      "assets/ranking/games/4/3 - me3.webp",
+      "assets/ranking/games/4/4 - me3.webp",
+      "assets/ranking/games/4/5 - me3.webp"
+    ],
+    "5": [
+      "assets/ranking/games/5/1 - tttwds1.webp",
+      "assets/ranking/games/5/2 - tttwds1.webp",
+      "assets/ranking/games/5/3 - tttwds1.webp",
+      "assets/ranking/games/5/4 - tttwds1.webp",
+      "assets/ranking/games/5/5 - tttwds1.webp"
+    ],
+    "6": [
+      "assets/ranking/games/6/1 - coe33.webp",
+      "assets/ranking/games/6/2 - coe33.webp",
+      "assets/ranking/games/6/3 - coe33.webp",
+      "assets/ranking/games/6/4 - coe33.webp",
+      "assets/ranking/games/6/5 - coe33.webp"
+    ],
+    "7": [
+      "assets/ranking/games/7/1 - ab.webp",
+      "assets/ranking/games/7/2 - ab.webp",
+      "assets/ranking/games/7/3 - ab.webp",
+      "assets/ranking/games/7/4 - ab.webp",
+      "assets/ranking/games/7/5 - ab.webp",
+      "assets/ranking/games/7/6 - ab.webp"
+    ],
+    "8": [
+      "assets/ranking/games/8/1 - sm2.webp",
+      "assets/ranking/games/8/2 - sm2.webp",
+      "assets/ranking/games/8/3 - sm2.webp",
+      "assets/ranking/games/8/4 - sm2.webp",
+      "assets/ranking/games/8/5 - sm2.webp"
+    ],
+    "9": [
+      "assets/ranking/games/9/1 - lis.webp",
+      "assets/ranking/games/9/2 - lis.webp",
+      "assets/ranking/games/9/3 - lis.webp",
+      "assets/ranking/games/9/4 - lis.webp",
+      "assets/ranking/games/9/5 - lis.webp"
+    ],
+    "10": [
+      "assets/ranking/games/10/1 - p4g.webp",
+      "assets/ranking/games/10/2 - p4g.webp",
+      "assets/ranking/games/10/3 - p4g.webp",
+      "assets/ranking/games/10/4 - p4g.webp",
+      "assets/ranking/games/10/5 - p4g.webp"
+    ],
+    "11": [
+      "assets/ranking/games/11/1 - gow.webp",
+      "assets/ranking/games/11/2 - gow.webp",
+      "assets/ranking/games/11/3 - gow.webp",
+      "assets/ranking/games/11/4 - gow.webp",
+      "assets/ranking/games/11/5 - gow.webp"
+    ],
+    "12": [
+      "assets/ranking/games/12/1 - me2.webp",
+      "assets/ranking/games/12/2 - me2.webp",
+      "assets/ranking/games/12/3 - me2.webp",
+      "assets/ranking/games/12/4 - me2.webp",
+      "assets/ranking/games/12/5 - me2.webp"
+    ],
+    "13": [
+      "assets/ranking/games/13/1 - hzd.webp",
+      "assets/ranking/games/13/2 - hzd.webp",
+      "assets/ranking/games/13/3 - hzd.webp",
+      "assets/ranking/games/13/4 - hzd.webp",
+      "assets/ranking/games/13/5 - hzd.webp",
+      "assets/ranking/games/13/6 - hzd.webp"
+    ],
+    "14": [
+      "assets/ranking/games/14/1 - got.webp",
+      "assets/ranking/games/14/2 - got.webp",
+      "assets/ranking/games/14/3 - got.webp",
+      "assets/ranking/games/14/4 - got.webp",
+      "assets/ranking/games/14/5 - got.webp"
+    ],
+    "15": [
+      "assets/ranking/games/15/1 - listc.webp",
+      "assets/ranking/games/15/2 - listc.webp",
+      "assets/ranking/games/15/3 - listc.webp",
+      "assets/ranking/games/15/4 - listc.webp",
+      "assets/ranking/games/15/5 - listc.webp"
+    ],
+    "16": [
+      "assets/ranking/games/16/1 - wroef.webp",
+      "assets/ranking/games/16/2 - wroef.webp",
+      "assets/ranking/games/16/3 - wroef.webp",
+      "assets/ranking/games/16/4 - wroef.webp",
+      "assets/ranking/games/16/5 - wroef.webp"
+    ],
+    "17": [
+      "assets/ranking/games/17/1 - s2bot.webp",
+      "assets/ranking/games/17/2 - s2bot.webp",
+      "assets/ranking/games/17/3 - s2bot.webp",
+      "assets/ranking/games/17/4 - s2bot.webp",
+      "assets/ranking/games/17/5 - s2bot.webp"
+    ],
+    "18": [
+      "assets/ranking/games/18/1 - s3hat.webp",
+      "assets/ranking/games/18/2 - s3hat.webp",
+      "assets/ranking/games/18/3 - s3hat.webp",
+      "assets/ranking/games/18/4 - s3hat.webp",
+      "assets/ranking/games/18/5 - s3hat.webp"
+    ],
+    "19": [
+      "assets/ranking/games/19/1 - y5.webp",
+      "assets/ranking/games/19/2 - y5.webp",
+      "assets/ranking/games/19/3 - y5.webp",
+      "assets/ranking/games/19/4 - y5.webp",
+      "assets/ranking/games/19/5 - y5.webp"
+    ],
+    "20": [
+      "assets/ranking/games/20/1 - y6.webp",
+      "assets/ranking/games/20/2 - y6.webp",
+      "assets/ranking/games/20/3 - y6.webp",
+      "assets/ranking/games/20/4 - y6.webp",
+      "assets/ranking/games/20/5 - y6.webp"
+    ],
+    "21": [
+      "assets/ranking/games/21/1 - ok.webp",
+      "assets/ranking/games/21/2 - ok.webp",
+      "assets/ranking/games/21/3 - ok.webp",
+      "assets/ranking/games/21/4 - ok.webp",
+      "assets/ranking/games/21/5 - ok.webp"
+    ],
+    "22": [
+      "assets/ranking/games/22/1 - latle.webp",
+      "assets/ranking/games/22/2 - latle.webp",
+      "assets/ranking/games/22/3 - latle.webp",
+      "assets/ranking/games/22/4 - latle.webp",
+      "assets/ranking/games/22/5 - latle.webp"
+    ],
+    "23": [
+      "assets/ranking/games/23/1 - pn2.webp",
+      "assets/ranking/games/23/2 - pn2.webp",
+      "assets/ranking/games/23/3 - pn2.webp",
+      "assets/ranking/games/23/4 - pn2.webp",
+      "assets/ranking/games/23/5 - pn2.webp",
+      "assets/ranking/games/23/6 - pn2.webp"
+    ],
+    "24": [
+      "assets/ranking/games/24/1 - sctit.webp",
+      "assets/ranking/games/24/2 - sctit.webp",
+      "assets/ranking/games/24/3 - sctit.webp",
+      "assets/ranking/games/24/4 - sctit.webp",
+      "assets/ranking/games/24/5 - sctit.webp"
+    ],
+    "25": [
+      "assets/ranking/games/25/1 - sg.webp",
+      "assets/ranking/games/25/2 - sg.webp",
+      "assets/ranking/games/25/3 - sg.webp",
+      "assets/ranking/games/25/4 - sg.webp",
+      "assets/ranking/games/25/5 - sg.webp"
+    ],
+    "26": [
+      "assets/ranking/games/26/1 - y0.webp",
+      "assets/ranking/games/26/2 - y0.webp",
+      "assets/ranking/games/26/3 - y0.webp",
+      "assets/ranking/games/26/4 - y0.webp",
+      "assets/ranking/games/26/5 - y0.webp"
+    ],
+    "27": [
+      "assets/ranking/games/27/1 - u4.webp",
+      "assets/ranking/games/27/2 - u4.webp",
+      "assets/ranking/games/27/3 - u4.webp",
+      "assets/ranking/games/27/4 - u4.webp",
+      "assets/ranking/games/27/5 - u4.webp"
+    ],
+    "28": [
+      "assets/ranking/games/28/1 - swjfo.webp",
+      "assets/ranking/games/28/2 - swjfo.webp",
+      "assets/ranking/games/28/3 - swjfo.webp",
+      "assets/ranking/games/28/4 - swjfo.webp",
+      "assets/ranking/games/28/5 - swjfo.webp"
+    ],
+    "29": [
+      "assets/ranking/games/29/1 - smmm.webp",
+      "assets/ranking/games/29/2 - smmm.webp",
+      "assets/ranking/games/29/3 - smmm.webp",
+      "assets/ranking/games/29/4 - smmm.webp",
+      "assets/ranking/games/29/5 - smmm.webp"
+    ],
+    "30": [
+      "assets/ranking/games/30/1 - sm.webp",
+      "assets/ranking/games/30/2 - sm.webp",
+      "assets/ranking/games/30/3 - sm.webp",
+      "assets/ranking/games/30/4 - sm.webp",
+      "assets/ranking/games/30/5 - sm.webp"
+    ],
+    "31": [
+      "assets/ranking/games/31/1 - ctrl.webp",
+      "assets/ranking/games/31/2 - ctrl.webp",
+      "assets/ranking/games/31/3 - ctrl.webp",
+      "assets/ranking/games/31/4 - ctrl.webp",
+      "assets/ranking/games/31/5 - ctrl.webp"
+    ],
+    "32": [
+      "assets/ranking/games/32/1 - rdr.webp",
+      "assets/ranking/games/32/2 - rdr.webp",
+      "assets/ranking/games/32/3 - rdr.webp",
+      "assets/ranking/games/32/4 - rdr.webp",
+      "assets/ranking/games/32/5 - rdr.webp"
+    ],
+    "33": [
+      "assets/ranking/games/33/1 - mde.webp",
+      "assets/ranking/games/33/2 - mde.webp",
+      "assets/ranking/games/33/3 - mde.webp",
+      "assets/ranking/games/33/4 - mde.webp",
+      "assets/ranking/games/33/5 - mde.webp"
+    ],
+    "34": [
+      "assets/ranking/games/34/1 - dbh.webp",
+      "assets/ranking/games/34/2 - dbh.webp",
+      "assets/ranking/games/34/3 - dbh.webp",
+      "assets/ranking/games/34/4 - dbh.webp",
+      "assets/ranking/games/34/5 - dbh.webp"
+    ],
+    "35": [
+      "assets/ranking/games/35/1 - awo.webp",
+      "assets/ranking/games/35/2 - awo.webp",
+      "assets/ranking/games/35/3 - awo.webp",
+      "assets/ranking/games/35/4 - awo.webp",
+      "assets/ranking/games/35/5 - awo.webp"
+    ],
+    "36": [
+      "assets/ranking/games/36/1 - tttwds2.webp",
+      "assets/ranking/games/36/2 - tttwds2.webp",
+      "assets/ranking/games/36/3 - tttwds2.webp",
+      "assets/ranking/games/36/4 - tttwds2.webp",
+      "assets/ranking/games/36/5 - tttwds2.webp"
+    ],
+    "37": [
+      "assets/ranking/games/37/1 - bi.webp",
+      "assets/ranking/games/37/2 - bi.webp",
+      "assets/ranking/games/37/3 - bi.webp",
+      "assets/ranking/games/37/4 - bi.webp",
+      "assets/ranking/games/37/5 - bi.webp"
+    ],
+    "38": [
+      "assets/ranking/games/38/1 - 34h.webp",
+      "assets/ranking/games/38/2 - 34h.webp",
+      "assets/ranking/games/38/3 - 34h.webp"
+    ],
+    "39": [
+      "assets/ranking/games/39/1 - lisbts.webp",
+      "assets/ranking/games/39/2 - lisbts.webp",
+      "assets/ranking/games/39/3 - lisbts.webp",
+      "assets/ranking/games/39/4 - lisbts.webp",
+      "assets/ranking/games/39/5 - lisbts.webp"
+    ],
+    "40": [
+      "assets/ranking/games/40/1 - jo.webp",
+      "assets/ranking/games/40/2 - jo.webp",
+      "assets/ranking/games/40/3 - jo.webp",
+      "assets/ranking/games/40/4 - jo.webp",
+      "assets/ranking/games/40/5 - jo.webp"
+    ],
+    "41": [
+      "assets/ranking/games/41/1 - p5.webp",
+      "assets/ranking/games/41/2 - p5.webp",
+      "assets/ranking/games/41/3 - p5.webp",
+      "assets/ranking/games/41/4 - p5.webp",
+      "assets/ranking/games/41/5 - p5.webp"
+    ],
+    "42": [
+      "assets/ranking/games/42/1 - tae.webp",
+      "assets/ranking/games/42/2 - tae.webp",
+      "assets/ranking/games/42/3 - tae.webp",
+      "assets/ranking/games/42/4 - tae.webp",
+      "assets/ranking/games/42/5 - tae.webp"
+    ],
+    "43": [
+      "assets/ranking/games/43/1 - ull.webp",
+      "assets/ranking/games/43/2 - ull.webp",
+      "assets/ranking/games/43/3 - ull.webp",
+      "assets/ranking/games/43/4 - ull.webp",
+      "assets/ranking/games/43/5 - ull.webp"
+    ],
+    "44": [
+      "assets/ranking/games/44/1 - bio.webp",
+      "assets/ranking/games/44/2 - bio.webp",
+      "assets/ranking/games/44/3 - bio.webp",
+      "assets/ranking/games/44/4 - bio.webp",
+      "assets/ranking/games/44/5 - bio.webp"
+    ],
+    "45": [
+      "assets/ranking/games/45/1 - wiitnc.webp",
+      "assets/ranking/games/45/2 - wiitnc.webp",
+      "assets/ranking/games/45/3 - wiitnc.webp",
+      "assets/ranking/games/45/4 - wiitnc.webp",
+      "assets/ranking/games/45/5 - wiitnc.webp"
+    ],
+    "46": [
+      "assets/ranking/games/46/1 - tftb.webp",
+      "assets/ranking/games/46/2 - tftb.webp",
+      "assets/ranking/games/46/3 - tftb.webp",
+      "assets/ranking/games/46/4 - tftb.webp",
+      "assets/ranking/games/46/5 - tftb.webp"
+    ],
+    "47": [
+      "assets/ranking/games/47/1 - bmak.webp",
+      "assets/ranking/games/47/2 - bmak.webp",
+      "assets/ranking/games/47/3 - bmak.webp",
+      "assets/ranking/games/47/4 - bmak.webp",
+      "assets/ranking/games/47/5 - bmak.webp"
+    ],
+    "48": [
+      "assets/ranking/games/48/1 - me.webp",
+      "assets/ranking/games/48/2 - me.webp",
+      "assets/ranking/games/48/3 - me.webp",
+      "assets/ranking/games/48/4 - me.webp",
+      "assets/ranking/games/48/5 - me.webp"
+    ],
+    "49": [
+      "assets/ranking/games/49/1 - scattr.webp",
+      "assets/ranking/games/49/2 - scattr.webp",
+      "assets/ranking/games/49/3 - scattr.webp",
+      "assets/ranking/games/49/4 - scattr.webp",
+      "assets/ranking/games/49/5 - scattr.webp"
+    ],
+    "50": [
+      "assets/ranking/games/50/1 - wtno.webp",
+      "assets/ranking/games/50/2 - wtno.webp",
+      "assets/ranking/games/50/3 - wtno.webp",
+      "assets/ranking/games/50/4 - wtno.webp",
+      "assets/ranking/games/50/5 - wtno.webp"
+    ],
+    "51": [
+      "assets/ranking/games/51/1 - to1886.webp",
+      "assets/ranking/games/51/2 - to1886.webp",
+      "assets/ranking/games/51/3 - to1886.webp",
+      "assets/ranking/games/51/4 - to1886.webp",
+      "assets/ranking/games/51/5 - to1886.webp"
+    ],
+    "52": [
+      "assets/ranking/games/52/1 - tus.webp",
+      "assets/ranking/games/52/2 - tus.webp",
+      "assets/ranking/games/52/3 - tus.webp",
+      "assets/ranking/games/52/4 - tus.webp",
+      "assets/ranking/games/52/5 - tus.webp"
+    ],
+    "53": [
+      "assets/ranking/games/53/1 - twau.webp",
+      "assets/ranking/games/53/2 - twau.webp",
+      "assets/ranking/games/53/3 - twau.webp",
+      "assets/ranking/games/53/4 - twau.webp",
+      "assets/ranking/games/53/5 - twau.webp"
+    ],
+    "54": [
+      "assets/ranking/games/54/1 - rime.webp",
+      "assets/ranking/games/54/2 - rime.webp",
+      "assets/ranking/games/54/3 - rime.webp",
+      "assets/ranking/games/54/4 - rime.webp",
+      "assets/ranking/games/54/5 - rime.webp"
+    ],
+    "55": [
+      "assets/ranking/games/55/1 - ba.webp",
+      "assets/ranking/games/55/2 - ba.webp",
+      "assets/ranking/games/55/3 - ba.webp",
+      "assets/ranking/games/55/4 - ba.webp",
+      "assets/ranking/games/55/5 - ba.webp"
+    ],
+    "56": [
+      "assets/ranking/games/56/1 - bas.webp",
+      "assets/ranking/games/56/2 - bas.webp",
+      "assets/ranking/games/56/3 - bas.webp",
+      "assets/ranking/games/56/4 - bas.webp",
+      "assets/ranking/games/56/5 - bas.webp"
+    ],
+    "57": [
+      "assets/ranking/games/57/1 - bmaa.webp",
+      "assets/ranking/games/57/2 - bmaa.webp",
+      "assets/ranking/games/57/3 - bmaa.webp",
+      "assets/ranking/games/57/4 - bmaa.webp",
+      "assets/ranking/games/57/5 - bmaa.webp"
+    ],
+    "58": [
+      "assets/ranking/games/58/1 - pup.webp",
+      "assets/ranking/games/58/2 - pup.webp",
+      "assets/ranking/games/58/3 - pup.webp",
+      "assets/ranking/games/58/4 - pup.webp",
+      "assets/ranking/games/58/5 - pup.webp"
+    ],
+    "59": [
+      "assets/ranking/games/59/1 - bmao.webp",
+      "assets/ranking/games/59/2 - bmao.webp",
+      "assets/ranking/games/59/3 - bmao.webp",
+      "assets/ranking/games/59/4 - bmao.webp",
+      "assets/ranking/games/59/5 - bmao.webp"
+    ],
+    "60": [
+      "assets/ranking/games/60/1 - sd.webp",
+      "assets/ranking/games/60/2 - sd.webp",
+      "assets/ranking/games/60/3 - sd.webp",
+      "assets/ranking/games/60/4 - sd.webp",
+      "assets/ranking/games/60/5 - sd.webp"
+    ],
+    "61": [
+      "assets/ranking/games/61/1 - iss.webp",
+      "assets/ranking/games/61/2 - iss.webp",
+      "assets/ranking/games/61/3 - iss.webp",
+      "assets/ranking/games/61/4 - iss.webp",
+      "assets/ranking/games/61/5 - iss.webp"
+    ],
+    "62": [
+      "assets/ranking/games/62/1 - mesow.webp",
+      "assets/ranking/games/62/2 - mesow.webp",
+      "assets/ranking/games/62/3 - mesow.webp",
+      "assets/ranking/games/62/4 - mesow.webp",
+      "assets/ranking/games/62/5 - mesow.webp"
+    ],
+    "63": [
+      "assets/ranking/games/63/1 - mesom.webp",
+      "assets/ranking/games/63/2 - mesom.webp",
+      "assets/ranking/games/63/3 - mesom.webp",
+      "assets/ranking/games/63/4 - mesom.webp",
+      "assets/ranking/games/63/5 - mesom.webp"
+    ],
+    "64": [
+      "assets/ranking/games/64/1 - vf.webp",
+      "assets/ranking/games/64/2 - vf.webp",
+      "assets/ranking/games/64/3 - vf.webp",
+      "assets/ranking/games/64/4 - vf.webp",
+      "assets/ranking/games/64/5 - vf.webp"
+    ],
+    "65": [
+      "assets/ranking/games/65/1 - trs.webp",
+      "assets/ranking/games/65/2 - trs.webp",
+      "assets/ranking/games/65/3 - trs.webp",
+      "assets/ranking/games/65/4 - trs.webp",
+      "assets/ranking/games/65/5 - trs.webp"
+    ],
+    "66": [
+      "assets/ranking/games/66/1 - egttr.webp",
+      "assets/ranking/games/66/2 - egttr.webp",
+      "assets/ranking/games/66/3 - egttr.webp",
+      "assets/ranking/games/66/4 - egttr.webp",
+      "assets/ranking/games/66/5 - egttr.webp"
+    ],
+    "67": [
+      "assets/ranking/games/67/1 - vhtgw.webp",
+      "assets/ranking/games/67/2 - vhtgw.webp",
+      "assets/ranking/games/67/3 - vhtgw.webp",
+      "assets/ranking/games/67/4 - vhtgw.webp",
+      "assets/ranking/games/67/5 - vhtgw.webp"
+    ],
+    "68": [
+      "assets/ranking/games/68/1 - tw.webp",
+      "assets/ranking/games/68/2 - tw.webp",
+      "assets/ranking/games/68/3 - tw.webp",
+      "assets/ranking/games/68/4 - tw.webp",
+      "assets/ranking/games/68/5 - tw.webp"
+    ],
+    "69": [
+      "assets/ranking/games/69/1 - gf.webp",
+      "assets/ranking/games/69/2 - gf.webp",
+      "assets/ranking/games/69/3 - gf.webp",
+      "assets/ranking/games/69/4 - gf.webp",
+      "assets/ranking/games/69/5 - gf.webp"
+    ],
+    "70": [
+      "assets/ranking/games/70/1 - tf2.webp",
+      "assets/ranking/games/70/2 - tf2.webp",
+      "assets/ranking/games/70/3 - tf2.webp",
+      "assets/ranking/games/70/4 - tf2.webp",
+      "assets/ranking/games/70/5 - tf2.webp"
+    ],
+    "71": [
+      "assets/ranking/games/71/1 - flwr.webp",
+      "assets/ranking/games/71/2 - flwr.webp",
+      "assets/ranking/games/71/3 - flwr.webp",
+      "assets/ranking/games/71/4 - flwr.webp",
+      "assets/ranking/games/71/5 - flwr.webp"
+    ],
+    "72": [
+      "assets/ranking/games/72/1 - ifl.webp",
+      "assets/ranking/games/72/2 - ifl.webp",
+      "assets/ranking/games/72/3 - ifl.webp",
+      "assets/ranking/games/72/4 - ifl.webp",
+      "assets/ranking/games/72/5 - ifl.webp"
+    ],
+    "73": [
+      "assets/ranking/games/73/1 - v2x.webp",
+      "assets/ranking/games/73/2 - v2x.webp",
+      "assets/ranking/games/73/3 - v2x.webp",
+      "assets/ranking/games/73/4 - v2x.webp",
+      "assets/ranking/games/73/5 - v2x.webp"
+    ],
+    "74": [
+      "assets/ranking/games/74/1 - sotc.webp",
+      "assets/ranking/games/74/2 - sotc.webp",
+      "assets/ranking/games/74/3 - sotc.webp",
+      "assets/ranking/games/74/4 - sotc.webp",
+      "assets/ranking/games/74/5 - sotc.webp"
+    ],
+    "75": [
+      "assets/ranking/games/75/1 - imm.webp",
+      "assets/ranking/games/75/2 - imm.webp",
+      "assets/ranking/games/75/3 - imm.webp",
+      "assets/ranking/games/75/4 - imm.webp",
+      "assets/ranking/games/75/5 - imm.webp"
+    ],
+    "76": [
+      "assets/ranking/games/76/1 - twa.webp",
+      "assets/ranking/games/76/2 - twa.webp",
+      "assets/ranking/games/76/3 - twa.webp",
+      "assets/ranking/games/76/4 - twa.webp",
+      "assets/ranking/games/76/5 - twa.webp"
+    ],
+    "77": [
+      "assets/ranking/games/77/1 - sotl.webp",
+      "assets/ranking/games/77/2 - sotl.webp",
+      "assets/ranking/games/77/3 - sotl.webp",
+      "assets/ranking/games/77/4 - sotl.webp",
+      "assets/ranking/games/77/5 - sotl.webp"
+    ],
+    "78": [
+      "assets/ranking/games/78/1 - col.webp",
+      "assets/ranking/games/78/2 - col.webp",
+      "assets/ranking/games/78/3 - col.webp",
+      "assets/ranking/games/78/4 - col.webp",
+      "assets/ranking/games/78/5 - col.webp"
+    ],
+    "79": [
+      "assets/ranking/games/79/1 - vu.webp",
+      "assets/ranking/games/79/2 - vu.webp",
+      "assets/ranking/games/79/3 - vu.webp",
+      "assets/ranking/games/79/4 - vu.webp"
+    ],
+    "80": [
+      "assets/ranking/games/80/1 - gm.webp",
+      "assets/ranking/games/80/2 - gm.webp",
+      "assets/ranking/games/80/3 - gm.webp",
+      "assets/ranking/games/80/4 - gm.webp",
+      "assets/ranking/games/80/5 - gm.webp"
+    ],
+    "81": [
+      "assets/ranking/games/81/1 - dok.webp",
+      "assets/ranking/games/81/2 - dok.webp",
+      "assets/ranking/games/81/3 - dok.webp",
+      "assets/ranking/games/81/4 - dok.webp",
+      "assets/ranking/games/81/5 - dok.webp"
+    ],
+    "82": [
+      "assets/ranking/games/82/1 - bl2.webp",
+      "assets/ranking/games/82/2 - bl2.webp",
+      "assets/ranking/games/82/3 - bl2.webp",
+      "assets/ranking/games/82/4 - bl2.webp",
+      "assets/ranking/games/82/5 - bl2.webp"
+    ],
+    "83": [
+      "assets/ranking/games/83/1 - mb.webp",
+      "assets/ranking/games/83/2 - mb.webp",
+      "assets/ranking/games/83/3 - mb.webp",
+      "assets/ranking/games/83/4 - mb.webp",
+      "assets/ranking/games/83/5 - mb.webp"
+    ],
+    "84": [
+      "assets/ranking/games/84/1 - goy.webp",
+      "assets/ranking/games/84/2 - goy.webp",
+      "assets/ranking/games/84/3 - goy.webp",
+      "assets/ranking/games/84/4 - goy.webp",
+      "assets/ranking/games/84/5 - goy.webp",
+      "assets/ranking/games/84/6 - goy.webp",
+      "assets/ranking/games/84/7 - goy.webp",
+      "assets/ranking/games/84/8 - goy.webp",
+      "assets/ranking/games/84/9 - goy.webp",
+      "assets/ranking/games/84/10 - goy.webp",
+      "assets/ranking/games/84/11 - goy.webp",
+      "assets/ranking/games/84/12 - goy.webp"
+    ]
+  },
+  "mcu": {
+    "1": [
+      "assets/ranking/mcu/1/1 - ae.webp",
+      "assets/ranking/mcu/1/2 - ae.webp",
+      "assets/ranking/mcu/1/3 - ae.webp",
+      "assets/ranking/mcu/1/4 - ae.webp",
+      "assets/ranking/mcu/1/5 - ae.webp"
+    ],
+    "2": [
+      "assets/ranking/mcu/2/1 - aiw.webp",
+      "assets/ranking/mcu/2/2 - aiw.webp",
+      "assets/ranking/mcu/2/3 - aiw.webp",
+      "assets/ranking/mcu/2/4 - aiw.webp",
+      "assets/ranking/mcu/2/5 - aiw.webp"
+    ],
+    "3": [
+      "assets/ranking/mcu/3/1 - catws.webp",
+      "assets/ranking/mcu/3/2 - catws.webp",
+      "assets/ranking/mcu/3/3 - catws.webp",
+      "assets/ranking/mcu/3/4 - catws.webp",
+      "assets/ranking/mcu/3/5 - catws.webp",
+      "assets/ranking/mcu/3/6 - catws.webp",
+      "assets/ranking/mcu/3/7 - catws.webp"
+    ],
+    "4": [
+      "assets/ranking/mcu/4/1 - smnwh.webp",
+      "assets/ranking/mcu/4/2 - smnwh.webp",
+      "assets/ranking/mcu/4/3 - smnwh.webp",
+      "assets/ranking/mcu/4/4 - smnwh.webp",
+      "assets/ranking/mcu/4/5 - smnwh.webp",
+      "assets/ranking/mcu/4/6 - smnwh.webp",
+      "assets/ranking/mcu/4/7 - smnwh.webp",
+      "assets/ranking/mcu/4/8 - smnwh.webp",
+      "assets/ranking/mcu/4/9 - smnwh.webp",
+      "assets/ranking/mcu/4/10 - smnwh.webp",
+      "assets/ranking/mcu/4/11 - smnwh.webp",
+      "assets/ranking/mcu/4/12 - smnwh.webp",
+      "assets/ranking/mcu/4/13 - smnwh.webp",
+      "assets/ranking/mcu/4/14 - smnwh.webp"
+    ],
+    "5": [
+      "assets/ranking/mcu/5/1 - smhc.webp",
+      "assets/ranking/mcu/5/2 - smhc.webp",
+      "assets/ranking/mcu/5/3 - smhc.webp",
+      "assets/ranking/mcu/5/4 - smhc.webp",
+      "assets/ranking/mcu/5/5 - smhc.webp",
+      "assets/ranking/mcu/5/6 - smhc.webp",
+      "assets/ranking/mcu/5/7 - smhc.webp",
+      "assets/ranking/mcu/5/8 - smhc.webp"
+    ],
+    "6": [
+      "assets/ranking/mcu/6/1 - cacw.webp",
+      "assets/ranking/mcu/6/2 - cacw.webp",
+      "assets/ranking/mcu/6/3 - cacw.webp",
+      "assets/ranking/mcu/6/4 - cacw.webp",
+      "assets/ranking/mcu/6/5 - cacw.webp",
+      "assets/ranking/mcu/6/6 - cacw.webp",
+      "assets/ranking/mcu/6/7 - cacw.webp",
+      "assets/ranking/mcu/6/8 - cacw.webp",
+      "assets/ranking/mcu/6/9 - cacw.webp",
+      "assets/ranking/mcu/6/10 - cacw.webp",
+      "assets/ranking/mcu/6/11 - cacw.webp",
+      "assets/ranking/mcu/6/12 - cacw.webp",
+      "assets/ranking/mcu/6/13 - cacw.webp",
+      "assets/ranking/mcu/6/14 - cacw.webp"
+    ],
+    "7": [
+      "assets/ranking/mcu/7/1 - bpwf.webp",
+      "assets/ranking/mcu/7/2 - bpwf.webp",
+      "assets/ranking/mcu/7/3 - bpwf.webp",
+      "assets/ranking/mcu/7/4 - bpwf.webp",
+      "assets/ranking/mcu/7/5 - bpwf.webp",
+      "assets/ranking/mcu/7/6 - bpwf.webp",
+      "assets/ranking/mcu/7/7 - bpwf.webp",
+      "assets/ranking/mcu/7/8 - bpwf.webp"
+    ],
+    "8": [
+      "assets/ranking/mcu/8/1 - smffh.webp",
+      "assets/ranking/mcu/8/2 - smffh.webp",
+      "assets/ranking/mcu/8/3 - smffh.webp",
+      "assets/ranking/mcu/8/4 - smffh.webp",
+      "assets/ranking/mcu/8/5 - smffh.webp",
+      "assets/ranking/mcu/8/6 - smffh.webp",
+      "assets/ranking/mcu/8/7 - smffh.webp",
+      "assets/ranking/mcu/8/8 - smffh.webp",
+      "assets/ranking/mcu/8/9 - smffh.webp",
+      "assets/ranking/mcu/8/10 - smffh.webp",
+      "assets/ranking/mcu/8/11 - smffh.webp",
+      "assets/ranking/mcu/8/12 - smffh.webp",
+      "assets/ranking/mcu/8/13 - smffh.webp",
+      "assets/ranking/mcu/8/14 - smffh.webp",
+      "assets/ranking/mcu/8/15 - smffh.webp",
+      "assets/ranking/mcu/8/16 - smffh.webp"
+    ],
+    "9": [
+      "assets/ranking/mcu/9/1 - tb.webp",
+      "assets/ranking/mcu/9/2 - tb.webp",
+      "assets/ranking/mcu/9/3 - tb.webp",
+      "assets/ranking/mcu/9/4 - tb.webp",
+      "assets/ranking/mcu/9/5 - tb.webp",
+      "assets/ranking/mcu/9/6 - tb.webp",
+      "assets/ranking/mcu/9/7 - tb.webp",
+      "assets/ranking/mcu/9/8 - tb.webp",
+      "assets/ranking/mcu/9/9 - tb.webp",
+      "assets/ranking/mcu/9/10 - tb.webp",
+      "assets/ranking/mcu/9/11 - tb.webp",
+      "assets/ranking/mcu/9/12 - tb.webp",
+      "assets/ranking/mcu/9/13 - tb.webp"
+    ],
+    "10": [
+      "assets/ranking/mcu/10/1 - tr.webp",
+      "assets/ranking/mcu/10/2 - tr.webp",
+      "assets/ranking/mcu/10/3 - tr.webp",
+      "assets/ranking/mcu/10/4 - tr.webp",
+      "assets/ranking/mcu/10/5 - tr.webp",
+      "assets/ranking/mcu/10/6 - tr.webp",
+      "assets/ranking/mcu/10/7 - tr.webp",
+      "assets/ranking/mcu/10/8 - tr.webp",
+      "assets/ranking/mcu/10/9 - tr.webp"
+    ]
+  }
+}

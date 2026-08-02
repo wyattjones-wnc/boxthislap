@@ -19,6 +19,8 @@
   --strong-shadow: rgba(0, 0, 0, 0.48);
   --accent-shadow: rgba(240, 82, 101, 0.12);
   --accent-border: rgba(240, 82, 101, 0.42);
+  --time: #5fd18a;
+  --time-strong: #86efac;
   --manager-dot-border: #303946;
   --manager-dot-ring: rgba(255, 255, 255, 0.26);
   --updated: rgba(166, 176, 192, 0.76);
@@ -44,6 +46,8 @@ html[data-theme="light"] {
   --strong-shadow: rgba(0, 0, 0, 0.19);
   --accent-shadow: rgba(194, 31, 50, 0.08);
   --accent-border: rgba(194, 31, 50, 0.42);
+  --time: #17633a;
+  --time-strong: #0f5132;
   --manager-dot-border: #ffffff;
   --manager-dot-ring: rgba(24, 33, 47, 0.18);
   --updated: rgba(95, 105, 120, 0.76);
@@ -238,15 +242,62 @@ body.has-shell-stale-warning .stale-shell-alert {
   align-items: center;
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin: 0 auto;
   max-width: 1120px;
   padding: 0 20px 10px;
 }
 
+.followed-team-shortcuts {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.followed-team-shortcuts::-webkit-scrollbar {
+  display: none;
+}
+
+.followed-team-shortcut {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 34px;
+  justify-content: center;
+  overflow: hidden;
+  text-decoration: none;
+  width: 34px;
+}
+
+.followed-team-shortcut:hover,
+.followed-team-shortcut.is-active {
+  background: var(--soft);
+  border-color: var(--accent);
+}
+
+.followed-team-shortcut img {
+  height: 28px;
+  object-fit: contain;
+  width: 28px;
+}
+
+.followed-team-shortcut span {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .login-actions {
   align-items: center;
   display: flex;
+  flex: 0 0 auto;
   gap: 8px;
   position: relative;
 }
@@ -692,7 +743,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .next-time {
-  color: var(--accent);
+  color: var(--time-strong);
 }
 
 .next-completed-icon {
@@ -764,6 +815,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   pointer-events: none;
 }
 
+.ranking-item.is-excluded {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.ranking-item.is-excluded .ranking-rank,
+.ranking-item.is-excluded strong {
+  color: var(--muted);
+}
+
 .ranking-rank {
   align-items: center;
   background: var(--soft);
@@ -796,6 +857,46 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
+.ranking-excluded-label {
+  color: var(--accent) !important;
+}
+
+.ranking-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.18s ease, opacity 0.18s ease;
+}
+
+.ranking-item.is-actions-open .ranking-item-actions {
+  max-height: 48px;
+  opacity: 1;
+}
+
+.ranking-inline-action {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 7px 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ranking-inline-action:hover,
+.ranking-inline-action:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
 .ranking-item-meta {
   display: flex;
   flex-wrap: wrap;
@@ -821,6 +922,29 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .ranking-warning {
   margin: 0 0 8px;
+}
+
+.loading-message {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.loading-spinner {
+  animation: loading-spin 0.8s linear infinite;
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  border-top-color: var(--accent);
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 18px;
+  width: 18px;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .ranking-filters {
@@ -865,6 +989,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: 0 8px 18px var(--shadow);
 }
 
+.footy-team-view-toggle {
+  margin: 0;
+}
+
 .ranking-checkbox-control {
   align-items: center;
   background: var(--soft);
@@ -883,6 +1011,47 @@ body.has-shell-stale-warning .stale-shell-alert {
   accent-color: var(--track);
   height: 18px;
   width: 18px;
+}
+
+.ranking-select-control {
+  align-items: start;
+  display: grid;
+  gap: 5px;
+  min-width: min(220px, 100%);
+}
+
+.ranking-select-control span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ranking-select-control select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 14px center / 7px 7px no-repeat,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) right 9px center / 7px 7px no-repeat,
+    var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 9px 32px 9px 10px;
+}
+
+.ranking-normalize-button {
+  min-height: 42px;
+}
+
+.ranking-item-normalize-control {
+  margin-top: 12px;
+}
+
+.ranking-dialog-note {
+  margin: 8px 0 0;
 }
 
 .ranking-drag-handle {
@@ -925,42 +1094,92 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-battle-options {
+  align-items: stretch;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .ranking-battle-option {
+  align-items: center;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  cursor: pointer;
-  align-items: center;
-  display: flex;
+  display: grid;
   font: inherit;
-  gap: 8px;
-  justify-content: center;
-  min-height: 132px;
-  padding: 18px;
+  gap: 4px;
+  grid-template-rows: minmax(0, 218px) 44px auto;
+  height: 314px;
+  justify-items: stretch;
+  min-width: 0;
+  padding: 6px;
   text-align: center;
 }
 
-.ranking-battle-option:hover,
-.ranking-battle-option:focus-visible {
+.ranking-battle-option:hover {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
-  outline: none;
 }
 
 .ranking-battle-option strong {
-  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  align-items: center;
+  display: flex;
+  font-size: clamp(1rem, 2.8vw, 1.32rem);
+  justify-content: center;
   line-height: 1.15;
+  overflow: hidden;
+  padding: 0 4px;
+}
+
+.ranking-battle-actions {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.ranking-battle-actions .ranking-inline-action {
+  justify-self: start;
+}
+
+.ranking-battle-pick-button {
+  font-size: 0.86rem;
+  justify-self: end;
+  min-height: 30px;
+  padding: 5px 10px;
+}
+
+.ranking-battle-image-frame {
+  align-self: stretch;
+  box-sizing: border-box;
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ranking-battle-image-frame img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.ranking-battle-image-frame.is-empty {
+  background: transparent;
 }
 
 @media (max-width: 640px) {
   .ranking-battle-options {
     grid-template-columns: 1fr;
+  }
+
+  .ranking-battle-option {
+    grid-template-rows: minmax(0, 196px) 42px auto;
+    height: 292px;
   }
 }
 
@@ -1379,6 +1598,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.footy-note-ga-fields label {
+  min-width: 0;
+  position: relative;
+}
+
 .footy-note-ga-fields .footy-goal-assists-actions {
   align-items: stretch;
 }
@@ -1407,6 +1631,67 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-note-ga-builder input[type="text"] {
   background: var(--panel);
+}
+
+.autocomplete-dropdown {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px var(--shadow);
+  display: none;
+  left: 0;
+  margin-top: 6px;
+  max-height: 260px;
+  overflow: auto;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1000;
+}
+
+.autocomplete-dropdown.is-open {
+  display: grid;
+}
+
+.autocomplete-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.autocomplete-option:last-child {
+  border-bottom: 0;
+}
+
+.autocomplete-option:hover,
+.autocomplete-option:focus-visible {
+  background: var(--soft);
+  outline: none;
+}
+
+.autocomplete-option small,
+.autocomplete-empty {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.autocomplete-empty {
+  margin: 0;
+  padding: 12px;
 }
 
 .footy-note-grid textarea {
@@ -1562,7 +1847,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-fixture-card strong {
   align-self: center;
-  color: var(--accent-dark);
+  color: var(--time-strong);
   font-size: 0.9rem;
   justify-self: end;
   text-align: right;
@@ -1604,6 +1889,294 @@ body.has-shell-stale-warning .stale-shell-alert {
 .footy-admin-diagnostics {
   margin-bottom: 14px;
   margin-top: 0;
+}
+
+.footy-team-heading .back-link {
+  color: var(--muted);
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: 900;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.footy-team-heading .back-link:hover {
+  color: var(--ink);
+}
+
+.footy-team-heading {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.footy-team-summary-card {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  margin-bottom: 18px;
+  padding: 16px;
+}
+
+.footy-team-summary-badge {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  overflow: hidden;
+  width: 52px;
+}
+
+.footy-team-summary-badge img {
+  height: 44px;
+  object-fit: contain;
+  width: 44px;
+}
+
+.footy-team-summary-badge span {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.footy-team-summary-card h2 {
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+}
+
+.footy-team-summary-card p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.footy-team-stat-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(70px, 1fr));
+  margin: 0;
+}
+
+.footy-team-stat-grid div {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.footy-team-stat-grid dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.footy-team-stat-grid dd {
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.footy-team-fixture-section {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.footy-team-fixture-section h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.footy-team-player-section {
+  display: grid;
+  gap: 14px;
+}
+
+.footy-team-player-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+}
+
+.footy-team-player-card {
+  align-items: end;
+  aspect-ratio: 3 / 4;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 94%, transparent), var(--soft)),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  min-height: 176px;
+  overflow: hidden;
+  position: relative;
+}
+
+.footy-team-player-card:focus-visible,
+.footy-team-player-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--line));
+  box-shadow: 0 10px 26px var(--shadow);
+  cursor: pointer;
+}
+
+.footy-team-player-art {
+  align-items: end;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0.7;
+  position: absolute;
+}
+
+.footy-team-player-art img {
+  display: block;
+  height: 88%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+.footy-team-player-number {
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 1.08rem;
+  font-weight: 900;
+  line-height: 1;
+  min-width: 2.15rem;
+  padding: 7px 9px;
+  position: absolute;
+  right: 8px;
+  text-align: center;
+  top: 8px;
+  z-index: 1;
+}
+
+.footy-team-player-name {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  color: var(--ink);
+  font-weight: 900;
+  line-height: 1.1;
+  padding: 10px;
+  position: relative;
+  text-wrap: balance;
+}
+
+.footy-trading-card-dialog {
+  max-width: calc(100vw - 24px);
+  width: auto;
+}
+
+.footy-trading-card-form {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: block;
+  padding: 0;
+  width: auto;
+}
+
+.footy-trading-card-content {
+  display: block;
+}
+
+.trading-card-preview {
+  aspect-ratio: 2500 / 3520;
+  background: var(--bg);
+  border-radius: 8px;
+  box-shadow: 0 20px 52px rgb(0 0 0 / 0.46);
+  max-height: min(86vh, 740px);
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  position: relative;
+  width: min(390px, calc(100vw - 24px));
+}
+
+.trading-card-frame {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: contain;
+  position: absolute;
+  width: 100%;
+}
+
+.trading-card-team-badge {
+  align-items: center;
+  display: flex;
+  height: 12%;
+  justify-content: center;
+  left: 2.8%;
+  position: absolute;
+  top: 3.2%;
+  width: 18%;
+  z-index: 1;
+}
+
+.trading-card-team-badge img {
+  display: block;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.trading-card-team-badge span {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 900;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.trading-card-number {
+  align-items: center;
+  color: #fff;
+  display: flex;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.65rem, 7.4vw, 2.55rem);
+  font-weight: 950;
+  height: 5.7%;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 2.9%;
+  text-align: center;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
+  top: 1.7%;
+  width: 13.2%;
+  z-index: 1;
+}
+
+.trading-card-name {
+  bottom: 7.1%;
+  color: #fff;
+  font-family: "Trebuchet MS", "Gill Sans", Verdana, sans-serif;
+  font-size: clamp(1.28rem, 6.4vw, 2.25rem);
+  font-weight: 950;
+  left: 13%;
+  line-height: 1;
+  overflow: hidden;
+  position: absolute;
+  right: 15%;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 0.55);
+  white-space: nowrap;
+  z-index: 1;
 }
 
 .footy-admin-diagnostics {
@@ -2654,7 +3227,7 @@ main {
 
 .formula-one-question-card header span,
 .formula-one-weekly-card header span {
-  color: var(--accent-dark);
+  color: var(--time-strong);
   font-size: 0.75rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -3244,7 +3817,7 @@ main {
 }
 
 .match-header p {
-  color: var(--accent-dark);
+  color: var(--time-strong);
   font-size: 1rem;
   font-weight: 800;
   margin: 0;
@@ -3988,9 +4561,23 @@ tr:last-child td {
 
 @media (max-width: 760px) {
   .login-row-inner {
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
     padding: 0 12px 8px;
+  }
+
+  .followed-team-shortcuts {
+    gap: 6px;
+  }
+
+  .followed-team-shortcut {
+    height: 32px;
+    width: 32px;
+  }
+
+  .followed-team-shortcut img {
+    height: 26px;
+    width: 26px;
   }
 
   .login-actions {
@@ -4112,6 +4699,25 @@ tr:last-child td {
     grid-column: 2;
     justify-content: flex-end;
     justify-self: stretch;
+  }
+
+  .footy-team-summary-card {
+    align-items: start;
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .footy-team-summary-badge {
+    height: 44px;
+    width: 44px;
+  }
+
+  .footy-team-summary-badge img {
+    height: 38px;
+    width: 38px;
+  }
+
+  .footy-team-stat-grid {
+    grid-column: 1 / -1;
   }
 
   .brand {

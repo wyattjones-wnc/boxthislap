@@ -190,7 +190,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202607270002">
+    <link rel="stylesheet" href="styles.css?v=202608020001">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -337,6 +337,7 @@
       </nav>
       <div class="login-row">
         <div class="login-row-inner">
+          <div class="followed-team-shortcuts" id="followed-team-shortcuts" aria-label="Followed teams"></div>
           <div class="login-actions">
             <a class="login-button" id="login-open-button" href="#login" data-page-link="login">Log In</a>
             <div class="profile-menu" id="profile-menu" hidden>
@@ -511,11 +512,11 @@
                 <div class="footy-note-ga-fields">
                   <label>
                     <span>Scorer Name</span>
-                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" placeholder="Scorer Name">
+                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Scorer Name">
                   </label>
                   <label>
                     <span>Assister Name</span>
-                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Assister Name">
                   </label>
                   <label>
                     <span>Minute</span>
@@ -540,11 +541,11 @@
                 <div class="footy-note-ga-fields">
                   <label>
                     <span>Scorer Name</span>
-                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" placeholder="Scorer Name">
+                    <input type="text" data-footy-note-ga-field="scorer" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Scorer Name">
                   </label>
                   <label>
                     <span>Assister Name</span>
-                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" placeholder="Assister Name">
+                    <input type="text" data-footy-note-ga-field="assister" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Assister Name">
                   </label>
                   <label>
                     <span>Minute</span>
@@ -582,6 +583,29 @@
                 Save
               </button>
             </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="page" id="footy-team" data-page="footy-team">
+        <div class="section-heading page-heading-with-action footy-team-heading">
+          <div>
+            <a class="back-link" href="#footy" data-page-link="footy">Footy</a>
+            <h1 id="footy-team-title">Team</h1>
+          </div>
+          <div class="heading-actions heading-actions-right">
+            <div class="segmented-control ranking-mode-toggle footy-team-view-toggle" role="group" aria-label="Team page view">
+              <button class="is-active" type="button" data-footy-team-view-mode="schedule" aria-pressed="true">Schedule</button>
+              <button type="button" data-footy-team-view-mode="team" aria-pressed="false">Team</button>
+            </div>
+          </div>
+        </div>
+        <div class="content-shell" id="footy-team-content">
+          <p class="table-message">Loading team...</p>
+        </div>
+        <dialog class="footy-note-dialog footy-trading-card-dialog" id="footy-trading-card-dialog">
+          <form class="footy-note-form footy-trading-card-form" method="dialog">
+            <div id="footy-trading-card-content" class="footy-trading-card-content"></div>
           </form>
         </dialog>
       </section>
@@ -725,10 +749,29 @@
             <input id="ranking-more-data-toggle" type="checkbox">
             <span>More Data</span>
           </label>
+          <label class="ranking-checkbox-control">
+            <input id="ranking-show-excluded-toggle" type="checkbox">
+            <span>Show Excluded</span>
+          </label>
           <div class="segmented-control ranking-mode-toggle" role="group" aria-label="Ranking view" data-admin-only hidden>
             <button class="is-active" type="button" data-ranking-view-mode="manual" aria-pressed="true">Manual</button>
             <button type="button" data-ranking-view-mode="calculated" aria-pressed="false">Calculated</button>
           </div>
+          <label class="ranking-select-control" data-admin-only hidden>
+            <span>Snapshot</span>
+            <select id="ranking-snapshot-select">
+              <option value="current">Current</option>
+            </select>
+          </label>
+          <label class="ranking-select-control" data-admin-only hidden>
+            <span>Compare</span>
+            <select id="ranking-compare-select">
+              <option value="">None</option>
+            </select>
+          </label>
+          <button class="action-button ranking-normalize-button" id="ranking-normalize-button" type="button" data-admin-only hidden>
+            Normalize
+          </button>
         </div>
         <div class="tabs ranking-tabs" role="tablist" aria-label="Ranking lists">
           <button class="tab is-active" type="button" data-ranking-tab="games" aria-selected="true" role="tab">Games</button>
@@ -739,22 +782,22 @@
         <div class="content-shell ranking-shell">
           <section class="ranking-panel is-active" data-ranking-panel="games" role="tabpanel">
             <div class="ranking-list" id="ranking-list-games">
-              <p class="table-message">Game rankings will load here.</p>
+              <p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>Loading game rankings...</span></p>
             </div>
           </section>
           <section class="ranking-panel" data-ranking-panel="mcu" role="tabpanel">
             <div class="ranking-list" id="ranking-list-mcu">
-              <p class="table-message">MCU rankings will load here.</p>
+              <p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>Loading MCU rankings...</span></p>
             </div>
           </section>
           <section class="ranking-panel" data-ranking-panel="movies" role="tabpanel">
             <div class="ranking-list" id="ranking-list-movies">
-              <p class="table-message">Movie rankings will load here.</p>
+              <p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>Loading movie rankings...</span></p>
             </div>
           </section>
           <section class="ranking-panel" data-ranking-panel="tv" role="tabpanel">
             <div class="ranking-list" id="ranking-list-tv">
-              <p class="table-message">TV rankings will load here.</p>
+              <p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>Loading TV rankings...</span></p>
             </div>
           </section>
         </div>
@@ -781,6 +824,13 @@
                 <input id="ranking-item-rank" type="number" min="1" step="1" required>
               </label>
             </div>
+            <label class="ranking-checkbox-control ranking-item-normalize-control">
+              <input id="ranking-item-normalize" type="checkbox" checked>
+              <span>Normalize after adding</span>
+            </label>
+            <p class="body-copy ranking-dialog-note">
+              Saves a snapshot, resets old comparisons, and starts this list from the new order.
+            </p>
             <p class="footy-note-status" id="ranking-item-status" aria-live="polite"></p>
             <footer>
               <button class="action-button" id="ranking-item-cancel" type="button">
@@ -811,6 +861,35 @@
               </button>
               <button class="action-button" id="ranking-battle-done" type="button">
                 Done
+              </button>
+            </footer>
+          </form>
+        </dialog>
+
+        <dialog class="footy-note-dialog ranking-normalize-dialog" id="ranking-normalize-dialog">
+          <form class="footy-note-form ranking-battle-form" method="dialog">
+            <header>
+              <div>
+                <h2>Normalize Rankings</h2>
+                <p id="ranking-normalize-status" class="footy-note-status" aria-live="polite"></p>
+              </div>
+              <button class="icon-action-button footy-note-close" id="ranking-normalize-close" type="button" aria-label="Close normalize dialog">
+                &times;
+              </button>
+            </header>
+            <p class="body-copy">
+              This saves the current calculated order as a snapshot, compresses Elo ratings into closer gaps, and clears old choices for this ranking list.
+            </p>
+            <label class="next-item-wide">
+              <span>Reason</span>
+              <input id="ranking-normalize-reason" type="text" value="Normalized calculated rankings" autocomplete="off">
+            </label>
+            <footer>
+              <button class="action-button" id="ranking-normalize-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" id="ranking-normalize-confirm" type="button">
+                Save Snapshot & Normalize
               </button>
             </footer>
           </form>
@@ -1195,15 +1274,10 @@
             <label class="bracket-submitter bracket-submission-viewer">
               <span>Submitted</span>
               <select id="bracket-submission-select">
-                <option value="">Make picks</option>
+                <option value="">Official</option>
               </select>
             </label>
-            <label class="bracket-submitter">
-              <span>Name</span>
-              <input id="bracket-submitter" type="text" autocomplete="name" placeholder="Your name">
-            </label>
-            <button class="action-button" id="bracket-submit-picks" type="button">Submit</button>
-            <button class="action-button secondary-action" id="bracket-clear-picks" type="button">Clear Picks</button>
+            <button class="action-button secondary-action" id="bracket-clear-picks" type="button" hidden disabled>Clear Picks</button>
           </div>
         </div>
         <p class="bracket-submit-status" id="bracket-submit-status" role="status"></p>
@@ -1651,6 +1725,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202607280003"></script>
+    <script type="module" src="script.js?v=202607310011"></script>
   </body>
 </html>

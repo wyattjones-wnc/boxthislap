@@ -55,6 +55,7 @@ import {
   profileDropdown,
   profileName,
   logoutButton,
+  followedTeamShortcuts,
   managerHubSubtitle,
   workflowCount,
   workflowList,
@@ -73,6 +74,14 @@ import {
   footyDateToFilter,
   footyTeamFilter,
   footyScheduleList,
+  footyTeamTitle,
+  footyTeamContent,
+  footyTeamPlayerToggle,
+  footyTeamViewModeButtons,
+  footyTradingCardDialog,
+  footyTradingCardTitle,
+  footyTradingCardContent,
+  footyTradingCardClose,
   footyGoalAssistsButton,
   footyGoalAssistsBack,
   footyGoalAssistsForm,
@@ -132,7 +141,11 @@ import {
   rankingFilterToggle,
   rankingFilters,
   rankingMoreDataToggle,
+  rankingShowExcludedToggle,
   rankingViewModeButtons,
+  rankingSnapshotSelect,
+  rankingCompareSelect,
+  rankingNormalizeButton,
   rankingItemDialog,
   rankingItemForm,
   rankingItemDialogTitle,
@@ -140,6 +153,7 @@ import {
   rankingItemId,
   rankingItemName,
   rankingItemRank,
+  rankingItemNormalize,
   rankingItemStatus,
   rankingItemClose,
   rankingItemCancel,
@@ -150,6 +164,12 @@ import {
   rankingBattleClose,
   rankingBattleSkip,
   rankingBattleDone,
+  rankingNormalizeDialog,
+  rankingNormalizeReason,
+  rankingNormalizeStatus,
+  rankingNormalizeClose,
+  rankingNormalizeCancel,
+  rankingNormalizeConfirm,
   fantasyCritic2025Content,
   fantasyCritic2026Content,
   formulaOneViews,
@@ -183,8 +203,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607280001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607280001";
+} from "./modules/domRefs.js?v=202607310002";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
   formatUpdatedTime,
@@ -211,21 +231,39 @@ let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
+let activeFootyTeamViewMode = "schedule";
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
+let activeRankingSnapshotId = "current";
+let activeRankingCompareSnapshotId = "";
 let shouldShowRankingFilters = false;
 let shouldShowRankingMoreData = false;
+let shouldShowRankingExcluded = false;
 let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
+let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const FOOTY_LOCAL_TEAM_BADGES = {
+  "charlotte": "assets/teams/charlotte-fc.svg",
+  "charlotte fc": "assets/teams/charlotte-fc.svg",
+  "inter miami": "assets/teams/inter-miami-cf.webp",
+  "inter miami cf": "assets/teams/inter-miami-cf.webp",
+  usmnt: "assets/teams/usmnt.svg",
+  uswmt: "assets/teams/uswnt.svg",
+  uswnt: "assets/teams/uswnt.svg",
+};
+const FOOTY_DISPLAY_TEAM_NAMES = {
+  uswmt: "USWNT",
+};
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
+const BRACKET_SUBMISSIONS_ARCHIVED = true;
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
 const RANKING_PROVISIONAL_COMPARISONS = 10;
@@ -267,10 +305,13 @@ const RANKING_CONFIG = {
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
+let activeAutocompleteInput = null;
+let footyRosterLoadPromise = null;
 const footyNoteGoalAssistEntries = {
   follow: [],
   opponent: [],
 };
+const AUTOCOMPLETE_OPTION_LIMIT = 8;
 const siteData = {};
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
@@ -400,6 +441,316 @@ function renderFootySchedule(schedule) {
   `;
 }
 
+function renderFollowedTeamShortcuts(schedule) {
+  if (!followedTeamShortcuts) {
+    return;
+  }
+
+  const teams = getFootyShortcutTeams(schedule);
+  followedTeamShortcuts.hidden = teams.length === 0 || !isFootyContextPage(activePageName);
+
+  if (teams.length === 0) {
+    followedTeamShortcuts.innerHTML = "";
+    return;
+  }
+
+  followedTeamShortcuts.innerHTML = teams.map((team) => {
+    const slug = getFootyTeamSlug(team.name);
+    const fallback = getFootyTeamFallbackBadge(team.name);
+
+    return `
+      <a class="followed-team-shortcut" href="#footy-team-${escapeHtml(slug)}" data-page-link="footy-team-${escapeHtml(slug)}" aria-label="${escapeHtml(team.name)}">
+        ${team.badge ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallback)}</span>`}
+      </a>
+    `;
+  }).join("");
+}
+
+function isFootyContextPage(pageName = activePageName) {
+  return pageName === "footy" || String(pageName || "").startsWith("footy-team-");
+}
+
+function syncFollowedTeamShortcutsVisibility(pageName = activePageName) {
+  if (!followedTeamShortcuts) {
+    return;
+  }
+
+  followedTeamShortcuts.hidden = !isFootyContextPage(pageName) ||
+    followedTeamShortcuts.children.length === 0;
+}
+
+function getFootyShortcutTeams(schedule) {
+  return getAllFootyScheduleTeams(schedule);
+}
+
+function normalizeFootyScheduleTeam(teamSchedule = {}) {
+  const team = teamSchedule.team || {};
+  const name = getFootyDisplayTeamName(team.name);
+  const badge = getFootyTeamBadge(name, team.badge);
+
+  return {
+    badge,
+    fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
+    id: String(team.id || "").trim(),
+    name,
+    priority: normalizeFootyPriority(team.priority),
+    status: String(teamSchedule.status || "").trim(),
+    updatedAt: String(teamSchedule.updatedAt || teamSchedule.attemptedAt || "").trim(),
+  };
+}
+
+function uniqueFootyTeams(teams = []) {
+  const teamsByKey = new Map();
+
+  teams.forEach((team) => {
+    const key = getFootyTeamFilterKey(team.name);
+    const existing = teamsByKey.get(key);
+
+    if (!key || (existing?.badge && !team.badge)) {
+      return;
+    }
+
+    teamsByKey.set(key, {
+      ...existing,
+      ...team,
+      badge: team.badge || existing?.badge || "",
+      fixtureCount: (existing?.fixtureCount || 0) + (team.fixtureCount || 0),
+    });
+  });
+
+  return [...teamsByKey.values()];
+}
+
+function compareFootyTeamsByPriorityThenName(firstTeam, secondTeam) {
+  return Number(firstTeam.priority || Number.MAX_SAFE_INTEGER) - Number(secondTeam.priority || Number.MAX_SAFE_INTEGER) ||
+    String(firstTeam.name || "").localeCompare(String(secondTeam.name || ""));
+}
+
+function getFootyTeamSlug(teamName) {
+  return normalizeLookupName(teamName).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "team";
+}
+
+function getFootyTeamFromSlug(slug) {
+  const normalizedSlug = String(slug || "").trim();
+
+  return getFootyShortcutTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+    getAllFootyScheduleTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+    null;
+}
+
+function getActiveFootyTeam() {
+  if (!String(activePageName || "").startsWith("footy-team-")) {
+    return null;
+  }
+
+  return getFootyTeamFromSlug(String(activePageName || "").replace(/^footy-team-/, ""));
+}
+
+function getAllFootyScheduleTeams(schedule) {
+  if (!Array.isArray(schedule?.teamSchedules)) {
+    return [];
+  }
+
+  return uniqueFootyTeams(schedule.teamSchedules.map((teamSchedule) => normalizeFootyScheduleTeam(teamSchedule)))
+    .sort(compareFootyTeamsByPriorityThenName);
+}
+
+function getFootyTeamFallbackBadge(teamName) {
+  return String(teamName || "?").trim().slice(0, 1).toUpperCase() || "?";
+}
+
+function getFootyDisplayTeamName(teamName) {
+  const rawName = String(teamName || "").trim();
+  const displayName = FOOTY_DISPLAY_TEAM_NAMES[normalizeLookupName(rawName)];
+
+  return displayName || rawName;
+}
+
+function getFootyTeamBadge(teamName, explicitBadge = "") {
+  const badge = String(explicitBadge || "").trim();
+
+  if (badge) {
+    return badge;
+  }
+
+  return FOOTY_LOCAL_TEAM_BADGES[normalizeLookupName(teamName)] ||
+    FOOTY_LOCAL_TEAM_BADGES[normalizeFootyClubName(teamName)] ||
+    "";
+}
+
+function renderFootyTeamPage(pageName = activePageName) {
+  if (!footyTeamTitle || !footyTeamContent) {
+    return;
+  }
+
+  const slug = String(pageName || "").replace(/^footy-team-/, "");
+  const team = getFootyTeamFromSlug(slug);
+
+  if (!siteData.footySchedule) {
+    footyTeamTitle.textContent = "Team";
+    syncFootyTeamViewToggle(true);
+    footyTeamContent.innerHTML = `<p class="table-message">Loading team...</p>`;
+    return;
+  }
+
+  if (!team) {
+    footyTeamTitle.textContent = "Team";
+    syncFootyTeamViewToggle(true);
+    footyTeamContent.innerHTML = `<p class="table-message">Unable to find that followed team.</p>`;
+    return;
+  }
+
+  const fixtures = getFootyScheduleFixtures(siteData.footySchedule)
+    .filter((fixture) => isSameFootyTeamName(fixture.teamName, team.name));
+  const upcomingFixtures = fixtures.filter((fixture) => !isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures);
+  const pastFixtures = fixtures.filter((fixture) => isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures).reverse();
+  const nextFixtures = upcomingFixtures.slice(0, 5);
+  const recentFixtures = pastFixtures.slice(0, 3);
+  const updatedAt = formatFootyGeneratedAt(team.updatedAt || getFootyScheduleUpdatedAt(siteData.footySchedule));
+  const badgeMarkup = team.badge
+    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">`
+    : `<span>${escapeHtml(getFootyTeamFallbackBadge(team.name))}</span>`;
+
+  footyTeamTitle.textContent = team.name;
+  syncFootyTeamViewToggle(false);
+
+  if (activeFootyTeamViewMode === "team") {
+    renderFootyTeamPlayers(team);
+    return;
+  }
+
+  footyTeamContent.innerHTML = `
+    <section class="footy-team-summary-card">
+      <div class="footy-team-summary-badge" aria-hidden="true">
+        ${badgeMarkup}
+      </div>
+      <div>
+        <h2>${escapeHtml(team.name)}</h2>
+        ${updatedAt ? `<p>Updated ${escapeHtml(updatedAt)}</p>` : ""}
+      </div>
+      <dl class="footy-team-stat-grid">
+        <div>
+          <dt>Upcoming</dt>
+          <dd>${escapeHtml(String(upcomingFixtures.length))}</dd>
+        </div>
+        <div>
+          <dt>Past</dt>
+          <dd>${escapeHtml(String(pastFixtures.length))}</dd>
+        </div>
+      </dl>
+    </section>
+    ${renderFootyTeamFixtureSection("Next Matches", nextFixtures)}
+    ${renderFootyTeamFixtureSection("Recent Matches", recentFixtures)}
+  `;
+}
+
+function syncFootyTeamViewToggle(isDisabled = false) {
+  footyTeamPlayerToggle?.setAttribute("hidden", "");
+  footyTeamViewModeButtons?.forEach((button) => {
+    const isActive = button.dataset.footyTeamViewMode === activeFootyTeamViewMode;
+
+    button.disabled = isDisabled;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function renderFootyTeamPlayers(team) {
+  const roster = getFootyRosterForTeam(team);
+
+  if (!Array.isArray(siteData.footyRosters)) {
+    footyTeamContent.innerHTML = `<p class="table-message">Loading roster...</p>`;
+    ensureFootyRosters()
+      .then(() => {
+        if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && activeFootyTeamViewMode === "team") {
+          renderFootyTeamPage();
+        }
+      })
+      .catch((error) => {
+        footyTeamContent.innerHTML = `<p class="table-message">Unable to load roster: ${escapeHtml(error.message)}</p>`;
+      });
+    return;
+  }
+
+  if (!roster) {
+    footyTeamContent.innerHTML = `<p class="table-message">No roster loaded for ${escapeHtml(team.name)}.</p>`;
+    return;
+  }
+
+  const players = getFootyRosterPlayersForTeam(team);
+  footyTeamContent.innerHTML = `
+    <section class="footy-team-player-section">
+      <div class="footy-team-player-grid">
+        ${players.map(renderFootyTeamPlayerCard).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderFootyTeamPlayerCard(player) {
+  const fallbackSources = Array.isArray(player.imageFallbackPaths) ? player.imageFallbackPaths : [];
+  const imageMarkup = player.imagePath
+    ? `<img src="${escapeHtml(player.imagePath)}" alt="" loading="lazy" decoding="async"${fallbackSources.length ? ` data-fallback-srcs="${escapeHtml(JSON.stringify(fallbackSources))}"` : ""}>`
+    : "";
+  const number = formatFootyPlayerNumber(player.number);
+
+  return `
+    <article class="footy-team-player-card" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="Open ${escapeHtml(player.name)} trading card">
+      <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
+      ${number ? `<div class="footy-team-player-number">${escapeHtml(number)}</div>` : ""}
+      <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
+    </article>
+  `;
+}
+
+function formatFootyPlayerNumber(number) {
+  const cleanNumber = String(number || "").trim().replace(/^#/, "");
+
+  return cleanNumber;
+}
+
+function openFootyTradingCard(player, team) {
+  if (!player || !team || !footyTradingCardDialog || !footyTradingCardContent) {
+    return;
+  }
+
+  const number = formatFootyPlayerNumber(player.number);
+  const fallback = getFootyTeamFallbackBadge(team.name);
+  const badgeMarkup = team.badge
+    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async">`
+    : `<span>${escapeHtml(fallback)}</span>`;
+
+  if (footyTradingCardTitle) {
+    footyTradingCardTitle.textContent = player.name;
+  }
+
+  footyTradingCardContent.innerHTML = `
+    <div class="trading-card-preview" aria-label="${escapeHtml(player.name)} trading card">
+      <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="" decoding="async">
+      <div class="trading-card-team-badge" aria-hidden="true">${badgeMarkup}</div>
+      ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}
+      <div class="trading-card-name">${escapeHtml(player.name)}</div>
+    </div>
+  `;
+
+  footyTradingCardDialog.showModal();
+}
+
+function closeFootyTradingCard() {
+  footyTradingCardDialog?.close();
+}
+
+function renderFootyTeamFixtureSection(title, fixtures = []) {
+  return `
+    <section class="footy-team-fixture-section">
+      <h2>${escapeHtml(title)}</h2>
+      ${fixtures.length
+        ? `<div class="footy-list footy-team-fixture-list">${fixtures.map(renderFootyFixture).join("")}</div>`
+        : `<p class="table-message">No ${escapeHtml(title.toLowerCase())} loaded.</p>`}
+    </section>
+  `;
+}
+
 function getFootyScheduleFixtures(schedule) {
   if (!Array.isArray(schedule?.teamSchedules)) {
     return [];
@@ -412,7 +763,8 @@ function getFootyScheduleFixtures(schedule) {
 
       return teamFixtures.map((fixture) => ({
         ...fixture,
-        teamBadge: fixture.teamBadge || team.badge || "",
+        teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge),
+        teamName: getFootyDisplayTeamName(fixture.teamName || team.name),
       }));
     });
   const teamBadges = getFootyTeamBadgeMap(fixtures);
@@ -968,6 +1320,7 @@ function toggleFootyFixtureExpansion(matchId) {
   }
 
   renderFootySchedule(siteData.footySchedule);
+  renderFootyTeamPage();
 }
 
 function renderFootyFixtureDetails(fixture) {
@@ -1118,6 +1471,13 @@ function openFootyNoteDialog(matchId) {
   clearFootyNoteGoalAssistInputs("opponent");
   renderFootyNoteGoalAssistEntries("follow");
   renderFootyNoteGoalAssistEntries("opponent");
+  applyFootyNoteRosterOptions(fixture);
+  ensureFootyRosters()
+    .then(() => applyFootyNoteRosterOptions(fixture))
+    .catch((error) => {
+      recordDiagnostic("footy rosters failed to load", error);
+      console.warn("Box This Lap footy rosters failed to load", error);
+    });
 
   if (footyNoteText) {
     footyNoteText.value = String(note.note || "");
@@ -1139,6 +1499,7 @@ function openFootyNoteDialog(matchId) {
 
 function closeFootyNoteDialog() {
   activeFootyNoteMatchId = "";
+  closeAutocompleteDropdown();
 
   if (!footyNoteDialog) {
     return;
@@ -1413,6 +1774,393 @@ function loadFootyMatchNotes() {
     };
     document.head.append(script);
   });
+}
+
+function ensureFootyRosters() {
+  if (Array.isArray(siteData.footyRosters)) {
+    return Promise.resolve(siteData.footyRosters);
+  }
+
+  if (footyRosterLoadPromise) {
+    return footyRosterLoadPromise;
+  }
+
+  footyRosterLoadPromise = loadFootyRosters()
+    .then((rosters) => {
+      siteData.footyRosters = normalizeFootyRosters(rosters);
+      return siteData.footyRosters;
+    })
+    .catch((error) => {
+      footyRosterLoadPromise = null;
+      throw error;
+    });
+
+  return footyRosterLoadPromise;
+}
+
+function loadFootyRosters() {
+  if (!FOOTY_DATA_ENDPOINT) {
+    return Promise.resolve([]);
+  }
+
+  const callbackName = `boxThisLapFootyRosters${Date.now()}${Math.random().toString(36).slice(2)}`;
+  const callbackId = `footy-rosters-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return new Promise((resolve, reject) => {
+    let script;
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("No response from the footy roster endpoint."));
+    }, 12000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      delete window[callbackName];
+      script?.remove();
+    }
+
+    window[callbackName] = (data) => {
+      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
+        return;
+      }
+
+      cleanup();
+
+      if (!data.ok) {
+        reject(new Error(data.error || "Unable to load footy rosters."));
+        return;
+      }
+
+      resolve(Array.isArray(data.rosters) ? data.rosters : []);
+    };
+
+    const url = new URL(FOOTY_DATA_ENDPOINT);
+    url.searchParams.set("action", "listFootyRosters");
+    url.searchParams.set("callback", callbackName);
+    url.searchParams.set("callbackId", callbackId);
+    script = document.createElement("script");
+    script.async = true;
+    script.src = url.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Unable to reach the footy roster endpoint."));
+    };
+    document.head.append(script);
+  });
+}
+
+function normalizeFootyRosters(rosters = []) {
+  return rosters
+    .map((roster) => {
+      const teamId = String(roster.teamId || roster["Team ID"] || roster.id || roster.ID || "").trim();
+
+      return {
+        players: Array.isArray(roster.players)
+          ? roster.players
+              .map((player) => normalizeFootyRosterPlayer({
+                ...player,
+                season: player.season || player.Season || roster.season,
+                teamId: player.teamId || player["Team ID"] || teamId,
+              }))
+              .filter((player) => player.name)
+          : [],
+        season: String(roster.season || "").trim(),
+        sheetName: String(roster.sheetName || "").trim(),
+        team: String(roster.team || roster.name || "").trim(),
+        teamId,
+      };
+    })
+    .filter((roster) => (roster.team || roster.teamId) && roster.players.length > 0);
+}
+
+function normalizeFootyRosterPlayer(player = {}) {
+  const id = String(player.id || player.ID || "").trim();
+  const season = String(player.season || player.Season || "").trim();
+  const teamId = String(player.teamId || player["Team ID"] || "").trim();
+  const transparent = String(player.transparent || player.Transparent || "").trim();
+  const imagePaths = getFootyPlayerTransparentPaths({ id, season, teamId, transparent });
+
+  return {
+    fromAcademy: normalizeBooleanish(player.fromAcademy || player.FromAcademy),
+    id,
+    imageFallbackPaths: imagePaths.slice(1),
+    imagePath: imagePaths[0] || "",
+    name: String(player.player || player.Player || player.name || "").trim(),
+    number: String(player.number || player["#"] || "").trim(),
+    position: String(player.position || player.Position || "").trim(),
+    season,
+    teamId,
+    transparent,
+    transferOut: normalizeBooleanish(player.transferOut || player.TransferOut),
+  };
+}
+
+function getFootyPlayerTransparentPaths(player = {}) {
+  const id = String(player.id || "").trim();
+  const season = String(player.season || "").trim();
+  const teamId = String(player.teamId || "").trim();
+  const transparent = String(player.transparent || "").trim();
+
+  if (!teamId || !transparent) {
+    return [];
+  }
+
+  const seasonKey = season.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "");
+  const encodedTeamId = encodeURIComponent(teamId);
+  const encodedTransparent = encodeURIComponent(transparent);
+  const paths = [];
+
+  if (seasonKey && id) {
+    paths.push(`assets/players/${encodeURIComponent(seasonKey)}/${encodedTeamId}/${encodeURIComponent(id)}/${encodedTransparent}`);
+  }
+
+  if (id) {
+    paths.push(`assets/players/${encodedTeamId}/${encodeURIComponent(id)}/${encodedTransparent}`);
+  }
+
+  paths.push(
+    `assets/players/${encodedTeamId}/1/${encodedTransparent}`,
+    `assets/players/${encodedTeamId}/${encodedTransparent}`,
+    `assets/players/${encodedTransparent}`
+  );
+
+  return [...new Set(paths)];
+}
+
+function normalizeBooleanish(value) {
+  const normalizedValue = normalizeLookupName(value);
+
+  return ["1", "true", "yes", "y"].includes(normalizedValue);
+}
+
+function applyFootyNoteRosterOptions(fixture) {
+  if (activeAutocompleteInput) {
+    renderFootyPlayerAutocomplete(activeAutocompleteInput);
+  }
+}
+
+function isFootyPlayerAutocompleteInput(input) {
+  return Boolean(input?.matches?.("[data-footy-note-ga-field=\"scorer\"], [data-footy-note-ga-field=\"assister\"]"));
+}
+
+function getFootyPlayerAutocompleteOptions(input) {
+  if (!isFootyPlayerAutocompleteInput(input)) {
+    return [];
+  }
+
+  const side = input.closest("[data-footy-note-ga-side]")?.getAttribute("data-footy-note-ga-side");
+  const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
+  const teamName = side === "opponent"
+    ? getFootyFixtureOpponentRosterName(fixture)
+    : fixture?.teamName;
+
+  return getFootyRosterPlayersForTeam(teamName).map((player) => ({
+    label: player.name,
+    meta: [player.position, player.number ? `#${player.number}` : ""].filter(Boolean).join(" "),
+    value: player.name,
+  }));
+}
+
+function ensureAutocompleteDropdown(input) {
+  const label = input?.closest?.("label");
+
+  if (!label) {
+    return null;
+  }
+
+  let dropdown = label.querySelector(".autocomplete-dropdown");
+
+  if (!dropdown) {
+    dropdown = document.createElement("div");
+    dropdown.className = "autocomplete-dropdown";
+    input.insertAdjacentElement("afterend", dropdown);
+  }
+
+  return dropdown;
+}
+
+function renderAutocompleteDropdown(input, options = [], emptyMessage = "No matches") {
+  const dropdown = ensureAutocompleteDropdown(input);
+
+  if (!dropdown) {
+    return;
+  }
+
+  const searchValue = normalizeLookupName(input.value);
+  const filteredOptions = options
+    .filter((option) => !searchValue || normalizeLookupName(option.label).includes(searchValue))
+    .slice(0, AUTOCOMPLETE_OPTION_LIMIT);
+
+  if (!filteredOptions.length) {
+    dropdown.innerHTML = `<p class="autocomplete-empty">${escapeHtml(emptyMessage)}</p>`;
+    dropdown.classList.add("is-open");
+    return;
+  }
+
+  dropdown.innerHTML = filteredOptions
+    .map((option) => `
+      <button class="autocomplete-option" type="button" data-autocomplete-value="${escapeHtml(option.value)}">
+        <span>${escapeHtml(option.label)}</span>
+        ${option.meta ? `<small>${escapeHtml(option.meta)}</small>` : ""}
+      </button>
+    `)
+    .join("");
+  dropdown.classList.add("is-open");
+}
+
+function closeAutocompleteDropdown() {
+  document.querySelectorAll(".autocomplete-dropdown.is-open").forEach((dropdown) => {
+    dropdown.classList.remove("is-open");
+    dropdown.innerHTML = "";
+  });
+  activeAutocompleteInput = null;
+}
+
+function selectAutocompleteOption(input, value) {
+  if (!input) {
+    return;
+  }
+
+  input.value = value;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  closeAutocompleteDropdown();
+  input.focus({ preventScroll: true });
+}
+
+function renderFootyPlayerAutocomplete(input) {
+  if (!isFootyPlayerAutocompleteInput(input)) {
+    closeAutocompleteDropdown();
+    return;
+  }
+
+  activeAutocompleteInput = input;
+
+  if (!Array.isArray(siteData.footyRosters)) {
+    renderAutocompleteDropdown(input, [], "Loading roster...");
+    ensureFootyRosters()
+      .then(() => {
+        if (activeAutocompleteInput === input) {
+          renderFootyPlayerAutocomplete(input);
+        }
+      })
+      .catch((error) => {
+        recordDiagnostic("footy rosters failed to load", error);
+        if (activeAutocompleteInput === input) {
+          renderAutocompleteDropdown(input, [], "Unable to load roster");
+        }
+      });
+    return;
+  }
+
+  renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "No roster matches");
+}
+
+function getFootyRosterPlayersForTeam(teamInput) {
+  const roster = getFootyRosterForTeam(teamInput);
+
+  if (!roster) {
+    return [];
+  }
+
+  return [...roster.players].sort(compareFootyRosterPlayers);
+}
+
+function compareFootyRosterPlayers(first, second) {
+  const firstNumber = parseIntegerValue(first.number);
+  const secondNumber = parseIntegerValue(second.number);
+
+  if (firstNumber !== null || secondNumber !== null) {
+    return (firstNumber ?? Number.MAX_SAFE_INTEGER) - (secondNumber ?? Number.MAX_SAFE_INTEGER) ||
+      compareFootyRosterPlayerIds(first, second) ||
+      first.name.localeCompare(second.name, undefined, { sensitivity: "base" });
+  }
+
+  return compareFootyRosterPlayerIds(first, second) ||
+    first.name.localeCompare(second.name, undefined, { sensitivity: "base" });
+}
+
+function compareFootyRosterPlayerIds(first, second) {
+  const firstId = parseIntegerValue(first.id);
+  const secondId = parseIntegerValue(second.id);
+
+  if (firstId !== null || secondId !== null) {
+    return (firstId ?? Number.MAX_SAFE_INTEGER) - (secondId ?? Number.MAX_SAFE_INTEGER);
+  }
+
+  return String(first.id || "").localeCompare(String(second.id || ""), undefined, { numeric: true, sensitivity: "base" });
+}
+
+function parseIntegerValue(value) {
+  const normalizedValue = String(value ?? "").trim().replace(/^#/, "");
+
+  if (!normalizedValue || !/^-?\d+$/.test(normalizedValue)) {
+    return null;
+  }
+
+  return Number.parseInt(normalizedValue, 10);
+}
+
+function getFootyRosterPlayerForTeam(teamInput, playerId) {
+  const normalizedPlayerId = String(playerId || "").trim();
+
+  if (!normalizedPlayerId) {
+    return null;
+  }
+
+  return getFootyRosterPlayersForTeam(teamInput).find((player) => player.id === normalizedPlayerId) || null;
+}
+
+function getFootyRosterForTeam(teamInput) {
+  const teamName = typeof teamInput === "object" && teamInput
+    ? teamInput.name
+    : teamInput;
+  const explicitTeamId = typeof teamInput === "object" && teamInput
+    ? String(teamInput.id || teamInput.teamId || "").trim()
+    : "";
+  const teamId = explicitTeamId || getFootyScheduleTeamIdByName(teamName);
+  const normalizedTeam = normalizeFootyClubName(teamName);
+
+  if (!normalizedTeam && !teamId) {
+    return null;
+  }
+
+  return (siteData.footyRosters || []).find((roster) =>
+    (teamId && String(roster.teamId || "").trim() === teamId) ||
+    (normalizedTeam && normalizeFootyClubName(roster.team) === normalizedTeam)
+  ) || null;
+}
+
+function getFootyScheduleTeamIdByName(teamName) {
+  const normalizedTeam = normalizeFootyClubName(teamName);
+
+  if (!normalizedTeam || !siteData.footySchedule) {
+    return "";
+  }
+
+  const team = getAllFootyScheduleTeams(siteData.footySchedule)
+    .find((scheduleTeam) => normalizeFootyClubName(scheduleTeam.name) === normalizedTeam);
+
+  return String(team?.id || "").trim();
+}
+
+function getFootyFixtureOpponentRosterName(fixture) {
+  if (!fixture) {
+    return "";
+  }
+
+  if (fixture.opponent) {
+    return fixture.opponent;
+  }
+
+  if (isSameFootyTeamName(fixture.teamName, fixture.home)) {
+    return fixture.away;
+  }
+
+  if (isSameFootyTeamName(fixture.teamName, fixture.away)) {
+    return fixture.home;
+  }
+
+  return "";
 }
 
 function mergeFootyMatchNotes(notes = []) {
@@ -2570,7 +3318,7 @@ function renderRankingsPage() {
 }
 
 function ensureRankingsLoaded() {
-  if (siteData.rankings) {
+  if (siteData.rankingsLoaded) {
     return Promise.resolve(siteData.rankings);
   }
 
@@ -2578,52 +3326,55 @@ function ensureRankingsLoaded() {
     return rankingsLoadPromise;
   }
 
-  renderRankingAdminMessage("Loading rankings...");
+  siteData.rankings = {};
+  siteData.rankingErrors = [];
+  siteData.rankingErrorsByKind = {};
+  siteData.rankingLoading = Object.fromEntries(
+    Object.keys(RANKING_CONFIG).map((kind) => [kind, true])
+  );
+  renderRankingLists();
 
-  rankingsLoadPromise = Promise.allSettled(
-    Object.entries(RANKING_CONFIG).map(async ([kind, config]) => {
-      const rows = await loadSheet(config.source);
-      return [kind, normalizeRankingRows(rows)];
+  const supplementalPromise = loadRankingSupplementalData()
+    .catch((error) => {
+      recordDiagnostic("ranking supplemental data failed to load", error);
+      siteData.rankingErrors = [
+        ...(siteData.rankingErrors || []),
+        `Ranking supplemental data: ${error.message}`,
+      ];
+      siteData.rankingElo = [];
+      siteData.rankingExclusions = [];
+      siteData.rankingSeeds = [];
+      siteData.rankingSnapshots = [];
+      siteData.rankingSnapshotItems = [];
     })
-  ).then((results) => {
-    const rankings = {};
-    const errors = [];
+    .then(() => renderRankingLists());
 
-    results.forEach((result, index) => {
-      const kind = Object.keys(RANKING_CONFIG)[index];
-
-      if (result.status === "fulfilled") {
-        const [resultKind, rows] = result.value;
-        rankings[resultKind] = rows;
-      } else {
-        rankings[kind] = [];
-        errors.push(`${RANKING_CONFIG[kind].sheetName}: ${result.reason?.message || result.reason}`);
-      }
-    });
-
-    siteData.rankings = rankings;
-    siteData.rankingErrors = errors;
-
-    return loadRankingSupplementalData()
-      .catch((error) => {
-        recordDiagnostic("ranking supplemental data failed to load", error);
-        siteData.rankingErrors = [
-          ...(siteData.rankingErrors || []),
-          `Ranking supplemental data: ${error.message}`,
-        ];
-        siteData.rankingChoices = [];
-        siteData.rankingElo = [];
-        siteData.rankingSeeds = [];
+  const rankingPromises = Object.entries(RANKING_CONFIG).map(([kind, config]) =>
+    loadSheet(config.source)
+      .then((rows) => {
+        siteData.rankings[kind] = normalizeRankingRows(rows);
       })
-      .then(() => {
-        renderRankingLists();
-        return rankings;
-      });
-  }).catch((error) => {
-    siteData.rankingErrors = [error.message];
-    renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
-    throw error;
-  });
+      .catch((error) => {
+        siteData.rankings[kind] = [];
+        siteData.rankingErrorsByKind[kind] = `${config.sheetName}: ${error.message || error}`;
+      })
+      .finally(() => {
+        siteData.rankingLoading[kind] = false;
+        renderRankingList(kind);
+      })
+  );
+
+  rankingsLoadPromise = Promise.allSettled([...rankingPromises, supplementalPromise])
+    .then(() => {
+      siteData.rankingsLoaded = true;
+      renderRankingLists();
+      return siteData.rankings;
+    })
+    .catch((error) => {
+      siteData.rankingErrors = [error.message];
+      renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
+      throw error;
+    });
 
   return rankingsLoadPromise;
 }
@@ -2633,28 +3384,50 @@ function renderRankingAdminMessage(message) {
     const list = RANKING_CONFIG[kind].list();
 
     if (list) {
-      list.innerHTML = `<p class="table-message">${escapeHtml(message)}</p>`;
+      list.innerHTML = renderLoadingMessage(message);
     }
   });
 }
 
 async function loadRankingSupplementalData() {
   if (!NEXT_DATA_ENDPOINT) {
-    siteData.rankingChoices = [];
     siteData.rankingElo = [];
+    siteData.rankingExclusions = [];
     siteData.rankingSeeds = [];
+    siteData.rankingSnapshots = [];
+    siteData.rankingSnapshotItems = [];
     return;
   }
 
-  const [choicesResponse, eloResponse, seedsResponse] = await Promise.all([
-    loadNextDataEndpoint("listRankingChoices"),
-    loadNextDataEndpoint("listRankingElo"),
-    loadNextDataEndpoint("listRankingSeeds"),
+  const [
+    eloResponse,
+    seedsResponse,
+    snapshotsResponse,
+    exclusionsResponse,
+    choicesResponse,
+  ] = await Promise.all([
+    loadOptionalRankingEndpoint("listRankingElo", { elo: [] }, { managerId: getCurrentManagerId() }),
+    loadOptionalRankingEndpoint("listRankingSeeds", { seeds: [] }),
+    loadOptionalRankingEndpoint("listRankingSnapshots", { snapshotItems: [], snapshots: [] }),
+    loadOptionalRankingEndpoint("listRankingExclusions", { exclusions: [] }),
+    loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
   ]);
 
-  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
   siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
+  siteData.rankingExclusions = normalizeRankingExclusions(exclusionsResponse.exclusions || []);
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
+  siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
+  siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
+  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
+}
+
+async function loadOptionalRankingEndpoint(action, fallback, params = {}) {
+  try {
+    return await loadNextDataEndpoint(action, params);
+  } catch (error) {
+    recordDiagnostic(`${action} failed to load`, error);
+    return fallback;
+  }
 }
 
 function loadNextDataEndpoint(action, params = {}) {
@@ -2747,6 +3520,8 @@ function normalizeRankingEloRows(rows = []) {
 }
 
 function normalizeRankingEloRow(row) {
+  const id = String(getField(row, "ID", "Id", "id") || "").trim();
+  const managerId = String(getField(row, "Manager ID", "Manager", "managerId") || "").trim();
   const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
   const itemId = String(getField(row, "Item ID", "Item", "itemId") || "").trim();
 
@@ -2755,9 +3530,11 @@ function normalizeRankingEloRow(row) {
   }
 
   return {
+    id,
     itemId,
     lastChoiceId: String(getField(row, "Last Choice ID", "lastChoiceId") || "").trim(),
     losses: Number(getField(row, "Losses", "losses") || 0),
+    managerId,
     rating: Number(getField(row, "Rating", "rating") || RANKING_BASE_RATING),
     rankingType,
     updatedAt: String(getField(row, "Updated At", "updatedAt") || "").trim(),
@@ -2791,6 +3568,80 @@ function normalizeRankingSeedRow(row) {
   };
 }
 
+function normalizeRankingExclusions(rows = []) {
+  return rows
+    .map((row) => {
+      const rankingType = String(getField(row, "Ranking Type", "Ranking", "Type", "rankingType") || "").trim();
+      const itemId = String(getField(row, "Item ID", "Item", "itemId") || "").trim();
+      const managerId = String(getField(row, "Manager ID", "Manager", "managerId") || "").trim();
+
+      if (!rankingType || !itemId || !managerId) {
+        return null;
+      }
+
+      return {
+        excluded: isTrueValue(getField(row, "Excluded", "excluded")),
+        id: String(getField(row, "ID", "Id", "id") || "").trim(),
+        itemId,
+        managerId,
+        rankingType,
+        updatedAt: String(getField(row, "Updated At", "updatedAt") || "").trim(),
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeRankingSnapshots(rows = []) {
+  return rows
+    .map((row) => {
+      const id = String(getField(row, "Snapshot ID", "snapshotId", "ID") || "").trim();
+      const rankingType = String(getField(row, "Ranking Type", "Ranking", "rankingType") || "").trim();
+
+      if (!id || !rankingType) {
+        return null;
+      }
+
+      return {
+        createdAt: String(getField(row, "Created At", "createdAt") || "").trim(),
+        id,
+        label: String(getField(row, "Label", "label") || "").trim(),
+        managerId: String(getField(row, "Manager ID", "managerId") || "").trim(),
+        rankingType,
+        reason: String(getField(row, "Reason", "reason") || "").trim(),
+        source: String(getField(row, "Source", "source") || "").trim(),
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeRankingSnapshotItems(rows = []) {
+  return rows
+    .map((row) => {
+      const snapshotId = String(getField(row, "Snapshot ID", "snapshotId") || "").trim();
+      const itemId = String(getField(row, "Item ID", "itemId") || "").trim();
+
+      if (!snapshotId || !itemId) {
+        return null;
+      }
+
+      const rating = Number(getField(row, "Rating", "rating") || RANKING_BASE_RATING);
+      const wins = Number(getField(row, "Wins", "wins") || 0);
+      const losses = Number(getField(row, "Losses", "losses") || 0);
+
+      return {
+        comparisons: Number(getField(row, "Games", "games") || wins + losses || 0),
+        itemId,
+        itemName: String(getField(row, "Item Name", "itemName", "Name") || "").trim(),
+        losses,
+        rank: Number(getField(row, "Rank", "rank") || 0),
+        rating: Number.isFinite(rating) ? rating : RANKING_BASE_RATING,
+        snapshotId,
+        wins,
+      };
+    })
+    .filter(Boolean);
+}
+
 function renderRankingLists() {
   syncRankingControls();
   Object.keys(RANKING_CONFIG).forEach(renderRankingList);
@@ -2806,34 +3657,99 @@ function renderRankingList(kind) {
 
   const rows = getDisplayedRankingRows(kind);
 
-  if (!rows.length) {
-    list.innerHTML = `<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
+  if (siteData.rankingLoading?.[kind]) {
+    list.innerHTML = renderLoadingMessage(`Loading ${config.itemLabel.toLowerCase()} rankings...`);
     return;
   }
 
-  const errorMarkup = kind === activeRankingKind && siteData.rankingErrors?.length
-    ? `<p class="table-message ranking-warning">${siteData.rankingErrors.map(escapeHtml).join("<br>")}</p>`
+  const messages = [
+    ...(siteData.rankingErrorsByKind?.[kind] ? [siteData.rankingErrorsByKind[kind]] : []),
+    ...(kind === activeRankingKind ? siteData.rankingErrors || [] : []),
+  ];
+  const errorMarkup = messages.length
+    ? `<p class="table-message ranking-warning">${messages.map(escapeHtml).join("<br>")}</p>`
     : "";
+
+  if (!rows.length) {
+    list.innerHTML = `${errorMarkup}<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
+    return;
+  }
+
   list.innerHTML = rows.map((item) => renderRankingItem(kind, item)).join("");
   list.insertAdjacentHTML("afterbegin", errorMarkup);
 }
 
+function renderLoadingMessage(message = "Loading...") {
+  return `
+    <p class="table-message loading-message">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span>${escapeHtml(message)}</span>
+    </p>
+  `;
+}
+
 function renderRankingItem(kind, item) {
   const isAdmin = isCurrentManagerAdmin();
-  const isManualView = isAdmin && activeRankingViewMode === "manual";
+  const isSnapshotView = isAdmin && activeRankingSnapshotId !== "current";
+  const isManualView = isAdmin && activeRankingViewMode === "manual" && !isSnapshotView;
   const draggable = isManualView ? ` draggable="true"` : "";
+  const isExcluded = isRankingItemExcluded(kind, item.id);
   const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
+  const movement = renderRankingMovement(kind, item);
+  const exclusionAction = renderRankingExclusionAction(kind, item);
 
   return `
-    <article class="ranking-item" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
+    <article class="ranking-item${isExcluded ? " is-excluded" : ""}" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
       <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
       <span class="ranking-item-main">
         <strong>${escapeHtml(item.name)}</strong>
+        ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
+        ${movement}
         ${meta}
+        ${exclusionAction}
       </span>
       ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
     </article>
   `;
+}
+
+function renderRankingExclusionAction(kind, item) {
+  if (!siteData.managerSession || isCurrentManagerAdmin() && activeRankingSnapshotId !== "current") {
+    return "";
+  }
+
+  const isExcluded = isRankingItemExcluded(kind, item.id);
+  const label = isExcluded ? "Include" : "Exclude";
+
+  return `
+    <span class="ranking-item-actions">
+      <button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
+        ${escapeHtml(label)}
+      </button>
+    </span>
+  `;
+}
+
+function renderRankingMovement(kind, item) {
+  if (!isCurrentManagerAdmin() || !activeRankingCompareSnapshotId) {
+    return "";
+  }
+
+  const compareRank = getRankingCompareRank(kind, item.id);
+
+  if (!compareRank) {
+    return `<small>New since comparison</small>`;
+  }
+
+  const currentRank = Number(item.displayRank || item.rank || 0);
+  const movement = compareRank - currentRank;
+  const label = movement > 0
+    ? `Up ${movement}`
+    : movement < 0
+      ? `Down ${Math.abs(movement)}`
+      : "No change";
+
+  return `<small>${escapeHtml(label)} from ${escapeHtml(getRankingCompareLabel())}</small>`;
 }
 
 function normalizeRankingRows(rows = []) {
@@ -2892,41 +3808,113 @@ function getRankingRows(kind = activeRankingKind) {
 }
 
 function getDisplayedRankingRows(kind = activeRankingKind) {
+  const filterExcludedRows = (rows) => shouldShowRankingExcluded
+    ? rows
+    : rows.filter((item) => !isRankingItemExcluded(kind, item.id));
+
+  if (isCurrentManagerAdmin() && activeRankingSnapshotId !== "current") {
+    return getRankingSnapshotRows(kind, activeRankingSnapshotId);
+  }
+
   if (!isCurrentManagerAdmin()) {
-    return getCurrentManagerRankingChoices(kind).length
-      ? getCurrentManagerCalculatedRankingRows(kind)
-      : getRandomizedRankingRows(kind);
+    return filterExcludedRows(getCalculatedRankingRows(kind));
   }
 
   if (activeRankingViewMode === "calculated") {
-    return getCalculatedRankingRows(kind);
+    return filterExcludedRows(getCalculatedRankingRows(kind));
   }
 
-  return getManualRankingRowsWithElo(kind);
+  return filterExcludedRows(getManualRankingRowsWithElo(kind));
 }
 
-function getCurrentManagerCalculatedRankingRows(kind = activeRankingKind) {
-  const eloMap = getChoiceDerivedRankingEloMap(kind, getCurrentManagerRankingChoices(kind));
+function getRankingSnapshotRows(kind = activeRankingKind, snapshotId = activeRankingSnapshotId) {
+  const snapshotItems = getRankingSnapshotItems(snapshotId);
+  const rowsById = new Map(getRankingRows(kind).map((item) => [String(item.id), item]));
 
-  return getRankingRows(kind)
+  return snapshotItems
     .map((item) => {
-      const elo = eloMap.get(String(item.id)) || getSeededRankingEloForItem(getRankingType(kind), item.id);
-      const seed = getRankingSeedForItem(kind, item.id);
+      const base = rowsById.get(String(item.itemId));
       return {
-        ...item,
-        comparisons: elo.comparisons,
-        losses: elo.losses,
-        rating: elo.rating,
-        seed,
-        wins: elo.wins,
+        ...(base || {
+          id: item.itemId,
+          name: item.itemName || `Item ${item.itemId}`,
+          rank: item.rank,
+        }),
+        calculatedRank: item.rank,
+        comparisons: item.comparisons,
+        displayRank: item.rank,
+        losses: item.losses,
+        rating: item.rating,
+        snapshotRank: item.rank,
+        wins: item.wins,
       };
     })
-    .sort(compareCalculatedRankingRows)
-    .map((item, index) => ({
-      ...item,
-      calculatedRank: index + 1,
-      displayRank: index + 1,
-    }));
+    .sort((first, second) => Number(first.displayRank || 0) - Number(second.displayRank || 0));
+}
+
+function getRankingSnapshotItems(snapshotId) {
+  return (siteData.rankingSnapshotItems || [])
+    .filter((item) => String(item.snapshotId) === String(snapshotId))
+    .sort((first, second) => Number(first.rank || 0) - Number(second.rank || 0));
+}
+
+function getRankingCompareRank(kind, itemId) {
+  if (activeRankingCompareSnapshotId === "current") {
+    const row = getCurrentRankingRowsForCompare(kind).find((entry) => String(entry.id) === String(itemId));
+    return Number(row?.displayRank || row?.rank || 0);
+  }
+
+  const row = getRankingSnapshotRows(kind, activeRankingCompareSnapshotId)
+    .find((entry) => String(entry.id) === String(itemId));
+  return Number(row?.displayRank || row?.rank || 0);
+}
+
+function getCurrentRankingRowsForCompare(kind = activeRankingKind) {
+  return activeRankingViewMode === "calculated"
+    ? getCalculatedRankingRows(kind)
+    : getManualRankingRowsWithElo(kind);
+}
+
+function getRankingCompareLabel() {
+  if (activeRankingCompareSnapshotId === "current") {
+    return "Current";
+  }
+
+  return formatRankingSnapshotOptionLabel(getRankingSnapshotById(activeRankingCompareSnapshotId));
+}
+
+function getRankingSnapshotsForKind(kind = activeRankingKind) {
+  const type = normalizeLookupName(getRankingType(kind));
+  return (siteData.rankingSnapshots || [])
+    .filter((snapshot) => normalizeLookupName(snapshot.rankingType) === type)
+    .sort((first, second) => {
+      const firstTime = Date.parse(first.createdAt || "");
+      const secondTime = Date.parse(second.createdAt || "");
+      return (Number.isFinite(secondTime) ? secondTime : 0) - (Number.isFinite(firstTime) ? firstTime : 0) ||
+        String(second.id).localeCompare(String(first.id), undefined, { numeric: true });
+    });
+}
+
+function getRankingSnapshotById(snapshotId) {
+  return (siteData.rankingSnapshots || []).find((snapshot) => String(snapshot.id) === String(snapshotId)) || null;
+}
+
+function formatRankingSnapshotOptionLabel(snapshot) {
+  if (!snapshot) {
+    return "Snapshot";
+  }
+
+  const date = new Date(snapshot.createdAt || "");
+
+  if (Number.isNaN(date.getTime())) {
+    return snapshot.label || snapshot.createdAt || `Snapshot ${snapshot.id}`;
+  }
+
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function getRandomizedRankingRows(kind = activeRankingKind) {
@@ -2976,70 +3964,17 @@ function getRankingRandomOrder(kind, rows) {
   return new Map(Object.entries(siteData.rankingRandomOrder[kind]));
 }
 
-function getChoiceDerivedRankingEloMap(kind, choices = []) {
-  const type = getRankingType(kind);
-  const eloMap = new Map(
-    getRankingRows(kind).map((item) => [
-      String(item.id),
-      getSeededRankingEloForItem(type, item.id),
-    ])
-  );
-
-  [...choices]
-    .sort(compareRankingChoicesByTime)
-    .forEach((choice) => applyRankingChoiceToEloMap(choice, eloMap));
-
-  return eloMap;
-}
-
-function compareRankingChoicesByTime(first, second) {
-  const firstTime = Date.parse(first.createdAt || "");
-  const secondTime = Date.parse(second.createdAt || "");
-  const normalizedFirst = Number.isFinite(firstTime) ? firstTime : 0;
-  const normalizedSecond = Number.isFinite(secondTime) ? secondTime : 0;
-
-  return normalizedFirst - normalizedSecond ||
-    String(first.id || "").localeCompare(String(second.id || ""), undefined, { numeric: true });
-}
-
-function applyRankingChoiceToEloMap(choice, eloMap) {
-  const winner = eloMap.get(String(choice.winnerId));
-  const loser = eloMap.get(String(choice.loserId));
-
-  if (!winner || !loser) {
-    return;
-  }
-
-  const expectedWinner = getRankingExpectedScore(winner.rating, loser.rating);
-  const expectedLoser = getRankingExpectedScore(loser.rating, winner.rating);
-  const winnerKFactor = getRankingKFactor(winner);
-  const loserKFactor = getRankingKFactor(loser);
-
-  eloMap.set(String(choice.winnerId), {
-    ...winner,
-    lastChoiceId: choice.id,
-    rating: Math.round(winner.rating + winnerKFactor * (1 - expectedWinner)),
-    updatedAt: choice.createdAt,
-    wins: winner.wins + 1,
-  });
-  eloMap.set(String(choice.loserId), {
-    ...loser,
-    lastChoiceId: choice.id,
-    losses: loser.losses + 1,
-    rating: Math.round(loser.rating + loserKFactor * (0 - expectedLoser)),
-    updatedAt: choice.createdAt,
-  });
-}
-
 function getSeededRankingEloForItem(rankingType, itemId) {
   const seed = getRankingSeedForItemByType(rankingType, itemId);
   const rating = Number(seed?.seedRating || RANKING_BASE_RATING);
+  const managerId = getCurrentManagerId();
 
   return {
     comparisons: 0,
     itemId: String(itemId || "").trim(),
     lastChoiceId: "",
     losses: 0,
+    managerId,
     rating: Number.isFinite(rating) ? rating : RANKING_BASE_RATING,
     rankingType,
     updatedAt: "",
@@ -3092,11 +4027,12 @@ function getCalculatedRankingRankMap(kind = activeRankingKind) {
   return new Map(getCalculatedRankingRows(kind).map((item) => [item.id, item.calculatedRank]));
 }
 
-function getRankingEloForItem(kind, itemId) {
+function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
   const type = getRankingType(kind);
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(type) &&
-    String(entry.itemId) === String(itemId)
+    String(entry.itemId) === String(itemId) &&
+    String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItem(kind, itemId);
   const rating = row
@@ -3109,6 +4045,7 @@ function getRankingEloForItem(kind, itemId) {
     comparisons: wins + losses,
     itemId: String(itemId || "").trim(),
     losses,
+    managerId,
     rating,
     rankingType: type,
     wins,
@@ -3194,6 +4131,12 @@ function syncRankingControls() {
     rankingMoreDataToggle.checked = shouldShowRankingMoreData;
   }
 
+  if (rankingShowExcludedToggle) {
+    rankingShowExcludedToggle.checked = shouldShowRankingExcluded;
+  }
+
+  syncRankingSnapshotControls();
+
   rankingViewModeButtons?.forEach((button) => {
     const isActive = button.dataset.rankingViewMode === activeRankingViewMode;
     const container = button.closest(".ranking-mode-toggle");
@@ -3205,6 +4148,47 @@ function syncRankingControls() {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+}
+
+function syncRankingSnapshotControls() {
+  const isAdmin = isCurrentManagerAdmin();
+  const snapshots = getRankingSnapshotsForKind(activeRankingKind);
+  const snapshotOptions = [
+    `<option value="current">Current</option>`,
+    ...snapshots.map((snapshot) =>
+      `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`
+    ),
+  ];
+  const compareOptions = [
+    `<option value="">None</option>`,
+    `<option value="current">Current</option>`,
+    ...snapshots.map((snapshot) =>
+      `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`
+    ),
+  ];
+
+  if (rankingSnapshotSelect) {
+    rankingSnapshotSelect.closest("[data-admin-only]")?.toggleAttribute("hidden", !isAdmin);
+    rankingSnapshotSelect.innerHTML = snapshotOptions.join("");
+    if (!["current", ...snapshots.map((snapshot) => String(snapshot.id))].includes(String(activeRankingSnapshotId))) {
+      activeRankingSnapshotId = "current";
+    }
+    rankingSnapshotSelect.value = activeRankingSnapshotId;
+  }
+
+  if (rankingCompareSelect) {
+    rankingCompareSelect.closest("[data-admin-only]")?.toggleAttribute("hidden", !isAdmin);
+    rankingCompareSelect.innerHTML = compareOptions.join("");
+    if (!["", "current", ...snapshots.map((snapshot) => String(snapshot.id))].includes(String(activeRankingCompareSnapshotId))) {
+      activeRankingCompareSnapshotId = "";
+    }
+    rankingCompareSelect.value = activeRankingCompareSnapshotId;
+  }
+
+  if (rankingNormalizeButton) {
+    rankingNormalizeButton.hidden = !isAdmin;
+    rankingNormalizeButton.disabled = activeRankingSnapshotId !== "current";
+  }
 }
 
 function syncRankingTabs() {
@@ -3263,6 +4247,10 @@ function openRankingItemDialog(kind = activeRankingKind) {
     rankingItemRank.value = String(rows.length + 1);
   }
 
+  if (rankingItemNormalize) {
+    rankingItemNormalize.checked = true;
+  }
+
   setRankingItemStatus("");
 
   if (typeof rankingItemDialog.showModal === "function") {
@@ -3286,6 +4274,138 @@ function closeRankingItemDialog() {
   }
 }
 
+function openRankingNormalizeDialog() {
+  if (!isCurrentManagerAdmin() || !rankingNormalizeDialog) {
+    return;
+  }
+
+  if (rankingNormalizeReason) {
+    rankingNormalizeReason.value = "Normalized calculated rankings";
+  }
+
+  setRankingNormalizeStatus("");
+
+  if (typeof rankingNormalizeDialog.showModal === "function") {
+    rankingNormalizeDialog.showModal();
+  } else {
+    rankingNormalizeDialog.setAttribute("open", "");
+  }
+}
+
+function closeRankingNormalizeDialog() {
+  if (!rankingNormalizeDialog) {
+    return;
+  }
+
+  if (typeof rankingNormalizeDialog.close === "function") {
+    rankingNormalizeDialog.close();
+  } else {
+    rankingNormalizeDialog.removeAttribute("open");
+  }
+}
+
+function normalizeActiveRanking() {
+  if (!isCurrentManagerAdmin()) {
+    return;
+  }
+
+  const kind = activeRankingKind;
+  const rows = getCalculatedRankingRows(kind);
+
+  if (!rows.length) {
+    setRankingNormalizeStatus("There are no rankings to normalize.", true);
+    return;
+  }
+
+  const createdAt = new Date().toISOString();
+  const items = rows.map((item, index) => ({
+    comparisons: Number(item.comparisons || 0),
+    id: item.id,
+    itemId: item.id,
+    itemName: item.name,
+    losses: Number(item.losses || 0),
+    normalizedRating: calculateNormalizedRating(index + 1, rows.length),
+    rank: index + 1,
+    rating: Math.round(item.rating || RANKING_BASE_RATING),
+    wins: Number(item.wins || 0),
+  }));
+  const snapshot = {
+    createdAt,
+    id: createRankingSnapshotId(),
+    label: formatRankingSnapshotOptionLabel({ createdAt }),
+    managerId: getCurrentManagerId(),
+    rankingType: getRankingType(kind),
+    reason: String(rankingNormalizeReason?.value || "Normalized calculated rankings").trim(),
+    source: "calculated",
+  };
+
+  setRankingNormalizeStatus("Saving snapshot and normalizing...");
+  siteData.rankingSnapshots = [snapshot, ...(siteData.rankingSnapshots || [])];
+  siteData.rankingSnapshotItems = [
+    ...(siteData.rankingSnapshotItems || []),
+    ...items.map((item) => ({
+      comparisons: item.comparisons,
+      itemId: item.id,
+      itemName: item.itemName,
+      losses: item.losses,
+      rank: item.rank,
+      rating: item.rating,
+      snapshotId: snapshot.id,
+      wins: item.wins,
+    })),
+  ];
+  siteData.rankingElo = [
+    ...(siteData.rankingElo || [])
+      .filter((row) =>
+        normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType) ||
+        String(row.managerId || "") !== String(snapshot.managerId || "")
+      ),
+    ...items.map((item) => ({
+      itemId: item.id,
+      lastChoiceId: "",
+      losses: 0,
+      managerId: snapshot.managerId,
+      rating: item.normalizedRating,
+      rankingType: snapshot.rankingType,
+      updatedAt: createdAt,
+      wins: 0,
+    })),
+  ];
+
+  submitRankingPayload({
+    action: "normalizeRanking",
+    normalization: {
+      createdAt,
+      items,
+      label: snapshot.label,
+      managerId: snapshot.managerId,
+      rankingType: snapshot.rankingType,
+      reason: snapshot.reason,
+      snapshotId: snapshot.id,
+      source: snapshot.source,
+    },
+  });
+  activeRankingSnapshotId = "current";
+  activeRankingCompareSnapshotId = snapshot.id;
+  renderRankingLists();
+  closeRankingNormalizeDialog();
+}
+
+function calculateNormalizedRating(rank, total) {
+  const midpoint = (Number(total || 0) + 1) / 2;
+  const step = 8;
+  return Math.round(RANKING_BASE_RATING + ((midpoint - Number(rank || 0)) * step));
+}
+
+function createRankingSnapshotId() {
+  const nextId = (siteData.rankingSnapshots || [])
+    .map((snapshot) => Number(String(snapshot.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
+}
+
 function saveRankingItemFromForm() {
   const kind = String(rankingItemKind?.value || activeRankingKind).trim();
   const config = RANKING_CONFIG[kind];
@@ -3304,6 +4424,10 @@ function saveRankingItemFromForm() {
 
   const rows = getRankingRows(kind);
   const rank = clampRankingRank(rankingItemRank?.value, rows.length + 1);
+  const shouldNormalizeAfterAdd = Boolean(rankingItemNormalize?.checked);
+  const preInsertSnapshotItems = shouldNormalizeAfterAdd
+    ? createRankingSnapshotItemsFromRows(getCalculatedRankingRows(kind))
+    : [];
   const item = {
     id: createRankingItemId(kind),
     name,
@@ -3311,19 +4435,31 @@ function saveRankingItemFromForm() {
     rank,
   };
   const seed = createRankingSeedForNewItem(kind, item.id, rank);
+  const createdAt = new Date().toISOString();
+  const snapshot = shouldNormalizeAfterAdd
+    ? createRankingSnapshotForKind(kind, createdAt, "Before adding ranking item", "pre-add calculated")
+    : null;
+  const normalizedItems = shouldNormalizeAfterAdd
+    ? createNormalizedRankingItemsAfterAdd(kind, item, rank)
+    : [];
 
   siteData.rankings = siteData.rankings || {};
   siteData.rankings[kind] = insertRankingItem(rows, item, rank);
   upsertRankingSeed(seed);
-  upsertRankingEloRow({
-    itemId: item.id,
-    lastChoiceId: "",
-    losses: 0,
-    rating: seed.seedRating,
-    rankingType: seed.rankingType,
-    updatedAt: seed.seededAt,
-    wins: 0,
-  });
+  if (shouldNormalizeAfterAdd) {
+    applyRankingNormalizationLocally(kind, snapshot, preInsertSnapshotItems, normalizedItems, createdAt);
+  } else {
+    upsertRankingEloRow({
+      itemId: item.id,
+      lastChoiceId: "",
+      losses: 0,
+      managerId: getCurrentManagerId(),
+      rating: seed.seedRating,
+      rankingType: seed.rankingType,
+      updatedAt: seed.seededAt,
+      wins: 0,
+    });
+  }
   renderRankingList(kind);
   submitRankingPayload({
     action: "saveRankingItem",
@@ -3332,6 +4468,17 @@ function saveRankingItemFromForm() {
       Rank: item.rank,
       Name: item.name,
     },
+    normalization: shouldNormalizeAfterAdd ? {
+      createdAt,
+      items: normalizedItems,
+      label: snapshot.label,
+      managerId: snapshot.managerId,
+      rankingType: snapshot.rankingType,
+      reason: snapshot.reason,
+      snapshotId: snapshot.id,
+      snapshotItems: preInsertSnapshotItems,
+      source: snapshot.source,
+    } : null,
     ranking: kind,
     seed,
     sheetName: config.sheetName,
@@ -3450,12 +4597,13 @@ function getRankingItemElement(kind, itemId) {
     ) || null;
 }
 
-function openRankingBattleDialog(kind = activeRankingKind) {
+async function openRankingBattleDialog(kind = activeRankingKind) {
   if (!rankingBattleDialog || !RANKING_CONFIG[kind]) {
     return;
   }
 
   activeRankingBattle = null;
+  await ensureRankingAssetManifest();
   renderNextRankingBattle(kind);
 
   if (typeof rankingBattleDialog.showModal === "function") {
@@ -3501,86 +4649,397 @@ function renderNextRankingBattle(kind = activeRankingKind) {
   }
 
   rankingBattleOptions.innerHTML = [pair.itemA, pair.itemB].map((item) => `
-    <button class="ranking-battle-option" type="button" data-ranking-battle-choice="${escapeHtml(item.id)}">
+    <article class="ranking-battle-option">
+      ${renderRankingBattleImage(kind, item)}
       <strong>${escapeHtml(item.name)}</strong>
-    </button>
+      ${renderRankingBattleExclusionAction(kind, item)}
+    </article>
   `).join("");
 }
 
+function renderRankingBattleExclusionAction(kind, item) {
+  if (!siteData.managerSession) {
+    return "";
+  }
+
+  return `
+    <span class="ranking-battle-actions">
+      <button class="ranking-inline-action" type="button" data-ranking-battle-exclude="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
+        Exclude
+      </button>
+      <button class="action-button ranking-battle-pick-button" type="button" data-ranking-battle-pick="${escapeHtml(item.id)}">
+        Pick
+      </button>
+    </span>
+  `;
+}
+
+function renderRankingBattleImage(kind, item) {
+  const imagePath = getRandomRankingAssetPath(kind, item?.id);
+  const imageMarkup = imagePath
+    ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
+    : "";
+
+  return `
+    <span class="ranking-battle-image-frame${imagePath ? "" : " is-empty"}" aria-hidden="true">
+      ${imageMarkup}
+    </span>
+  `;
+}
+
+async function ensureRankingAssetManifest() {
+  if (siteData.rankingAssets) {
+    return siteData.rankingAssets;
+  }
+
+  if (!rankingAssetManifestPromise) {
+    rankingAssetManifestPromise = loadJson("data/ranking-assets.json")
+      .then((manifest) => {
+        siteData.rankingAssets = manifest && typeof manifest === "object" ? manifest : {};
+        return siteData.rankingAssets;
+      })
+      .catch(() => {
+        siteData.rankingAssets = {};
+        return siteData.rankingAssets;
+      });
+  }
+
+  return rankingAssetManifestPromise;
+}
+
+function getRandomRankingAssetPath(kind, itemId) {
+  const images = siteData.rankingAssets?.[kind]?.[String(itemId || "")];
+
+  if (!Array.isArray(images) || images.length === 0) {
+    return "";
+  }
+
+  return images[Math.floor(Math.random() * images.length)];
+}
+
 function createRankingBattlePair(kind = activeRankingKind) {
-  const rows = isCurrentManagerAdmin()
+  const rows = (isCurrentManagerAdmin()
     ? getManualRankingRowsWithElo(kind)
-    : getDisplayedRankingRows(kind);
+    : getDisplayedRankingRows(kind))
+    .filter((item) => !isRankingItemExcluded(kind, item.id));
 
   if (rows.length < 2) {
     return null;
   }
 
   const comparisonCounts = getRankingComparisonCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
-  const sortedRows = [...rows].sort((first, second) => {
-    const firstCount = comparisonCounts.get(first.id) || 0;
-    const secondCount = comparisonCounts.get(second.id) || 0;
-
-    return firstCount - secondCount || Math.random() - 0.5;
-  });
-  const itemA = sortedRows[0];
-  const itemB = sortedRows
-    .slice(1)
-    .sort((first, second) => {
-      const firstDistance = Math.abs(Number(first.rating || RANKING_BASE_RATING) - Number(itemA.rating || RANKING_BASE_RATING));
-      const secondDistance = Math.abs(Number(second.rating || RANKING_BASE_RATING) - Number(itemA.rating || RANKING_BASE_RATING));
-      return firstDistance - secondDistance || Math.random() - 0.5;
-    })[0];
+  const pairCounts = getRankingPairCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
+  const pairCandidates = createRankingPairCandidates(rows, comparisonCounts, pairCounts);
+  const strategy = Math.random();
+  const [itemA, itemB] = strategy < 0.5
+    ? chooseExploratoryRankingPair(pairCandidates)
+    : strategy < 0.8
+      ? chooseNearbyRankingPair(pairCandidates)
+      : chooseRandomRankingPair(pairCandidates);
 
   if (!itemA || !itemB) {
     return null;
   }
 
+  const [displayItemA, displayItemB] = Math.random() < 0.5
+    ? [itemA, itemB]
+    : [itemB, itemA];
+
   return {
-    itemA,
-    itemB,
+    itemA: displayItemA,
+    itemB: displayItemB,
     kind,
     rankingType: getRankingType(kind),
   };
 }
 
 function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
+  const managerId = String(options.managerId || getCurrentManagerId()).trim();
+  return new Map(
+    getRankingRows(kind).map((item) => {
+      const elo = getRankingEloForItem(kind, item.id, managerId);
+      return [String(item.id), Number(elo.comparisons || 0)];
+    })
+  );
+}
+
+function createRankingSnapshotForKind(kind, createdAt, reason, source) {
+  return {
+    createdAt,
+    id: createRankingSnapshotId(),
+    label: formatRankingSnapshotOptionLabel({ createdAt }),
+    managerId: getCurrentManagerId(),
+    rankingType: getRankingType(kind),
+    reason,
+    source,
+  };
+}
+
+function createRankingSnapshotItemsFromRows(rows = []) {
+  return rows.map((item, index) => ({
+    comparisons: Number(item.comparisons || 0),
+    id: item.id,
+    itemId: item.id,
+    itemName: item.name,
+    losses: Number(item.losses || 0),
+    rank: Number(item.displayRank || item.rank || index + 1),
+    rating: Math.round(item.rating || RANKING_BASE_RATING),
+    wins: Number(item.wins || 0),
+  }));
+}
+
+function createNormalizedRankingItemsAfterAdd(kind, item, rank) {
+  const calculatedRows = getCalculatedRankingRows(kind)
+    .filter((row) => String(row.id) !== String(item.id));
+  const insertedRows = [...calculatedRows];
+  insertedRows.splice(clampRankingRank(rank, insertedRows.length + 1) - 1, 0, {
+    ...item,
+    comparisons: 0,
+    losses: 0,
+    rating: calculateSeedRatingForRank(kind, rank),
+    wins: 0,
+  });
+
+  return insertedRows.map((row, index) => ({
+    comparisons: Number(row.comparisons || 0),
+    id: row.id,
+    itemId: row.id,
+    itemName: row.name,
+    losses: Number(row.losses || 0),
+    normalizedRating: calculateNormalizedRating(index + 1, insertedRows.length),
+    rank: index + 1,
+    rating: Math.round(row.rating || RANKING_BASE_RATING),
+    wins: Number(row.wins || 0),
+  }));
+}
+
+function applyRankingNormalizationLocally(kind, snapshot, snapshotItems, normalizedItems, createdAt) {
+  if (!snapshot) {
+    return;
+  }
+
+  siteData.rankingSnapshots = [snapshot, ...(siteData.rankingSnapshots || [])];
+  siteData.rankingSnapshotItems = [
+    ...(siteData.rankingSnapshotItems || []),
+    ...snapshotItems.map((item) => ({
+      comparisons: item.comparisons,
+      itemId: item.itemId,
+      itemName: item.itemName,
+      losses: item.losses,
+      rank: item.rank,
+      rating: item.rating,
+      snapshotId: snapshot.id,
+      wins: item.wins,
+    })),
+  ];
+  siteData.rankingElo = [
+    ...(siteData.rankingElo || [])
+      .filter((row) =>
+        normalizeLookupName(row.rankingType) !== normalizeLookupName(snapshot.rankingType) ||
+        String(row.managerId || "") !== String(snapshot.managerId || "")
+      ),
+    ...normalizedItems.map((item) => ({
+      itemId: item.itemId,
+      lastChoiceId: "",
+      losses: 0,
+      managerId: snapshot.managerId,
+      rating: item.normalizedRating,
+      rankingType: getRankingType(kind),
+      updatedAt: createdAt,
+      wins: 0,
+    })),
+  ];
+  activeRankingSnapshotId = "current";
+  activeRankingCompareSnapshotId = snapshot.id;
+}
+
+function getRankingPairCounts(kind = activeRankingKind, options = {}) {
+  const rankingType = normalizeLookupName(getRankingType(kind));
+  const managerId = String(options.managerId || getCurrentManagerId()).trim();
   const counts = new Map();
 
-  getRankingChoicesForKind(kind, options).forEach((choice) => {
-    [choice.itemAId, choice.itemBId, choice.winnerId, choice.loserId].forEach((id) => {
-      if (id) {
-        counts.set(id, (counts.get(id) || 0) + 1);
-      }
-    });
+  (siteData.rankingChoices || []).forEach((choice) => {
+    if (normalizeLookupName(choice.rankingType) !== rankingType) {
+      return;
+    }
+
+    if (managerId && String(choice.managerId || "") !== managerId) {
+      return;
+    }
+
+    const pairKey = getRankingPairKey(choice.itemAId || choice.winnerId, choice.itemBId || choice.loserId);
+
+    if (!pairKey) {
+      return;
+    }
+
+    counts.set(pairKey, (counts.get(pairKey) || 0) + 1);
   });
 
   return counts;
 }
 
-function getRankingChoicesForKind(kind = activeRankingKind, options = {}) {
-  const type = normalizeLookupName(getRankingType(kind));
-  const managerId = getCurrentManagerId();
+function createRankingPairCandidates(rows, comparisonCounts, pairCounts) {
+  const candidates = [];
 
-  return (siteData.rankingChoices || []).filter((choice) => {
-    if (normalizeLookupName(choice.rankingType) !== type) {
-      return false;
-    }
+  rows.forEach((first, firstIndex) => {
+    rows.slice(firstIndex + 1).forEach((second) => {
+      const firstCount = comparisonCounts.get(first.id) || 0;
+      const secondCount = comparisonCounts.get(second.id) || 0;
+      const pairCount = pairCounts.get(getRankingPairKey(first.id, second.id)) || 0;
+      const ratingDistance = Math.abs(Number(first.rating || RANKING_BASE_RATING) - Number(second.rating || RANKING_BASE_RATING));
 
-    if (!options.managerScoped) {
-      return true;
-    }
-
-    return managerId && String(choice.managerId || "").trim() === managerId;
+      candidates.push({
+        first,
+        firstCount,
+        pairCount,
+        ratingDistance,
+        second,
+        secondCount,
+      });
+    });
   });
+
+  return candidates;
 }
 
-function getCurrentManagerRankingChoices(kind = activeRankingKind) {
-  return getRankingChoicesForKind(kind, { managerScoped: true });
+function chooseExploratoryRankingPair(candidates) {
+  return chooseRankingPairByScore(candidates, (candidate) =>
+    (candidate.pairCount * 35) +
+    ((candidate.firstCount + candidate.secondCount) * 12) +
+    (Math.min(candidate.firstCount, candidate.secondCount) * 18) +
+    (Math.random() * 30)
+  );
+}
+
+function chooseNearbyRankingPair(candidates) {
+  return chooseRankingPairByScore(candidates, (candidate) =>
+    (candidate.pairCount * 28) +
+    (candidate.ratingDistance / 12) +
+    ((candidate.firstCount + candidate.secondCount) * 4) +
+    (Math.random() * 18)
+  );
+}
+
+function chooseRandomRankingPair(candidates) {
+  const candidate = candidates[Math.floor(Math.random() * candidates.length)];
+  return [candidate?.first, candidate?.second];
+}
+
+function chooseRankingPairByScore(candidates, getScore) {
+  const candidate = candidates
+    .map((entry) => ({ entry, score: getScore(entry) }))
+    .sort((first, second) => first.score - second.score)[0]?.entry;
+
+  return [candidate?.first, candidate?.second];
+}
+
+function getRankingPairKey(firstId, secondId) {
+  const ids = [String(firstId || "").trim(), String(secondId || "").trim()].filter(Boolean).sort();
+  return ids.length === 2 ? ids.join("::") : "";
 }
 
 function getCurrentManagerId() {
   return String(siteData.managerSession?.managerId || "").trim();
+}
+
+function getRankingExclusion(kind, itemId, managerId = getCurrentManagerId()) {
+  const rankingType = normalizeLookupName(getRankingType(kind));
+
+  return (siteData.rankingExclusions || []).find((entry) =>
+    normalizeLookupName(entry.rankingType) === rankingType &&
+    String(entry.itemId) === String(itemId) &&
+    String(entry.managerId) === String(managerId)
+  ) || null;
+}
+
+function isRankingItemExcluded(kind, itemId, managerId = getCurrentManagerId()) {
+  return Boolean(getRankingExclusion(kind, itemId, managerId)?.excluded);
+}
+
+async function setRankingItemExcluded(kind, itemId, excluded) {
+  const managerId = getCurrentManagerId();
+  const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
+
+  if (!managerId || !item) {
+    return;
+  }
+
+  const rankingType = getRankingType(kind);
+  const updatedAt = new Date().toISOString();
+  const existing = getRankingExclusion(kind, itemId, managerId);
+  const exclusion = {
+    excluded: Boolean(excluded),
+    id: existing?.id || `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    itemId: item.id,
+    managerId,
+    rankingType,
+    updatedAt,
+  };
+
+  siteData.rankingExclusions = [
+    ...(siteData.rankingExclusions || []).filter((entry) =>
+      !(normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+        String(entry.itemId) === String(item.id) &&
+        String(entry.managerId) === String(managerId))
+    ),
+    exclusion,
+  ];
+
+  renderRankingLists();
+  setRankingItemStatus(`${item.name} ${excluded ? "excluded" : "included"}. Saving...`);
+
+  try {
+    const response = await loadNextDataEndpoint("saveRankingExclusion", {
+      excluded: exclusion.excluded ? "TRUE" : "FALSE",
+      itemId: exclusion.itemId,
+      managerId: exclusion.managerId,
+      rankingType: exclusion.rankingType,
+      updatedAt: exclusion.updatedAt,
+      ...(existing?.id ? { id: existing.id } : {}),
+    });
+    const saved = normalizeRankingExclusions(response.exclusion ? [response.exclusion] : [])[0];
+
+    if (saved) {
+      siteData.rankingExclusions = [
+        ...(siteData.rankingExclusions || []).filter((entry) =>
+          !(normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+            String(entry.itemId) === String(item.id) &&
+            String(entry.managerId) === String(managerId))
+        ),
+        saved,
+      ];
+    }
+
+    setRankingItemStatus(`${item.name} ${excluded ? "excluded" : "included"}.`);
+  } catch (error) {
+    siteData.rankingExclusions = (siteData.rankingExclusions || []).filter((entry) =>
+      !(normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
+        String(entry.itemId) === String(item.id) &&
+        String(entry.managerId) === String(managerId))
+    );
+    if (existing) {
+      siteData.rankingExclusions = [...siteData.rankingExclusions, existing];
+    }
+    recordDiagnostic("ranking exclusion failed to save", error);
+    setRankingItemStatus(`Unable to save ${item.name}: ${error.message}`, true);
+  }
+
+  renderRankingLists();
+
+  if (activeRankingBattle?.kind === kind && activeRankingBattle && [activeRankingBattle.itemA, activeRankingBattle.itemB].some((battleItem) => String(battleItem.id) === String(itemId))) {
+    setRankingBattleStatus(`${item.name} ${excluded ? "excluded" : "included"}.`);
+    renderNextRankingBattle(kind);
+  }
+}
+
+function createRankingExclusionId() {
+  const nextId = (siteData.rankingExclusions || [])
+    .map((entry) => Number(String(entry.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
 }
 
 function chooseRankingBattleWinner(winnerId) {
@@ -3608,10 +5067,7 @@ function chooseRankingBattleWinner(winnerId) {
     winnerId: winner.id,
   };
 
-  siteData.rankingChoices = [...(siteData.rankingChoices || []), choice];
-  if (isCurrentManagerAdmin()) {
-    applyRankingChoiceToElo(choice);
-  }
+  applyRankingChoiceToElo(choice);
   submitRankingPayload({
     action: "saveRankingChoice",
     choice,
@@ -3622,12 +5078,7 @@ function chooseRankingBattleWinner(winnerId) {
 }
 
 function createRankingChoiceId() {
-  const nextId = (siteData.rankingChoices || [])
-    .map((choice) => Number(String(choice.id || "").trim()))
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
-
-  return String(nextId);
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function applyRankingChoiceToElo(choice) {
@@ -3656,10 +5107,11 @@ function applyRankingChoiceToElo(choice) {
   upsertRankingEloRow(nextLoser);
 }
 
-function getRankingEloForItemByType(rankingType, itemId) {
+function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentManagerId()) {
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
-    String(entry.itemId) === String(itemId)
+    String(entry.itemId) === String(itemId) &&
+    String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItemByType(rankingType, itemId);
   const rating = row
@@ -3670,9 +5122,11 @@ function getRankingEloForItemByType(rankingType, itemId) {
 
   return {
     comparisons: wins + losses,
+    id: row?.id || "",
     itemId: String(itemId || "").trim(),
     lastChoiceId: row?.lastChoiceId || "",
     losses,
+    managerId,
     rating,
     rankingType,
     updatedAt: row?.updatedAt || "",
@@ -3684,7 +5138,8 @@ function upsertRankingEloRow(row) {
   const rows = siteData.rankingElo || [];
   const index = rows.findIndex((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(row.rankingType) &&
-    String(entry.itemId) === String(row.itemId)
+    String(entry.itemId) === String(row.itemId) &&
+    String(entry.managerId || "") === String(row.managerId || "")
   );
 
   if (index >= 0) {
@@ -3800,6 +5255,15 @@ function setRankingItemStatus(message, isError = false) {
 
   rankingItemStatus.textContent = message;
   rankingItemStatus.classList.toggle("is-error", isError);
+}
+
+function setRankingNormalizeStatus(message, isError = false) {
+  if (!rankingNormalizeStatus) {
+    return;
+  }
+
+  rankingNormalizeStatus.textContent = message;
+  rankingNormalizeStatus.classList.toggle("is-error", isError);
 }
 
 function renderFantasyCriticPage(year = getActiveFantasyCriticYear()) {
@@ -4474,6 +5938,7 @@ function renderPageContext(pageName = "") {
 
   renderActivePageContent(pageName);
   renderStandingsAwards();
+  syncFollowedTeamShortcutsVisibility(pageName);
 
   const formulaOneYear = getFormulaOneYearFromPage(pageName);
 
@@ -4489,6 +5954,11 @@ function shouldRenderPageSection(pageName) {
 function renderActivePageContent(pageName = "") {
   if (pageName === "footy" && siteData.footySchedule) {
     renderFootySchedule(siteData.footySchedule);
+    return;
+  }
+
+  if (pageName.startsWith("footy-team-")) {
+    renderFootyTeamPage(pageName);
     return;
   }
 
@@ -5626,6 +7096,24 @@ pageLinks.forEach((link) => {
   });
 });
 
+followedTeamShortcuts?.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-page-link]");
+
+  if (!link) {
+    return;
+  }
+
+  event.preventDefault();
+  const pageName = link.dataset.pageLink;
+  const nextHash = `#${pageName}`;
+
+  if (window.location.hash !== nextHash) {
+    history.pushState(null, "", nextHash);
+  }
+
+  showPage(pageName, { scrollToTop: true });
+});
+
 workflowList?.addEventListener("click", (event) => {
   const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
 
@@ -5658,6 +7146,32 @@ document.addEventListener("click", (event) => {
   event.stopPropagation();
   awardButton.setAttribute("aria-expanded", String(awardButton.getAttribute("aria-expanded") !== "true"));
 });
+
+document.addEventListener("error", (event) => {
+  const image = event.target;
+
+  if (!(image instanceof HTMLImageElement) || !image.dataset.fallbackSrcs) {
+    return;
+  }
+
+  let fallbacks = [];
+
+  try {
+    fallbacks = JSON.parse(image.dataset.fallbackSrcs);
+  } catch {
+    fallbacks = [];
+  }
+
+  const [nextSource, ...remainingSources] = Array.isArray(fallbacks) ? fallbacks : [];
+
+  if (!nextSource) {
+    image.removeAttribute("data-fallback-srcs");
+    return;
+  }
+
+  image.dataset.fallbackSrcs = JSON.stringify(remainingSources);
+  image.src = nextSource;
+}, true);
 
 copyCurrentPageLinkButton?.addEventListener("click", () => {
   copyCurrentPageUrl();
@@ -5719,7 +7233,7 @@ document.addEventListener("click", (event) => {
   closeProfileDropdown();
 });
 
-footyScheduleList?.addEventListener("click", (event) => {
+function handleFootyFixtureListClick(event) {
   const editButton = event.target.closest("[data-footy-note-edit]");
 
   if (editButton) {
@@ -5738,9 +7252,9 @@ footyScheduleList?.addEventListener("click", (event) => {
   }
 
   toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
-});
+}
 
-footyScheduleList?.addEventListener("keydown", (event) => {
+function handleFootyFixtureListKeydown(event) {
   if (event.key !== "Enter" && event.key !== " ") {
     return;
   }
@@ -5753,6 +7267,42 @@ footyScheduleList?.addEventListener("keydown", (event) => {
 
   event.preventDefault();
   toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+}
+
+[footyScheduleList, footyTeamContent].forEach((container) => {
+  container?.addEventListener("click", handleFootyFixtureListClick);
+  container?.addEventListener("keydown", handleFootyFixtureListKeydown);
+});
+
+footyTeamContent?.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-footy-player-id]");
+
+  if (!card) {
+    return;
+  }
+
+  const team = getActiveFootyTeam();
+  const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
+
+  openFootyTradingCard(player, team);
+});
+
+footyTeamContent?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-footy-player-id]");
+
+  if (!card || event.target !== card) {
+    return;
+  }
+
+  event.preventDefault();
+  const team = getActiveFootyTeam();
+  const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
+
+  openFootyTradingCard(player, team);
 });
 
 leagueYearSelect?.addEventListener("change", () => {
@@ -5807,7 +7357,31 @@ footyNoteForm?.addEventListener("submit", (event) => {
   saveFootyMatchNoteFromDialog();
 });
 
+footyNoteForm?.addEventListener("pointerdown", (event) => {
+  const optionButton = event.target.closest("[data-autocomplete-value]");
+
+  if (!optionButton) {
+    if (!isFootyPlayerAutocompleteInput(event.target) && !event.target.closest(".autocomplete-dropdown")) {
+      closeAutocompleteDropdown();
+    }
+
+    return;
+  }
+
+  event.preventDefault();
+  selectAutocompleteOption(
+    activeAutocompleteInput,
+    optionButton.getAttribute("data-autocomplete-value") || "",
+  );
+});
+
 footyNoteForm?.addEventListener("click", (event) => {
+  const optionButton = event.target.closest("[data-autocomplete-value]");
+
+  if (optionButton) {
+    return;
+  }
+
   const saveButton = event.target.closest("[data-footy-note-ga-save]");
 
   if (saveButton) {
@@ -5825,6 +7399,39 @@ footyNoteForm?.addEventListener("click", (event) => {
   }
 });
 
+footyNoteForm?.addEventListener("focusin", (event) => {
+  if (!isFootyPlayerAutocompleteInput(event.target)) {
+    closeAutocompleteDropdown();
+    return;
+  }
+
+  activeAutocompleteInput = event.target;
+  renderFootyPlayerAutocomplete(event.target);
+
+  ensureFootyRosters()
+    .then(() => {
+      if (activeAutocompleteInput === event.target) {
+        renderFootyPlayerAutocomplete(event.target);
+      }
+    })
+    .catch((error) => {
+      recordDiagnostic("footy rosters failed to load", error);
+      console.warn("Box This Lap footy rosters failed to load", error);
+    });
+});
+
+footyNoteForm?.addEventListener("input", (event) => {
+  if (isFootyPlayerAutocompleteInput(event.target)) {
+    renderFootyPlayerAutocomplete(event.target);
+  }
+});
+
+footyNoteForm?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeAutocompleteDropdown();
+  }
+});
+
 [footyNoteClose, footyNoteCancel].forEach((button) => {
   button?.addEventListener("click", () => closeFootyNoteDialog());
 });
@@ -5832,6 +7439,32 @@ footyNoteForm?.addEventListener("click", (event) => {
 footyFilterToggle?.addEventListener("click", () => {
   shouldShowFootyFilters = !shouldShowFootyFilters;
   renderFootySchedule(siteData.footySchedule);
+});
+
+footyTeamPlayerToggle?.addEventListener("click", () => {
+  activeFootyTeamViewMode = activeFootyTeamViewMode === "team" ? "schedule" : "team";
+  renderFootyTeamPage();
+});
+
+footyTeamViewModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.footyTeamViewMode;
+
+    if (!["schedule", "team"].includes(mode) || mode === activeFootyTeamViewMode) {
+      return;
+    }
+
+    activeFootyTeamViewMode = mode;
+    renderFootyTeamPage();
+  });
+});
+
+footyTradingCardClose?.addEventListener("click", closeFootyTradingCard);
+
+footyTradingCardDialog?.addEventListener("click", (event) => {
+  if (event.target === footyTradingCardDialog) {
+    closeFootyTradingCard();
+  }
 });
 
 footyTeamFilter?.addEventListener("click", (event) => {
@@ -5963,6 +7596,25 @@ rankingMoreDataToggle?.addEventListener("change", () => {
   renderRankingLists();
 });
 
+rankingShowExcludedToggle?.addEventListener("change", () => {
+  shouldShowRankingExcluded = Boolean(rankingShowExcludedToggle.checked);
+  renderRankingLists();
+});
+
+rankingSnapshotSelect?.addEventListener("change", () => {
+  activeRankingSnapshotId = rankingSnapshotSelect.value || "current";
+  renderRankingLists();
+});
+
+rankingCompareSelect?.addEventListener("change", () => {
+  activeRankingCompareSnapshotId = rankingCompareSelect.value || "";
+  renderRankingLists();
+});
+
+rankingNormalizeButton?.addEventListener("click", () => {
+  openRankingNormalizeDialog();
+});
+
 rankingViewModeButtons?.forEach((button) => {
   button.addEventListener("click", () => {
     const mode = button.dataset.rankingViewMode;
@@ -5989,24 +7641,78 @@ rankingItemForm?.addEventListener("submit", (event) => {
   button?.addEventListener("click", closeRankingBattleDialog);
 });
 
+[rankingNormalizeClose, rankingNormalizeCancel].forEach((button) => {
+  button?.addEventListener("click", closeRankingNormalizeDialog);
+});
+
+rankingNormalizeConfirm?.addEventListener("click", () => {
+  normalizeActiveRanking();
+});
+
 rankingBattleSkip?.addEventListener("click", () => {
   renderNextRankingBattle(activeRankingBattle?.kind || activeRankingKind);
 });
 
 rankingBattleOptions?.addEventListener("click", (event) => {
-  const option = event.target.closest("[data-ranking-battle-choice]");
+  const exclusionAction = event.target.closest("[data-ranking-battle-exclude]");
+
+  if (exclusionAction) {
+    event.preventDefault();
+    event.stopPropagation();
+    setRankingItemExcluded(
+      exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind,
+      exclusionAction.getAttribute("data-ranking-battle-exclude") || "",
+      true
+    );
+    return;
+  }
+
+  const option = event.target.closest("[data-ranking-battle-pick]");
 
   if (!option) {
     return;
   }
 
-  chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-choice") || "");
+  chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-pick") || "");
+});
+
+document.addEventListener("click", (event) => {
+  const exclusionAction = event.target.closest("[data-ranking-exclusion-toggle]");
+
+  if (exclusionAction) {
+    event.preventDefault();
+    event.stopPropagation();
+    const kind = exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind;
+    const itemId = exclusionAction.getAttribute("data-ranking-exclusion-toggle") || "";
+    setRankingItemExcluded(kind, itemId, !isRankingItemExcluded(kind, itemId));
+    return;
+  }
+
+  const rankingItem = event.target.closest(".ranking-item");
+
+  if (!rankingItem) {
+    document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+      item.classList.remove("is-actions-open");
+    });
+    return;
+  }
+
+  if (event.target.closest("button, a, input, select, textarea, label, [role='button']")) {
+    return;
+  }
+
+  document.querySelectorAll(".ranking-item.is-actions-open").forEach((item) => {
+    if (item !== rankingItem) {
+      item.classList.remove("is-actions-open");
+    }
+  });
+  rankingItem.classList.toggle("is-actions-open");
 });
 
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-ranking-id]");
 
-  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual") {
+  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") {
     return;
   }
 
@@ -6050,7 +7756,7 @@ document.addEventListener("pointerdown", (event) => {
   const handle = event.target.closest(".ranking-drag-handle");
   const item = handle?.closest("[data-ranking-id]");
 
-  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual") {
+  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") {
     return;
   }
 
@@ -8758,7 +10464,9 @@ loadJson("data/footy-schedule.json")
   .then((schedule) => {
     clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
+    renderFollowedTeamShortcuts(schedule);
     renderFootySchedule(schedule);
+    renderFootyTeamPage();
     console.info("Box This Lap footy schedule loaded", schedule);
     return loadFootyMatchNotes();
   })
@@ -8769,6 +10477,7 @@ loadJson("data/footy-schedule.json")
 
     mergeFootyMatchNotes(notes);
     renderFootySchedule(siteData.footySchedule);
+    renderFootyTeamPage();
     console.info("Box This Lap footy match notes loaded", notes);
   })
   .catch((error) => {
@@ -9618,7 +11327,7 @@ function renderBracketSubmissionOptions(submissions = []) {
   const selectedValue = bracketSubmissionSelect.value;
 
   bracketSubmissionSelect.innerHTML = `
-    <option value="${BRACKET_MANUAL_PICK_VALUE}">Make picks</option>
+    <option value="${BRACKET_MANUAL_PICK_VALUE}">Official</option>
     ${submissions.map((submission) => `
       <option value="${escapeHtml(submission.id)}">${escapeHtml(submission.label)}</option>
     `).join("")}
@@ -9650,7 +11359,8 @@ function syncBracketSubmissionControls() {
   }
 
   if (bracketClearPicks) {
-    bracketClearPicks.disabled = isViewingSubmission;
+    bracketClearPicks.hidden = BRACKET_SUBMISSIONS_ARCHIVED;
+    bracketClearPicks.disabled = BRACKET_SUBMISSIONS_ARCHIVED || isViewingSubmission;
   }
 
   if (!isViewingSubmission && bracketSubmitStatus?.textContent.startsWith("Viewing ")) {
@@ -10032,6 +11742,11 @@ function hydrateBracketSubmitter() {
 }
 
 function submitBracketPicks() {
+  if (BRACKET_SUBMISSIONS_ARCHIVED) {
+    setBracketSubmitStatus("Bracket submissions are archived.", "error");
+    return;
+  }
+
   const submitter = bracketSubmitterInput?.value.trim() ?? "";
   const picks = getBracketPicks();
   const selectedMatchIds = Object.keys(picks);
@@ -10139,6 +11854,11 @@ function setBracketSubmitStatus(message, state = "") {
 }
 
 function clearBracketPicks() {
+  if (BRACKET_SUBMISSIONS_ARCHIVED) {
+    setBracketSubmitStatus("Bracket picks are archived.", "error");
+    return;
+  }
+
   bracketPicksFallback = {};
 
   try {

@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-01T11:36:22.521Z",
+  "generatedAt": "2026-08-02T11:36:44.043Z",
   "schemaVersion": 2,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-08-01T11:36:22.521Z",
-    "attemptedAt": "2026-08-01T11:36:22.521Z",
-    "updatedAt": "2026-08-01T11:36:22.521Z",
-    "oldestTeamUpdatedAt": "2026-08-01T11:36:22.521Z",
+    "generatedAt": "2026-08-02T11:36:44.043Z",
+    "attemptedAt": "2026-08-02T11:36:44.043Z",
+    "updatedAt": "2026-08-02T11:36:44.043Z",
+    "oldestTeamUpdatedAt": "2026-08-02T11:36:44.043Z",
     "teamCount": 7,
     "fixtureCount": 207,
     "statuses": {
@@ -43,19 +43,19 @@
     "sync": {
       "status": "synced",
       "rows": 207,
-      "syncedAt": "2026-08-01T11:36:22.521Z",
-      "appended": 2,
-      "updated": 205
+      "syncedAt": "2026-08-02T11:36:44.043Z",
+      "appended": 0,
+      "updated": 207
     }
   },
   "teamSchedules": [
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "updated",
       "team": {
-        "badge": "",
+        "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
         "id": "1",
         "league": "Premier League",
         "name": "Arsenal",
@@ -77,13 +77,12 @@
           "home": "Girona",
           "homeBadge": "",
           "id": "Arsenal.com:8ew7n1ri67qmwp7v5lrcpk9hw",
-          "leagueId": "4nidzmunvpvxk1ir9b6m8mpay",
+          "isRegistryFixture": true,
           "isHome": false,
+          "lastSeen": "2026-07-31T23:27:47.129Z",
           "league": "Club Friendlies",
           "opponent": "Girona",
           "priority": "1",
-          "round": "0",
-          "season": "2026",
           "source": "Arsenal.com + TheSportsDB + Footy Matches + iCalendar",
           "sourceIds": {
             "iCalendar": "6a3cfc194a03ae0002d6bd16",
@@ -96,17 +95,18 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "sourceDetail": "monthly-graphql",
-          "status": "Fixture",
           "teamBadge": "https://crests.football-data.org/57.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "18:00:00",
           "timestamp": "2026-08-01T18:00:00Z",
-          "venue": "Estadi Municipal de Montilivi",
           "matchId": "footy_1de1093d4aae",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "leagueId": "4nidzmunvpvxk1ir9b6m8mpay",
+          "round": "0",
+          "season": "2026",
+          "sourceDetail": "monthly-graphql",
+          "status": "Fixture",
+          "venue": "Estadi Municipal de Montilivi"
         },
         {
           "away": "Real Betis",
@@ -120,21 +120,23 @@
           "league": "Club Friendlies",
           "opponent": "Real Betis",
           "priority": "1",
-          "round": "",
-          "season": "",
-          "source": "Arsenal.com + Footy Matches + iCalendar",
+          "round": "0",
+          "season": "2026",
+          "source": "Arsenal.com + TheSportsDB + Footy Matches + iCalendar",
           "sourceIds": {
             "iCalendar": "69ddfde7d58bd20002c1d1d5",
-            "Arsenal.com": "7gtr3l35rew0sxv8w40ykk8wk"
+            "Arsenal.com": "7gtr3l35rew0sxv8w40ykk8wk",
+            "TheSportsDB": "2467936"
           },
           "sources": [
             "Arsenal.com",
+            "TheSportsDB",
             "Footy Matches",
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "18:30:00",
@@ -142,7 +144,7 @@
           "venue": "Aviva Stadium",
           "matchId": "footy_063a95569d22",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Borussia Dortmund",
@@ -170,7 +172,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "13:00:00",
@@ -178,7 +180,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_6e7db37f9d3f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Como",
@@ -206,7 +208,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "18:30:00",
@@ -242,7 +244,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "14:00:00",
@@ -250,7 +252,7 @@
           "venue": "Principality Stadium",
           "matchId": "footy_336955d7bc6e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Coventry City FC",
@@ -282,7 +284,7 @@
           ],
           "sourceDetail": "league-season",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "19:00:00",
@@ -290,7 +292,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_8c14b40f0739",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -320,7 +322,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "19:00:00",
@@ -328,7 +330,7 @@
           "venue": "Villa Park",
           "matchId": "footy_5b3df6cc7493",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Chelsea FC",
@@ -358,7 +360,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:30:00",
@@ -366,7 +368,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_338d98d726b7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -396,7 +398,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "19:00:00",
@@ -404,7 +406,7 @@
           "venue": "Stadium of Light",
           "matchId": "footy_e5434cfc0251",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -432,7 +434,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "14:00:00",
@@ -440,7 +442,7 @@
           "venue": "American Express Stadium",
           "matchId": "footy_de8f7b459bb5",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal",
@@ -466,7 +468,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Scheduled",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "14:00:00",
@@ -504,7 +506,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "14:00:00",
@@ -512,7 +514,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_de2b62cce9c3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -542,7 +544,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "14:00:00",
@@ -550,7 +552,7 @@
           "venue": "The City Ground",
           "matchId": "footy_db640982a4a1",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Everton FC",
@@ -580,7 +582,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "14:00:00",
@@ -588,7 +590,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_1e687960579b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -618,7 +620,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -626,7 +628,7 @@
           "venue": "Anfield",
           "matchId": "footy_775d38b756c5",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Hull City AFC",
@@ -656,7 +658,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -664,7 +666,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_eaca5d9a2c3e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -694,7 +696,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -702,7 +704,7 @@
           "venue": "St. James' Park",
           "matchId": "footy_c37276de968b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Manchester City FC",
@@ -732,7 +734,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -740,7 +742,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_f1d43f044a8d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -770,7 +772,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "20:00:00",
@@ -778,7 +780,7 @@
           "venue": "Gtech Community Stadium",
           "matchId": "footy_fcfe1a707a9f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -808,7 +810,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -816,7 +818,7 @@
           "venue": "Tottenham Hotspur Stadium",
           "matchId": "footy_12719cecbc9c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "AFC Bournemouth",
@@ -846,7 +848,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -854,7 +856,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_e2fbc7ac730e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Manchester United FC",
@@ -884,7 +886,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -892,7 +894,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_f8cd42a14544",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -922,7 +924,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -930,7 +932,7 @@
           "venue": "Selhurst Park",
           "matchId": "footy_8aec9afb0622",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -960,7 +962,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "20:00:00",
@@ -968,7 +970,7 @@
           "venue": "Craven Cottage",
           "matchId": "footy_372f9c98907a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Ipswich Town FC",
@@ -998,7 +1000,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1006,7 +1008,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_cc2f1cbb220c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Brentford FC",
@@ -1036,7 +1038,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1044,7 +1046,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_5502ac6f7335",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1074,7 +1076,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1082,7 +1084,7 @@
           "venue": "MKM Stadium",
           "matchId": "footy_7c8d394d087f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Newcastle United FC",
@@ -1112,7 +1114,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1120,7 +1122,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_6314e9da2b0c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1150,7 +1152,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1158,7 +1160,7 @@
           "venue": "Etihad Stadium",
           "matchId": "footy_a1c6d7043170",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Liverpool FC",
@@ -1188,7 +1190,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1196,7 +1198,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_ac01d8fd9fcf",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1226,7 +1228,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1234,7 +1236,7 @@
           "venue": "Portman Road",
           "matchId": "footy_7245e74fda4c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Fulham FC",
@@ -1264,7 +1266,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1272,7 +1274,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_72ff2e385bdb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1302,7 +1304,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1310,7 +1312,7 @@
           "venue": "Old Trafford",
           "matchId": "footy_d8cc7963d3a2",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Crystal Palace FC",
@@ -1340,7 +1342,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1348,7 +1350,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_484f5e302307",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1378,7 +1380,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1386,7 +1388,7 @@
           "venue": "Stamford Bridge",
           "matchId": "footy_562fd9ea4e7a",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Sunderland AFC",
@@ -1416,7 +1418,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1424,7 +1426,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_47e9ca2cf328",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1454,7 +1456,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1462,7 +1464,7 @@
           "venue": "Coventry Building Society Arena",
           "matchId": "footy_7bf4e83cd821",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Aston Villa FC",
@@ -1492,7 +1494,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1500,7 +1502,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_67ba025a9319",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1530,7 +1532,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1538,7 +1540,7 @@
           "venue": "Vitality Stadium",
           "matchId": "footy_6f4960192ccd",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Tottenham Hotspur FC",
@@ -1568,7 +1570,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1576,7 +1578,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_532c5a14344e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1606,7 +1608,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1614,7 +1616,7 @@
           "venue": "Elland Road",
           "matchId": "footy_40f840a3862f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Nottingham Forest FC",
@@ -1644,7 +1646,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1652,7 +1654,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_dd887e014368",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Arsenal FC",
@@ -1682,7 +1684,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1690,7 +1692,7 @@
           "venue": "Hill Dickinson Stadium",
           "matchId": "footy_f809314e3194",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Brighton & Hove Albion FC",
@@ -1718,7 +1720,7 @@
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "12:00:00",
@@ -1726,7 +1728,7 @@
           "venue": "Emirates Stadium",
           "matchId": "footy_9b1299311e68",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Brighton and Hove Albion",
@@ -1752,7 +1754,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Scheduled",
-          "teamBadge": "https://crests.football-data.org/57.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
@@ -1764,20 +1766,20 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-08-01 through 2027-08-01.",
+        "Loaded 38 SCHEDULED matches from 2026-08-02 through 2027-08-02.",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 43 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 44 iCalendar fixtures from calendar feed."
+        "Loaded 42 Arsenal.com fixtures from monthly GraphQL windows.",
+        "Loaded 43 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "updated",
       "team": {
-        "badge": "",
+        "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
         "id": "2",
         "league": "La Liga",
         "name": "Barcelona",
@@ -1882,7 +1884,7 @@
             "TheSportsDB",
             "Footy Matches"
           ],
-          "teamBadge": "",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:00:00",
@@ -1943,22 +1945,25 @@
           "priority": "2",
           "round": "",
           "season": "",
-          "source": "iCalendar",
+          "source": "iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a6dd07f54aa884ccf0a384c"
           },
           "sources": [
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "Scheduled",
-          "teamBadge": "",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "18:00:00",
           "timestamp": "2026-08-19T18:00:00Z",
           "venue": "Barcelona, Barcelona",
-          "matchId": "footy_711a83959e6c"
+          "matchId": "footy_711a83959e6c",
+          "isRegistryFixture": true,
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -1986,7 +1991,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:30:00",
@@ -1994,7 +1999,7 @@
           "venue": "Elche, Elche",
           "matchId": "footy_57d0c2e5e6c3",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Athletic Club",
@@ -2021,7 +2026,7 @@
             "iCalendar"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:00:00",
@@ -2056,7 +2061,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Scheduled",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:30:00",
@@ -2089,7 +2094,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:30:00",
@@ -2125,7 +2130,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
@@ -2133,7 +2138,7 @@
           "venue": "Valencia, Valencia",
           "matchId": "footy_a1e0bdafa15d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -2159,7 +2164,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2192,7 +2197,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
@@ -2226,7 +2231,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2259,7 +2264,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
@@ -2295,7 +2300,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
@@ -2303,7 +2308,7 @@
           "venue": "Sevilla, Sevilla",
           "matchId": "footy_1548b5fb0796",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Getafe CF",
@@ -2331,7 +2336,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
@@ -2339,7 +2344,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_d41e6d566583",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -2365,7 +2370,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2398,7 +2403,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
@@ -2434,7 +2439,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2442,7 +2447,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_95c5ec8b1d4d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Alavés",
@@ -2468,7 +2473,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2501,7 +2506,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2535,7 +2540,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2568,7 +2573,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2604,7 +2609,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2612,7 +2617,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_b1afd3ced3ef",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -2638,7 +2643,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2671,7 +2676,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2705,7 +2710,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2738,7 +2743,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2774,7 +2779,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2782,7 +2787,7 @@
           "venue": "Málaga, Málaga",
           "matchId": "footy_80422df3842f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Real Sociedad",
@@ -2808,7 +2813,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2841,7 +2846,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
@@ -2875,7 +2880,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2908,7 +2913,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -2942,7 +2947,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -2975,7 +2980,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3011,7 +3016,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3019,7 +3024,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_e914faac49f7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -3045,7 +3050,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3078,7 +3083,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3114,7 +3119,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3122,7 +3127,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_edcab34e15ab",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Atlético de Madrid",
@@ -3138,22 +3143,25 @@
           "priority": "2",
           "round": "",
           "season": "",
-          "source": "iCalendar",
+          "source": "iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "6a6dd07f54aa884ccf0a384b"
           },
           "sources": [
-            "iCalendar"
+            "iCalendar",
+            "Footy Matches"
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
           "timestamp": "2027-02-02T11:00:00Z",
           "venue": "TBC",
-          "matchId": "footy_b56fbfb608bc"
+          "matchId": "footy_b56fbfb608bc",
+          "isRegistryFixture": true,
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Atlético Madrid",
@@ -3179,7 +3187,7 @@
           ],
           "sourceDetail": "league-season",
           "status": "NS",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:00:00",
@@ -3213,7 +3221,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3246,7 +3254,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3282,7 +3290,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3290,7 +3298,7 @@
           "venue": "Villarreal, Villarreal",
           "matchId": "footy_38de849f857e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Levante",
@@ -3316,7 +3324,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3349,7 +3357,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3385,7 +3393,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3393,7 +3401,7 @@
           "venue": "Bilbao, Bilbao",
           "matchId": "footy_6ebada99ec79",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "Real Betis",
@@ -3419,7 +3427,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3452,7 +3460,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3486,7 +3494,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3519,7 +3527,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3553,7 +3561,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3586,7 +3594,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3622,7 +3630,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3630,7 +3638,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_7f31045cacfb",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -3656,7 +3664,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3689,7 +3697,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3723,7 +3731,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3756,7 +3764,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3790,7 +3798,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3823,7 +3831,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3857,7 +3865,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3890,7 +3898,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3926,7 +3934,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -3934,7 +3942,7 @@
           "venue": "Madrid, Madrid",
           "matchId": "footy_dcf49c939538",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -3960,7 +3968,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "",
@@ -3993,7 +4001,7 @@
             "Footy Matches"
           ],
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -4029,7 +4037,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -4037,7 +4045,7 @@
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_84c339af8d48",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
           "away": "FC Barcelona",
@@ -4065,7 +4073,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
-          "teamBadge": "https://crests.football-data.org/81.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
@@ -4073,11 +4081,11 @@
           "venue": "Getafe, Getafe",
           "matchId": "footy_e6f25184c25b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z"
+          "lastSeen": "2026-08-01T11:36:22.521Z"
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-08-01 through 2027-08-01.",
+        "Loaded 38 SCHEDULED matches from 2026-08-02 through 2027-08-02.",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
         "Loaded 40 iCalendar fixtures from calendar feed.",
         "Preserved 1 registered fixtures that were not returned by providers this run."
@@ -4085,12 +4093,12 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "updated",
       "team": {
-        "badge": "",
+        "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
         "id": "3",
         "league": "Championship",
         "name": "Wrexham",
@@ -4196,7 +4204,7 @@
           ],
           "sourceDetail": "team-upcoming",
           "status": "NS",
-          "teamBadge": "",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "23:00:00",
@@ -4230,7 +4238,7 @@
           ],
           "sourceDetail": "calendar-feed",
           "status": "Scheduled",
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:00:00",
@@ -4249,7 +4257,7 @@
           "id": "561772",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Cardiff City FC",
           "priority": "3",
@@ -4263,7 +4271,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:00:00",
@@ -4285,7 +4293,7 @@
           "id": "561779",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Watford FC",
           "priority": "3",
@@ -4299,7 +4307,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "14:00:00",
@@ -4321,7 +4329,7 @@
           "id": "561796",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Birmingham City FC",
           "priority": "3",
@@ -4335,7 +4343,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:00:00",
@@ -4357,7 +4365,7 @@
           "id": "561806",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Millwall FC",
           "priority": "3",
@@ -4371,7 +4379,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "18:45:00",
@@ -4393,7 +4401,7 @@
           "id": "561811",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Swansea City AFC",
           "priority": "3",
@@ -4407,7 +4415,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:00:00",
@@ -4429,7 +4437,7 @@
           "id": "561830",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Burnley FC",
           "priority": "3",
@@ -4443,7 +4451,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "18:45:00",
@@ -4465,7 +4473,7 @@
           "id": "561842",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "West Ham United FC",
           "priority": "3",
@@ -4479,7 +4487,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:00:00",
@@ -4501,7 +4509,7 @@
           "id": "561846",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Southampton FC",
           "priority": "3",
@@ -4515,7 +4523,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "14:00:00",
@@ -4537,7 +4545,7 @@
           "id": "561864",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Derby County FC",
           "priority": "3",
@@ -4551,7 +4559,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "14:00:00",
@@ -4573,7 +4581,7 @@
           "id": "561870",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "West Bromwich Albion FC",
           "priority": "3",
@@ -4587,7 +4595,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "18:45:00",
@@ -4609,7 +4617,7 @@
           "id": "561892",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Preston North End FC",
           "priority": "3",
@@ -4623,7 +4631,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "14:00:00",
@@ -4645,7 +4653,7 @@
           "id": "561902",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Blackburn Rovers FC",
           "priority": "3",
@@ -4659,7 +4667,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "14:00:00",
@@ -4681,7 +4689,7 @@
           "id": "561916",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Sheffield United FC",
           "priority": "3",
@@ -4695,7 +4703,7 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -4717,7 +4725,7 @@
           "id": "561927",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Middlesbrough FC",
           "priority": "3",
@@ -4731,7 +4739,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:45:00",
@@ -4753,7 +4761,7 @@
           "id": "561933",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Wolverhampton Wanderers FC",
           "priority": "3",
@@ -4767,7 +4775,7 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -4789,7 +4797,7 @@
           "id": "561949",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Lincoln City FC",
           "priority": "3",
@@ -4803,7 +4811,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -4825,7 +4833,7 @@
           "id": "561959",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Bristol City FC",
           "priority": "3",
@@ -4839,7 +4847,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:45:00",
@@ -4861,7 +4869,7 @@
           "id": "561965",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Portsmouth FC",
           "priority": "3",
@@ -4875,7 +4883,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -4897,7 +4905,7 @@
           "id": "561980",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Norwich City FC",
           "priority": "3",
@@ -4911,7 +4919,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -4933,7 +4941,7 @@
           "id": "561992",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Charlton Athletic FC",
           "priority": "3",
@@ -4947,7 +4955,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:45:00",
@@ -4969,7 +4977,7 @@
           "id": "562006",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Bolton Wanderers FC",
           "priority": "3",
@@ -4983,7 +4991,7 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -5005,7 +5013,7 @@
           "id": "562019",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Queens Park Rangers FC",
           "priority": "3",
@@ -5019,7 +5027,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -5041,7 +5049,7 @@
           "id": "562032",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Stoke City FC",
           "priority": "3",
@@ -5055,7 +5063,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "15:00:00",
@@ -5077,7 +5085,7 @@
           "id": "562044",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Blackburn Rovers FC",
           "priority": "3",
@@ -5091,7 +5099,7 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "19:45:00",
@@ -5113,7 +5121,7 @@
           "id": "562058",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Bolton Wanderers FC",
           "priority": "3",
@@ -5127,7 +5135,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5149,7 +5157,7 @@
           "id": "562064",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Preston North End FC",
           "priority": "3",
@@ -5163,7 +5171,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5185,7 +5193,7 @@
           "id": "562073",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Sheffield United FC",
           "priority": "3",
@@ -5199,7 +5207,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5221,7 +5229,7 @@
           "id": "562096",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Middlesbrough FC",
           "priority": "3",
@@ -5235,7 +5243,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5257,7 +5265,7 @@
           "id": "562101",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Wolverhampton Wanderers FC",
           "priority": "3",
@@ -5271,7 +5279,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5293,7 +5301,7 @@
           "id": "562116",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Lincoln City FC",
           "priority": "3",
@@ -5307,7 +5315,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5329,7 +5337,7 @@
           "id": "562129",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "West Ham United FC",
           "priority": "3",
@@ -5343,7 +5351,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5365,7 +5373,7 @@
           "id": "562139",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "West Bromwich Albion FC",
           "priority": "3",
@@ -5379,7 +5387,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5401,7 +5409,7 @@
           "id": "562145",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Southampton FC",
           "priority": "3",
@@ -5415,7 +5423,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5437,7 +5445,7 @@
           "id": "562161",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Derby County FC",
           "priority": "3",
@@ -5451,7 +5459,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5473,7 +5481,7 @@
           "id": "562171",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Watford FC",
           "priority": "3",
@@ -5487,7 +5495,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5509,7 +5517,7 @@
           "id": "562184",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Cardiff City FC",
           "priority": "3",
@@ -5523,7 +5531,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5545,7 +5553,7 @@
           "id": "562195",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Portsmouth FC",
           "priority": "3",
@@ -5559,7 +5567,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5581,7 +5589,7 @@
           "id": "562209",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Norwich City FC",
           "priority": "3",
@@ -5595,7 +5603,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5617,7 +5625,7 @@
           "id": "562219",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Stoke City FC",
           "priority": "3",
@@ -5631,7 +5639,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5653,7 +5661,7 @@
           "id": "562239",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Queens Park Rangers FC",
           "priority": "3",
@@ -5667,7 +5675,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5689,7 +5697,7 @@
           "id": "562248",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Burnley FC",
           "priority": "3",
@@ -5703,7 +5711,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5725,7 +5733,7 @@
           "id": "562253",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Swansea City AFC",
           "priority": "3",
@@ -5739,7 +5747,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5761,7 +5769,7 @@
           "id": "562267",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Birmingham City FC",
           "priority": "3",
@@ -5775,7 +5783,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5797,7 +5805,7 @@
           "id": "562282",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Millwall FC",
           "priority": "3",
@@ -5811,7 +5819,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5833,7 +5841,7 @@
           "id": "562297",
           "isRegistryFixture": true,
           "isHome": false,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Charlton Athletic FC",
           "priority": "3",
@@ -5847,7 +5855,7 @@
             "Footy Matches",
             "iCalendar"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5869,7 +5877,7 @@
           "id": "562307",
           "isRegistryFixture": true,
           "isHome": true,
-          "lastSeen": "2026-07-31T23:27:47.129Z",
+          "lastSeen": "2026-08-01T11:36:22.521Z",
           "league": "Championship",
           "opponent": "Bristol City FC",
           "priority": "3",
@@ -5883,7 +5891,7 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "teamBadge": "https://crests.football-data.org/404.png",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
           "time": "12:00:00",
@@ -5898,19 +5906,19 @@
         }
       ],
       "notes": [
-        "Loaded 46 SCHEDULED matches from 2026-08-01 through 2027-08-01.",
+        "Loaded 46 SCHEDULED matches from 2026-08-02 through 2027-08-02.",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 47 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "no-fixtures",
       "team": {
-        "badge": "",
+        "badge": "assets/teams/usmnt.svg",
         "id": "4",
         "league": "International",
         "name": "USMNT",
@@ -5926,15 +5934,15 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "no-fixtures",
       "team": {
-        "badge": "",
+        "badge": "assets/teams/uswnt.svg",
         "id": "5",
         "league": "International",
-        "name": "USWMT",
+        "name": "USWNT",
         "priority": "5"
       },
       "sources": [],
@@ -5947,9 +5955,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -6716,9 +6724,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-01T11:36:22.521Z",
-      "updatedAt": "2026-08-01T11:36:22.521Z",
-      "previousUpdatedAt": "2026-07-31T12:20:56.859Z",
+      "attemptedAt": "2026-08-02T11:36:44.043Z",
+      "updatedAt": "2026-08-02T11:36:44.043Z",
+      "previousUpdatedAt": "2026-08-01T11:36:22.521Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -6805,13 +6813,12 @@
           "home": "Inter Miami CF",
           "homeBadge": "",
           "id": "iCalendar:MLS-MAT-0009IE",
-          "leagueId": "",
+          "isRegistryFixture": true,
           "isHome": true,
+          "lastSeen": "2026-07-26T11:38:57.762Z",
           "league": "MLS - Regular Season",
           "opponent": "Columbus Crew",
           "priority": "7",
-          "round": "",
-          "season": "",
           "source": "iCalendar + Footy Matches",
           "sourceIds": {
             "iCalendar": "MLS-MAT-0009IE"
@@ -6820,17 +6827,18 @@
             "iCalendar",
             "Footy Matches"
           ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
           "teamBadge": "assets/teams/inter-miami-cf.webp",
           "teamId": "7",
           "teamName": "Inter Miami CF",
           "time": "23:30:00",
           "timestamp": "2026-08-01T23:30:00Z",
-          "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_dbb18874b79f",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "leagueId": "",
+          "round": "",
+          "season": "",
+          "sourceDetail": "calendar-feed",
+          "status": "Scheduled",
+          "venue": "Nu Stadium, Miami, FL"
         },
         {
           "away": "Atlético de San Luis",
@@ -6864,7 +6872,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_a55418ab01c9",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Club de Fútbol Monterrey Rayados, A.C.",
@@ -6898,7 +6906,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_e497e3999b9f",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Club León",
@@ -6932,7 +6940,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_099d775806b7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -6966,7 +6974,7 @@
           "venue": "GEODIS Park, Nashville, TN",
           "matchId": "footy_4f23955b07ad",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -7000,7 +7008,7 @@
           "venue": "Subaru Park, Chester, PA",
           "matchId": "footy_9f09e3550e00",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Toronto FC",
@@ -7034,7 +7042,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_d334d69bffb7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "CF Montreal",
@@ -7068,7 +7076,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_7b035a08e65e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Atlanta United",
@@ -7102,7 +7110,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_4c2982ce6ce0",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -7136,7 +7144,7 @@
           "venue": "Soldier Field, Chicago, IL",
           "matchId": "footy_c0fb8d3eca3c",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Nashville SC",
@@ -7170,7 +7178,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_178babb52200",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Cruz Azul",
@@ -7204,7 +7212,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_16cef9c9ede4",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "San Diego FC",
@@ -7238,7 +7246,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_46c43b6859a7",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -7272,7 +7280,7 @@
           "venue": "ScottsMiracle-Gro Field, Columbus, OH",
           "matchId": "footy_49588f1fa817",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "D.C. United",
@@ -7306,7 +7314,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_530471365d06",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "New York City FC",
@@ -7340,7 +7348,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_cd5a9e4aff42",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -7374,7 +7382,7 @@
           "venue": "Mercedes-Benz Stadium, Atlanta, GA",
           "matchId": "footy_bfdd2c40b485",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -7408,7 +7416,7 @@
           "venue": "Sports Illustrated Stadium, Harrison, NJ",
           "matchId": "footy_3df128b63f2b",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "FC Cincinnati",
@@ -7442,7 +7450,7 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_627ae6fc215e",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Inter Miami CF",
@@ -7476,7 +7484,7 @@
           "venue": "Gillette Stadium, Foxborough, MA",
           "matchId": "footy_15d1c3b9797d",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Charlotte FC",
@@ -7510,13 +7518,13 @@
           "venue": "Nu Stadium, Miami, FL",
           "matchId": "footy_a344cfa9dd73",
           "isRegistryFixture": true,
-          "lastSeen": "2026-07-26T11:38:57.762Z"
+          "lastSeen": "2026-07-24T13:33:58.404Z"
         }
       ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 21 iCalendar fixtures from calendar feed."
+        "Loaded 20 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     }

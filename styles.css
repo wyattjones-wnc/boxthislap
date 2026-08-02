@@ -2072,8 +2072,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-trading-card-dialog {
-  max-width: min(92vw, 430px);
-  width: fit-content;
+  max-width: calc(100vw - 24px);
+  width: auto;
 }
 
 .footy-trading-card-form {
@@ -2082,11 +2082,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: none;
   display: block;
   padding: 0;
+  width: auto;
 }
 
 .footy-trading-card-content {
-  display: grid;
-  justify-items: center;
+  display: block;
 }
 
 .trading-card-preview {
@@ -2095,10 +2095,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   box-shadow: 0 20px 52px rgb(0 0 0 / 0.46);
   max-height: min(86vh, 740px);
-  max-width: 100%;
+  max-width: calc(100vw - 24px);
   overflow: hidden;
   position: relative;
-  width: min(100%, 390px);
+  width: min(390px, calc(100vw - 24px));
 }
 
 .trading-card-frame {

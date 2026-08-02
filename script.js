@@ -693,7 +693,7 @@ function renderFootyTeamPlayerCard(player) {
 function formatFootyPlayerNumber(number) {
   const cleanNumber = String(number || "").trim().replace(/^#/, "");
 
-  return cleanNumber ? `#${cleanNumber}` : "";
+  return cleanNumber;
 }
 
 function renderFootyTeamFixtureSection(title, fixtures = []) {
@@ -1813,7 +1813,11 @@ function normalizeFootyRosters(rosters = []) {
       return {
         players: Array.isArray(roster.players)
           ? roster.players
-              .map((player) => normalizeFootyRosterPlayer({ ...player, teamId: player.teamId || player["Team ID"] || teamId }))
+              .map((player) => normalizeFootyRosterPlayer({
+                ...player,
+                season: player.season || player.Season || roster.season,
+                teamId: player.teamId || player["Team ID"] || teamId,
+              }))
               .filter((player) => player.name)
           : [],
         season: String(roster.season || "").trim(),
@@ -1827,9 +1831,10 @@ function normalizeFootyRosters(rosters = []) {
 
 function normalizeFootyRosterPlayer(player = {}) {
   const id = String(player.id || player.ID || "").trim();
+  const season = String(player.season || player.Season || "").trim();
   const teamId = String(player.teamId || player["Team ID"] || "").trim();
   const transparent = String(player.transparent || player.Transparent || "").trim();
-  const imagePaths = getFootyPlayerTransparentPaths({ id, teamId, transparent });
+  const imagePaths = getFootyPlayerTransparentPaths({ id, season, teamId, transparent });
 
   return {
     fromAcademy: normalizeBooleanish(player.fromAcademy || player.FromAcademy),
@@ -1839,13 +1844,16 @@ function normalizeFootyRosterPlayer(player = {}) {
     name: String(player.player || player.Player || player.name || "").trim(),
     number: String(player.number || player["#"] || "").trim(),
     position: String(player.position || player.Position || "").trim(),
+    season,
     teamId,
     transparent,
+    transferOut: normalizeBooleanish(player.transferOut || player.TransferOut),
   };
 }
 
 function getFootyPlayerTransparentPaths(player = {}) {
   const id = String(player.id || "").trim();
+  const season = String(player.season || "").trim();
   const teamId = String(player.teamId || "").trim();
   const transparent = String(player.transparent || "").trim();
 
@@ -1853,9 +1861,14 @@ function getFootyPlayerTransparentPaths(player = {}) {
     return [];
   }
 
+  const seasonKey = season.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "");
   const encodedTeamId = encodeURIComponent(teamId);
   const encodedTransparent = encodeURIComponent(transparent);
   const paths = [];
+
+  if (seasonKey && id) {
+    paths.push(`assets/players/${encodeURIComponent(seasonKey)}/${encodedTeamId}/${encodeURIComponent(id)}/${encodedTransparent}`);
+  }
 
   if (id) {
     paths.push(`assets/players/${encodedTeamId}/${encodeURIComponent(id)}/${encodedTransparent}`);

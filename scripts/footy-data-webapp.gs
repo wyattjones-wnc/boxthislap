@@ -34,6 +34,7 @@ const FOOTY_ROSTER_COLUMNS = [
   "Birthday",
   "FromAcademy",
   "Transparent",
+  "TransferOut",
 ];
 const FOOTY_COMBINED_ROSTER_SHEET_NAME = "2026-27";
 const FOOTY_ROSTER_SHEET_NAME_PATTERN = /^\d{4}-\d{2}\s+(.+)$/;
@@ -501,6 +502,7 @@ function normalizeFootyRosterPlayer(row, columns) {
     position: player.Position,
     teamId: player["Team ID"],
     transparent: player.Transparent,
+    transferOut: player.TransferOut,
   };
 }
 

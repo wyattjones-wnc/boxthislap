@@ -587,6 +587,20 @@
       "assets/ranking/games/83/3 - mb.webp",
       "assets/ranking/games/83/4 - mb.webp",
       "assets/ranking/games/83/5 - mb.webp"
+    ],
+    "84": [
+      "assets/ranking/games/84/1 - goy.webp",
+      "assets/ranking/games/84/2 - goy.webp",
+      "assets/ranking/games/84/3 - goy.webp",
+      "assets/ranking/games/84/4 - goy.webp",
+      "assets/ranking/games/84/5 - goy.webp",
+      "assets/ranking/games/84/6 - goy.webp",
+      "assets/ranking/games/84/7 - goy.webp",
+      "assets/ranking/games/84/8 - goy.webp",
+      "assets/ranking/games/84/9 - goy.webp",
+      "assets/ranking/games/84/10 - goy.webp",
+      "assets/ranking/games/84/11 - goy.webp",
+      "assets/ranking/games/84/12 - goy.webp"
     ]
   },
   "mcu": {
@@ -699,7 +713,15 @@
       "assets/ranking/mcu/9/13 - tb.webp"
     ],
     "10": [
-      "assets/ranking/mcu/10/1 - tr.webp"
+      "assets/ranking/mcu/10/1 - tr.webp",
+      "assets/ranking/mcu/10/2 - tr.webp",
+      "assets/ranking/mcu/10/3 - tr.webp",
+      "assets/ranking/mcu/10/4 - tr.webp",
+      "assets/ranking/mcu/10/5 - tr.webp",
+      "assets/ranking/mcu/10/6 - tr.webp",
+      "assets/ranking/mcu/10/7 - tr.webp",
+      "assets/ranking/mcu/10/8 - tr.webp",
+      "assets/ranking/mcu/10/9 - tr.webp"
     ]
   }
 }

@@ -7396,6 +7396,12 @@ footyTeamViewModeButtons?.forEach((button) => {
 
 footyTradingCardClose?.addEventListener("click", closeFootyTradingCard);
 
+footyTradingCardDialog?.addEventListener("click", (event) => {
+  if (event.target === footyTradingCardDialog) {
+    closeFootyTradingCard();
+  }
+});
+
 footyTeamFilter?.addEventListener("click", (event) => {
   if (!event.target.closest(".multi-filter-button")) {
     return;

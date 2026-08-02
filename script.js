@@ -2034,6 +2034,24 @@ function renderFootyPlayerAutocomplete(input) {
   }
 
   activeAutocompleteInput = input;
+
+  if (!Array.isArray(siteData.footyRosters)) {
+    renderAutocompleteDropdown(input, [], "Loading roster...");
+    ensureFootyRosters()
+      .then(() => {
+        if (activeAutocompleteInput === input) {
+          renderFootyPlayerAutocomplete(input);
+        }
+      })
+      .catch((error) => {
+        recordDiagnostic("footy rosters failed to load", error);
+        if (activeAutocompleteInput === input) {
+          renderAutocompleteDropdown(input, [], "Unable to load roster");
+        }
+      });
+    return;
+  }
+
   renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "No roster matches");
 }
 
@@ -2044,9 +2062,42 @@ function getFootyRosterPlayersForTeam(teamInput) {
     return [];
   }
 
-  return [...roster.players].sort((first, second) =>
-    first.name.localeCompare(second.name, undefined, { sensitivity: "base" })
-  );
+  return [...roster.players].sort(compareFootyRosterPlayers);
+}
+
+function compareFootyRosterPlayers(first, second) {
+  const firstNumber = parseIntegerValue(first.number);
+  const secondNumber = parseIntegerValue(second.number);
+
+  if (firstNumber !== null || secondNumber !== null) {
+    return (firstNumber ?? Number.MAX_SAFE_INTEGER) - (secondNumber ?? Number.MAX_SAFE_INTEGER) ||
+      compareFootyRosterPlayerIds(first, second) ||
+      first.name.localeCompare(second.name, undefined, { sensitivity: "base" });
+  }
+
+  return compareFootyRosterPlayerIds(first, second) ||
+    first.name.localeCompare(second.name, undefined, { sensitivity: "base" });
+}
+
+function compareFootyRosterPlayerIds(first, second) {
+  const firstId = parseIntegerValue(first.id);
+  const secondId = parseIntegerValue(second.id);
+
+  if (firstId !== null || secondId !== null) {
+    return (firstId ?? Number.MAX_SAFE_INTEGER) - (secondId ?? Number.MAX_SAFE_INTEGER);
+  }
+
+  return String(first.id || "").localeCompare(String(second.id || ""), undefined, { numeric: true, sensitivity: "base" });
+}
+
+function parseIntegerValue(value) {
+  const normalizedValue = String(value ?? "").trim().replace(/^#/, "");
+
+  if (!normalizedValue || !/^-?\d+$/.test(normalizedValue)) {
+    return null;
+  }
+
+  return Number.parseInt(normalizedValue, 10);
 }
 
 function getFootyRosterPlayerForTeam(teamInput, playerId) {
@@ -2063,9 +2114,10 @@ function getFootyRosterForTeam(teamInput) {
   const teamName = typeof teamInput === "object" && teamInput
     ? teamInput.name
     : teamInput;
-  const teamId = typeof teamInput === "object" && teamInput
+  const explicitTeamId = typeof teamInput === "object" && teamInput
     ? String(teamInput.id || teamInput.teamId || "").trim()
     : "";
+  const teamId = explicitTeamId || getFootyScheduleTeamIdByName(teamName);
   const normalizedTeam = normalizeFootyClubName(teamName);
 
   if (!normalizedTeam && !teamId) {
@@ -2076,6 +2128,19 @@ function getFootyRosterForTeam(teamInput) {
     (teamId && String(roster.teamId || "").trim() === teamId) ||
     (normalizedTeam && normalizeFootyClubName(roster.team) === normalizedTeam)
   ) || null;
+}
+
+function getFootyScheduleTeamIdByName(teamName) {
+  const normalizedTeam = normalizeFootyClubName(teamName);
+
+  if (!normalizedTeam || !siteData.footySchedule) {
+    return "";
+  }
+
+  const team = getAllFootyScheduleTeams(siteData.footySchedule)
+    .find((scheduleTeam) => normalizeFootyClubName(scheduleTeam.name) === normalizedTeam);
+
+  return String(team?.id || "").trim();
 }
 
 function getFootyFixtureOpponentRosterName(fixture) {

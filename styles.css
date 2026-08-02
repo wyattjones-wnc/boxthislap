@@ -2091,7 +2091,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trading-card-preview {
   aspect-ratio: 2500 / 3520;
-  background: #000;
+  background: color-mix(in srgb, var(--panel) 78%, #000);
   border-radius: 8px;
   box-shadow: 0 20px 52px rgb(0 0 0 / 0.46);
   max-height: min(86vh, 740px);
@@ -2112,6 +2112,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .trading-card-background {
+  object-fit: cover;
   z-index: 0;
 }
 

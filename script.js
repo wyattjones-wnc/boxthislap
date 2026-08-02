@@ -77,6 +77,11 @@ import {
   footyTeamTitle,
   footyTeamContent,
   footyTeamPlayerToggle,
+  footyTeamViewModeButtons,
+  footyTradingCardDialog,
+  footyTradingCardTitle,
+  footyTradingCardContent,
+  footyTradingCardClose,
   footyGoalAssistsButton,
   footyGoalAssistsBack,
   footyGoalAssistsForm,
@@ -226,7 +231,7 @@ let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
-let shouldShowFootyTeamPlayers = false;
+let activeFootyTeamViewMode = "schedule";
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
 let activeRankingKind = "games";
@@ -533,6 +538,14 @@ function getFootyTeamFromSlug(slug) {
     null;
 }
 
+function getActiveFootyTeam() {
+  if (!String(activePageName || "").startsWith("footy-team-")) {
+    return null;
+  }
+
+  return getFootyTeamFromSlug(String(activePageName || "").replace(/^footy-team-/, ""));
+}
+
 function getAllFootyScheduleTeams(schedule) {
   if (!Array.isArray(schedule?.teamSchedules)) {
     return [];
@@ -575,14 +588,14 @@ function renderFootyTeamPage(pageName = activePageName) {
 
   if (!siteData.footySchedule) {
     footyTeamTitle.textContent = "Team";
-    syncFootyTeamPlayerToggle(false, true);
+    syncFootyTeamViewToggle(true);
     footyTeamContent.innerHTML = `<p class="table-message">Loading team...</p>`;
     return;
   }
 
   if (!team) {
     footyTeamTitle.textContent = "Team";
-    syncFootyTeamPlayerToggle(false, true);
+    syncFootyTeamViewToggle(true);
     footyTeamContent.innerHTML = `<p class="table-message">Unable to find that followed team.</p>`;
     return;
   }
@@ -599,9 +612,9 @@ function renderFootyTeamPage(pageName = activePageName) {
     : `<span>${escapeHtml(getFootyTeamFallbackBadge(team.name))}</span>`;
 
   footyTeamTitle.textContent = team.name;
-  syncFootyTeamPlayerToggle(shouldShowFootyTeamPlayers, false);
+  syncFootyTeamViewToggle(false);
 
-  if (shouldShowFootyTeamPlayers) {
+  if (activeFootyTeamViewMode === "team") {
     renderFootyTeamPlayers(team);
     return;
   }
@@ -631,15 +644,15 @@ function renderFootyTeamPage(pageName = activePageName) {
   `;
 }
 
-function syncFootyTeamPlayerToggle(isActive, isDisabled = false) {
-  if (!footyTeamPlayerToggle) {
-    return;
-  }
+function syncFootyTeamViewToggle(isDisabled = false) {
+  footyTeamPlayerToggle?.setAttribute("hidden", "");
+  footyTeamViewModeButtons?.forEach((button) => {
+    const isActive = button.dataset.footyTeamViewMode === activeFootyTeamViewMode;
 
-  footyTeamPlayerToggle.disabled = isDisabled;
-  footyTeamPlayerToggle.classList.toggle("is-active", isActive);
-  footyTeamPlayerToggle.setAttribute("aria-pressed", String(isActive));
-  footyTeamPlayerToggle.setAttribute("aria-label", isActive ? "Show matches" : "Show players");
+    button.disabled = isDisabled;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
 }
 
 function renderFootyTeamPlayers(team) {
@@ -649,7 +662,7 @@ function renderFootyTeamPlayers(team) {
     footyTeamContent.innerHTML = `<p class="table-message">Loading roster...</p>`;
     ensureFootyRosters()
       .then(() => {
-        if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && shouldShowFootyTeamPlayers) {
+        if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && activeFootyTeamViewMode === "team") {
           renderFootyTeamPage();
         }
       })
@@ -682,7 +695,7 @@ function renderFootyTeamPlayerCard(player) {
   const number = formatFootyPlayerNumber(player.number);
 
   return `
-    <article class="footy-team-player-card">
+    <article class="footy-team-player-card" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="Open ${escapeHtml(player.name)} trading card">
       <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
       ${number ? `<div class="footy-team-player-number">${escapeHtml(number)}</div>` : ""}
       <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
@@ -694,6 +707,37 @@ function formatFootyPlayerNumber(number) {
   const cleanNumber = String(number || "").trim().replace(/^#/, "");
 
   return cleanNumber;
+}
+
+function openFootyTradingCard(player, team) {
+  if (!player || !team || !footyTradingCardDialog || !footyTradingCardContent) {
+    return;
+  }
+
+  const number = formatFootyPlayerNumber(player.number);
+  const fallback = getFootyTeamFallbackBadge(team.name);
+  const badgeMarkup = team.badge
+    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async">`
+    : `<span>${escapeHtml(fallback)}</span>`;
+
+  if (footyTradingCardTitle) {
+    footyTradingCardTitle.textContent = player.name;
+  }
+
+  footyTradingCardContent.innerHTML = `
+    <div class="trading-card-preview" aria-label="${escapeHtml(player.name)} trading card">
+      <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="" decoding="async">
+      <div class="trading-card-team-badge" aria-hidden="true">${badgeMarkup}</div>
+      ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}
+      <div class="trading-card-name">${escapeHtml(player.name)}</div>
+    </div>
+  `;
+
+  footyTradingCardDialog.showModal();
+}
+
+function closeFootyTradingCard() {
+  footyTradingCardDialog?.close();
 }
 
 function renderFootyTeamFixtureSection(title, fixtures = []) {
@@ -2003,6 +2047,16 @@ function getFootyRosterPlayersForTeam(teamInput) {
   return [...roster.players].sort((first, second) =>
     first.name.localeCompare(second.name, undefined, { sensitivity: "base" })
   );
+}
+
+function getFootyRosterPlayerForTeam(teamInput, playerId) {
+  const normalizedPlayerId = String(playerId || "").trim();
+
+  if (!normalizedPlayerId) {
+    return null;
+  }
+
+  return getFootyRosterPlayersForTeam(teamInput).find((player) => player.id === normalizedPlayerId) || null;
 }
 
 function getFootyRosterForTeam(teamInput) {
@@ -7155,6 +7209,37 @@ function handleFootyFixtureListKeydown(event) {
   container?.addEventListener("keydown", handleFootyFixtureListKeydown);
 });
 
+footyTeamContent?.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-footy-player-id]");
+
+  if (!card) {
+    return;
+  }
+
+  const team = getActiveFootyTeam();
+  const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
+
+  openFootyTradingCard(player, team);
+});
+
+footyTeamContent?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-footy-player-id]");
+
+  if (!card || event.target !== card) {
+    return;
+  }
+
+  event.preventDefault();
+  const team = getActiveFootyTeam();
+  const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
+
+  openFootyTradingCard(player, team);
+});
+
 leagueYearSelect?.addEventListener("change", () => {
   renderLeagueList(leagueYearSelect.value);
 });
@@ -7292,9 +7377,24 @@ footyFilterToggle?.addEventListener("click", () => {
 });
 
 footyTeamPlayerToggle?.addEventListener("click", () => {
-  shouldShowFootyTeamPlayers = !shouldShowFootyTeamPlayers;
+  activeFootyTeamViewMode = activeFootyTeamViewMode === "team" ? "schedule" : "team";
   renderFootyTeamPage();
 });
+
+footyTeamViewModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.footyTeamViewMode;
+
+    if (!["schedule", "team"].includes(mode) || mode === activeFootyTeamViewMode) {
+      return;
+    }
+
+    activeFootyTeamViewMode = mode;
+    renderFootyTeamPage();
+  });
+});
+
+footyTradingCardClose?.addEventListener("click", closeFootyTradingCard);
 
 footyTeamFilter?.addEventListener("click", (event) => {
   if (!event.target.closest(".multi-filter-button")) {

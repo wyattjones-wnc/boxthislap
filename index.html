@@ -594,19 +594,28 @@
             <h1 id="footy-team-title">Team</h1>
           </div>
           <div class="heading-actions heading-actions-right">
-            <button class="icon-action-button" id="footy-team-player-toggle" type="button" aria-label="Show players" aria-pressed="false">
-              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="10" cy="7" r="4"></circle>
-                <path d="M20 8v6"></path>
-                <path d="M23 11h-6"></path>
-              </svg>
-            </button>
+            <div class="segmented-control ranking-mode-toggle footy-team-view-toggle" role="group" aria-label="Team page view">
+              <button class="is-active" type="button" data-footy-team-view-mode="schedule" aria-pressed="true">Schedule</button>
+              <button type="button" data-footy-team-view-mode="team" aria-pressed="false">Team</button>
+            </div>
           </div>
         </div>
         <div class="content-shell" id="footy-team-content">
           <p class="table-message">Loading team...</p>
         </div>
+        <dialog class="footy-note-dialog footy-trading-card-dialog" id="footy-trading-card-dialog">
+          <form class="footy-note-form footy-trading-card-form" method="dialog">
+            <header>
+              <div>
+                <h2 id="footy-trading-card-title">Player Card</h2>
+              </div>
+              <button class="icon-action-button footy-note-close" id="footy-trading-card-close" type="button" aria-label="Close player card">
+                &times;
+              </button>
+            </header>
+            <div id="footy-trading-card-content" class="footy-trading-card-content"></div>
+          </form>
+        </dialog>
       </section>
 
       <section class="page" id="next" data-page="next">

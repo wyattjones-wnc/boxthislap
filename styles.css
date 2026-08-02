@@ -989,6 +989,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: 0 8px 18px var(--shadow);
 }
 
+.footy-team-view-toggle {
+  margin: 0;
+}
+
 .ranking-checkbox-control {
   align-items: center;
   background: var(--soft);
@@ -2016,6 +2020,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   position: relative;
 }
 
+.footy-team-player-card:focus-visible,
+.footy-team-player-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--line));
+  box-shadow: 0 10px 26px var(--shadow);
+  cursor: pointer;
+}
+
 .footy-team-player-art {
   align-items: end;
   display: flex;
@@ -2058,6 +2069,102 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 10px;
   position: relative;
   text-wrap: balance;
+}
+
+.footy-trading-card-dialog {
+  max-width: min(92vw, 460px);
+}
+
+.footy-trading-card-form {
+  gap: 14px;
+}
+
+.footy-trading-card-content {
+  display: grid;
+  justify-items: center;
+}
+
+.trading-card-preview {
+  aspect-ratio: 2500 / 3520;
+  background: var(--bg);
+  border-radius: 8px;
+  max-height: min(72vh, 680px);
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+  width: min(100%, 360px);
+}
+
+.trading-card-frame {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: contain;
+  position: absolute;
+  width: 100%;
+}
+
+.trading-card-team-badge {
+  align-items: center;
+  display: flex;
+  height: 12%;
+  justify-content: center;
+  left: 2.8%;
+  position: absolute;
+  top: 3.2%;
+  width: 18%;
+  z-index: 1;
+}
+
+.trading-card-team-badge img {
+  display: block;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.trading-card-team-badge span {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 900;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.trading-card-number {
+  color: #fff;
+  font-size: clamp(1.35rem, 7vw, 2.25rem);
+  font-weight: 950;
+  line-height: 1;
+  position: absolute;
+  right: 4.7%;
+  text-align: center;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
+  top: 2.5%;
+  width: 12%;
+  z-index: 1;
+}
+
+.trading-card-name {
+  bottom: 8.7%;
+  color: #fff;
+  font-size: clamp(1.35rem, 7vw, 2.35rem);
+  font-weight: 950;
+  left: 13%;
+  line-height: 1;
+  overflow: hidden;
+  position: absolute;
+  right: 15%;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 0.55);
+  white-space: nowrap;
+  z-index: 1;
 }
 
 .footy-admin-diagnostics {

@@ -709,12 +709,24 @@ function formatFootyPlayerNumber(number) {
   return cleanNumber;
 }
 
+function getFootyPlayerTradingCardBackgroundPath(player = {}) {
+  const id = String(player.id || "").trim();
+  const teamId = String(player.teamId || "").trim();
+
+  if (!id || !teamId) {
+    return "";
+  }
+
+  return `assets/players/2026_27/${encodeURIComponent(teamId)}/${encodeURIComponent(id)}/trading-card.webp`;
+}
+
 function openFootyTradingCard(player, team) {
   if (!player || !team || !footyTradingCardDialog || !footyTradingCardContent) {
     return;
   }
 
   const number = formatFootyPlayerNumber(player.number);
+  const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
   const badgeMarkup = team.badge
     ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async">`
@@ -726,6 +738,7 @@ function openFootyTradingCard(player, team) {
 
   footyTradingCardContent.innerHTML = `
     <div class="trading-card-preview" aria-label="${escapeHtml(player.name)} trading card">
+      ${backgroundPath ? `<img class="trading-card-background" src="${escapeHtml(backgroundPath)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : ""}
       <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="" decoding="async">
       <div class="trading-card-team-badge" aria-hidden="true">${badgeMarkup}</div>
       ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}

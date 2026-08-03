@@ -971,27 +971,14 @@ function canvasToPngBlob(canvas) {
 }
 
 async function downloadCanvasAsPng(canvas, fileName, options = {}) {
-  const openRenderedImage = () => {
-    try {
-      const dataUrl = canvas.toDataURL("image/png");
-      const previewWindow = window.open(dataUrl, "_blank");
-      if (!previewWindow) {
-        recordDiagnostic("trading card export failed", new Error("Unable to create PNG blob or open data URL."));
-      }
-    } catch (error) {
-      recordDiagnostic("trading card export failed", error);
-    }
-  };
-
   const blob = await canvasToPngBlob(canvas);
 
   if (!blob) {
-    openRenderedImage();
-    setTradingCardExportStatus("Card rendered. Use the opened image to save it.");
+    setTradingCardExportImageLink(canvas, fileName);
     return;
   }
 
-  setTradingCardExportDownload(fileName, blob);
+  const downloadUrl = setTradingCardExportDownload(fileName, blob);
 
   const file = new File([blob], fileName, { type: "image/png" });
 
@@ -1010,18 +997,12 @@ async function downloadCanvasAsPng(canvas, fileName, options = {}) {
     }
   }
 
-  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = url;
+  link.href = downloadUrl;
   link.download = fileName;
   document.body.append(link);
   link.click();
   link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-  if (isMobileViewport()) {
-    openRenderedImage();
-  }
 }
 
 function setTradingCardExportStatus(message) {
@@ -1036,7 +1017,7 @@ function setTradingCardExportDownload(fileName, blob) {
   const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
 
   if (!status) {
-    return;
+    return "";
   }
 
   if (activeTradingCardExportUrl) {
@@ -1048,10 +1029,26 @@ function setTradingCardExportDownload(fileName, blob) {
     <span>Card ready.</span>
     <a href="${escapeHtml(activeTradingCardExportUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Download</a>
   `;
+  return activeTradingCardExportUrl;
 }
 
-function isMobileViewport() {
-  return window.matchMedia?.("(max-width: 720px)")?.matches || window.innerWidth <= 720;
+function setTradingCardExportImageLink(canvas, fileName) {
+  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+
+  if (!status) {
+    return;
+  }
+
+  try {
+    const dataUrl = canvas.toDataURL("image/png");
+    status.innerHTML = `
+      <span>Card ready.</span>
+      <a href="${escapeHtml(dataUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Open Image</a>
+    `;
+  } catch (error) {
+    recordDiagnostic("trading card export failed", error);
+    setTradingCardExportStatus("Unable to export this card.");
+  }
 }
 
 function slugifyFileName(value) {

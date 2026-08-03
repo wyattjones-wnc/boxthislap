@@ -289,6 +289,7 @@
         <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
           <a href="#footy" data-page-link="footy" role="tab">Footy</a>
           <a href="#next" data-page-link="next" role="tab">Next</a>
+          <a href="#todo" data-page-link="todo" role="tab" data-admin-only hidden>To Do</a>
           <a href="#rankings" data-page-link="rankings" role="tab" data-login-only hidden>Rankings</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
@@ -717,6 +718,66 @@
             <p class="footy-note-status" id="next-item-status" aria-live="polite"></p>
             <footer>
               <button class="action-button" id="next-item-cancel" type="button">
+                Cancel
+              </button>
+              <button class="action-button" type="submit">
+                Save
+              </button>
+            </footer>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="page" id="todo" data-page="todo">
+        <div class="section-heading page-heading-with-action footy-heading">
+          <h1>To Do</h1>
+          <div class="heading-actions">
+            <button class="icon-action-button next-add-button" id="todo-add-button" type="button" aria-label="Add To Do item" data-admin-only hidden>
+              +
+            </button>
+          </div>
+        </div>
+        <div class="content-shell" id="todo-list">
+          <p class="table-message">To Do items will load here.</p>
+        </div>
+        <dialog class="footy-note-dialog next-item-dialog" id="todo-item-dialog">
+          <form class="footy-note-form next-item-form" id="todo-item-form" method="dialog">
+            <header>
+              <div>
+                <h2>Add To Do Item</h2>
+              </div>
+              <button class="icon-action-button footy-note-close" id="todo-item-close" type="button" aria-label="Close To Do item dialog">
+                X
+              </button>
+            </header>
+            <input id="todo-item-id" type="hidden">
+            <div class="next-item-fields">
+              <label class="next-item-wide">
+                <span>Name</span>
+                <input id="todo-name" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Order</span>
+                <input id="todo-order" type="number" min="1" step="1" value="1">
+              </label>
+              <label>
+                <span>Low Hour</span>
+                <input id="todo-low-hour" type="number" min="0" step="0.25">
+              </label>
+              <label>
+                <span>High Hour</span>
+                <input id="todo-high-hour" type="number" min="0" step="0.25">
+              </label>
+              <div class="next-dialog-checks">
+                <label class="next-checkbox-control next-dialog-checkbox">
+                  <input id="todo-started" type="checkbox">
+                  <span>Started</span>
+                </label>
+              </div>
+            </div>
+            <p class="footy-note-status" id="todo-item-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="todo-item-cancel" type="button">
                 Cancel
               </button>
               <button class="action-button" type="submit">

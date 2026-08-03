@@ -10,6 +10,14 @@ const NEXT_ITEM_COLUMNS = [
   "Completed",
   "NonAdmin",
 ];
+const TODO_ITEM_COLUMNS = [
+  "ID",
+  "Order",
+  "Name",
+  "Low Hour",
+  "High Hour",
+  "Started",
+];
 const RANKING_SHEETS = {
   games: "VG Ranking",
   mcu: "MCU Ranking",
@@ -133,6 +141,10 @@ function doGet(e) {
       return webResponse(e, { ok: true, items: listNextItems() });
     }
 
+    if (action === "listTodoItems") {
+      return webResponse(e, { ok: true, items: listTodoItems() });
+    }
+
     return webResponse(e, { ok: true, service: "boxthislap-next-data" });
   } catch (error) {
     return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });
@@ -145,6 +157,14 @@ function doPost(e) {
 
     if (payload.action === "saveNextItem") {
       return jsonResponse(saveNextItem(payload.item || {}));
+    }
+
+    if (payload.action === "saveTodoItem") {
+      return jsonResponse(saveTodoItem(payload.item || {}));
+    }
+
+    if (payload.action === "saveTodoOrder") {
+      return jsonResponse(saveTodoOrder(payload.items || []));
     }
 
     if (payload.action === "saveRankingItem") {
@@ -283,6 +303,154 @@ function listNextItems() {
       nonAdmin: isTrueValue(row.NonAdmin),
     }))
     .filter((row) => row.id && row.thing && row.date);
+}
+
+function saveTodoItem(item) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const context = getSimpleTableContext("To Do", TODO_ITEM_COLUMNS, "ID");
+    const rows = getTodoRows(context);
+    const rowValues = normalizeTodoItem(item);
+    rowValues.ID = rowValues.ID || getNextNumericIdFromRows(rows, "ID");
+
+    if (!rowValues.ID) {
+      throw new Error("ID is required.");
+    }
+
+    if (!rowValues.Name) {
+      throw new Error("Name is required.");
+    }
+
+    const order = clampTodoOrder(rowValues.Order, rows.length + 1);
+    const existingRows = rows.filter((row) => row.ID !== rowValues.ID);
+    existingRows.splice(order - 1, 0, rowValues);
+    writeTodoRows(context, normalizeTodoOrder(existingRows));
+
+    return {
+      ok: true,
+      id: rowValues.ID,
+      status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended",
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function saveTodoOrder(items) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const context = getSimpleTableContext("To Do", TODO_ITEM_COLUMNS, "ID");
+    const existingRows = getTodoRows(context);
+    const existingRowsById = {};
+    existingRows.forEach((row) => {
+      existingRowsById[row.ID] = row;
+    });
+
+    const orderedIds = items
+      .map((item) => String(item.ID || item.Id || item.id || "").trim())
+      .filter(Boolean);
+    const reorderedRows = orderedIds
+      .map((id) => existingRowsById[id])
+      .filter(Boolean);
+    const reorderedIds = {};
+    reorderedRows.forEach((row) => {
+      reorderedIds[row.ID] = true;
+    });
+    const remainingRows = existingRows
+      .filter((row) => !reorderedIds[row.ID])
+      .sort(compareTodoRows);
+    const nextRows = normalizeTodoOrder(reorderedRows.concat(remainingRows));
+
+    writeTodoRows(context, nextRows);
+
+    return { ok: true, count: nextRows.length, status: "updated" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function listTodoItems() {
+  const context = getSimpleTableContext("To Do", TODO_ITEM_COLUMNS, "ID");
+
+  return readSimpleTableDisplayRows(context)
+    .map((row) => ({
+      ID: String(row.ID || "").trim(),
+      Order: String(row.Order || "").trim(),
+      Name: String(row.Name || "").trim(),
+      "Low Hour": String(row["Low Hour"] || "").trim(),
+      "High Hour": String(row["High Hour"] || "").trim(),
+      Started: isTrueValue(row.Started),
+    }))
+    .filter((row) => row.ID && row.Name)
+    .sort(compareTodoRows);
+}
+
+function getTodoRows(context) {
+  return readSimpleTableRows(context)
+    .map((row) => normalizeTodoItem(row))
+    .filter((row) => row.ID && row.Name)
+    .sort(compareTodoRows);
+}
+
+function writeTodoRows(context, rows) {
+  const lastRow = context.sheet.getLastRow();
+  const writeRows = rows.map((row) => {
+    const values = Array(context.rowWidth).fill("");
+    TODO_ITEM_COLUMNS.forEach((column) => {
+      values[context.columns[column] - 1] = row[column] === undefined ? "" : row[column];
+    });
+    return values;
+  });
+
+  if (writeRows.length > 0) {
+    context.sheet.getRange(context.headerRow + 1, 1, writeRows.length, context.rowWidth).setValues(writeRows);
+  }
+
+  const extraRowCount = lastRow - context.headerRow - writeRows.length;
+
+  if (extraRowCount > 0) {
+    context.sheet.getRange(context.headerRow + 1 + writeRows.length, 1, extraRowCount, context.rowWidth).clearContent();
+  }
+}
+
+function normalizeTodoItem(item) {
+  return {
+    ID: String(item.ID || item.Id || item.id || "").trim(),
+    Order: clampTodoOrder(item.Order || item.order, Number.MAX_SAFE_INTEGER),
+    Name: String(item.Name || item.name || "").trim(),
+    "Low Hour": String(item["Low Hour"] || item.lowHour || "").trim(),
+    "High Hour": String(item["High Hour"] || item.highHour || "").trim(),
+    Started: normalizeBool(item.Started || item.started),
+  };
+}
+
+function normalizeTodoOrder(rows) {
+  return rows.map((row, index) => ({
+    ...row,
+    Order: index + 1,
+  }));
+}
+
+function clampTodoOrder(value, maxOrder) {
+  const order = Number(value);
+
+  if (!Number.isInteger(order) || order <= 0) {
+    return Math.max(1, maxOrder);
+  }
+
+  return Math.min(order, Math.max(1, maxOrder));
+}
+
+function compareTodoRows(first, second) {
+  if (Number(first.Order) !== Number(second.Order)) {
+    return Number(first.Order) - Number(second.Order);
+  }
+
+  return String(first.ID || "").localeCompare(String(second.ID || ""), undefined, { numeric: true });
 }
 
 function getNextNumericId(rowsById) {

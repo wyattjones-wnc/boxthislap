@@ -715,6 +715,29 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-color: color-mix(in srgb, #f2c94c 38%, var(--line));
 }
 
+.todo-card {
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.todo-card:active {
+  cursor: grabbing;
+}
+
+.todo-card.is-dragging {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.todo-card--started {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+}
+
+.todo-card .next-card-main {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .next-card-main {
   align-items: center;
   display: grid;
@@ -2006,6 +2029,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
 }
 
+.footy-team-player-grid.is-export-mode .footy-team-player-card {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+}
+
 .footy-team-player-card {
   align-items: end;
   aspect-ratio: 3 / 4;
@@ -2069,6 +2096,24 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 10px;
   position: relative;
   text-wrap: balance;
+}
+
+.trading-card-export-toggle {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 900;
+  gap: 8px;
+  justify-self: center;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.trading-card-export-toggle input {
+  accent-color: var(--accent);
+  height: 18px;
+  width: 18px;
 }
 
 .footy-trading-card-dialog {

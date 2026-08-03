@@ -134,6 +134,19 @@ import {
   nextItemStatus,
   nextItemClose,
   nextItemCancel,
+  todoList,
+  todoAddButton,
+  todoItemDialog,
+  todoItemForm,
+  todoItemId,
+  todoNameInput,
+  todoOrderInput,
+  todoLowHourInput,
+  todoHighHourInput,
+  todoStartedInput,
+  todoItemStatus,
+  todoItemClose,
+  todoItemCancel,
   rankingTabs,
   rankingPanels,
   rankingAddButton,
@@ -232,8 +245,11 @@ let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
 let activeFootyTeamViewMode = "schedule";
+let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
+let draggedTodoItemId = "";
+let didMoveTodoPointer = false;
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
 let activeRankingSnapshotId = "current";
@@ -341,7 +357,9 @@ const router = createRouter({
   onStandingsTabShown: () => renderStandingsAwards(),
   pageLinks,
   pages,
-  shouldBlockPage: (pageName) => pageName === "rankings" && !siteData.managerSession,
+  shouldBlockPage: (pageName) =>
+    (pageName === "rankings" && !siteData.managerSession) ||
+    (pageName === "todo" && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -690,9 +708,13 @@ function renderFootyTeamPlayers(team) {
   const players = getFootyRosterPlayersForTeam(team);
   footyTeamContent.innerHTML = `
     <section class="footy-team-player-section">
-      <div class="footy-team-player-grid">
+      <div class="footy-team-player-grid${shouldExportFootyTradingCards ? " is-export-mode" : ""}">
         ${players.map(renderFootyTeamPlayerCard).join("")}
       </div>
+      <label class="trading-card-export-toggle">
+        <input type="checkbox" data-trading-card-export-toggle${shouldExportFootyTradingCards ? " checked" : ""}>
+        <span>Export</span>
+      </label>
     </section>
   `;
 }
@@ -705,7 +727,7 @@ function renderFootyTeamPlayerCard(player) {
   const number = formatFootyPlayerNumber(player.number);
 
   return `
-    <article class="footy-team-player-card" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="Open ${escapeHtml(player.name)} trading card">
+    <article class="footy-team-player-card" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="${shouldExportFootyTradingCards ? "Export" : "Open"} ${escapeHtml(player.name)} trading card">
       <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
       ${number ? `<div class="footy-team-player-number">${escapeHtml(number)}</div>` : ""}
       <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
@@ -761,6 +783,178 @@ function openFootyTradingCard(player, team) {
 
 function closeFootyTradingCard() {
   footyTradingCardDialog?.close();
+}
+
+async function exportFootyTradingCard(player, team) {
+  if (!player || !team) {
+    return;
+  }
+
+  const width = 2500;
+  const height = 3520;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = width;
+  canvas.height = height;
+
+  if (!context) {
+    return;
+  }
+
+  const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
+  const framePath = "assets/trading-card/trading-card.svg";
+  const number = formatFootyPlayerNumber(player.number);
+  const badgePath = getFootyTeamBadge(team.name, team.badge);
+
+  context.fillStyle = "#07111d";
+  context.fillRect(0, 0, width, height);
+
+  await drawCanvasImage(context, backgroundPath, 0, 0, width, height);
+  await drawCanvasImage(context, framePath, 0, 0, width, height);
+
+  if (badgePath) {
+    await drawCanvasImage(context, badgePath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true });
+  } else {
+    drawFallbackTradingCardBadge(context, team.name, width * 0.028, height * 0.032, width * 0.18, height * 0.12);
+  }
+
+  if (number) {
+    drawTradingCardNumber(context, number, width, height);
+  }
+
+  drawTradingCardName(context, player.name, width, height);
+  downloadCanvasAsPng(canvas, `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card.png`);
+}
+
+function loadCanvasImage(src) {
+  return new Promise((resolve, reject) => {
+    if (!src) {
+      reject(new Error("Missing image source."));
+      return;
+    }
+
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Unable to load image: ${src}`));
+    image.src = src;
+  });
+}
+
+async function drawCanvasImage(context, src, x, y, width, height, options = {}) {
+  try {
+    const image = await loadCanvasImage(src);
+
+    if (options.contain) {
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * scale;
+      const drawHeight = image.naturalHeight * scale;
+      context.drawImage(image, x + ((width - drawWidth) / 2), y + ((height - drawHeight) / 2), drawWidth, drawHeight);
+      return true;
+    }
+
+    context.drawImage(image, x, y, width, height);
+    return true;
+  } catch (error) {
+    recordDiagnostic("trading card image failed to draw", error, { src });
+    return false;
+  }
+}
+
+function drawFallbackTradingCardBadge(context, teamName, x, y, width, height) {
+  const size = Math.min(width, height) * 0.78;
+  const centerX = x + (width / 2);
+  const centerY = y + (height / 2);
+
+  context.save();
+  context.fillStyle = "#101a2b";
+  context.strokeStyle = "#d8e3ff";
+  context.lineWidth = 10;
+  context.beginPath();
+  context.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.fillStyle = "#f4f7ff";
+  context.font = `900 ${Math.round(size * 0.45)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(getFootyTeamFallbackBadge(teamName), centerX, centerY + (size * 0.03));
+  context.restore();
+}
+
+function drawTradingCardNumber(context, number, width, height) {
+  const boxX = width * 0.8527;
+  const boxY = height * 0.0096;
+  const boxWidth = width * 0.1352;
+  const boxHeight = height * 0.055;
+
+  context.save();
+  context.fillStyle = "#ffffff";
+  context.font = `950 ${Math.round(boxHeight * 0.88)}px Impact, Arial Black, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.shadowColor = "rgba(0, 0, 0, 0.45)";
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 7;
+  context.fillText(String(number), boxX + (boxWidth / 2), boxY + (boxHeight / 2) - (boxHeight * 0.02));
+  context.restore();
+}
+
+function drawTradingCardName(context, name, width, height) {
+  const boxX = width * 0.13;
+  const boxY = height * 0.889;
+  const boxWidth = width * 0.72;
+  const boxHeight = height * 0.055;
+  const fontSize = fitCanvasText(context, String(name || ""), boxWidth, Math.round(boxHeight * 0.84), "Trebuchet MS, Arial, sans-serif");
+
+  context.save();
+  context.fillStyle = "#ffffff";
+  context.font = `950 ${fontSize}px Trebuchet MS, Arial, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.shadowColor = "rgba(0, 0, 0, 0.55)";
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 7;
+  context.fillText(String(name || ""), boxX + (boxWidth / 2), boxY + (boxHeight / 2));
+  context.restore();
+}
+
+function fitCanvasText(context, text, maxWidth, startingSize, family) {
+  let size = startingSize;
+
+  while (size > 28) {
+    context.font = `950 ${size}px ${family}`;
+    if (context.measureText(text).width <= maxWidth) {
+      return size;
+    }
+    size -= 4;
+  }
+
+  return size;
+}
+
+function downloadCanvasAsPng(canvas, fileName) {
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, "image/png");
+}
+
+function slugifyFileName(value) {
+  return normalizeLookupName(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "card";
 }
 
 function renderFootyTeamFixtureSection(title, fixtures = []) {
@@ -3323,6 +3517,301 @@ function renderNextListError(error) {
   }
 
   nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
+}
+
+function renderTodoList(items = siteData.todoItems || []) {
+  if (!todoList || !shouldRenderPageSection("todo")) {
+    return;
+  }
+
+  if (!isCurrentManagerAdmin()) {
+    todoList.innerHTML = `<p class="table-message">To Do is available to admin users.</p>`;
+    return;
+  }
+
+  const normalizedItems = items.map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
+
+  if (!normalizedItems.length) {
+    todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
+    return;
+  }
+
+  todoList.innerHTML = `
+    <div class="next-list todo-list">
+      ${normalizedItems.map(renderTodoItem).join("")}
+    </div>
+  `;
+}
+
+function normalizeTodoItem(row) {
+  const name = String(row?.Name || "").trim();
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    highHour: normalizeTodoHour(row["High Hour"]),
+    id: String(row?.ID || row?.Id || row?.id || "").trim(),
+    lowHour: normalizeTodoHour(row["Low Hour"]),
+    name,
+    order: normalizeTodoOrder(row.Order),
+    raw: row,
+    started: isTrueValue(row.Started),
+  };
+}
+
+function normalizeTodoOrder(value) {
+  const order = Number(value);
+  return Number.isFinite(order) && order > 0 ? order : Number.MAX_SAFE_INTEGER;
+}
+
+function normalizeTodoHour(value) {
+  const hour = Number(value);
+  return Number.isFinite(hour) && hour >= 0 ? hour : null;
+}
+
+function compareTodoItems(first, second) {
+  if (first.order !== second.order) {
+    return first.order - second.order;
+  }
+
+  return String(first.id).localeCompare(String(second.id), undefined, { numeric: true });
+}
+
+function renderTodoItem(item) {
+  const hourLabel = formatTodoHourRange(item);
+  const startedClass = item.started ? " todo-card--started" : "";
+
+  return `
+    <article class="next-card todo-card${startedClass}" draggable="true" tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="Move ${escapeHtml(item.name)}">
+      <div class="next-card-main">
+        <div>
+          <h2>${escapeHtml(item.name)}</h2>
+          ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
+        </div>
+        <span class="ranking-drag-handle todo-drag-handle" aria-hidden="true" title="Drag to reorder"></span>
+      </div>
+    </article>
+  `;
+}
+
+function formatTodoHourRange(item) {
+  const low = item.lowHour;
+  const high = item.highHour;
+
+  if (low === null && high === null) {
+    return "";
+  }
+
+  if (low !== null && high !== null) {
+    return `${formatTodoHour(low)} - ${formatTodoHour(high)} hours`;
+  }
+
+  return `${formatTodoHour(low ?? high)} hours`;
+}
+
+function formatTodoHour(value) {
+  return Number.isInteger(value) ? String(value) : String(value).replace(/\.?0+$/, "");
+}
+
+function openTodoItemDialog() {
+  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+    return;
+  }
+
+  const rows = getTodoItems();
+  const nextOrder = rows.length + 1;
+
+  if (todoItemId) {
+    todoItemId.value = "";
+  }
+  if (todoNameInput) {
+    todoNameInput.value = "";
+  }
+  if (todoOrderInput) {
+    todoOrderInput.value = String(nextOrder);
+    todoOrderInput.max = String(nextOrder);
+  }
+  if (todoLowHourInput) {
+    todoLowHourInput.value = "";
+  }
+  if (todoHighHourInput) {
+    todoHighHourInput.value = "";
+  }
+  if (todoStartedInput) {
+    todoStartedInput.checked = false;
+  }
+
+  setTodoItemStatus("");
+
+  if (typeof todoItemDialog.showModal === "function") {
+    todoItemDialog.showModal();
+  } else {
+    todoItemDialog.setAttribute("open", "");
+  }
+
+  todoNameInput?.focus();
+}
+
+function closeTodoItemDialog() {
+  if (!todoItemDialog) {
+    return;
+  }
+
+  if (typeof todoItemDialog.close === "function") {
+    todoItemDialog.close();
+  } else {
+    todoItemDialog.removeAttribute("open");
+  }
+}
+
+function saveTodoItemFromForm() {
+  const name = String(todoNameInput?.value || "").trim();
+
+  if (!name) {
+    setTodoItemStatus("Name is required.", true);
+    return;
+  }
+
+  const rows = getTodoItems();
+  const item = {
+    ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
+    Order: String(clampTodoOrder(todoOrderInput?.value, rows.length + 1)),
+    Name: name,
+    "Low Hour": String(todoLowHourInput?.value || "").trim(),
+    "High Hour": String(todoHighHourInput?.value || "").trim(),
+    Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
+  };
+
+  upsertTodoItemLocally(item);
+  normalizeTodoOrdersLocally();
+  renderTodoList();
+  submitNextItemPayload({
+    action: "saveTodoItem",
+    item,
+    sheetName: "To Do",
+  });
+  closeTodoItemDialog();
+}
+
+function getTodoItems() {
+  return Array.isArray(siteData.todoItems) ? siteData.todoItems : [];
+}
+
+function createTodoItemId() {
+  const nextId = getTodoItems()
+    .map((row) => Number(String(row?.ID || row?.Id || row?.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
+}
+
+function clampTodoOrder(value, maxOrder) {
+  const order = Number(value);
+
+  if (!Number.isInteger(order)) {
+    return maxOrder;
+  }
+
+  return Math.min(Math.max(order, 1), Math.max(maxOrder, 1));
+}
+
+function upsertTodoItemLocally(item) {
+  const id = String(item.ID || "").trim();
+  const rows = getTodoItems();
+  const existingIndex = rows.findIndex((row) => String(row.ID || row.Id || row.id || "").trim() === id);
+  const order = clampTodoOrder(item.Order, rows.length + 1);
+  const nextRows = rows.filter((row) => String(row.ID || row.Id || row.id || "").trim() !== id);
+
+  nextRows.splice(order - 1, 0, item);
+  siteData.todoItems = nextRows;
+
+  if (existingIndex >= 0 && existingIndex === order - 1) {
+    siteData.todoItems[existingIndex] = item;
+  }
+}
+
+function normalizeTodoOrdersLocally() {
+  siteData.todoItems = getTodoItems()
+    .map(normalizeTodoItem)
+    .filter(Boolean)
+    .sort(compareTodoItems)
+    .map((item, index) => ({
+      ID: item.id,
+      Order: String(index + 1),
+      Name: item.name,
+      "Low Hour": item.raw["Low Hour"] || "",
+      "High Hour": item.raw["High Hour"] || "",
+      Started: item.started ? "TRUE" : "FALSE",
+    }));
+}
+
+function moveTodoItem(draggedId, targetId, options = {}) {
+  if (!isCurrentManagerAdmin() || !draggedId || !targetId || draggedId === targetId) {
+    return false;
+  }
+
+  const rows = getTodoItems().map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
+  const fromIndex = rows.findIndex((row) => row.id === draggedId);
+  const toIndex = rows.findIndex((row) => row.id === targetId);
+
+  if (fromIndex < 0 || toIndex < 0) {
+    return false;
+  }
+
+  const [item] = rows.splice(fromIndex, 1);
+  rows.splice(toIndex, 0, item);
+  siteData.todoItems = rows.map((row, index) => ({
+    ID: row.id,
+    Order: String(index + 1),
+    Name: row.name,
+    "Low Hour": row.raw["Low Hour"] || "",
+    "High Hour": row.raw["High Hour"] || "",
+    Started: row.started ? "TRUE" : "FALSE",
+  }));
+  renderTodoList();
+
+  if (options.shouldSubmit !== false) {
+    submitTodoOrder();
+  }
+
+  return true;
+}
+
+function submitTodoOrder() {
+  submitNextItemPayload({
+    action: "saveTodoOrder",
+    items: getTodoItems().map((item) => ({
+      ID: item.ID,
+      Order: item.Order,
+      Name: item.Name,
+      "Low Hour": item["Low Hour"] || "",
+      "High Hour": item["High Hour"] || "",
+      Started: item.Started || "FALSE",
+    })),
+    sheetName: "To Do",
+  });
+}
+
+function getTodoItemElement(itemId) {
+  return todoList?.querySelector(`[data-todo-id="${CSS.escape(String(itemId || ""))}"]`) || null;
+}
+
+function setTodoItemStatus(message, isError = false) {
+  if (!todoItemStatus) {
+    return;
+  }
+
+  todoItemStatus.textContent = message;
+  todoItemStatus.classList.toggle("is-error", isError);
+}
+
+function renderTodoListError(error) {
+  if (todoList) {
+    todoList.innerHTML = `<p class="table-message">Unable to load To Do items: ${escapeHtml(error.message)}</p>`;
+  }
 }
 
 function renderRankingsPage() {
@@ -6005,6 +6494,15 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "todo") {
+    if (Array.isArray(siteData.todoItems)) {
+      renderTodoList();
+    } else if (todoList) {
+      todoList.innerHTML = renderLoadingMessage("Loading To Do items...");
+    }
+    return;
+  }
+
   if (pageName === "rankings") {
     renderRankingsPage();
     return;
@@ -7367,6 +7865,14 @@ function handleFootyFixtureListKeydown(event) {
 });
 
 footyTeamContent?.addEventListener("click", (event) => {
+  const exportToggle = event.target.closest("[data-trading-card-export-toggle]");
+
+  if (exportToggle) {
+    shouldExportFootyTradingCards = Boolean(exportToggle.checked);
+    renderFootyTeamPage();
+    return;
+  }
+
   const card = event.target.closest("[data-footy-player-id]");
 
   if (!card) {
@@ -7376,7 +7882,11 @@ footyTeamContent?.addEventListener("click", (event) => {
   const team = getActiveFootyTeam();
   const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
 
-  openFootyTradingCard(player, team);
+  if (shouldExportFootyTradingCards) {
+    void exportFootyTradingCard(player, team);
+  } else {
+    openFootyTradingCard(player, team);
+  }
 });
 
 footyTeamContent?.addEventListener("keydown", (event) => {
@@ -7394,7 +7904,11 @@ footyTeamContent?.addEventListener("keydown", (event) => {
   const team = getActiveFootyTeam();
   const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
 
-  openFootyTradingCard(player, team);
+  if (shouldExportFootyTradingCards) {
+    void exportFootyTradingCard(player, team);
+  } else {
+    openFootyTradingCard(player, team);
+  }
 });
 
 leagueYearSelect?.addEventListener("change", () => {
@@ -7664,6 +8178,19 @@ nextItemForm?.addEventListener("submit", (event) => {
   control?.addEventListener("change", updateNextCompletedControlAvailability);
 });
 
+todoAddButton?.addEventListener("click", () => {
+  openTodoItemDialog();
+});
+
+todoItemForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveTodoItemFromForm();
+});
+
+[todoItemClose, todoItemCancel].forEach((button) => {
+  button?.addEventListener("click", closeTodoItemDialog);
+});
+
 rankingTabs?.forEach((tab) => {
   tab.addEventListener("click", () => {
     setActiveRankingKind(tab.dataset.rankingTab);
@@ -7912,6 +8439,106 @@ document.addEventListener("pointercancel", () => {
   draggedRankingItemId = "";
   draggedRankingKind = "";
   didMoveRankingPointer = false;
+});
+
+document.addEventListener("dragstart", (event) => {
+  const item = event.target.closest("[data-todo-id]");
+
+  if (!item || !isCurrentManagerAdmin() || !event.target.closest(".todo-drag-handle")) {
+    return;
+  }
+
+  draggedTodoItemId = item.getAttribute("data-todo-id") || "";
+  event.dataTransfer?.setData("text/plain", draggedTodoItemId);
+  event.dataTransfer && (event.dataTransfer.effectAllowed = "move");
+  item.classList.add("is-dragging");
+});
+
+document.addEventListener("dragend", (event) => {
+  event.target.closest("[data-todo-id]")?.classList.remove("is-dragging");
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
+});
+
+document.addEventListener("dragover", (event) => {
+  if (!draggedTodoItemId || !event.target.closest("[data-todo-id]")) {
+    return;
+  }
+
+  event.preventDefault();
+});
+
+document.addEventListener("drop", (event) => {
+  const target = event.target.closest("[data-todo-id]");
+
+  if (!target || !draggedTodoItemId) {
+    return;
+  }
+
+  event.preventDefault();
+  moveTodoItem(draggedTodoItemId, target.getAttribute("data-todo-id") || "");
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
+});
+
+document.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest(".todo-drag-handle");
+  const item = handle?.closest("[data-todo-id]");
+
+  if (!item || !isCurrentManagerAdmin()) {
+    return;
+  }
+
+  draggedTodoItemId = item.getAttribute("data-todo-id") || "";
+  didMoveTodoPointer = false;
+
+  if (!draggedTodoItemId) {
+    return;
+  }
+
+  event.preventDefault();
+  item.classList.add("is-dragging");
+  handle.setPointerCapture?.(event.pointerId);
+}, true);
+
+document.addEventListener("pointermove", (event) => {
+  if (!draggedTodoItemId) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-todo-id]");
+  const targetId = target?.getAttribute("data-todo-id") || "";
+
+  if (moveTodoItem(draggedTodoItemId, targetId, { shouldSubmit: false })) {
+    didMoveTodoPointer = true;
+    getTodoItemElement(draggedTodoItemId)?.classList.add("is-dragging");
+  }
+}, true);
+
+document.addEventListener("pointerup", () => {
+  if (!draggedTodoItemId) {
+    return;
+  }
+
+  getTodoItemElement(draggedTodoItemId)?.classList.remove("is-dragging");
+
+  if (didMoveTodoPointer) {
+    submitTodoOrder();
+  }
+
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
+}, true);
+
+document.addEventListener("pointercancel", () => {
+  if (draggedTodoItemId) {
+    getTodoItemElement(draggedTodoItemId)?.classList.remove("is-dragging");
+  }
+
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
 });
 
 document.addEventListener("pointerdown", (event) => {
@@ -10558,6 +11185,10 @@ function getPageDataScope(pageName = "") {
     return "next";
   }
 
+  if (page === "todo") {
+    return "todo";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -10656,6 +11287,10 @@ function loadPageData(scope) {
     return ensureNextData();
   }
 
+  if (scope === "todo") {
+    return ensureTodoData();
+  }
+
   if (scope === "rankings") {
     return ensureRankingsLoaded();
   }
@@ -10722,6 +11357,10 @@ function renderPageDataError(scope, error) {
 
   if (scope === "next") {
     renderNextListError(error);
+  }
+
+  if (scope === "todo") {
+    renderTodoListError(error);
   }
 
   if (scope === "world-cup-results" && dynamicResultImages) {
@@ -10812,6 +11451,28 @@ function ensureNextData() {
     return items;
   }).catch((error) => {
     siteData.nextItemsError = error;
+    throw error;
+  });
+}
+
+function ensureTodoData() {
+  return ensureSharedData("todo", async () => {
+    let items;
+
+    try {
+      const response = await loadNextDataEndpoint("listTodoItems");
+      items = response.items || response.todoItems || [];
+    } catch (error) {
+      recordDiagnostic("To Do endpoint failed to load; using published sheet", error);
+      items = await loadSheet("todo");
+    }
+
+    siteData.todoItems = items;
+    renderTodoList(items);
+    console.info("Box This Lap To Do data loaded", items);
+    return items;
+  }).catch((error) => {
+    siteData.todoItemsError = error;
     throw error;
   });
 }

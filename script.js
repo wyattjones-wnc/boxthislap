@@ -511,11 +511,16 @@ function renderFollowedTeamShortcuts(schedule) {
   followedTeamShortcuts.innerHTML = teams.map((team) => {
     const slug = getFootyTeamSlug(team.name);
     const fallback = getFootyTeamFallbackBadge(team.name);
-    const badgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId) || team.badge;
+    const localBadgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId);
+    const providerBadgePath = String(team.badge || "").trim();
 
     return `
       <a class="followed-team-shortcut" href="#footy-team-${escapeHtml(slug)}" data-page-link="footy-team-${escapeHtml(slug)}" aria-label="${escapeHtml(team.name)}">
-        ${badgePath ? `<img src="${escapeHtml(badgePath)}" alt="" decoding="async" loading="lazy" onerror="this.remove(); this.closest('.followed-team-shortcut')?.insertAdjacentHTML('afterbegin', '<span>${escapeHtml(fallback)}</span>')">` : `<span>${escapeHtml(fallback)}</span>`}
+        ${renderFootyBadgeMarkup({
+          fallbackSrc: providerBadgePath,
+          fallbackText: fallback,
+          primarySrc: localBadgePath,
+        })}
       </a>
     `;
   }).join("");
@@ -645,6 +650,33 @@ function getFootyLocalTeamBadge(teamName, teamId = "") {
   return "";
 }
 
+function renderFootyBadgeMarkup({
+  primarySrc = "",
+  fallbackSrc = "",
+  fallbackText = "",
+  loading = "lazy",
+}) {
+  const primary = String(primarySrc || "").trim();
+  const fallback = String(fallbackSrc || "").trim();
+  const text = String(fallbackText || "").trim() || "?";
+
+  if (!primary) {
+    return `<span>${escapeHtml(text)}</span>`;
+  }
+
+  return `
+    <span hidden>${escapeHtml(text)}</span>
+    <img
+      src="${escapeHtml(primary)}"
+      alt=""
+      decoding="async"
+      loading="${escapeHtml(loading)}"
+      data-fallback-src="${escapeHtml(fallback)}"
+      onerror="const fallbackSrc=this.dataset.fallbackSrc||''; if(fallbackSrc && this.getAttribute('src')!==fallbackSrc){ this.setAttribute('src', fallbackSrc); this.dataset.fallbackSrc=''; return; } this.hidden=true; if(this.previousElementSibling){ this.previousElementSibling.hidden=false; }"
+    >
+  `.trim();
+}
+
 function renderFootyTeamPage(pageName = activePageName) {
   if (!footyTeamTitle || !footyTeamContent) {
     return;
@@ -674,9 +706,11 @@ function renderFootyTeamPage(pageName = activePageName) {
   const nextFixtures = upcomingFixtures.slice(0, 5);
   const recentFixtures = pastFixtures.slice(0, 3);
   const updatedAt = formatFootyGeneratedAt(team.updatedAt || getFootyScheduleUpdatedAt(siteData.footySchedule));
-  const badgeMarkup = team.badge
-    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">`
-    : `<span>${escapeHtml(getFootyTeamFallbackBadge(team.name))}</span>`;
+  const badgeMarkup = renderFootyBadgeMarkup({
+    fallbackSrc: String(team.badge || "").trim(),
+    fallbackText: getFootyTeamFallbackBadge(team.name),
+    primarySrc: getFootyLocalTeamBadge(team.name, team.id || team.teamId),
+  });
 
   footyTeamTitle.textContent = team.name;
   syncFootyTeamViewToggle(false);
@@ -815,11 +849,12 @@ function openFootyTradingCard(player, team) {
   const number = formatFootyPlayerNumber(player.number);
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
-  const badgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId) ||
-    getFootyTeamBadge(team.name, team.badge, team.id || team.teamId);
-  const badgeMarkup = badgePath
-    ? `<img src="${escapeHtml(badgePath)}" alt="" decoding="async" onerror="this.remove(); this.closest('.trading-card-team-badge')?.insertAdjacentHTML('afterbegin', '<span>${escapeHtml(fallback)}</span>')">`
-    : `<span>${escapeHtml(fallback)}</span>`;
+  const badgeMarkup = renderFootyBadgeMarkup({
+    fallbackSrc: String(team.badge || "").trim(),
+    fallbackText: fallback,
+    loading: "eager",
+    primarySrc: getFootyLocalTeamBadge(team.name, team.id || team.teamId),
+  });
 
   if (footyTradingCardTitle) {
     footyTradingCardTitle.textContent = player.name;
@@ -1015,7 +1050,7 @@ function drawTradingCardNumber(context, number, width, height) {
 
 function drawTradingCardName(context, name, width, height) {
   const boxX = width * 0.13;
-  const boxY = height * 0.862;
+  const boxY = height * 0.844;
   const boxWidth = width * 0.72;
   const boxHeight = height * 0.055;
   const fontSize = fitCanvasText(context, String(name || ""), boxWidth, Math.round(boxHeight * 0.84), "Trebuchet MS, Arial, sans-serif");
@@ -1648,7 +1683,8 @@ function closeProfileDropdown() {
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
   const sideLabel = fixture.isHome ? "H" : "A";
-  const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+  const scheduleBadge = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
+  const localBadge = getFootyLocalTeamBadge(fixture.teamName, fixture.teamId);
   const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
   const timingLabel = getFootyFixtureTimingLabel(fixture);
   const isHighlighted = Boolean(timingLabel);
@@ -1682,7 +1718,11 @@ function renderFootyFixture(fixture) {
   return `
     <article class="${cardClasses}" data-footy-match-id="${escapeHtml(matchId)}" ${matchId ? `role="button" tabindex="0" aria-expanded="${String(Boolean(isExpanded))}"` : ""}>
       <div class="footy-fixture-badge" aria-hidden="true">
-        ${badge ? `<img src="${escapeHtml(badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
+        ${renderFootyBadgeMarkup({
+          fallbackSrc: localBadge,
+          fallbackText: fallbackBadge,
+          primarySrc: scheduleBadge,
+        })}
       </div>
       <div>
         <h2>${titleMarkup}</h2>

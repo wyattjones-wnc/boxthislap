@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.03.05.13";
+      window.BOX_THIS_LAP_VERSION = "2026.08.03.05.56";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608030513">
+    <link rel="stylesheet" href="styles.css?v=202608030556">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -746,13 +746,13 @@
           </div>
         </div>
         <div class="ranking-filters todo-filters" id="todo-filters" hidden>
+          <label class="toggle-row todo-edit-filter">
+            <span>Edit</span>
+            <input id="todo-edit-toggle" type="checkbox">
+          </label>
           <label class="toggle-row">
             <span>More Data</span>
             <input id="todo-more-data-toggle" type="checkbox">
-          </label>
-          <label class="toggle-row">
-            <span>Edit</span>
-            <input id="todo-edit-toggle" type="checkbox">
           </label>
           <div class="todo-filter-group" role="group" aria-label="To Do status filters">
             <label class="toggle-row">
@@ -1856,6 +1856,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608030513"></script>
+    <script type="module" src="script.js?v=202608030556"></script>
   </body>
 </html>

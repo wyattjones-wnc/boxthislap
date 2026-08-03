@@ -3672,7 +3672,7 @@ function normalizeTodoOrder(value) {
 
 function normalizeTodoHour(value) {
   const hour = Number(value);
-  return Number.isFinite(hour) && hour >= 0 ? hour : null;
+  return Number.isFinite(hour) && hour > 0 ? hour : null;
 }
 
 function compareTodoItems(first, second) {
@@ -3790,7 +3790,7 @@ function renderTodoChildItem(item) {
 function renderTodoStatusChips(item) {
   const chips = getTodoStatusChips(item);
 
-  if (!chips.length || (!activeTodoStatusFilter && !shouldShowTodoMoreData)) {
+  if (!chips.length) {
     return "";
   }
 
@@ -3811,19 +3811,12 @@ function getTodoStatusChips(item) {
   if (item.deleted) chips.push({ icon: "X", key: "deleted", label: "Deleted" });
   if (item.unpurchased) chips.push({ icon: "$", key: "unpurchased", label: "Unpurchased" });
 
-  if (activeTodoStatusFilter && activeTodoStatusFilter !== "all") {
-    const selectedChip = chips.find((chip) => chip.key === activeTodoStatusFilter);
-    return selectedChip ? [selectedChip] : chips;
-  }
-
   return chips;
 }
 
 function renderTodoMoreData(item) {
   const details = [
-    item.id ? `ID ${item.id}` : "",
-    Number.isFinite(item.order) && item.order !== Number.MAX_SAFE_INTEGER ? `Order ${item.order}` : "",
-    item.parentId ? `Parent ${item.parentId}` : "",
+    item.parentId ? `Parent: ${getTodoParentLabel(item.parentId) || item.parentId}` : "",
   ].filter(Boolean);
 
   if (!details.length) {
@@ -3842,6 +3835,10 @@ function formatTodoHourRange(item) {
   }
 
   if (low !== null && high !== null) {
+    if (low === high) {
+      return `${formatTodoHour(low)} hours`;
+    }
+
     return `${formatTodoHour(low)} - ${formatTodoHour(high)} hours`;
   }
 
@@ -3948,6 +3945,7 @@ function saveTodoItemFromForm() {
   }
 
   const rows = getTodoItems();
+  const parentId = resolveTodoParentIdFromInput();
   const existingItem = String(todoItemId?.value || "").trim()
     ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === String(todoItemId?.value || "").trim())
     : null;
@@ -3957,7 +3955,7 @@ function saveTodoItemFromForm() {
     Name: name,
     "Low Hour": String(todoLowHourInput?.value ?? "").trim(),
     "High Hour": String(todoHighHourInput?.value ?? "").trim(),
-    "Parent ID": String(todoParentIdInput?.value || "").trim(),
+    "Parent ID": parentId,
     Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
     Archived: todoArchivedInput?.checked ? "TRUE" : "FALSE",
     "Platinum Cleanup": todoPlatinumCleanupInput?.checked ? "TRUE" : "FALSE",
@@ -4173,14 +4171,34 @@ function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()
     .map((item) => ({
       label: item.name,
       meta: item.id ? `ID ${item.id}` : "",
-      value: `${item.name} (${item.id})`,
+      value: item.id,
       id: item.id,
     }));
 }
 
 function getTodoParentLabel(parentId) {
   const item = getTodoItems().map(normalizeTodoItem).filter(Boolean).find((row) => row.id === String(parentId || ""));
-  return item ? `${item.name} (${item.id})` : "";
+  return item ? item.name : "";
+}
+
+function resolveTodoParentIdFromInput() {
+  const typedValue = String(todoParentInput?.value || "").trim();
+  const currentId = String(todoParentIdInput?.value || "").trim();
+
+  if (!typedValue) {
+    return "";
+  }
+
+  const option = getTodoParentOptions().find((entry) =>
+    normalizeLookupName(entry.label) === normalizeLookupName(typedValue) ||
+    normalizeLookupName(entry.value) === normalizeLookupName(typedValue)
+  );
+
+  if (option?.id) {
+    return option.id;
+  }
+
+  return getTodoParentLabel(currentId) === typedValue ? currentId : "";
 }
 
 function renderTodoParentAutocomplete() {
@@ -4193,10 +4211,10 @@ function renderTodoParentAutocomplete() {
 }
 
 function selectTodoParentOption(value) {
-  const option = getTodoParentOptions().find((entry) => entry.value === value);
+  const option = getTodoParentOptions().find((entry) => entry.id === String(value));
 
   if (todoParentInput) {
-    todoParentInput.value = option ? option.value : value;
+    todoParentInput.value = option ? option.label : value;
   }
 
   if (todoParentIdInput) {
@@ -8673,12 +8691,8 @@ todoParentInput?.addEventListener("input", () => {
 });
 
 todoParentInput?.addEventListener("change", () => {
-  const option = getTodoParentOptions().find((entry) =>
-    normalizeLookupName(entry.value) === normalizeLookupName(todoParentInput.value)
-  );
-
   if (todoParentIdInput) {
-    todoParentIdInput.value = option?.id || "";
+    todoParentIdInput.value = resolveTodoParentIdFromInput();
   }
 });
 

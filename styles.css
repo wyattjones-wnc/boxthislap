@@ -299,6 +299,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: flex;
   flex: 0 0 auto;
   gap: 8px;
+  margin-left: auto;
   position: relative;
 }
 
@@ -909,6 +910,13 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .todo-filter-group {
   display: contents;
+}
+
+.todo-edit-filter {
+  border-bottom: 1px solid var(--line);
+  flex-basis: 100%;
+  margin-bottom: 4px;
+  padding-bottom: 10px;
 }
 
 .next-card-main {

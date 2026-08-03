@@ -951,20 +951,38 @@ function fitCanvasText(context, text, maxWidth, startingSize, family) {
 }
 
 function downloadCanvasAsPng(canvas, fileName) {
-  canvas.toBlob((blob) => {
-    if (!blob) {
-      return;
+  const openRenderedImage = () => {
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      const previewWindow = window.open(dataUrl, "_blank");
+      if (!previewWindow) {
+        recordDiagnostic("trading card export failed", new Error("Unable to create PNG blob or open data URL."));
+      }
+    } catch (error) {
+      recordDiagnostic("trading card export failed", error);
     }
+  };
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, "image/png");
+  try {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        openRenderedImage();
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, "image/png");
+  } catch (error) {
+    recordDiagnostic("trading card export failed", error);
+    openRenderedImage();
+  }
 }
 
 function slugifyFileName(value) {
@@ -3459,6 +3477,11 @@ function submitNextItemPayload(payload) {
     return false;
   }
 
+  if (payload?.action === "saveTodoItem" || payload?.action === "saveTodoOrder") {
+    submitNextItemPayloadWithForm(payload);
+    return true;
+  }
+
   try {
     const body = new URLSearchParams();
     body.set("payload", JSON.stringify(payload));
@@ -3676,6 +3699,7 @@ function renderTodoItem(item, children = []) {
   return `
     <article class="next-card todo-card${startedClass}${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="${shouldShowTodoEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
       <div class="next-card-main">
+        <span class="todo-order-number">${escapeHtml(formatTodoOrderNumber(item))}</span>
         <div>
           <h2>${escapeHtml(item.name)}</h2>
           ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
@@ -3696,6 +3720,7 @@ function renderTodoChildItem(item) {
 
   return `
     <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
+      <span class="todo-order-number todo-order-number--child">${escapeHtml(formatTodoOrderNumber(item))}</span>
       <div>
         <h3>${escapeHtml(item.name)}</h3>
         ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
@@ -3716,7 +3741,7 @@ function renderTodoStatusChips(item) {
 
   return `
     <div class="todo-chip-list">
-      ${chips.map((chip) => `<span class="status-pill todo-status-chip"><span></span>${escapeHtml(chip)}</span>`).join("")}
+      ${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${escapeHtml(chip.key)}"><span aria-hidden="true">${escapeHtml(chip.icon)}</span>${escapeHtml(chip.label)}</span>`).join("")}
     </div>
   `;
 }
@@ -3724,16 +3749,15 @@ function renderTodoStatusChips(item) {
 function getTodoStatusChips(item) {
   const chips = [];
 
-  if (item.started) chips.push("Started");
-  if (item.archived) chips.push("Archived");
-  if (item.platinumCleanup) chips.push("Platinum Cleanup");
-  if (item.completed) chips.push("Completed");
-  if (item.deleted) chips.push("Deleted");
-  if (item.unpurchased) chips.push("Unpurchased");
+  if (item.started) chips.push({ icon: ">", key: "started", label: "Started" });
+  if (item.archived) chips.push({ icon: "A", key: "archived", label: "Archived" });
+  if (item.platinumCleanup) chips.push({ icon: "P", key: "platinumCleanup", label: "Platinum Cleanup" });
+  if (item.completed) chips.push({ icon: "OK", key: "completed", label: "Completed" });
+  if (item.deleted) chips.push({ icon: "X", key: "deleted", label: "Deleted" });
+  if (item.unpurchased) chips.push({ icon: "$", key: "unpurchased", label: "Unpurchased" });
 
   if (activeTodoStatusFilter && activeTodoStatusFilter !== "all") {
-    const selectedLabel = getTodoStatusFilterLabel(activeTodoStatusFilter);
-    const selectedChip = chips.find((chip) => normalizeLookupName(chip) === normalizeLookupName(selectedLabel));
+    const selectedChip = chips.find((chip) => chip.key === activeTodoStatusFilter);
     return selectedChip ? [selectedChip] : chips;
   }
 
@@ -3767,6 +3791,12 @@ function formatTodoHourRange(item) {
   }
 
   return `${formatTodoHour(low ?? high)} hours`;
+}
+
+function formatTodoOrderNumber(item) {
+  return Number.isFinite(item.order) && item.order !== Number.MAX_SAFE_INTEGER
+    ? String(item.order)
+    : "-";
 }
 
 function formatTodoHour(value) {
@@ -3870,8 +3900,8 @@ function saveTodoItemFromForm() {
     ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
     Order: String(clampTodoOrder(todoOrderInput?.value, rows.length + 1)),
     Name: name,
-    "Low Hour": String(todoLowHourInput?.value || "").trim(),
-    "High Hour": String(todoHighHourInput?.value || "").trim(),
+    "Low Hour": String(todoLowHourInput?.value ?? "").trim(),
+    "High Hour": String(todoHighHourInput?.value ?? "").trim(),
     "Parent ID": String(todoParentIdInput?.value || "").trim(),
     Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
     Archived: todoArchivedInput?.checked ? "TRUE" : "FALSE",
@@ -3943,8 +3973,8 @@ function normalizeTodoOrdersLocally() {
       ID: item.id,
       Order: String(index + 1),
       Name: item.name,
-      "Low Hour": item.raw["Low Hour"] || "",
-      "High Hour": item.raw["High Hour"] || "",
+      "Low Hour": item.raw["Low Hour"] ?? "",
+      "High Hour": item.raw["High Hour"] ?? "",
       "Parent ID": item.parentId || "",
       Started: item.started ? "TRUE" : "FALSE",
       Archived: item.archived ? "TRUE" : "FALSE",
@@ -3974,8 +4004,8 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     ID: row.id,
     Order: String(index + 1),
     Name: row.name,
-    "Low Hour": row.raw["Low Hour"] || "",
-    "High Hour": row.raw["High Hour"] || "",
+    "Low Hour": row.raw["Low Hour"] ?? "",
+    "High Hour": row.raw["High Hour"] ?? "",
     "Parent ID": row.parentId || "",
     Started: row.started ? "TRUE" : "FALSE",
     Archived: row.archived ? "TRUE" : "FALSE",
@@ -4000,8 +4030,8 @@ function submitTodoOrder() {
       ID: item.ID,
       Order: item.Order,
       Name: item.Name,
-      "Low Hour": item["Low Hour"] || "",
-      "High Hour": item["High Hour"] || "",
+      "Low Hour": item["Low Hour"] ?? "",
+      "High Hour": item["High Hour"] ?? "",
       "Parent ID": item["Parent ID"] || "",
       Started: item.Started || "FALSE",
       Archived: item.Archived || "FALSE",

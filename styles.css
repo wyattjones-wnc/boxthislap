@@ -742,7 +742,29 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .todo-card .next-card-main {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.todo-order-number {
+  align-items: center;
+  align-self: start;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 950;
+  height: 2.25rem;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: 0 8px;
+}
+
+.todo-order-number--child {
+  font-size: 0.8rem;
+  height: 1.9rem;
+  min-width: 2.1rem;
 }
 
 .todo-card-actions {
@@ -768,7 +790,89 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .todo-status-chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--soft) 84%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
   font-size: 0.66rem;
+  font-weight: 950;
+  gap: 5px;
+  letter-spacing: 0.02em;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
+.todo-status-chip span {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.58rem;
+  height: 1.1rem;
+  justify-content: center;
+  min-width: 1.1rem;
+  padding: 0 3px;
+}
+
+.todo-status-chip--started {
+  background: color-mix(in srgb, #2f80ed 16%, var(--soft));
+  border-color: color-mix(in srgb, #2f80ed 44%, var(--line));
+}
+
+.todo-status-chip--started span {
+  background: #2f80ed;
+  color: #fff;
+}
+
+.todo-status-chip--archived {
+  background: color-mix(in srgb, #8b949e 18%, var(--soft));
+  border-color: color-mix(in srgb, #8b949e 48%, var(--line));
+}
+
+.todo-status-chip--archived span {
+  background: #8b949e;
+  color: #111827;
+}
+
+.todo-status-chip--platinumCleanup {
+  background: color-mix(in srgb, #d9e6ef 22%, var(--soft));
+  border-color: color-mix(in srgb, #d9e6ef 55%, var(--line));
+}
+
+.todo-status-chip--platinumCleanup span {
+  background: #d9e6ef;
+  color: #172033;
+}
+
+.todo-status-chip--completed {
+  background: color-mix(in srgb, #27ae60 16%, var(--soft));
+  border-color: color-mix(in srgb, #27ae60 44%, var(--line));
+}
+
+.todo-status-chip--completed span {
+  background: #27ae60;
+  color: #fff;
+}
+
+.todo-status-chip--deleted {
+  background: color-mix(in srgb, #eb5757 16%, var(--soft));
+  border-color: color-mix(in srgb, #eb5757 44%, var(--line));
+}
+
+.todo-status-chip--deleted span {
+  background: #eb5757;
+  color: #fff;
+}
+
+.todo-status-chip--unpurchased {
+  background: color-mix(in srgb, #f2c94c 16%, var(--soft));
+  border-color: color-mix(in srgb, #f2c94c 48%, var(--line));
+}
+
+.todo-status-chip--unpurchased span {
+  background: #f2c94c;
+  color: #111827;
 }
 
 .todo-more-data {
@@ -793,7 +897,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   padding: 12px;
 }
 

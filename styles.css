@@ -2289,6 +2289,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 18px;
 }
 
+.trading-card-export-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  justify-self: center;
+  margin: 0;
+  min-height: 1.2em;
+  text-align: center;
+}
+
 .footy-trading-card-dialog {
   max-width: calc(100vw - 24px);
   width: auto;
@@ -4590,6 +4600,13 @@ tr:last-child td {
 
 .footer-copy-link:hover {
   border-color: var(--accent);
+}
+
+.footer-version {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .footer-test-toggle {

@@ -32,8 +32,10 @@ import {
   tabPanels,
   headerArt,
   navGroups,
+  brandLogo,
   themeToggle,
   copyCurrentPageLinkButton,
+  siteVersion,
   adminOnlyElements,
   loginOnlyElements,
   testRulesLinks,
@@ -302,6 +304,7 @@ const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
 };
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
 const BRACKET_SUBMISSIONS_ARCHIVED = true;
 const RANKING_BASE_RATING = 1500;
@@ -731,6 +734,7 @@ function renderFootyTeamPlayers(team) {
         <input type="checkbox" data-trading-card-export-toggle${shouldExportFootyTradingCards ? " checked" : ""}>
         <span>Export</span>
       </label>
+      <p class="trading-card-export-status" aria-live="polite" data-trading-card-export-status></p>
     </section>
   `;
 }
@@ -806,6 +810,8 @@ async function exportFootyTradingCard(player, team) {
     return;
   }
 
+  setTradingCardExportStatus(`Preparing ${player.name}...`);
+
   const width = 2500;
   const height = 3520;
   const canvas = document.createElement("canvas");
@@ -840,7 +846,10 @@ async function exportFootyTradingCard(player, team) {
   }
 
   drawTradingCardName(context, player.name, width, height);
-  downloadCanvasAsPng(canvas, `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card.png`);
+  await downloadCanvasAsPng(canvas, `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card.png`, {
+    title: `${team.name} ${player.name} trading card`,
+  });
+  setTradingCardExportStatus(`${player.name} card ready.`);
 }
 
 function loadCanvasImage(src) {
@@ -950,7 +959,18 @@ function fitCanvasText(context, text, maxWidth, startingSize, family) {
   return size;
 }
 
-function downloadCanvasAsPng(canvas, fileName) {
+function canvasToPngBlob(canvas) {
+  return new Promise((resolve) => {
+    try {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    } catch (error) {
+      recordDiagnostic("trading card export failed", error);
+      resolve(null);
+    }
+  });
+}
+
+async function downloadCanvasAsPng(canvas, fileName, options = {}) {
   const openRenderedImage = () => {
     try {
       const dataUrl = canvas.toDataURL("image/png");
@@ -963,26 +983,53 @@ function downloadCanvasAsPng(canvas, fileName) {
     }
   };
 
-  try {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        openRenderedImage();
-        return;
-      }
+  const blob = await canvasToPngBlob(canvas);
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, "image/png");
-  } catch (error) {
-    recordDiagnostic("trading card export failed", error);
+  if (!blob) {
+    openRenderedImage();
+    return;
+  }
+
+  const file = new File([blob], fileName, { type: "image/png" });
+
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: options.title || "Trading card",
+      });
+      return;
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        recordDiagnostic("trading card share failed", error);
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  if (isMobileViewport()) {
     openRenderedImage();
   }
+}
+
+function setTradingCardExportStatus(message) {
+  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+
+  if (status) {
+    status.textContent = message || "";
+  }
+}
+
+function isMobileViewport() {
+  return window.matchMedia?.("(max-width: 720px)")?.matches || window.innerWidth <= 720;
 }
 
 function slugifyFileName(value) {
@@ -3472,46 +3519,12 @@ function upsertNextItemLocally(item) {
 }
 
 function submitNextItemPayload(payload) {
-  if (!NEXT_DATA_ENDPOINT) {
-    console.warn("Next data endpoint is not configured.", payload);
-    return false;
-  }
-
-  if (payload?.action === "saveTodoItem" || payload?.action === "saveTodoOrder") {
-    submitNextItemPayloadWithForm(payload);
-    return true;
-  }
-
-  try {
-    const body = new URLSearchParams();
-    body.set("payload", JSON.stringify(payload));
-
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(NEXT_DATA_ENDPOINT, body);
-      if (sent) {
-        return true;
-      }
-    }
-
-    window.fetch(NEXT_DATA_ENDPOINT, {
-      body,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      keepalive: true,
-      method: "POST",
-      mode: "no-cors",
-    }).catch((error) => {
-      console.warn("Unable to submit Next item with fetch; falling back to form.", error);
-      submitNextItemPayloadWithForm(payload);
-    });
-    return true;
-  } catch (error) {
-    console.warn("Unable to submit Next item with beacon/fetch; falling back to form.", error);
-  }
-
-  submitNextItemPayloadWithForm(payload);
-  return true;
+  return submitAppsScriptPayload(payload, {
+    endpoint: NEXT_DATA_ENDPOINT,
+    fallback: submitNextItemPayloadWithForm,
+    missingMessage: "Next data endpoint is not configured.",
+    submitLabel: "Next item",
+  });
 }
 
 function submitNextItemPayloadWithForm(payload) {
@@ -3539,6 +3552,48 @@ function submitNextItemPayloadWithForm(payload) {
   document.body.append(form);
   form.submit();
   form.remove();
+}
+
+function submitAppsScriptPayload(payload, options = {}) {
+  const endpoint = options.endpoint;
+  const fallback = options.fallback;
+  const submitLabel = options.submitLabel || "data";
+
+  if (!endpoint) {
+    if (options.status) {
+      options.status(options.missingMessage || "Data endpoint is not configured yet.", true);
+    }
+    console.warn(options.missingMessage || "Data endpoint is not configured.", payload);
+    return false;
+  }
+
+  try {
+    const body = new URLSearchParams();
+    body.set("payload", JSON.stringify(payload));
+
+    if (navigator.sendBeacon && navigator.sendBeacon(endpoint, body)) {
+      return true;
+    }
+
+    window.fetch(endpoint, {
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      keepalive: true,
+      method: "POST",
+      mode: "no-cors",
+    }).catch((error) => {
+      console.warn(`Unable to submit ${submitLabel} with fetch; falling back to form.`, error);
+      fallback?.(payload);
+    });
+    return true;
+  } catch (error) {
+    console.warn(`Unable to submit ${submitLabel} with beacon/fetch; falling back to form.`, error);
+  }
+
+  fallback?.(payload);
+  return true;
 }
 
 function setNextItemStatus(message, isError = false) {
@@ -6055,38 +6110,13 @@ function submitRankingOrder(kind) {
 }
 
 function submitRankingPayload(payload) {
-  if (!NEXT_DATA_ENDPOINT) {
-    setRankingItemStatus("Ranking data endpoint is not configured yet.", true);
-    return false;
-  }
-
-  try {
-    const body = new URLSearchParams();
-    body.set("payload", JSON.stringify(payload));
-
-    if (navigator.sendBeacon && navigator.sendBeacon(NEXT_DATA_ENDPOINT, body)) {
-      return true;
-    }
-
-    window.fetch(NEXT_DATA_ENDPOINT, {
-      body,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      keepalive: true,
-      method: "POST",
-      mode: "no-cors",
-    }).catch((error) => {
-      console.warn("Unable to submit ranking data with fetch; falling back to form.", error);
-      submitRankingPayloadWithForm(payload);
-    });
-    return true;
-  } catch (error) {
-    console.warn("Unable to submit ranking data with beacon/fetch; falling back to form.", error);
-  }
-
-  submitRankingPayloadWithForm(payload);
-  return true;
+  return submitAppsScriptPayload(payload, {
+    endpoint: NEXT_DATA_ENDPOINT,
+    fallback: submitRankingPayloadWithForm,
+    missingMessage: "Ranking data endpoint is not configured yet.",
+    status: setRankingItemStatus,
+    submitLabel: "ranking data",
+  });
 }
 
 function submitRankingPayloadWithForm(payload) {
@@ -9506,8 +9536,29 @@ function renderLoginState() {
     };
   }
 
+  syncSiteVersionDisplay(managerMeta);
+  syncBrandLogo();
   renderNextList();
   renderRankingsPage();
+}
+
+function syncSiteVersionDisplay(managerMeta = null) {
+  if (!siteVersion) {
+    return;
+  }
+
+  siteVersion.textContent = `v${SITE_VERSION}`;
+  siteVersion.hidden = !managerMeta?.isAdmin;
+}
+
+function syncBrandLogo() {
+  if (!brandLogo) {
+    return;
+  }
+
+  brandLogo.src = window.location.pathname.includes("/dev/")
+    ? "assets/dev-apple-touch-icon.png"
+    : "assets/box-this-lap-logo.jpg";
 }
 
 function renderLoginManagerOptions() {

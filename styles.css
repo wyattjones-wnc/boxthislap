@@ -2112,7 +2112,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .trading-card-background {
-  object-fit: cover;
+  object-fit: fill;
   z-index: 0;
 }
 
@@ -2159,15 +2159,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-family: Impact, Haettenschweiler, "Arial Black", "Trebuchet MS", sans-serif;
   font-size: clamp(1.55rem, 6.8vw, 2.45rem);
   font-weight: 950;
-  height: 5.35%;
+  height: 5.5%;
   justify-content: center;
   line-height: 1;
+  left: 85.27%;
   position: absolute;
-  right: 3.15%;
   text-align: center;
   text-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
-  top: 1.82%;
-  width: 12.6%;
+  top: 0.96%;
+  transform: translateY(-2%);
+  width: 13.52%;
   z-index: 2;
 }
 

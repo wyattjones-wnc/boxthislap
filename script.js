@@ -268,6 +268,7 @@ let activeTodoStatusFilter = "";
 let activeTodoItemId = "";
 let draggedTodoItemId = "";
 let didMoveTodoPointer = false;
+let activeTradingCardExportUrl = "";
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
 let activeRankingSnapshotId = "current";
@@ -849,7 +850,6 @@ async function exportFootyTradingCard(player, team) {
   await downloadCanvasAsPng(canvas, `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card.png`, {
     title: `${team.name} ${player.name} trading card`,
   });
-  setTradingCardExportStatus(`${player.name} card ready.`);
 }
 
 function loadCanvasImage(src) {
@@ -987,8 +987,11 @@ async function downloadCanvasAsPng(canvas, fileName, options = {}) {
 
   if (!blob) {
     openRenderedImage();
+    setTradingCardExportStatus("Card rendered. Use the opened image to save it.");
     return;
   }
+
+  setTradingCardExportDownload(fileName, blob);
 
   const file = new File([blob], fileName, { type: "image/png" });
 
@@ -998,6 +1001,7 @@ async function downloadCanvasAsPng(canvas, fileName, options = {}) {
         files: [file],
         title: options.title || "Trading card",
       });
+      setTradingCardExportStatus("Card shared.");
       return;
     } catch (error) {
       if (error?.name !== "AbortError") {
@@ -1026,6 +1030,24 @@ function setTradingCardExportStatus(message) {
   if (status) {
     status.textContent = message || "";
   }
+}
+
+function setTradingCardExportDownload(fileName, blob) {
+  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+
+  if (!status) {
+    return;
+  }
+
+  if (activeTradingCardExportUrl) {
+    URL.revokeObjectURL(activeTradingCardExportUrl);
+  }
+
+  activeTradingCardExportUrl = URL.createObjectURL(blob);
+  status.innerHTML = `
+    <span>Card ready.</span>
+    <a href="${escapeHtml(activeTradingCardExportUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Download</a>
+  `;
 }
 
 function isMobileViewport() {
@@ -3689,7 +3711,7 @@ function getVisibleTodoItems(items) {
       return false;
     }
 
-    return activeTodoStatusFilter || (!item.archived && !item.completed && !item.deleted);
+    return activeTodoStatusFilter || (!item.archived && !item.deleted && (!item.completed || item.platinumCleanup));
   });
 }
 
@@ -3796,18 +3818,30 @@ function renderTodoStatusChips(item) {
 
   return `
     <div class="todo-chip-list">
-      ${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${escapeHtml(chip.key)}"><span aria-hidden="true">${escapeHtml(chip.icon)}</span>${escapeHtml(chip.label)}</span>`).join("")}
+      ${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${escapeHtml(chip.key)}"><span aria-hidden="true">${renderTodoChipIcon(chip.icon)}</span>${escapeHtml(chip.label)}</span>`).join("")}
     </div>
   `;
+}
+
+function renderTodoChipIcon(icon) {
+  if (icon === "check") {
+    return `<svg viewBox="0 0 16 16" focusable="false"><path d="M3.2 8.3 6.4 11.4 12.8 4.6"></path></svg>`;
+  }
+
+  if (icon === "folder") {
+    return `<svg viewBox="0 0 16 16" focusable="false"><path d="M2.5 5.2h4l1.2 1.4h5.8v5.9h-11Z"></path><path d="M2.5 5.2v-1.7h4.2l1.1 1.7"></path></svg>`;
+  }
+
+  return escapeHtml(icon);
 }
 
 function getTodoStatusChips(item) {
   const chips = [];
 
-  if (item.started) chips.push({ icon: ">", key: "started", label: "Started" });
-  if (item.archived) chips.push({ icon: "A", key: "archived", label: "Archived" });
+  if (item.started && !item.completed) chips.push({ icon: ">", key: "started", label: "Started" });
+  if (item.archived) chips.push({ icon: "folder", key: "archived", label: "Archived" });
   if (item.platinumCleanup) chips.push({ icon: "P", key: "platinumCleanup", label: "Platinum Cleanup" });
-  if (item.completed) chips.push({ icon: "OK", key: "completed", label: "Completed" });
+  if (item.completed) chips.push({ icon: "check", key: "completed", label: "Completed" });
   if (item.deleted) chips.push({ icon: "X", key: "deleted", label: "Deleted" });
   if (item.unpurchased) chips.push({ icon: "$", key: "unpurchased", label: "Unpurchased" });
 
@@ -3921,7 +3955,6 @@ function openTodoItemDialogForItem(itemId) {
     todoItemDialog.setAttribute("open", "");
   }
 
-  todoNameInput?.focus();
 }
 
 function closeTodoItemDialog() {

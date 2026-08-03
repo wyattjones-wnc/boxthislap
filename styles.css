@@ -816,6 +816,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 0 3px;
 }
 
+.todo-status-chip svg {
+  fill: none;
+  height: 0.82rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 0.82rem;
+}
+
 .todo-status-chip--started {
   background: color-mix(in srgb, #2f80ed 16%, var(--soft));
   border-color: color-mix(in srgb, #2f80ed 44%, var(--line));
@@ -827,13 +837,13 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .todo-status-chip--archived {
-  background: color-mix(in srgb, #8b949e 18%, var(--soft));
-  border-color: color-mix(in srgb, #8b949e 48%, var(--line));
+  background: color-mix(in srgb, #eb5757 16%, var(--soft));
+  border-color: color-mix(in srgb, #eb5757 44%, var(--line));
 }
 
 .todo-status-chip--archived span {
-  background: #8b949e;
-  color: #111827;
+  background: #eb5757;
+  color: #fff;
 }
 
 .todo-status-chip--platinumCleanup {
@@ -2299,12 +2309,21 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trading-card-export-status {
   color: var(--muted);
+  display: inline-flex;
+  flex-wrap: wrap;
   font-size: 0.82rem;
   font-weight: 800;
+  gap: 8px;
   justify-self: center;
+  justify-content: center;
   margin: 0;
   min-height: 1.2em;
   text-align: center;
+}
+
+.trading-card-export-status a {
+  color: var(--accent-dark);
+  font-weight: 950;
 }
 
 .footy-trading-card-dialog {

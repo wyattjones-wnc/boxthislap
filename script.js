@@ -293,13 +293,25 @@ const fantasyOfficeData = {
   2026: { draft: [], movies: [], ordering: [], results: [] },
 };
 const FOOTY_LOCAL_TEAM_BADGES = {
-  "charlotte": "assets/teams/charlotte-fc.svg",
-  "charlotte fc": "assets/teams/charlotte-fc.svg",
-  "inter miami": "assets/teams/inter-miami-cf.webp",
-  "inter miami cf": "assets/teams/inter-miami-cf.webp",
-  usmnt: "assets/teams/usmnt.svg",
-  uswmt: "assets/teams/uswnt.svg",
-  uswnt: "assets/teams/uswnt.svg",
+  "arsenal": "assets/teams/1/logo.svg",
+  "arsenal fc": "assets/teams/1/logo.svg",
+  "barcelona": "assets/teams/2/logo.svg",
+  "fc barcelona": "assets/teams/2/logo.svg",
+  "charlotte": "assets/teams/6/badge.svg",
+  "charlotte fc": "assets/teams/6/badge.svg",
+  "inter miami": "assets/teams/7/badge.webp",
+  "inter miami cf": "assets/teams/7/badge.webp",
+  usmnt: "assets/teams/4/usmnt.svg",
+  uswmt: "assets/teams/5/uswnt.svg",
+  uswnt: "assets/teams/5/uswnt.svg",
+};
+const FOOTY_LOCAL_TEAM_BADGES_BY_ID = {
+  1: "assets/teams/1/logo.svg",
+  2: "assets/teams/2/logo.svg",
+  4: "assets/teams/4/usmnt.svg",
+  5: "assets/teams/5/uswnt.svg",
+  6: "assets/teams/6/badge.svg",
+  7: "assets/teams/7/badge.webp",
 };
 const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
@@ -534,12 +546,13 @@ function getFootyShortcutTeams(schedule) {
 function normalizeFootyScheduleTeam(teamSchedule = {}) {
   const team = teamSchedule.team || {};
   const name = getFootyDisplayTeamName(team.name);
-  const badge = getFootyTeamBadge(name, team.badge);
+  const id = String(team.id || "").trim();
+  const badge = getFootyTeamBadge(name, team.badge, id);
 
   return {
     badge,
     fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
-    id: String(team.id || "").trim(),
+    id,
     name,
     priority: normalizeFootyPriority(team.priority),
     status: String(teamSchedule.status || "").trim(),
@@ -614,11 +627,27 @@ function getFootyDisplayTeamName(teamName) {
   return displayName || rawName;
 }
 
-function getFootyTeamBadge(teamName, explicitBadge = "") {
+function getFootyTeamBadge(teamName, explicitBadge = "", teamId = "") {
+  const localBadge = getFootyLocalTeamBadge(teamName, teamId);
+
+  if (localBadge) {
+    return localBadge;
+  }
+
   const badge = String(explicitBadge || "").trim();
 
   if (badge) {
     return badge;
+  }
+
+  return "";
+}
+
+function getFootyLocalTeamBadge(teamName, teamId = "") {
+  const id = String(teamId || "").trim();
+
+  if (id && FOOTY_LOCAL_TEAM_BADGES_BY_ID[id]) {
+    return FOOTY_LOCAL_TEAM_BADGES_BY_ID[id];
   }
 
   return FOOTY_LOCAL_TEAM_BADGES[normalizeLookupName(teamName)] ||
@@ -707,7 +736,7 @@ function renderFootyTeamPlayers(team) {
   const roster = getFootyRosterForTeam(team);
 
   if (!Array.isArray(siteData.footyRosters)) {
-    footyTeamContent.innerHTML = `<p class="table-message">Loading roster...</p>`;
+    footyTeamContent.innerHTML = renderFootyPlayerGridLoading();
     ensureFootyRosters()
       .then(() => {
         if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && activeFootyTeamViewMode === "team") {
@@ -736,6 +765,21 @@ function renderFootyTeamPlayers(team) {
         <span>Export</span>
       </label>
       <p class="trading-card-export-status" aria-live="polite" data-trading-card-export-status></p>
+    </section>
+  `;
+}
+
+function renderFootyPlayerGridLoading() {
+  return `
+    <section class="footy-team-player-section" aria-busy="true">
+      <div class="footy-team-player-grid footy-team-player-grid--loading">
+        ${Array.from({ length: 8 }, () => `
+          <article class="footy-team-player-card footy-team-player-card--loading">
+            <div class="footy-team-player-skeleton-art"></div>
+            <div class="footy-team-player-skeleton-name"></div>
+          </article>
+        `).join("")}
+      </div>
     </section>
   `;
 }
@@ -781,8 +825,9 @@ function openFootyTradingCard(player, team) {
   const number = formatFootyPlayerNumber(player.number);
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
-  const badgeMarkup = team.badge
-    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async">`
+  const badgePath = getFootyTeamBadge(team.name, team.badge, team.id || team.teamId);
+  const badgeMarkup = badgePath
+    ? `<img src="${escapeHtml(badgePath)}" alt="" decoding="async">`
     : `<span>${escapeHtml(fallback)}</span>`;
 
   if (footyTradingCardTitle) {
@@ -828,7 +873,7 @@ async function exportFootyTradingCard(player, team) {
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const framePath = "assets/trading-card/trading-card.svg";
   const number = formatFootyPlayerNumber(player.number);
-  const badgePath = getFootyTeamBadge(team.name, team.badge);
+  const badgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId);
 
   context.fillStyle = "#07111d";
   context.fillRect(0, 0, width, height);
@@ -861,10 +906,46 @@ function loadCanvasImage(src) {
 
     const image = new Image();
     image.decoding = "async";
-    image.onload = () => resolve(image);
+    const isLocalAsset = isLocalAssetPath(src);
+    let objectUrl = "";
+
+    image.onload = () => {
+      if (objectUrl) {
+        image.dataset.objectUrl = objectUrl;
+      }
+      resolve(image);
+    };
     image.onerror = () => reject(new Error(`Unable to load image: ${src}`));
-    image.src = src;
+
+    if (!isLocalAsset) {
+      reject(new Error(`Refusing to draw non-local export image: ${src}`));
+      return;
+    }
+
+    fetch(src, { cache: "force-cache" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Unable to fetch image: ${src}`);
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        image.src = objectUrl;
+      })
+      .catch((error) => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
+        reject(error);
+      });
   });
+}
+
+function isLocalAssetPath(src) {
+  const value = String(src || "").trim();
+
+  return Boolean(value) && !/^(?:https?:)?\/\//i.test(value) && !/^data:/i.test(value);
 }
 
 async function drawCanvasImage(context, src, x, y, width, height, options = {}) {
@@ -876,14 +957,25 @@ async function drawCanvasImage(context, src, x, y, width, height, options = {}) 
       const drawWidth = image.naturalWidth * scale;
       const drawHeight = image.naturalHeight * scale;
       context.drawImage(image, x + ((width - drawWidth) / 2), y + ((height - drawHeight) / 2), drawWidth, drawHeight);
+      revokeCanvasImageObjectUrl(image);
       return true;
     }
 
     context.drawImage(image, x, y, width, height);
+    revokeCanvasImageObjectUrl(image);
     return true;
   } catch (error) {
     recordDiagnostic("trading card image failed to draw", error, { src });
     return false;
+  }
+}
+
+function revokeCanvasImageObjectUrl(image) {
+  const objectUrl = image?.dataset?.objectUrl;
+
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+    delete image.dataset.objectUrl;
   }
 }
 
@@ -1080,7 +1172,7 @@ function getFootyScheduleFixtures(schedule) {
 
       return teamFixtures.map((fixture) => ({
         ...fixture,
-        teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge),
+        teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge, fixture.teamId || team.id),
         teamName: getFootyDisplayTeamName(fixture.teamName || team.name),
       }));
     });

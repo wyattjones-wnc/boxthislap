@@ -2224,6 +2224,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
 }
 
+.footy-team-player-grid--loading {
+  pointer-events: none;
+}
+
 .footy-team-player-card {
   align-items: end;
   aspect-ratio: 3 / 4;
@@ -2236,6 +2240,43 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-height: 176px;
   overflow: hidden;
   position: relative;
+}
+
+.footy-team-player-card--loading {
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.footy-team-player-card--loading::after {
+  animation: skeleton-shimmer 1.15s linear infinite;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 10%, transparent), transparent);
+  content: "";
+  inset: 0;
+  position: absolute;
+  transform: translateX(-100%);
+}
+
+.footy-team-player-skeleton-art {
+  align-self: stretch;
+  background: color-mix(in srgb, var(--soft) 72%, transparent);
+  border-radius: 8px 8px 0 0;
+  margin: 12px 12px 52px;
+}
+
+.footy-team-player-skeleton-name {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 999px;
+  bottom: 14px;
+  height: 16px;
+  left: 18px;
+  position: absolute;
+  right: 18px;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .footy-team-player-card:focus-visible,

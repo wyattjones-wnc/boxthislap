@@ -329,10 +329,12 @@ function saveTodoItem(item) {
       throw new Error("Name is required.");
     }
 
-    const order = clampTodoOrder(rowValues.Order, rows.length + 1);
     const existingRows = rows.filter((row) => row.ID !== rowValues.ID);
-    existingRows.splice(order - 1, 0, rowValues);
-    writeTodoRows(context, normalizeTodoOrder(existingRows));
+    const nextRows = existingRows.concat([rowValues]);
+    writeTodoRows(context, normalizeTodoOrder(nextRows, {
+      movedId: rowValues.ID,
+      requestedOrder: rowValues.Order,
+    }));
 
     return {
       ok: true,
@@ -359,17 +361,24 @@ function saveTodoOrder(items) {
     const orderedIds = items
       .map((item) => String(item.ID || item.Id || item.id || "").trim())
       .filter(Boolean);
+    const existingOrderableRows = getTodoDefaultOrderRows(existingRows);
+    const existingOrderableIds = {};
+    existingOrderableRows.forEach((row) => {
+      existingOrderableIds[row.ID] = true;
+    });
     const reorderedRows = orderedIds
       .map((id) => existingRowsById[id])
-      .filter(Boolean);
+      .filter((row) => row && existingOrderableIds[row.ID]);
     const reorderedIds = {};
     reorderedRows.forEach((row) => {
       reorderedIds[row.ID] = true;
     });
-    const remainingRows = existingRows
+    const remainingOrderableRows = existingOrderableRows
       .filter((row) => !reorderedIds[row.ID])
       .sort(compareTodoRows);
-    const nextRows = normalizeTodoOrder(reorderedRows.concat(remainingRows));
+    const nextRows = normalizeTodoOrder(existingRows, {
+      orderedRows: reorderedRows.concat(remainingOrderableRows),
+    });
 
     writeTodoRows(context, nextRows);
 
@@ -446,11 +455,50 @@ function normalizeTodoItem(item) {
   };
 }
 
-function normalizeTodoOrder(rows) {
-  return rows.map((row, index) => ({
+function normalizeTodoOrder(rows, options) {
+  const normalizedRows = rows.map((row) => normalizeTodoItem(row));
+  let orderableRows = getTodoDefaultOrderRows(normalizedRows);
+
+  if (options && options.orderedRows) {
+    orderableRows = options.orderedRows;
+  } else if (options && options.movedId) {
+    const movedId = String(options.movedId || "").trim();
+    const movedRow = normalizedRows.find((row) => row.ID === movedId);
+    orderableRows = orderableRows.filter((row) => row.ID !== movedId);
+
+    if (movedRow && isTodoDefaultOrderRow(movedRow, normalizedRows)) {
+      const targetIndex = clampTodoOrder(options.requestedOrder, orderableRows.length + 1) - 1;
+      orderableRows.splice(targetIndex, 0, movedRow);
+    }
+  }
+
+  const orderById = {};
+  orderableRows.forEach((row, index) => {
+    orderById[row.ID] = String(index + 1);
+  });
+
+  return normalizedRows.map((row) => ({
     ...row,
-    Order: index + 1,
-  }));
+    Order: orderById[row.ID] || row.Order || "",
+  })).sort(compareTodoRows);
+}
+
+function getTodoDefaultOrderRows(rows) {
+  return rows
+    .filter((row) => isTodoDefaultOrderRow(row, rows))
+    .sort(compareTodoRows);
+}
+
+function isTodoDefaultOrderRow(row, rows) {
+  if (!row || row.Archived === "TRUE" || row.IsDeleted === "TRUE" || (row.Completed === "TRUE" && row["Platinum Cleanup"] !== "TRUE")) {
+    return false;
+  }
+
+  const parent = String(row["Parent ID"] || "").trim()
+    ? rows.find((candidate) => candidate.ID === String(row["Parent ID"] || "").trim())
+    : null;
+
+  return !(parent && parent.Completed !== "TRUE" && parent.Archived !== "TRUE" && parent.IsDeleted !== "TRUE");
 }
 
 function clampTodoOrder(value, maxOrder) {

@@ -3835,8 +3835,30 @@ function getVisibleTodoItems(items) {
       return false;
     }
 
-    return activeTodoStatusFilter || (!item.archived && !item.deleted && (!item.completed || item.platinumCleanup));
+    return activeTodoStatusFilter || isTodoDefaultListItem(item);
   });
+}
+
+function isTodoDefaultListItem(item) {
+  return Boolean(item && !item.archived && !item.deleted && (!item.completed || item.platinumCleanup));
+}
+
+function getTodoItemMap(items) {
+  return new Map(items.filter((item) => item.id).map((item) => [item.id, item]));
+}
+
+function hasActiveTodoParent(item, itemsById = getTodoItemMap(getTodoItems().map(normalizeTodoItem).filter(Boolean))) {
+  const parent = item?.parentId ? itemsById.get(item.parentId) : null;
+  return Boolean(parent && isTodoDefaultListItem(parent) && !parent.completed);
+}
+
+function getTodoDefaultOrderItems(items) {
+  const itemsById = getTodoItemMap(items);
+
+  return items
+    .filter(isTodoDefaultListItem)
+    .filter((item) => !hasActiveTodoParent(item, itemsById))
+    .sort(compareTodoItems);
 }
 
 function matchesTodoStatusFilter(item) {
@@ -4030,8 +4052,10 @@ function openTodoItemDialogForItem(itemId) {
     ? getTodoItems().map(normalizeTodoItem).filter(Boolean).find((item) => item.id === String(itemId))
     : null;
   const rows = getTodoItems();
-  const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : rows.length + 1;
-  const maxOrder = editingItem ? Math.max(rows.length, 1) : rows.length + 1;
+  const normalizedRows = rows.map(normalizeTodoItem).filter(Boolean);
+  const defaultOrderRows = getTodoDefaultOrderItems(normalizedRows);
+  const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : defaultOrderRows.length + 1;
+  const maxOrder = editingItem ? Math.max(defaultOrderRows.length, 1) : defaultOrderRows.length + 1;
 
   if (todoItemId) {
     todoItemId.value = editingItem?.id || "";
@@ -4102,13 +4126,21 @@ function saveTodoItemFromForm() {
   }
 
   const rows = getTodoItems();
-  const parentId = resolveTodoParentIdFromInput();
+  const parentResolution = resolveTodoParentIdFromInput();
+
+  if (parentResolution.error) {
+    setTodoItemStatus(parentResolution.error, true);
+    return;
+  }
+
+  const parentId = parentResolution.id;
   const existingItem = String(todoItemId?.value || "").trim()
     ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === String(todoItemId?.value || "").trim())
     : null;
+  const requestedOrder = clampTodoOrder(todoOrderInput?.value, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
   const item = {
     ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
-    Order: String(clampTodoOrder(todoOrderInput?.value, rows.length + 1)),
+    Order: String(requestedOrder),
     Name: name,
     "Low Hour": String(todoLowHourInput?.value ?? "").trim(),
     "High Hour": String(todoHighHourInput?.value ?? "").trim(),
@@ -4126,7 +4158,7 @@ function saveTodoItemFromForm() {
   }
 
   upsertTodoItemLocally(item);
-  normalizeTodoOrdersLocally();
+  normalizeTodoOrdersLocally({ movedItemId: item.ID, requestedOrder });
   renderTodoList();
   submitNextItemPayload({
     action: "saveTodoItem",
@@ -4162,26 +4194,34 @@ function clampTodoOrder(value, maxOrder) {
 function upsertTodoItemLocally(item) {
   const id = String(item.ID || "").trim();
   const rows = getTodoItems();
-  const existingIndex = rows.findIndex((row) => String(row.ID || row.Id || row.id || "").trim() === id);
-  const order = clampTodoOrder(item.Order, rows.length + 1);
   const nextRows = rows.filter((row) => String(row.ID || row.Id || row.id || "").trim() !== id);
 
-  nextRows.splice(order - 1, 0, item);
+  nextRows.push(item);
   siteData.todoItems = nextRows;
-
-  if (existingIndex >= 0 && existingIndex === order - 1) {
-    siteData.todoItems[existingIndex] = item;
-  }
 }
 
-function normalizeTodoOrdersLocally() {
-  siteData.todoItems = getTodoItems()
-    .map(normalizeTodoItem)
-    .filter(Boolean)
-    .sort(compareTodoItems)
-    .map((item, index) => ({
+function normalizeTodoOrdersLocally(options = {}) {
+  const normalizedItems = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const orderableItems = getTodoDefaultOrderItems(normalizedItems);
+  const movedItemId = String(options.movedItemId || "").trim();
+  const movedItem = movedItemId ? normalizedItems.find((item) => item.id === movedItemId) : null;
+  let nextOrderableItems = orderableItems;
+
+  if (movedItemId) {
+    nextOrderableItems = orderableItems.filter((item) => item.id !== movedItemId);
+
+    if (movedItem && isTodoDefaultListItem(movedItem) && !hasActiveTodoParent(movedItem, getTodoItemMap(normalizedItems))) {
+      const targetIndex = clampTodoOrder(options.requestedOrder, nextOrderableItems.length + 1) - 1;
+      nextOrderableItems.splice(targetIndex, 0, movedItem);
+    }
+  }
+
+  const orderById = new Map(nextOrderableItems.map((item, index) => [item.id, String(index + 1)]));
+
+  siteData.todoItems = normalizedItems
+    .map((item) => ({
       ID: item.id,
-      Order: String(index + 1),
+      Order: orderById.get(item.id) || String(item.order === Number.MAX_SAFE_INTEGER ? "" : item.order),
       Name: item.name,
       "Low Hour": item.raw["Low Hour"] ?? "",
       "High Hour": item.raw["High Hour"] ?? "",
@@ -4192,7 +4232,8 @@ function normalizeTodoOrdersLocally() {
       Completed: item.completed ? "TRUE" : "FALSE",
       IsDeleted: item.deleted ? "TRUE" : "FALSE",
       Unpurchased: item.unpurchased ? "TRUE" : "FALSE",
-    }));
+    }))
+    .sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
 }
 
 function moveTodoItem(draggedId, targetId, options = {}) {
@@ -4200,7 +4241,8 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     return false;
   }
 
-  const rows = getTodoItems().map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
+  const allRows = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const rows = getTodoDefaultOrderItems(allRows);
   const fromIndex = rows.findIndex((row) => row.id === draggedId);
   const toIndex = rows.findIndex((row) => row.id === targetId);
 
@@ -4210,9 +4252,10 @@ function moveTodoItem(draggedId, targetId, options = {}) {
 
   const [item] = rows.splice(fromIndex, 1);
   rows.splice(toIndex, 0, item);
-  siteData.todoItems = rows.map((row, index) => ({
+  const orderById = new Map(rows.map((row, index) => [row.id, String(index + 1)]));
+  siteData.todoItems = allRows.map((row) => ({
     ID: row.id,
-    Order: String(index + 1),
+    Order: orderById.get(row.id) || String(row.order === Number.MAX_SAFE_INTEGER ? "" : row.order),
     Name: row.name,
     "Low Hour": row.raw["Low Hour"] ?? "",
     "High Hour": row.raw["High Hour"] ?? "",
@@ -4223,7 +4266,7 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     Completed: row.completed ? "TRUE" : "FALSE",
     IsDeleted: row.deleted ? "TRUE" : "FALSE",
     Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
-  }));
+  })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
   renderTodoList();
 
   if (options.shouldSubmit !== false) {
@@ -4268,6 +4311,7 @@ function deleteTodoItem(itemId) {
   };
 
   upsertTodoItemLocally(nextItem);
+  normalizeTodoOrdersLocally({ movedItemId: item.id, requestedOrder: item.order });
   renderTodoList();
   submitNextItemPayload({
     action: "saveTodoItem",
@@ -4320,10 +4364,12 @@ function getTodoStatusFilterLabel(filter) {
 }
 
 function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()) {
+  const excludedIds = getTodoExcludedParentIds(excludeId);
+
   return getTodoItems()
     .map(normalizeTodoItem)
     .filter(Boolean)
-    .filter((item) => item.id && item.id !== excludeId)
+    .filter((item) => item.id && !excludedIds.has(item.id))
     .sort(compareTodoItems)
     .map((item) => ({
       label: item.name,
@@ -4331,6 +4377,39 @@ function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()
       value: item.id,
       id: item.id,
     }));
+}
+
+function getTodoExcludedParentIds(itemId) {
+  const excludedIds = new Set();
+  const normalizedId = String(itemId || "").trim();
+
+  if (!normalizedId) {
+    return excludedIds;
+  }
+
+  const items = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const childrenByParentId = new Map();
+  items.forEach((item) => {
+    if (!item.parentId) {
+      return;
+    }
+
+    const children = childrenByParentId.get(item.parentId) || [];
+    children.push(item.id);
+    childrenByParentId.set(item.parentId, children);
+  });
+
+  const visit = (id) => {
+    if (!id || excludedIds.has(id)) {
+      return;
+    }
+
+    excludedIds.add(id);
+    (childrenByParentId.get(id) || []).forEach(visit);
+  };
+
+  visit(normalizedId);
+  return excludedIds;
 }
 
 function getTodoParentLabel(parentId) {
@@ -4343,19 +4422,36 @@ function resolveTodoParentIdFromInput() {
   const currentId = String(todoParentIdInput?.value || "").trim();
 
   if (!typedValue) {
-    return "";
+    return { id: "" };
   }
 
-  const option = getTodoParentOptions().find((entry) =>
+  const options = getTodoParentOptions();
+  const normalizedTypedValue = normalizeLookupName(typedValue);
+  const option = options.find((entry) =>
     normalizeLookupName(entry.label) === normalizeLookupName(typedValue) ||
     normalizeLookupName(entry.value) === normalizeLookupName(typedValue)
   );
 
   if (option?.id) {
-    return option.id;
+    return { id: option.id };
   }
 
-  return getTodoParentLabel(currentId) === typedValue ? currentId : "";
+  if (currentId && normalizeLookupName(getTodoParentLabel(currentId)) === normalizedTypedValue) {
+    return { id: currentId };
+  }
+
+  const filteredOptions = options.filter((entry) => normalizeLookupName(entry.label).includes(normalizedTypedValue));
+
+  if (filteredOptions.length === 1) {
+    return { id: filteredOptions[0].id };
+  }
+
+  return {
+    error: filteredOptions.length
+      ? "Select one parent from the list."
+      : "Parent must match another To Do item.",
+    id: "",
+  };
 }
 
 function renderTodoParentAutocomplete() {
@@ -8849,7 +8945,8 @@ todoParentInput?.addEventListener("input", () => {
 
 todoParentInput?.addEventListener("change", () => {
   if (todoParentIdInput) {
-    todoParentIdInput.value = resolveTodoParentIdFromInput();
+    const parentResolution = resolveTodoParentIdFromInput();
+    todoParentIdInput.value = parentResolution.id || "";
   }
 });
 

@@ -294,26 +294,18 @@ const fantasyOfficeData = {
   2025: { draft: [], movies: [], ordering: [], results: [] },
   2026: { draft: [], movies: [], ordering: [], results: [] },
 };
-const FOOTY_LOCAL_TEAM_BADGES = {
-  "arsenal": "assets/teams/1/logo.svg",
-  "arsenal fc": "assets/teams/1/logo.svg",
-  "barcelona": "assets/teams/2/logo.svg",
-  "fc barcelona": "assets/teams/2/logo.svg",
-  "charlotte": "assets/teams/6/badge.svg",
-  "charlotte fc": "assets/teams/6/badge.svg",
-  "inter miami": "assets/teams/7/badge.webp",
-  "inter miami cf": "assets/teams/7/badge.webp",
-  usmnt: "assets/teams/4/usmnt.svg",
-  uswmt: "assets/teams/5/uswnt.svg",
-  uswnt: "assets/teams/5/uswnt.svg",
-};
-const FOOTY_LOCAL_TEAM_BADGES_BY_ID = {
-  1: "assets/teams/1/logo.svg",
-  2: "assets/teams/2/logo.svg",
-  4: "assets/teams/4/usmnt.svg",
-  5: "assets/teams/5/uswnt.svg",
-  6: "assets/teams/6/badge.svg",
-  7: "assets/teams/7/badge.webp",
+const FOOTY_LOCAL_TEAM_IDS = {
+  arsenal: "1",
+  "arsenal fc": "1",
+  barcelona: "2",
+  "fc barcelona": "2",
+  charlotte: "6",
+  "charlotte fc": "6",
+  "inter miami": "7",
+  "inter miami cf": "7",
+  usmnt: "4",
+  uswmt: "5",
+  uswnt: "5",
 };
 const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
@@ -519,10 +511,11 @@ function renderFollowedTeamShortcuts(schedule) {
   followedTeamShortcuts.innerHTML = teams.map((team) => {
     const slug = getFootyTeamSlug(team.name);
     const fallback = getFootyTeamFallbackBadge(team.name);
+    const badgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId) || team.badge;
 
     return `
       <a class="followed-team-shortcut" href="#footy-team-${escapeHtml(slug)}" data-page-link="footy-team-${escapeHtml(slug)}" aria-label="${escapeHtml(team.name)}">
-        ${team.badge ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallback)}</span>`}
+        ${badgePath ? `<img src="${escapeHtml(badgePath)}" alt="" decoding="async" loading="lazy" onerror="this.remove(); this.closest('.followed-team-shortcut')?.insertAdjacentHTML('afterbegin', '<span>${escapeHtml(fallback)}</span>')">` : `<span>${escapeHtml(fallback)}</span>`}
       </a>
     `;
   }).join("");
@@ -640,15 +633,16 @@ function getFootyTeamBadge(teamName, explicitBadge = "", teamId = "") {
 }
 
 function getFootyLocalTeamBadge(teamName, teamId = "") {
-  const id = String(teamId || "").trim();
+  const id = String(teamId || "").trim() ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeLookupName(teamName)] ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeFootyClubName(teamName)] ||
+    "";
 
-  if (id && FOOTY_LOCAL_TEAM_BADGES_BY_ID[id]) {
-    return FOOTY_LOCAL_TEAM_BADGES_BY_ID[id];
+  if (id) {
+    return `assets/teams/${encodeURIComponent(id)}/badge.svg`;
   }
 
-  return FOOTY_LOCAL_TEAM_BADGES[normalizeLookupName(teamName)] ||
-    FOOTY_LOCAL_TEAM_BADGES[normalizeFootyClubName(teamName)] ||
-    "";
+  return "";
 }
 
 function renderFootyTeamPage(pageName = activePageName) {
@@ -821,9 +815,10 @@ function openFootyTradingCard(player, team) {
   const number = formatFootyPlayerNumber(player.number);
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
-  const badgePath = getFootyTeamBadge(team.name, team.badge, team.id || team.teamId);
+  const badgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId) ||
+    getFootyTeamBadge(team.name, team.badge, team.id || team.teamId);
   const badgeMarkup = badgePath
-    ? `<img src="${escapeHtml(badgePath)}" alt="" decoding="async">`
+    ? `<img src="${escapeHtml(badgePath)}" alt="" decoding="async" onerror="this.remove(); this.closest('.trading-card-team-badge')?.insertAdjacentHTML('afterbegin', '<span>${escapeHtml(fallback)}</span>')">`
     : `<span>${escapeHtml(fallback)}</span>`;
 
   if (footyTradingCardTitle) {
@@ -877,9 +872,13 @@ async function exportFootyTradingCard(player, team) {
   await drawCanvasImage(context, backgroundPath, 0, 0, width, height);
   await drawCanvasImage(context, framePath, 0, 0, width, height);
 
+  let didDrawBadge = false;
+
   if (badgePath) {
-    await drawCanvasImage(context, badgePath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true });
-  } else {
+    didDrawBadge = await drawCanvasImage(context, badgePath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true });
+  }
+
+  if (!didDrawBadge) {
     drawFallbackTradingCardBadge(context, team.name, width * 0.028, height * 0.032, width * 0.18, height * 0.12);
   }
 
@@ -1016,7 +1015,7 @@ function drawTradingCardNumber(context, number, width, height) {
 
 function drawTradingCardName(context, name, width, height) {
   const boxX = width * 0.13;
-  const boxY = height * 0.889;
+  const boxY = height * 0.876;
   const boxWidth = width * 0.72;
   const boxHeight = height * 0.055;
   const fontSize = fitCanvasText(context, String(name || ""), boxWidth, Math.round(boxHeight * 0.84), "Trebuchet MS, Arial, sans-serif");

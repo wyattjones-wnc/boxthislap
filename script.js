@@ -284,6 +284,8 @@ let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const FOOTY_JSONP_TIMEOUT_MS = 12000;
+const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -628,19 +630,13 @@ function getFootyDisplayTeamName(teamName) {
 }
 
 function getFootyTeamBadge(teamName, explicitBadge = "", teamId = "") {
-  const localBadge = getFootyLocalTeamBadge(teamName, teamId);
-
-  if (localBadge) {
-    return localBadge;
-  }
-
   const badge = String(explicitBadge || "").trim();
 
   if (badge) {
     return badge;
   }
 
-  return "";
+  return getFootyLocalTeamBadge(teamName, teamId);
 }
 
 function getFootyLocalTeamBadge(teamName, teamId = "") {
@@ -2147,7 +2143,7 @@ function loadFootyMatchNotes() {
     const timeout = window.setTimeout(() => {
       cleanup();
       reject(new Error("No response from the footy match notes endpoint."));
-    }, 12000);
+    }, FOOTY_JSONP_TIMEOUT_MS);
 
     function cleanup() {
       window.clearTimeout(timeout);
@@ -2220,7 +2216,7 @@ function loadFootyRosters() {
     const timeout = window.setTimeout(() => {
       cleanup();
       reject(new Error("No response from the footy roster endpoint."));
-    }, 12000);
+    }, FOOTY_ROSTER_JSONP_TIMEOUT_MS);
 
     function cleanup() {
       window.clearTimeout(timeout);

@@ -135,6 +135,11 @@ import {
   nextItemClose,
   nextItemCancel,
   todoList,
+  todoFilterToggle,
+  todoFilters,
+  todoMoreDataToggle,
+  todoEditToggle,
+  todoStatusFilters,
   todoAddButton,
   todoItemDialog,
   todoItemForm,
@@ -143,7 +148,13 @@ import {
   todoOrderInput,
   todoLowHourInput,
   todoHighHourInput,
+  todoParentInput,
+  todoParentIdInput,
   todoStartedInput,
+  todoArchivedInput,
+  todoPlatinumCleanupInput,
+  todoCompletedInput,
+  todoUnpurchasedInput,
   todoItemStatus,
   todoItemClose,
   todoItemCancel,
@@ -248,6 +259,11 @@ let activeFootyTeamViewMode = "schedule";
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
+let shouldShowTodoFilters = false;
+let shouldShowTodoMoreData = false;
+let shouldShowTodoEditMode = false;
+let activeTodoStatusFilter = "";
+let activeTodoItemId = "";
 let draggedTodoItemId = "";
 let didMoveTodoPointer = false;
 let activeRankingKind = "games";
@@ -3529,35 +3545,45 @@ function renderTodoList(items = siteData.todoItems || []) {
     return;
   }
 
-  const normalizedItems = items.map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
+  syncTodoControls();
 
-  if (!normalizedItems.length) {
+  const normalizedItems = items.map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
+  const visibleItems = getVisibleTodoItems(normalizedItems);
+  const groupedItems = groupTodoItems(visibleItems, normalizedItems);
+
+  if (!groupedItems.length) {
     todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
     return;
   }
 
   todoList.innerHTML = `
     <div class="next-list todo-list">
-      ${normalizedItems.map(renderTodoItem).join("")}
+      ${groupedItems.map((entry) => renderTodoItem(entry.item, entry.children)).join("")}
     </div>
   `;
 }
 
 function normalizeTodoItem(row) {
-  const name = String(row?.Name || "").trim();
+  const name = String(row?.Name || row?.name || "").trim();
 
   if (!name) {
     return null;
   }
 
   return {
-    highHour: normalizeTodoHour(row["High Hour"]),
+    archived: isTrueValue(row.Archived || row.archived),
+    completed: isTrueValue(row.Completed || row.completed),
+    deleted: isTrueValue(row.IsDeleted || row.isDeleted || row.deleted),
+    highHour: normalizeTodoHour(row["High Hour"] ?? row.highHour),
     id: String(row?.ID || row?.Id || row?.id || "").trim(),
-    lowHour: normalizeTodoHour(row["Low Hour"]),
+    lowHour: normalizeTodoHour(row["Low Hour"] ?? row.lowHour),
     name,
     order: normalizeTodoOrder(row.Order),
+    parentId: String(row["Parent ID"] || row.parentId || "").trim(),
+    platinumCleanup: isTrueValue(row["Platinum Cleanup"] || row.platinumCleanup),
     raw: row,
-    started: isTrueValue(row.Started),
+    started: isTrueValue(row.Started || row.started),
+    unpurchased: isTrueValue(row.Unpurchased || row.unpurchased),
   };
 }
 
@@ -3579,21 +3605,153 @@ function compareTodoItems(first, second) {
   return String(first.id).localeCompare(String(second.id), undefined, { numeric: true });
 }
 
-function renderTodoItem(item) {
+function getVisibleTodoItems(items) {
+  return items.filter((item) => {
+    if (!matchesTodoStatusFilter(item)) {
+      return false;
+    }
+
+    return activeTodoStatusFilter || (!item.archived && !item.completed && !item.deleted);
+  });
+}
+
+function matchesTodoStatusFilter(item) {
+  if (!activeTodoStatusFilter) {
+    return true;
+  }
+
+  if (activeTodoStatusFilter === "all") {
+    return true;
+  }
+
+  return Boolean(item[activeTodoStatusFilter]);
+}
+
+function groupTodoItems(visibleItems, allItems) {
+  const byId = new Map(allItems.map((item) => [item.id, item]));
+  const visibleIds = new Set(visibleItems.map((item) => item.id));
+  const childrenByParentId = new Map();
+
+  visibleItems.forEach((item) => {
+    const parent = item.parentId ? byId.get(item.parentId) : null;
+    const shouldNest = parent && !parent.completed && visibleIds.has(parent.id);
+
+    if (!shouldNest) {
+      return;
+    }
+
+    const children = childrenByParentId.get(parent.id) || [];
+    children.push(item);
+    childrenByParentId.set(parent.id, children);
+  });
+
+  return visibleItems
+    .filter((item) => {
+      const parent = item.parentId ? byId.get(item.parentId) : null;
+      return !parent || parent.completed || !visibleIds.has(parent.id);
+    })
+    .map((item) => ({
+      children: (childrenByParentId.get(item.id) || []).sort(compareTodoItems),
+      item,
+    }));
+}
+
+function renderTodoItem(item, children = []) {
   const hourLabel = formatTodoHourRange(item);
   const startedClass = item.started ? " todo-card--started" : "";
+  const deletedClass = item.deleted ? " todo-card--deleted" : "";
+  const expandedClass = shouldShowTodoEditMode && activeTodoItemId === item.id ? " is-actions-open" : "";
+  const chips = renderTodoStatusChips(item);
+  const draggable = shouldShowTodoEditMode ? ` draggable="true"` : "";
+  const controls = shouldShowTodoEditMode ? `
+    <div class="todo-card-actions">
+      <button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>
+      <button class="ranking-inline-action" type="button" data-todo-delete="${escapeHtml(item.id)}">Delete</button>
+    </div>
+  ` : "";
+  const childMarkup = children.length
+    ? `<div class="todo-child-list">${children.map(renderTodoChildItem).join("")}</div>`
+    : "";
 
   return `
-    <article class="next-card todo-card${startedClass}" draggable="true" tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="Move ${escapeHtml(item.name)}">
+    <article class="next-card todo-card${startedClass}${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="${shouldShowTodoEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
       <div class="next-card-main">
         <div>
           <h2>${escapeHtml(item.name)}</h2>
           ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
+          ${chips}
+          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
         </div>
-        <span class="ranking-drag-handle todo-drag-handle" aria-hidden="true" title="Drag to reorder"></span>
+        ${shouldShowTodoEditMode ? `<span class="ranking-drag-handle todo-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
       </div>
+      ${controls}
+      ${childMarkup}
     </article>
   `;
+}
+
+function renderTodoChildItem(item) {
+  const hourLabel = formatTodoHourRange(item);
+  const chips = renderTodoStatusChips(item);
+
+  return `
+    <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
+      <div>
+        <h3>${escapeHtml(item.name)}</h3>
+        ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
+        ${chips}
+        ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
+      </div>
+      ${shouldShowTodoEditMode ? `<button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>` : ""}
+    </article>
+  `;
+}
+
+function renderTodoStatusChips(item) {
+  const chips = getTodoStatusChips(item);
+
+  if (!chips.length || (!activeTodoStatusFilter && !shouldShowTodoMoreData)) {
+    return "";
+  }
+
+  return `
+    <div class="todo-chip-list">
+      ${chips.map((chip) => `<span class="status-pill todo-status-chip"><span></span>${escapeHtml(chip)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function getTodoStatusChips(item) {
+  const chips = [];
+
+  if (item.started) chips.push("Started");
+  if (item.archived) chips.push("Archived");
+  if (item.platinumCleanup) chips.push("Platinum Cleanup");
+  if (item.completed) chips.push("Completed");
+  if (item.deleted) chips.push("Deleted");
+  if (item.unpurchased) chips.push("Unpurchased");
+
+  if (activeTodoStatusFilter && activeTodoStatusFilter !== "all") {
+    const selectedLabel = getTodoStatusFilterLabel(activeTodoStatusFilter);
+    const selectedChip = chips.find((chip) => normalizeLookupName(chip) === normalizeLookupName(selectedLabel));
+    return selectedChip ? [selectedChip] : chips;
+  }
+
+  return chips;
+}
+
+function renderTodoMoreData(item) {
+  const details = [
+    item.id ? `ID ${item.id}` : "",
+    Number.isFinite(item.order) && item.order !== Number.MAX_SAFE_INTEGER ? `Order ${item.order}` : "",
+    item.parentId ? `Parent ${item.parentId}` : "",
+  ].filter(Boolean);
+
+  if (!details.length) {
+    return "";
+  }
+
+  return `<p class="todo-more-data">${details.map(escapeHtml).join(" | ")}</p>`;
 }
 
 function formatTodoHourRange(item) {
@@ -3620,27 +3778,57 @@ function openTodoItemDialog() {
     return;
   }
 
+  openTodoItemDialogForItem(null);
+}
+
+function openTodoItemDialogForItem(itemId) {
+  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+    return;
+  }
+
+  const editingItem = itemId
+    ? getTodoItems().map(normalizeTodoItem).filter(Boolean).find((item) => item.id === String(itemId))
+    : null;
   const rows = getTodoItems();
-  const nextOrder = rows.length + 1;
+  const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : rows.length + 1;
+  const maxOrder = editingItem ? Math.max(rows.length, 1) : rows.length + 1;
 
   if (todoItemId) {
-    todoItemId.value = "";
+    todoItemId.value = editingItem?.id || "";
   }
   if (todoNameInput) {
-    todoNameInput.value = "";
+    todoNameInput.value = editingItem?.name || "";
   }
   if (todoOrderInput) {
     todoOrderInput.value = String(nextOrder);
-    todoOrderInput.max = String(nextOrder);
+    todoOrderInput.max = String(maxOrder);
   }
   if (todoLowHourInput) {
-    todoLowHourInput.value = "";
+    todoLowHourInput.value = editingItem?.raw["Low Hour"] || "";
   }
   if (todoHighHourInput) {
-    todoHighHourInput.value = "";
+    todoHighHourInput.value = editingItem?.raw["High Hour"] || "";
+  }
+  if (todoParentIdInput) {
+    todoParentIdInput.value = editingItem?.parentId || "";
+  }
+  if (todoParentInput) {
+    todoParentInput.value = getTodoParentLabel(editingItem?.parentId) || "";
   }
   if (todoStartedInput) {
-    todoStartedInput.checked = false;
+    todoStartedInput.checked = Boolean(editingItem?.started);
+  }
+  if (todoArchivedInput) {
+    todoArchivedInput.checked = Boolean(editingItem?.archived);
+  }
+  if (todoPlatinumCleanupInput) {
+    todoPlatinumCleanupInput.checked = Boolean(editingItem?.platinumCleanup);
+  }
+  if (todoCompletedInput) {
+    todoCompletedInput.checked = Boolean(editingItem?.completed);
+  }
+  if (todoUnpurchasedInput) {
+    todoUnpurchasedInput.checked = Boolean(editingItem?.unpurchased);
   }
 
   setTodoItemStatus("");
@@ -3675,14 +3863,27 @@ function saveTodoItemFromForm() {
   }
 
   const rows = getTodoItems();
+  const existingItem = String(todoItemId?.value || "").trim()
+    ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === String(todoItemId?.value || "").trim())
+    : null;
   const item = {
     ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
     Order: String(clampTodoOrder(todoOrderInput?.value, rows.length + 1)),
     Name: name,
     "Low Hour": String(todoLowHourInput?.value || "").trim(),
     "High Hour": String(todoHighHourInput?.value || "").trim(),
+    "Parent ID": String(todoParentIdInput?.value || "").trim(),
     Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
+    Archived: todoArchivedInput?.checked ? "TRUE" : "FALSE",
+    "Platinum Cleanup": todoPlatinumCleanupInput?.checked ? "TRUE" : "FALSE",
+    Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
+    IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
+    Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
   };
+
+  if (item["Parent ID"] === item.ID) {
+    item["Parent ID"] = "";
+  }
 
   upsertTodoItemLocally(item);
   normalizeTodoOrdersLocally();
@@ -3744,7 +3945,13 @@ function normalizeTodoOrdersLocally() {
       Name: item.name,
       "Low Hour": item.raw["Low Hour"] || "",
       "High Hour": item.raw["High Hour"] || "",
+      "Parent ID": item.parentId || "",
       Started: item.started ? "TRUE" : "FALSE",
+      Archived: item.archived ? "TRUE" : "FALSE",
+      "Platinum Cleanup": item.platinumCleanup ? "TRUE" : "FALSE",
+      Completed: item.completed ? "TRUE" : "FALSE",
+      IsDeleted: item.deleted ? "TRUE" : "FALSE",
+      Unpurchased: item.unpurchased ? "TRUE" : "FALSE",
     }));
 }
 
@@ -3769,7 +3976,13 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     Name: row.name,
     "Low Hour": row.raw["Low Hour"] || "",
     "High Hour": row.raw["High Hour"] || "",
+    "Parent ID": row.parentId || "",
     Started: row.started ? "TRUE" : "FALSE",
+    Archived: row.archived ? "TRUE" : "FALSE",
+    "Platinum Cleanup": row.platinumCleanup ? "TRUE" : "FALSE",
+    Completed: row.completed ? "TRUE" : "FALSE",
+    IsDeleted: row.deleted ? "TRUE" : "FALSE",
+    Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
   }));
   renderTodoList();
 
@@ -3789,10 +4002,123 @@ function submitTodoOrder() {
       Name: item.Name,
       "Low Hour": item["Low Hour"] || "",
       "High Hour": item["High Hour"] || "",
+      "Parent ID": item["Parent ID"] || "",
       Started: item.Started || "FALSE",
+      Archived: item.Archived || "FALSE",
+      "Platinum Cleanup": item["Platinum Cleanup"] || "FALSE",
+      Completed: item.Completed || "FALSE",
+      IsDeleted: item.IsDeleted || "FALSE",
+      Unpurchased: item.Unpurchased || "FALSE",
     })),
     sheetName: "To Do",
   });
+}
+
+function deleteTodoItem(itemId) {
+  const item = getTodoItems().map(normalizeTodoItem).filter(Boolean).find((row) => row.id === String(itemId));
+
+  if (!item) {
+    return;
+  }
+
+  const nextItem = {
+    ...item.raw,
+    ID: item.id,
+    IsDeleted: "TRUE",
+  };
+
+  upsertTodoItemLocally(nextItem);
+  renderTodoList();
+  submitNextItemPayload({
+    action: "saveTodoItem",
+    item: nextItem,
+    sheetName: "To Do",
+  });
+}
+
+function syncTodoControls() {
+  if (todoFilters) {
+    todoFilters.hidden = !shouldShowTodoFilters;
+  }
+
+  if (todoFilterToggle) {
+    todoFilterToggle.setAttribute("aria-expanded", String(shouldShowTodoFilters));
+    todoFilterToggle.classList.toggle("is-active", shouldShowTodoFilters);
+  }
+
+  if (todoMoreDataToggle) {
+    todoMoreDataToggle.checked = shouldShowTodoMoreData;
+  }
+
+  if (todoEditToggle) {
+    todoEditToggle.checked = shouldShowTodoEditMode;
+  }
+
+  todoStatusFilters?.forEach((input) => {
+    input.checked = input.dataset.todoStatusFilter === activeTodoStatusFilter;
+  });
+}
+
+function setTodoStatusFilter(filter) {
+  activeTodoStatusFilter = activeTodoStatusFilter === filter ? "" : filter;
+  activeTodoItemId = "";
+  renderTodoList();
+}
+
+function getTodoStatusFilterLabel(filter) {
+  const labels = {
+    all: "All",
+    archived: "Archived",
+    completed: "Completed",
+    deleted: "Deleted",
+    platinumCleanup: "Platinum Cleanup",
+    started: "Started",
+    unpurchased: "Unpurchased",
+  };
+
+  return labels[filter] || "";
+}
+
+function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()) {
+  return getTodoItems()
+    .map(normalizeTodoItem)
+    .filter(Boolean)
+    .filter((item) => item.id && item.id !== excludeId)
+    .sort(compareTodoItems)
+    .map((item) => ({
+      label: item.name,
+      meta: item.id ? `ID ${item.id}` : "",
+      value: `${item.name} (${item.id})`,
+      id: item.id,
+    }));
+}
+
+function getTodoParentLabel(parentId) {
+  const item = getTodoItems().map(normalizeTodoItem).filter(Boolean).find((row) => row.id === String(parentId || ""));
+  return item ? `${item.name} (${item.id})` : "";
+}
+
+function renderTodoParentAutocomplete() {
+  if (!todoParentInput) {
+    return;
+  }
+
+  activeAutocompleteInput = todoParentInput;
+  renderAutocompleteDropdown(todoParentInput, getTodoParentOptions(), "No To Do matches");
+}
+
+function selectTodoParentOption(value) {
+  const option = getTodoParentOptions().find((entry) => entry.value === value);
+
+  if (todoParentInput) {
+    todoParentInput.value = option ? option.value : value;
+  }
+
+  if (todoParentIdInput) {
+    todoParentIdInput.value = option?.id || "";
+  }
+
+  closeAutocompleteDropdown();
 }
 
 function getTodoItemElement(itemId) {
@@ -8182,6 +8508,77 @@ todoAddButton?.addEventListener("click", () => {
   openTodoItemDialog();
 });
 
+todoFilterToggle?.addEventListener("click", () => {
+  shouldShowTodoFilters = !shouldShowTodoFilters;
+  renderTodoList();
+});
+
+todoMoreDataToggle?.addEventListener("change", () => {
+  shouldShowTodoMoreData = Boolean(todoMoreDataToggle.checked);
+  renderTodoList();
+});
+
+todoEditToggle?.addEventListener("change", () => {
+  shouldShowTodoEditMode = Boolean(todoEditToggle.checked);
+  activeTodoItemId = "";
+  renderTodoList();
+});
+
+todoStatusFilters?.forEach((input) => {
+  input.addEventListener("change", () => {
+    setTodoStatusFilter(input.checked ? input.dataset.todoStatusFilter : "");
+  });
+});
+
+todoList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-todo-edit]");
+
+  if (editButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    openTodoItemDialogForItem(editButton.getAttribute("data-todo-edit"));
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-todo-delete]");
+
+  if (deleteButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    deleteTodoItem(deleteButton.getAttribute("data-todo-delete"));
+    return;
+  }
+
+  const card = event.target.closest("[data-todo-id]");
+
+  if (!card || !shouldShowTodoEditMode || event.target.closest("button, a, input, select, textarea, label, .todo-drag-handle")) {
+    return;
+  }
+
+  activeTodoItemId = activeTodoItemId === card.getAttribute("data-todo-id")
+    ? ""
+    : card.getAttribute("data-todo-id") || "";
+  renderTodoList();
+});
+
+todoList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-todo-id]");
+
+  if (!card || !shouldShowTodoEditMode) {
+    return;
+  }
+
+  event.preventDefault();
+  activeTodoItemId = activeTodoItemId === card.getAttribute("data-todo-id")
+    ? ""
+    : card.getAttribute("data-todo-id") || "";
+  renderTodoList();
+});
+
 todoItemForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveTodoItemFromForm();
@@ -8189,6 +8586,40 @@ todoItemForm?.addEventListener("submit", (event) => {
 
 [todoItemClose, todoItemCancel].forEach((button) => {
   button?.addEventListener("click", closeTodoItemDialog);
+});
+
+todoItemForm?.addEventListener("pointerdown", (event) => {
+  const optionButton = event.target.closest("[data-autocomplete-value]");
+
+  if (!optionButton) {
+    if (event.target !== todoParentInput && !event.target.closest(".autocomplete-dropdown")) {
+      closeAutocompleteDropdown();
+    }
+
+    return;
+  }
+
+  event.preventDefault();
+  selectTodoParentOption(optionButton.getAttribute("data-autocomplete-value") || "");
+});
+
+todoParentInput?.addEventListener("focus", renderTodoParentAutocomplete);
+todoParentInput?.addEventListener("input", () => {
+  if (!todoParentInput.value.trim() && todoParentIdInput) {
+    todoParentIdInput.value = "";
+  }
+
+  renderTodoParentAutocomplete();
+});
+
+todoParentInput?.addEventListener("change", () => {
+  const option = getTodoParentOptions().find((entry) =>
+    normalizeLookupName(entry.value) === normalizeLookupName(todoParentInput.value)
+  );
+
+  if (todoParentIdInput) {
+    todoParentIdInput.value = option?.id || "";
+  }
 });
 
 rankingTabs?.forEach((tab) => {
@@ -8444,7 +8875,7 @@ document.addEventListener("pointercancel", () => {
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-todo-id]");
 
-  if (!item || !isCurrentManagerAdmin() || !event.target.closest(".todo-drag-handle")) {
+  if (!item || !isCurrentManagerAdmin() || !shouldShowTodoEditMode || !event.target.closest(".todo-drag-handle")) {
     return;
   }
 
@@ -8485,7 +8916,7 @@ document.addEventListener("pointerdown", (event) => {
   const handle = event.target.closest(".todo-drag-handle");
   const item = handle?.closest("[data-todo-id]");
 
-  if (!item || !isCurrentManagerAdmin()) {
+  if (!item || !isCurrentManagerAdmin() || !shouldShowTodoEditMode) {
     return;
   }
 

@@ -16,7 +16,13 @@ const TODO_ITEM_COLUMNS = [
   "Name",
   "Low Hour",
   "High Hour",
+  "Parent ID",
   "Started",
+  "Archived",
+  "Platinum Cleanup",
+  "Completed",
+  "IsDeleted",
+  "Unpurchased",
 ];
 const RANKING_SHEETS = {
   games: "VG Ranking",
@@ -383,7 +389,13 @@ function listTodoItems() {
       Name: String(row.Name || "").trim(),
       "Low Hour": String(row["Low Hour"] || "").trim(),
       "High Hour": String(row["High Hour"] || "").trim(),
+      "Parent ID": String(row["Parent ID"] || "").trim(),
       Started: isTrueValue(row.Started),
+      Archived: isTrueValue(row.Archived),
+      "Platinum Cleanup": isTrueValue(row["Platinum Cleanup"]),
+      Completed: isTrueValue(row.Completed),
+      IsDeleted: isTrueValue(row.IsDeleted),
+      Unpurchased: isTrueValue(row.Unpurchased),
     }))
     .filter((row) => row.ID && row.Name)
     .sort(compareTodoRows);
@@ -422,9 +434,15 @@ function normalizeTodoItem(item) {
     ID: String(item.ID || item.Id || item.id || "").trim(),
     Order: clampTodoOrder(item.Order || item.order, Number.MAX_SAFE_INTEGER),
     Name: String(item.Name || item.name || "").trim(),
-    "Low Hour": String(item["Low Hour"] || item.lowHour || "").trim(),
-    "High Hour": String(item["High Hour"] || item.highHour || "").trim(),
+    "Low Hour": String(item["Low Hour"] ?? item.lowHour ?? "").trim(),
+    "High Hour": String(item["High Hour"] ?? item.highHour ?? "").trim(),
+    "Parent ID": String(item["Parent ID"] || item.parentId || "").trim(),
     Started: normalizeBool(item.Started || item.started),
+    Archived: normalizeBool(item.Archived || item.archived),
+    "Platinum Cleanup": normalizeBool(item["Platinum Cleanup"] || item.platinumCleanup),
+    Completed: normalizeBool(item.Completed || item.completed),
+    IsDeleted: normalizeBool(item.IsDeleted || item.isDeleted),
+    Unpurchased: normalizeBool(item.Unpurchased || item.unpurchased),
   };
 }
 

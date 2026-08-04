@@ -1050,7 +1050,7 @@ function drawTradingCardNumber(context, number, width, height) {
 
 function drawTradingCardName(context, name, width, height) {
   const boxX = width * 0.13;
-  const boxY = height * 0.9;
+  const boxY = height * 0.87;
   const boxWidth = width * 0.72;
   const boxHeight = height * 0.055;
   const fontSize = fitCanvasText(context, String(name || ""), boxWidth, Math.round(boxHeight * 0.84), "Trebuchet MS, Arial, sans-serif");

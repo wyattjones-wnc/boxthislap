@@ -517,9 +517,9 @@ function renderFollowedTeamShortcuts(schedule) {
     return `
       <a class="followed-team-shortcut" href="#footy-team-${escapeHtml(slug)}" data-page-link="footy-team-${escapeHtml(slug)}" aria-label="${escapeHtml(team.name)}">
         ${renderFootyBadgeMarkup({
-          fallbackSrc: providerBadgePath,
+          fallbackSrc: localBadgePath,
           fallbackText: fallback,
-          primarySrc: localBadgePath,
+          primarySrc: providerBadgePath || localBadgePath,
         })}
       </a>
     `;
@@ -661,6 +661,16 @@ function getFootyLocalTeamLogo(teamName, teamId = "") {
   }
 
   return "";
+}
+
+function getFootyTradingCardBadgeSources(team = {}) {
+  const name = team.name || team.teamName || "";
+  const id = team.id || team.teamId || "";
+  const providerBadge = String(team.badge || team.teamBadge || "").trim();
+  const localBadge = getFootyLocalTeamBadge(name, id);
+  const localLogo = getFootyLocalTeamLogo(name, id);
+
+  return [providerBadge, localBadge, localLogo].filter(Boolean);
 }
 
 function renderFootyBadgeMarkup({
@@ -862,12 +872,12 @@ function openFootyTradingCard(player, team) {
   const number = formatFootyPlayerNumber(player.number);
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
-  const localLogoPath = getFootyLocalTeamLogo(team.name, team.id || team.teamId);
+  const badgeSources = getFootyTradingCardBadgeSources(team);
   const badgeMarkup = renderFootyBadgeMarkup({
-    fallbackSrc: localLogoPath || String(team.badge || "").trim(),
+    fallbackSrc: badgeSources[1] || "",
     fallbackText: fallback,
     loading: "eager",
-    primarySrc: getFootyLocalTeamBadge(team.name, team.id || team.teamId),
+    primarySrc: badgeSources[0] || "",
   });
 
   if (footyTradingCardTitle) {
@@ -913,7 +923,7 @@ async function exportFootyTradingCard(player, team) {
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const framePath = "assets/trading-card/trading-card.svg";
   const number = formatFootyPlayerNumber(player.number);
-  const badgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId);
+  const badgeSources = getFootyTradingCardBadgeSources(team);
 
   context.fillStyle = "#07111d";
   context.fillRect(0, 0, width, height);
@@ -923,16 +933,12 @@ async function exportFootyTradingCard(player, team) {
 
   let didDrawBadge = false;
 
-  if (badgePath) {
+  for (const badgePath of badgeSources) {
     didDrawBadge = await drawCanvasImage(context, badgePath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true });
-  }
 
-  if (!didDrawBadge) {
-    const teamId = String(team.id || team.teamId || "").trim();
-    const logoPath = getFootyLocalTeamLogo(team.name, teamId);
-    didDrawBadge = logoPath
-      ? await drawCanvasImage(context, logoPath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true })
-      : false;
+    if (didDrawBadge) {
+      break;
+    }
   }
 
   if (!didDrawBadge) {

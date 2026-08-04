@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 290 100">
+  <path d="M42 8L72 20V50C72 70 58 84 42 92C26 84 12 70 12 50V20Z"
+        fill="none" stroke="#B89443" stroke-width="5"/>
+  <circle cx="42" cy="49" r="19"
+          fill="none" stroke="#B89443" stroke-width="2"
+          stroke-dasharray="4 4" opacity=".35"/>
+  <text x="92" y="44" fill="#001B3A" font-family="Arial, sans-serif"
+        font-weight="700" font-size="25">ACADEMY</text>
+  <text x="92" y="76" fill="#001B3A" font-family="Arial, sans-serif"
+        font-weight="700" font-size="25">PRODUCT</text>
+</svg>

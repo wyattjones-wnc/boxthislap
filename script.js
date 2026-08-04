@@ -650,6 +650,19 @@ function getFootyLocalTeamBadge(teamName, teamId = "") {
   return "";
 }
 
+function getFootyLocalTeamLogo(teamName, teamId = "") {
+  const id = String(teamId || "").trim() ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeLookupName(teamName)] ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeFootyClubName(teamName)] ||
+    "";
+
+  if (id) {
+    return `assets/teams/${encodeURIComponent(id)}/logo.svg`;
+  }
+
+  return "";
+}
+
 function renderFootyBadgeMarkup({
   primarySrc = "",
   fallbackSrc = "",
@@ -849,8 +862,9 @@ function openFootyTradingCard(player, team) {
   const number = formatFootyPlayerNumber(player.number);
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
+  const localLogoPath = getFootyLocalTeamLogo(team.name, team.id || team.teamId);
   const badgeMarkup = renderFootyBadgeMarkup({
-    fallbackSrc: String(team.badge || "").trim(),
+    fallbackSrc: localLogoPath || String(team.badge || "").trim(),
     fallbackText: fallback,
     loading: "eager",
     primarySrc: getFootyLocalTeamBadge(team.name, team.id || team.teamId),
@@ -911,6 +925,14 @@ async function exportFootyTradingCard(player, team) {
 
   if (badgePath) {
     didDrawBadge = await drawCanvasImage(context, badgePath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true });
+  }
+
+  if (!didDrawBadge) {
+    const teamId = String(team.id || team.teamId || "").trim();
+    const logoPath = getFootyLocalTeamLogo(team.name, teamId);
+    didDrawBadge = logoPath
+      ? await drawCanvasImage(context, logoPath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true })
+      : false;
   }
 
   if (!didDrawBadge) {
@@ -1981,6 +2003,27 @@ function normalizeFootyGoalAssistForNote(event) {
   return normalized;
 }
 
+function formatFootyGoalAssistMinute(minute) {
+  const rawMinute = String(minute || "").trim();
+
+  if (!rawMinute) {
+    return "";
+  }
+
+  const normalizedMinute = rawMinute
+    .replace(/[’`]/g, "'")
+    .replace(/\s*'\s*/g, "")
+    .replace(/\s*\+\s*/g, " +")
+    .trim();
+  const match = normalizedMinute.match(/^(\d+)(?:\s*\+(\d+))?$/);
+
+  if (!match) {
+    return rawMinute;
+  }
+
+  return match[2] ? `${match[1]}' +${match[2]}` : `${match[1]}'`;
+}
+
 function normalizeFootyGoalAssistList(events = []) {
   return Array.isArray(events)
     ? events.map(normalizeFootyGoalAssistForNote)
@@ -2761,7 +2804,7 @@ function renderFootyGoalAssistEvents(label, events = []) {
     <div class="footy-goal-events">
       <span>${escapeHtml(label)}</span>
       ${sortedEvents.map((event) => {
-        const minute = event.minute ? `${escapeHtml(event.minute)}' - ` : "";
+        const minute = event.minute ? `${escapeHtml(formatFootyGoalAssistMinute(event.minute))} - ` : "";
         const assist = event.assister ? `, ${escapeHtml(event.assister)}` : "";
         const penalty = event.penalty ? " (P)" : "";
 
@@ -2778,7 +2821,10 @@ function compareFootyGoalAssistEvents(firstEvent, secondEvent) {
 }
 
 function getFootyGoalAssistMinuteSortValue(event) {
-  const minuteText = String(event?.minute || "").trim().replace("'", "");
+  const minuteText = String(event?.minute || "")
+    .trim()
+    .replace(/[’'`]/g, "")
+    .replace(/\s*\+\s*/g, "+");
   const minuteMatch = minuteText.match(/^(\d+)(?:\s*\+\s*(\d+))?/);
 
   if (!minuteMatch) {
@@ -2880,7 +2926,7 @@ function getFootyGoalAssistLabel(entry, index) {
 }
 
 function getFootyGoalAssistChipText(entry, index) {
-  const minute = entry.minute ? `${entry.minute}' - ` : "";
+  const minute = entry.minute ? `${formatFootyGoalAssistMinute(entry.minute)} - ` : "";
 
   if (entry.scorer && entry.assister) {
     return `${minute}${entry.scorer} / ${entry.assister}`;
@@ -3943,7 +3989,6 @@ function renderTodoChildItem(item) {
 
   return `
     <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
-      <span class="todo-order-number todo-order-number--child">${escapeHtml(formatTodoOrderNumber(item))}</span>
       <div>
         <h3>${escapeHtml(item.name)}</h3>
         ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}

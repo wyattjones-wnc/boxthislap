@@ -908,7 +908,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   padding: 12px;
 }
 

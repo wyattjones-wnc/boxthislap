@@ -5,6 +5,7 @@ import {
   MANAGER_SESSION_STORAGE_KEY,
   MANAGER_PORTAL_ENDPOINT,
   FOOTY_DATA_ENDPOINT,
+  FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
@@ -23,7 +24,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607250003";
+} from "./modules/siteConfig.js?v=202608050001";
 
 import {
   pageLinks,
@@ -230,7 +231,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607310002";
+} from "./modules/domRefs.js?v=202608050001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -289,6 +290,7 @@ const FOOTY_JSONP_TIMEOUT_MS = 12000;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
 const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notifications-sent";
+const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
 const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
 const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
 const FOOTY_NOTIFICATION_OFFSETS = [
@@ -1710,7 +1712,7 @@ function syncFootyNotificationToggle() {
     return;
   }
 
-  const supported = isFootyNotificationSupported();
+  const supported = isFootyPushNotificationSupported() || isFootyNotificationSupported();
   const enabled = isFootyNotificationEnabled();
 
   footyNotificationToggle.hidden = !supported;
@@ -1735,18 +1737,21 @@ function isFootyNotificationSupported() {
 
 function isFootyNotificationEnabled() {
   return getStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY) &&
-    isFootyNotificationSupported() &&
     Notification.permission === "granted";
 }
 
 async function toggleFootyNotifications() {
-  if (!isFootyNotificationSupported()) {
+  if (!isFootyPushNotificationSupported() && !isFootyNotificationSupported()) {
     window.alert("This browser cannot show site notifications here.");
     syncFootyNotificationToggle();
     return;
   }
 
   if (isFootyNotificationEnabled()) {
+    if (isFootyPushNotificationSupported()) {
+      await unsubscribeFootyPushNotifications();
+    }
+
     setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
     stopFootyNotificationMonitor();
     syncFootyNotificationToggle();
@@ -1764,13 +1769,130 @@ async function toggleFootyNotifications() {
   }
 
   setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, true);
-  startFootyNotificationMonitor();
-  checkFootyMatchNotifications();
+
+  if (isFootyPushNotificationSupported()) {
+    try {
+      await subscribeFootyPushNotifications();
+      stopFootyNotificationMonitor();
+    } catch (error) {
+      setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+      recordDiagnostic("footy push subscription failed", error);
+      window.alert(`Unable to subscribe to match alerts: ${getErrorMessage(error)}`);
+    }
+  } else {
+    startFootyNotificationMonitor();
+    checkFootyMatchNotifications();
+  }
+
   syncFootyNotificationToggle();
 }
 
+function getFootyPushEndpoint() {
+  return String(FOOTY_PUSH_ENDPOINT || "").trim().replace(/\/$/, "");
+}
+
+function isFootyPushNotificationSupported() {
+  return Boolean(
+    getFootyPushEndpoint() &&
+    isFootyNotificationSupported() &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window
+  );
+}
+
+async function registerBoxThisLapServiceWorker() {
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+    return null;
+  }
+
+  return navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+}
+
+async function subscribeFootyPushNotifications() {
+  const endpoint = getFootyPushEndpoint();
+
+  if (!endpoint) {
+    throw new Error("Footy push endpoint is not configured.");
+  }
+
+  const registration = await registerBoxThisLapServiceWorker();
+
+  if (!registration?.pushManager) {
+    throw new Error("Push notifications are not available in this browser.");
+  }
+
+  const vapidResponse = await fetch(`${endpoint}/vapid-public-key`);
+
+  if (!vapidResponse.ok) {
+    throw new Error(`Unable to load push key (${vapidResponse.status}).`);
+  }
+
+  const { publicKey } = await vapidResponse.json();
+  const existingSubscription = await registration.pushManager.getSubscription();
+  const subscription = existingSubscription || await registration.pushManager.subscribe({
+    applicationServerKey: base64UrlToUint8Array(publicKey),
+    userVisibleOnly: true,
+  });
+  const saveResponse = await fetch(`${endpoint}/subscribe`, {
+    body: JSON.stringify({
+      managerId: getCurrentManagerId(),
+      pageUrl: window.location.href,
+      subscription: subscription.toJSON(),
+      userAgent: navigator.userAgent,
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!saveResponse.ok) {
+    throw new Error(`Unable to save push subscription (${saveResponse.status}).`);
+  }
+
+  setStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {
+    endpoint: subscription.endpoint,
+    savedAt: new Date().toISOString(),
+  });
+}
+
+async function unsubscribeFootyPushNotifications() {
+  const endpoint = getFootyPushEndpoint();
+  const registration = "serviceWorker" in navigator
+    ? await navigator.serviceWorker.getRegistration()
+    : null;
+  const subscription = registration?.pushManager
+    ? await registration.pushManager.getSubscription()
+    : null;
+
+  if (subscription) {
+    if (endpoint) {
+      await fetch(`${endpoint}/unsubscribe`, {
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }).catch((error) => recordDiagnostic("footy push unsubscribe failed", error));
+    }
+
+    await subscription.unsubscribe().catch((error) => recordDiagnostic("browser push unsubscribe failed", error));
+  }
+
+  setStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {});
+}
+
+function base64UrlToUint8Array(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index);
+  }
+
+  return outputArray;
+}
+
 function startFootyNotificationMonitor() {
-  if (footyNotificationTimer || !isFootyNotificationEnabled()) {
+  if (footyNotificationTimer || !isFootyNotificationEnabled() || isFootyPushNotificationSupported()) {
     return;
   }
 
@@ -1790,7 +1912,7 @@ function stopFootyNotificationMonitor() {
 }
 
 function checkFootyMatchNotifications() {
-  if (!isFootyNotificationEnabled() || !siteData.footySchedule) {
+  if (isFootyPushNotificationSupported() || !isFootyNotificationEnabled() || !siteData.footySchedule) {
     return;
   }
 

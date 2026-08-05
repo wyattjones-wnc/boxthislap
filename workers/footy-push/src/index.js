@@ -126,10 +126,12 @@ async function sendDueFootyAlerts(env) {
   const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
   let sent = 0;
   let skipped = 0;
+  let failed = 0;
   let removed = 0;
 
   for (const subscription of subscriptions) {
     const pendingNotifications = [];
+    const pendingSentKeys = [];
 
     for (const alert of dueAlerts) {
       const sentKey = `${SENT_PREFIX}${alert.key}:${subscription.hash}`;
@@ -146,7 +148,7 @@ async function sendDueFootyAlerts(env) {
         title: alert.title,
         url: env.NOTIFICATION_URL || "./#footy",
       });
-      await env.FOOTY_PUSH_KV.put(sentKey, new Date().toISOString(), { expirationTtl: 60 * 60 * 24 * 14 });
+      pendingSentKeys.push(sentKey);
     }
 
     if (pendingNotifications.length === 0) {
@@ -163,24 +165,32 @@ async function sendDueFootyAlerts(env) {
 
     if (result.status === 404 || result.status === 410) {
       await env.FOOTY_PUSH_KV.delete(`${SUBSCRIPTION_PREFIX}${subscription.hash}`);
+      await env.FOOTY_PUSH_KV.delete(`${PENDING_PREFIX}${subscription.hash}`);
       removed += 1;
       continue;
     }
 
     if (!result.ok) {
       console.warn("Unable to send footy push", subscription.hash, result.status, await result.text());
+      await env.FOOTY_PUSH_KV.delete(`${PENDING_PREFIX}${subscription.hash}`);
+      failed += pendingNotifications.length;
       continue;
     }
 
+    await Promise.all(pendingSentKeys.map((sentKey) =>
+      env.FOOTY_PUSH_KV.put(sentKey, new Date().toISOString(), { expirationTtl: 60 * 60 * 24 * 14 })
+    ));
     sent += pendingNotifications.length;
   }
 
   return {
     dueAlerts: dueAlerts.length,
+    failed,
     ok: true,
     removed,
     sent,
     skipped,
+    skippedAlreadySent: skipped,
     subscriptions: subscriptions.length,
   };
 }

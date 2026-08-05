@@ -1,4 +1,4 @@
-const FOOTY_PUSH_ENDPOINT = "";
+const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
 
 self.addEventListener("push", (event) => {
   event.waitUntil(showPendingFootyNotifications());

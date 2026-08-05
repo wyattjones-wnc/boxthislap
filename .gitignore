@@ -1,2 +1,4 @@
 .cache/
 .tmp/
+node_modules/
+.wrangler-config/

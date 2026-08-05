@@ -128,11 +128,7 @@ function isUpcomingItem(item) {
   }
 
   const now = new Date();
-  const relevantEnd = item.endDate
-    ? endOfDay(item.endDate)
-    : item.time
-      ? item.startDate
-      : endOfDay(item.startDate);
+  const relevantEnd = getItemRelevantEnd(item);
 
   return relevantEnd >= now;
 }
@@ -169,7 +165,6 @@ function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.url = SITE_URL;
-  widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
   widget.setPadding(14, 14, 14, 14);
 
   const header = widget.addStack();
@@ -189,16 +184,19 @@ function createWidget(item, result) {
   widget.addSpacer(10);
 
   if (!result.ok) {
+    widget.refreshAfterDate = getWidgetRefreshDate(null);
     addErrorState(widget, result.error);
     return widget;
   }
 
   if (!item) {
+    widget.refreshAfterDate = getWidgetRefreshDate(null);
     addEmptyState(widget);
     return widget;
   }
 
   const eventState = getEventState(item);
+  widget.refreshAfterDate = getWidgetRefreshDate(item);
   const name = widget.addText(item.thing);
   name.font = Font.boldSystemFont(20);
   name.textColor = COLORS.text;
@@ -405,6 +403,10 @@ function getEventState(item) {
     return { label: "In progress", color: COLORS.warning };
   }
 
+  if (!item.time && isSameCalendarDay(now, item.startDate)) {
+    return { label: "Today", color: COLORS.warning };
+  }
+
   if (item.startDate <= now) {
     return { label: "Past", color: COLORS.muted };
   }
@@ -422,7 +424,36 @@ function getEventState(item) {
     return { label: `${hours}h ${minutes}m`, color: COLORS.accent };
   }
 
-  return { label: `${Math.max(minutes, 0)}m`, color: COLORS.accent };
+  return { label: "< 1 hr", color: COLORS.accent };
+}
+
+function getWidgetRefreshDate(item) {
+  const now = new Date();
+
+  if (!item || !item.startDate) {
+    return new Date(now.getTime() + 60 * 60 * 1000);
+  }
+
+  const relevantEnd = getItemRelevantEnd(item);
+  const remaining = item.startDate.getTime() - now.getTime();
+  const refreshMs = remaining > 0 && remaining < 60 * 60 * 1000
+    ? 60 * 1000
+    : 60 * 60 * 1000;
+  const nextRefresh = new Date(now.getTime() + refreshMs);
+
+  if (relevantEnd > now && relevantEnd < nextRefresh) {
+    return new Date(relevantEnd.getTime() + 60 * 1000);
+  }
+
+  return nextRefresh;
+}
+
+function getItemRelevantEnd(item) {
+  if (item.endDate) {
+    return endOfDay(item.endDate);
+  }
+
+  return item.time ? item.startDate : endOfDay(item.startDate);
 }
 
 function formatDateRange(item) {
@@ -453,4 +484,11 @@ function formatDate(date, includeTime) {
 
 function endOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+function isSameCalendarDay(first, second) {
+  return first && second &&
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
 }

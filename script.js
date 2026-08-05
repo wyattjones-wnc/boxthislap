@@ -69,6 +69,7 @@ import {
   leagueYearSelect,
   leagueList,
   footyPastToggle,
+  footyNotificationToggle,
   footyFilterToggle,
   footyFilters,
   footySearchInput,
@@ -286,6 +287,16 @@ let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const FOOTY_JSONP_TIMEOUT_MS = 12000;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
+const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
+const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notifications-sent";
+const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
+const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
+const FOOTY_NOTIFICATION_OFFSETS = [
+  { key: "2h", label: "in 2 hours", minutes: 120 },
+  { key: "1h", label: "in 1 hour", minutes: 60 },
+  { key: "start", label: "now", minutes: 0 },
+];
+let footyNotificationTimer = null;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -1682,6 +1693,7 @@ function isFootyFixtureCurrent(fixture) {
 function syncFootyPastToggle(fixtures = []) {
   if (!footyPastToggle) {
     syncFootyGoalAssistsButton();
+    syncFootyNotificationToggle();
     return;
   }
 
@@ -1690,6 +1702,212 @@ function syncFootyPastToggle(fixtures = []) {
   footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
   footyPastToggle.disabled = false;
   syncFootyGoalAssistsButton();
+  syncFootyNotificationToggle();
+}
+
+function syncFootyNotificationToggle() {
+  if (!footyNotificationToggle) {
+    return;
+  }
+
+  const supported = isFootyNotificationSupported();
+  const enabled = isFootyNotificationEnabled();
+
+  footyNotificationToggle.hidden = !supported;
+  footyNotificationToggle.disabled = !supported;
+  footyNotificationToggle.classList.toggle("is-active", enabled);
+  footyNotificationToggle.setAttribute("aria-pressed", String(enabled));
+  footyNotificationToggle.setAttribute(
+    "aria-label",
+    enabled ? "Turn off match alerts" : "Subscribe to match alerts",
+  );
+  footyNotificationToggle.setAttribute(
+    "title",
+    enabled ? "Match alerts on" : "Notify 2 hours, 1 hour, and at kickoff",
+  );
+}
+
+function isFootyNotificationSupported() {
+  return typeof window !== "undefined" &&
+    "Notification" in window &&
+    window.isSecureContext;
+}
+
+function isFootyNotificationEnabled() {
+  return getStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY) &&
+    isFootyNotificationSupported() &&
+    Notification.permission === "granted";
+}
+
+async function toggleFootyNotifications() {
+  if (!isFootyNotificationSupported()) {
+    window.alert("This browser cannot show site notifications here.");
+    syncFootyNotificationToggle();
+    return;
+  }
+
+  if (isFootyNotificationEnabled()) {
+    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+    stopFootyNotificationMonitor();
+    syncFootyNotificationToggle();
+    return;
+  }
+
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : await Notification.requestPermission();
+
+  if (permission !== "granted") {
+    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+    syncFootyNotificationToggle();
+    return;
+  }
+
+  setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, true);
+  startFootyNotificationMonitor();
+  checkFootyMatchNotifications();
+  syncFootyNotificationToggle();
+}
+
+function startFootyNotificationMonitor() {
+  if (footyNotificationTimer || !isFootyNotificationEnabled()) {
+    return;
+  }
+
+  footyNotificationTimer = window.setInterval(
+    checkFootyMatchNotifications,
+    FOOTY_NOTIFICATION_CHECK_INTERVAL_MS,
+  );
+}
+
+function stopFootyNotificationMonitor() {
+  if (!footyNotificationTimer) {
+    return;
+  }
+
+  window.clearInterval(footyNotificationTimer);
+  footyNotificationTimer = null;
+}
+
+function checkFootyMatchNotifications() {
+  if (!isFootyNotificationEnabled() || !siteData.footySchedule) {
+    return;
+  }
+
+  const now = Date.now();
+  const sentNotifications = getStoredJsonObject(FOOTY_NOTIFICATION_SENT_STORAGE_KEY);
+  let didUpdateSentNotifications = false;
+
+  getFootyScheduleFixtures(siteData.footySchedule).forEach((fixture) => {
+    if (!hasFootyFixtureNotificationTime(fixture)) {
+      return;
+    }
+
+    const fixtureTime = getFootyFixtureComparableTime(fixture);
+
+    if (!Number.isFinite(fixtureTime)) {
+      return;
+    }
+
+    FOOTY_NOTIFICATION_OFFSETS.forEach((offset) => {
+      const notificationTime = fixtureTime - offset.minutes * 60 * 1000;
+      const notificationKey = getFootyNotificationKey(fixture, offset.key);
+
+      if (
+        sentNotifications[notificationKey] ||
+        now < notificationTime ||
+        now - notificationTime > FOOTY_NOTIFICATION_WINDOW_MS
+      ) {
+        return;
+      }
+
+      sentNotifications[notificationKey] = new Date(now).toISOString();
+      didUpdateSentNotifications = true;
+      showFootyMatchNotification(fixture, offset);
+    });
+  });
+
+  if (didUpdateSentNotifications) {
+    setStoredJsonObject(FOOTY_NOTIFICATION_SENT_STORAGE_KEY, sentNotifications);
+  }
+}
+
+function hasFootyFixtureNotificationTime(fixture) {
+  const time = String(fixture?.time || "").trim();
+  const timestamp = String(fixture?.timestamp || "").trim();
+
+  return Boolean(time || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(timestamp));
+}
+
+function getFootyNotificationKey(fixture, offsetKey) {
+  return [
+    String(fixture.matchId || fixture.id || "").trim(),
+    getFootyFixtureDateKey(fixture),
+    normalizeLookupName(`${fixture.home || ""} ${fixture.away || ""}`),
+    offsetKey,
+  ].filter(Boolean).join("|");
+}
+
+function showFootyMatchNotification(fixture, offset) {
+  const title = offset.key === "start"
+    ? "Match starting now"
+    : `Match starts ${offset.label}`;
+  const bodyParts = [
+    `${fixture.home || "TBD"} v ${fixture.away || "TBD"}`,
+    formatFootyFixtureDate(fixture.timestamp || fixture.date),
+  ].filter(Boolean);
+
+  try {
+    const notification = new Notification(title, {
+      body: bodyParts.join(" • "),
+      tag: getFootyNotificationKey(fixture, offset.key),
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      showPage("footy", { scrollToTop: true });
+      window.location.hash = "footy";
+      notification.close();
+    };
+  } catch (error) {
+    recordDiagnostic("footy notification failed", error, {
+      matchId: fixture.matchId || fixture.id || "",
+      offset: offset.key,
+    });
+  }
+}
+
+function getStoredBoolean(key) {
+  try {
+    return localStorage.getItem(key) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredBoolean(key, value) {
+  try {
+    localStorage.setItem(key, value ? "true" : "false");
+  } catch {
+    // Storage can be unavailable in private or restricted browser contexts.
+  }
+}
+
+function getStoredJsonObject(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function setStoredJsonObject(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value || {}));
+  } catch {
+    // Storage can be unavailable in private or restricted browser contexts.
+  }
 }
 
 function syncFootyGoalAssistsButton() {
@@ -3506,10 +3724,6 @@ function isNextDateSpanPast(dateKey, endDateKey = "") {
   return Boolean(lastDateKey && lastDateKey < getDateKey(0));
 }
 
-function canCompleteNextItem(dateKey, endDateKey = "") {
-  return isNextDateSpanPast(dateKey, endDateKey);
-}
-
 function openNextItemDialog(itemId = "") {
   if (!isCurrentManagerAdmin() || !nextItemDialog) {
     return;
@@ -3616,16 +3830,8 @@ function updateNextCompletedControlAvailability() {
     return;
   }
 
-  const dateKey = parseNextDateKey(nextStartDateInput?.value || "");
-  const endDateKey = parseNextDateKey(nextEndDateInput?.value || "");
-  const canComplete = canCompleteNextItem(dateKey, endDateKey);
-
-  nextItemCompletedInput.disabled = !canComplete;
-  nextItemCompletedInput.closest("label")?.classList.toggle("is-disabled", !canComplete);
-
-  if (!canComplete) {
-    nextItemCompletedInput.checked = false;
-  }
+  nextItemCompletedInput.disabled = false;
+  nextItemCompletedInput.closest("label")?.classList.remove("is-disabled");
 }
 
 function createNextItemId() {
@@ -3679,11 +3885,6 @@ function saveNextItemFromForm() {
 
   if (!item.Date) {
     setNextItemStatus("Date is required.", true);
-    return;
-  }
-
-  if (isTrueValue(item.Completed) && !canCompleteNextItem(parseNextDateKey(item.Date), parseNextDateKey(item["End Date"]))) {
-    setNextItemStatus("Only past items can be marked completed.", true);
     return;
   }
 
@@ -8629,6 +8830,20 @@ footyPastToggle?.addEventListener("click", () => {
   renderFootySchedule(siteData.footySchedule);
 });
 
+footyNotificationToggle?.addEventListener("click", () => {
+  toggleFootyNotifications();
+});
+
+window.addEventListener("focus", () => {
+  checkFootyMatchNotifications();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    checkFootyMatchNotifications();
+  }
+});
+
 footyGoalAssistsButton?.addEventListener("click", () => {
   showPage("footy-goal-assists", { scrollToTop: true });
   window.location.hash = "footy-goal-assists";
@@ -12251,6 +12466,8 @@ function ensureFootyData() {
     renderFollowedTeamShortcuts(schedule);
     renderFootySchedule(schedule);
     renderFootyTeamPage();
+    startFootyNotificationMonitor();
+    checkFootyMatchNotifications();
     console.info("Box This Lap footy schedule loaded", schedule);
 
     try {

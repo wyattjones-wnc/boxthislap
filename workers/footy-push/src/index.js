@@ -37,6 +37,11 @@ export default {
         return json(await consumePending(request, env), env);
       }
 
+      if (request.method === "GET" && url.pathname === "/debug") {
+        assertAdminRequest(request, env);
+        return json(await getFootyPushDebug(env), env);
+      }
+
       if (request.method === "POST" && url.pathname === "/run") {
         assertAdminRequest(request, env);
         return json(await sendDueFootyAlerts(env), env);
@@ -107,6 +112,28 @@ async function consumePending(request, env) {
   return { notifications, ok: true };
 }
 
+async function getFootyPushDebug(env) {
+  assertEnv(env, ["FOOTY_PUSH_KV", "FOOTY_SCHEDULE_URL"]);
+  const schedule = await fetchJson(env.FOOTY_SCHEDULE_URL);
+  const fixtures = getUniqueFixtures(schedule);
+  const dueAlerts = getDueFootyAlerts(schedule, env);
+  const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
+
+  return {
+    dueAlerts: dueAlerts.map((alert) => ({
+      body: alert.body,
+      key: alert.key,
+      title: alert.title,
+    })),
+    fixtureCount: fixtures.length,
+    nextAlertWindows: getNextFootyAlertWindows(fixtures, env).slice(0, 10),
+    ok: true,
+    scheduleGeneratedAt: schedule?.generatedAt || schedule?.updatedAt || "",
+    scheduleUrl: env.FOOTY_SCHEDULE_URL,
+    subscriptions: subscriptions.length,
+  };
+}
+
 async function sendDueFootyAlerts(env) {
   assertEnv(env, [
     "FOOTY_PUSH_KV",
@@ -120,7 +147,12 @@ async function sendDueFootyAlerts(env) {
   const dueAlerts = getDueFootyAlerts(schedule, env);
 
   if (dueAlerts.length === 0) {
-    return { dueAlerts: 0, ok: true, subscriptions: 0 };
+    return {
+      dueAlerts: 0,
+      fixtureCount: getUniqueFixtures(schedule).length,
+      nextAlertWindows: getNextFootyAlertWindows(getUniqueFixtures(schedule), env).slice(0, 5),
+      ok: true,
+    };
   }
 
   const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
@@ -227,6 +259,42 @@ function getDueFootyAlerts(schedule, env) {
   });
 
   return alerts;
+}
+
+function getNextFootyAlertWindows(fixtures, env) {
+  const now = Date.now();
+  const lookbackMinutes = Math.max(1, Number(env.NOTIFICATION_LOOKBACK_MINUTES || 16));
+  const lookbackMs = lookbackMinutes * 60 * 1000;
+  const windows = [];
+
+  fixtures.forEach((fixture) => {
+    const fixtureTime = getFixtureTime(fixture);
+
+    if (!Number.isFinite(fixtureTime)) {
+      return;
+    }
+
+    OFFSETS.forEach((offset) => {
+      const alertTime = fixtureTime - offset.minutes * 60 * 1000;
+
+      if (alertTime + lookbackMs < now) {
+        return;
+      }
+
+      windows.push({
+        alertAt: new Date(alertTime).toISOString(),
+        alertWindowEndsAt: new Date(alertTime + lookbackMs).toISOString(),
+        home: fixture.home || "",
+        away: fixture.away || "",
+        key: `${getFixtureKey(fixture)}:${offset.key}`,
+        matchId: fixture.matchId || fixture.id || "",
+        offset: offset.key,
+        startsAt: new Date(fixtureTime).toISOString(),
+      });
+    });
+  });
+
+  return windows.sort((left, right) => Date.parse(left.alertAt) - Date.parse(right.alertAt));
 }
 
 function getUniqueFixtures(schedule) {

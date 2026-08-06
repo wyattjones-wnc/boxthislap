@@ -512,6 +512,22 @@ body.has-shell-stale-warning .stale-shell-alert {
   flex-wrap: nowrap;
 }
 
+.footy-notification-status {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  min-height: 1.25rem;
+  margin: -8px 0 16px;
+}
+
+.footy-notification-status.is-error {
+  color: var(--accent);
+}
+
+.footy-notification-status.is-success {
+  color: var(--success);
+}
+
 .icon-action-button {
   align-items: center;
   background: var(--panel);
@@ -542,6 +558,21 @@ body.has-shell-stale-warning .stale-shell-alert {
 .icon-action-button:hover {
   background: var(--track);
   color: var(--track-ink);
+}
+
+.icon-action-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.icon-action-button.is-loading svg {
+  animation: soft-spin 1s linear infinite;
+}
+
+@keyframes soft-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .footy-filters {

@@ -71,6 +71,7 @@ import {
   leagueList,
   footyPastToggle,
   footyNotificationToggle,
+  footyNotificationStatus,
   footyFilterToggle,
   footyFilters,
   footySearchInput,
@@ -299,6 +300,7 @@ const FOOTY_NOTIFICATION_OFFSETS = [
   { key: "start", label: "now", minutes: 0 },
 ];
 let footyNotificationTimer = null;
+let isFootyNotificationBusy = false;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -1716,17 +1718,32 @@ function syncFootyNotificationToggle() {
   const enabled = isFootyNotificationEnabled();
 
   footyNotificationToggle.hidden = !supported;
-  footyNotificationToggle.disabled = !supported;
+  footyNotificationToggle.disabled = !supported || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
+  footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
   footyNotificationToggle.setAttribute("aria-pressed", String(enabled));
   footyNotificationToggle.setAttribute(
     "aria-label",
-    enabled ? "Turn off match alerts" : "Subscribe to match alerts",
+    isFootyNotificationBusy
+      ? "Updating match alerts"
+      : enabled ? "Turn off match alerts" : "Subscribe to match alerts",
   );
   footyNotificationToggle.setAttribute(
     "title",
-    enabled ? "Match alerts on" : "Notify 2 hours, 1 hour, and at kickoff",
+    isFootyNotificationBusy
+      ? "Updating match alerts"
+      : enabled ? "Match alerts on" : "Notify 2 hours, 1 hour, and at kickoff",
   );
+}
+
+function setFootyNotificationStatus(message = "", state = "") {
+  if (!footyNotificationStatus) {
+    return;
+  }
+
+  footyNotificationStatus.textContent = message;
+  footyNotificationStatus.classList.toggle("is-error", state === "error");
+  footyNotificationStatus.classList.toggle("is-success", state === "success");
 }
 
 function isFootyNotificationSupported() {
@@ -1741,51 +1758,69 @@ function isFootyNotificationEnabled() {
 }
 
 async function toggleFootyNotifications() {
-  if (!isFootyPushNotificationSupported() && !isFootyNotificationSupported()) {
-    window.alert("This browser cannot show site notifications here.");
+  if (isFootyNotificationBusy) {
+    return;
+  }
+
+  const supportsPush = isFootyPushNotificationSupported();
+  const supportsLocal = isFootyNotificationSupported();
+
+  if (!supportsPush && !supportsLocal) {
+    setFootyNotificationStatus("This browser cannot show site notifications here.", "error");
     syncFootyNotificationToggle();
     return;
   }
 
-  if (isFootyNotificationEnabled()) {
-    if (isFootyPushNotificationSupported()) {
-      await unsubscribeFootyPushNotifications();
+  isFootyNotificationBusy = true;
+  syncFootyNotificationToggle();
+
+  try {
+    if (isFootyNotificationEnabled()) {
+      setFootyNotificationStatus("Turning off match alerts...");
+
+      if (supportsPush) {
+        await unsubscribeFootyPushNotifications();
+      }
+
+      setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+      stopFootyNotificationMonitor();
+      setFootyNotificationStatus("Match alerts are off.", "success");
+      return;
     }
 
-    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
-    stopFootyNotificationMonitor();
-    syncFootyNotificationToggle();
-    return;
-  }
+    setFootyNotificationStatus("Requesting notification permission...");
+    const permission = Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
 
-  const permission = Notification.permission === "granted"
-    ? "granted"
-    : await Notification.requestPermission();
+    if (permission !== "granted") {
+      setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+      setFootyNotificationStatus("Notification permission was not granted.", "error");
+      return;
+    }
 
-  if (permission !== "granted") {
-    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
-    syncFootyNotificationToggle();
-    return;
-  }
+    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, true);
 
-  setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, true);
-
-  if (isFootyPushNotificationSupported()) {
-    try {
+    if (supportsPush) {
+      setFootyNotificationStatus("Subscribing this device...");
       await subscribeFootyPushNotifications();
       stopFootyNotificationMonitor();
-    } catch (error) {
-      setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
-      recordDiagnostic("footy push subscription failed", error);
-      window.alert(`Unable to subscribe to match alerts: ${getErrorMessage(error)}`);
+      setFootyNotificationStatus("Match alerts are on for this device.", "success");
+    } else {
+      startFootyNotificationMonitor();
+      checkFootyMatchNotifications();
+      setFootyNotificationStatus("Match alerts are on while this browser is open.", "success");
     }
-  } else {
-    startFootyNotificationMonitor();
-    checkFootyMatchNotifications();
+  } catch (error) {
+    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+    recordDiagnostic("footy notification toggle failed", error);
+    setFootyNotificationStatus(`Unable to subscribe: ${getErrorMessage(error)}`, "error");
+  } finally {
+    isFootyNotificationBusy = false;
+    syncFootyNotificationToggle();
   }
-
-  syncFootyNotificationToggle();
 }
+
 
 function getFootyPushEndpoint() {
   return String(FOOTY_PUSH_ENDPOINT || "").trim().replace(/\/$/, "");
@@ -1828,7 +1863,20 @@ async function subscribeFootyPushNotifications() {
   }
 
   const { publicKey } = await vapidResponse.json();
-  const existingSubscription = await registration.pushManager.getSubscription();
+  const storedSubscription = getStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {});
+  let existingSubscription = await registration.pushManager.getSubscription();
+
+  if (
+    existingSubscription &&
+    storedSubscription?.endpoint === existingSubscription.endpoint &&
+    storedSubscription?.publicKey !== publicKey
+  ) {
+    await existingSubscription.unsubscribe().catch((error) =>
+      recordDiagnostic("stale footy push subscription unsubscribe failed", error)
+    );
+    existingSubscription = null;
+  }
+
   const subscription = existingSubscription || await registration.pushManager.subscribe({
     applicationServerKey: base64UrlToUint8Array(publicKey),
     userVisibleOnly: true,
@@ -1850,6 +1898,7 @@ async function subscribeFootyPushNotifications() {
 
   setStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {
     endpoint: subscription.endpoint,
+    publicKey,
     savedAt: new Date().toISOString(),
   });
 }
@@ -8953,7 +9002,7 @@ footyPastToggle?.addEventListener("click", () => {
 });
 
 footyNotificationToggle?.addEventListener("click", () => {
-  toggleFootyNotifications();
+  void toggleFootyNotifications();
 });
 
 window.addEventListener("focus", () => {

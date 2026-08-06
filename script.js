@@ -289,6 +289,7 @@ let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const FOOTY_JSONP_TIMEOUT_MS = 12000;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
+const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
 const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notifications-sent";
 const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
@@ -301,6 +302,7 @@ const FOOTY_NOTIFICATION_OFFSETS = [
 ];
 let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
+let footyMatchNotesLoadPromise = null;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -490,6 +492,26 @@ function renderFootySchedule(schedule) {
   const updatedMarkup = generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : "";
 
   syncFootyPastToggle(fixtures);
+
+  if (shouldWaitForFootyMatchNotes()) {
+    footyScheduleList.innerHTML = `
+      ${updatedMarkup}
+      ${adminDiagnosticsMarkup}
+      ${renderLoadingMessage("Loading match notes...")}
+    `;
+    ensureFootyMatchNotes({ force: shouldRefreshFootyMatchNotes() })
+      .then(() => renderFootySchedule(siteData.footySchedule))
+      .catch((error) => {
+        siteData.footyMatchNotesError = error;
+        recordDiagnostic("footy match notes failed to load for past matches", error);
+        footyScheduleList.innerHTML = `
+          ${updatedMarkup}
+          ${adminDiagnosticsMarkup}
+          <p class="table-message">Unable to load match notes: ${escapeHtml(error.message)}</p>
+        `;
+      });
+    return;
+  }
 
   if (visibleFixtures.length === 0) {
     footyScheduleList.innerHTML = `
@@ -2598,6 +2620,7 @@ async function saveFootyMatchNoteFromDialog() {
     });
     const savedNote = response.savedNote || note;
 
+    upsertFootyMatchNote(savedNote);
     updateFootyFixtureMatchNote(savedNote);
     renderFootySchedule(siteData.footySchedule);
     closeFootyNoteDialog();
@@ -2605,6 +2628,82 @@ async function saveFootyMatchNoteFromDialog() {
     setFootyNoteStatus(error.message || "Unable to save match note.", true);
     footyNoteSave && (footyNoteSave.disabled = false);
   }
+}
+
+function hasFootyMatchNotesLoaded() {
+  return Boolean(siteData.footyMatchNotesLoadedAt);
+}
+
+function shouldRefreshFootyMatchNotes() {
+  const loadedAt = Date.parse(siteData.footyMatchNotesLoadedAt || "");
+
+  return !Number.isFinite(loadedAt) || Date.now() - loadedAt > FOOTY_MATCH_NOTES_FRESH_MS;
+}
+
+function shouldWaitForFootyMatchNotes() {
+  return shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
+}
+
+function ensureFootyMatchNotes({ force = false } = {}) {
+  if (!FOOTY_DATA_ENDPOINT) {
+    siteData.footyMatchNotes = [];
+    siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+    return Promise.resolve([]);
+  }
+
+  if (!force && hasFootyMatchNotesLoaded() && !shouldRefreshFootyMatchNotes()) {
+    return Promise.resolve(siteData.footyMatchNotes || []);
+  }
+
+  if (footyMatchNotesLoadPromise) {
+    return footyMatchNotesLoadPromise;
+  }
+
+  footyMatchNotesLoadPromise = loadFootyMatchNotesWithRetry()
+    .then((notes) => {
+      siteData.footyMatchNotes = notes;
+      siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+      siteData.footyMatchNotesError = null;
+      clearFootyScheduleMatchNotes(siteData.footySchedule);
+      mergeFootyMatchNotes(notes);
+      return notes;
+    })
+    .finally(() => {
+      footyMatchNotesLoadPromise = null;
+    });
+
+  return footyMatchNotesLoadPromise;
+}
+
+function refreshFootyMatchNotesIfNeeded() {
+  if (!siteData.footySchedule || !shouldShowPastFootyFixtures || !shouldRefreshFootyMatchNotes()) {
+    return;
+  }
+
+  renderFootySchedule(siteData.footySchedule);
+}
+
+async function loadFootyMatchNotesWithRetry() {
+  const retryDelays = [0, 450, 1400];
+  let lastError;
+
+  for (const delay of retryDelays) {
+    if (delay) {
+      await wait(delay);
+    }
+
+    try {
+      return await loadFootyMatchNotes();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("Unable to load footy match notes.");
+}
+
+function wait(durationMs) {
+  return new Promise((resolve) => window.setTimeout(resolve, durationMs));
 }
 
 function loadFootyMatchNotes() {
@@ -3047,6 +3146,28 @@ function getFootyFixtureOpponentRosterName(fixture) {
 
 function mergeFootyMatchNotes(notes = []) {
   notes.forEach((note) => updateFootyFixtureMatchNote(note));
+}
+
+function upsertFootyMatchNote(note) {
+  const normalizedId = normalizeFootyMatchId(note?.matchId);
+
+  if (!normalizedId) {
+    return;
+  }
+
+  const notes = Array.isArray(siteData.footyMatchNotes) ? siteData.footyMatchNotes : [];
+  const existingIndex = notes.findIndex((existingNote) =>
+    normalizeFootyMatchId(existingNote?.matchId) === normalizedId
+  );
+
+  if (existingIndex >= 0) {
+    notes[existingIndex] = note;
+  } else {
+    notes.push(note);
+  }
+
+  siteData.footyMatchNotes = notes;
+  siteData.footyMatchNotesLoadedAt = new Date().toISOString();
 }
 
 function submitFootyDataPayload(payload) {
@@ -9007,11 +9128,13 @@ footyNotificationToggle?.addEventListener("click", () => {
 
 window.addEventListener("focus", () => {
   checkFootyMatchNotifications();
+  refreshFootyMatchNotesIfNeeded();
 });
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     checkFootyMatchNotifications();
+    refreshFootyMatchNotesIfNeeded();
   }
 });
 
@@ -12641,18 +12764,18 @@ function ensureFootyData() {
     checkFootyMatchNotifications();
     console.info("Box This Lap footy schedule loaded", schedule);
 
-    try {
-      const notes = await loadFootyMatchNotes();
-      if (notes.length) {
-        mergeFootyMatchNotes(notes);
-        renderFootySchedule(siteData.footySchedule);
-        renderFootyTeamPage();
-      }
-      console.info("Box This Lap footy match notes loaded", notes);
-    } catch (error) {
-      siteData.footyMatchNotesError = error;
-      recordDiagnostic("footy match notes failed to load", error);
-    }
+    ensureFootyMatchNotes()
+      .then((notes) => {
+        if (notes.length) {
+          renderFootySchedule(siteData.footySchedule);
+          renderFootyTeamPage();
+        }
+        console.info("Box This Lap footy match notes loaded", notes);
+      })
+      .catch((error) => {
+        siteData.footyMatchNotesError = error;
+        recordDiagnostic("footy match notes failed to load", error);
+      });
 
     return schedule;
   }).catch((error) => {

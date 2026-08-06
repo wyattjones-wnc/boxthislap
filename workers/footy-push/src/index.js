@@ -306,10 +306,11 @@ async function listActiveSubscriptions(kv) {
 async function sendEmptyWebPush(subscription, env) {
   const endpoint = new URL(subscription.endpoint);
   const jwt = await createVapidJwt(endpoint.origin, env);
+  const publicKey = getSecretValue(env.VAPID_PUBLIC_KEY, "VAPID_PUBLIC_KEY");
 
   return fetch(subscription.endpoint, {
     headers: {
-      Authorization: `vapid t=${jwt}, k=${env.VAPID_PUBLIC_KEY}`,
+      Authorization: `vapid t=${jwt}, k=${publicKey}`,
       TTL: "900",
       Urgency: "normal",
     },
@@ -318,18 +319,25 @@ async function sendEmptyWebPush(subscription, env) {
 }
 
 async function createVapidJwt(audience, env) {
-  const publicKey = base64UrlToBytes(env.VAPID_PUBLIC_KEY);
+  const vapidPublicKey = getSecretValue(env.VAPID_PUBLIC_KEY, "VAPID_PUBLIC_KEY");
+  const vapidPrivateKey = getSecretValue(env.VAPID_PRIVATE_KEY, "VAPID_PRIVATE_KEY");
+  const publicKey = base64UrlToBytes(vapidPublicKey);
+  const privateKey = base64UrlToBytes(vapidPrivateKey);
 
   if (publicKey.length !== 65 || publicKey[0] !== 4) {
     throw new Error("VAPID_PUBLIC_KEY must be an uncompressed P-256 public key.");
+  }
+
+  if (privateKey.length !== 32) {
+    throw new Error("VAPID_PRIVATE_KEY must be a 32-byte base64url P-256 private key.");
   }
 
   const key = await crypto.subtle.importKey(
     "jwk",
     {
       crv: "P-256",
-      d: env.VAPID_PRIVATE_KEY,
-      ext: false,
+      d: bytesToBase64Url(privateKey),
+      ext: true,
       key_ops: ["sign"],
       kty: "EC",
       x: bytesToBase64Url(publicKey.slice(1, 33)),
@@ -353,6 +361,19 @@ async function createVapidJwt(audience, env) {
   );
 
   return `${unsignedToken}.${bytesToBase64Url(new Uint8Array(signature))}`;
+}
+
+function getSecretValue(value, name) {
+  const normalized = String(value || "")
+    .trim()
+    .replace(new RegExp(`^${name}\\s*=\\s*`, "i"), "")
+    .trim();
+
+  if (!normalized) {
+    throw new Error(`Missing required secret: ${name}.`);
+  }
+
+  return normalized;
 }
 
 function normalizeSubscription(subscription) {

@@ -11,6 +11,9 @@ const SITE_ASSET_BASE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/";
 const MATCH_LIMIT = 3;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
 const WIDGET_LOCAL_BADGE_PATHS = {
+  "4": "assets/teams/4/badge.png",
+  "5": "assets/teams/5/badge.png",
+  "6": "assets/teams/6/badge.png",
   "7": "assets/teams/7/badge.png",
 };
 const FOOTY_LOCAL_TEAM_IDS = {

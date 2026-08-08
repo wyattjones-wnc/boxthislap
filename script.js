@@ -143,6 +143,9 @@ import {
   todoList,
   todoCompareButton,
   todoViewModeButtons,
+  todoSnapshotSelect,
+  todoSnapshotCompareSelect,
+  todoNormalizeButton,
   todoFilterToggle,
   todoFilters,
   todoMoreDataToggle,
@@ -271,6 +274,8 @@ let shouldShowTodoFilters = false;
 let shouldShowTodoMoreData = false;
 let shouldShowTodoEditMode = false;
 let activeTodoViewMode = "manual";
+let activeTodoSnapshotId = "current";
+let activeTodoCompareSnapshotId = "";
 let activeTodoStatusFilter = "";
 let activeTodoItemId = "";
 let draggedTodoItemId = "";
@@ -290,6 +295,7 @@ let rankingsLoadPromise = null;
 let todoRankingLoadPromise = null;
 let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
+let normalizingRankingKind = "";
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const FOOTY_JSONP_TIMEOUT_MS = 12000;
@@ -4358,12 +4364,16 @@ function renderTodoList(items = siteData.todoItems || []) {
   const normalizedItems = items.map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
   const visibleItems = getVisibleTodoItems(normalizedItems);
   if (activeTodoViewMode === "calculated") {
-    const calculatedItems = visibleItems
+    const currentCalculatedItems = visibleItems
       .map((item) => {
         const elo = getRankingEloForItem("todo", item.id);
         return { ...item, comparisons: elo.comparisons, losses: elo.losses, rating: elo.rating, wins: elo.wins };
       })
       .sort(compareCalculatedRankingRows);
+    const visibleIds = new Set(visibleItems.map((item) => String(item.id)));
+    const calculatedItems = activeTodoSnapshotId === "current"
+      ? currentCalculatedItems
+      : getRankingSnapshotRows("todo", activeTodoSnapshotId).filter((item) => visibleIds.has(String(item.id)));
 
     if (!calculatedItems.length) {
       todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
@@ -4371,7 +4381,7 @@ function renderTodoList(items = siteData.todoItems || []) {
     }
 
     todoList.innerHTML = `<div class="next-list todo-list">${calculatedItems.map((item, index) =>
-      renderTodoCalculatedItem(item, index + 1)
+      renderTodoCalculatedItem(item, index + 1, currentCalculatedItems)
     ).join("")}</div>`;
     return;
   }
@@ -4389,12 +4399,18 @@ function renderTodoList(items = siteData.todoItems || []) {
   `;
 }
 
-function renderTodoCalculatedItem(item, rank) {
+function renderTodoCalculatedItem(item, rank, currentRows = []) {
+  const compareRows = activeTodoCompareSnapshotId === "current"
+    ? currentRows
+    : activeTodoCompareSnapshotId ? getRankingSnapshotRows("todo", activeTodoCompareSnapshotId) : [];
+  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+  const movement = compareRank ? compareRank - rank : 0;
   const meta = [
     `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
     `${item.wins || 0}-${item.losses || 0}`,
     Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
     `Manual #${formatTodoOrderNumber(item)}`,
+    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getTodoSnapshotLabel(activeTodoCompareSnapshotId)}` : "",
   ].filter(Boolean);
 
   return `
@@ -4417,18 +4433,31 @@ function ensureTodoRankingDataLoaded() {
   }
 
   todoRankingLoadPromise = Promise.all([
-    loadOptionalRankingEndpoint("listTodoElo", { elo: [] }, { managerId: getCurrentManagerId() }),
-    loadOptionalRankingEndpoint("listTodoChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
-  ]).then(([eloResponse, choicesResponse]) => {
+    loadOptionalRankingEndpoint("listTodoElo", { elo: [] }),
+    loadOptionalRankingEndpoint("listTodoChoices", { choices: [] }),
+    loadOptionalRankingEndpoint("listTodoRankingMeta", { seeds: [], snapshotItems: [], snapshots: [] }),
+  ]).then(([eloResponse, choicesResponse, metaResponse]) => {
+    const managerId = getCurrentManagerId();
     const otherElo = (siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo");
     const otherChoices = (siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo");
-    siteData.rankingElo = [...otherElo, ...normalizeRankingEloRows(eloResponse.elo || [])];
-    siteData.rankingChoices = [...otherChoices, ...normalizeRankingChoices(choicesResponse.choices || [])];
+    siteData.rankingElo = [...otherElo, ...normalizeRankingEloRows(eloResponse.elo || []).map((row) => ({ ...row, managerId }))];
+    siteData.rankingChoices = [...otherChoices, ...normalizeRankingChoices(choicesResponse.choices || []).map((row) => ({ ...row, managerId }))];
+    siteData.rankingSeeds = [...(siteData.rankingSeeds || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo"), ...normalizeRankingSeedRows(metaResponse.seeds || [])];
+    const previousTodoSnapshotIds = new Set((siteData.rankingSnapshots || []).filter((row) => normalizeLookupName(row.rankingType) === "todo").map((row) => String(row.id)));
+    const todoSnapshots = normalizeRankingSnapshots((metaResponse.snapshots || []).map((row) => ({ ...row, "Snapshot ID": `todo-${row["Snapshot ID"] || row.snapshotId || ""}` })));
+    const todoSnapshotItems = normalizeRankingSnapshotItems((metaResponse.snapshotItems || []).map((row) => ({ ...row, "Snapshot ID": `todo-${row["Snapshot ID"] || row.snapshotId || ""}` })));
+    siteData.rankingSnapshots = [...(siteData.rankingSnapshots || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo"), ...todoSnapshots];
+    siteData.rankingSnapshotItems = [...(siteData.rankingSnapshotItems || []).filter((row) => !previousTodoSnapshotIds.has(String(row.snapshotId))), ...todoSnapshotItems];
     siteData.todoRankingLoaded = true;
     if (activePageName === "todo") renderTodoList();
   }).catch((error) => recordDiagnostic("To Do ranking data failed to load", error));
 
   return todoRankingLoadPromise;
+}
+
+function getTodoSnapshotLabel(snapshotId) {
+  if (snapshotId === "current") return "Current";
+  return formatRankingSnapshotOptionLabel(getRankingSnapshotById(snapshotId));
 }
 
 function normalizeTodoItem(row) {
@@ -4987,6 +5016,20 @@ function syncTodoControls() {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+
+  const snapshots = getRankingSnapshotsForKind("todo");
+  if (todoSnapshotSelect) {
+    todoSnapshotSelect.innerHTML = [`<option value="current">Current</option>`, ...snapshots.map((snapshot) =>
+      `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`)].join("");
+    if (!["current", ...snapshots.map((snapshot) => snapshot.id)].includes(activeTodoSnapshotId)) activeTodoSnapshotId = "current";
+    todoSnapshotSelect.value = activeTodoSnapshotId;
+  }
+  if (todoSnapshotCompareSelect) {
+    todoSnapshotCompareSelect.innerHTML = [`<option value="">None</option>`, `<option value="current">Current</option>`, ...snapshots.map((snapshot) =>
+      `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`)].join("");
+    if (!["", "current", ...snapshots.map((snapshot) => snapshot.id)].includes(activeTodoCompareSnapshotId)) activeTodoCompareSnapshotId = "";
+    todoSnapshotCompareSelect.value = activeTodoCompareSnapshotId;
+  }
 
   todoStatusFilters?.forEach((input) => {
     input.checked = input.dataset.todoStatusFilter === activeTodoStatusFilter;
@@ -5887,9 +5930,10 @@ function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
     String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItem(kind, itemId);
+  const todoSeedRating = kind === "todo" ? getTodoImplicitSeedRating(itemId) : RANKING_BASE_RATING;
   const rating = row
     ? Number(row.rating || RANKING_BASE_RATING)
-    : Number(seed?.seedRating || RANKING_BASE_RATING);
+    : Number(seed?.seedRating || todoSeedRating);
   const wins = Number(row?.wins || 0);
   const losses = Number(row?.losses || 0);
 
@@ -5902,6 +5946,12 @@ function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
     rankingType: type,
     wins,
   };
+}
+
+function getTodoImplicitSeedRating(itemId) {
+  const rows = getRankingRows("todo");
+  const index = rows.findIndex((row) => String(row.id) === String(itemId));
+  return calculateNormalizedRating(index >= 0 ? index + 1 : rows.length + 1, Math.max(rows.length, 1));
 }
 
 function renderRankingItemMeta(item) {
@@ -6126,14 +6176,15 @@ function closeRankingItemDialog() {
   }
 }
 
-function openRankingNormalizeDialog() {
+function openRankingNormalizeDialog(kind = activeRankingKind) {
   if (!isCurrentManagerAdmin() || !rankingNormalizeDialog) {
     return;
   }
 
   if (rankingNormalizeReason) {
-    rankingNormalizeReason.value = "Normalized calculated rankings";
+    rankingNormalizeReason.value = kind === "todo" ? "Normalized calculated To Do order" : "Normalized calculated rankings";
   }
+  normalizingRankingKind = kind;
 
   setRankingNormalizeStatus("");
 
@@ -6145,6 +6196,7 @@ function openRankingNormalizeDialog() {
 }
 
 function closeRankingNormalizeDialog() {
+  normalizingRankingKind = "";
   if (!rankingNormalizeDialog) {
     return;
   }
@@ -6161,7 +6213,7 @@ function normalizeActiveRanking() {
     return;
   }
 
-  const kind = activeRankingKind;
+  const kind = normalizingRankingKind || activeRankingKind;
   const rows = getCalculatedRankingRows(kind);
 
   if (!rows.length) {
@@ -6181,11 +6233,12 @@ function normalizeActiveRanking() {
     rating: Math.round(item.rating || RANKING_BASE_RATING),
     wins: Number(item.wins || 0),
   }));
+  const rawSnapshotId = kind === "todo" ? String(Date.now()) : createRankingSnapshotId();
   const snapshot = {
     createdAt,
-    id: createRankingSnapshotId(),
+    id: kind === "todo" ? `todo-${rawSnapshotId}` : rawSnapshotId,
     label: formatRankingSnapshotOptionLabel({ createdAt }),
-    managerId: getCurrentManagerId(),
+    managerId: kind === "todo" ? getCurrentManagerId() : getCurrentManagerId(),
     rankingType: getRankingType(kind),
     reason: String(rankingNormalizeReason?.value || "Normalized calculated rankings").trim(),
     source: "calculated",
@@ -6225,7 +6278,7 @@ function normalizeActiveRanking() {
   ];
 
   submitRankingPayload({
-    action: "normalizeRanking",
+    action: kind === "todo" ? "normalizeTodo" : "normalizeRanking",
     normalization: {
       createdAt,
       items,
@@ -6233,13 +6286,19 @@ function normalizeActiveRanking() {
       managerId: snapshot.managerId,
       rankingType: snapshot.rankingType,
       reason: snapshot.reason,
-      snapshotId: snapshot.id,
+      snapshotId: kind === "todo" ? rawSnapshotId : snapshot.id,
       source: snapshot.source,
     },
   });
-  activeRankingSnapshotId = "current";
-  activeRankingCompareSnapshotId = snapshot.id;
-  renderRankingLists();
+  if (kind === "todo") {
+    activeTodoSnapshotId = "current";
+    activeTodoCompareSnapshotId = snapshot.id;
+    renderTodoList();
+  } else {
+    activeRankingSnapshotId = "current";
+    activeRankingCompareSnapshotId = snapshot.id;
+    renderRankingLists();
+  }
   closeRankingNormalizeDialog();
 }
 
@@ -6976,9 +7035,10 @@ function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentM
     String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItemByType(rankingType, itemId);
+  const fallbackRating = normalizeLookupName(rankingType) === "todo" ? getTodoImplicitSeedRating(itemId) : RANKING_BASE_RATING;
   const rating = row
     ? Number(row.rating || RANKING_BASE_RATING)
-    : Number(seed?.seedRating || RANKING_BASE_RATING);
+    : Number(seed?.seedRating || fallbackRating);
   const wins = Number(row?.wins || 0);
   const losses = Number(row?.losses || 0);
 
@@ -9529,6 +9589,16 @@ todoFilterToggle?.addEventListener("click", () => {
 });
 
 todoCompareButton?.addEventListener("click", () => openRankingBattleDialog("todo"));
+todoNormalizeButton?.addEventListener("click", () => openRankingNormalizeDialog("todo"));
+todoSnapshotSelect?.addEventListener("change", () => {
+  activeTodoSnapshotId = todoSnapshotSelect.value || "current";
+  activeTodoViewMode = "calculated";
+  renderTodoList();
+});
+todoSnapshotCompareSelect?.addEventListener("change", () => {
+  activeTodoCompareSnapshotId = todoSnapshotCompareSelect.value || "";
+  renderTodoList();
+});
 
 todoViewModeButtons?.forEach((button) => {
   button.addEventListener("click", () => {

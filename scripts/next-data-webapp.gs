@@ -57,9 +57,16 @@ const RANKING_ELO_COLUMNS = [
   "Last Choice ID",
   "Updated At",
 ];
-// Create these two tables with the listed headers for the To Do calculated view.
 const TODO_CHOICE_SHEET = "To Do Choices";
 const TODO_ELO_SHEET = "To Do Elo";
+const TODO_SEED_SHEET = "To Do Seeds";
+const TODO_SNAPSHOT_SHEET = "To Do Snapshots";
+const TODO_SNAPSHOT_ITEM_SHEET = "To Do Snapshot Items";
+const TODO_CHOICE_COLUMNS = ["ID", "Item A ID", "Item B ID", "Winner ID", "Loser ID", "Created At"];
+const TODO_ELO_COLUMNS = ["ID", "Item ID", "Rating", "Wins", "Losses", "Last Choice ID", "Updated At"];
+const TODO_SEED_COLUMNS = ["ID", "Item ID", "Seed Rank", "Seed Rating", "Seeded At", "Reason"];
+const TODO_SNAPSHOT_COLUMNS = ["Snapshot ID", "Created At", "Label", "Reason", "Source"];
+const TODO_SNAPSHOT_ITEM_COLUMNS = ["Snapshot ID", "Item ID", "Item Name", "Rank", "Rating", "Wins", "Losses", "Games"];
 const RANKING_SEED_COLUMNS = [
   "Ranking Type",
   "Item ID",
@@ -151,11 +158,20 @@ function doGet(e) {
     }
 
     if (action === "listTodoChoices") {
-      return webResponse(e, { ok: true, choices: listChoiceRows(TODO_CHOICE_SHEET, e.parameter.managerId) });
+      return webResponse(e, { ok: true, choices: listTodoChoices() });
     }
 
     if (action === "listTodoElo") {
-      return webResponse(e, { ok: true, elo: listEloRows(TODO_ELO_SHEET, e.parameter.managerId) });
+      return webResponse(e, { ok: true, elo: listTodoElo() });
+    }
+
+    if (action === "listTodoRankingMeta") {
+      return webResponse(e, {
+        ok: true,
+        seeds: listTodoSeeds(),
+        snapshotItems: listTodoSnapshotItems(),
+        snapshots: listTodoSnapshots(),
+      });
     }
 
     if (action === "listTodoItems") {
@@ -203,7 +219,11 @@ function doPost(e) {
     }
 
     if (payload.action === "saveTodoChoice") {
-      return jsonResponse(saveChoiceToTables(payload.choice || {}, TODO_CHOICE_SHEET, TODO_ELO_SHEET));
+      return jsonResponse(saveTodoChoice(payload.choice || {}));
+    }
+
+    if (payload.action === "normalizeTodo") {
+      return jsonResponse(normalizeTodo(payload.normalization || {}));
     }
 
     if (payload.action === "saveRankingExclusion") {
@@ -788,6 +808,20 @@ function listChoiceRows(sheetName, managerId) {
       (!normalizedManagerId || String(row["Manager ID"] || "").trim() === normalizedManagerId));
 }
 
+function listTodoChoices() {
+  const context = getSimpleTableContext(TODO_CHOICE_SHEET, TODO_CHOICE_COLUMNS, "ID");
+  return readSimpleTableRows(context).map((row) => ({
+    "Created At": row["Created At"],
+    ID: row.ID,
+    "Item A ID": row["Item A ID"],
+    "Item B ID": row["Item B ID"],
+    "Loser ID": row["Loser ID"],
+    "Manager ID": "todo",
+    "Ranking Type": "todo",
+    "Winner ID": row["Winner ID"],
+  })).filter((row) => row["Winner ID"] && row["Loser ID"]);
+}
+
 function listRankingElo(managerId) {
   const normalizedManagerId = String(managerId || "").trim();
   const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
@@ -828,6 +862,60 @@ function listEloRows(sheetName, managerId) {
     }))
     .filter((row) => row["Item ID"] && row["Manager ID"] &&
       (!normalizedManagerId || String(row["Manager ID"]).trim() === normalizedManagerId));
+}
+
+function listTodoElo() {
+  const context = getSimpleTableContext(TODO_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
+  return readSimpleTableRows(context).map((row) => ({
+    ID: row.ID,
+    "Item ID": row["Item ID"],
+    "Last Choice ID": row["Last Choice ID"],
+    Losses: row.Losses,
+    "Manager ID": "todo",
+    "Ranking Type": "todo",
+    Rating: row.Rating,
+    "Updated At": row["Updated At"],
+    Wins: row.Wins,
+  })).filter((row) => row["Item ID"]);
+}
+
+function listTodoSeeds() {
+  const context = getSimpleTableContext(TODO_SEED_SHEET, TODO_SEED_COLUMNS, "ID");
+  return readSimpleTableRows(context).map((row) => ({
+    "Item ID": row["Item ID"],
+    "Ranking Type": "todo",
+    Reason: row.Reason,
+    "Seed Rank": row["Seed Rank"],
+    "Seed Rating": row["Seed Rating"],
+    "Seeded At": row["Seeded At"],
+  })).filter((row) => row["Item ID"]);
+}
+
+function listTodoSnapshots() {
+  const context = getSimpleTableContext(TODO_SNAPSHOT_SHEET, TODO_SNAPSHOT_COLUMNS, "Snapshot ID");
+  return readSimpleTableRows(context).map((row) => ({
+    "Created At": row["Created At"],
+    Label: row.Label,
+    "Manager ID": "todo",
+    "Ranking Type": "todo",
+    Reason: row.Reason,
+    "Snapshot ID": row["Snapshot ID"],
+    Source: row.Source,
+  })).filter((row) => row["Snapshot ID"]);
+}
+
+function listTodoSnapshotItems() {
+  const context = getSimpleTableContext(TODO_SNAPSHOT_ITEM_SHEET, TODO_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+  return readSimpleTableRows(context).map((row) => ({
+    Games: row.Games,
+    "Item ID": row["Item ID"],
+    "Item Name": row["Item Name"],
+    Losses: row.Losses,
+    Rank: row.Rank,
+    Rating: row.Rating,
+    "Snapshot ID": row["Snapshot ID"],
+    Wins: row.Wins,
+  })).filter((row) => row["Snapshot ID"] && row["Item ID"]);
 }
 
 function repairRankingEloDuplicateManagers(options) {
@@ -1072,6 +1160,143 @@ function saveChoiceToTables(choice, choiceSheetName, eloSheetName) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function saveTodoChoice(choice) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const choiceContext = getSimpleTableContext(TODO_CHOICE_SHEET, TODO_CHOICE_COLUMNS, "ID");
+    const rows = readSimpleTableRows(choiceContext);
+    const rowValues = {
+      ID: String(choice.ID || choice.id || "").trim() || getNextNumericIdFromRows(rows, "ID"),
+      "Item A ID": String(choice["Item A ID"] || choice.itemAId || "").trim(),
+      "Item B ID": String(choice["Item B ID"] || choice.itemBId || "").trim(),
+      "Winner ID": String(choice["Winner ID"] || choice.winnerId || "").trim(),
+      "Loser ID": String(choice["Loser ID"] || choice.loserId || "").trim(),
+      "Created At": String(choice["Created At"] || choice.createdAt || new Date().toISOString()).trim(),
+    };
+    if (!rowValues["Winner ID"] || !rowValues["Loser ID"]) throw new Error("Winner ID and Loser ID are required.");
+    appendSimpleTableRow(choiceContext, rowValues, TODO_CHOICE_COLUMNS);
+    return { choice: rowValues, elo: updateTodoEloRows(rowValues), ok: true, status: "appended" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function updateTodoEloRows(choice) {
+  const context = getSimpleTableContext(TODO_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
+  const rows = readSimpleTableRows(context);
+  const winner = getTodoEloRow(rows, choice["Winner ID"]);
+  const loser = getTodoEloRow(rows, choice["Loser ID"]);
+  const updatedAt = new Date().toISOString();
+  const winnerNext = {
+    ...winner,
+    "Last Choice ID": choice.ID,
+    Rating: Math.round(winner.Rating + getRankingKFactor(winner) * (1 - getRankingExpectedScore(winner.Rating, loser.Rating))),
+    "Updated At": updatedAt,
+    Wins: winner.Wins + 1,
+  };
+  const loserNext = {
+    ...loser,
+    "Last Choice ID": choice.ID,
+    Losses: loser.Losses + 1,
+    Rating: Math.round(loser.Rating + getRankingKFactor(loser) * (0 - getRankingExpectedScore(loser.Rating, winner.Rating))),
+    "Updated At": updatedAt,
+  };
+  upsertTodoEloRow(context, winnerNext);
+  upsertTodoEloRow(context, loserNext);
+  return [winnerNext, loserNext];
+}
+
+function getTodoEloRow(rows, itemId) {
+  const row = rows.find((entry) => String(entry["Item ID"] || "").trim() === String(itemId || "").trim());
+  const seed = row ? null : ensureTodoSeed(itemId);
+  const wins = Number(row && row.Wins || 0);
+  const losses = Number(row && row.Losses || 0);
+  return {
+    Comparisons: wins + losses,
+    ID: String(row && row.ID || "").trim(),
+    "Item ID": String(itemId || "").trim(),
+    "Last Choice ID": String(row && row["Last Choice ID"] || "").trim(),
+    Losses: losses,
+    Rating: Number(row && row.Rating || seed && seed["Seed Rating"] || RANKING_BASE_RATING),
+    rowNumber: row && row.rowNumber,
+    "Updated At": String(row && row["Updated At"] || "").trim(),
+    Wins: wins,
+  };
+}
+
+function ensureTodoSeed(itemId) {
+  const context = getSimpleTableContext(TODO_SEED_SHEET, TODO_SEED_COLUMNS, "ID");
+  const rows = readSimpleTableRows(context);
+  const existing = rows.find((row) => String(row["Item ID"] || "").trim() === String(itemId || "").trim());
+  if (existing) return existing;
+  const todoRows = listTodoItems();
+  const itemIndex = todoRows.findIndex((row) => String(row.ID || "").trim() === String(itemId || "").trim());
+  const seedRank = itemIndex >= 0 ? itemIndex + 1 : todoRows.length + 1;
+  const seed = {
+    ID: getNextNumericIdFromRows(rows, "ID"),
+    "Item ID": String(itemId || "").trim(),
+    Reason: "Initial rating from manual To Do order",
+    "Seed Rank": seedRank,
+    "Seed Rating": calculateNormalizedRatingForTable(seedRank, Math.max(todoRows.length, 1)),
+    "Seeded At": new Date().toISOString(),
+  };
+  appendSimpleTableRow(context, seed, TODO_SEED_COLUMNS);
+  return seed;
+}
+
+function upsertTodoEloRow(context, rowValues) {
+  if (rowValues.rowNumber) {
+    writeSimpleTableCells(context, rowValues.rowNumber, rowValues, TODO_ELO_COLUMNS);
+    return;
+  }
+  const rows = readSimpleTableRows(context);
+  rowValues.ID = rowValues.ID || getNextNumericIdFromRows(rows, "ID");
+  appendSimpleTableRow(context, rowValues, TODO_ELO_COLUMNS);
+}
+
+function normalizeTodo(normalization) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const items = Array.isArray(normalization.items) ? normalization.items : [];
+    if (!items.length) throw new Error("At least one To Do item is required.");
+    const createdAt = String(normalization.createdAt || new Date().toISOString()).trim();
+    const snapshotContext = getSimpleTableContext(TODO_SNAPSHOT_SHEET, TODO_SNAPSHOT_COLUMNS, "Snapshot ID");
+    const snapshotRows = readSimpleTableRows(snapshotContext);
+    const snapshotId = String(normalization.snapshotId || getNextNumericIdFromRows(snapshotRows, "Snapshot ID"));
+    appendSimpleTableRow(snapshotContext, {
+      "Created At": createdAt,
+      Label: String(normalization.label || formatSnapshotLabel(createdAt)).trim(),
+      Reason: String(normalization.reason || "Normalized calculated To Do order").trim(),
+      "Snapshot ID": snapshotId,
+      Source: String(normalization.source || "calculated").trim(),
+    }, TODO_SNAPSHOT_COLUMNS);
+    const itemContext = getSimpleTableContext(TODO_SNAPSHOT_ITEM_SHEET, TODO_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+    items.forEach((item, index) => appendSimpleTableRow(itemContext, {
+      Games: Number(item.comparisons || item.Games || 0),
+      "Item ID": String(item.itemId || item.id || "").trim(),
+      "Item Name": String(item.itemName || item.name || "").trim(),
+      Losses: Number(item.losses || 0), Rank: index + 1,
+      Rating: Number(item.rating || RANKING_BASE_RATING),
+      "Snapshot ID": snapshotId, Wins: Number(item.wins || 0),
+    }, TODO_SNAPSHOT_ITEM_COLUMNS));
+    const eloContext = getSimpleTableContext(TODO_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
+    deleteSimpleTableRows(eloContext, () => true);
+    const eloRows = [];
+    items.forEach((item, index) => {
+      const row = { ID: String(index + 1), "Item ID": String(item.itemId || item.id || "").trim(), "Last Choice ID": "", Losses: 0,
+        Rating: Number(item.normalizedRating || calculateNormalizedRatingForTable(index + 1, items.length)), "Updated At": createdAt, Wins: 0 };
+      appendSimpleTableRow(eloContext, row, TODO_ELO_COLUMNS); eloRows.push(row);
+    });
+    return { elo: eloRows, ok: true, snapshotId, status: "normalized" };
+  } finally { lock.releaseLock(); }
+}
+
+function calculateNormalizedRatingForTable(rank, total) {
+  return Math.round(RANKING_BASE_RATING + ((((Number(total || 0) + 1) / 2) - Number(rank || 0)) * 8));
 }
 
 function normalizeRanking(normalization) {

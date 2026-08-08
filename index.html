@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.08.04.50";
+      window.BOX_THIS_LAP_VERSION = "2026.08.08.04.58";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608080450">
+    <link rel="stylesheet" href="styles.css?v=202608080458">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -772,6 +772,15 @@
             <span>More Data</span>
             <input id="todo-more-data-toggle" type="checkbox">
           </label>
+          <label class="ranking-select-control">
+            <span>Snapshot</span>
+            <select id="todo-snapshot-select"><option value="current">Current</option></select>
+          </label>
+          <label class="ranking-select-control">
+            <span>Compare</span>
+            <select id="todo-snapshot-compare-select"><option value="">None</option></select>
+          </label>
+          <button class="action-button ranking-normalize-button" id="todo-normalize-button" type="button">Normalize</button>
           <div class="todo-filter-group" role="group" aria-label="To Do status filters">
             <label class="toggle-row">
               <span>Only Started</span>
@@ -1874,6 +1883,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608080450"></script>
+    <script type="module" src="script.js?v=202608080458"></script>
   </body>
 </html>

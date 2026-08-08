@@ -10,6 +10,7 @@ const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy";
 const SITE_ASSET_BASE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/";
 const MATCH_LIMIT = 3;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
+const LOCAL_BADGE_TEAM_IDS = new Set(["3", "4", "5", "6", "7"]);
 
 const COLORS = {
   background: new Color("#101820"),
@@ -109,7 +110,7 @@ async function createWidget(result) {
       widget.addSpacer(7);
     }
 
-    await addFixture(widget, fixture, index === 0);
+    await addFixture(widget, fixture);
   }
 
   widget.refreshAfterDate = getRefreshDate(result.fixtures[0]);
@@ -131,43 +132,43 @@ function addHeader(widget) {
   widget.addSpacer(8);
 }
 
-async function addFixture(widget, fixture, isPrimary) {
+async function addFixture(widget, fixture) {
   const timingLabel = getTimingLabel(fixture);
   const isStarted = timingLabel === "Started";
   const card = widget.addStack();
   card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
   card.cornerRadius = 10;
-  card.setPadding(isPrimary ? 9 : 6, 9, isPrimary ? 9 : 6, 9);
+  card.size = new Size(0, 62);
+  card.setPadding(7, 9, 7, 9);
 
   const badgeImage = await loadTeamBadge(fixture);
+  const badgeSlot = card.addStack();
+  badgeSlot.size = new Size(34, 0);
+  badgeSlot.centerAlignContent();
 
   if (badgeImage) {
-    const badge = card.addImage(badgeImage);
-    const badgeSize = isPrimary ? 32 : 23;
+    const badge = badgeSlot.addImage(badgeImage);
+    const badgeSize = 30;
     badge.imageSize = new Size(badgeSize, badgeSize);
     badge.cornerRadius = badgeSize / 2;
-    card.addSpacer(8);
+  } else {
+    const placeholder = badgeSlot.addImage(SFSymbol.named("soccerball").image);
+    placeholder.imageSize = new Size(22, 22);
+    placeholder.tintColor = COLORS.muted;
   }
 
+  card.addSpacer(8);
   const content = card.addStack();
   content.layoutVertically();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
-  match.font = isPrimary ? Font.boldSystemFont(16) : Font.semiboldSystemFont(12);
+  match.font = Font.semiboldSystemFont(13);
   match.textColor = COLORS.text;
-  match.lineLimit = isPrimary ? 2 : 1;
-  match.minimumScaleFactor = 0.7;
-
-  const detail = content.addStack();
-  detail.centerAlignContent();
-  detail.addSpacer();
-  const date = detail.addText(formatFixtureDate(fixture));
-  date.font = Font.mediumSystemFont(isPrimary ? 11 : 10);
-  date.textColor = timingLabel ? (isStarted ? COLORS.started : COLORS.accent) : COLORS.muted;
-  date.minimumScaleFactor = 0.75;
+  match.lineLimit = 1;
+  match.minimumScaleFactor = 0.55;
 
   if (timingLabel) {
-    detail.addSpacer(6);
-    const chip = detail.addStack();
+    content.addSpacer(3);
+    const chip = content.addStack();
     chip.backgroundColor = isStarted ? COLORS.started : COLORS.accent;
     chip.cornerRadius = 7;
     chip.setPadding(2, 5, 2, 5);
@@ -175,23 +176,39 @@ async function addFixture(widget, fixture, isPrimary) {
     label.font = Font.boldSystemFont(9);
     label.textColor = COLORS.background;
   }
+
+  card.addSpacer(6);
+  const dateStack = card.addStack();
+  dateStack.size = new Size(96, 0);
+  dateStack.layoutVertically();
+  dateStack.centerAlignContent();
+  const date = dateStack.addText(formatFixtureDate(fixture));
+  date.font = Font.mediumSystemFont(10);
+  date.textColor = COLORS.muted;
+  date.rightAlignText();
+  date.lineLimit = 2;
+  date.minimumScaleFactor = 0.7;
 }
 
 async function loadTeamBadge(fixture) {
   const path = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
+  const localPath = LOCAL_BADGE_TEAM_IDS.has(String(fixture.teamId || ""))
+    ? `assets/teams/${fixture.teamId}/badge.svg`
+    : "";
+  const paths = [path, localPath].filter(Boolean);
 
-  if (!path) {
-    return null;
+  for (const badgePath of paths) {
+    try {
+      const url = /^https?:\/\//i.test(badgePath) ? badgePath : `${SITE_ASSET_BASE_URL}${badgePath.replace(/^\/+/, "")}`;
+      const request = new Request(url);
+      request.timeoutInterval = 10;
+      return await request.loadImage();
+    } catch {
+      // Try the local team badge after a stale or unavailable schedule badge.
+    }
   }
 
-  try {
-    const url = /^https?:\/\//i.test(path) ? path : `${SITE_ASSET_BASE_URL}${path.replace(/^\/+/, "")}`;
-    const request = new Request(url);
-    request.timeoutInterval = 10;
-    return await request.loadImage();
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 function addErrorState(widget, message) {
@@ -252,7 +269,7 @@ function getTimingLabel(fixture) {
 function formatFixtureDate(fixture) {
   const date = new Date(getFixtureTime(fixture));
   const formatter = new DateFormatter();
-  formatter.dateFormat = "EEE, MMM d · h:mm a";
+  formatter.dateFormat = "EEE, MMM d\nh:mm a";
   return formatter.string(date);
 }
 

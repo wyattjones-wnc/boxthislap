@@ -141,6 +141,12 @@ import {
   nextItemClose,
   nextItemCancel,
   todoList,
+  todoRandomButton,
+  todoRandomDialog,
+  todoRandomContent,
+  todoRandomClose,
+  todoRandomAgain,
+  todoRandomDone,
   todoCompareButton,
   todoViewModeButtons,
   todoSnapshotSelect,
@@ -4455,6 +4461,68 @@ function ensureTodoRankingDataLoaded() {
   return todoRankingLoadPromise;
 }
 
+function openTodoRandomDialog() {
+  if (!todoRandomDialog) return;
+  renderRandomTodoItem();
+  if (typeof todoRandomDialog.showModal === "function") todoRandomDialog.showModal();
+  else todoRandomDialog.setAttribute("open", "");
+}
+
+function closeTodoRandomDialog() {
+  if (!todoRandomDialog) return;
+  if (typeof todoRandomDialog.close === "function") todoRandomDialog.close();
+  else todoRandomDialog.removeAttribute("open");
+}
+
+function renderRandomTodoItem() {
+  if (!todoRandomContent) return;
+  const visibleItems = getVisibleTodoItems(getTodoItems().map(normalizeTodoItem).filter(Boolean));
+  const visibleIds = new Set(visibleItems.map((item) => String(item.id)));
+  const rankedItems = activeTodoViewMode === "calculated"
+    ? activeTodoSnapshotId === "current"
+      ? visibleItems.map((item) => ({ ...item, rating: getRankingEloForItem("todo", item.id).rating })).sort(compareCalculatedRankingRows)
+      : getRankingSnapshotRows("todo", activeTodoSnapshotId).filter((item) => visibleIds.has(String(item.id)))
+    : visibleItems.sort(compareTodoItems);
+  const item = chooseWeightedTodoItem(rankedItems);
+
+  if (!item) {
+    todoRandomContent.innerHTML = `<p class="table-message">No To Do items match the current filters.</p>`;
+    return;
+  }
+
+  const imagePath = getTodoImagePath(item);
+  todoRandomContent.innerHTML = `
+    <article class="todo-random-result">
+      <span class="todo-random-image-frame${imagePath ? "" : " is-empty"}">
+        ${imagePath ? `<img src="${escapeHtml(imagePath)}" alt="${escapeHtml(item.name)}" loading="eager" decoding="async">` : ""}
+      </span>
+      <div>
+        <span class="todo-random-rank">#${rankedItems.findIndex((entry) => entry.id === item.id) + 1}</span>
+        <h3>${escapeHtml(item.name)}</h3>
+        ${renderTodoStatusChips(item)}
+        ${renderTodoMoreData(item)}
+      </div>
+    </article>`;
+}
+
+function chooseWeightedTodoItem(items) {
+  if (!items.length) return null;
+  const lastIndex = Math.max(items.length - 1, 1);
+  const weights = items.map((item, index) => 1 + (0.75 * (1 - (index / lastIndex))));
+  let target = Math.random() * weights.reduce((total, weight) => total + weight, 0);
+  for (let index = 0; index < items.length; index += 1) {
+    target -= weights[index];
+    if (target <= 0) return items[index];
+  }
+  return items[items.length - 1];
+}
+
+function getTodoImagePath(item) {
+  const id = String(item?.id || "").trim();
+  const filename = String(item?.image || "").trim().split(/[\\/]/).pop();
+  return id && filename ? `assets/todo/${encodeURIComponent(id)}/${encodeURIComponent(filename)}` : "";
+}
+
 function getTodoSnapshotLabel(snapshotId) {
   if (snapshotId === "current") return "Current";
   return formatRankingSnapshotOptionLabel(getRankingSnapshotById(snapshotId));
@@ -4473,6 +4541,7 @@ function normalizeTodoItem(row) {
     deleted: isTrueValue(row.IsDeleted || row.isDeleted || row.deleted),
     highHour: normalizeTodoHour(row["High Hour"] ?? row.highHour),
     id: String(row?.ID || row?.Id || row?.id || "").trim(),
+    image: String(row?.image || row?.Image || "").trim(),
     lowHour: normalizeTodoHour(row["Low Hour"] ?? row.lowHour),
     name,
     order: normalizeTodoOrder(row.Order),
@@ -4823,6 +4892,7 @@ function saveTodoItemFromForm() {
     Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
     IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
     Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
+    image: String(existingItem?.image || existingItem?.Image || "").trim(),
   };
 
   if (item["Parent ID"] === item.ID) {
@@ -4904,6 +4974,7 @@ function normalizeTodoOrdersLocally(options = {}) {
       Completed: item.completed ? "TRUE" : "FALSE",
       IsDeleted: item.deleted ? "TRUE" : "FALSE",
       Unpurchased: item.unpurchased ? "TRUE" : "FALSE",
+      image: item.image || "",
     }))
     .sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
 }
@@ -4938,6 +5009,7 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     Completed: row.completed ? "TRUE" : "FALSE",
     IsDeleted: row.deleted ? "TRUE" : "FALSE",
     Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
+    image: row.image || "",
   })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
   renderTodoList();
 
@@ -4964,6 +5036,7 @@ function submitTodoOrder() {
       Completed: item.Completed || "FALSE",
       IsDeleted: item.IsDeleted || "FALSE",
       Unpurchased: item.Unpurchased || "FALSE",
+      image: item.image || item.Image || "",
     })),
     sheetName: "To Do",
   });
@@ -9589,6 +9662,9 @@ todoFilterToggle?.addEventListener("click", () => {
 });
 
 todoCompareButton?.addEventListener("click", () => openRankingBattleDialog("todo"));
+todoRandomButton?.addEventListener("click", openTodoRandomDialog);
+todoRandomAgain?.addEventListener("click", renderRandomTodoItem);
+[todoRandomClose, todoRandomDone].forEach((button) => button?.addEventListener("click", closeTodoRandomDialog));
 todoNormalizeButton?.addEventListener("click", () => openRankingNormalizeDialog("todo"));
 todoSnapshotSelect?.addEventListener("change", () => {
   activeTodoSnapshotId = todoSnapshotSelect.value || "current";

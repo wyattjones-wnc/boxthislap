@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.08.04.58";
+      window.BOX_THIS_LAP_VERSION = "2026.08.08.05.11";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608080458">
+    <link rel="stylesheet" href="styles.css?v=202608080511">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -746,6 +746,7 @@
         <div class="section-heading page-heading-with-action footy-heading">
           <h1>To Do</h1>
           <div class="heading-actions">
+            <button class="icon-action-button todo-random-button" id="todo-random-button" type="button" aria-label="Pick a weighted random To Do item" title="Pick a weighted random To Do item">?</button>
             <button class="action-button ranking-compare-button" id="todo-compare-button" type="button">
               Compare
             </button>
@@ -879,6 +880,19 @@
               <button class="action-button" type="submit">
                 Save
               </button>
+            </footer>
+          </form>
+        </dialog>
+        <dialog class="footy-note-dialog todo-random-dialog" id="todo-random-dialog">
+          <form class="footy-note-form ranking-battle-form" method="dialog">
+            <header>
+              <div><h2>Random To Do</h2></div>
+              <button class="icon-action-button footy-note-close" id="todo-random-close" type="button" aria-label="Close random To Do dialog">&times;</button>
+            </header>
+            <div id="todo-random-content"></div>
+            <footer>
+              <button class="action-button" id="todo-random-again" type="button">Pick Again</button>
+              <button class="action-button" id="todo-random-done" type="button">Done</button>
             </footer>
           </form>
         </dialog>
@@ -1883,6 +1897,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608080458"></script>
+    <script type="module" src="script.js?v=202608080511"></script>
   </body>
 </html>

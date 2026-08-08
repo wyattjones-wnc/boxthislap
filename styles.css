@@ -1438,6 +1438,60 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 6px;
 }
 
+.todo-random-button {
+  font-size: 1.1rem;
+  font-weight: 950;
+}
+
+.todo-random-result {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(160px, 44%) minmax(0, 1fr);
+  padding: 12px;
+}
+
+.todo-random-image-frame {
+  align-items: center;
+  background: var(--soft);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  min-height: 260px;
+  overflow: hidden;
+}
+
+.todo-random-image-frame img {
+  display: block;
+  height: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.todo-random-image-frame.is-empty {
+  min-height: 120px;
+}
+
+.todo-random-rank {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.todo-random-result h3 {
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  margin: 6px 0 12px;
+}
+
+@media (max-width: 640px) {
+  .todo-random-result { grid-template-columns: 1fr; }
+  .todo-random-image-frame { min-height: 210px; }
+}
+
 .footy-filters .footy-checkbox-control {
   align-items: center;
   background: var(--soft);

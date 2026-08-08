@@ -103,7 +103,7 @@ async function createWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.url = SITE_URL;
-  widget.setPadding(12, 14, 12, 14);
+  widget.setPadding(6, 14, 6, 14);
   addHeader(widget);
 
   if (!result.ok) {
@@ -122,7 +122,7 @@ async function createWidget(result) {
     const fixture = result.fixtures[index];
 
     if (index > 0) {
-      widget.addSpacer(7);
+      widget.addSpacer(4);
     }
 
     await addFixture(widget, fixture);
@@ -144,7 +144,7 @@ function addHeader(widget) {
   const image = header.addImage(SFSymbol.named("soccerball").image);
   image.imageSize = new Size(14, 14);
   image.tintColor = COLORS.accent;
-  widget.addSpacer(8);
+  widget.addSpacer(4);
 }
 
 async function addFixture(widget, fixture) {
@@ -154,8 +154,8 @@ async function addFixture(widget, fixture) {
   const card = widget.addStack();
   card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
   card.cornerRadius = 10;
-  card.size = new Size(cardWidth, 50);
-  card.setPadding(4, 8, 4, 8);
+  card.size = new Size(cardWidth, 40);
+  card.setPadding(2, 8, 2, 8);
 
   const badgeImage = await loadTeamBadge(fixture);
   const badgeSlot = card.addStack();
@@ -164,7 +164,7 @@ async function addFixture(widget, fixture) {
 
   if (badgeImage) {
     const badge = badgeSlot.addImage(badgeImage);
-    const badgeSize = 26;
+    const badgeSize = 24;
     badge.imageSize = new Size(badgeSize, badgeSize);
     badge.cornerRadius = badgeSize / 2;
   } else {
@@ -178,13 +178,13 @@ async function addFixture(widget, fixture) {
   content.size = new Size(cardWidth - 134, 0);
   content.layoutVertically();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
-  match.font = Font.semiboldSystemFont(12);
+  match.font = Font.semiboldSystemFont(11);
   match.textColor = COLORS.text;
   match.lineLimit = 1;
   match.minimumScaleFactor = 0.55;
 
   if (timingLabel) {
-    content.addSpacer(3);
+    content.addSpacer(2);
     const chip = content.addStack();
     chip.backgroundColor = isStarted ? COLORS.started : COLORS.accent;
     chip.cornerRadius = 7;

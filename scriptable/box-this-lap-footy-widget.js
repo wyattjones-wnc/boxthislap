@@ -10,7 +10,19 @@ const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy";
 const SITE_ASSET_BASE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/";
 const MATCH_LIMIT = 3;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
-const LOCAL_BADGE_TEAM_IDS = new Set(["3", "4", "5", "6", "7"]);
+const FOOTY_LOCAL_TEAM_IDS = {
+  arsenal: "1",
+  "arsenal fc": "1",
+  barcelona: "2",
+  "fc barcelona": "2",
+  charlotte: "6",
+  "charlotte fc": "6",
+  "inter miami": "7",
+  "inter miami cf": "7",
+  usmnt: "4",
+  uswmt: "5",
+  uswnt: "5",
+};
 
 const COLORS = {
   background: new Color("#101820"),
@@ -138,17 +150,17 @@ async function addFixture(widget, fixture) {
   const card = widget.addStack();
   card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
   card.cornerRadius = 10;
-  card.size = new Size(0, 62);
-  card.setPadding(7, 9, 7, 9);
+  card.size = new Size(0, 50);
+  card.setPadding(4, 8, 4, 8);
 
   const badgeImage = await loadTeamBadge(fixture);
   const badgeSlot = card.addStack();
-  badgeSlot.size = new Size(34, 0);
+  badgeSlot.size = new Size(28, 0);
   badgeSlot.centerAlignContent();
 
   if (badgeImage) {
     const badge = badgeSlot.addImage(badgeImage);
-    const badgeSize = 30;
+    const badgeSize = 26;
     badge.imageSize = new Size(badgeSize, badgeSize);
     badge.cornerRadius = badgeSize / 2;
   } else {
@@ -157,11 +169,11 @@ async function addFixture(widget, fixture) {
     placeholder.tintColor = COLORS.muted;
   }
 
-  card.addSpacer(8);
+  card.addSpacer(6);
   const content = card.addStack();
   content.layoutVertically();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
-  match.font = Font.semiboldSystemFont(13);
+  match.font = Font.semiboldSystemFont(12);
   match.textColor = COLORS.text;
   match.lineLimit = 1;
   match.minimumScaleFactor = 0.55;
@@ -177,9 +189,9 @@ async function addFixture(widget, fixture) {
     label.textColor = COLORS.background;
   }
 
-  card.addSpacer(6);
+  card.addSpacer(2);
   const dateStack = card.addStack();
-  dateStack.size = new Size(96, 0);
+  dateStack.size = new Size(84, 0);
   dateStack.layoutVertically();
   dateStack.centerAlignContent();
   const date = dateStack.addText(formatFixtureDate(fixture));
@@ -192,9 +204,7 @@ async function addFixture(widget, fixture) {
 
 async function loadTeamBadge(fixture) {
   const path = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
-  const localPath = LOCAL_BADGE_TEAM_IDS.has(String(fixture.teamId || ""))
-    ? `assets/teams/${fixture.teamId}/badge.svg`
-    : "";
+  const localPath = getFootyLocalTeamBadge(fixture.teamName, fixture.teamId);
   const paths = [path, localPath].filter(Boolean);
 
   for (const badgePath of paths) {
@@ -209,6 +219,20 @@ async function loadTeamBadge(fixture) {
   }
 
   return null;
+}
+
+function getFootyLocalTeamBadge(teamName, teamId = "") {
+  const id = String(teamId || "").trim() || FOOTY_LOCAL_TEAM_IDS[normalizeTeamName(teamName)] || "";
+  return id ? `assets/teams/${encodeURIComponent(id)}/badge.svg` : "";
+}
+
+function normalizeTeamName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function addErrorState(widget, message) {

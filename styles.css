@@ -1506,7 +1506,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   border-radius: 8px;
   display: flex;
   justify-content: center;
-  min-height: 260px;
+  height: clamp(220px, 45vh, 360px);
   overflow: hidden;
 }
 
@@ -1519,7 +1519,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .todo-random-image-frame.is-empty {
-  min-height: 120px;
+  height: clamp(220px, 45vh, 360px);
 }
 
 .todo-random-rank {
@@ -1536,7 +1536,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 @media (max-width: 640px) {
   .todo-random-result { grid-template-columns: 1fr; }
-  .todo-random-image-frame { min-height: 210px; }
+  .todo-random-image-frame { height: clamp(190px, 38vh, 280px); }
 }
 
 .footy-filters .footy-checkbox-control {

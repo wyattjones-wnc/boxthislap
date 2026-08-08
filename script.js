@@ -4503,11 +4503,11 @@ function renderRandomTodoItem() {
     return;
   }
 
-  const imagePath = getTodoImagePath(item);
+  const imageUrl = getTodoImageUrl(item);
   todoRandomContent.innerHTML = `
     <article class="todo-random-result">
-      <span class="todo-random-image-frame${imagePath ? "" : " is-empty"}">
-        ${imagePath ? `<img src="${escapeHtml(imagePath)}" alt="${escapeHtml(item.name)}" loading="eager" decoding="async">` : ""}
+      <span class="todo-random-image-frame${imageUrl ? "" : " is-empty"}">
+        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(item.name)}" loading="eager" decoding="async">` : ""}
       </span>
       <div>
         <span class="todo-random-rank">#${rankedItems.findIndex((entry) => entry.id === item.id) + 1}</span>
@@ -4530,10 +4530,8 @@ function chooseWeightedTodoItem(items) {
   return items[items.length - 1];
 }
 
-function getTodoImagePath(item) {
-  const id = String(item?.id || "").trim();
-  const filename = String(item?.image || "").trim().split(/[\\/]/).pop();
-  return id && filename ? `assets/todo/${encodeURIComponent(id)}/${encodeURIComponent(filename)}` : "";
+function getTodoImageUrl(item) {
+  return String(item?.imageUrl || "").trim();
 }
 
 function getTodoSnapshotLabel(snapshotId) {
@@ -4554,7 +4552,7 @@ function normalizeTodoItem(row) {
     deleted: isTrueValue(row.IsDeleted || row.isDeleted || row.deleted),
     highHour: normalizeTodoHour(row["High Hour"] ?? row.highHour),
     id: String(row?.ID || row?.Id || row?.id || "").trim(),
-    image: String(row?.image || row?.Image || "").trim(),
+    imageUrl: String(row?.["Image URL"] || row?.imageUrl || "").trim(),
     lowHour: normalizeTodoHour(row["Low Hour"] ?? row.lowHour),
     name,
     order: normalizeTodoOrder(row.Order),
@@ -4905,7 +4903,7 @@ function saveTodoItemFromForm() {
     Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
     IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
     Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
-    image: String(existingItem?.image || existingItem?.Image || "").trim(),
+    "Image URL": String(existingItem?.["Image URL"] || existingItem?.imageUrl || "").trim(),
   };
 
   if (item["Parent ID"] === item.ID) {
@@ -4987,7 +4985,7 @@ function normalizeTodoOrdersLocally(options = {}) {
       Completed: item.completed ? "TRUE" : "FALSE",
       IsDeleted: item.deleted ? "TRUE" : "FALSE",
       Unpurchased: item.unpurchased ? "TRUE" : "FALSE",
-      image: item.image || "",
+      "Image URL": item.imageUrl || "",
     }))
     .sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
 }
@@ -5022,7 +5020,7 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     Completed: row.completed ? "TRUE" : "FALSE",
     IsDeleted: row.deleted ? "TRUE" : "FALSE",
     Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
-    image: row.image || "",
+    "Image URL": row.imageUrl || "",
   })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
   renderTodoList();
 
@@ -5049,7 +5047,7 @@ function submitTodoOrder() {
       Completed: item.Completed || "FALSE",
       IsDeleted: item.IsDeleted || "FALSE",
       Unpurchased: item.Unpurchased || "FALSE",
-      image: item.image || item.Image || "",
+      "Image URL": item["Image URL"] || item.imageUrl || "",
     })),
     sheetName: "To Do",
   });
@@ -6681,7 +6679,7 @@ function renderRankingBattleExclusionAction(kind, item) {
 }
 
 function renderRankingBattleImage(kind, item) {
-  const imagePath = getRandomRankingAssetPath(kind, item?.id);
+  const imagePath = kind === "todo" ? getTodoImageUrl(item) : getRandomRankingAssetPath(kind, item?.id);
   const imageMarkup = imagePath
     ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
     : "";

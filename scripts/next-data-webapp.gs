@@ -23,7 +23,7 @@ const TODO_ITEM_COLUMNS = [
   "Completed",
   "IsDeleted",
   "Unpurchased",
-  "image",
+  "Image URL",
 ];
 const RANKING_SHEETS = {
   games: "VG Ranking",
@@ -445,7 +445,7 @@ function listTodoItems() {
       Completed: isTrueValue(row.Completed),
       IsDeleted: isTrueValue(row.IsDeleted),
       Unpurchased: isTrueValue(row.Unpurchased),
-      image: String(row.image || "").trim(),
+      "Image URL": String(row["Image URL"] || "").trim(),
     }))
     .filter((row) => row.ID && row.Name)
     .sort(compareTodoRows);
@@ -493,7 +493,7 @@ function normalizeTodoItem(item) {
     Completed: normalizeBool(item.Completed || item.completed),
     IsDeleted: normalizeBool(item.IsDeleted || item.isDeleted),
     Unpurchased: normalizeBool(item.Unpurchased || item.unpurchased),
-    image: String(item.image || item.Image || "").trim(),
+    "Image URL": String(item["Image URL"] || item.imageUrl || "").trim(),
   };
 }
 

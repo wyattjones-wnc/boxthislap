@@ -6600,7 +6600,12 @@ async function openRankingBattleDialog(kind = activeRankingKind) {
   }
 
   activeRankingBattle = null;
-  await ensureRankingAssetManifest();
+  if (rankingBattleDialog.parentElement !== document.body) {
+    document.body.append(rankingBattleDialog);
+  }
+  if (kind !== "todo") {
+    await ensureRankingAssetManifest();
+  }
   renderNextRankingBattle(kind);
 
   if (typeof rankingBattleDialog.showModal === "function") {

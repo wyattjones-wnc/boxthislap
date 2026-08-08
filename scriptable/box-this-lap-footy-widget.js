@@ -151,7 +151,9 @@ async function addFixture(widget, fixture) {
   const timingLabel = getTimingLabel(fixture);
   const isStarted = timingLabel === "Started";
   const cardWidth = getMatchCardWidth();
-  const card = widget.addStack();
+  const row = widget.addStack();
+  row.addSpacer();
+  const card = row.addStack();
   card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
   card.cornerRadius = 10;
   card.size = new Size(cardWidth, 40);
@@ -205,6 +207,7 @@ async function addFixture(widget, fixture) {
   date.rightAlignText();
   date.lineLimit = 2;
   date.minimumScaleFactor = 0.7;
+  row.addSpacer();
 }
 
 async function loadTeamBadge(fixture) {
@@ -233,7 +236,12 @@ function getFootyLocalTeamBadge(teamName, teamId = "") {
 
 function getMatchCardWidth() {
   const screen = Device.screenSize();
-  return Math.max(290, Math.min(screen.width, screen.height) - 72);
+  const screenWidth = Math.min(screen.width, screen.height);
+
+  // Medium widgets do not scale one-to-one with the display width. This
+  // tracks Apple's widget margins across common iPhone sizes without relying
+  // on a single device-specific width.
+  return Math.max(280, Math.round(screenWidth * 0.45 + 134));
 }
 
 function normalizeTeamName(value) {

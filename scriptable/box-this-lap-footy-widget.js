@@ -10,6 +10,9 @@ const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy";
 const SITE_ASSET_BASE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/";
 const MATCH_LIMIT = 3;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
+const WIDGET_LOCAL_BADGE_PATHS = {
+  "7": "assets/teams/7/badge.png",
+};
 const FOOTY_LOCAL_TEAM_IDS = {
   arsenal: "1",
   "arsenal fc": "1",
@@ -147,10 +150,11 @@ function addHeader(widget) {
 async function addFixture(widget, fixture) {
   const timingLabel = getTimingLabel(fixture);
   const isStarted = timingLabel === "Started";
+  const cardWidth = getMatchCardWidth();
   const card = widget.addStack();
   card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
   card.cornerRadius = 10;
-  card.size = new Size(0, 50);
+  card.size = new Size(cardWidth, 50);
   card.setPadding(4, 8, 4, 8);
 
   const badgeImage = await loadTeamBadge(fixture);
@@ -171,6 +175,7 @@ async function addFixture(widget, fixture) {
 
   card.addSpacer(6);
   const content = card.addStack();
+  content.size = new Size(cardWidth - 134, 0);
   content.layoutVertically();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
   match.font = Font.semiboldSystemFont(12);
@@ -189,7 +194,7 @@ async function addFixture(widget, fixture) {
     label.textColor = COLORS.background;
   }
 
-  card.addSpacer(2);
+  card.addSpacer();
   const dateStack = card.addStack();
   dateStack.size = new Size(84, 0);
   dateStack.layoutVertically();
@@ -223,7 +228,12 @@ async function loadTeamBadge(fixture) {
 
 function getFootyLocalTeamBadge(teamName, teamId = "") {
   const id = String(teamId || "").trim() || FOOTY_LOCAL_TEAM_IDS[normalizeTeamName(teamName)] || "";
-  return id ? `assets/teams/${encodeURIComponent(id)}/badge.svg` : "";
+  return WIDGET_LOCAL_BADGE_PATHS[id] || (id ? `assets/teams/${encodeURIComponent(id)}/badge.svg` : "");
+}
+
+function getMatchCardWidth() {
+  const screen = Device.screenSize();
+  return Math.max(290, Math.min(screen.width, screen.height) - 72);
 }
 
 function normalizeTeamName(value) {

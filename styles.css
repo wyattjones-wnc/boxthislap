@@ -728,6 +728,53 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: grid;
   gap: 14px;
   padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.next-card--with-image {
+  background: #111827;
+  border-color: color-mix(in srgb, #ffffff 22%, var(--line));
+  min-height: clamp(150px, 24vw, 220px);
+  padding: clamp(20px, 5vw, 34px);
+}
+
+.next-card-image {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.next-card--with-image::after {
+  background: linear-gradient(90deg, rgba(5, 9, 17, 0.92) 0%, rgba(5, 9, 17, 0.69) 52%, rgba(5, 9, 17, 0.22) 100%),
+    linear-gradient(0deg, rgba(5, 9, 17, 0.48), transparent 55%);
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.next-card--with-image > :not(.next-card-image) {
+  position: relative;
+  z-index: 1;
+}
+
+.next-card--with-image h2 {
+  color: #ffffff;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  max-width: 22ch;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+}
+
+.next-card--with-image .next-card-date,
+.next-card--with-image .next-time {
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+
+.next-card--with-image.next-card--past {
+  border-color: color-mix(in srgb, #f2c94c 55%, var(--line));
 }
 
 .next-card--editable {

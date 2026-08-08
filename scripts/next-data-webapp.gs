@@ -288,6 +288,9 @@ function saveNextItem(item) {
     }
 
     const rowValues = normalizeNextItem(item);
+    const savedColumns = columns["Image URL"]
+      ? NEXT_ITEM_COLUMNS.concat(["Image URL"])
+      : NEXT_ITEM_COLUMNS;
     const existingRowsById = getExistingRowsById(sheet, header.row, columns.ID);
     const id = rowValues.ID || getNextNumericId(existingRowsById);
     rowValues.ID = id;
@@ -307,8 +310,8 @@ function saveNextItem(item) {
     const rowNumber = existingRowsById[id];
 
     if (rowNumber) {
-      for (let index = 0; index < NEXT_ITEM_COLUMNS.length; index += 1) {
-        const column = NEXT_ITEM_COLUMNS[index];
+      for (let index = 0; index < savedColumns.length; index += 1) {
+        const column = savedColumns[index];
         sheet.getRange(rowNumber, columns[column]).setValue(rowValues[column]);
       }
 
@@ -317,7 +320,7 @@ function saveNextItem(item) {
 
     const row = Array(rowWidth).fill("");
 
-    for (const column of NEXT_ITEM_COLUMNS) {
+    for (const column of savedColumns) {
       row[columns[column] - 1] = rowValues[column];
     }
 
@@ -343,6 +346,7 @@ function listNextItems() {
       priorityLevel: String(row["Priority Level"] || "").trim(),
       completed: isTrueValue(row.Completed),
       nonAdmin: isTrueValue(row.NonAdmin),
+      imageUrl: String(row["Image URL"] || "").trim(),
     }))
     .filter((row) => row.id && row.thing && row.date);
 }
@@ -1527,6 +1531,7 @@ function normalizeNextItem(item) {
   return {
     ID: String(item.ID || item.Id || item.id || "").trim(),
     Thing: String(item.Thing || item.thing || "").trim(),
+    "Image URL": String(item["Image URL"] || item.imageUrl || "").trim(),
     Date: String(item.Date || item.date || "").trim(),
     "End Date": String(item["End Date"] || item.endDate || "").trim(),
     Time: String(item.Time || item.time || "").trim(),

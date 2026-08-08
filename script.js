@@ -131,6 +131,7 @@ import {
   nextItemDialogTitle,
   nextItemId,
   nextThingInput,
+  nextImageUrlInput,
   nextStartDateInput,
   nextEndDateInput,
   nextTimeInput,
@@ -3685,6 +3686,7 @@ function normalizeNextItem(row) {
     dateKey,
     endDateKey,
     id,
+    imageUrl: String(row?.["Image URL"] || row?.imageUrl || row?.Image || row?.image || "").trim(),
     nonAdmin,
     priority,
     raw: row,
@@ -3844,9 +3846,14 @@ function renderNextItem(item) {
   const interactionAttributes = isNextEditModeEnabled() && item.id
     ? ` role="button" tabindex="0" aria-expanded="${String(activeNextItemId === item.id)}" data-next-item-id="${escapeHtml(item.id)}"`
     : "";
+  const imageMarkup = item.imageUrl
+    ? `<img class="next-card-image" src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-next-card-image>`
+    : "";
+  const imageClass = imageMarkup ? " next-card--with-image" : "";
 
   return `
-    <article class="${classNames}"${interactionAttributes}>
+    <article class="${classNames}${imageClass}"${interactionAttributes}>
+      ${imageMarkup}
       <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
         ${completedIcon}
         <div>
@@ -4086,6 +4093,10 @@ function openNextItemDialog(itemId = "") {
     nextThingInput.value = item?.thing || "";
   }
 
+  if (nextImageUrlInput) {
+    nextImageUrlInput.value = item?.imageUrl || "";
+  }
+
   if (nextStartDateInput) {
     nextStartDateInput.value = item?.dateKey || "";
   }
@@ -4150,6 +4161,7 @@ function getNextItemById(itemId) {
 function buildNextItemPayloadFromForm() {
   const existingId = String(nextItemId?.value || "").trim();
   const thing = String(nextThingInput?.value || "").trim();
+  const imageUrl = String(nextImageUrlInput?.value || "").trim();
   const date = String(nextStartDateInput?.value || "").trim();
   const endDate = String(nextEndDateInput?.value || "").trim();
   const time = String(nextTimeInput?.value || "").trim();
@@ -4158,6 +4170,7 @@ function buildNextItemPayloadFromForm() {
   return {
     ID: existingId || createNextItemId(),
     Thing: thing,
+    "Image URL": imageUrl,
     Date: date,
     "End Date": endDate,
     Time: time ? formatNextTimeForSheet(time) : "",
@@ -9198,7 +9211,17 @@ document.addEventListener("click", (event) => {
 document.addEventListener("error", (event) => {
   const image = event.target;
 
-  if (!(image instanceof HTMLImageElement) || !image.dataset.fallbackSrcs) {
+  if (!(image instanceof HTMLImageElement)) {
+    return;
+  }
+
+  if (image.hasAttribute("data-next-card-image")) {
+    image.closest(".next-card")?.classList.remove("next-card--with-image");
+    image.remove();
+    return;
+  }
+
+  if (!image.dataset.fallbackSrcs) {
     return;
   }
 

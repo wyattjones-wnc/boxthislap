@@ -102,6 +102,7 @@ export const nextItemForm = document.querySelector("#next-item-form");
 export const nextItemDialogTitle = document.querySelector("#next-item-dialog-title");
 export const nextItemId = document.querySelector("#next-item-id");
 export const nextThingInput = document.querySelector("#next-thing");
+export const nextImageUrlInput = document.querySelector("#next-image-url");
 export const nextStartDateInput = document.querySelector("#next-start-date");
 export const nextEndDateInput = document.querySelector("#next-end-date");
 export const nextTimeInput = document.querySelector("#next-time");

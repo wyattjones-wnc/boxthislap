@@ -57,6 +57,9 @@ const RANKING_ELO_COLUMNS = [
   "Last Choice ID",
   "Updated At",
 ];
+// Create these two tables with the listed headers for the To Do calculated view.
+const TODO_CHOICE_SHEET = "To Do Choices";
+const TODO_ELO_SHEET = "To Do Elo";
 const RANKING_SEED_COLUMNS = [
   "Ranking Type",
   "Item ID",
@@ -147,6 +150,14 @@ function doGet(e) {
       return webResponse(e, { ok: true, items: listNextItems() });
     }
 
+    if (action === "listTodoChoices") {
+      return webResponse(e, { ok: true, choices: listChoiceRows(TODO_CHOICE_SHEET, e.parameter.managerId) });
+    }
+
+    if (action === "listTodoElo") {
+      return webResponse(e, { ok: true, elo: listEloRows(TODO_ELO_SHEET, e.parameter.managerId) });
+    }
+
     if (action === "listTodoItems") {
       return webResponse(e, { ok: true, items: listTodoItems() });
     }
@@ -189,6 +200,10 @@ function doPost(e) {
 
     if (payload.action === "saveRankingChoice") {
       return jsonResponse(saveRankingChoice(payload.choice || {}));
+    }
+
+    if (payload.action === "saveTodoChoice") {
+      return jsonResponse(saveChoiceToTables(payload.choice || {}, TODO_CHOICE_SHEET, TODO_ELO_SHEET));
     }
 
     if (payload.action === "saveRankingExclusion") {
@@ -764,6 +779,15 @@ function listRankingChoices(managerId) {
     );
 }
 
+function listChoiceRows(sheetName, managerId) {
+  const normalizedManagerId = String(managerId || "").trim();
+  const context = getOrCreateSimpleTableContext(sheetName, RANKING_CHOICE_COLUMNS, "ID");
+  return readSimpleTableRows(context)
+    .map(normalizeRankingChoice)
+    .filter((row) => row["Winner ID"] && row["Loser ID"] &&
+      (!normalizedManagerId || String(row["Manager ID"] || "").trim() === normalizedManagerId));
+}
+
 function listRankingElo(managerId) {
   const normalizedManagerId = String(managerId || "").trim();
   const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
@@ -785,6 +809,25 @@ function listRankingElo(managerId) {
       row["Manager ID"] &&
       (!normalizedManagerId || String(row["Manager ID"]).trim() === normalizedManagerId)
     );
+}
+
+function listEloRows(sheetName, managerId) {
+  const normalizedManagerId = String(managerId || "").trim();
+  const context = getOrCreateSimpleTableContext(sheetName, RANKING_ELO_COLUMNS, "ID");
+  return readSimpleTableRows(context)
+    .map((row) => ({
+      ID: row.ID,
+      "Item ID": row["Item ID"],
+      "Last Choice ID": row["Last Choice ID"],
+      Losses: row.Losses,
+      "Manager ID": row["Manager ID"],
+      "Ranking Type": row["Ranking Type"] || "todo",
+      Rating: row.Rating,
+      "Updated At": row["Updated At"],
+      Wins: row.Wins,
+    }))
+    .filter((row) => row["Item ID"] && row["Manager ID"] &&
+      (!normalizedManagerId || String(row["Manager ID"]).trim() === normalizedManagerId));
 }
 
 function repairRankingEloDuplicateManagers(options) {
@@ -1012,6 +1055,25 @@ function saveRankingChoice(choice) {
   }
 }
 
+function saveChoiceToTables(choice, choiceSheetName, eloSheetName) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const choiceContext = getOrCreateSimpleTableContext(choiceSheetName, RANKING_CHOICE_COLUMNS, "ID");
+    const rowValues = normalizeRankingChoice({ ...choice, rankingType: "todo", "Ranking Type": "todo" });
+    if (!rowValues["Winner ID"] || !rowValues["Loser ID"] || !rowValues["Manager ID"]) {
+      throw new Error("Winner ID, Loser ID, and Manager ID are required.");
+    }
+    if (!rowValues.ID) rowValues.ID = getNextNumericIdFromRows(readSimpleTableRows(choiceContext), "ID");
+    appendSimpleTableRow(choiceContext, rowValues, RANKING_CHOICE_COLUMNS);
+    const eloRows = updateRankingEloRows(rowValues, eloSheetName);
+    return { choice: rowValues, elo: eloRows, ok: true, status: "appended" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function normalizeRanking(normalization) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -1144,8 +1206,10 @@ function normalizeRankingChoice(choice) {
   };
 }
 
-function updateRankingEloRows(choice) {
-  const context = getSimpleTableContext("Ranking Elo", RANKING_ELO_COLUMNS, "Ranking Type");
+function updateRankingEloRows(choice, sheetName = "Ranking Elo") {
+  const context = sheetName === "Ranking Elo"
+    ? getSimpleTableContext(sheetName, RANKING_ELO_COLUMNS, "Ranking Type")
+    : getOrCreateSimpleTableContext(sheetName, RANKING_ELO_COLUMNS, "ID");
   const rows = readSimpleTableRows(context);
   const winner = getRankingEloRow(rows, choice["Ranking Type"], choice["Winner ID"], choice["Manager ID"]);
   const loser = getRankingEloRow(rows, choice["Ranking Type"], choice["Loser ID"], choice["Manager ID"]);
@@ -1336,6 +1400,17 @@ function getSimpleTableContext(sheetName, requiredColumns, requiredColumn) {
     sheet,
     sheetName,
   };
+}
+
+function getOrCreateSimpleTableContext(sheetName, requiredColumns, requiredColumn) {
+  const spreadsheet = getNextSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+    sheet.getRange(1, 1, 1, requiredColumns.length).setValues([requiredColumns]);
+    sheet.setFrozenRows(1);
+  }
+  return getSimpleTableContext(sheetName, requiredColumns, requiredColumn);
 }
 
 function readSimpleTableRows(context) {

@@ -141,6 +141,8 @@ import {
   nextItemClose,
   nextItemCancel,
   todoList,
+  todoCompareButton,
+  todoViewModeButtons,
   todoFilterToggle,
   todoFilters,
   todoMoreDataToggle,
@@ -268,6 +270,7 @@ let activeNextItemId = "";
 let shouldShowTodoFilters = false;
 let shouldShowTodoMoreData = false;
 let shouldShowTodoEditMode = false;
+let activeTodoViewMode = "manual";
 let activeTodoStatusFilter = "";
 let activeTodoItemId = "";
 let draggedTodoItemId = "";
@@ -284,6 +287,7 @@ let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
+let todoRankingLoadPromise = null;
 let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let activePageName = "";
@@ -369,6 +373,10 @@ const RANKING_CONFIG = {
     source: "rankingTv",
     type: "tv",
   },
+};
+const TODO_RANKING_CONFIG = {
+  itemLabel: "To Do Item",
+  type: "todo",
 };
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
@@ -4345,9 +4353,28 @@ function renderTodoList(items = siteData.todoItems || []) {
   }
 
   syncTodoControls();
+  ensureTodoRankingDataLoaded();
 
   const normalizedItems = items.map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
   const visibleItems = getVisibleTodoItems(normalizedItems);
+  if (activeTodoViewMode === "calculated") {
+    const calculatedItems = visibleItems
+      .map((item) => {
+        const elo = getRankingEloForItem("todo", item.id);
+        return { ...item, comparisons: elo.comparisons, losses: elo.losses, rating: elo.rating, wins: elo.wins };
+      })
+      .sort(compareCalculatedRankingRows);
+
+    if (!calculatedItems.length) {
+      todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
+      return;
+    }
+
+    todoList.innerHTML = `<div class="next-list todo-list">${calculatedItems.map((item, index) =>
+      renderTodoCalculatedItem(item, index + 1)
+    ).join("")}</div>`;
+    return;
+  }
   const groupedItems = groupTodoItems(visibleItems, normalizedItems);
 
   if (!groupedItems.length) {
@@ -4360,6 +4387,48 @@ function renderTodoList(items = siteData.todoItems || []) {
       ${groupedItems.map((entry) => renderTodoItem(entry.item, entry.children)).join("")}
     </div>
   `;
+}
+
+function renderTodoCalculatedItem(item, rank) {
+  const meta = [
+    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+    `${item.wins || 0}-${item.losses || 0}`,
+    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+    `Manual #${formatTodoOrderNumber(item)}`,
+  ].filter(Boolean);
+
+  return `
+    <article class="next-card todo-card">
+      <div class="next-card-main">
+        <span class="todo-order-number">${rank}</span>
+        <div>
+          <h2>${escapeHtml(item.name)}</h2>
+          <p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p>
+          ${renderTodoStatusChips(item)}
+          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
+        </div>
+      </div>
+    </article>`;
+}
+
+function ensureTodoRankingDataLoaded() {
+  if (siteData.todoRankingLoaded || todoRankingLoadPromise || !NEXT_DATA_ENDPOINT) {
+    return todoRankingLoadPromise || Promise.resolve();
+  }
+
+  todoRankingLoadPromise = Promise.all([
+    loadOptionalRankingEndpoint("listTodoElo", { elo: [] }, { managerId: getCurrentManagerId() }),
+    loadOptionalRankingEndpoint("listTodoChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
+  ]).then(([eloResponse, choicesResponse]) => {
+    const otherElo = (siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo");
+    const otherChoices = (siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo");
+    siteData.rankingElo = [...otherElo, ...normalizeRankingEloRows(eloResponse.elo || [])];
+    siteData.rankingChoices = [...otherChoices, ...normalizeRankingChoices(choicesResponse.choices || [])];
+    siteData.todoRankingLoaded = true;
+    if (activePageName === "todo") renderTodoList();
+  }).catch((error) => recordDiagnostic("To Do ranking data failed to load", error));
+
+  return todoRankingLoadPromise;
 }
 
 function normalizeTodoItem(row) {
@@ -4910,7 +4979,14 @@ function syncTodoControls() {
 
   if (todoEditToggle) {
     todoEditToggle.checked = shouldShowTodoEditMode;
+    todoEditToggle.disabled = activeTodoViewMode === "calculated";
   }
+
+  todoViewModeButtons?.forEach((button) => {
+    const isActive = button.dataset.todoViewMode === activeTodoViewMode;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
 
   todoStatusFilters?.forEach((input) => {
     input.checked = input.dataset.todoStatusFilter === activeTodoStatusFilter;
@@ -5181,12 +5257,14 @@ async function loadRankingSupplementalData() {
     loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
   ]);
 
-  siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
+  const todoElo = (siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) === "todo");
+  const todoChoices = (siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) === "todo");
+  siteData.rankingElo = [...normalizeRankingEloRows(eloResponse.elo || []), ...todoElo];
   siteData.rankingExclusions = normalizeRankingExclusions(exclusionsResponse.exclusions || []);
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
   siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
   siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
-  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
+  siteData.rankingChoices = [...normalizeRankingChoices(choicesResponse.choices || []), ...todoChoices];
 }
 
 async function loadOptionalRankingEndpoint(action, fallback, params = {}) {
@@ -5572,6 +5650,12 @@ function compareCalculatedRankingRows(first, second) {
 }
 
 function getRankingRows(kind = activeRankingKind) {
+  if (kind === "todo") {
+    return getTodoItems().map(normalizeTodoItem).filter(Boolean).map((item) => ({
+      ...item,
+      rank: item.order,
+    })).sort(compareRankingRows);
+  }
   return [...(siteData.rankings?.[kind] || [])].sort(compareRankingRows);
 }
 
@@ -6366,7 +6450,7 @@ function getRankingItemElement(kind, itemId) {
 }
 
 async function openRankingBattleDialog(kind = activeRankingKind) {
-  if (!rankingBattleDialog || !RANKING_CONFIG[kind]) {
+  if (!rankingBattleDialog || !(RANKING_CONFIG[kind] || kind === "todo")) {
     return;
   }
 
@@ -6401,7 +6485,7 @@ function renderNextRankingBattle(kind = activeRankingKind) {
 
   if (rankingBattleTitle) {
     rankingBattleTitle.textContent = pair
-      ? `Compare ${RANKING_CONFIG[kind].itemLabel}s`
+      ? `Compare ${(RANKING_CONFIG[kind] || TODO_RANKING_CONFIG).itemLabel}s`
       : "Compare Rankings";
   }
 
@@ -6428,6 +6512,10 @@ function renderNextRankingBattle(kind = activeRankingKind) {
 function renderRankingBattleExclusionAction(kind, item) {
   if (!siteData.managerSession) {
     return "";
+  }
+
+  if (kind === "todo") {
+    return `<span class="ranking-battle-actions"><button class="action-button ranking-battle-pick-button" type="button" data-ranking-battle-pick="${escapeHtml(item.id)}">Pick</button></span>`;
   }
 
   return `
@@ -6486,7 +6574,12 @@ function getRandomRankingAssetPath(kind, itemId) {
 }
 
 function createRankingBattlePair(kind = activeRankingKind) {
-  const rows = (isCurrentManagerAdmin()
+  const rows = (kind === "todo"
+    ? getVisibleTodoItems(getTodoItems().map(normalizeTodoItem).filter(Boolean)).map((item) => {
+      const elo = getRankingEloForItem(kind, item.id);
+      return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
+    })
+    : isCurrentManagerAdmin()
     ? getManualRankingRowsWithElo(kind)
     : getDisplayedRankingRows(kind))
     .filter((item) => !isRankingItemExcluded(kind, item.id));
@@ -6837,10 +6930,11 @@ function chooseRankingBattleWinner(winnerId) {
 
   applyRankingChoiceToElo(choice);
   submitRankingPayload({
-    action: "saveRankingChoice",
+    action: battle.kind === "todo" ? "saveTodoChoice" : "saveRankingChoice",
     choice,
   });
-  renderRankingLists();
+  if (battle.kind === "todo") renderTodoList();
+  else renderRankingLists();
   setRankingBattleStatus(`${winner.name} saved.`);
   renderNextRankingBattle(battle.kind);
 }
@@ -9432,6 +9526,18 @@ todoAddButton?.addEventListener("click", () => {
 todoFilterToggle?.addEventListener("click", () => {
   shouldShowTodoFilters = !shouldShowTodoFilters;
   renderTodoList();
+});
+
+todoCompareButton?.addEventListener("click", () => openRankingBattleDialog("todo"));
+
+todoViewModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.todoViewMode;
+    if (mode !== "manual" && mode !== "calculated") return;
+    activeTodoViewMode = mode;
+    if (mode === "calculated") shouldShowTodoEditMode = false;
+    renderTodoList();
+  });
 });
 
 todoMoreDataToggle?.addEventListener("change", () => {

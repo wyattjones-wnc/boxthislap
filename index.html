@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.08.04.44";
+      window.BOX_THIS_LAP_VERSION = "2026.08.08.04.50";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608080444">
+    <link rel="stylesheet" href="styles.css?v=202608080450">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -746,6 +746,9 @@
         <div class="section-heading page-heading-with-action footy-heading">
           <h1>To Do</h1>
           <div class="heading-actions">
+            <button class="action-button ranking-compare-button" id="todo-compare-button" type="button">
+              Compare
+            </button>
             <button class="icon-action-button ranking-filter-toggle" id="todo-filter-toggle" type="button" aria-expanded="false" aria-controls="todo-filters" aria-label="Show To Do filters">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
@@ -757,6 +760,10 @@
           </div>
         </div>
         <div class="ranking-filters todo-filters" id="todo-filters" hidden>
+          <div class="segmented-control ranking-mode-toggle" role="group" aria-label="To Do view">
+            <button class="is-active" type="button" data-todo-view-mode="manual" aria-pressed="true">Manual</button>
+            <button type="button" data-todo-view-mode="calculated" aria-pressed="false">Calculated</button>
+          </div>
           <label class="toggle-row todo-edit-filter">
             <span>Edit</span>
             <input id="todo-edit-toggle" type="checkbox">
@@ -1867,6 +1874,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608080444"></script>
+    <script type="module" src="script.js?v=202608080450"></script>
   </body>
 </html>

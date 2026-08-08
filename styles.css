@@ -19,6 +19,7 @@
   --strong-shadow: rgba(0, 0, 0, 0.48);
   --accent-shadow: rgba(240, 82, 101, 0.12);
   --accent-border: rgba(240, 82, 101, 0.42);
+  --highlight: #a78bfa;
   --time: #5fd18a;
   --time-strong: #86efac;
   --manager-dot-border: #303946;
@@ -46,6 +47,7 @@ html[data-theme="light"] {
   --strong-shadow: rgba(0, 0, 0, 0.19);
   --accent-shadow: rgba(194, 31, 50, 0.08);
   --accent-border: rgba(194, 31, 50, 0.42);
+  --highlight: #7c3aed;
   --time: #17633a;
   --time-strong: #0f5132;
   --manager-dot-border: #ffffff;
@@ -1977,9 +1979,9 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-card--soon {
-  background: color-mix(in srgb, var(--accent) 22%, var(--soft));
-  border-color: color-mix(in srgb, var(--accent) 82%, var(--line));
-  box-shadow: inset 6px 0 0 var(--accent), 0 12px 28px var(--shadow);
+  background: color-mix(in srgb, var(--highlight) 22%, var(--soft));
+  border-color: color-mix(in srgb, var(--highlight) 82%, var(--line));
+  box-shadow: inset 6px 0 0 var(--highlight), 0 12px 28px var(--shadow);
 }
 
 .footy-fixture-card--win {

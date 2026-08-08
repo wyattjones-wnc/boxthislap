@@ -20,6 +20,20 @@ const SOURCE_PRIORITY = {
   [SPORTDB_PROVIDER_NAME]: 20,
   [ICALENDAR_PROVIDER_NAME]: 10,
 };
+const FRIENDLY_COMPETITION_IDS = new Set([
+  "4nidzmunvpvxk1ir9b6m8mpay",
+  "4569",
+  "bfbepcvvs13v9didqrb12rh05",
+]);
+const FRIENDLY_COMPETITION_NAMES = new Set([
+  "club friendlies",
+  "club friendly",
+  "emirates cup",
+  "english premier league summer series",
+  "friendly",
+  "friendlies",
+  "trofeo joan gamper",
+]);
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
 const SHOULD_VERIFY_FOOTBALL_DATA_TEAMS = isTrueValue(process.env.FOOTY_VERIFY_FOOTBALL_DATA_TEAMS);
@@ -1457,6 +1471,7 @@ function applyFootyMatchRegistry(fixtures = [], registry) {
     const existingMatchNote = hasMatchNote(fixture.matchNote) ? fixture.matchNote : null;
     const enrichedFixture = {
       ...fixture,
+      isFriendly: isFriendlyCompetition(fixture.leagueId, fixture.league),
       matchId: row?.matchId || fixture.matchId || "",
       sourceIds: mergeSourceIds(row?.sourceIds, fixture.sourceIds),
     };
@@ -1464,6 +1479,14 @@ function applyFootyMatchRegistry(fixtures = [], registry) {
 
     return preservedMatchNote ? { ...enrichedFixture, matchNote: preservedMatchNote } : enrichedFixture;
   });
+}
+
+function isFriendlyCompetition(leagueId, leagueName) {
+  const normalizedLeagueId = String(leagueId || "").trim();
+  const normalizedLeagueName = normalizeText(leagueName);
+
+  return FRIENDLY_COMPETITION_IDS.has(normalizedLeagueId) ||
+    FRIENDLY_COMPETITION_NAMES.has(normalizedLeagueName);
 }
 
 function normalizeFootyMatchRows(rows = []) {

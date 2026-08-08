@@ -77,6 +77,7 @@ import {
   footySearchInput,
   footyDateFromFilter,
   footyDateToFilter,
+  footyFriendliesFilter,
   footyTeamFilter,
   footyScheduleList,
   footyTeamTitle,
@@ -1375,6 +1376,10 @@ function getFilteredFootyFixtures(fixtures) {
   const defaultPrioritySet = getDefaultFootyPrioritySet();
 
   return fixtures.filter((fixture) => {
+    if (footyFriendliesFilter && !footyFriendliesFilter.checked && isFootyFriendlyFixture(fixture)) {
+      return false;
+    }
+
     if (dateRange && !isFootyFixtureInDateRange(fixture, dateRange)) {
       return false;
     }
@@ -1395,11 +1400,36 @@ function getFilteredFootyFixtures(fixtures) {
   });
 }
 
+function isFootyFriendlyFixture(fixture = {}) {
+  if (typeof fixture.isFriendly === "boolean") {
+    return fixture.isFriendly;
+  }
+
+  const friendlyCompetitionIds = new Set([
+    "4nidzmunvpvxk1ir9b6m8mpay",
+    "4569",
+    "bfbepcvvs13v9didqrb12rh05",
+  ]);
+  const friendlyCompetitionNames = new Set([
+    "club friendlies",
+    "club friendly",
+    "emirates cup",
+    "english premier league summer series",
+    "friendly",
+    "friendlies",
+    "trofeo joan gamper",
+  ]);
+
+  return friendlyCompetitionIds.has(String(fixture.leagueId || "").trim()) ||
+    friendlyCompetitionNames.has(normalizeLookupName(fixture.league));
+}
+
 function hasActiveFootyFilters() {
   return Boolean(
     String(footySearchInput?.value || "").trim() ||
     String(footyDateFromFilter?.value || "").trim() ||
     String(footyDateToFilter?.value || "").trim() ||
+    (footyFriendliesFilter && !footyFriendliesFilter.checked) ||
     getSelectedFootyTeams().size > 0
   );
 }
@@ -9314,7 +9344,7 @@ function markFootyTeamSelectionExplicit(event) {
 footyTeamFilter?.addEventListener("input", markFootyTeamSelectionExplicit);
 footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
 
-[footySearchInput, footyDateFromFilter, footyDateToFilter, footyTeamFilter].forEach((control) => {
+[footySearchInput, footyDateFromFilter, footyDateToFilter, footyFriendliesFilter, footyTeamFilter].forEach((control) => {
   control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });

@@ -7,6 +7,7 @@
 
 const SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json";
 const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy";
+const SITE_ASSET_BASE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/";
 const MATCH_LIMIT = 3;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
 
@@ -20,7 +21,7 @@ const COLORS = {
 };
 
 const result = await loadFixtures();
-const widget = createWidget(result);
+const widget = await createWidget(result);
 
 if (config.runsInWidget) {
   Script.setWidget(widget);
@@ -61,6 +62,7 @@ function getScheduleFixtures(schedule) {
 
     return fixtures.map((fixture) => ({
       ...fixture,
+      teamBadge: String(fixture.teamBadge || team.badge || "").trim(),
       teamName: String(fixture.teamName || team.name || "").trim(),
     }));
   }).filter((fixture) => Number.isFinite(getFixtureTime(fixture)));
@@ -81,7 +83,7 @@ function getUniqueFixtures(fixtures) {
   });
 }
 
-function createWidget(result) {
+async function createWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.url = SITE_URL;
@@ -100,13 +102,15 @@ function createWidget(result) {
     return widget;
   }
 
-  result.fixtures.forEach((fixture, index) => {
+  for (let index = 0; index < result.fixtures.length; index += 1) {
+    const fixture = result.fixtures[index];
+
     if (index > 0) {
       widget.addSpacer(7);
     }
 
-    addFixture(widget, fixture, index === 0);
-  });
+    await addFixture(widget, fixture, index === 0);
+  }
 
   widget.refreshAfterDate = getRefreshDate(result.fixtures[0]);
   return widget;
@@ -127,22 +131,33 @@ function addHeader(widget) {
   widget.addSpacer(8);
 }
 
-function addFixture(widget, fixture, isPrimary) {
+async function addFixture(widget, fixture, isPrimary) {
   const timingLabel = getTimingLabel(fixture);
   const isStarted = timingLabel === "Started";
   const card = widget.addStack();
-  card.layoutVertically();
   card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
   card.cornerRadius = 10;
   card.setPadding(isPrimary ? 9 : 6, 9, isPrimary ? 9 : 6, 9);
 
-  const match = card.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
+  const badgeImage = await loadTeamBadge(fixture);
+
+  if (badgeImage) {
+    const badge = card.addImage(badgeImage);
+    const badgeSize = isPrimary ? 32 : 23;
+    badge.imageSize = new Size(badgeSize, badgeSize);
+    badge.cornerRadius = badgeSize / 2;
+    card.addSpacer(8);
+  }
+
+  const content = card.addStack();
+  content.layoutVertically();
+  const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
   match.font = isPrimary ? Font.boldSystemFont(16) : Font.semiboldSystemFont(12);
   match.textColor = COLORS.text;
   match.lineLimit = isPrimary ? 2 : 1;
   match.minimumScaleFactor = 0.7;
 
-  const detail = card.addStack();
+  const detail = content.addStack();
   detail.centerAlignContent();
   detail.addSpacer();
   const date = detail.addText(formatFixtureDate(fixture));
@@ -152,9 +167,30 @@ function addFixture(widget, fixture, isPrimary) {
 
   if (timingLabel) {
     detail.addSpacer(6);
-    const label = detail.addText(timingLabel);
+    const chip = detail.addStack();
+    chip.backgroundColor = isStarted ? COLORS.started : COLORS.accent;
+    chip.cornerRadius = 7;
+    chip.setPadding(2, 5, 2, 5);
+    const label = chip.addText(timingLabel);
     label.font = Font.boldSystemFont(9);
-    label.textColor = isStarted ? COLORS.started : COLORS.accent;
+    label.textColor = COLORS.background;
+  }
+}
+
+async function loadTeamBadge(fixture) {
+  const path = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
+
+  if (!path) {
+    return null;
+  }
+
+  try {
+    const url = /^https?:\/\//i.test(path) ? path : `${SITE_ASSET_BASE_URL}${path.replace(/^\/+/, "")}`;
+    const request = new Request(url);
+    request.timeoutInterval = 10;
+    return await request.loadImage();
+  } catch {
+    return null;
   }
 }
 

@@ -32,7 +32,7 @@ if (result.ok && !config.runsInWidget) {
 
 const savedFocus = readSavedFocus();
 const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM, savedFocus) : null;
-const widget = createWidget(item, result);
+const widget = await createWidget(item, result);
 
 if (config.runsInWidget) {
   Script.setWidget(widget);
@@ -161,18 +161,25 @@ function sortItemsForPicker(items) {
   });
 }
 
-function createWidget(item, result) {
+async function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.url = SITE_URL;
   widget.setPadding(14, 14, 14, 14);
+
+  const hasBackgroundImage = item ? await applyItemBackground(widget, item) : false;
+
+  if (hasBackgroundImage) {
+    widget.setPadding(10, 10, 10, 10);
+  }
 
   const header = widget.addStack();
   header.centerAlignContent();
 
   const title = header.addText("Box This Lap");
   title.font = Font.semiboldSystemFont(12);
-  title.textColor = COLORS.muted;
+  title.textColor = hasBackgroundImage ? COLORS.text : COLORS.muted;
+  applyTextShadow(title, hasBackgroundImage);
 
   header.addSpacer();
 
@@ -181,7 +188,7 @@ function createWidget(item, result) {
   image.imageSize = new Size(18, 18);
   image.tintColor = COLORS.accent;
 
-  widget.addSpacer(10);
+  widget.addSpacer(hasBackgroundImage ? 6 : 10);
 
   if (!result.ok) {
     widget.refreshAfterDate = getWidgetRefreshDate(null);
@@ -197,26 +204,64 @@ function createWidget(item, result) {
 
   const eventState = getEventState(item);
   widget.refreshAfterDate = getWidgetRefreshDate(item);
-  const name = widget.addText(item.thing);
-  name.font = Font.boldSystemFont(20);
+  const content = widget.addStack();
+  content.layoutVertically();
+
+  if (hasBackgroundImage) {
+    content.backgroundColor = new Color("#07101a", 0.76);
+    content.cornerRadius = 10;
+    content.setPadding(6, 9, 6, 9);
+  }
+
+  const name = content.addText(item.thing);
+  name.font = Font.boldSystemFont(hasBackgroundImage ? 18 : 20);
   name.textColor = COLORS.text;
   name.lineLimit = 2;
+  applyTextShadow(name, hasBackgroundImage);
 
-  widget.addSpacer(8);
+  content.addSpacer(hasBackgroundImage ? 5 : 8);
 
-  const countdown = widget.addText(eventState.label);
-  countdown.font = Font.heavySystemFont(24);
+  const countdown = content.addText(eventState.label);
+  countdown.font = Font.heavySystemFont(hasBackgroundImage ? 22 : 24);
   countdown.textColor = eventState.color;
   countdown.minimumScaleFactor = 0.7;
+  applyTextShadow(countdown, hasBackgroundImage);
 
-  widget.addSpacer(6);
+  content.addSpacer(hasBackgroundImage ? 3 : 6);
 
-  const dateLine = widget.addText(formatDateRange(item));
-  dateLine.font = Font.mediumSystemFont(13);
-  dateLine.textColor = COLORS.muted;
+  const dateLine = content.addText(formatDateRange(item));
+  dateLine.font = Font.mediumSystemFont(hasBackgroundImage ? 12 : 13);
+  dateLine.textColor = hasBackgroundImage ? COLORS.text : COLORS.muted;
   dateLine.lineLimit = 2;
+  applyTextShadow(dateLine, hasBackgroundImage);
 
   return widget;
+}
+
+async function applyItemBackground(widget, item) {
+  if (!item.imageUrl) {
+    return false;
+  }
+
+  try {
+    const request = new Request(item.imageUrl);
+    request.timeoutInterval = 15;
+    widget.backgroundImage = await request.loadImage();
+    return true;
+  } catch (error) {
+    console.warn(`Unable to load Next image: ${error}`);
+    return false;
+  }
+}
+
+function applyTextShadow(text, enabled) {
+  if (!enabled) {
+    return;
+  }
+
+  text.shadowColor = new Color("#000000", 0.9);
+  text.shadowOffset = new Point(0, 1);
+  text.shadowRadius = 3;
 }
 
 function readSavedFocus() {
@@ -291,6 +336,7 @@ function normalizeItem(item) {
     priorityLevel: Number(item.priorityLevel || 0),
     completed: item.completed === true || String(item.completed || "").toLowerCase() === "true",
     nonAdmin: item.nonAdmin === true || String(item.nonAdmin || "").toLowerCase() === "true",
+    imageUrl: String(item.imageUrl || item["Image URL"] || "").trim(),
     startDate,
     endDate,
   };

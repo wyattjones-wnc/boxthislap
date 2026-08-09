@@ -143,25 +143,31 @@ async function sendDueFootyAlerts(env) {
     "VAPID_SUBJECT",
   ]);
 
-  const schedule = await fetchJson(env.FOOTY_SCHEDULE_URL);
-  const dueAlerts = getDueFootyAlerts(schedule, env);
+  const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
+  const schedules = await loadFootySchedulesByChannel(env, subscriptions);
+  const dueAlertsByChannel = {
+    main: getDueFootyAlerts(schedules.main, env),
+    dev: getDueFootyAlerts(schedules.dev, env),
+  };
+  const dueAlertCount = dueAlertsByChannel.main.length + dueAlertsByChannel.dev.length;
 
-  if (dueAlerts.length === 0) {
+  if (dueAlertCount === 0) {
     return {
       dueAlerts: 0,
-      fixtureCount: getUniqueFixtures(schedule).length,
-      nextAlertWindows: getNextFootyAlertWindows(getUniqueFixtures(schedule), env).slice(0, 5),
+      fixtureCount: getUniqueFixtures(schedules.main).length,
+      nextAlertWindows: getNextFootyAlertWindows(getUniqueFixtures(schedules.main), env).slice(0, 5),
       ok: true,
     };
   }
 
-  const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
   let sent = 0;
   let skipped = 0;
   let failed = 0;
   let removed = 0;
 
   for (const subscription of subscriptions) {
+    const channel = getFootySubscriptionChannel(subscription.record);
+    const dueAlerts = dueAlertsByChannel[channel];
     const pendingNotifications = [];
     const pendingSentKeys = [];
 
@@ -178,7 +184,7 @@ async function sendDueFootyAlerts(env) {
         body: alert.body,
         tag: `box-this-lap-footy-${alert.key}`,
         title: alert.title,
-        url: env.NOTIFICATION_URL || "./#footy",
+        url: getFootyNotificationUrl(channel, env),
       });
       pendingSentKeys.push(sentKey);
     }
@@ -216,7 +222,7 @@ async function sendDueFootyAlerts(env) {
   }
 
   return {
-    dueAlerts: dueAlerts.length,
+    dueAlerts: dueAlertCount,
     failed,
     ok: true,
     removed,
@@ -225,6 +231,39 @@ async function sendDueFootyAlerts(env) {
     skippedAlreadySent: skipped,
     subscriptions: subscriptions.length,
   };
+}
+
+async function loadFootySchedulesByChannel(env, subscriptions) {
+  const mainUrl = String(env.FOOTY_SCHEDULE_URL || "").trim();
+  const devUrl = String(env.FOOTY_DEV_SCHEDULE_URL || mainUrl).trim();
+  const main = await fetchJson(mainUrl);
+  const needsDev = subscriptions.some((subscription) => getFootySubscriptionChannel(subscription.record) === "dev");
+  let dev = main;
+  if (needsDev && devUrl !== mainUrl) {
+    try {
+      dev = await fetchJson(devUrl);
+    } catch (error) {
+      console.warn("Unable to load dev Footy schedule", error);
+      dev = { teamSchedules: [] };
+    }
+  }
+  return { dev, main };
+}
+
+function getFootySubscriptionChannel(record) {
+  try {
+    const pathname = new URL(String(record && record.pageUrl || "")).pathname;
+    return pathname.includes("/boxthislap/dev/") ? "dev" : "main";
+  } catch (_error) {
+    return "main";
+  }
+}
+
+function getFootyNotificationUrl(channel, env) {
+  if (channel === "dev") {
+    return String(env.DEV_NOTIFICATION_URL || env.NOTIFICATION_URL || "./#footy").trim();
+  }
+  return String(env.NOTIFICATION_URL || "./#footy").trim();
 }
 
 function getDueFootyAlerts(schedule, env) {

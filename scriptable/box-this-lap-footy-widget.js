@@ -106,7 +106,7 @@ async function createWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.url = SITE_URL;
-  widget.setPadding(6, 14, 6, 14);
+  widget.setPadding(2, 14, 6, 14);
   addHeader(widget);
 
   if (!result.ok) {
@@ -125,7 +125,7 @@ async function createWidget(result) {
     const fixture = result.fixtures[index];
 
     if (index > 0) {
-      widget.addSpacer(4);
+      widget.addSpacer(5);
     }
 
     await addFixture(widget, fixture);
@@ -138,6 +138,7 @@ async function createWidget(result) {
 function addHeader(widget) {
   const header = widget.addStack();
   header.centerAlignContent();
+  header.addSpacer(4);
 
   const title = header.addText("FOOTY · NEXT MATCHES");
   title.font = Font.semiboldSystemFont(10);
@@ -182,6 +183,7 @@ async function addFixture(widget, fixture) {
   const content = card.addStack();
   content.size = new Size(cardWidth - 134, 0);
   content.layoutVertically();
+  content.addSpacer();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
   match.font = Font.semiboldSystemFont(11);
   match.textColor = COLORS.text;
@@ -198,6 +200,8 @@ async function addFixture(widget, fixture) {
     label.font = Font.boldSystemFont(9);
     label.textColor = COLORS.background;
   }
+
+  content.addSpacer();
 
   card.addSpacer();
   const dateStack = card.addStack();

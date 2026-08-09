@@ -5,6 +5,7 @@ import {
   MANAGER_SESSION_STORAGE_KEY,
   MANAGER_PORTAL_ENDPOINT,
   FOOTY_DATA_ENDPOINT,
+  FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
@@ -23,7 +24,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202607250003";
+} from "./modules/siteConfig.js?v=202608050001";
 
 import {
   pageLinks,
@@ -32,8 +33,10 @@ import {
   tabPanels,
   headerArt,
   navGroups,
+  brandLogo,
   themeToggle,
   copyCurrentPageLinkButton,
+  siteVersion,
   adminOnlyElements,
   loginOnlyElements,
   testRulesLinks,
@@ -67,11 +70,14 @@ import {
   leagueYearSelect,
   leagueList,
   footyPastToggle,
+  footyNotificationToggle,
+  footyNotificationStatus,
   footyFilterToggle,
   footyFilters,
   footySearchInput,
   footyDateFromFilter,
   footyDateToFilter,
+  footyFriendliesFilter,
   footyTeamFilter,
   footyScheduleList,
   footyTeamTitle,
@@ -125,6 +131,7 @@ import {
   nextItemDialogTitle,
   nextItemId,
   nextThingInput,
+  nextImageUrlInput,
   nextStartDateInput,
   nextEndDateInput,
   nextTimeInput,
@@ -134,6 +141,42 @@ import {
   nextItemStatus,
   nextItemClose,
   nextItemCancel,
+  todoList,
+  todoRandomButton,
+  todoRandomDialog,
+  todoRandomContent,
+  todoRandomClose,
+  todoRandomAgain,
+  todoRandomDone,
+  todoCompareButton,
+  todoViewModeButtons,
+  todoSnapshotSelect,
+  todoSnapshotCompareSelect,
+  todoNormalizeButton,
+  todoFilterToggle,
+  todoFilters,
+  todoMoreDataToggle,
+  todoEditToggle,
+  todoStatusFilters,
+  todoAddButton,
+  todoItemDialog,
+  todoItemForm,
+  todoItemId,
+  todoNameInput,
+  todoOrderInput,
+  todoLowHourInput,
+  todoHighHourInput,
+  todoParentInput,
+  todoParentIdInput,
+  todoImageUrlInput,
+  todoStartedInput,
+  todoArchivedInput,
+  todoPlatinumCleanupInput,
+  todoCompletedInput,
+  todoUnpurchasedInput,
+  todoItemStatus,
+  todoItemClose,
+  todoItemCancel,
   rankingTabs,
   rankingPanels,
   rankingAddButton,
@@ -203,7 +246,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202607310002";
+} from "./modules/domRefs.js?v=202608050001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -232,8 +275,20 @@ let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
 let shouldSuppressNextFootyDropdownClick = false;
 let activeFootyTeamViewMode = "schedule";
+let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
+let shouldShowTodoFilters = false;
+let shouldShowTodoMoreData = false;
+let shouldShowTodoEditMode = false;
+let activeTodoViewMode = "manual";
+let activeTodoSnapshotId = "current";
+let activeTodoCompareSnapshotId = "";
+let activeTodoStatusFilter = "";
+let activeTodoItemId = "";
+let draggedTodoItemId = "";
+let didMoveTodoPointer = false;
+let activeTradingCardExportUrl = "";
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
 let activeRankingSnapshotId = "current";
@@ -245,10 +300,28 @@ let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
+let todoRankingLoadPromise = null;
 let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
+let normalizingRankingKind = "";
 let activePageName = "";
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const FOOTY_JSONP_TIMEOUT_MS = 12000;
+const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
+const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
+const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
+const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notifications-sent";
+const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
+const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
+const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
+const FOOTY_NOTIFICATION_OFFSETS = [
+  { key: "2h", label: "in 2 hours", minutes: 120 },
+  { key: "1h", label: "in 1 hour", minutes: 60 },
+  { key: "start", label: "now", minutes: 0 },
+];
+let footyNotificationTimer = null;
+let isFootyNotificationBusy = false;
+let footyMatchNotesLoadPromise = null;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -257,19 +330,24 @@ const fantasyOfficeData = {
   2025: { draft: [], movies: [], ordering: [], results: [] },
   2026: { draft: [], movies: [], ordering: [], results: [] },
 };
-const FOOTY_LOCAL_TEAM_BADGES = {
-  "charlotte": "assets/teams/charlotte-fc.svg",
-  "charlotte fc": "assets/teams/charlotte-fc.svg",
-  "inter miami": "assets/teams/inter-miami-cf.webp",
-  "inter miami cf": "assets/teams/inter-miami-cf.webp",
-  usmnt: "assets/teams/usmnt.svg",
-  uswmt: "assets/teams/uswnt.svg",
-  uswnt: "assets/teams/uswnt.svg",
+const FOOTY_LOCAL_TEAM_IDS = {
+  arsenal: "1",
+  "arsenal fc": "1",
+  barcelona: "2",
+  "fc barcelona": "2",
+  charlotte: "6",
+  "charlotte fc": "6",
+  "inter miami": "7",
+  "inter miami cf": "7",
+  usmnt: "4",
+  uswmt: "5",
+  uswnt: "5",
 };
 const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
 };
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
 const BRACKET_SUBMISSIONS_ARCHIVED = true;
 const RANKING_BASE_RATING = 1500;
@@ -310,6 +388,10 @@ const RANKING_CONFIG = {
     type: "tv",
   },
 };
+const TODO_RANKING_CONFIG = {
+  itemLabel: "To Do Item",
+  type: "todo",
+};
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
@@ -341,7 +423,9 @@ const router = createRouter({
   onStandingsTabShown: () => renderStandingsAwards(),
   pageLinks,
   pages,
-  shouldBlockPage: (pageName) => pageName === "rankings" && !siteData.managerSession,
+  shouldBlockPage: (pageName) =>
+    (pageName === "rankings" && !siteData.managerSession) ||
+    (pageName === "todo" && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -432,6 +516,26 @@ function renderFootySchedule(schedule) {
 
   syncFootyPastToggle(fixtures);
 
+  if (shouldWaitForFootyMatchNotes()) {
+    footyScheduleList.innerHTML = `
+      ${updatedMarkup}
+      ${adminDiagnosticsMarkup}
+      ${renderLoadingMessage("Loading match notes...")}
+    `;
+    ensureFootyMatchNotes({ force: shouldRefreshFootyMatchNotes() })
+      .then(() => renderFootySchedule(siteData.footySchedule))
+      .catch((error) => {
+        siteData.footyMatchNotesError = error;
+        recordDiagnostic("footy match notes failed to load for past matches", error);
+        footyScheduleList.innerHTML = `
+          ${updatedMarkup}
+          ${adminDiagnosticsMarkup}
+          <p class="table-message">Unable to load match notes: ${escapeHtml(error.message)}</p>
+        `;
+      });
+    return;
+  }
+
   if (visibleFixtures.length === 0) {
     footyScheduleList.innerHTML = `
       ${updatedMarkup}
@@ -467,10 +571,16 @@ function renderFollowedTeamShortcuts(schedule) {
   followedTeamShortcuts.innerHTML = teams.map((team) => {
     const slug = getFootyTeamSlug(team.name);
     const fallback = getFootyTeamFallbackBadge(team.name);
+    const localBadgePath = getFootyLocalTeamBadge(team.name, team.id || team.teamId);
+    const providerBadgePath = String(team.badge || "").trim();
 
     return `
       <a class="followed-team-shortcut" href="#footy-team-${escapeHtml(slug)}" data-page-link="footy-team-${escapeHtml(slug)}" aria-label="${escapeHtml(team.name)}">
-        ${team.badge ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallback)}</span>`}
+        ${renderFootyBadgeMarkup({
+          fallbackSrc: localBadgePath,
+          fallbackText: fallback,
+          primarySrc: providerBadgePath || localBadgePath,
+        })}
       </a>
     `;
   }).join("");
@@ -496,12 +606,13 @@ function getFootyShortcutTeams(schedule) {
 function normalizeFootyScheduleTeam(teamSchedule = {}) {
   const team = teamSchedule.team || {};
   const name = getFootyDisplayTeamName(team.name);
-  const badge = getFootyTeamBadge(name, team.badge);
+  const id = String(team.id || "").trim();
+  const badge = getFootyTeamBadge(name, team.badge, id);
 
   return {
     badge,
     fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
-    id: String(team.id || "").trim(),
+    id,
     name,
     priority: normalizeFootyPriority(team.priority),
     status: String(teamSchedule.status || "").trim(),
@@ -576,16 +687,77 @@ function getFootyDisplayTeamName(teamName) {
   return displayName || rawName;
 }
 
-function getFootyTeamBadge(teamName, explicitBadge = "") {
+function getFootyTeamBadge(teamName, explicitBadge = "", teamId = "") {
   const badge = String(explicitBadge || "").trim();
 
   if (badge) {
     return badge;
   }
 
-  return FOOTY_LOCAL_TEAM_BADGES[normalizeLookupName(teamName)] ||
-    FOOTY_LOCAL_TEAM_BADGES[normalizeFootyClubName(teamName)] ||
+  return getFootyLocalTeamBadge(teamName, teamId);
+}
+
+function getFootyLocalTeamBadge(teamName, teamId = "") {
+  const id = String(teamId || "").trim() ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeLookupName(teamName)] ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeFootyClubName(teamName)] ||
     "";
+
+  if (id) {
+    return `assets/teams/${encodeURIComponent(id)}/badge.svg`;
+  }
+
+  return "";
+}
+
+function getFootyLocalTeamLogo(teamName, teamId = "") {
+  const id = String(teamId || "").trim() ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeLookupName(teamName)] ||
+    FOOTY_LOCAL_TEAM_IDS[normalizeFootyClubName(teamName)] ||
+    "";
+
+  if (id) {
+    return `assets/teams/${encodeURIComponent(id)}/logo.svg`;
+  }
+
+  return "";
+}
+
+function getFootyTradingCardBadgeSources(team = {}) {
+  const name = team.name || team.teamName || "";
+  const id = team.id || team.teamId || "";
+  const providerBadge = String(team.badge || team.teamBadge || "").trim();
+  const localBadge = getFootyLocalTeamBadge(name, id);
+  const localLogo = getFootyLocalTeamLogo(name, id);
+
+  return [providerBadge, localBadge, localLogo].filter(Boolean);
+}
+
+function renderFootyBadgeMarkup({
+  primarySrc = "",
+  fallbackSrc = "",
+  fallbackText = "",
+  loading = "lazy",
+}) {
+  const primary = String(primarySrc || "").trim();
+  const fallback = String(fallbackSrc || "").trim();
+  const text = String(fallbackText || "").trim() || "?";
+
+  if (!primary) {
+    return `<span>${escapeHtml(text)}</span>`;
+  }
+
+  return `
+    <span hidden>${escapeHtml(text)}</span>
+    <img
+      src="${escapeHtml(primary)}"
+      alt=""
+      decoding="async"
+      loading="${escapeHtml(loading)}"
+      data-fallback-src="${escapeHtml(fallback)}"
+      onerror="const fallbackSrc=this.dataset.fallbackSrc||''; if(fallbackSrc && this.getAttribute('src')!==fallbackSrc){ this.setAttribute('src', fallbackSrc); this.dataset.fallbackSrc=''; return; } this.hidden=true; if(this.previousElementSibling){ this.previousElementSibling.hidden=false; }"
+    >
+  `.trim();
 }
 
 function renderFootyTeamPage(pageName = activePageName) {
@@ -617,9 +789,11 @@ function renderFootyTeamPage(pageName = activePageName) {
   const nextFixtures = upcomingFixtures.slice(0, 5);
   const recentFixtures = pastFixtures.slice(0, 3);
   const updatedAt = formatFootyGeneratedAt(team.updatedAt || getFootyScheduleUpdatedAt(siteData.footySchedule));
-  const badgeMarkup = team.badge
-    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async" loading="lazy">`
-    : `<span>${escapeHtml(getFootyTeamFallbackBadge(team.name))}</span>`;
+  const badgeMarkup = renderFootyBadgeMarkup({
+    fallbackSrc: String(team.badge || "").trim(),
+    fallbackText: getFootyTeamFallbackBadge(team.name),
+    primarySrc: getFootyLocalTeamBadge(team.name, team.id || team.teamId),
+  });
 
   footyTeamTitle.textContent = team.name;
   syncFootyTeamViewToggle(false);
@@ -669,7 +843,7 @@ function renderFootyTeamPlayers(team) {
   const roster = getFootyRosterForTeam(team);
 
   if (!Array.isArray(siteData.footyRosters)) {
-    footyTeamContent.innerHTML = `<p class="table-message">Loading roster...</p>`;
+    footyTeamContent.innerHTML = renderFootyPlayerGridLoading();
     ensureFootyRosters()
       .then(() => {
         if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && activeFootyTeamViewMode === "team") {
@@ -690,8 +864,28 @@ function renderFootyTeamPlayers(team) {
   const players = getFootyRosterPlayersForTeam(team);
   footyTeamContent.innerHTML = `
     <section class="footy-team-player-section">
-      <div class="footy-team-player-grid">
+      <div class="footy-team-player-grid${shouldExportFootyTradingCards ? " is-export-mode" : ""}">
         ${players.map(renderFootyTeamPlayerCard).join("")}
+      </div>
+      <label class="trading-card-export-toggle">
+        <input type="checkbox" data-trading-card-export-toggle${shouldExportFootyTradingCards ? " checked" : ""}>
+        <span>Export</span>
+      </label>
+      <p class="trading-card-export-status" aria-live="polite" data-trading-card-export-status></p>
+    </section>
+  `;
+}
+
+function renderFootyPlayerGridLoading() {
+  return `
+    <section class="footy-team-player-section" aria-busy="true">
+      <div class="footy-team-player-grid footy-team-player-grid--loading">
+        ${Array.from({ length: 8 }, () => `
+          <article class="footy-team-player-card footy-team-player-card--loading">
+            <div class="footy-team-player-skeleton-art"></div>
+            <div class="footy-team-player-skeleton-name"></div>
+          </article>
+        `).join("")}
       </div>
     </section>
   `;
@@ -705,7 +899,7 @@ function renderFootyTeamPlayerCard(player) {
   const number = formatFootyPlayerNumber(player.number);
 
   return `
-    <article class="footy-team-player-card" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="Open ${escapeHtml(player.name)} trading card">
+    <article class="footy-team-player-card" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="${shouldExportFootyTradingCards ? "Export" : "Open"} ${escapeHtml(player.name)} trading card">
       <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
       ${number ? `<div class="footy-team-player-number">${escapeHtml(number)}</div>` : ""}
       <div class="footy-team-player-name">${escapeHtml(player.name)}</div>
@@ -738,9 +932,13 @@ function openFootyTradingCard(player, team) {
   const number = formatFootyPlayerNumber(player.number);
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const fallback = getFootyTeamFallbackBadge(team.name);
-  const badgeMarkup = team.badge
-    ? `<img src="${escapeHtml(team.badge)}" alt="" decoding="async">`
-    : `<span>${escapeHtml(fallback)}</span>`;
+  const badgeSources = getFootyTradingCardBadgeSources(team);
+  const badgeMarkup = renderFootyBadgeMarkup({
+    fallbackSrc: badgeSources[1] || "",
+    fallbackText: fallback,
+    loading: "eager",
+    primarySrc: badgeSources[0] || "",
+  });
 
   if (footyTradingCardTitle) {
     footyTradingCardTitle.textContent = player.name;
@@ -761,6 +959,312 @@ function openFootyTradingCard(player, team) {
 
 function closeFootyTradingCard() {
   footyTradingCardDialog?.close();
+}
+
+async function exportFootyTradingCard(player, team) {
+  if (!player || !team) {
+    return;
+  }
+
+  setTradingCardExportStatus(`Preparing ${player.name}...`);
+
+  const width = 2500;
+  const height = 3520;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = width;
+  canvas.height = height;
+
+  if (!context) {
+    return;
+  }
+
+  const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
+  const framePath = "assets/trading-card/trading-card.svg";
+  const number = formatFootyPlayerNumber(player.number);
+  const badgeSources = getFootyTradingCardBadgeSources(team);
+
+  context.fillStyle = "#07111d";
+  context.fillRect(0, 0, width, height);
+
+  await drawCanvasImage(context, backgroundPath, 0, 0, width, height);
+  await drawCanvasImage(context, framePath, 0, 0, width, height);
+
+  let didDrawBadge = false;
+
+  for (const badgePath of badgeSources) {
+    didDrawBadge = await drawCanvasImage(context, badgePath, width * 0.028, height * 0.032, width * 0.18, height * 0.12, { contain: true });
+
+    if (didDrawBadge) {
+      break;
+    }
+  }
+
+  if (!didDrawBadge) {
+    drawFallbackTradingCardBadge(context, team.name, width * 0.028, height * 0.032, width * 0.18, height * 0.12);
+  }
+
+  if (number) {
+    drawTradingCardNumber(context, number, width, height);
+  }
+
+  drawTradingCardName(context, player.name, width, height);
+  await downloadCanvasAsPng(canvas, `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card.png`, {
+    title: `${team.name} ${player.name} trading card`,
+  });
+}
+
+function loadCanvasImage(src) {
+  return new Promise((resolve, reject) => {
+    if (!src) {
+      reject(new Error("Missing image source."));
+      return;
+    }
+
+    const image = new Image();
+    image.decoding = "async";
+    const isLocalAsset = isLocalAssetPath(src);
+    let objectUrl = "";
+
+    image.onload = () => {
+      if (objectUrl) {
+        image.dataset.objectUrl = objectUrl;
+      }
+      resolve(image);
+    };
+    image.onerror = () => reject(new Error(`Unable to load image: ${src}`));
+
+    if (!isLocalAsset) {
+      reject(new Error(`Refusing to draw non-local export image: ${src}`));
+      return;
+    }
+
+    fetch(src, { cache: "force-cache" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Unable to fetch image: ${src}`);
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        image.src = objectUrl;
+      })
+      .catch((error) => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
+        reject(error);
+      });
+  });
+}
+
+function isLocalAssetPath(src) {
+  const value = String(src || "").trim();
+
+  return Boolean(value) && !/^(?:https?:)?\/\//i.test(value) && !/^data:/i.test(value);
+}
+
+async function drawCanvasImage(context, src, x, y, width, height, options = {}) {
+  try {
+    const image = await loadCanvasImage(src);
+
+    if (options.contain) {
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * scale;
+      const drawHeight = image.naturalHeight * scale;
+      context.drawImage(image, x + ((width - drawWidth) / 2), y + ((height - drawHeight) / 2), drawWidth, drawHeight);
+      revokeCanvasImageObjectUrl(image);
+      return true;
+    }
+
+    context.drawImage(image, x, y, width, height);
+    revokeCanvasImageObjectUrl(image);
+    return true;
+  } catch (error) {
+    recordDiagnostic("trading card image failed to draw", error, { src });
+    return false;
+  }
+}
+
+function revokeCanvasImageObjectUrl(image) {
+  const objectUrl = image?.dataset?.objectUrl;
+
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+    delete image.dataset.objectUrl;
+  }
+}
+
+function drawFallbackTradingCardBadge(context, teamName, x, y, width, height) {
+  const size = Math.min(width, height) * 0.78;
+  const centerX = x + (width / 2);
+  const centerY = y + (height / 2);
+
+  context.save();
+  context.fillStyle = "#101a2b";
+  context.strokeStyle = "#d8e3ff";
+  context.lineWidth = 10;
+  context.beginPath();
+  context.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.fillStyle = "#f4f7ff";
+  context.font = `900 ${Math.round(size * 0.45)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(getFootyTeamFallbackBadge(teamName), centerX, centerY + (size * 0.03));
+  context.restore();
+}
+
+function drawTradingCardNumber(context, number, width, height) {
+  const boxX = width * 0.8527;
+  const boxY = height * 0.0096;
+  const boxWidth = width * 0.1352;
+  const boxHeight = height * 0.055;
+
+  context.save();
+  context.fillStyle = "#ffffff";
+  context.font = `950 ${Math.round(boxHeight * 0.88)}px Impact, Arial Black, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.shadowColor = "rgba(0, 0, 0, 0.45)";
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 7;
+  context.fillText(String(number), boxX + (boxWidth / 2), boxY + (boxHeight / 2) - (boxHeight * 0.02));
+  context.restore();
+}
+
+function drawTradingCardName(context, name, width, height) {
+  const boxX = width * 0.13;
+  const boxY = height * 0.87;
+  const boxWidth = width * 0.72;
+  const boxHeight = height * 0.055;
+  const fontSize = fitCanvasText(context, String(name || ""), boxWidth, Math.round(boxHeight * 0.84), "Trebuchet MS, Arial, sans-serif");
+
+  context.save();
+  context.fillStyle = "#ffffff";
+  context.font = `950 ${fontSize}px Trebuchet MS, Arial, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.shadowColor = "rgba(0, 0, 0, 0.55)";
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 7;
+  context.fillText(String(name || ""), boxX + (boxWidth / 2), boxY + (boxHeight / 2));
+  context.restore();
+}
+
+function fitCanvasText(context, text, maxWidth, startingSize, family) {
+  let size = startingSize;
+
+  while (size > 28) {
+    context.font = `950 ${size}px ${family}`;
+    if (context.measureText(text).width <= maxWidth) {
+      return size;
+    }
+    size -= 4;
+  }
+
+  return size;
+}
+
+function canvasToPngBlob(canvas) {
+  return new Promise((resolve) => {
+    try {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    } catch (error) {
+      recordDiagnostic("trading card export failed", error);
+      resolve(null);
+    }
+  });
+}
+
+async function downloadCanvasAsPng(canvas, fileName, options = {}) {
+  const blob = await canvasToPngBlob(canvas);
+
+  if (!blob) {
+    setTradingCardExportImageLink(canvas, fileName);
+    return;
+  }
+
+  const downloadUrl = setTradingCardExportDownload(fileName, blob);
+
+  const file = new File([blob], fileName, { type: "image/png" });
+
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: options.title || "Trading card",
+      });
+      setTradingCardExportStatus("Card shared.");
+      return;
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        recordDiagnostic("trading card share failed", error);
+      }
+    }
+  }
+
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+
+function setTradingCardExportStatus(message) {
+  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+
+  if (status) {
+    status.textContent = message || "";
+  }
+}
+
+function setTradingCardExportDownload(fileName, blob) {
+  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+
+  if (!status) {
+    return "";
+  }
+
+  if (activeTradingCardExportUrl) {
+    URL.revokeObjectURL(activeTradingCardExportUrl);
+  }
+
+  activeTradingCardExportUrl = URL.createObjectURL(blob);
+  status.innerHTML = `
+    <span>Card ready.</span>
+    <a href="${escapeHtml(activeTradingCardExportUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Download</a>
+  `;
+  return activeTradingCardExportUrl;
+}
+
+function setTradingCardExportImageLink(canvas, fileName) {
+  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+
+  if (!status) {
+    return;
+  }
+
+  try {
+    const dataUrl = canvas.toDataURL("image/png");
+    status.innerHTML = `
+      <span>Card ready.</span>
+      <a href="${escapeHtml(dataUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Open Image</a>
+    `;
+  } catch (error) {
+    recordDiagnostic("trading card export failed", error);
+    setTradingCardExportStatus("Unable to export this card.");
+  }
+}
+
+function slugifyFileName(value) {
+  return normalizeLookupName(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "card";
 }
 
 function renderFootyTeamFixtureSection(title, fixtures = []) {
@@ -786,7 +1290,7 @@ function getFootyScheduleFixtures(schedule) {
 
       return teamFixtures.map((fixture) => ({
         ...fixture,
-        teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge),
+        teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge, fixture.teamId || team.id),
         teamName: getFootyDisplayTeamName(fixture.teamName || team.name),
       }));
     });
@@ -894,6 +1398,10 @@ function getFilteredFootyFixtures(fixtures) {
   const defaultPrioritySet = getDefaultFootyPrioritySet();
 
   return fixtures.filter((fixture) => {
+    if (footyFriendliesFilter && !footyFriendliesFilter.checked && isFootyFriendlyFixture(fixture)) {
+      return false;
+    }
+
     if (dateRange && !isFootyFixtureInDateRange(fixture, dateRange)) {
       return false;
     }
@@ -914,11 +1422,36 @@ function getFilteredFootyFixtures(fixtures) {
   });
 }
 
+function isFootyFriendlyFixture(fixture = {}) {
+  if (typeof fixture.isFriendly === "boolean") {
+    return fixture.isFriendly;
+  }
+
+  const friendlyCompetitionIds = new Set([
+    "4nidzmunvpvxk1ir9b6m8mpay",
+    "4569",
+    "bfbepcvvs13v9didqrb12rh05",
+  ]);
+  const friendlyCompetitionNames = new Set([
+    "club friendlies",
+    "club friendly",
+    "emirates cup",
+    "english premier league summer series",
+    "friendly",
+    "friendlies",
+    "trofeo joan gamper",
+  ]);
+
+  return friendlyCompetitionIds.has(String(fixture.leagueId || "").trim()) ||
+    friendlyCompetitionNames.has(normalizeLookupName(fixture.league));
+}
+
 function hasActiveFootyFilters() {
   return Boolean(
     String(footySearchInput?.value || "").trim() ||
     String(footyDateFromFilter?.value || "").trim() ||
     String(footyDateToFilter?.value || "").trim() ||
+    (footyFriendliesFilter && !footyFriendliesFilter.checked) ||
     getSelectedFootyTeams().size > 0
   );
 }
@@ -1238,6 +1771,7 @@ function isFootyFixtureCurrent(fixture) {
 function syncFootyPastToggle(fixtures = []) {
   if (!footyPastToggle) {
     syncFootyGoalAssistsButton();
+    syncFootyNotificationToggle();
     return;
   }
 
@@ -1246,6 +1780,379 @@ function syncFootyPastToggle(fixtures = []) {
   footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
   footyPastToggle.disabled = false;
   syncFootyGoalAssistsButton();
+  syncFootyNotificationToggle();
+}
+
+function syncFootyNotificationToggle() {
+  if (!footyNotificationToggle) {
+    return;
+  }
+
+  const supported = isFootyPushNotificationSupported() || isFootyNotificationSupported();
+  const enabled = isFootyNotificationEnabled();
+
+  footyNotificationToggle.hidden = !supported;
+  footyNotificationToggle.disabled = !supported || isFootyNotificationBusy;
+  footyNotificationToggle.classList.toggle("is-active", enabled);
+  footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
+  footyNotificationToggle.setAttribute("aria-pressed", String(enabled));
+  footyNotificationToggle.setAttribute(
+    "aria-label",
+    isFootyNotificationBusy
+      ? "Updating match alerts"
+      : enabled ? "Turn off match alerts" : "Subscribe to match alerts",
+  );
+  footyNotificationToggle.setAttribute(
+    "title",
+    isFootyNotificationBusy
+      ? "Updating match alerts"
+      : enabled ? "Match alerts on" : "Notify 2 hours, 1 hour, and at kickoff",
+  );
+}
+
+function setFootyNotificationStatus(message = "", state = "") {
+  if (!footyNotificationStatus) {
+    return;
+  }
+
+  footyNotificationStatus.textContent = message;
+  footyNotificationStatus.classList.toggle("is-error", state === "error");
+  footyNotificationStatus.classList.toggle("is-success", state === "success");
+}
+
+function isFootyNotificationSupported() {
+  return typeof window !== "undefined" &&
+    "Notification" in window &&
+    window.isSecureContext;
+}
+
+function isFootyNotificationEnabled() {
+  return getStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY) &&
+    Notification.permission === "granted";
+}
+
+async function toggleFootyNotifications() {
+  if (isFootyNotificationBusy) {
+    return;
+  }
+
+  const supportsPush = isFootyPushNotificationSupported();
+  const supportsLocal = isFootyNotificationSupported();
+
+  if (!supportsPush && !supportsLocal) {
+    setFootyNotificationStatus("This browser cannot show site notifications here.", "error");
+    syncFootyNotificationToggle();
+    return;
+  }
+
+  isFootyNotificationBusy = true;
+  syncFootyNotificationToggle();
+
+  try {
+    if (isFootyNotificationEnabled()) {
+      setFootyNotificationStatus("Turning off match alerts...");
+
+      if (supportsPush) {
+        await unsubscribeFootyPushNotifications();
+      }
+
+      setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+      stopFootyNotificationMonitor();
+      setFootyNotificationStatus("Match alerts are off.", "success");
+      return;
+    }
+
+    setFootyNotificationStatus("Requesting notification permission...");
+    const permission = Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+      setFootyNotificationStatus("Notification permission was not granted.", "error");
+      return;
+    }
+
+    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, true);
+
+    if (supportsPush) {
+      setFootyNotificationStatus("Subscribing this device...");
+      await subscribeFootyPushNotifications();
+      stopFootyNotificationMonitor();
+      setFootyNotificationStatus("Match alerts are on for this device.", "success");
+    } else {
+      startFootyNotificationMonitor();
+      checkFootyMatchNotifications();
+      setFootyNotificationStatus("Match alerts are on while this browser is open.", "success");
+    }
+  } catch (error) {
+    setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
+    recordDiagnostic("footy notification toggle failed", error);
+    setFootyNotificationStatus(`Unable to subscribe: ${getErrorMessage(error)}`, "error");
+  } finally {
+    isFootyNotificationBusy = false;
+    syncFootyNotificationToggle();
+  }
+}
+
+
+function getFootyPushEndpoint() {
+  return String(FOOTY_PUSH_ENDPOINT || "").trim().replace(/\/$/, "");
+}
+
+function isFootyPushNotificationSupported() {
+  return Boolean(
+    getFootyPushEndpoint() &&
+    isFootyNotificationSupported() &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window
+  );
+}
+
+async function registerBoxThisLapServiceWorker() {
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+    return null;
+  }
+
+  return navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+}
+
+async function subscribeFootyPushNotifications() {
+  const endpoint = getFootyPushEndpoint();
+
+  if (!endpoint) {
+    throw new Error("Footy push endpoint is not configured.");
+  }
+
+  const registration = await registerBoxThisLapServiceWorker();
+
+  if (!registration?.pushManager) {
+    throw new Error("Push notifications are not available in this browser.");
+  }
+
+  const vapidResponse = await fetch(`${endpoint}/vapid-public-key`);
+
+  if (!vapidResponse.ok) {
+    throw new Error(`Unable to load push key (${vapidResponse.status}).`);
+  }
+
+  const { publicKey } = await vapidResponse.json();
+  const storedSubscription = getStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {});
+  let existingSubscription = await registration.pushManager.getSubscription();
+
+  if (
+    existingSubscription &&
+    storedSubscription?.endpoint === existingSubscription.endpoint &&
+    storedSubscription?.publicKey !== publicKey
+  ) {
+    await existingSubscription.unsubscribe().catch((error) =>
+      recordDiagnostic("stale footy push subscription unsubscribe failed", error)
+    );
+    existingSubscription = null;
+  }
+
+  const subscription = existingSubscription || await registration.pushManager.subscribe({
+    applicationServerKey: base64UrlToUint8Array(publicKey),
+    userVisibleOnly: true,
+  });
+  const saveResponse = await fetch(`${endpoint}/subscribe`, {
+    body: JSON.stringify({
+      managerId: getCurrentManagerId(),
+      pageUrl: window.location.href,
+      subscription: subscription.toJSON(),
+      userAgent: navigator.userAgent,
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!saveResponse.ok) {
+    throw new Error(`Unable to save push subscription (${saveResponse.status}).`);
+  }
+
+  setStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {
+    endpoint: subscription.endpoint,
+    publicKey,
+    savedAt: new Date().toISOString(),
+  });
+}
+
+async function unsubscribeFootyPushNotifications() {
+  const endpoint = getFootyPushEndpoint();
+  const registration = "serviceWorker" in navigator
+    ? await navigator.serviceWorker.getRegistration()
+    : null;
+  const subscription = registration?.pushManager
+    ? await registration.pushManager.getSubscription()
+    : null;
+
+  if (subscription) {
+    if (endpoint) {
+      await fetch(`${endpoint}/unsubscribe`, {
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }).catch((error) => recordDiagnostic("footy push unsubscribe failed", error));
+    }
+
+    await subscription.unsubscribe().catch((error) => recordDiagnostic("browser push unsubscribe failed", error));
+  }
+
+  setStoredJsonObject(FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY, {});
+}
+
+function base64UrlToUint8Array(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index);
+  }
+
+  return outputArray;
+}
+
+function startFootyNotificationMonitor() {
+  if (footyNotificationTimer || !isFootyNotificationEnabled() || isFootyPushNotificationSupported()) {
+    return;
+  }
+
+  footyNotificationTimer = window.setInterval(
+    checkFootyMatchNotifications,
+    FOOTY_NOTIFICATION_CHECK_INTERVAL_MS,
+  );
+}
+
+function stopFootyNotificationMonitor() {
+  if (!footyNotificationTimer) {
+    return;
+  }
+
+  window.clearInterval(footyNotificationTimer);
+  footyNotificationTimer = null;
+}
+
+function checkFootyMatchNotifications() {
+  if (isFootyPushNotificationSupported() || !isFootyNotificationEnabled() || !siteData.footySchedule) {
+    return;
+  }
+
+  const now = Date.now();
+  const sentNotifications = getStoredJsonObject(FOOTY_NOTIFICATION_SENT_STORAGE_KEY);
+  let didUpdateSentNotifications = false;
+
+  getFootyScheduleFixtures(siteData.footySchedule).forEach((fixture) => {
+    if (!hasFootyFixtureNotificationTime(fixture)) {
+      return;
+    }
+
+    const fixtureTime = getFootyFixtureComparableTime(fixture);
+
+    if (!Number.isFinite(fixtureTime)) {
+      return;
+    }
+
+    FOOTY_NOTIFICATION_OFFSETS.forEach((offset) => {
+      const notificationTime = fixtureTime - offset.minutes * 60 * 1000;
+      const notificationKey = getFootyNotificationKey(fixture, offset.key);
+
+      if (
+        sentNotifications[notificationKey] ||
+        now < notificationTime ||
+        now - notificationTime > FOOTY_NOTIFICATION_WINDOW_MS
+      ) {
+        return;
+      }
+
+      sentNotifications[notificationKey] = new Date(now).toISOString();
+      didUpdateSentNotifications = true;
+      showFootyMatchNotification(fixture, offset);
+    });
+  });
+
+  if (didUpdateSentNotifications) {
+    setStoredJsonObject(FOOTY_NOTIFICATION_SENT_STORAGE_KEY, sentNotifications);
+  }
+}
+
+function hasFootyFixtureNotificationTime(fixture) {
+  const time = String(fixture?.time || "").trim();
+  const timestamp = String(fixture?.timestamp || "").trim();
+
+  return Boolean(time || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(timestamp));
+}
+
+function getFootyNotificationKey(fixture, offsetKey) {
+  return [
+    String(fixture.matchId || fixture.id || "").trim(),
+    getFootyFixtureDateKey(fixture),
+    normalizeLookupName(`${fixture.home || ""} ${fixture.away || ""}`),
+    offsetKey,
+  ].filter(Boolean).join("|");
+}
+
+function showFootyMatchNotification(fixture, offset) {
+  const title = offset.key === "start"
+    ? "Match starting now"
+    : `Match starts ${offset.label}`;
+  const bodyParts = [
+    `${fixture.home || "TBD"} v ${fixture.away || "TBD"}`,
+    formatFootyFixtureDate(fixture.timestamp || fixture.date),
+  ].filter(Boolean);
+
+  try {
+    const notification = new Notification(title, {
+      body: bodyParts.join(" • "),
+      tag: getFootyNotificationKey(fixture, offset.key),
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      showPage("footy", { scrollToTop: true });
+      window.location.hash = "footy";
+      notification.close();
+    };
+  } catch (error) {
+    recordDiagnostic("footy notification failed", error, {
+      matchId: fixture.matchId || fixture.id || "",
+      offset: offset.key,
+    });
+  }
+}
+
+function getStoredBoolean(key) {
+  try {
+    return localStorage.getItem(key) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredBoolean(key, value) {
+  try {
+    localStorage.setItem(key, value ? "true" : "false");
+  } catch {
+    // Storage can be unavailable in private or restricted browser contexts.
+  }
+}
+
+function getStoredJsonObject(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function setStoredJsonObject(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value || {}));
+  } catch {
+    // Storage can be unavailable in private or restricted browser contexts.
+  }
 }
 
 function syncFootyGoalAssistsButton() {
@@ -1267,7 +2174,8 @@ function closeProfileDropdown() {
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
   const sideLabel = fixture.isHome ? "H" : "A";
-  const badge = fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "";
+  const scheduleBadge = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
+  const localBadge = getFootyLocalTeamBadge(fixture.teamName, fixture.teamId);
   const fallbackBadge = getFootyFixtureFallbackBadge(fixture);
   const timingLabel = getFootyFixtureTimingLabel(fixture);
   const isHighlighted = Boolean(timingLabel);
@@ -1301,7 +2209,11 @@ function renderFootyFixture(fixture) {
   return `
     <article class="${cardClasses}" data-footy-match-id="${escapeHtml(matchId)}" ${matchId ? `role="button" tabindex="0" aria-expanded="${String(Boolean(isExpanded))}"` : ""}>
       <div class="footy-fixture-badge" aria-hidden="true">
-        ${badge ? `<img src="${escapeHtml(badge)}" alt="" decoding="async" loading="lazy">` : `<span>${escapeHtml(fallbackBadge)}</span>`}
+        ${renderFootyBadgeMarkup({
+          fallbackSrc: localBadge,
+          fallbackText: fallbackBadge,
+          primarySrc: scheduleBadge,
+        })}
       </div>
       <div>
         <h2>${titleMarkup}</h2>
@@ -1560,6 +2472,27 @@ function normalizeFootyGoalAssistForNote(event) {
   return normalized;
 }
 
+function formatFootyGoalAssistMinute(minute) {
+  const rawMinute = String(minute || "").trim();
+
+  if (!rawMinute) {
+    return "";
+  }
+
+  const normalizedMinute = rawMinute
+    .replace(/[’`]/g, "'")
+    .replace(/\s*'\s*/g, "")
+    .replace(/\s*\+\s*/g, " +")
+    .trim();
+  const match = normalizedMinute.match(/^(\d+)(?:\s*\+(\d+))?$/);
+
+  if (!match) {
+    return rawMinute;
+  }
+
+  return match[2] ? `${match[1]}' +${match[2]}` : `${match[1]}'`;
+}
+
 function normalizeFootyGoalAssistList(events = []) {
   return Array.isArray(events)
     ? events.map(normalizeFootyGoalAssistForNote)
@@ -1739,6 +2672,7 @@ async function saveFootyMatchNoteFromDialog() {
     });
     const savedNote = response.savedNote || note;
 
+    upsertFootyMatchNote(savedNote);
     updateFootyFixtureMatchNote(savedNote);
     renderFootySchedule(siteData.footySchedule);
     closeFootyNoteDialog();
@@ -1746,6 +2680,82 @@ async function saveFootyMatchNoteFromDialog() {
     setFootyNoteStatus(error.message || "Unable to save match note.", true);
     footyNoteSave && (footyNoteSave.disabled = false);
   }
+}
+
+function hasFootyMatchNotesLoaded() {
+  return Boolean(siteData.footyMatchNotesLoadedAt);
+}
+
+function shouldRefreshFootyMatchNotes() {
+  const loadedAt = Date.parse(siteData.footyMatchNotesLoadedAt || "");
+
+  return !Number.isFinite(loadedAt) || Date.now() - loadedAt > FOOTY_MATCH_NOTES_FRESH_MS;
+}
+
+function shouldWaitForFootyMatchNotes() {
+  return shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
+}
+
+function ensureFootyMatchNotes({ force = false } = {}) {
+  if (!FOOTY_DATA_ENDPOINT) {
+    siteData.footyMatchNotes = [];
+    siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+    return Promise.resolve([]);
+  }
+
+  if (!force && hasFootyMatchNotesLoaded() && !shouldRefreshFootyMatchNotes()) {
+    return Promise.resolve(siteData.footyMatchNotes || []);
+  }
+
+  if (footyMatchNotesLoadPromise) {
+    return footyMatchNotesLoadPromise;
+  }
+
+  footyMatchNotesLoadPromise = loadFootyMatchNotesWithRetry()
+    .then((notes) => {
+      siteData.footyMatchNotes = notes;
+      siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+      siteData.footyMatchNotesError = null;
+      clearFootyScheduleMatchNotes(siteData.footySchedule);
+      mergeFootyMatchNotes(notes);
+      return notes;
+    })
+    .finally(() => {
+      footyMatchNotesLoadPromise = null;
+    });
+
+  return footyMatchNotesLoadPromise;
+}
+
+function refreshFootyMatchNotesIfNeeded() {
+  if (!siteData.footySchedule || !shouldShowPastFootyFixtures || !shouldRefreshFootyMatchNotes()) {
+    return;
+  }
+
+  renderFootySchedule(siteData.footySchedule);
+}
+
+async function loadFootyMatchNotesWithRetry() {
+  const retryDelays = [0, 450, 1400];
+  let lastError;
+
+  for (const delay of retryDelays) {
+    if (delay) {
+      await wait(delay);
+    }
+
+    try {
+      return await loadFootyMatchNotes();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("Unable to load footy match notes.");
+}
+
+function wait(durationMs) {
+  return new Promise((resolve) => window.setTimeout(resolve, durationMs));
 }
 
 function loadFootyMatchNotes() {
@@ -1761,7 +2771,7 @@ function loadFootyMatchNotes() {
     const timeout = window.setTimeout(() => {
       cleanup();
       reject(new Error("No response from the footy match notes endpoint."));
-    }, 12000);
+    }, FOOTY_JSONP_TIMEOUT_MS);
 
     function cleanup() {
       window.clearTimeout(timeout);
@@ -1834,7 +2844,7 @@ function loadFootyRosters() {
     const timeout = window.setTimeout(() => {
       cleanup();
       reject(new Error("No response from the footy roster endpoint."));
-    }, 12000);
+    }, FOOTY_ROSTER_JSONP_TIMEOUT_MS);
 
     function cleanup() {
       window.clearTimeout(timeout);
@@ -2190,6 +3200,28 @@ function mergeFootyMatchNotes(notes = []) {
   notes.forEach((note) => updateFootyFixtureMatchNote(note));
 }
 
+function upsertFootyMatchNote(note) {
+  const normalizedId = normalizeFootyMatchId(note?.matchId);
+
+  if (!normalizedId) {
+    return;
+  }
+
+  const notes = Array.isArray(siteData.footyMatchNotes) ? siteData.footyMatchNotes : [];
+  const existingIndex = notes.findIndex((existingNote) =>
+    normalizeFootyMatchId(existingNote?.matchId) === normalizedId
+  );
+
+  if (existingIndex >= 0) {
+    notes[existingIndex] = note;
+  } else {
+    notes.push(note);
+  }
+
+  siteData.footyMatchNotes = notes;
+  siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+}
+
 function submitFootyDataPayload(payload) {
   return submitFootyDataPayloadWithPost(payload);
 }
@@ -2340,7 +3372,7 @@ function renderFootyGoalAssistEvents(label, events = []) {
     <div class="footy-goal-events">
       <span>${escapeHtml(label)}</span>
       ${sortedEvents.map((event) => {
-        const minute = event.minute ? `${escapeHtml(event.minute)}' - ` : "";
+        const minute = event.minute ? `${escapeHtml(formatFootyGoalAssistMinute(event.minute))} - ` : "";
         const assist = event.assister ? `, ${escapeHtml(event.assister)}` : "";
         const penalty = event.penalty ? " (P)" : "";
 
@@ -2357,7 +3389,10 @@ function compareFootyGoalAssistEvents(firstEvent, secondEvent) {
 }
 
 function getFootyGoalAssistMinuteSortValue(event) {
-  const minuteText = String(event?.minute || "").trim().replace("'", "");
+  const minuteText = String(event?.minute || "")
+    .trim()
+    .replace(/[’'`]/g, "")
+    .replace(/\s*\+\s*/g, "+");
   const minuteMatch = minuteText.match(/^(\d+)(?:\s*\+\s*(\d+))?/);
 
   if (!minuteMatch) {
@@ -2459,7 +3494,7 @@ function getFootyGoalAssistLabel(entry, index) {
 }
 
 function getFootyGoalAssistChipText(entry, index) {
-  const minute = entry.minute ? `${entry.minute}' - ` : "";
+  const minute = entry.minute ? `${formatFootyGoalAssistMinute(entry.minute)} - ` : "";
 
   if (entry.scorer && entry.assister) {
     return `${minute}${entry.scorer} / ${entry.assister}`;
@@ -2620,6 +3655,9 @@ function renderNextList(items = siteData.nextItems || []) {
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
   const renderedItems = [...visibleItems, ...previousTailItems];
+  const previousDivider = previousTailItems.length
+    ? `<div class="next-previous-divider" role="separator" aria-label="Previous items"><span>Previous</span></div>`
+    : "";
 
   if (!renderedItems.length) {
     nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
@@ -2628,7 +3666,9 @@ function renderNextList(items = siteData.nextItems || []) {
 
   nextList.innerHTML = `
     <div class="next-list">
-      ${renderedItems.map(renderNextItem).join("")}
+      ${visibleItems.map(renderNextItem).join("")}
+      ${previousDivider}
+      ${previousTailItems.map(renderNextItem).join("")}
     </div>
   `;
 }
@@ -2652,6 +3692,7 @@ function normalizeNextItem(row) {
     dateKey,
     endDateKey,
     id,
+    imageUrl: String(row?.["Image URL"] || row?.imageUrl || row?.Image || row?.image || "").trim(),
     nonAdmin,
     priority,
     raw: row,
@@ -2811,9 +3852,14 @@ function renderNextItem(item) {
   const interactionAttributes = isNextEditModeEnabled() && item.id
     ? ` role="button" tabindex="0" aria-expanded="${String(activeNextItemId === item.id)}" data-next-item-id="${escapeHtml(item.id)}"`
     : "";
+  const imageMarkup = item.imageUrl
+    ? `<img class="next-card-image" src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-next-card-image>`
+    : "";
+  const imageClass = imageMarkup ? " next-card--with-image" : "";
 
   return `
-    <article class="${classNames}"${interactionAttributes}>
+    <article class="${classNames}${imageClass}"${interactionAttributes}>
+      ${imageMarkup}
       <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
         ${completedIcon}
         <div>
@@ -3033,10 +4079,6 @@ function isNextDateSpanPast(dateKey, endDateKey = "") {
   return Boolean(lastDateKey && lastDateKey < getDateKey(0));
 }
 
-function canCompleteNextItem(dateKey, endDateKey = "") {
-  return isNextDateSpanPast(dateKey, endDateKey);
-}
-
 function openNextItemDialog(itemId = "") {
   if (!isCurrentManagerAdmin() || !nextItemDialog) {
     return;
@@ -3055,6 +4097,10 @@ function openNextItemDialog(itemId = "") {
 
   if (nextThingInput) {
     nextThingInput.value = item?.thing || "";
+  }
+
+  if (nextImageUrlInput) {
+    nextImageUrlInput.value = item?.imageUrl || "";
   }
 
   if (nextStartDateInput) {
@@ -3121,6 +4167,7 @@ function getNextItemById(itemId) {
 function buildNextItemPayloadFromForm() {
   const existingId = String(nextItemId?.value || "").trim();
   const thing = String(nextThingInput?.value || "").trim();
+  const imageUrl = String(nextImageUrlInput?.value || "").trim();
   const date = String(nextStartDateInput?.value || "").trim();
   const endDate = String(nextEndDateInput?.value || "").trim();
   const time = String(nextTimeInput?.value || "").trim();
@@ -3129,6 +4176,7 @@ function buildNextItemPayloadFromForm() {
   return {
     ID: existingId || createNextItemId(),
     Thing: thing,
+    "Image URL": imageUrl,
     Date: date,
     "End Date": endDate,
     Time: time ? formatNextTimeForSheet(time) : "",
@@ -3143,16 +4191,8 @@ function updateNextCompletedControlAvailability() {
     return;
   }
 
-  const dateKey = parseNextDateKey(nextStartDateInput?.value || "");
-  const endDateKey = parseNextDateKey(nextEndDateInput?.value || "");
-  const canComplete = canCompleteNextItem(dateKey, endDateKey);
-
-  nextItemCompletedInput.disabled = !canComplete;
-  nextItemCompletedInput.closest("label")?.classList.toggle("is-disabled", !canComplete);
-
-  if (!canComplete) {
-    nextItemCompletedInput.checked = false;
-  }
+  nextItemCompletedInput.disabled = false;
+  nextItemCompletedInput.closest("label")?.classList.remove("is-disabled");
 }
 
 function createNextItemId() {
@@ -3209,11 +4249,6 @@ function saveNextItemFromForm() {
     return;
   }
 
-  if (isTrueValue(item.Completed) && !canCompleteNextItem(parseNextDateKey(item.Date), parseNextDateKey(item["End Date"]))) {
-    setNextItemStatus("Only past items can be marked completed.", true);
-    return;
-  }
-
   if (!submitNextItemPayload({ action: "saveNextItem", item })) {
     setNextItemStatus("Next data endpoint is not configured yet.", true);
     return;
@@ -3244,41 +4279,12 @@ function upsertNextItemLocally(item) {
 }
 
 function submitNextItemPayload(payload) {
-  if (!NEXT_DATA_ENDPOINT) {
-    console.warn("Next data endpoint is not configured.", payload);
-    return false;
-  }
-
-  try {
-    const body = new URLSearchParams();
-    body.set("payload", JSON.stringify(payload));
-
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(NEXT_DATA_ENDPOINT, body);
-      if (sent) {
-        return true;
-      }
-    }
-
-    window.fetch(NEXT_DATA_ENDPOINT, {
-      body,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      keepalive: true,
-      method: "POST",
-      mode: "no-cors",
-    }).catch((error) => {
-      console.warn("Unable to submit Next item with fetch; falling back to form.", error);
-      submitNextItemPayloadWithForm(payload);
-    });
-    return true;
-  } catch (error) {
-    console.warn("Unable to submit Next item with beacon/fetch; falling back to form.", error);
-  }
-
-  submitNextItemPayloadWithForm(payload);
-  return true;
+  return submitAppsScriptPayload(payload, {
+    endpoint: NEXT_DATA_ENDPOINT,
+    fallback: submitNextItemPayloadWithForm,
+    missingMessage: "Next data endpoint is not configured.",
+    submitLabel: "Next item",
+  });
 }
 
 function submitNextItemPayloadWithForm(payload) {
@@ -3308,6 +4314,48 @@ function submitNextItemPayloadWithForm(payload) {
   form.remove();
 }
 
+function submitAppsScriptPayload(payload, options = {}) {
+  const endpoint = options.endpoint;
+  const fallback = options.fallback;
+  const submitLabel = options.submitLabel || "data";
+
+  if (!endpoint) {
+    if (options.status) {
+      options.status(options.missingMessage || "Data endpoint is not configured yet.", true);
+    }
+    console.warn(options.missingMessage || "Data endpoint is not configured.", payload);
+    return false;
+  }
+
+  try {
+    const body = new URLSearchParams();
+    body.set("payload", JSON.stringify(payload));
+
+    if (navigator.sendBeacon && navigator.sendBeacon(endpoint, body)) {
+      return true;
+    }
+
+    window.fetch(endpoint, {
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      keepalive: true,
+      method: "POST",
+      mode: "no-cors",
+    }).catch((error) => {
+      console.warn(`Unable to submit ${submitLabel} with fetch; falling back to form.`, error);
+      fallback?.(payload);
+    });
+    return true;
+  } catch (error) {
+    console.warn(`Unable to submit ${submitLabel} with beacon/fetch; falling back to form.`, error);
+  }
+
+  fallback?.(payload);
+  return true;
+}
+
 function setNextItemStatus(message, isError = false) {
   if (!nextItemStatus) {
     return;
@@ -3323,6 +4371,915 @@ function renderNextListError(error) {
   }
 
   nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
+}
+
+function renderTodoList(items = siteData.todoItems || []) {
+  if (!todoList || !shouldRenderPageSection("todo")) {
+    return;
+  }
+
+  if (!isCurrentManagerAdmin()) {
+    todoList.innerHTML = `<p class="table-message">To Do is available to admin users.</p>`;
+    return;
+  }
+
+  syncTodoControls();
+  ensureTodoRankingDataLoaded();
+
+  const normalizedItems = items.map(normalizeTodoItem).filter(Boolean).sort(compareTodoItems);
+  const visibleItems = getVisibleTodoItems(normalizedItems);
+  if (activeTodoViewMode === "calculated") {
+    const currentCalculatedItems = visibleItems
+      .map((item) => {
+        const elo = getRankingEloForItem("todo", item.id);
+        return { ...item, comparisons: elo.comparisons, losses: elo.losses, rating: elo.rating, wins: elo.wins };
+      })
+      .sort(compareCalculatedRankingRows);
+    const visibleIds = new Set(visibleItems.map((item) => String(item.id)));
+    const calculatedItems = activeTodoSnapshotId === "current"
+      ? currentCalculatedItems
+      : getRankingSnapshotRows("todo", activeTodoSnapshotId).filter((item) => visibleIds.has(String(item.id)));
+
+    if (!calculatedItems.length) {
+      todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
+      return;
+    }
+
+    todoList.innerHTML = `<div class="next-list todo-list">${calculatedItems.map((item, index) =>
+      renderTodoCalculatedItem(item, index + 1, currentCalculatedItems)
+    ).join("")}</div>`;
+    return;
+  }
+  const groupedItems = groupTodoItems(visibleItems, normalizedItems);
+
+  if (!groupedItems.length) {
+    todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
+    return;
+  }
+
+  todoList.innerHTML = `
+    <div class="next-list todo-list">
+      ${groupedItems.map((entry) => renderTodoItem(entry.item, entry.children)).join("")}
+    </div>
+  `;
+}
+
+function renderTodoCalculatedItem(item, rank, currentRows = []) {
+  const compareRows = activeTodoCompareSnapshotId === "current"
+    ? currentRows
+    : activeTodoCompareSnapshotId ? getRankingSnapshotRows("todo", activeTodoCompareSnapshotId) : [];
+  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+  const movement = compareRank ? compareRank - rank : 0;
+  const meta = [
+    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+    `${item.wins || 0}-${item.losses || 0}`,
+    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+    `Manual #${formatTodoOrderNumber(item)}`,
+    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getTodoSnapshotLabel(activeTodoCompareSnapshotId)}` : "",
+  ].filter(Boolean);
+
+  return `
+    <article class="next-card todo-card">
+      <div class="next-card-main">
+        <span class="todo-order-number">${rank}</span>
+        <div>
+          <h2>${escapeHtml(item.name)}</h2>
+          <p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p>
+          ${renderTodoStatusChips(item)}
+          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
+        </div>
+      </div>
+    </article>`;
+}
+
+function ensureTodoRankingDataLoaded() {
+  if (siteData.todoRankingLoaded || todoRankingLoadPromise || !NEXT_DATA_ENDPOINT) {
+    return todoRankingLoadPromise || Promise.resolve();
+  }
+
+  todoRankingLoadPromise = Promise.all([
+    loadOptionalRankingEndpoint("listTodoElo", { elo: [] }),
+    loadOptionalRankingEndpoint("listTodoChoices", { choices: [] }),
+    loadOptionalRankingEndpoint("listTodoRankingMeta", { seeds: [], snapshotItems: [], snapshots: [] }),
+  ]).then(([eloResponse, choicesResponse, metaResponse]) => {
+    const managerId = getCurrentManagerId();
+    const otherElo = (siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo");
+    const otherChoices = (siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo");
+    siteData.rankingElo = [...otherElo, ...normalizeRankingEloRows(eloResponse.elo || []).map((row) => ({ ...row, managerId }))];
+    siteData.rankingChoices = [...otherChoices, ...normalizeRankingChoices(choicesResponse.choices || []).map((row) => ({ ...row, managerId }))];
+    siteData.rankingSeeds = [...(siteData.rankingSeeds || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo"), ...normalizeRankingSeedRows(metaResponse.seeds || [])];
+    const previousTodoSnapshotIds = new Set((siteData.rankingSnapshots || []).filter((row) => normalizeLookupName(row.rankingType) === "todo").map((row) => String(row.id)));
+    const todoSnapshots = normalizeRankingSnapshots((metaResponse.snapshots || []).map((row) => ({ ...row, "Snapshot ID": `todo-${row["Snapshot ID"] || row.snapshotId || ""}` })));
+    const todoSnapshotItems = normalizeRankingSnapshotItems((metaResponse.snapshotItems || []).map((row) => ({ ...row, "Snapshot ID": `todo-${row["Snapshot ID"] || row.snapshotId || ""}` })));
+    siteData.rankingSnapshots = [...(siteData.rankingSnapshots || []).filter((row) => normalizeLookupName(row.rankingType) !== "todo"), ...todoSnapshots];
+    siteData.rankingSnapshotItems = [...(siteData.rankingSnapshotItems || []).filter((row) => !previousTodoSnapshotIds.has(String(row.snapshotId))), ...todoSnapshotItems];
+    siteData.todoRankingLoaded = true;
+    if (activePageName === "todo") renderTodoList();
+  }).catch((error) => recordDiagnostic("To Do ranking data failed to load", error));
+
+  return todoRankingLoadPromise;
+}
+
+function openTodoRandomDialog() {
+  if (!todoRandomDialog) return;
+  renderRandomTodoItem();
+  if (typeof todoRandomDialog.showModal === "function") todoRandomDialog.showModal();
+  else todoRandomDialog.setAttribute("open", "");
+}
+
+function closeTodoRandomDialog() {
+  if (!todoRandomDialog) return;
+  if (typeof todoRandomDialog.close === "function") todoRandomDialog.close();
+  else todoRandomDialog.removeAttribute("open");
+}
+
+function renderRandomTodoItem() {
+  if (!todoRandomContent) return;
+  const visibleItems = getVisibleTodoItems(getTodoItems().map(normalizeTodoItem).filter(Boolean));
+  const visibleIds = new Set(visibleItems.map((item) => String(item.id)));
+  const rankedItems = activeTodoViewMode === "calculated"
+    ? activeTodoSnapshotId === "current"
+      ? visibleItems.map((item) => ({ ...item, rating: getRankingEloForItem("todo", item.id).rating })).sort(compareCalculatedRankingRows)
+      : getRankingSnapshotRows("todo", activeTodoSnapshotId).filter((item) => visibleIds.has(String(item.id)))
+    : visibleItems.sort(compareTodoItems);
+  const item = chooseWeightedTodoItem(rankedItems);
+
+  if (!item) {
+    todoRandomContent.innerHTML = `<p class="table-message">No To Do items match the current filters.</p>`;
+    return;
+  }
+
+  const imageUrl = getTodoImageUrl(item);
+  todoRandomContent.innerHTML = `
+    <article class="todo-random-result">
+      <span class="todo-random-image-frame${imageUrl ? "" : " is-empty"}">
+        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(item.name)}" loading="eager" decoding="async">` : ""}
+      </span>
+      <div>
+        <span class="todo-random-rank">#${rankedItems.findIndex((entry) => entry.id === item.id) + 1}</span>
+        <h3>${escapeHtml(item.name)}</h3>
+        ${renderTodoStatusChips(item)}
+        ${renderTodoMoreData(item)}
+      </div>
+    </article>`;
+}
+
+function chooseWeightedTodoItem(items) {
+  if (!items.length) return null;
+  const lastIndex = Math.max(items.length - 1, 1);
+  const weights = items.map((item, index) => 1 + (0.75 * (1 - (index / lastIndex))));
+  let target = Math.random() * weights.reduce((total, weight) => total + weight, 0);
+  for (let index = 0; index < items.length; index += 1) {
+    target -= weights[index];
+    if (target <= 0) return items[index];
+  }
+  return items[items.length - 1];
+}
+
+function getTodoImageUrl(item) {
+  return String(item?.imageUrl || "").trim();
+}
+
+function getTodoSnapshotLabel(snapshotId) {
+  if (snapshotId === "current") return "Current";
+  return formatRankingSnapshotOptionLabel(getRankingSnapshotById(snapshotId));
+}
+
+function normalizeTodoItem(row) {
+  const name = String(row?.Name || row?.name || "").trim();
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    archived: isTrueValue(row.Archived || row.archived),
+    completed: isTrueValue(row.Completed || row.completed),
+    deleted: isTrueValue(row.IsDeleted || row.isDeleted || row.deleted),
+    highHour: normalizeTodoHour(row["High Hour"] ?? row.highHour),
+    id: String(row?.ID || row?.Id || row?.id || "").trim(),
+    imageUrl: String(row?.["Image URL"] || row?.imageUrl || "").trim(),
+    lowHour: normalizeTodoHour(row["Low Hour"] ?? row.lowHour),
+    name,
+    order: normalizeTodoOrder(row.Order),
+    parentId: String(row["Parent ID"] || row.parentId || "").trim(),
+    platinumCleanup: isTrueValue(row["Platinum Cleanup"] || row.platinumCleanup),
+    raw: row,
+    started: isTrueValue(row.Started || row.started),
+    unpurchased: isTrueValue(row.Unpurchased || row.unpurchased),
+  };
+}
+
+function normalizeTodoOrder(value) {
+  const order = Number(value);
+  return Number.isFinite(order) && order > 0 ? order : Number.MAX_SAFE_INTEGER;
+}
+
+function normalizeTodoHour(value) {
+  const hour = Number(value);
+  return Number.isFinite(hour) && hour > 0 ? hour : null;
+}
+
+function compareTodoItems(first, second) {
+  if (first.order !== second.order) {
+    return first.order - second.order;
+  }
+
+  return String(first.id).localeCompare(String(second.id), undefined, { numeric: true });
+}
+
+function getVisibleTodoItems(items) {
+  return items.filter((item) => {
+    if (!matchesTodoStatusFilter(item)) {
+      return false;
+    }
+
+    return activeTodoStatusFilter || isTodoDefaultListItem(item);
+  });
+}
+
+function isTodoDefaultListItem(item) {
+  return Boolean(item && !item.archived && !item.deleted && !item.unpurchased && (!item.completed || item.platinumCleanup));
+}
+
+function getTodoItemMap(items) {
+  return new Map(items.filter((item) => item.id).map((item) => [item.id, item]));
+}
+
+function hasActiveTodoParent(item, itemsById = getTodoItemMap(getTodoItems().map(normalizeTodoItem).filter(Boolean))) {
+  const parent = item?.parentId ? itemsById.get(item.parentId) : null;
+  return Boolean(parent && isTodoDefaultListItem(parent) && !parent.completed);
+}
+
+function getTodoDefaultOrderItems(items) {
+  const itemsById = getTodoItemMap(items);
+
+  return items
+    .filter(isTodoDefaultListItem)
+    .filter((item) => !hasActiveTodoParent(item, itemsById))
+    .sort(compareTodoItems);
+}
+
+function matchesTodoStatusFilter(item) {
+  if (!activeTodoStatusFilter) {
+    return true;
+  }
+
+  if (activeTodoStatusFilter === "all") {
+    return true;
+  }
+
+  return Boolean(item[activeTodoStatusFilter]);
+}
+
+function groupTodoItems(visibleItems, allItems) {
+  const byId = new Map(allItems.map((item) => [item.id, item]));
+  const visibleIds = new Set(visibleItems.map((item) => item.id));
+  const childrenByParentId = new Map();
+
+  visibleItems.forEach((item) => {
+    const parent = item.parentId ? byId.get(item.parentId) : null;
+    const shouldNest = parent && !parent.completed && visibleIds.has(parent.id);
+
+    if (!shouldNest) {
+      return;
+    }
+
+    const children = childrenByParentId.get(parent.id) || [];
+    children.push(item);
+    childrenByParentId.set(parent.id, children);
+  });
+
+  return visibleItems
+    .filter((item) => {
+      const parent = item.parentId ? byId.get(item.parentId) : null;
+      return !parent || parent.completed || !visibleIds.has(parent.id);
+    })
+    .map((item) => ({
+      children: (childrenByParentId.get(item.id) || []).sort(compareTodoItems),
+      item,
+    }));
+}
+
+function renderTodoItem(item, children = []) {
+  const hourLabel = formatTodoHourRange(item);
+  const startedClass = item.started ? " todo-card--started" : "";
+  const deletedClass = item.deleted ? " todo-card--deleted" : "";
+  const expandedClass = shouldShowTodoEditMode && activeTodoItemId === item.id ? " is-actions-open" : "";
+  const chips = renderTodoStatusChips(item);
+  const draggable = shouldShowTodoEditMode ? ` draggable="true"` : "";
+  const controls = shouldShowTodoEditMode ? `
+    <div class="todo-card-actions">
+      <button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>
+      <button class="ranking-inline-action" type="button" data-todo-delete="${escapeHtml(item.id)}">Delete</button>
+    </div>
+  ` : "";
+  const childMarkup = children.length
+    ? `<div class="todo-child-list">${children.map(renderTodoChildItem).join("")}</div>`
+    : "";
+
+  return `
+    <article class="next-card todo-card${startedClass}${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="${shouldShowTodoEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
+      <div class="next-card-main">
+        <span class="todo-order-number">${escapeHtml(formatTodoOrderNumber(item))}</span>
+        <div>
+          <h2>${escapeHtml(item.name)}</h2>
+          ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
+          ${chips}
+          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
+        </div>
+        ${shouldShowTodoEditMode ? `<span class="ranking-drag-handle todo-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
+      </div>
+      ${controls}
+      ${childMarkup}
+    </article>
+  `;
+}
+
+function renderTodoChildItem(item) {
+  const hourLabel = formatTodoHourRange(item);
+  const chips = renderTodoStatusChips(item);
+
+  return `
+    <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
+      <div>
+        <h3>${escapeHtml(item.name)}</h3>
+        ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
+        ${chips}
+        ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
+      </div>
+      ${shouldShowTodoEditMode ? `<button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>` : ""}
+    </article>
+  `;
+}
+
+function renderTodoStatusChips(item) {
+  const chips = getTodoStatusChips(item);
+
+  if (!chips.length) {
+    return "";
+  }
+
+  return `
+    <div class="todo-chip-list">
+      ${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${escapeHtml(chip.key)}"><span aria-hidden="true">${renderTodoChipIcon(chip.icon)}</span>${escapeHtml(chip.label)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderTodoChipIcon(icon) {
+  if (icon === "check") {
+    return `<svg viewBox="0 0 16 16" focusable="false"><path d="M3.2 8.3 6.4 11.4 12.8 4.6"></path></svg>`;
+  }
+
+  if (icon === "folder") {
+    return `<svg viewBox="0 0 16 16" focusable="false"><path d="M2.5 5.2h4l1.2 1.4h5.8v5.9h-11Z"></path><path d="M2.5 5.2v-1.7h4.2l1.1 1.7"></path></svg>`;
+  }
+
+  return escapeHtml(icon);
+}
+
+function getTodoStatusChips(item) {
+  const chips = [];
+
+  if (item.started && !item.completed) chips.push({ icon: ">", key: "started", label: "Started" });
+  if (item.archived) chips.push({ icon: "folder", key: "archived", label: "Archived" });
+  if (item.platinumCleanup) chips.push({ icon: "P", key: "platinumCleanup", label: "Platinum Cleanup" });
+  if (item.completed) chips.push({ icon: "check", key: "completed", label: "Completed" });
+  if (item.deleted) chips.push({ icon: "X", key: "deleted", label: "Deleted" });
+  if (item.unpurchased) chips.push({ icon: "$", key: "unpurchased", label: "Unpurchased" });
+
+  return chips;
+}
+
+function renderTodoMoreData(item) {
+  const details = [
+    item.parentId ? `Parent: ${getTodoParentLabel(item.parentId) || item.parentId}` : "",
+  ].filter(Boolean);
+
+  if (!details.length) {
+    return "";
+  }
+
+  return `<p class="todo-more-data">${details.map(escapeHtml).join(" | ")}</p>`;
+}
+
+function formatTodoHourRange(item) {
+  const low = item.lowHour;
+  const high = item.highHour;
+
+  if (low === null && high === null) {
+    return "";
+  }
+
+  if (low !== null && high !== null) {
+    if (low === high) {
+      return `${formatTodoHour(low)} hours`;
+    }
+
+    return `${formatTodoHour(low)} - ${formatTodoHour(high)} hours`;
+  }
+
+  return `${formatTodoHour(low ?? high)} hours`;
+}
+
+function formatTodoOrderNumber(item) {
+  return Number.isFinite(item.order) && item.order !== Number.MAX_SAFE_INTEGER
+    ? String(item.order)
+    : "-";
+}
+
+function formatTodoHour(value) {
+  return Number.isInteger(value) ? String(value) : String(value).replace(/\.?0+$/, "");
+}
+
+function openTodoItemDialog() {
+  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+    return;
+  }
+
+  openTodoItemDialogForItem(null);
+}
+
+function openTodoItemDialogForItem(itemId) {
+  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+    return;
+  }
+
+  const editingItem = itemId
+    ? getTodoItems().map(normalizeTodoItem).filter(Boolean).find((item) => item.id === String(itemId))
+    : null;
+  const rows = getTodoItems();
+  const normalizedRows = rows.map(normalizeTodoItem).filter(Boolean);
+  const defaultOrderRows = getTodoDefaultOrderItems(normalizedRows);
+  const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : defaultOrderRows.length + 1;
+  const maxOrder = editingItem ? Math.max(defaultOrderRows.length, 1) : defaultOrderRows.length + 1;
+
+  if (todoItemId) {
+    todoItemId.value = editingItem?.id || "";
+  }
+  if (todoNameInput) {
+    todoNameInput.value = editingItem?.name || "";
+  }
+  if (todoOrderInput) {
+    todoOrderInput.value = String(nextOrder);
+    todoOrderInput.max = String(maxOrder);
+  }
+  if (todoLowHourInput) {
+    todoLowHourInput.value = editingItem?.raw["Low Hour"] || "";
+  }
+  if (todoHighHourInput) {
+    todoHighHourInput.value = editingItem?.raw["High Hour"] || "";
+  }
+  if (todoParentIdInput) {
+    todoParentIdInput.value = editingItem?.parentId || "";
+  }
+  if (todoParentInput) {
+    todoParentInput.value = getTodoParentLabel(editingItem?.parentId) || "";
+  }
+  if (todoImageUrlInput) {
+    todoImageUrlInput.value = editingItem?.imageUrl || "";
+  }
+  if (todoStartedInput) {
+    todoStartedInput.checked = Boolean(editingItem?.started);
+  }
+  if (todoArchivedInput) {
+    todoArchivedInput.checked = Boolean(editingItem?.archived);
+  }
+  if (todoPlatinumCleanupInput) {
+    todoPlatinumCleanupInput.checked = Boolean(editingItem?.platinumCleanup);
+  }
+  if (todoCompletedInput) {
+    todoCompletedInput.checked = Boolean(editingItem?.completed);
+  }
+  if (todoUnpurchasedInput) {
+    todoUnpurchasedInput.checked = Boolean(editingItem?.unpurchased);
+  }
+
+  setTodoItemStatus("");
+
+  if (typeof todoItemDialog.showModal === "function") {
+    todoItemDialog.showModal();
+  } else {
+    todoItemDialog.setAttribute("open", "");
+  }
+
+}
+
+function closeTodoItemDialog() {
+  if (!todoItemDialog) {
+    return;
+  }
+
+  if (typeof todoItemDialog.close === "function") {
+    todoItemDialog.close();
+  } else {
+    todoItemDialog.removeAttribute("open");
+  }
+}
+
+function saveTodoItemFromForm() {
+  const name = String(todoNameInput?.value || "").trim();
+
+  if (!name) {
+    setTodoItemStatus("Name is required.", true);
+    return;
+  }
+
+  const rows = getTodoItems();
+  const parentResolution = resolveTodoParentIdFromInput();
+
+  if (parentResolution.error) {
+    setTodoItemStatus(parentResolution.error, true);
+    return;
+  }
+
+  const parentId = parentResolution.id;
+  const existingItem = String(todoItemId?.value || "").trim()
+    ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === String(todoItemId?.value || "").trim())
+    : null;
+  const requestedOrder = clampTodoOrder(todoOrderInput?.value, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
+  const item = {
+    ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
+    Order: String(requestedOrder),
+    Name: name,
+    "Low Hour": String(todoLowHourInput?.value ?? "").trim(),
+    "High Hour": String(todoHighHourInput?.value ?? "").trim(),
+    "Parent ID": parentId,
+    Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
+    Archived: todoArchivedInput?.checked ? "TRUE" : "FALSE",
+    "Platinum Cleanup": todoPlatinumCleanupInput?.checked ? "TRUE" : "FALSE",
+    Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
+    IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
+    Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
+    "Image URL": String(todoImageUrlInput?.value || "").trim(),
+  };
+
+  if (item["Parent ID"] === item.ID) {
+    item["Parent ID"] = "";
+  }
+
+  upsertTodoItemLocally(item);
+  normalizeTodoOrdersLocally({ movedItemId: item.ID, requestedOrder });
+  renderTodoList();
+  submitNextItemPayload({
+    action: "saveTodoItem",
+    item,
+    sheetName: "To Do",
+  });
+  closeTodoItemDialog();
+}
+
+function getTodoItems() {
+  return Array.isArray(siteData.todoItems) ? siteData.todoItems : [];
+}
+
+function createTodoItemId() {
+  const nextId = getTodoItems()
+    .map((row) => Number(String(row?.ID || row?.Id || row?.id || "").trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
+
+  return String(nextId);
+}
+
+function clampTodoOrder(value, maxOrder) {
+  const order = Number(value);
+
+  if (!Number.isInteger(order)) {
+    return maxOrder;
+  }
+
+  return Math.min(Math.max(order, 1), Math.max(maxOrder, 1));
+}
+
+function upsertTodoItemLocally(item) {
+  const id = String(item.ID || "").trim();
+  const rows = getTodoItems();
+  const nextRows = rows.filter((row) => String(row.ID || row.Id || row.id || "").trim() !== id);
+
+  nextRows.push(item);
+  siteData.todoItems = nextRows;
+}
+
+function normalizeTodoOrdersLocally(options = {}) {
+  const normalizedItems = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const orderableItems = getTodoDefaultOrderItems(normalizedItems);
+  const movedItemId = String(options.movedItemId || "").trim();
+  const movedItem = movedItemId ? normalizedItems.find((item) => item.id === movedItemId) : null;
+  let nextOrderableItems = orderableItems;
+
+  if (movedItemId) {
+    nextOrderableItems = orderableItems.filter((item) => item.id !== movedItemId);
+
+    if (movedItem && isTodoDefaultListItem(movedItem) && !hasActiveTodoParent(movedItem, getTodoItemMap(normalizedItems))) {
+      const targetIndex = clampTodoOrder(options.requestedOrder, nextOrderableItems.length + 1) - 1;
+      nextOrderableItems.splice(targetIndex, 0, movedItem);
+    }
+  }
+
+  const orderById = new Map(nextOrderableItems.map((item, index) => [item.id, String(index + 1)]));
+
+  siteData.todoItems = normalizedItems
+    .map((item) => ({
+      ID: item.id,
+      Order: orderById.get(item.id) || String(item.order === Number.MAX_SAFE_INTEGER ? "" : item.order),
+      Name: item.name,
+      "Low Hour": item.raw["Low Hour"] ?? "",
+      "High Hour": item.raw["High Hour"] ?? "",
+      "Parent ID": item.parentId || "",
+      Started: item.started ? "TRUE" : "FALSE",
+      Archived: item.archived ? "TRUE" : "FALSE",
+      "Platinum Cleanup": item.platinumCleanup ? "TRUE" : "FALSE",
+      Completed: item.completed ? "TRUE" : "FALSE",
+      IsDeleted: item.deleted ? "TRUE" : "FALSE",
+      Unpurchased: item.unpurchased ? "TRUE" : "FALSE",
+      "Image URL": item.imageUrl || "",
+    }))
+    .sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
+}
+
+function moveTodoItem(draggedId, targetId, options = {}) {
+  if (!isCurrentManagerAdmin() || !draggedId || !targetId || draggedId === targetId) {
+    return false;
+  }
+
+  const allRows = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const rows = getTodoDefaultOrderItems(allRows);
+  const fromIndex = rows.findIndex((row) => row.id === draggedId);
+  const toIndex = rows.findIndex((row) => row.id === targetId);
+
+  if (fromIndex < 0 || toIndex < 0) {
+    return false;
+  }
+
+  const [item] = rows.splice(fromIndex, 1);
+  rows.splice(toIndex, 0, item);
+  const orderById = new Map(rows.map((row, index) => [row.id, String(index + 1)]));
+  siteData.todoItems = allRows.map((row) => ({
+    ID: row.id,
+    Order: orderById.get(row.id) || String(row.order === Number.MAX_SAFE_INTEGER ? "" : row.order),
+    Name: row.name,
+    "Low Hour": row.raw["Low Hour"] ?? "",
+    "High Hour": row.raw["High Hour"] ?? "",
+    "Parent ID": row.parentId || "",
+    Started: row.started ? "TRUE" : "FALSE",
+    Archived: row.archived ? "TRUE" : "FALSE",
+    "Platinum Cleanup": row.platinumCleanup ? "TRUE" : "FALSE",
+    Completed: row.completed ? "TRUE" : "FALSE",
+    IsDeleted: row.deleted ? "TRUE" : "FALSE",
+    Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
+    "Image URL": row.imageUrl || "",
+  })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
+  renderTodoList();
+
+  if (options.shouldSubmit !== false) {
+    submitTodoOrder();
+  }
+
+  return true;
+}
+
+function submitTodoOrder() {
+  submitNextItemPayload({
+    action: "saveTodoOrder",
+    items: getTodoItems().map((item) => ({
+      ID: item.ID,
+      Order: item.Order,
+      Name: item.Name,
+      "Low Hour": item["Low Hour"] ?? "",
+      "High Hour": item["High Hour"] ?? "",
+      "Parent ID": item["Parent ID"] || "",
+      Started: item.Started || "FALSE",
+      Archived: item.Archived || "FALSE",
+      "Platinum Cleanup": item["Platinum Cleanup"] || "FALSE",
+      Completed: item.Completed || "FALSE",
+      IsDeleted: item.IsDeleted || "FALSE",
+      Unpurchased: item.Unpurchased || "FALSE",
+      "Image URL": item["Image URL"] || item.imageUrl || "",
+    })),
+    sheetName: "To Do",
+  });
+}
+
+function deleteTodoItem(itemId) {
+  const item = getTodoItems().map(normalizeTodoItem).filter(Boolean).find((row) => row.id === String(itemId));
+
+  if (!item) {
+    return;
+  }
+
+  const nextItem = {
+    ...item.raw,
+    ID: item.id,
+    IsDeleted: "TRUE",
+  };
+
+  upsertTodoItemLocally(nextItem);
+  normalizeTodoOrdersLocally({ movedItemId: item.id, requestedOrder: item.order });
+  renderTodoList();
+  submitNextItemPayload({
+    action: "saveTodoItem",
+    item: nextItem,
+    sheetName: "To Do",
+  });
+}
+
+function syncTodoControls() {
+  if (todoFilters) {
+    todoFilters.hidden = !shouldShowTodoFilters;
+  }
+
+  if (todoFilterToggle) {
+    todoFilterToggle.setAttribute("aria-expanded", String(shouldShowTodoFilters));
+    todoFilterToggle.classList.toggle("is-active", shouldShowTodoFilters);
+  }
+
+  if (todoMoreDataToggle) {
+    todoMoreDataToggle.checked = shouldShowTodoMoreData;
+  }
+
+  if (todoEditToggle) {
+    todoEditToggle.checked = shouldShowTodoEditMode;
+    todoEditToggle.disabled = activeTodoViewMode === "calculated";
+  }
+
+  todoViewModeButtons?.forEach((button) => {
+    const isActive = button.dataset.todoViewMode === activeTodoViewMode;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  const snapshots = getRankingSnapshotsForKind("todo");
+  if (todoSnapshotSelect) {
+    todoSnapshotSelect.innerHTML = [`<option value="current">Current</option>`, ...snapshots.map((snapshot) =>
+      `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`)].join("");
+    if (!["current", ...snapshots.map((snapshot) => snapshot.id)].includes(activeTodoSnapshotId)) activeTodoSnapshotId = "current";
+    todoSnapshotSelect.value = activeTodoSnapshotId;
+  }
+  if (todoSnapshotCompareSelect) {
+    todoSnapshotCompareSelect.innerHTML = [`<option value="">None</option>`, `<option value="current">Current</option>`, ...snapshots.map((snapshot) =>
+      `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`)].join("");
+    if (!["", "current", ...snapshots.map((snapshot) => snapshot.id)].includes(activeTodoCompareSnapshotId)) activeTodoCompareSnapshotId = "";
+    todoSnapshotCompareSelect.value = activeTodoCompareSnapshotId;
+  }
+
+  todoStatusFilters?.forEach((input) => {
+    input.checked = input.dataset.todoStatusFilter === activeTodoStatusFilter;
+  });
+}
+
+function setTodoStatusFilter(filter) {
+  activeTodoStatusFilter = activeTodoStatusFilter === filter ? "" : filter;
+  activeTodoItemId = "";
+  renderTodoList();
+}
+
+function getTodoStatusFilterLabel(filter) {
+  const labels = {
+    all: "All",
+    archived: "Archived",
+    completed: "Completed",
+    deleted: "Deleted",
+    platinumCleanup: "Platinum Cleanup",
+    started: "Started",
+    unpurchased: "Unpurchased",
+  };
+
+  return labels[filter] || "";
+}
+
+function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()) {
+  const excludedIds = getTodoExcludedParentIds(excludeId);
+
+  return getTodoItems()
+    .map(normalizeTodoItem)
+    .filter(Boolean)
+    .filter((item) => item.id && !excludedIds.has(item.id))
+    .sort(compareTodoItems)
+    .map((item) => ({
+      label: item.name,
+      meta: item.id ? `ID ${item.id}` : "",
+      value: item.id,
+      id: item.id,
+    }));
+}
+
+function getTodoExcludedParentIds(itemId) {
+  const excludedIds = new Set();
+  const normalizedId = String(itemId || "").trim();
+
+  if (!normalizedId) {
+    return excludedIds;
+  }
+
+  const items = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const childrenByParentId = new Map();
+  items.forEach((item) => {
+    if (!item.parentId) {
+      return;
+    }
+
+    const children = childrenByParentId.get(item.parentId) || [];
+    children.push(item.id);
+    childrenByParentId.set(item.parentId, children);
+  });
+
+  const visit = (id) => {
+    if (!id || excludedIds.has(id)) {
+      return;
+    }
+
+    excludedIds.add(id);
+    (childrenByParentId.get(id) || []).forEach(visit);
+  };
+
+  visit(normalizedId);
+  return excludedIds;
+}
+
+function getTodoParentLabel(parentId) {
+  const item = getTodoItems().map(normalizeTodoItem).filter(Boolean).find((row) => row.id === String(parentId || ""));
+  return item ? item.name : "";
+}
+
+function resolveTodoParentIdFromInput() {
+  const typedValue = String(todoParentInput?.value || "").trim();
+  const currentId = String(todoParentIdInput?.value || "").trim();
+
+  if (!typedValue) {
+    return { id: "" };
+  }
+
+  const options = getTodoParentOptions();
+  const normalizedTypedValue = normalizeLookupName(typedValue);
+  const option = options.find((entry) =>
+    normalizeLookupName(entry.label) === normalizeLookupName(typedValue) ||
+    normalizeLookupName(entry.value) === normalizeLookupName(typedValue)
+  );
+
+  if (option?.id) {
+    return { id: option.id };
+  }
+
+  if (currentId && normalizeLookupName(getTodoParentLabel(currentId)) === normalizedTypedValue) {
+    return { id: currentId };
+  }
+
+  const filteredOptions = options.filter((entry) => normalizeLookupName(entry.label).includes(normalizedTypedValue));
+
+  if (filteredOptions.length === 1) {
+    return { id: filteredOptions[0].id };
+  }
+
+  return {
+    error: filteredOptions.length
+      ? "Select one parent from the list."
+      : "Parent must match another To Do item.",
+    id: "",
+  };
+}
+
+function renderTodoParentAutocomplete() {
+  if (!todoParentInput) {
+    return;
+  }
+
+  activeAutocompleteInput = todoParentInput;
+  renderAutocompleteDropdown(todoParentInput, getTodoParentOptions(), "No To Do matches");
+}
+
+function selectTodoParentOption(value) {
+  const option = getTodoParentOptions().find((entry) => entry.id === String(value));
+
+  if (todoParentInput) {
+    todoParentInput.value = option ? option.label : value;
+  }
+
+  if (todoParentIdInput) {
+    todoParentIdInput.value = option?.id || "";
+  }
+
+  closeAutocompleteDropdown();
+}
+
+function getTodoItemElement(itemId) {
+  return todoList?.querySelector(`[data-todo-id="${CSS.escape(String(itemId || ""))}"]`) || null;
+}
+
+function setTodoItemStatus(message, isError = false) {
+  if (!todoItemStatus) {
+    return;
+  }
+
+  todoItemStatus.textContent = message;
+  todoItemStatus.classList.toggle("is-error", isError);
+}
+
+function renderTodoListError(error) {
+  if (todoList) {
+    todoList.innerHTML = `<p class="table-message">Unable to load To Do items: ${escapeHtml(error.message)}</p>`;
+  }
 }
 
 function renderRankingsPage() {
@@ -3436,12 +5393,14 @@ async function loadRankingSupplementalData() {
     loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
   ]);
 
-  siteData.rankingElo = normalizeRankingEloRows(eloResponse.elo || []);
+  const todoElo = (siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) === "todo");
+  const todoChoices = (siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) === "todo");
+  siteData.rankingElo = [...normalizeRankingEloRows(eloResponse.elo || []), ...todoElo];
   siteData.rankingExclusions = normalizeRankingExclusions(exclusionsResponse.exclusions || []);
   siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
   siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
   siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
-  siteData.rankingChoices = normalizeRankingChoices(choicesResponse.choices || []);
+  siteData.rankingChoices = [...normalizeRankingChoices(choicesResponse.choices || []), ...todoChoices];
 }
 
 async function loadOptionalRankingEndpoint(action, fallback, params = {}) {
@@ -3827,6 +5786,12 @@ function compareCalculatedRankingRows(first, second) {
 }
 
 function getRankingRows(kind = activeRankingKind) {
+  if (kind === "todo") {
+    return getTodoItems().map(normalizeTodoItem).filter(Boolean).map((item) => ({
+      ...item,
+      rank: item.order,
+    })).sort(compareRankingRows);
+  }
   return [...(siteData.rankings?.[kind] || [])].sort(compareRankingRows);
 }
 
@@ -4058,9 +6023,10 @@ function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
     String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItem(kind, itemId);
+  const todoSeedRating = kind === "todo" ? getTodoImplicitSeedRating(itemId) : RANKING_BASE_RATING;
   const rating = row
     ? Number(row.rating || RANKING_BASE_RATING)
-    : Number(seed?.seedRating || RANKING_BASE_RATING);
+    : Number(seed?.seedRating || todoSeedRating);
   const wins = Number(row?.wins || 0);
   const losses = Number(row?.losses || 0);
 
@@ -4073,6 +6039,12 @@ function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
     rankingType: type,
     wins,
   };
+}
+
+function getTodoImplicitSeedRating(itemId) {
+  const rows = getRankingRows("todo");
+  const index = rows.findIndex((row) => String(row.id) === String(itemId));
+  return calculateNormalizedRating(index >= 0 ? index + 1 : rows.length + 1, Math.max(rows.length, 1));
 }
 
 function renderRankingItemMeta(item) {
@@ -4297,14 +6269,15 @@ function closeRankingItemDialog() {
   }
 }
 
-function openRankingNormalizeDialog() {
+function openRankingNormalizeDialog(kind = activeRankingKind) {
   if (!isCurrentManagerAdmin() || !rankingNormalizeDialog) {
     return;
   }
 
   if (rankingNormalizeReason) {
-    rankingNormalizeReason.value = "Normalized calculated rankings";
+    rankingNormalizeReason.value = kind === "todo" ? "Normalized calculated To Do order" : "Normalized calculated rankings";
   }
+  normalizingRankingKind = kind;
 
   setRankingNormalizeStatus("");
 
@@ -4316,6 +6289,7 @@ function openRankingNormalizeDialog() {
 }
 
 function closeRankingNormalizeDialog() {
+  normalizingRankingKind = "";
   if (!rankingNormalizeDialog) {
     return;
   }
@@ -4332,7 +6306,7 @@ function normalizeActiveRanking() {
     return;
   }
 
-  const kind = activeRankingKind;
+  const kind = normalizingRankingKind || activeRankingKind;
   const rows = getCalculatedRankingRows(kind);
 
   if (!rows.length) {
@@ -4352,11 +6326,12 @@ function normalizeActiveRanking() {
     rating: Math.round(item.rating || RANKING_BASE_RATING),
     wins: Number(item.wins || 0),
   }));
+  const rawSnapshotId = kind === "todo" ? String(Date.now()) : createRankingSnapshotId();
   const snapshot = {
     createdAt,
-    id: createRankingSnapshotId(),
+    id: kind === "todo" ? `todo-${rawSnapshotId}` : rawSnapshotId,
     label: formatRankingSnapshotOptionLabel({ createdAt }),
-    managerId: getCurrentManagerId(),
+    managerId: kind === "todo" ? getCurrentManagerId() : getCurrentManagerId(),
     rankingType: getRankingType(kind),
     reason: String(rankingNormalizeReason?.value || "Normalized calculated rankings").trim(),
     source: "calculated",
@@ -4396,7 +6371,7 @@ function normalizeActiveRanking() {
   ];
 
   submitRankingPayload({
-    action: "normalizeRanking",
+    action: kind === "todo" ? "normalizeTodo" : "normalizeRanking",
     normalization: {
       createdAt,
       items,
@@ -4404,13 +6379,19 @@ function normalizeActiveRanking() {
       managerId: snapshot.managerId,
       rankingType: snapshot.rankingType,
       reason: snapshot.reason,
-      snapshotId: snapshot.id,
+      snapshotId: kind === "todo" ? rawSnapshotId : snapshot.id,
       source: snapshot.source,
     },
   });
-  activeRankingSnapshotId = "current";
-  activeRankingCompareSnapshotId = snapshot.id;
-  renderRankingLists();
+  if (kind === "todo") {
+    activeTodoSnapshotId = "current";
+    activeTodoCompareSnapshotId = snapshot.id;
+    renderTodoList();
+  } else {
+    activeRankingSnapshotId = "current";
+    activeRankingCompareSnapshotId = snapshot.id;
+    renderRankingLists();
+  }
   closeRankingNormalizeDialog();
 }
 
@@ -4621,12 +6602,17 @@ function getRankingItemElement(kind, itemId) {
 }
 
 async function openRankingBattleDialog(kind = activeRankingKind) {
-  if (!rankingBattleDialog || !RANKING_CONFIG[kind]) {
+  if (!rankingBattleDialog || !(RANKING_CONFIG[kind] || kind === "todo")) {
     return;
   }
 
   activeRankingBattle = null;
-  await ensureRankingAssetManifest();
+  if (rankingBattleDialog.parentElement !== document.body) {
+    document.body.append(rankingBattleDialog);
+  }
+  if (kind !== "todo") {
+    await ensureRankingAssetManifest();
+  }
   renderNextRankingBattle(kind);
 
   if (typeof rankingBattleDialog.showModal === "function") {
@@ -4656,7 +6642,7 @@ function renderNextRankingBattle(kind = activeRankingKind) {
 
   if (rankingBattleTitle) {
     rankingBattleTitle.textContent = pair
-      ? `Compare ${RANKING_CONFIG[kind].itemLabel}s`
+      ? `Compare ${(RANKING_CONFIG[kind] || TODO_RANKING_CONFIG).itemLabel}s`
       : "Compare Rankings";
   }
 
@@ -4685,6 +6671,10 @@ function renderRankingBattleExclusionAction(kind, item) {
     return "";
   }
 
+  if (kind === "todo") {
+    return `<span class="ranking-battle-actions"><button class="action-button ranking-battle-pick-button" type="button" data-ranking-battle-pick="${escapeHtml(item.id)}">Pick</button></span>`;
+  }
+
   return `
     <span class="ranking-battle-actions">
       <button class="ranking-inline-action" type="button" data-ranking-battle-exclude="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
@@ -4698,7 +6688,7 @@ function renderRankingBattleExclusionAction(kind, item) {
 }
 
 function renderRankingBattleImage(kind, item) {
-  const imagePath = getRandomRankingAssetPath(kind, item?.id);
+  const imagePath = kind === "todo" ? getTodoImageUrl(item) : getRandomRankingAssetPath(kind, item?.id);
   const imageMarkup = imagePath
     ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
     : "";
@@ -4741,7 +6731,12 @@ function getRandomRankingAssetPath(kind, itemId) {
 }
 
 function createRankingBattlePair(kind = activeRankingKind) {
-  const rows = (isCurrentManagerAdmin()
+  const rows = (kind === "todo"
+    ? getTodoItems().map(normalizeTodoItem).filter(Boolean).filter(isTodoDefaultListItem).map((item) => {
+      const elo = getRankingEloForItem(kind, item.id);
+      return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
+    })
+    : isCurrentManagerAdmin()
     ? getManualRankingRowsWithElo(kind)
     : getDisplayedRankingRows(kind))
     .filter((item) => !isRankingItemExcluded(kind, item.id));
@@ -5092,10 +7087,11 @@ function chooseRankingBattleWinner(winnerId) {
 
   applyRankingChoiceToElo(choice);
   submitRankingPayload({
-    action: "saveRankingChoice",
+    action: battle.kind === "todo" ? "saveTodoChoice" : "saveRankingChoice",
     choice,
   });
-  renderRankingLists();
+  if (battle.kind === "todo") renderTodoList();
+  else renderRankingLists();
   setRankingBattleStatus(`${winner.name} saved.`);
   renderNextRankingBattle(battle.kind);
 }
@@ -5137,9 +7133,10 @@ function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentM
     String(entry.managerId || "") === String(managerId)
   );
   const seed = getRankingSeedForItemByType(rankingType, itemId);
+  const fallbackRating = normalizeLookupName(rankingType) === "todo" ? getTodoImplicitSeedRating(itemId) : RANKING_BASE_RATING;
   const rating = row
     ? Number(row.rating || RANKING_BASE_RATING)
-    : Number(seed?.seedRating || RANKING_BASE_RATING);
+    : Number(seed?.seedRating || fallbackRating);
   const wins = Number(row?.wins || 0);
   const losses = Number(row?.losses || 0);
 
@@ -5210,38 +7207,13 @@ function submitRankingOrder(kind) {
 }
 
 function submitRankingPayload(payload) {
-  if (!NEXT_DATA_ENDPOINT) {
-    setRankingItemStatus("Ranking data endpoint is not configured yet.", true);
-    return false;
-  }
-
-  try {
-    const body = new URLSearchParams();
-    body.set("payload", JSON.stringify(payload));
-
-    if (navigator.sendBeacon && navigator.sendBeacon(NEXT_DATA_ENDPOINT, body)) {
-      return true;
-    }
-
-    window.fetch(NEXT_DATA_ENDPOINT, {
-      body,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      keepalive: true,
-      method: "POST",
-      mode: "no-cors",
-    }).catch((error) => {
-      console.warn("Unable to submit ranking data with fetch; falling back to form.", error);
-      submitRankingPayloadWithForm(payload);
-    });
-    return true;
-  } catch (error) {
-    console.warn("Unable to submit ranking data with beacon/fetch; falling back to form.", error);
-  }
-
-  submitRankingPayloadWithForm(payload);
-  return true;
+  return submitAppsScriptPayload(payload, {
+    endpoint: NEXT_DATA_ENDPOINT,
+    fallback: submitRankingPayloadWithForm,
+    missingMessage: "Ranking data endpoint is not configured yet.",
+    status: setRankingItemStatus,
+    submitLabel: "ranking data",
+  });
 }
 
 function submitRankingPayloadWithForm(payload) {
@@ -6001,6 +7973,15 @@ function renderActivePageContent(pageName = "") {
       renderNextList();
     } else if (nextList) {
       nextList.innerHTML = renderLoadingMessage("Loading Next items...");
+    }
+    return;
+  }
+
+  if (pageName === "todo") {
+    if (Array.isArray(siteData.todoItems)) {
+      renderTodoList();
+    } else if (todoList) {
+      todoList.innerHTML = renderLoadingMessage("Loading To Do items...");
     }
     return;
   }
@@ -7242,7 +9223,17 @@ document.addEventListener("click", (event) => {
 document.addEventListener("error", (event) => {
   const image = event.target;
 
-  if (!(image instanceof HTMLImageElement) || !image.dataset.fallbackSrcs) {
+  if (!(image instanceof HTMLImageElement)) {
+    return;
+  }
+
+  if (image.hasAttribute("data-next-card-image")) {
+    image.closest(".next-card")?.classList.remove("next-card--with-image");
+    image.remove();
+    return;
+  }
+
+  if (!image.dataset.fallbackSrcs) {
     return;
   }
 
@@ -7367,6 +9358,14 @@ function handleFootyFixtureListKeydown(event) {
 });
 
 footyTeamContent?.addEventListener("click", (event) => {
+  const exportToggle = event.target.closest("[data-trading-card-export-toggle]");
+
+  if (exportToggle) {
+    shouldExportFootyTradingCards = Boolean(exportToggle.checked);
+    renderFootyTeamPage();
+    return;
+  }
+
   const card = event.target.closest("[data-footy-player-id]");
 
   if (!card) {
@@ -7376,7 +9375,11 @@ footyTeamContent?.addEventListener("click", (event) => {
   const team = getActiveFootyTeam();
   const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
 
-  openFootyTradingCard(player, team);
+  if (shouldExportFootyTradingCards) {
+    void exportFootyTradingCard(player, team);
+  } else {
+    openFootyTradingCard(player, team);
+  }
 });
 
 footyTeamContent?.addEventListener("keydown", (event) => {
@@ -7394,7 +9397,11 @@ footyTeamContent?.addEventListener("keydown", (event) => {
   const team = getActiveFootyTeam();
   const player = getFootyRosterPlayerForTeam(team, card.getAttribute("data-footy-player-id"));
 
-  openFootyTradingCard(player, team);
+  if (shouldExportFootyTradingCards) {
+    void exportFootyTradingCard(player, team);
+  } else {
+    openFootyTradingCard(player, team);
+  }
 });
 
 leagueYearSelect?.addEventListener("change", () => {
@@ -7405,6 +9412,22 @@ footyPastToggle?.addEventListener("click", () => {
   shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
   shouldShowAllFootyFixtures = false;
   renderFootySchedule(siteData.footySchedule);
+});
+
+footyNotificationToggle?.addEventListener("click", () => {
+  void toggleFootyNotifications();
+});
+
+window.addEventListener("focus", () => {
+  checkFootyMatchNotifications();
+  refreshFootyMatchNotesIfNeeded();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    checkFootyMatchNotifications();
+    refreshFootyMatchNotesIfNeeded();
+  }
 });
 
 footyGoalAssistsButton?.addEventListener("click", () => {
@@ -7583,7 +9606,7 @@ function markFootyTeamSelectionExplicit(event) {
 footyTeamFilter?.addEventListener("input", markFootyTeamSelectionExplicit);
 footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
 
-[footySearchInput, footyDateFromFilter, footyDateToFilter, footyTeamFilter].forEach((control) => {
+[footySearchInput, footyDateFromFilter, footyDateToFilter, footyFriendliesFilter, footyTeamFilter].forEach((control) => {
   control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });
@@ -7662,6 +9685,146 @@ nextItemForm?.addEventListener("submit", (event) => {
 [nextStartDateInput, nextEndDateInput].forEach((control) => {
   control?.addEventListener("input", updateNextCompletedControlAvailability);
   control?.addEventListener("change", updateNextCompletedControlAvailability);
+});
+
+todoAddButton?.addEventListener("click", () => {
+  openTodoItemDialog();
+});
+
+todoFilterToggle?.addEventListener("click", () => {
+  shouldShowTodoFilters = !shouldShowTodoFilters;
+  renderTodoList();
+});
+
+todoCompareButton?.addEventListener("click", () => openRankingBattleDialog("todo"));
+todoRandomButton?.addEventListener("click", openTodoRandomDialog);
+todoRandomAgain?.addEventListener("click", renderRandomTodoItem);
+[todoRandomClose, todoRandomDone].forEach((button) => button?.addEventListener("click", closeTodoRandomDialog));
+todoNormalizeButton?.addEventListener("click", () => openRankingNormalizeDialog("todo"));
+todoSnapshotSelect?.addEventListener("change", () => {
+  activeTodoSnapshotId = todoSnapshotSelect.value || "current";
+  activeTodoViewMode = "calculated";
+  renderTodoList();
+});
+todoSnapshotCompareSelect?.addEventListener("change", () => {
+  activeTodoCompareSnapshotId = todoSnapshotCompareSelect.value || "";
+  renderTodoList();
+});
+
+todoViewModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.todoViewMode;
+    if (mode !== "manual" && mode !== "calculated") return;
+    activeTodoViewMode = mode;
+    if (mode === "calculated") shouldShowTodoEditMode = false;
+    renderTodoList();
+  });
+});
+
+todoMoreDataToggle?.addEventListener("change", () => {
+  shouldShowTodoMoreData = Boolean(todoMoreDataToggle.checked);
+  renderTodoList();
+});
+
+todoEditToggle?.addEventListener("change", () => {
+  shouldShowTodoEditMode = Boolean(todoEditToggle.checked);
+  activeTodoItemId = "";
+  renderTodoList();
+});
+
+todoStatusFilters?.forEach((input) => {
+  input.addEventListener("change", () => {
+    setTodoStatusFilter(input.checked ? input.dataset.todoStatusFilter : "");
+  });
+});
+
+todoList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-todo-edit]");
+
+  if (editButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    openTodoItemDialogForItem(editButton.getAttribute("data-todo-edit"));
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-todo-delete]");
+
+  if (deleteButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    deleteTodoItem(deleteButton.getAttribute("data-todo-delete"));
+    return;
+  }
+
+  const card = event.target.closest("[data-todo-id]");
+
+  if (!card || !shouldShowTodoEditMode || event.target.closest("button, a, input, select, textarea, label, .todo-drag-handle")) {
+    return;
+  }
+
+  activeTodoItemId = activeTodoItemId === card.getAttribute("data-todo-id")
+    ? ""
+    : card.getAttribute("data-todo-id") || "";
+  renderTodoList();
+});
+
+todoList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-todo-id]");
+
+  if (!card || !shouldShowTodoEditMode) {
+    return;
+  }
+
+  event.preventDefault();
+  activeTodoItemId = activeTodoItemId === card.getAttribute("data-todo-id")
+    ? ""
+    : card.getAttribute("data-todo-id") || "";
+  renderTodoList();
+});
+
+todoItemForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveTodoItemFromForm();
+});
+
+[todoItemClose, todoItemCancel].forEach((button) => {
+  button?.addEventListener("click", closeTodoItemDialog);
+});
+
+todoItemForm?.addEventListener("pointerdown", (event) => {
+  const optionButton = event.target.closest("[data-autocomplete-value]");
+
+  if (!optionButton) {
+    if (event.target !== todoParentInput && !event.target.closest(".autocomplete-dropdown")) {
+      closeAutocompleteDropdown();
+    }
+
+    return;
+  }
+
+  event.preventDefault();
+  selectTodoParentOption(optionButton.getAttribute("data-autocomplete-value") || "");
+});
+
+todoParentInput?.addEventListener("focus", renderTodoParentAutocomplete);
+todoParentInput?.addEventListener("input", () => {
+  if (!todoParentInput.value.trim() && todoParentIdInput) {
+    todoParentIdInput.value = "";
+  }
+
+  renderTodoParentAutocomplete();
+});
+
+todoParentInput?.addEventListener("change", () => {
+  if (todoParentIdInput) {
+    const parentResolution = resolveTodoParentIdFromInput();
+    todoParentIdInput.value = parentResolution.id || "";
+  }
 });
 
 rankingTabs?.forEach((tab) => {
@@ -7912,6 +10075,106 @@ document.addEventListener("pointercancel", () => {
   draggedRankingItemId = "";
   draggedRankingKind = "";
   didMoveRankingPointer = false;
+});
+
+document.addEventListener("dragstart", (event) => {
+  const item = event.target.closest("[data-todo-id]");
+
+  if (!item || !isCurrentManagerAdmin() || !shouldShowTodoEditMode || !event.target.closest(".todo-drag-handle")) {
+    return;
+  }
+
+  draggedTodoItemId = item.getAttribute("data-todo-id") || "";
+  event.dataTransfer?.setData("text/plain", draggedTodoItemId);
+  event.dataTransfer && (event.dataTransfer.effectAllowed = "move");
+  item.classList.add("is-dragging");
+});
+
+document.addEventListener("dragend", (event) => {
+  event.target.closest("[data-todo-id]")?.classList.remove("is-dragging");
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
+});
+
+document.addEventListener("dragover", (event) => {
+  if (!draggedTodoItemId || !event.target.closest("[data-todo-id]")) {
+    return;
+  }
+
+  event.preventDefault();
+});
+
+document.addEventListener("drop", (event) => {
+  const target = event.target.closest("[data-todo-id]");
+
+  if (!target || !draggedTodoItemId) {
+    return;
+  }
+
+  event.preventDefault();
+  moveTodoItem(draggedTodoItemId, target.getAttribute("data-todo-id") || "");
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
+});
+
+document.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest(".todo-drag-handle");
+  const item = handle?.closest("[data-todo-id]");
+
+  if (!item || !isCurrentManagerAdmin() || !shouldShowTodoEditMode) {
+    return;
+  }
+
+  draggedTodoItemId = item.getAttribute("data-todo-id") || "";
+  didMoveTodoPointer = false;
+
+  if (!draggedTodoItemId) {
+    return;
+  }
+
+  event.preventDefault();
+  item.classList.add("is-dragging");
+  handle.setPointerCapture?.(event.pointerId);
+}, true);
+
+document.addEventListener("pointermove", (event) => {
+  if (!draggedTodoItemId) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-todo-id]");
+  const targetId = target?.getAttribute("data-todo-id") || "";
+
+  if (moveTodoItem(draggedTodoItemId, targetId, { shouldSubmit: false })) {
+    didMoveTodoPointer = true;
+    getTodoItemElement(draggedTodoItemId)?.classList.add("is-dragging");
+  }
+}, true);
+
+document.addEventListener("pointerup", () => {
+  if (!draggedTodoItemId) {
+    return;
+  }
+
+  getTodoItemElement(draggedTodoItemId)?.classList.remove("is-dragging");
+
+  if (didMoveTodoPointer) {
+    submitTodoOrder();
+  }
+
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
+}, true);
+
+document.addEventListener("pointercancel", () => {
+  if (draggedTodoItemId) {
+    getTodoItemElement(draggedTodoItemId)?.classList.remove("is-dragging");
+  }
+
+  draggedTodoItemId = "";
+  didMoveTodoPointer = false;
 });
 
 document.addEventListener("pointerdown", (event) => {
@@ -8418,8 +10681,29 @@ function renderLoginState() {
     };
   }
 
+  syncSiteVersionDisplay(managerMeta);
+  syncBrandLogo();
   renderNextList();
   renderRankingsPage();
+}
+
+function syncSiteVersionDisplay(managerMeta = null) {
+  if (!siteVersion) {
+    return;
+  }
+
+  siteVersion.textContent = `v${SITE_VERSION}`;
+  siteVersion.hidden = !managerMeta?.isAdmin;
+}
+
+function syncBrandLogo() {
+  if (!brandLogo) {
+    return;
+  }
+
+  brandLogo.src = window.location.pathname.includes("/dev/")
+    ? "assets/dev-apple-touch-icon.png"
+    : "assets/box-this-lap-logo.jpg";
 }
 
 function renderLoginManagerOptions() {
@@ -10558,6 +12842,10 @@ function getPageDataScope(pageName = "") {
     return "next";
   }
 
+  if (page === "todo") {
+    return "todo";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -10656,6 +12944,10 @@ function loadPageData(scope) {
     return ensureNextData();
   }
 
+  if (scope === "todo") {
+    return ensureTodoData();
+  }
+
   if (scope === "rankings") {
     return ensureRankingsLoaded();
   }
@@ -10724,6 +13016,10 @@ function renderPageDataError(scope, error) {
     renderNextListError(error);
   }
 
+  if (scope === "todo") {
+    renderTodoListError(error);
+  }
+
   if (scope === "world-cup-results" && dynamicResultImages) {
     dynamicResultImages.innerHTML = `<p class="table-message">Unable to load result images: ${escapeHtml(message)}</p>`;
   }
@@ -10781,20 +13077,22 @@ function ensureFootyData() {
     renderFollowedTeamShortcuts(schedule);
     renderFootySchedule(schedule);
     renderFootyTeamPage();
+    startFootyNotificationMonitor();
+    checkFootyMatchNotifications();
     console.info("Box This Lap footy schedule loaded", schedule);
 
-    try {
-      const notes = await loadFootyMatchNotes();
-      if (notes.length) {
-        mergeFootyMatchNotes(notes);
-        renderFootySchedule(siteData.footySchedule);
-        renderFootyTeamPage();
-      }
-      console.info("Box This Lap footy match notes loaded", notes);
-    } catch (error) {
-      siteData.footyMatchNotesError = error;
-      recordDiagnostic("footy match notes failed to load", error);
-    }
+    ensureFootyMatchNotes()
+      .then((notes) => {
+        if (notes.length) {
+          renderFootySchedule(siteData.footySchedule);
+          renderFootyTeamPage();
+        }
+        console.info("Box This Lap footy match notes loaded", notes);
+      })
+      .catch((error) => {
+        siteData.footyMatchNotesError = error;
+        recordDiagnostic("footy match notes failed to load", error);
+      });
 
     return schedule;
   }).catch((error) => {
@@ -10812,6 +13110,28 @@ function ensureNextData() {
     return items;
   }).catch((error) => {
     siteData.nextItemsError = error;
+    throw error;
+  });
+}
+
+function ensureTodoData() {
+  return ensureSharedData("todo", async () => {
+    let items;
+
+    try {
+      const response = await loadNextDataEndpoint("listTodoItems");
+      items = response.items || response.todoItems || [];
+    } catch (error) {
+      recordDiagnostic("To Do endpoint failed to load; using published sheet", error);
+      items = await loadSheet("todo");
+    }
+
+    siteData.todoItems = items;
+    renderTodoList(items);
+    console.info("Box This Lap To Do data loaded", items);
+    return items;
+  }).catch((error) => {
+    siteData.todoItemsError = error;
     throw error;
   });
 }

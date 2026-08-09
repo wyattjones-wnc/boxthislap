@@ -52,6 +52,7 @@ export const DATA_SOURCES = {
     rankingMcu: buildNextCsvUrl("1257157651"),
     rankingMovies: buildNextCsvUrl("449567167"),
     rankingTv: buildNextCsvUrl("415412107"),
+    todo: `${NEXT_SHEET_BASE_URL}?single=true&output=csv&sheet=To%20Do`,
   },
 };
 

@@ -1,0 +1,18 @@
+name = "box-this-lap-footy-push"
+main = "src/index.js"
+compatibility_date = "2026-08-05"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[kv_namespaces]]
+binding = "FOOTY_PUSH_KV"
+id = "18bc15da284647deb5eda7baf59a0cd9"
+preview_id = "a79f07809e6149a4901e75bddbd3310b"
+
+[vars]
+ALLOWED_ORIGIN = "https://wyattjones-wnc.github.io"
+FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json"
+NOTIFICATION_LOOKBACK_MINUTES = "16"
+NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy"
+VAPID_SUBJECT = "mailto:boxthislap@example.com"

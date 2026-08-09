@@ -4599,7 +4599,7 @@ function getVisibleTodoItems(items) {
 }
 
 function isTodoDefaultListItem(item) {
-  return Boolean(item && !item.archived && !item.deleted && (!item.completed || item.platinumCleanup));
+  return Boolean(item && !item.archived && !item.deleted && !item.unpurchased && (!item.completed || item.platinumCleanup));
 }
 
 function getTodoItemMap(items) {
@@ -6732,7 +6732,7 @@ function getRandomRankingAssetPath(kind, itemId) {
 
 function createRankingBattlePair(kind = activeRankingKind) {
   const rows = (kind === "todo"
-    ? getVisibleTodoItems(getTodoItems().map(normalizeTodoItem).filter(Boolean)).map((item) => {
+    ? getTodoItems().map(normalizeTodoItem).filter(Boolean).filter(isTodoDefaultListItem).map((item) => {
       const elo = getRankingEloForItem(kind, item.id);
       return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
     })

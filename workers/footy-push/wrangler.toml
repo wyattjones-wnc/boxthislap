@@ -12,7 +12,9 @@ preview_id = "a79f07809e6149a4901e75bddbd3310b"
 
 [vars]
 ALLOWED_ORIGIN = "https://wyattjones-wnc.github.io"
-FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json"
+FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/data/footy-schedule.json"
+FOOTY_DEV_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json"
 NOTIFICATION_LOOKBACK_MINUTES = "16"
-NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy"
+NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/#footy"
+DEV_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy"
 VAPID_SUBJECT = "mailto:boxthislap@example.com"

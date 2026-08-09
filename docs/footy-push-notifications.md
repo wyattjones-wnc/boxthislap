@@ -8,6 +8,8 @@ This setup uses a Cloudflare Worker with KV so Footy match notifications can be 
 - `workers/footy-push`: Cloudflare Worker that stores push subscriptions, checks the Footy schedule, and sends Web Push wakeups.
 - `FOOTY_PUSH_ENDPOINT` in `modules/siteConfig.js`: the deployed Worker URL used by the site.
 - `FOOTY_PUSH_ENDPOINT` in `service-worker.js`: the same deployed Worker URL used by the background service worker.
+- `FOOTY_SCHEDULE_URL` / `NOTIFICATION_URL`: production schedule and destination.
+- `FOOTY_DEV_SCHEDULE_URL` / `DEV_NOTIFICATION_URL`: development schedule and destination. The Worker selects these when the subscription's saved page URL is under `/boxthislap/dev/`.
 
 ## Cloudflare Setup
 
@@ -37,6 +39,8 @@ This setup uses a Cloudflare Worker with KV so Footy match notifications can be 
 
    - `modules/siteConfig.js` as `FOOTY_PUSH_ENDPOINT`
    - `service-worker.js` as `FOOTY_PUSH_ENDPOINT`
+
+Main and dev use the same Worker and VAPID keys. Each service-worker scope creates its own browser subscription; the Worker stores the subscribing page URL and sends that subscription alerts from the matching schedule with a matching notification link.
 
 ## Cron
 

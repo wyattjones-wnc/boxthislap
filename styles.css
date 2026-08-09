@@ -720,6 +720,26 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.next-previous-divider {
+  align-items: center;
+  color: var(--muted);
+  display: grid;
+  font-size: 0.72rem;
+  font-weight: 950;
+  gap: 12px;
+  grid-template-columns: 1fr auto 1fr;
+  letter-spacing: 0.14em;
+  margin: 10px 0 2px;
+  text-transform: uppercase;
+}
+
+.next-previous-divider::before,
+.next-previous-divider::after {
+  background: var(--line);
+  content: "";
+  height: 1px;
+}
+
 .next-card {
   background: var(--panel);
   border: 1px solid var(--line);

@@ -3655,6 +3655,9 @@ function renderNextList(items = siteData.nextItems || []) {
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
   const renderedItems = [...visibleItems, ...previousTailItems];
+  const previousDivider = previousTailItems.length
+    ? `<div class="next-previous-divider" role="separator" aria-label="Previous items"><span>Previous</span></div>`
+    : "";
 
   if (!renderedItems.length) {
     nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
@@ -3663,7 +3666,9 @@ function renderNextList(items = siteData.nextItems || []) {
 
   nextList.innerHTML = `
     <div class="next-list">
-      ${renderedItems.map(renderNextItem).join("")}
+      ${visibleItems.map(renderNextItem).join("")}
+      ${previousDivider}
+      ${previousTailItems.map(renderNextItem).join("")}
     </div>
   `;
 }

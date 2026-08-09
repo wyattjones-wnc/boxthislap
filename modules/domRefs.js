@@ -139,6 +139,7 @@ export const todoLowHourInput = document.querySelector("#todo-low-hour");
 export const todoHighHourInput = document.querySelector("#todo-high-hour");
 export const todoParentInput = document.querySelector("#todo-parent");
 export const todoParentIdInput = document.querySelector("#todo-parent-id");
+export const todoImageUrlInput = document.querySelector("#todo-image-url");
 export const todoStartedInput = document.querySelector("#todo-started");
 export const todoArchivedInput = document.querySelector("#todo-archived");
 export const todoPlatinumCleanupInput = document.querySelector("#todo-platinum-cleanup");

@@ -168,6 +168,7 @@ import {
   todoHighHourInput,
   todoParentInput,
   todoParentIdInput,
+  todoImageUrlInput,
   todoStartedInput,
   todoArchivedInput,
   todoPlatinumCleanupInput,
@@ -4831,6 +4832,9 @@ function openTodoItemDialogForItem(itemId) {
   if (todoParentInput) {
     todoParentInput.value = getTodoParentLabel(editingItem?.parentId) || "";
   }
+  if (todoImageUrlInput) {
+    todoImageUrlInput.value = editingItem?.imageUrl || "";
+  }
   if (todoStartedInput) {
     todoStartedInput.checked = Boolean(editingItem?.started);
   }
@@ -4903,7 +4907,7 @@ function saveTodoItemFromForm() {
     Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
     IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
     Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
-    "Image URL": String(existingItem?.["Image URL"] || existingItem?.imageUrl || "").trim(),
+    "Image URL": String(todoImageUrlInput?.value || "").trim(),
   };
 
   if (item["Parent ID"] === item.ID) {

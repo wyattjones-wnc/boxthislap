@@ -165,8 +165,9 @@ async function addFixture(widget, fixture) {
 
   const badgeImage = await loadTeamBadge(fixture);
   const badgeSlot = card.addStack();
-  badgeSlot.size = new Size(28, 0);
-  badgeSlot.centerAlignContent();
+  badgeSlot.size = new Size(28, 36);
+  badgeSlot.layoutVertically();
+  badgeSlot.addSpacer();
 
   if (badgeImage) {
     const badge = badgeSlot.addImage(badgeImage);
@@ -178,10 +179,11 @@ async function addFixture(widget, fixture) {
     placeholder.imageSize = new Size(22, 22);
     placeholder.tintColor = COLORS.muted;
   }
+  badgeSlot.addSpacer();
 
   card.addSpacer(6);
   const content = card.addStack();
-  content.size = new Size(cardWidth - 134, 0);
+  content.size = new Size(cardWidth - 134, 36);
   content.layoutVertically();
   content.addSpacer();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
@@ -205,15 +207,16 @@ async function addFixture(widget, fixture) {
 
   card.addSpacer();
   const dateStack = card.addStack();
-  dateStack.size = new Size(84, 0);
+  dateStack.size = new Size(84, 36);
   dateStack.layoutVertically();
-  dateStack.centerAlignContent();
+  dateStack.addSpacer();
   const date = dateStack.addText(formatFixtureDate(fixture));
   date.font = Font.mediumSystemFont(10);
   date.textColor = COLORS.muted;
   date.rightAlignText();
   date.lineLimit = 2;
   date.minimumScaleFactor = 0.7;
+  dateStack.addSpacer();
   row.addSpacer();
 }
 

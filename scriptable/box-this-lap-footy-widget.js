@@ -187,19 +187,18 @@ async function addFixture(widget, fixture) {
   content.layoutVertically();
   content.addSpacer();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
-  match.font = Font.semiboldSystemFont(11);
+  match.font = Font.semiboldSystemFont(12);
   match.textColor = COLORS.text;
   match.lineLimit = 1;
-  match.minimumScaleFactor = 0.55;
 
   if (timingLabel) {
     content.addSpacer(2);
     const chip = content.addStack();
     chip.backgroundColor = isStarted ? COLORS.started : COLORS.accent;
-    chip.cornerRadius = 7;
-    chip.setPadding(2, 5, 2, 5);
+    chip.cornerRadius = 6;
+    chip.setPadding(1, 4, 1, 4);
     const label = chip.addText(timingLabel);
-    label.font = Font.boldSystemFont(9);
+    label.font = Font.boldSystemFont(8);
     label.textColor = COLORS.background;
   }
 

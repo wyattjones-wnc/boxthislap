@@ -10976,6 +10976,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
 
     const positionSelect = event.target.closest("[data-formula-one-calculator-position]");
     if (positionSelect) {
+      const tableScrollLeft = positionSelect.closest(".formula-one-calculator-table-wrap")?.scrollLeft ?? 0;
       const key = getFormulaOneCalculatorSelectionKey(
         positionSelect.dataset.eventType,
         positionSelect.dataset.roundId,
@@ -10988,6 +10989,10 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       }
       persistFormulaOneCalculatorState(year, data, state);
       renderFormulaOneCalculator(year);
+      const tableWrap = view.calculator.querySelector(".formula-one-calculator-table-wrap");
+      if (tableWrap) {
+        tableWrap.scrollLeft = tableScrollLeft;
+      }
     }
   });
 

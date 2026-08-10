@@ -3611,6 +3611,273 @@ main {
   margin: -6px 0 18px;
 }
 
+.formula-one-calculator {
+  display: grid;
+  gap: 16px;
+}
+
+.formula-one-calculator-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.formula-one-calculator-intro,
+.formula-one-calculator-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.formula-one-calculator-intro h3,
+.formula-one-calculator-section-heading h3 {
+  margin: 0;
+}
+
+.formula-one-calculator-intro p,
+.formula-one-calculator-section-heading p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.formula-one-calculator-intro > span {
+  background: var(--soft-strong);
+  border-radius: 999px;
+  color: var(--track);
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 7px 11px;
+}
+
+.formula-one-calculator-filters .formula-one-calculator-section-heading {
+  border-bottom: 1px solid var(--line);
+}
+
+.formula-one-calculator-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.formula-one-calculator-filter-actions button {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.formula-one-calculator-filter-actions button:hover,
+.formula-one-calculator-filter-actions button:focus-visible {
+  background: var(--soft-strong);
+}
+
+.formula-one-calculator-driver-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.formula-one-calculator-driver-filters label {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 850;
+  gap: 7px;
+  padding: 7px 10px;
+}
+
+.formula-one-calculator-driver-filters label:has(input:not(:checked)) {
+  color: var(--muted);
+  opacity: 0.62;
+}
+
+.formula-one-calculator-driver-filters input {
+  accent-color: var(--driver-color);
+  margin: 0;
+}
+
+.formula-one-driver-swatch {
+  background: var(--driver-color);
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 10px;
+  width: 10px;
+}
+
+.formula-one-calculator-table-wrap {
+  border-left: 0;
+  border-radius: 0;
+  border-right: 0;
+  border-bottom: 0;
+  box-shadow: none;
+  margin: 0;
+  max-height: min(70vh, 680px);
+  overflow: auto;
+}
+
+.formula-one-calculator-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: max-content;
+}
+
+.formula-one-calculator-table th,
+.formula-one-calculator-table td {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-width: 116px;
+  padding: 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.formula-one-calculator-table thead th {
+  background: var(--soft-strong);
+  color: var(--track);
+  font-size: 0.78rem;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.formula-one-calculator-table thead th span {
+  display: block;
+  font-size: 0.7rem;
+}
+
+.formula-one-calculator-table th:first-child,
+.formula-one-calculator-table td:first-child {
+  left: 0;
+  min-width: 190px;
+  position: sticky;
+  text-align: left;
+  z-index: 2;
+}
+
+.formula-one-calculator-table thead th:first-child {
+  z-index: 5;
+}
+
+.formula-one-calculator-table th:nth-child(2),
+.formula-one-calculator-table td:nth-child(2) {
+  left: 190px;
+  min-width: 88px;
+  position: sticky;
+  z-index: 2;
+}
+
+.formula-one-calculator-table thead th:nth-child(2) {
+  z-index: 5;
+}
+
+.formula-one-calculator-table th:last-child,
+.formula-one-calculator-table td:last-child {
+  border-right: 0;
+  min-width: 94px;
+  position: sticky;
+  right: 0;
+  z-index: 2;
+}
+
+.formula-one-calculator-table thead th:last-child {
+  z-index: 5;
+}
+
+.formula-one-calculator-table tbody tr:last-child th,
+.formula-one-calculator-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.formula-one-calculator-driver {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.formula-one-calculator-table select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  min-height: 36px;
+  width: 104px;
+}
+
+.formula-one-calculator-total {
+  color: var(--accent-dark);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.formula-one-calculator-projected small {
+  color: var(--muted);
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 2px;
+}
+
+.formula-one-calculator-chart-wrap {
+  border-top: 1px solid var(--line);
+  min-height: 300px;
+  overflow-x: auto;
+  padding: 8px 8px 2px;
+}
+
+.formula-one-calculator-chart-wrap .table-message {
+  margin: 0;
+  padding: 24px 16px;
+}
+
+.formula-one-calculator-chart {
+  display: block;
+  max-height: 420px;
+}
+
+.formula-one-chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.formula-one-chart-label,
+.formula-one-chart-projection-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.formula-one-chart-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.formula-one-chart-projection {
+  stroke: var(--muted);
+  stroke-dasharray: 5 5;
+  stroke-width: 1.5;
+}
+
 .formula-one-question-list {
   display: grid;
   gap: 16px;
@@ -5388,6 +5655,42 @@ tr:last-child td {
 
   .formula-one-results-toggle {
     margin-top: 0;
+  }
+
+  .formula-one-calculator-intro,
+  .formula-one-calculator-section-heading {
+    align-items: flex-start;
+    padding: 13px;
+  }
+
+  .formula-one-calculator-intro {
+    display: grid;
+  }
+
+  .formula-one-calculator-driver-filters {
+    padding: 12px 13px 13px;
+  }
+
+  .formula-one-calculator-filters .formula-one-calculator-section-heading {
+    display: grid;
+  }
+
+  .formula-one-calculator-filter-actions {
+    width: 100%;
+  }
+
+  .formula-one-calculator-filter-actions button {
+    flex: 1;
+  }
+
+  .formula-one-calculator-table th:first-child,
+  .formula-one-calculator-table td:first-child {
+    min-width: 155px;
+  }
+
+  .formula-one-calculator-table th:nth-child(2),
+  .formula-one-calculator-table td:nth-child(2) {
+    left: 155px;
   }
 
   .fantasy-critic-summary {

@@ -209,6 +209,7 @@ export const formulaOneViews = {
   2026: {
     awards: document.querySelector("#formula-one-2026-awards"),
     awardsList: document.querySelector("#formula-one-2026-awards-list"),
+    calculator: document.querySelector("#formula-one-2026-calculator-content"),
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),

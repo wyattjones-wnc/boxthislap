@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.10.19.29";
+      window.BOX_THIS_LAP_VERSION = "2026.08.10.20.47";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608101929">
+    <link rel="stylesheet" href="styles.css?v=202608102047">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -293,6 +293,7 @@
           <a href="#footy" data-page-link="footy" role="tab">Footy</a>
           <a href="#next" data-page-link="next" role="tab">Next</a>
           <a href="#todo" data-page-link="todo" role="tab" data-admin-only hidden>To Do</a>
+          <a href="#guides" data-page-link="guides" role="tab">Guides</a>
           <a href="#rankings" data-page-link="rankings" role="tab" data-login-only hidden>Rankings</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
@@ -905,6 +906,22 @@
             </footer>
           </form>
         </dialog>
+      </section>
+
+      <section class="page guides-page" id="guides" data-page="guides">
+        <div id="guides-view">
+          <div class="section-heading page-heading-with-action footy-heading">
+            <div>
+              <p class="guides-eyebrow">Walkthroughs</p>
+              <h1>Guides</h1>
+            </div>
+          </div>
+          <div class="guides-loading-grid" aria-label="Loading guides">
+            <span class="guides-skeleton-card"></span>
+            <span class="guides-skeleton-card"></span>
+            <span class="guides-skeleton-card"></span>
+          </div>
+        </div>
       </section>
 
       <section class="page" id="rankings" data-page="rankings">
@@ -1919,6 +1936,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608101929"></script>
+    <script type="module" src="script.js?v=202608102047"></script>
   </body>
 </html>

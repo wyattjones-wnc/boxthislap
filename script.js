@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608090001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608100002";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -247,8 +247,9 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202608090001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608100002";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
+import { createGuidesController } from "./modules/guides.js?v=202608100002";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -457,6 +458,8 @@ const { syncThemeToggle } = createThemeController({
   storageKey: THEME_STORAGE_KEY,
   toggle: themeToggle,
 });
+
+const guidesController = createGuidesController({ loadSheet });
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -8713,6 +8716,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "guides") {
+    guidesController.renderPage();
+    return;
+  }
+
   if (pageName === "rankings") {
     renderRankingsPage();
     return;
@@ -13667,6 +13675,10 @@ function getPageDataScope(pageName = "") {
     return "todo";
   }
 
+  if (page === "guides") {
+    return "guides";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -13767,6 +13779,11 @@ function loadPageData(scope) {
 
   if (scope === "todo") {
     return ensureTodoData();
+  }
+
+  if (scope === "guides") {
+    guidesController.renderPage();
+    return Promise.resolve();
   }
 
   if (scope === "rankings") {

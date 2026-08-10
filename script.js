@@ -6753,7 +6753,7 @@ function getRandomRankingAssetPath(kind, itemId) {
 
 function createRankingBattlePair(kind = activeRankingKind) {
   const rows = (kind === "todo"
-    ? getTodoItems().map(normalizeTodoItem).filter(Boolean).filter(isTodoDefaultListItem).map((item) => {
+    ? getTodoCompareItems().map((item) => {
       const elo = getRankingEloForItem(kind, item.id);
       return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
     })
@@ -6790,6 +6790,14 @@ function createRankingBattlePair(kind = activeRankingKind) {
     kind,
     rankingType: getRankingType(kind),
   };
+}
+
+function getTodoCompareItems() {
+  const items = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const itemsById = getTodoItemMap(items);
+  return items
+    .filter(isTodoDefaultListItem)
+    .filter((item) => !hasActiveTodoParent(item, itemsById));
 }
 
 function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {

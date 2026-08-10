@@ -966,16 +966,119 @@ function openFootyTradingCard(player, team) {
   }
 
   footyTradingCardContent.innerHTML = `
-    <div class="trading-card-preview" aria-label="${escapeHtml(player.name)} trading card">
-      ${backgroundPath ? `<img class="trading-card-background" src="${escapeHtml(backgroundPath)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : ""}
-      <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="" decoding="async">
-      <div class="trading-card-team-badge" aria-hidden="true">${badgeMarkup}</div>
-      ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}
-      <div class="trading-card-name">${escapeHtml(player.name)}</div>
+    <div
+      class="trading-card-preview"
+      role="button"
+      tabindex="0"
+      aria-label="Show back of ${escapeHtml(player.name)} trading card"
+      aria-pressed="false"
+      data-trading-card-flip
+      data-trading-card-player-name="${escapeHtml(player.name)}"
+    >
+      <div class="trading-card-flip-inner" data-trading-card-flip-inner>
+        <div class="trading-card-face trading-card-face--front">
+          ${backgroundPath ? `<img class="trading-card-background" src="${escapeHtml(backgroundPath)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : ""}
+          <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="" decoding="async">
+          <div class="trading-card-team-badge" aria-hidden="true">${badgeMarkup}</div>
+          ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}
+          <div class="trading-card-name">${escapeHtml(player.name)}</div>
+        </div>
+        ${renderFootyTradingCardBack(player, team, badgeMarkup)}
+      </div>
     </div>
   `;
 
   footyTradingCardDialog.showModal();
+}
+
+function renderFootyTradingCardBack(player, team, badgeMarkup) {
+  const badgeAssets = [
+    player.isNew
+      ? `<img class="trading-card-back-status-badge" src="assets/trading-card/back/badge-new-player.svg" alt="New player">`
+      : "",
+    player.fromAcademy
+      ? `
+        <div class="trading-card-back-academy-badge" aria-label="Academy product">
+          <img class="trading-card-back-academy-frame" src="assets/trading-card/back/badge-academy-product.svg" alt="">
+          <div class="trading-card-back-academy-logo" aria-hidden="true">${badgeMarkup}</div>
+        </div>
+      `
+      : "",
+  ].filter(Boolean).join("");
+  const facts = [
+    ["icon-appearances-stadium.svg", "Appearances", player.appearances],
+    ["icon-year-joined.svg", "Year joined", player.yearJoined],
+    ["icon-club-joined-from.svg", "Club joined from", player.clubJoinedFrom],
+    ["icon-home-country.svg", "Home country", player.homeCountry],
+    ["icon-birthday.svg", "Birthday", formatFootyTradingCardBirthday(player.birthday)],
+  ];
+
+  return `
+    <div class="trading-card-face trading-card-face--back">
+      <img class="trading-card-back-shell" src="assets/trading-card/back/card-shell.svg" alt="" decoding="async">
+      <div class="trading-card-back-rail" aria-hidden="true">
+        <img src="assets/trading-card/back/left-rail.svg" alt="" decoding="async">
+        <div class="trading-card-back-team-name">${escapeHtml(getFootyDisplayTeamName(team.name))}</div>
+        <div class="trading-card-back-rail-logo">${badgeMarkup}</div>
+      </div>
+      <img class="trading-card-back-stripes" src="assets/trading-card/back/bottom-stripes.svg" alt="" decoding="async">
+      <section class="trading-card-back-content">
+        <header class="trading-card-back-header${badgeAssets ? " has-badges" : ""}">
+          <div class="trading-card-back-player">
+            <h2>${renderFootyTradingCardBackName(player.name)}</h2>
+            ${player.position ? `<div class="trading-card-back-position">${escapeHtml(player.position)}</div>` : ""}
+          </div>
+          ${badgeAssets ? `<div class="trading-card-back-badges">${badgeAssets}</div>` : ""}
+        </header>
+        <img class="trading-card-back-divider" src="assets/trading-card/back/section-divider.svg" alt="">
+        <dl class="trading-card-back-facts">
+          ${facts.map(([icon, label, value]) => `
+            <div class="trading-card-back-fact">
+              <img src="assets/trading-card/back/${icon}" alt="">
+              <div>
+                <dt>${escapeHtml(label)}</dt>
+                <dd>${escapeHtml(String(value || "—"))}</dd>
+              </div>
+            </div>
+          `).join("")}
+        </dl>
+      </section>
+    </div>
+  `;
+}
+
+function renderFootyTradingCardBackName(name) {
+  const words = String(name || "").trim().split(/\s+/).filter(Boolean);
+
+  if (words.length < 2) {
+    return escapeHtml(words[0] || "Player");
+  }
+
+  return `${escapeHtml(words[0])}<br>${escapeHtml(words.slice(1).join(" "))}`;
+}
+
+function formatFootyTradingCardBirthday(value) {
+  const birthday = String(value || "").trim();
+  const dateParts = birthday.match(/^(?:[A-Za-z]{3}\s+)?([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+
+  if (dateParts) {
+    return `${Number.parseInt(dateParts[2], 10)} ${dateParts[1]} ${dateParts[3]}`;
+  }
+
+  return birthday;
+}
+
+function toggleFootyTradingCardSide(card) {
+  const cardInner = card?.querySelector("[data-trading-card-flip-inner]");
+
+  if (!cardInner) {
+    return;
+  }
+
+  const isFlipped = cardInner.classList.toggle("is-flipped");
+  const playerName = card.dataset.tradingCardPlayerName || "player";
+  card.setAttribute("aria-pressed", String(isFlipped));
+  card.setAttribute("aria-label", `Show ${isFlipped ? "front" : "back"} of ${playerName} trading card`);
 }
 
 function closeFootyTradingCard() {
@@ -2935,10 +3038,15 @@ function normalizeFootyRosterPlayer(player = {}) {
   const imagePaths = getFootyPlayerTransparentPaths({ id, season, teamId, transparent });
 
   return {
+    appearances: String(player.app || player.App || player.appearances || player.Appearances || "").trim(),
+    birthday: String(player.birthday || player.Birthday || "").trim(),
+    clubJoinedFrom: String(player.left || player.Left || player.clubJoinedFrom || player["Club Joined From"] || "").trim(),
     fromAcademy: normalizeBooleanish(player.fromAcademy || player.FromAcademy),
+    homeCountry: String(player.home || player.Home || player.homeCountry || player["Home Country"] || "").trim(),
     id,
     imageFallbackPaths: imagePaths.slice(1),
     imagePath: imagePaths[0] || "",
+    isNew: normalizeFootyRosterMarker(player.new || player.New),
     name: String(player.player || player.Player || player.name || "").trim(),
     number: String(player.number || player["#"] || "").trim(),
     position: String(player.position || player.Position || "").trim(),
@@ -2946,6 +3054,7 @@ function normalizeFootyRosterPlayer(player = {}) {
     teamId,
     transparent,
     transferOut: normalizeBooleanish(player.transferOut || player.TransferOut),
+    yearJoined: String(player.joined || player.Joined || player.yearJoined || player["Year Joined"] || "").trim(),
   };
 }
 
@@ -2985,6 +3094,12 @@ function normalizeBooleanish(value) {
   const normalizedValue = normalizeLookupName(value);
 
   return ["1", "true", "yes", "y"].includes(normalizedValue);
+}
+
+function normalizeFootyRosterMarker(value) {
+  const normalizedValue = normalizeLookupName(value);
+
+  return Boolean(normalizedValue) && !["0", "false", "no", "n"].includes(normalizedValue);
 }
 
 function applyFootyNoteRosterOptions(fixture) {
@@ -10197,6 +10312,25 @@ footyTradingCardDialog?.addEventListener("click", (event) => {
   if (event.target === footyTradingCardDialog) {
     closeFootyTradingCard();
   }
+});
+
+footyTradingCardContent?.addEventListener("click", (event) => {
+  toggleFootyTradingCardSide(event.target.closest("[data-trading-card-flip]"));
+});
+
+footyTradingCardContent?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-trading-card-flip]");
+
+  if (!card || event.target !== card) {
+    return;
+  }
+
+  event.preventDefault();
+  toggleFootyTradingCardSide(card);
 });
 
 footyTeamFilter?.addEventListener("click", (event) => {

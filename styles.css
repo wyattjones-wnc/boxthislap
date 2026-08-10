@@ -2562,14 +2562,50 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trading-card-preview {
   aspect-ratio: 2500 / 3520;
+  cursor: pointer;
+  max-height: min(86vh, 740px);
+  max-width: calc(100vw - 24px);
+  perspective: 1600px;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  width: min(390px, calc(100vw - 24px));
+}
+
+.trading-card-preview:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
+}
+
+.trading-card-flip-inner {
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.2, 0.72, 0.25, 1);
+  width: 100%;
+}
+
+.trading-card-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.trading-card-face {
+  backface-visibility: hidden;
   background: color-mix(in srgb, var(--panel) 78%, #000);
   border-radius: 8px;
   box-shadow: 0 20px 52px rgb(0 0 0 / 0.46);
-  max-height: min(86vh, 740px);
-  max-width: calc(100vw - 24px);
+  height: 100%;
+  inset: 0;
   overflow: hidden;
-  position: relative;
-  width: min(390px, calc(100vw - 24px));
+  position: absolute;
+  width: 100%;
+  -webkit-backface-visibility: hidden;
+}
+
+.trading-card-face--back {
+  color: #001b3a;
+  container-type: inline-size;
+  font-family: Arial, sans-serif;
+  transform: rotateY(180deg);
 }
 
 .trading-card-background,
@@ -2659,6 +2695,195 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-shadow: 0 2px 8px rgb(0 0 0 / 0.55);
   white-space: nowrap;
   z-index: 2;
+}
+
+.trading-card-back-shell {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.trading-card-back-rail {
+  height: 100%;
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 15%;
+}
+
+.trading-card-back-rail > img {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.trading-card-back-team-name {
+  color: #fff;
+  font-size: clamp(0.68rem, 3.4cqw, 0.85rem);
+  font-weight: 700;
+  left: 50%;
+  letter-spacing: 0.16em;
+  position: absolute;
+  text-transform: uppercase;
+  top: 54%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  white-space: nowrap;
+}
+
+.trading-card-back-rail-logo {
+  align-items: center;
+  display: flex;
+  height: 7%;
+  justify-content: center;
+  left: 33%;
+  position: absolute;
+  top: 69%;
+  width: 34%;
+}
+
+.trading-card-back-rail-logo img,
+.trading-card-back-academy-logo img {
+  display: block;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.trading-card-back-rail-logo span,
+.trading-card-back-academy-logo span {
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.trading-card-back-stripes {
+  bottom: 0;
+  position: absolute;
+  right: 0;
+  width: 45%;
+}
+
+.trading-card-back-content {
+  inset: 6.5% 6.5% 8% 19.5%;
+  position: absolute;
+}
+
+.trading-card-back-header {
+  align-items: center;
+  display: grid;
+  min-height: 30%;
+}
+
+.trading-card-back-header.has-badges {
+  gap: 4cqw;
+  grid-template-columns: minmax(0, 1fr) 27cqw;
+}
+
+.trading-card-back-player h2 {
+  color: #001b3a;
+  font-size: clamp(2rem, 12cqw, 3rem);
+  letter-spacing: -0.06em;
+  line-height: 0.84;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.trading-card-back-header.has-badges .trading-card-back-player h2 {
+  font-size: clamp(1.55rem, 8.4cqw, 2.05rem);
+}
+
+.trading-card-back-position {
+  border-top: 2px solid #b89443;
+  font-size: clamp(0.72rem, 3.7cqw, 0.95rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin-top: 4cqw;
+  padding-top: 2.4cqw;
+  text-transform: uppercase;
+  width: max-content;
+}
+
+.trading-card-back-badges {
+  display: grid;
+  gap: 2.6cqw;
+  max-width: 27cqw;
+  min-width: 0;
+  width: 27cqw;
+}
+
+.trading-card-back-status-badge,
+.trading-card-back-academy-frame {
+  display: block;
+  width: 100%;
+}
+
+.trading-card-back-academy-badge {
+  position: relative;
+}
+
+.trading-card-back-academy-logo {
+  align-items: center;
+  display: flex;
+  height: 38%;
+  justify-content: center;
+  left: 14.5%;
+  position: absolute;
+  top: 49%;
+  transform: translate(-50%, -50%);
+  width: 12.5%;
+}
+
+.trading-card-back-divider {
+  display: block;
+  margin: 4.5cqw 0 2cqw;
+  width: 100%;
+}
+
+.trading-card-back-facts {
+  display: grid;
+  margin: 0;
+}
+
+.trading-card-back-fact {
+  align-items: center;
+  border-bottom: 1px solid #d8dce2;
+  display: grid;
+  gap: 4cqw;
+  grid-template-columns: 14cqw minmax(0, 1fr);
+  min-height: 17cqw;
+  padding: 1.4cqw 0;
+}
+
+.trading-card-back-fact:last-child {
+  border-bottom: 0;
+}
+
+.trading-card-back-fact > img {
+  height: 14cqw;
+  width: 14cqw;
+}
+
+.trading-card-back-fact dt {
+  font-size: clamp(0.58rem, 2.9cqw, 0.74rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trading-card-back-fact dd {
+  font-size: clamp(0.92rem, 5.1cqw, 1.28rem);
+  font-weight: 650;
+  line-height: 1.05;
+  margin: 0.7cqw 0 0;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trading-card-flip-inner {
+    transition: none;
+  }
 }
 
 .footy-admin-diagnostics {

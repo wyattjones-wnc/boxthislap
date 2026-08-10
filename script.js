@@ -447,7 +447,7 @@ const router = createRouter({
   pages,
   shouldBlockPage: (pageName) =>
     (pageName === "rankings" && !siteData.managerSession) ||
-    (pageName === "todo" && !isCurrentManagerAdmin()),
+    (["todo", "guides"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,

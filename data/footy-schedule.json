@@ -1784,7 +1784,7 @@
         "id": "2",
         "league": "La Liga",
         "name": "Barcelona",
-        "prettyName": "Barcelona",
+        "prettyName": "Futbol Club Barcelona",
         "priority": "2"
       },
       "sources": [
@@ -4104,7 +4104,7 @@
         "id": "3",
         "league": "Championship",
         "name": "Wrexham",
-        "prettyName": "Wrexham",
+        "prettyName": "Wrexham Association Football Club",
         "priority": "3"
       },
       "sources": [
@@ -5925,7 +5925,7 @@
         "id": "4",
         "league": "International",
         "name": "USMNT",
-        "prettyName": "USMNT",
+        "prettyName": "United States Men's National Team",
         "priority": "4"
       },
       "sources": [],
@@ -5947,7 +5947,7 @@
         "id": "5",
         "league": "International",
         "name": "USWNT",
-        "prettyName": "USWNT",
+        "prettyName": "United States Women's National Team",
         "priority": "5"
       },
       "sources": [],
@@ -5969,7 +5969,7 @@
         "id": "6",
         "league": "MLS",
         "name": "Charlotte FC",
-        "prettyName": "Charlotte FC",
+        "prettyName": "Charlotte Football Club",
         "priority": "6"
       },
       "sources": [
@@ -6739,7 +6739,7 @@
         "id": "7",
         "league": "MLS",
         "name": "Inter Miami CF",
-        "prettyName": "Inter Miami CF",
+        "prettyName": "Club Internacional de Fútbol Miami",
         "priority": "7"
       },
       "sources": [

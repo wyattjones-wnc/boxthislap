@@ -2760,6 +2760,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   object-fit: contain;
 }
 
+.trading-card-back-corner-logo img {
+  height: 100%;
+  object-position: right center;
+  width: 100%;
+}
+
 .trading-card-back-academy-logo span {
   color: #fff;
   font-size: 0.75rem;
@@ -2827,7 +2833,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   align-items: center;
   display: flex;
   height: 15cqw;
-  justify-content: center;
+  justify-content: flex-end;
   width: 32cqw;
 }
 

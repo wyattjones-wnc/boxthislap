@@ -18,6 +18,8 @@ scripts/next-data-webapp.gs
 
 Redeploy it after this change so the new `listNextItems` action is available.
 
+The Footy Scriptable widget defaults to the production site. Set its Scriptable widget parameter to `dev` when you intentionally want the development schedule and assets.
+
 Quick endpoint check:
 
 ```text

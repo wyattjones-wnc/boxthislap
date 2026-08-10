@@ -3106,7 +3106,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   position: absolute;
   text-align: center;
   text-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
-  top: 0.95%;
+  top: 0.9%;
   transform: translateY(-2%);
   width: 13.52%;
   z-index: 2;

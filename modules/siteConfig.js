@@ -5,6 +5,8 @@ export const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfyc
 export const FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 export const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
 export const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
+// Set this after deploying scripts/guides-data-webapp.gs from the Guides workbook.
+export const GUIDES_DATA_ENDPOINT = "";
 export const AWARD_DEFINITIONS = [
   {
     abbreviation: "PC",

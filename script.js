@@ -7,6 +7,7 @@ import {
   FOOTY_DATA_ENDPOINT,
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
+  GUIDES_DATA_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
   BRACKET_STORAGE_KEY,
@@ -24,7 +25,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202608050001";
+} from "./modules/siteConfig.js?v=202608100003";
 
 import {
   pageLinks,
@@ -4438,11 +4439,38 @@ function submitGuideChecklistDone(item) {
     action: "saveWalkthroughChecklistDone",
     item,
   }, {
-    endpoint: NEXT_DATA_ENDPOINT,
-    fallback: submitNextItemPayloadWithForm,
+    endpoint: GUIDES_DATA_ENDPOINT,
+    fallback: submitGuideChecklistDoneWithForm,
     missingMessage: "Guide checklist data endpoint is not configured.",
     submitLabel: "guide checklist progress",
   });
+}
+
+function submitGuideChecklistDoneWithForm(payload) {
+  const iframeName = "guides-data-frame";
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.hidden = true;
+    document.body.append(iframe);
+  }
+
+  const form = document.createElement("form");
+  form.action = GUIDES_DATA_ENDPOINT;
+  form.method = "POST";
+  form.target = iframeName;
+  form.hidden = true;
+
+  const payloadInput = document.createElement("input");
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.append(payloadInput);
+
+  document.body.append(form);
+  form.submit();
+  form.remove();
 }
 
 function submitNextItemPayloadWithForm(payload) {

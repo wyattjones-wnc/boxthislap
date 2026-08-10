@@ -268,6 +268,7 @@ async function main() {
 
 async function resolveTeam(team) {
   const name = getTeamDisplayName(getField(team, "Name", "Team"));
+  const prettyName = getField(team, "Pretty Name", "PrettyName").trim() || name;
   const configuredId = getFootballDataTeamId(team);
   const badge = await resolveTeamBadge(team);
   const sportDbTeamId = getSportDbTeamId(team);
@@ -276,6 +277,7 @@ async function resolveTeam(team) {
     return {
       id: getField(team, "ID"),
       name: "Unnamed team",
+      prettyName: prettyName || "Unnamed team",
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerTeamId: configuredId,
@@ -290,6 +292,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: "",
@@ -307,6 +310,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: "",
@@ -325,6 +329,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: getField(team, "League").trim(),
@@ -346,6 +351,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: "",
@@ -363,6 +369,7 @@ async function resolveTeam(team) {
     id: getField(team, "ID"),
     league: getField(team, "League").trim(),
     name,
+    prettyName,
     priority: getField(team, "Priority"),
     provider: PRIMARY_PROVIDER_NAME,
     providerLeague: providerTeam.runningCompetitions?.[0]?.name || "",
@@ -1972,6 +1979,7 @@ function buildTeamScheduleTeam(team, previousTeam = {}) {
     id: team.id || previousTeam.id || "",
     league: team.league || previousTeam.league || "",
     name: team.name || previousTeam.name || "",
+    prettyName: team.prettyName || previousTeam.prettyName || team.name || previousTeam.name || "",
     priority: team.priority || previousTeam.priority || "",
   };
 }

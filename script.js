@@ -635,6 +635,7 @@ function normalizeFootyScheduleTeam(teamSchedule = {}) {
     fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
     id,
     name,
+    prettyName: String(team.prettyName || team["Pretty Name"] || "").trim() || name,
     priority: normalizeFootyPriority(team.priority),
     status: String(teamSchedule.status || "").trim(),
     updatedAt: String(teamSchedule.updatedAt || teamSchedule.attemptedAt || "").trim(),
@@ -992,6 +993,7 @@ function openFootyTradingCard(player, team) {
 }
 
 function renderFootyTradingCardBack(player, team, badgeMarkup) {
+  const railLogoPath = getFootyLocalTeamLogo(team.name, team.id || team.teamId);
   const badgeAssets = [
     player.isNew
       ? `<img class="trading-card-back-status-badge" src="assets/trading-card/back/badge-new-player.svg" alt="New player">`
@@ -1018,8 +1020,8 @@ function renderFootyTradingCardBack(player, team, badgeMarkup) {
       <img class="trading-card-back-shell" src="assets/trading-card/back/card-shell.svg" alt="" decoding="async">
       <div class="trading-card-back-rail" aria-hidden="true">
         <img src="assets/trading-card/back/left-rail.svg" alt="" decoding="async">
-        <div class="trading-card-back-team-name">${escapeHtml(getFootyDisplayTeamName(team.name))}</div>
-        <div class="trading-card-back-rail-logo">${badgeMarkup}</div>
+        <div class="trading-card-back-team-name">${escapeHtml(team.prettyName || getFootyDisplayTeamName(team.name))}</div>
+        ${railLogoPath ? `<div class="trading-card-back-rail-logo"><img src="${escapeHtml(railLogoPath)}" alt="" decoding="async" onerror="this.parentElement.remove()"></div>` : ""}
       </div>
       <img class="trading-card-back-stripes" src="assets/trading-card/back/bottom-stripes.svg" alt="" decoding="async">
       <section class="trading-card-back-content">

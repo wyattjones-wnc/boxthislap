@@ -59,6 +59,7 @@
         "id": "1",
         "league": "Premier League",
         "name": "Arsenal",
+        "prettyName": "Arsenal Football Club",
         "priority": "1"
       },
       "sources": [
@@ -1783,6 +1784,7 @@
         "id": "2",
         "league": "La Liga",
         "name": "Barcelona",
+        "prettyName": "Barcelona",
         "priority": "2"
       },
       "sources": [
@@ -4102,6 +4104,7 @@
         "id": "3",
         "league": "Championship",
         "name": "Wrexham",
+        "prettyName": "Wrexham",
         "priority": "3"
       },
       "sources": [
@@ -5922,6 +5925,7 @@
         "id": "4",
         "league": "International",
         "name": "USMNT",
+        "prettyName": "USMNT",
         "priority": "4"
       },
       "sources": [],
@@ -5943,6 +5947,7 @@
         "id": "5",
         "league": "International",
         "name": "USWNT",
+        "prettyName": "USWNT",
         "priority": "5"
       },
       "sources": [],
@@ -5964,6 +5969,7 @@
         "id": "6",
         "league": "MLS",
         "name": "Charlotte FC",
+        "prettyName": "Charlotte FC",
         "priority": "6"
       },
       "sources": [
@@ -6733,6 +6739,7 @@
         "id": "7",
         "league": "MLS",
         "name": "Inter Miami CF",
+        "prettyName": "Inter Miami CF",
         "priority": "7"
       },
       "sources": [

@@ -290,7 +290,7 @@ let activeTodoStatusFilter = "";
 let activeTodoItemId = "";
 let draggedTodoItemId = "";
 let didMoveTodoPointer = false;
-let activeTradingCardExportUrl = "";
+let activeTradingCardExportUrls = [];
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
 let activeRankingSnapshotId = "current";
@@ -733,7 +733,8 @@ function getFootyLocalTeamBadge(teamName, teamId = "") {
     "";
 
   if (id) {
-    return `assets/teams/${encodeURIComponent(id)}/badge.svg`;
+    const extension = ["1", "2"].includes(id) ? "png" : "svg";
+    return `assets/teams/${encodeURIComponent(id)}/badge.${extension}`;
   }
 
   return "";
@@ -754,12 +755,11 @@ function getFootyLocalTeamLogo(teamName, teamId = "") {
 
 function getFootyTradingCardBadgeSources(team = {}) {
   const name = team.name || team.teamName || "";
-  const id = team.id || team.teamId || "";
+  const id = String(team.id || team.teamId || "").trim();
   const providerBadge = String(team.badge || team.teamBadge || "").trim();
   const localBadge = getFootyLocalTeamBadge(name, id);
-  const localLogo = getFootyLocalTeamLogo(name, id);
 
-  return [providerBadge, localBadge, localLogo].filter(Boolean);
+  return [localBadge, providerBadge].filter(Boolean);
 }
 
 function renderFootyBadgeMarkup({
@@ -1106,16 +1106,37 @@ async function exportFootyTradingCard(player, team) {
 
   const width = 2500;
   const height = 3520;
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
+  const frontCanvas = createFootyTradingCardCanvas(width, height);
+  const backCanvas = createFootyTradingCardCanvas(width, height);
+  const frontContext = frontCanvas.getContext("2d");
+  const backContext = backCanvas.getContext("2d");
 
-  canvas.width = width;
-  canvas.height = height;
-
-  if (!context) {
+  if (!frontContext || !backContext) {
     return;
   }
 
+  await Promise.all([
+    drawFootyTradingCardFrontCanvas(frontContext, player, team, width, height),
+    drawFootyTradingCardBackCanvas(backContext, player, team, width, height),
+  ]);
+
+  const baseName = `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card`;
+  await downloadTradingCardCanvases([
+    { canvas: frontCanvas, fileName: `${baseName}-front.png`, label: "Front" },
+    { canvas: backCanvas, fileName: `${baseName}-back.png`, label: "Back" },
+  ], {
+    title: `${team.name} ${player.name} trading card`,
+  });
+}
+
+function createFootyTradingCardCanvas(width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+async function drawFootyTradingCardFrontCanvas(context, player, team, width, height) {
   const backgroundPath = getFootyPlayerTradingCardBackgroundPath(player);
   const framePath = "assets/trading-card/trading-card.svg";
   const number = formatFootyPlayerNumber(player.number);
@@ -1146,9 +1167,176 @@ async function exportFootyTradingCard(player, team) {
   }
 
   drawTradingCardName(context, player.name, width, height);
-  await downloadCanvasAsPng(canvas, `${slugifyFileName(team.name)}-${slugifyFileName(player.name)}-trading-card.png`, {
-    title: `${team.name} ${player.name} trading card`,
-  });
+}
+
+async function drawFootyTradingCardBackCanvas(context, player, team, width, height) {
+  const teamId = String(team.id || team.teamId || "").trim();
+  const logoPath = getFootyLocalTeamLogo(team.name, teamId);
+  const badgeSources = getFootyTradingCardBadgeSources(team);
+  const contentX = width * 0.195;
+  const contentY = height * 0.065;
+  const contentWidth = width * 0.74;
+  const contentRight = contentX + contentWidth;
+  const badgeWidth = width * 0.27;
+  const logoWidth = width * 0.32;
+  const logoHeight = width * 0.15;
+
+  context.fillStyle = "#001b3a";
+  context.fillRect(0, 0, width, height);
+  await drawCanvasImage(context, "assets/trading-card/back/card-shell.svg", 0, 0, width, height);
+  await drawCanvasImage(context, "assets/trading-card/back/left-rail.svg", 0, 0, width * 0.15, height);
+  await drawCanvasImage(context, "assets/trading-card/back/bottom-stripes.svg", width * 0.55, height - (width * 0.3326), width * 0.45, width * 0.3326);
+
+  drawTradingCardBackTeamName(context, team.prettyName || getFootyDisplayTeamName(team.name), width, height);
+
+  let badgeY = contentY;
+  if (logoPath) {
+    await drawCanvasImage(context, logoPath, contentRight - logoWidth, badgeY, logoWidth, logoHeight, {
+      alignX: "right",
+      contain: true,
+      scale: getFootyTradingCardLogoScale(teamId),
+    });
+    badgeY += logoHeight + (width * 0.015);
+  }
+
+  if (player.isNew) {
+    const newBadgeHeight = badgeWidth * 0.4;
+    await drawCanvasImage(context, "assets/trading-card/back/badge-new-player.svg", contentRight - badgeWidth, badgeY, badgeWidth, newBadgeHeight);
+    badgeY += newBadgeHeight + (width * 0.015);
+  }
+
+  if (player.fromAcademy) {
+    const academyHeight = badgeWidth * (100 / 290);
+    const academyX = contentRight - badgeWidth;
+    await drawCanvasImage(context, "assets/trading-card/back/badge-academy-product.svg", academyX, badgeY, badgeWidth, academyHeight);
+    for (const badgePath of badgeSources) {
+      const didDrawBadge = await drawCanvasImage(context, badgePath, academyX + (badgeWidth * 0.02), badgeY + (academyHeight * 0.30), badgeWidth * 0.25, academyHeight * 0.38, { contain: true });
+      if (didDrawBadge) {
+        break;
+      }
+    }
+  }
+
+  drawTradingCardBackPlayer(context, player, contentX, contentY, width * 0.38, width);
+
+  const dividerY = height * 0.315;
+  await drawCanvasImage(context, "assets/trading-card/back/section-divider.svg", contentX, dividerY, contentWidth, 18);
+
+  const facts = [
+    ["icon-appearances-stadium.svg", "Appearances", player.appearances],
+    ["icon-year-joined.svg", "Year joined", player.yearJoined],
+    ["icon-club-joined-from.svg", "Club joined from", player.clubJoinedFrom],
+    ["icon-home-country.svg", "Home country", player.homeCountry],
+    ["icon-birthday.svg", "Birthday", formatFootyTradingCardBirthday(player.birthday)],
+  ];
+  const factsY = dividerY + (width * 0.02);
+  const rowHeight = width * 0.164;
+  const iconSize = width * 0.14;
+
+  for (const [index, [icon, label, value]] of facts.entries()) {
+    const rowY = factsY + (rowHeight * index);
+    const iconY = rowY + ((rowHeight - iconSize) / 2);
+    const textX = contentX + iconSize + (width * 0.04);
+    await drawCanvasImage(context, `assets/trading-card/back/${icon}`, contentX, iconY, iconSize, iconSize);
+    drawTradingCardBackFact(context, label, value, textX, rowY, contentRight - textX, rowHeight, width);
+
+    if (index < facts.length - 1) {
+      context.save();
+      context.strokeStyle = "#d8dce2";
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(contentX, rowY + rowHeight);
+      context.lineTo(contentRight, rowY + rowHeight);
+      context.stroke();
+      context.restore();
+    }
+  }
+}
+
+function getFootyTradingCardLogoScale(teamId) {
+  return {
+    "1": 1.08,
+    "3": 0.92,
+    "6": 1.7,
+    "7": 1.7,
+  }[String(teamId || "")] || 1;
+}
+
+function drawTradingCardBackTeamName(context, teamName, width, height) {
+  const text = String(teamName || "").toUpperCase();
+  const fontSize = fitCanvasText(context, text, height * 0.72, Math.round(width * 0.032), "Arial, sans-serif");
+
+  context.save();
+  context.translate(width * 0.075, height * 0.54);
+  context.rotate(-Math.PI / 2);
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${fontSize}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, 0, 0);
+  context.restore();
+}
+
+function drawTradingCardBackPlayer(context, player, x, y, maxWidth, width) {
+  const words = String(player.name || "Player").trim().split(/\s+/).filter(Boolean);
+  const lines = words.length > 1 ? [words[0], words.slice(1).join(" ")] : [words[0] || "Player"];
+  const longestLine = lines.reduce((longest, line) => line.length > longest.length ? line : longest, "");
+  const fontSize = fitCanvasText(context, longestLine, maxWidth, Math.round(width * 0.084), "Arial, sans-serif");
+  const lineHeight = fontSize * 0.84;
+
+  context.save();
+  context.fillStyle = "#001b3a";
+  context.font = `900 ${fontSize}px Arial, sans-serif`;
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  lines.forEach((line, index) => context.fillText(line, x, y + (lineHeight * index)));
+
+  const positionY = y + (lineHeight * lines.length) + (width * 0.04);
+  context.strokeStyle = "#b89443";
+  context.lineWidth = 8;
+  context.beginPath();
+  context.moveTo(x, positionY);
+  context.lineTo(x + (width * 0.14), positionY);
+  context.stroke();
+  context.fillStyle = "#001b3a";
+  context.font = `800 ${Math.round(width * 0.037)}px Arial, sans-serif`;
+  context.textBaseline = "top";
+  context.fillText(String(player.position || "").toUpperCase(), x, positionY + (width * 0.024));
+  context.restore();
+}
+
+function drawTradingCardBackFact(context, label, value, x, y, maxWidth, rowHeight, width) {
+  context.save();
+  context.fillStyle = "#001b3a";
+  context.font = `800 ${Math.round(width * 0.029)}px Arial, sans-serif`;
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillText(String(label || "").toUpperCase(), x, y + (rowHeight * 0.22));
+  context.font = `650 ${Math.round(width * 0.051)}px Arial, sans-serif`;
+  drawWrappedCanvasText(context, String(value || "—"), x, y + (rowHeight * 0.46), maxWidth, width * 0.052, 2);
+  context.restore();
+}
+
+function drawWrappedCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+
+  for (const word of words) {
+    const nextLine = line ? `${line} ${word}` : word;
+    if (line && context.measureText(nextLine).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = nextLine;
+    }
+  }
+
+  if (line) {
+    lines.push(line);
+  }
+
+  lines.slice(0, maxLines).forEach((lineText, index) => context.fillText(lineText, x, y + (lineHeight * index)));
 }
 
 function loadCanvasImage(src) {
@@ -1161,6 +1349,7 @@ function loadCanvasImage(src) {
     const image = new Image();
     image.decoding = "async";
     const isLocalAsset = isLocalAssetPath(src);
+    const isRemoteAsset = /^https:\/\//i.test(src);
     let objectUrl = "";
 
     image.onload = () => {
@@ -1171,12 +1360,16 @@ function loadCanvasImage(src) {
     };
     image.onerror = () => reject(new Error(`Unable to load image: ${src}`));
 
-    if (!isLocalAsset) {
-      reject(new Error(`Refusing to draw non-local export image: ${src}`));
+    if (!isLocalAsset && !isRemoteAsset) {
+      reject(new Error(`Refusing to draw unsupported export image: ${src}`));
       return;
     }
 
-    fetch(src, { cache: "force-cache" })
+    fetch(src, {
+      cache: "force-cache",
+      credentials: isRemoteAsset ? "omit" : "same-origin",
+      mode: isRemoteAsset ? "cors" : "same-origin",
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Unable to fetch image: ${src}`);
@@ -1207,10 +1400,12 @@ async function drawCanvasImage(context, src, x, y, width, height, options = {}) 
     const image = await loadCanvasImage(src);
 
     if (options.contain) {
-      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight) * (Number(options.scale) || 1);
       const drawWidth = image.naturalWidth * scale;
       const drawHeight = image.naturalHeight * scale;
-      context.drawImage(image, x + ((width - drawWidth) / 2), y + ((height - drawHeight) / 2), drawWidth, drawHeight);
+      const drawX = options.alignX === "right" ? x + width - drawWidth : x + ((width - drawWidth) / 2);
+      const drawY = options.alignY === "top" ? y : y + ((height - drawHeight) / 2);
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
       revokeCanvasImageObjectUrl(image);
       return true;
     }
@@ -1316,25 +1511,26 @@ function canvasToPngBlob(canvas) {
   });
 }
 
-async function downloadCanvasAsPng(canvas, fileName, options = {}) {
-  const blob = await canvasToPngBlob(canvas);
+async function downloadTradingCardCanvases(exports, options = {}) {
+  const preparedExports = await Promise.all(exports.map(async (item) => ({
+    ...item,
+    blob: await canvasToPngBlob(item.canvas),
+  })));
+  const shareFiles = preparedExports.every((item) => item.blob)
+    ? preparedExports.map((item) => new File([item.blob], item.fileName, { type: "image/png" }))
+    : [];
+  const downloads = setTradingCardExportDownloads(preparedExports);
 
-  if (!blob) {
-    setTradingCardExportImageLink(canvas, fileName);
-    return;
-  }
-
-  const downloadUrl = setTradingCardExportDownload(fileName, blob);
-
-  const file = new File([blob], fileName, { type: "image/png" });
-
-  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+  if (shareFiles.length && navigator.share && (!navigator.canShare || navigator.canShare({ files: shareFiles }))) {
     try {
       await navigator.share({
-        files: [file],
+        files: shareFiles,
         title: options.title || "Trading card",
       });
-      setTradingCardExportStatus("Card shared.");
+      const statusText = footyTeamContent?.querySelector("[data-trading-card-export-status] span");
+      if (statusText) {
+        statusText.textContent = "Front and back shared.";
+      }
       return;
     } catch (error) {
       if (error?.name !== "AbortError") {
@@ -1343,12 +1539,14 @@ async function downloadCanvasAsPng(canvas, fileName, options = {}) {
     }
   }
 
-  const link = document.createElement("a");
-  link.href = downloadUrl;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
+  downloads.forEach(({ fileName, url }) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.append(link);
+    link.click();
+    link.remove();
+  });
 }
 
 function setTradingCardExportStatus(message) {
@@ -1359,42 +1557,39 @@ function setTradingCardExportStatus(message) {
   }
 }
 
-function setTradingCardExportDownload(fileName, blob) {
+function setTradingCardExportDownloads(exports) {
   const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
+  activeTradingCardExportUrls.forEach((url) => URL.revokeObjectURL(url));
+  activeTradingCardExportUrls = [];
 
-  if (!status) {
-    return "";
-  }
+  const downloads = exports.map((item) => {
+    let url = "";
+    if (item.blob) {
+      url = URL.createObjectURL(item.blob);
+      activeTradingCardExportUrls.push(url);
+    } else {
+      try {
+        url = item.canvas.toDataURL("image/png");
+      } catch (error) {
+        recordDiagnostic("trading card export failed", error);
+      }
+    }
+    return { ...item, url };
+  }).filter((item) => item.url);
 
-  if (activeTradingCardExportUrl) {
-    URL.revokeObjectURL(activeTradingCardExportUrl);
-  }
-
-  activeTradingCardExportUrl = URL.createObjectURL(blob);
-  status.innerHTML = `
-    <span>Card ready.</span>
-    <a href="${escapeHtml(activeTradingCardExportUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Download</a>
-  `;
-  return activeTradingCardExportUrl;
-}
-
-function setTradingCardExportImageLink(canvas, fileName) {
-  const status = footyTeamContent?.querySelector("[data-trading-card-export-status]");
-
-  if (!status) {
-    return;
-  }
-
-  try {
-    const dataUrl = canvas.toDataURL("image/png");
-    status.innerHTML = `
-      <span>Card ready.</span>
-      <a href="${escapeHtml(dataUrl)}" download="${escapeHtml(fileName)}" target="_blank" rel="noopener noreferrer">Open Image</a>
-    `;
-  } catch (error) {
-    recordDiagnostic("trading card export failed", error);
+  if (!downloads.length) {
     setTradingCardExportStatus("Unable to export this card.");
+    return [];
   }
+
+  if (status) {
+    status.innerHTML = `
+      <span>Front and back ready.</span>
+      ${downloads.map((item) => `<a href="${escapeHtml(item.url)}" download="${escapeHtml(item.fileName)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.label)}</a>`).join("")}
+    `;
+  }
+
+  return downloads;
 }
 
 function slugifyFileName(value) {

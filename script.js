@@ -249,7 +249,7 @@ import {
 } from "./modules/domRefs.js?v=202608090001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608100002";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuidesController } from "./modules/guides.js?v=202608100002";
+import { createGuidesController } from "./modules/guides.js?v=202608100003";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -459,7 +459,10 @@ const { syncThemeToggle } = createThemeController({
   toggle: themeToggle,
 });
 
-const guidesController = createGuidesController({ loadSheet });
+const guidesController = createGuidesController({
+  loadSheet,
+  saveChecklistDone: submitGuideChecklistDone,
+});
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -4427,6 +4430,18 @@ function submitNextItemPayload(payload) {
     fallback: submitNextItemPayloadWithForm,
     missingMessage: "Next data endpoint is not configured.",
     submitLabel: "Next item",
+  });
+}
+
+function submitGuideChecklistDone(item) {
+  return submitAppsScriptPayload({
+    action: "saveWalkthroughChecklistDone",
+    item,
+  }, {
+    endpoint: NEXT_DATA_ENDPOINT,
+    fallback: submitNextItemPayloadWithForm,
+    missingMessage: "Guide checklist data endpoint is not configured.",
+    submitLabel: "guide checklist progress",
   });
 }
 

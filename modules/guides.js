@@ -1,7 +1,6 @@
-const GUIDE_PROGRESS_STORAGE_KEY = "boxthislap-guide-progress-v1";
 const GUIDE_STEP_BATCH_SIZE = 60;
 
-export function createGuidesController({ loadSheet }) {
+export function createGuidesController({ loadSheet, saveChecklistDone }) {
   const view = document.querySelector("#guides-view");
   let guides = null;
   let checklist = null;
@@ -16,7 +15,7 @@ export function createGuidesController({ loadSheet }) {
   let typeFilter = "";
   let visibleStepLimit = GUIDE_STEP_BATCH_SIZE;
   let stepObserver = null;
-  let progressOverrides = readProgressOverrides();
+  const progressOverrides = {};
 
   view?.addEventListener("click", handleClick);
   view?.addEventListener("change", handleChange);
@@ -35,6 +34,11 @@ export function createGuidesController({ loadSheet }) {
     } else {
       renderGuideIndex();
     }
+  }
+
+  function isItemDone(item) {
+    const key = getStepKey(item.guideId, item.stepId);
+    return Object.prototype.hasOwnProperty.call(progressOverrides, key) ? progressOverrides[key] : item.done;
   }
 
   async function ensureIndexLoaded() {
@@ -311,7 +315,20 @@ export function createGuidesController({ loadSheet }) {
     const stepInput = event.target.closest("[data-guide-step]");
     if (stepInput) {
       progressOverrides[stepInput.dataset.guideStep] = stepInput.checked;
-      saveProgressOverrides(progressOverrides);
+      const item = checklist?.find((entry) => getStepKey(entry.guideId, entry.stepId) === stepInput.dataset.guideStep);
+      const submitted = item && saveChecklistDone?.({
+        Done: stepInput.checked,
+        "Guide ID": item.guideId,
+        ID: item.id,
+        "Step ID": item.stepId,
+      });
+
+      if (!submitted) {
+        delete progressOverrides[stepInput.dataset.guideStep];
+        stepInput.checked = !stepInput.checked;
+        return;
+      }
+
       if (stepInput.checked && hideDone) {
         stepInput.closest(".guide-step")?.classList.add("is-completing");
       }
@@ -413,37 +430,6 @@ function getFilterOptions(items) {
 
 function uniqueValues(values) {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-}
-
-function isItemDone(item) {
-  const key = getStepKey(item.guideId, item.stepId);
-  return Object.prototype.hasOwnProperty.call(readProgressCache(), key) ? readProgressCache()[key] : item.done;
-}
-
-let progressCache = null;
-function readProgressCache() {
-  if (progressCache === null) progressCache = readProgressOverrides();
-  return progressCache;
-}
-
-function readProgressOverrides() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(GUIDE_PROGRESS_STORAGE_KEY) || "{}");
-    progressCache = parsed && typeof parsed === "object" ? parsed : {};
-    return progressCache;
-  } catch {
-    progressCache = {};
-    return progressCache;
-  }
-}
-
-function saveProgressOverrides(overrides) {
-  progressCache = overrides;
-  try {
-    localStorage.setItem(GUIDE_PROGRESS_STORAGE_KEY, JSON.stringify(overrides));
-  } catch {
-    // The interaction still works for this visit when storage is unavailable.
-  }
 }
 
 function getStepKey(guideId, stepId) {

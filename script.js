@@ -7866,6 +7866,7 @@ function getFormulaOneCalculatorState(year, data) {
   const storedState = loadFormulaOneCalculatorStoredState(yearKey);
   const hiddenDrivers = new Set(storedState.hiddenDrivers ?? []);
   const state = {
+    filtersExpanded: false,
     knownDrivers: new Set(data.driversToWatch),
     selections: storedState.selections && typeof storedState.selections === "object" ? storedState.selections : {},
     visibleDrivers: new Set(data.driversToWatch.filter((driver) => !hiddenDrivers.has(driver))),
@@ -7956,6 +7957,28 @@ function getFormulaOneDriverColor(driver, data) {
   return FORMULA_ONE_DRIVER_COLOR_PALETTE[index % FORMULA_ONE_DRIVER_COLOR_PALETTE.length];
 }
 
+function getFormulaOneCalculatorSortedDrivers(data, drivers = data.driversToWatch) {
+  return [...drivers].sort((firstDriver, secondDriver) => {
+    return getFormulaOneCalculatorCurrentPoints(data, secondDriver) - getFormulaOneCalculatorCurrentPoints(data, firstDriver) ||
+      data.driversToWatch.indexOf(firstDriver) - data.driversToWatch.indexOf(secondDriver);
+  });
+}
+
+function renderFormulaOneCalculatorDriverName(driver) {
+  const [firstName, ...remainingNames] = String(driver ?? "").trim().split(/\s+/);
+
+  if (!remainingNames.length) {
+    return `<span class="formula-one-calculator-driver-name"><span>${escapeHtml(firstName)}</span></span>`;
+  }
+
+  return `
+    <span class="formula-one-calculator-driver-name">
+      <span>${escapeHtml(firstName)}</span>
+      <span>${escapeHtml(remainingNames.join(" "))}</span>
+    </span>
+  `;
+}
+
 function renderFormulaOneCalculator(year) {
   const view = formulaOneViews[year];
   const data = siteData[`formulaOne${year}Calculator`];
@@ -7966,7 +7989,8 @@ function renderFormulaOneCalculator(year) {
 
   const state = getFormulaOneCalculatorState(year, data);
   const events = getFormulaOneCalculatorEvents(data);
-  const visibleDrivers = data.driversToWatch.filter((driver) => state.visibleDrivers.has(driver));
+  const sortedDrivers = getFormulaOneCalculatorSortedDrivers(data);
+  const visibleDrivers = sortedDrivers.filter((driver) => state.visibleDrivers.has(driver));
   const lastCompletedRound = data.rounds.filter((round) => round.complete).at(-1)?.id ?? 0;
 
   view.calculator.innerHTML = `
@@ -7978,15 +8002,26 @@ function renderFormulaOneCalculator(year) {
       <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
     </section>
 
-    ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers)}
-
     <section class="formula-one-calculator-card">
       <div class="formula-one-calculator-section-heading">
         <div>
           <h3>Points calculator</h3>
           <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
         </div>
+        <button
+          class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
+          type="button"
+          data-formula-one-calculator-filter-toggle
+          aria-expanded="${state.filtersExpanded ? "true" : "false"}"
+          aria-controls="formula-one-${escapeHtml(year)}-driver-filters"
+          aria-label="${state.filtersExpanded ? "Hide" : "Show"} driver filters"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+          </svg>
+        </button>
       </div>
+      ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers)}
       <div class="table-wrap formula-one-calculator-table-wrap">
         ${renderFormulaOneCalculatorTable(data, state, events, visibleDrivers)}
       </div>
@@ -8006,9 +8041,14 @@ function renderFormulaOneCalculator(year) {
   `;
 }
 
-function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers) {
+function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers) {
   return `
-    <section class="formula-one-calculator-card formula-one-calculator-filters" aria-labelledby="formula-one-${escapeHtml(year)}-driver-filter-heading">
+    <div
+      class="formula-one-calculator-filters"
+      id="formula-one-${escapeHtml(year)}-driver-filters"
+      aria-labelledby="formula-one-${escapeHtml(year)}-driver-filter-heading"
+      ${state.filtersExpanded ? "" : "hidden"}
+    >
       <div class="formula-one-calculator-section-heading">
         <div>
           <h3 id="formula-one-${escapeHtml(year)}-driver-filter-heading">Drivers</h3>
@@ -8020,7 +8060,7 @@ function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers) {
         </div>
       </div>
       <div class="formula-one-calculator-driver-filters">
-        ${data.driversToWatch.map((driver) => `
+        ${sortedDrivers.map((driver) => `
           <label style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
             <input
               type="checkbox"
@@ -8033,7 +8073,7 @@ function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers) {
           </label>
         `).join("")}
       </div>
-    </section>
+    </div>
   `;
 }
 
@@ -8051,7 +8091,7 @@ function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
         <th scope="row">
           <span class="formula-one-calculator-driver" style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
             <span class="formula-one-driver-swatch" aria-hidden="true"></span>
-            ${escapeHtml(driver)}
+            ${renderFormulaOneCalculatorDriverName(driver)}
           </span>
         </th>
         <td class="formula-one-calculator-total">${escapeHtml(currentPoints)}</td>
@@ -10806,9 +10846,10 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   });
 
   view.calculator?.addEventListener("click", (event) => {
+    const filterToggle = event.target.closest("[data-formula-one-calculator-filter-toggle]");
     const showAllButton = event.target.closest("[data-formula-one-calculator-show-all]");
     const hideAllButton = event.target.closest("[data-formula-one-calculator-hide-all]");
-    if (!showAllButton && !hideAllButton) {
+    if (!filterToggle && !showAllButton && !hideAllButton) {
       return;
     }
 
@@ -10818,6 +10859,12 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     }
 
     const state = getFormulaOneCalculatorState(year, data);
+    if (filterToggle) {
+      state.filtersExpanded = !state.filtersExpanded;
+      renderFormulaOneCalculator(year);
+      return;
+    }
+
     state.visibleDrivers = new Set(showAllButton ? data.driversToWatch : []);
     persistFormulaOneCalculatorState(year, data, state);
     renderFormulaOneCalculator(year);

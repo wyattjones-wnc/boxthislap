@@ -3655,6 +3655,19 @@ main {
   padding: 7px 11px;
 }
 
+.formula-one-calculator-filter-toggle {
+  flex: 0 0 auto;
+}
+
+.formula-one-calculator-filters {
+  background: var(--soft);
+  border-top: 1px solid var(--line);
+}
+
+.formula-one-calculator-filters[hidden] {
+  display: none;
+}
+
 .formula-one-calculator-filters .formula-one-calculator-section-heading {
   border-bottom: 1px solid var(--line);
 }
@@ -3742,6 +3755,7 @@ main {
   background: var(--panel);
   border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
+  box-sizing: border-box;
   min-width: 116px;
   padding: 10px;
   text-align: center;
@@ -3809,6 +3823,10 @@ main {
   align-items: center;
   display: inline-flex;
   gap: 8px;
+}
+
+.formula-one-calculator-driver-name > span + span::before {
+  content: " ";
 }
 
 .formula-one-calculator-table select {
@@ -5685,12 +5703,69 @@ tr:last-child td {
 
   .formula-one-calculator-table th:first-child,
   .formula-one-calculator-table td:first-child {
-    min-width: 155px;
+    max-width: 112px;
+    min-width: 112px;
+    padding-left: 8px;
+    padding-right: 8px;
+    width: 112px;
   }
 
   .formula-one-calculator-table th:nth-child(2),
   .formula-one-calculator-table td:nth-child(2) {
-    left: 155px;
+    left: 112px;
+    min-width: 66px;
+    padding-left: 5px;
+    padding-right: 5px;
+    width: 66px;
+  }
+
+  .formula-one-calculator-table th,
+  .formula-one-calculator-table td {
+    min-width: 92px;
+    padding: 8px 6px;
+  }
+
+  .formula-one-calculator-table th:last-child,
+  .formula-one-calculator-table td:last-child {
+    min-width: 78px;
+    padding-left: 5px;
+    padding-right: 5px;
+    width: 78px;
+  }
+
+  .formula-one-calculator-table thead th {
+    font-size: 0.68rem;
+  }
+
+  .formula-one-calculator-driver {
+    font-size: 0.78rem;
+    gap: 6px;
+    line-height: 1.05;
+    white-space: normal;
+  }
+
+  .formula-one-calculator-driver-name {
+    display: grid;
+    gap: 3px;
+  }
+
+  .formula-one-calculator-driver-name > span + span::before {
+    content: none;
+  }
+
+  .formula-one-calculator-driver .formula-one-driver-swatch {
+    height: 8px;
+    width: 8px;
+  }
+
+  .formula-one-calculator-table select {
+    font-size: 0.75rem;
+    min-height: 34px;
+    width: 80px;
+  }
+
+  .formula-one-calculator-total {
+    font-size: 0.92rem;
   }
 
   .fantasy-critic-summary {

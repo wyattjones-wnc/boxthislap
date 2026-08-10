@@ -2597,15 +2597,35 @@ body.has-shell-stale-warning .stale-shell-alert {
   inset: 0;
   overflow: hidden;
   position: absolute;
+  transition:
+    opacity 0s linear 260ms,
+    visibility 0s linear 260ms;
   width: 100%;
   -webkit-backface-visibility: hidden;
+}
+
+.trading-card-face--front {
+  opacity: 1;
+  visibility: visible;
 }
 
 .trading-card-face--back {
   color: #001b3a;
   container-type: inline-size;
   font-family: Arial, sans-serif;
+  opacity: 0;
   transform: rotateY(180deg);
+  visibility: hidden;
+}
+
+.trading-card-flip-inner.is-flipped .trading-card-face--front {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.trading-card-flip-inner.is-flipped .trading-card-face--back {
+  opacity: 1;
+  visibility: visible;
 }
 
 .trading-card-background,
@@ -2882,6 +2902,10 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 @media (prefers-reduced-motion: reduce) {
   .trading-card-flip-inner {
+    transition: none;
+  }
+
+  .trading-card-face {
     transition: none;
   }
 }

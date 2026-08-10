@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608020001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608090001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -246,7 +246,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608050001";
+} from "./modules/domRefs.js?v=202608090001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202607310001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import {
@@ -326,6 +326,27 @@ const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
 const formulaOneDataPromises = new Map();
+const formulaOneCalculatorStates = new Map();
+const FORMULA_ONE_CALCULATOR_CONFIG = {
+  2026: {
+    driversSource: "formulaOne2026CalculatorDrivers",
+    optionsSource: "formulaOne2026CalculatorOptions",
+    sprintsSource: "formulaOne2026CalculatorSprints",
+    summarySource: "formulaOne2026CalculatorSummary",
+  },
+};
+const FORMULA_ONE_DRIVER_COLOR_PALETTE = [
+  "#e10600",
+  "#0072ce",
+  "#00a19c",
+  "#ff8700",
+  "#7c4dff",
+  "#d81b60",
+  "#2e7d32",
+  "#795548",
+  "#00838f",
+  "#c62828",
+];
 const fantasyOfficeData = {
   2025: { draft: [], movies: [], ordering: [], results: [] },
   2026: { draft: [], movies: [], ordering: [], results: [] },
@@ -6732,7 +6753,7 @@ function getRandomRankingAssetPath(kind, itemId) {
 
 function createRankingBattlePair(kind = activeRankingKind) {
   const rows = (kind === "todo"
-    ? getTodoItems().map(normalizeTodoItem).filter(Boolean).filter(isTodoDefaultListItem).map((item) => {
+    ? getTodoCompareItems().map((item) => {
       const elo = getRankingEloForItem(kind, item.id);
       return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
     })
@@ -6769,6 +6790,14 @@ function createRankingBattlePair(kind = activeRankingKind) {
     kind,
     rankingType: getRankingType(kind),
   };
+}
+
+function getTodoCompareItems() {
+  const items = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const itemsById = getTodoItemMap(items);
+  return items
+    .filter(isTodoDefaultListItem)
+    .filter((item) => !hasActiveTodoParent(item, itemsById));
 }
 
 function getRankingComparisonCounts(kind = activeRankingKind, options = {}) {
@@ -7647,6 +7676,585 @@ function parseFormulaOneRoundForms(rows) {
     .filter((form) => form.id && form.name && form.formUrl);
 }
 
+function parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv }) {
+  const optionsRows = parseCsvMatrix(optionsCsv);
+  const pointTables = findFormulaOneCalculatorPointTables(optionsRows);
+  const raceOptions = pointTables.find((table) => table.some((option) => option.position === "<10"));
+  const sprintOptions = pointTables.find((table) => table.some((option) => option.position === "<8"));
+  const driversToWatch = findFormulaOneDriversToWatch(optionsRows, pointTables);
+
+  if (!raceOptions?.length || !sprintOptions?.length || !driversToWatch.length) {
+    throw new Error("Formula 1 calculator options did not include RacePoints, SprintPoints, and DriversToWatch data.");
+  }
+
+  const raceData = parseFormulaOneCalculatorRoundTable(driversCsv);
+  const sprintData = parseFormulaOneCalculatorRoundTable(sprintsCsv);
+  const currentTotals = parseFormulaOneCalculatorSummary(summaryCsv);
+
+  if (!raceData.rounds.length) {
+    throw new Error("Formula 1 Drivers data did not include round columns.");
+  }
+
+  return {
+    currentTotals,
+    driversToWatch,
+    raceOptions,
+    rounds: raceData.rounds,
+    sprintOptions,
+    sprintRounds: sprintData.rounds,
+  };
+}
+
+function findFormulaOneCalculatorPointTables(rows) {
+  const tables = [];
+
+  rows.forEach((row, rowIndex) => {
+    row.forEach((value, columnIndex) => {
+      if (normalizeLookupName(value) !== "position" || normalizeLookupName(row[columnIndex + 1]) !== "points") {
+        return;
+      }
+
+      const options = [];
+
+      for (const optionRow of rows.slice(rowIndex + 1)) {
+        const position = String(optionRow[columnIndex] ?? "").trim();
+        const pointsText = String(optionRow[columnIndex + 1] ?? "").trim();
+
+        if (!position && !pointsText) {
+          break;
+        }
+
+        const points = Number(pointsText.replace(/,/g, ""));
+        if (!position || !Number.isFinite(points)) {
+          break;
+        }
+
+        options.push({ points, position });
+      }
+
+      if (options.some((option) => option.position.startsWith("<"))) {
+        tables.push({ headerRowIndex: rowIndex, options });
+      }
+    });
+  });
+
+  return tables.map((table) => table.options);
+}
+
+function findFormulaOneDriversToWatch(rows, pointTables) {
+  const terminalTokens = new Set(pointTables.flat()
+    .map((option) => option.position)
+    .filter((position) => position.startsWith("<")));
+  let passedPointTables = false;
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const row = rows[rowIndex] ?? [];
+    if (row.some((value) => terminalTokens.has(String(value ?? "").trim()))) {
+      passedPointTables = true;
+      continue;
+    }
+
+    if (!passedPointTables) {
+      continue;
+    }
+
+    const driverColumn = row.findIndex((value) => normalizeLookupName(value) === "driver");
+    if (driverColumn < 0) {
+      continue;
+    }
+
+    const drivers = [];
+    for (const driverRow of rows.slice(rowIndex + 1)) {
+      const driver = String(driverRow[driverColumn] ?? "").trim();
+      if (!driver) {
+        break;
+      }
+      drivers.push(driver);
+    }
+    return drivers;
+  }
+
+  return [];
+}
+
+function parseFormulaOneCalculatorRoundTable(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerIndex = rows.findIndex((row) => {
+    return normalizeLookupName(row[0]) === "driver" && row.some((value) => /^round\s+\d+/i.test(String(value ?? "").trim()));
+  });
+
+  if (headerIndex < 0) {
+    return { rounds: [] };
+  }
+
+  const headers = rows[headerIndex];
+  const prettyHeaders = rows[headerIndex - 1] ?? [];
+  const totalColumn = headers.findIndex((value) => normalizeLookupName(value) === "total");
+  const roundColumns = headers
+    .map((header, columnIndex) => {
+      const match = String(header ?? "").trim().match(/^Round\s+(\d+)/i);
+      if (!match || (totalColumn >= 0 && columnIndex >= totalColumn)) {
+        return null;
+      }
+
+      const prettyName = String(prettyHeaders[columnIndex] ?? "").trim();
+      const headerName = String(header ?? "").trim();
+      return {
+        columnIndex,
+        id: Number(match[1]),
+        name: /^Round\s+\d+/i.test(prettyName) ? prettyName : headerName,
+        pointsByDriver: new Map(),
+      };
+    })
+    .filter(Boolean);
+
+  for (const row of rows.slice(headerIndex + 1)) {
+    const driver = String(row[0] ?? "").trim();
+    if (!driver || normalizeLookupName(driver) === "count") {
+      break;
+    }
+
+    roundColumns.forEach((round) => {
+      const value = String(row[round.columnIndex] ?? "").trim();
+      round.pointsByDriver.set(normalizeLookupName(driver), value);
+    });
+  }
+
+  roundColumns.forEach((round) => {
+    round.complete = [...round.pointsByDriver.values()].some((value) => value !== "");
+  });
+
+  return { rounds: roundColumns };
+}
+
+function parseFormulaOneCalculatorSummary(csvText) {
+  const rows = parseCsvMatrix(csvText);
+  const headerIndex = rows.findIndex((row) => {
+    return normalizeLookupName(row[0]) === "driver" && row.some((value) => normalizeLookupName(value) === "total");
+  });
+  const currentTotals = new Map();
+
+  if (headerIndex < 0) {
+    return currentTotals;
+  }
+
+  const totalColumn = rows[headerIndex].findIndex((value) => normalizeLookupName(value) === "total");
+  for (const row of rows.slice(headerIndex + 1)) {
+    const driver = String(row[0] ?? "").trim();
+    if (!driver) {
+      break;
+    }
+    currentTotals.set(normalizeLookupName(driver), getFormulaOneCalculatorPointNumber(row[totalColumn]));
+  }
+
+  return currentTotals;
+}
+
+function getFormulaOneCalculatorPointNumber(value) {
+  const number = Number(String(value ?? "").trim().replace(/,/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getFormulaOneCalculatorState(year, data) {
+  const yearKey = String(year);
+  const existingState = formulaOneCalculatorStates.get(yearKey);
+
+  if (existingState) {
+    const currentDrivers = new Set(data.driversToWatch);
+    existingState.visibleDrivers = new Set([...existingState.visibleDrivers].filter((driver) => currentDrivers.has(driver)));
+    data.driversToWatch.forEach((driver) => {
+      if (!existingState.knownDrivers.has(driver)) {
+        existingState.visibleDrivers.add(driver);
+      }
+    });
+    existingState.knownDrivers = currentDrivers;
+    return existingState;
+  }
+
+  const storedState = loadFormulaOneCalculatorStoredState(yearKey);
+  const hiddenDrivers = new Set(storedState.hiddenDrivers ?? []);
+  const state = {
+    filtersExpanded: false,
+    knownDrivers: new Set(data.driversToWatch),
+    selections: storedState.selections && typeof storedState.selections === "object" ? storedState.selections : {},
+    visibleDrivers: new Set(data.driversToWatch.filter((driver) => !hiddenDrivers.has(driver))),
+  };
+  formulaOneCalculatorStates.set(yearKey, state);
+  return state;
+}
+
+function loadFormulaOneCalculatorStoredState(year) {
+  try {
+    return JSON.parse(localStorage.getItem(getFormulaOneCalculatorStorageKey(year)) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function persistFormulaOneCalculatorState(year, data, state) {
+  try {
+    localStorage.setItem(getFormulaOneCalculatorStorageKey(year), JSON.stringify({
+      hiddenDrivers: data.driversToWatch.filter((driver) => !state.visibleDrivers.has(driver)),
+      selections: state.selections,
+    }));
+  } catch {
+    // The calculator still works when browser storage is unavailable.
+  }
+}
+
+function getFormulaOneCalculatorStorageKey(year) {
+  return `boxthislap-formula-one-calculator-${year}`;
+}
+
+function getFormulaOneCalculatorEvents(data) {
+  const events = [];
+
+  data.rounds.filter((round) => !round.complete).forEach((round) => {
+    events.push({ round, type: "race" });
+  });
+  data.sprintRounds.filter((round) => !round.complete).forEach((round) => {
+    events.push({ round: getFormulaOneCalculatorRaceRoundForSprint(data, round), sourceRound: round, type: "sprint" });
+  });
+
+  return events.sort((firstEvent, secondEvent) => {
+    return firstEvent.round.id - secondEvent.round.id || (firstEvent.type === "sprint" ? -1 : 1);
+  });
+}
+
+function getFormulaOneCalculatorRaceRoundForSprint(data, sprintRound) {
+  const sprintName = getFormulaOneCalculatorRoundName(sprintRound);
+  return data.rounds.find((round) => getFormulaOneCalculatorRoundName(round) === sprintName) || sprintRound;
+}
+
+function getFormulaOneCalculatorRoundName(round) {
+  return normalizeLookupName(String(round?.name ?? "").replace(/^round\s+\d+\s*/i, ""));
+}
+
+function getFormulaOneCalculatorSelectionKey(type, roundId, driver) {
+  return `${type}:${roundId}:${driver}`;
+}
+
+function getFormulaOneCalculatorSelectedPoints(data, state, event, driver) {
+  const position = state.selections[getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver)] || "";
+  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
+  return options.find((option) => option.position === position)?.points ?? 0;
+}
+
+function getFormulaOneCalculatorCurrentPoints(data, driver) {
+  const summaryPoints = data.currentTotals.get(normalizeLookupName(driver));
+  if (Number.isFinite(summaryPoints)) {
+    return summaryPoints;
+  }
+
+  return data.rounds.reduce((total, round) => total + getFormulaOneCalculatorRoundPoints(round, driver), 0) +
+    data.sprintRounds.reduce((total, round) => total + getFormulaOneCalculatorRoundPoints(round, driver), 0);
+}
+
+function getFormulaOneCalculatorRoundPoints(round, driver) {
+  return getFormulaOneCalculatorPointNumber(round?.pointsByDriver.get(normalizeLookupName(driver)));
+}
+
+function getFormulaOneCalculatorProjectedPoints(data, state, events, driver) {
+  return getFormulaOneCalculatorCurrentPoints(data, driver) + events.reduce((total, event) => {
+    return total + getFormulaOneCalculatorSelectedPoints(data, state, event, driver);
+  }, 0);
+}
+
+function getFormulaOneDriverColor(driver, data) {
+  const index = Math.max(0, data.driversToWatch.indexOf(driver));
+  return FORMULA_ONE_DRIVER_COLOR_PALETTE[index % FORMULA_ONE_DRIVER_COLOR_PALETTE.length];
+}
+
+function getFormulaOneCalculatorSortedDrivers(data, drivers = data.driversToWatch) {
+  return [...drivers].sort((firstDriver, secondDriver) => {
+    return getFormulaOneCalculatorCurrentPoints(data, secondDriver) - getFormulaOneCalculatorCurrentPoints(data, firstDriver) ||
+      data.driversToWatch.indexOf(firstDriver) - data.driversToWatch.indexOf(secondDriver);
+  });
+}
+
+function renderFormulaOneCalculatorDriverName(driver) {
+  const [firstName, ...remainingNames] = String(driver ?? "").trim().split(/\s+/);
+
+  if (!remainingNames.length) {
+    return `<span class="formula-one-calculator-driver-name"><span>${escapeHtml(firstName)}</span></span>`;
+  }
+
+  return `
+    <span class="formula-one-calculator-driver-name">
+      <span>${escapeHtml(firstName)}</span>
+      <span>${escapeHtml(remainingNames.join(" "))}</span>
+    </span>
+  `;
+}
+
+function renderFormulaOneCalculator(year) {
+  const view = formulaOneViews[year];
+  const data = siteData[`formulaOne${year}Calculator`];
+
+  if (!view?.calculator || !data) {
+    return;
+  }
+
+  const state = getFormulaOneCalculatorState(year, data);
+  const events = getFormulaOneCalculatorEvents(data);
+  const sortedDrivers = getFormulaOneCalculatorSortedDrivers(data);
+  const visibleDrivers = sortedDrivers.filter((driver) => state.visibleDrivers.has(driver));
+  const lastCompletedRound = data.rounds.filter((round) => round.complete).at(-1)?.id ?? 0;
+
+  view.calculator.innerHTML = `
+    <section class="formula-one-calculator-card formula-one-calculator-intro">
+      <div>
+        <h3>Season scenarios</h3>
+        <p>Choose a finishing position for any remaining race or sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
+      </div>
+      <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
+    </section>
+
+    <section class="formula-one-calculator-card">
+      <div class="formula-one-calculator-section-heading">
+        <div>
+          <h3>Points calculator</h3>
+          <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
+        </div>
+        <button
+          class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
+          type="button"
+          data-formula-one-calculator-filter-toggle
+          aria-expanded="${state.filtersExpanded ? "true" : "false"}"
+          aria-controls="formula-one-${escapeHtml(year)}-driver-filters"
+          aria-label="${state.filtersExpanded ? "Hide" : "Show"} driver filters"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+          </svg>
+        </button>
+      </div>
+      ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers)}
+      <div class="table-wrap formula-one-calculator-table-wrap">
+        ${renderFormulaOneCalculatorTable(data, state, events, visibleDrivers)}
+      </div>
+    </section>
+
+    <section class="formula-one-calculator-card">
+      <div class="formula-one-calculator-section-heading">
+        <div>
+          <h3>Championship projection</h3>
+          <p>Cumulative points after each round</p>
+        </div>
+      </div>
+      <div class="formula-one-calculator-chart-wrap">
+        ${renderFormulaOneCalculatorChart(data, state, visibleDrivers)}
+      </div>
+    </section>
+  `;
+}
+
+function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers) {
+  return `
+    <div
+      class="formula-one-calculator-filters"
+      id="formula-one-${escapeHtml(year)}-driver-filters"
+      aria-labelledby="formula-one-${escapeHtml(year)}-driver-filter-heading"
+      ${state.filtersExpanded ? "" : "hidden"}
+    >
+      <div class="formula-one-calculator-section-heading">
+        <div>
+          <h3 id="formula-one-${escapeHtml(year)}-driver-filter-heading">Drivers</h3>
+          <p>Showing ${escapeHtml(visibleDrivers.length)} of ${escapeHtml(data.driversToWatch.length)}</p>
+        </div>
+        <div class="formula-one-calculator-filter-actions">
+          <button type="button" data-formula-one-calculator-show-all>Show all</button>
+          <button type="button" data-formula-one-calculator-hide-all>Hide all</button>
+        </div>
+      </div>
+      <div class="formula-one-calculator-driver-filters">
+        ${sortedDrivers.map((driver) => `
+          <label style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
+            <input
+              type="checkbox"
+              data-formula-one-calculator-filter
+              data-driver="${escapeHtml(driver)}"
+              ${state.visibleDrivers.has(driver) ? "checked" : ""}
+            >
+            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
+            <span>${escapeHtml(driver)}</span>
+          </label>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
+  const eventHeaders = events.map((event) => {
+    const eventLabel = event.type === "sprint" ? "Sprint" : "Race";
+    return `<th title="${escapeHtml(`${event.round.name} ${eventLabel}`)}"><span>R${escapeHtml(event.round.id)}</span>${escapeHtml(eventLabel)}</th>`;
+  }).join("");
+
+  const rows = visibleDrivers.length ? visibleDrivers.map((driver) => {
+    const currentPoints = getFormulaOneCalculatorCurrentPoints(data, driver);
+    const projectedPoints = getFormulaOneCalculatorProjectedPoints(data, state, events, driver);
+    return `
+      <tr>
+        <th scope="row">
+          <span class="formula-one-calculator-driver" style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
+            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
+            ${renderFormulaOneCalculatorDriverName(driver)}
+          </span>
+        </th>
+        <td class="formula-one-calculator-total">${escapeHtml(currentPoints)}</td>
+        ${events.map((event) => renderFormulaOneCalculatorPositionSelect(data, state, event, driver)).join("")}
+        <td class="formula-one-calculator-total formula-one-calculator-projected">
+          ${escapeHtml(projectedPoints)}
+          <small>+${escapeHtml(projectedPoints - currentPoints)}</small>
+        </td>
+      </tr>
+    `;
+  }).join("") : `
+    <tr>
+      <td class="table-message" colspan="${escapeHtml(events.length + 3)}">No drivers are selected. Use the driver filters above to add one.</td>
+    </tr>
+  `;
+
+  return `
+    <table class="formula-one-calculator-table">
+      <thead>
+        <tr>
+          <th>Driver</th>
+          <th>Current</th>
+          ${eventHeaders}
+          <th>Projected</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderFormulaOneCalculatorPositionSelect(data, state, event, driver) {
+  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
+  const key = getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver);
+  const selectedPosition = state.selections[key] || "";
+  const eventLabel = event.type === "sprint" ? "Sprint" : "Race";
+
+  return `
+    <td>
+      <select
+        aria-label="${escapeHtml(`${driver}, ${event.round.name} ${eventLabel} position`)}"
+        data-formula-one-calculator-position
+        data-driver="${escapeHtml(driver)}"
+        data-event-type="${escapeHtml(event.type)}"
+        data-round-id="${escapeHtml(event.round.id)}"
+      >
+        <option value="">—</option>
+        ${options.map((option) => `
+          <option value="${escapeHtml(option.position)}" ${option.position === selectedPosition ? "selected" : ""}>
+            ${escapeHtml(option.position)} · ${escapeHtml(option.points)} pts
+          </option>
+        `).join("")}
+      </select>
+    </td>
+  `;
+}
+
+function getFormulaOneCalculatorSeries(data, state, driver) {
+  const sprintRoundsById = new Map(data.sprintRounds.map((sprintRound) => {
+    return [getFormulaOneCalculatorRaceRoundForSprint(data, sprintRound).id, sprintRound];
+  }));
+  let cumulativePoints = 0;
+
+  return data.rounds.map((round) => {
+    const raceEvent = { round, type: "race" };
+    const sprintRound = sprintRoundsById.get(round.id);
+    const sprintEvent = sprintRound ? { round, sourceRound: sprintRound, type: "sprint" } : null;
+    cumulativePoints += round.complete
+      ? getFormulaOneCalculatorRoundPoints(round, driver)
+      : getFormulaOneCalculatorSelectedPoints(data, state, raceEvent, driver);
+    if (sprintRound) {
+      cumulativePoints += sprintRound.complete
+        ? getFormulaOneCalculatorRoundPoints(sprintRound, driver)
+        : getFormulaOneCalculatorSelectedPoints(data, state, sprintEvent, driver);
+    }
+    return { points: cumulativePoints, roundId: round.id };
+  });
+}
+
+function renderFormulaOneCalculatorChart(data, state, visibleDrivers) {
+  if (!visibleDrivers.length) {
+    return `<p class="table-message">No drivers are selected. The graph will update when a driver is turned on.</p>`;
+  }
+
+  const series = visibleDrivers.map((driver) => ({
+    color: getFormulaOneDriverColor(driver, data),
+    driver,
+    values: getFormulaOneCalculatorSeries(data, state, driver),
+  }));
+  const width = Math.max(760, 112 + data.rounds.length * 62);
+  const height = 420;
+  const margin = { bottom: 48, left: 64, right: 28, top: 28 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const maxPoints = Math.max(25, ...series.flatMap((entry) => entry.values.map((value) => value.points)));
+  const yMax = Math.ceil(maxPoints / 25) * 25;
+  const xForIndex = (index) => margin.left + (data.rounds.length === 1 ? 0 : (index / (data.rounds.length - 1)) * plotWidth);
+  const yForPoints = (points) => margin.top + plotHeight - (points / yMax) * plotHeight;
+  const completedRoundIndex = data.rounds.findLastIndex((round) => round.complete);
+  const projectionX = completedRoundIndex >= 0 && completedRoundIndex < data.rounds.length - 1
+    ? (xForIndex(completedRoundIndex) + xForIndex(completedRoundIndex + 1)) / 2
+    : null;
+  const yGrid = Array.from({ length: 6 }, (_, index) => {
+    const points = Math.round((yMax / 5) * index);
+    const y = yForPoints(points);
+    return `
+      <line class="formula-one-chart-grid" x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}"></line>
+      <text class="formula-one-chart-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${escapeHtml(points)}</text>
+    `;
+  }).join("");
+  const xLabels = data.rounds.map((round, index) => {
+    return `<text class="formula-one-chart-label" x="${xForIndex(index)}" y="${height - 18}" text-anchor="middle">R${escapeHtml(round.id)}</text>`;
+  }).join("");
+  const lines = series.map((entry) => {
+    const points = entry.values.map((value, index) => `${xForIndex(index)},${yForPoints(value.points)}`).join(" ");
+    const markers = entry.values.map((value, index) => `
+      <circle cx="${xForIndex(index)}" cy="${yForPoints(value.points)}" r="3.5" fill="${escapeHtml(entry.color)}">
+        <title>${escapeHtml(`${entry.driver} — Round ${value.roundId}: ${value.points} points`)}</title>
+      </circle>
+    `).join("");
+    return `
+      <polyline class="formula-one-chart-line" points="${points}" stroke="${escapeHtml(entry.color)}"></polyline>
+      ${markers}
+    `;
+  }).join("");
+
+  return `
+    <svg
+      class="formula-one-calculator-chart"
+      viewBox="0 0 ${width} ${height}"
+      width="${width}"
+      height="${height}"
+      role="img"
+      aria-labelledby="formula-one-calculator-chart-title formula-one-calculator-chart-description"
+    >
+      <title id="formula-one-calculator-chart-title">Formula 1 championship points projection</title>
+      <desc id="formula-one-calculator-chart-description">Cumulative points by round for the selected drivers, including the chosen future finishing positions.</desc>
+      ${yGrid}
+      ${xLabels}
+      ${projectionX === null ? "" : `
+        <line class="formula-one-chart-projection" x1="${projectionX}" x2="${projectionX}" y1="${margin.top}" y2="${margin.top + plotHeight}"></line>
+        <text class="formula-one-chart-projection-label" x="${projectionX + 8}" y="${margin.top + 14}">Projection</text>
+      `}
+      ${lines}
+    </svg>
+  `;
+}
+
+function renderFormulaOneCalculatorError(year, error) {
+  const calculator = formulaOneViews[year]?.calculator;
+  if (calculator) {
+    calculator.innerHTML = `<p class="table-message">Unable to load Formula 1 points calculator: ${escapeHtml(getErrorMessage(error))}</p>`;
+  }
+}
+
 function parseFormulaOneFormDate(value) {
   const match = String(value ?? "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
 
@@ -8034,6 +8642,15 @@ function renderActivePageContent(pageName = "") {
   const formulaOneYear = getFormulaOneYearFromPage(pageName);
 
   if (formulaOneYear) {
+    if (pageName.endsWith("-calculator")) {
+      if (siteData[`formulaOne${formulaOneYear}Calculator`]) {
+        renderFormulaOneCalculator(formulaOneYear);
+      } else if (formulaOneViews[formulaOneYear]?.calculator) {
+        formulaOneViews[formulaOneYear].calculator.innerHTML = renderLoadingMessage("Loading Formula 1 points calculator...");
+      }
+      return;
+    }
+
     if (pageName.endsWith("-questions")) {
       if (siteData[`formulaOne${formulaOneYear}`]) {
         renderFormulaOneQuestions(formulaOneYear);
@@ -10200,6 +10817,67 @@ document.addEventListener("click", (event) => {
 }, true);
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {
+  view.calculator?.addEventListener("change", (event) => {
+    const data = siteData[`formulaOne${year}Calculator`];
+    if (!data) {
+      return;
+    }
+
+    const state = getFormulaOneCalculatorState(year, data);
+    const filter = event.target.closest("[data-formula-one-calculator-filter]");
+    if (filter) {
+      if (filter.checked) {
+        state.visibleDrivers.add(filter.dataset.driver);
+      } else {
+        state.visibleDrivers.delete(filter.dataset.driver);
+      }
+      persistFormulaOneCalculatorState(year, data, state);
+      renderFormulaOneCalculator(year);
+      return;
+    }
+
+    const positionSelect = event.target.closest("[data-formula-one-calculator-position]");
+    if (positionSelect) {
+      const key = getFormulaOneCalculatorSelectionKey(
+        positionSelect.dataset.eventType,
+        positionSelect.dataset.roundId,
+        positionSelect.dataset.driver
+      );
+      if (positionSelect.value) {
+        state.selections[key] = positionSelect.value;
+      } else {
+        delete state.selections[key];
+      }
+      persistFormulaOneCalculatorState(year, data, state);
+      renderFormulaOneCalculator(year);
+    }
+  });
+
+  view.calculator?.addEventListener("click", (event) => {
+    const filterToggle = event.target.closest("[data-formula-one-calculator-filter-toggle]");
+    const showAllButton = event.target.closest("[data-formula-one-calculator-show-all]");
+    const hideAllButton = event.target.closest("[data-formula-one-calculator-hide-all]");
+    if (!filterToggle && !showAllButton && !hideAllButton) {
+      return;
+    }
+
+    const data = siteData[`formulaOne${year}Calculator`];
+    if (!data) {
+      return;
+    }
+
+    const state = getFormulaOneCalculatorState(year, data);
+    if (filterToggle) {
+      state.filtersExpanded = !state.filtersExpanded;
+      renderFormulaOneCalculator(year);
+      return;
+    }
+
+    state.visibleDrivers = new Set(showAllButton ? data.driversToWatch : []);
+    persistFormulaOneCalculatorState(year, data, state);
+    renderFormulaOneCalculator(year);
+  });
+
   view.questionSelect?.addEventListener("change", () => {
     if (view.questionFilter) {
       view.questionFilter.value = "";
@@ -12879,7 +13557,7 @@ function getPageDataScope(pageName = "") {
     return `fantasy-critic-${fantasyCriticMatch[1]}`;
   }
 
-  const formulaOneMatch = page.match(/^formula-1-(2024|2025|2026)-(questions|weekly|results)$/);
+  const formulaOneMatch = page.match(/^formula-1-(2024|2025|2026)-(questions|weekly|calculator|results)$/);
   if (formulaOneMatch) {
     const [, year, view] = formulaOneMatch;
     return `formula-one-${year}-${view}`;
@@ -12984,9 +13662,12 @@ function loadPageData(scope) {
     ]);
   }
 
-  const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|results)$/);
+  const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|calculator|results)$/);
   if (formulaOneMatch) {
     const [, year, view] = formulaOneMatch;
+    if (view === "calculator") {
+      return ensureFormulaOneCalculatorData(year);
+    }
     const dataView = view === "results"
       ? (formulaOneResultsMode[year] === "weekly" ? "weekly-results" : "questions")
       : view;
@@ -13026,6 +13707,11 @@ function renderPageDataError(scope, error) {
 
   if (scope === "world-cup-bracket") {
     renderBracketError(error);
+  }
+
+  const formulaOneCalculatorMatch = scope.match(/^formula-one-(2024|2025|2026)-calculator$/);
+  if (formulaOneCalculatorMatch) {
+    renderFormulaOneCalculatorError(formulaOneCalculatorMatch[1], error);
   }
 }
 
@@ -13391,6 +14077,8 @@ function refreshFormulaOnePage(year) {
   const page = activePageName;
   if (page === `formula-1-${year}-questions`) {
     renderFormulaOneQuestions(year);
+  } else if (page === `formula-1-${year}-calculator`) {
+    renderFormulaOneCalculator(year);
   } else if (page === `formula-1-${year}-weekly`) {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
     renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
@@ -13398,6 +14086,35 @@ function refreshFormulaOnePage(year) {
     renderFormulaOneResults(year);
   }
   renderFormulaOneAwards(year);
+}
+
+function ensureFormulaOneCalculatorData(year) {
+  const yearKey = String(year);
+  const config = FORMULA_ONE_CALCULATOR_CONFIG[yearKey];
+
+  if (!config) {
+    const error = new Error(`Formula 1 points calculator is not configured for ${yearKey}.`);
+    renderFormulaOneCalculatorError(yearKey, error);
+    return Promise.reject(error);
+  }
+
+  return ensureFormulaOneSource(
+    `formulaOne${yearKey}Calculator`,
+    async () => {
+      const [driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+        loadSheetText(config.driversSource),
+        loadSheetText(config.optionsSource),
+        loadSheetText(config.sprintsSource),
+        loadSheetText(config.summarySource),
+      ]);
+      return parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv });
+    },
+    (data) => {
+      siteData[`formulaOne${yearKey}Calculator`] = data;
+      renderFormulaOneCalculator(yearKey);
+    },
+    (error) => renderFormulaOneCalculatorError(yearKey, error)
+  );
 }
 
 function ensureFormulaOneData(year, view = "questions") {

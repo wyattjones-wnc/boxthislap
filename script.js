@@ -993,8 +993,11 @@ function openFootyTradingCard(player, team) {
 }
 
 function renderFootyTradingCardBack(player, team, badgeMarkup) {
-  const railLogoPath = getFootyLocalTeamLogo(team.name, team.id || team.teamId);
+  const teamLogoPath = getFootyLocalTeamLogo(team.name, team.id || team.teamId);
   const badgeAssets = [
+    teamLogoPath
+      ? `<div class="trading-card-back-corner-logo"><img src="${escapeHtml(teamLogoPath)}" alt="" decoding="async" onerror="this.parentElement.remove()"></div>`
+      : "",
     player.isNew
       ? `<img class="trading-card-back-status-badge" src="assets/trading-card/back/badge-new-player.svg" alt="New player">`
       : "",
@@ -1021,7 +1024,6 @@ function renderFootyTradingCardBack(player, team, badgeMarkup) {
       <div class="trading-card-back-rail" aria-hidden="true">
         <img src="assets/trading-card/back/left-rail.svg" alt="" decoding="async">
         <div class="trading-card-back-team-name">${escapeHtml(team.prettyName || getFootyDisplayTeamName(team.name))}</div>
-        ${railLogoPath ? `<div class="trading-card-back-rail-logo"><img src="${escapeHtml(railLogoPath)}" alt="" decoding="async" onerror="this.parentElement.remove()"></div>` : ""}
       </div>
       <img class="trading-card-back-stripes" src="assets/trading-card/back/bottom-stripes.svg" alt="" decoding="async">
       <section class="trading-card-back-content">

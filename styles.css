@@ -2752,18 +2752,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   white-space: nowrap;
 }
 
-.trading-card-back-rail-logo {
-  align-items: center;
-  display: flex;
-  height: 7%;
-  justify-content: center;
-  left: 33%;
-  position: absolute;
-  top: 69%;
-  width: 34%;
-}
-
-.trading-card-back-rail-logo img,
+.trading-card-back-corner-logo img,
 .trading-card-back-academy-logo img {
   display: block;
   max-height: 100%;
@@ -2771,7 +2760,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   object-fit: contain;
 }
 
-.trading-card-back-rail-logo span,
 .trading-card-back-academy-logo span {
   color: #fff;
   font-size: 0.75rem;
@@ -2798,7 +2786,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trading-card-back-header.has-badges {
   gap: 4cqw;
-  grid-template-columns: minmax(0, 1fr) 27cqw;
+  grid-template-columns: minmax(0, 1fr) 32cqw;
 }
 
 .trading-card-back-player h2 {
@@ -2826,16 +2814,34 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .trading-card-back-badges {
+  align-self: start;
   display: grid;
-  gap: 2.6cqw;
-  max-width: 27cqw;
+  gap: 1.5cqw;
+  justify-items: end;
+  max-width: 32cqw;
   min-width: 0;
+  width: 32cqw;
+}
+
+.trading-card-back-corner-logo {
+  align-items: center;
+  display: flex;
+  height: 15cqw;
+  justify-content: center;
+  width: 32cqw;
+}
+
+.trading-card-back-status-badge,
+.trading-card-back-academy-badge {
   width: 27cqw;
 }
 
 .trading-card-back-status-badge,
 .trading-card-back-academy-frame {
   display: block;
+}
+
+.trading-card-back-academy-frame {
   width: 100%;
 }
 

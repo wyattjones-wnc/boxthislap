@@ -3791,14 +3791,7 @@ main {
 
 .formula-one-calculator-table th:nth-child(2),
 .formula-one-calculator-table td:nth-child(2) {
-  left: 190px;
   min-width: 88px;
-  position: sticky;
-  z-index: 2;
-}
-
-.formula-one-calculator-table thead th:nth-child(2) {
-  z-index: 5;
 }
 
 .formula-one-calculator-table th:last-child,
@@ -5712,7 +5705,6 @@ tr:last-child td {
 
   .formula-one-calculator-table th:nth-child(2),
   .formula-one-calculator-table td:nth-child(2) {
-    left: 112px;
     min-width: 66px;
     padding-left: 5px;
     padding-right: 5px;

@@ -3176,7 +3176,22 @@ body.has-shell-stale-warning .stale-shell-alert {
 .trading-card-back-corner-logo img {
   height: 100%;
   object-position: right center;
+  transform: scale(var(--trading-card-team-logo-scale, 1));
+  transform-origin: right center;
   width: 100%;
+}
+
+.trading-card-back-corner-logo[data-team-logo-id="1"] {
+  --trading-card-team-logo-scale: 1.08;
+}
+
+.trading-card-back-corner-logo[data-team-logo-id="3"] {
+  --trading-card-team-logo-scale: 0.92;
+}
+
+.trading-card-back-corner-logo[data-team-logo-id="6"],
+.trading-card-back-corner-logo[data-team-logo-id="7"] {
+  --trading-card-team-logo-scale: 1.7;
 }
 
 .trading-card-back-academy-logo span {

@@ -1000,10 +1000,11 @@ function openFootyTradingCard(player, team) {
 }
 
 function renderFootyTradingCardBack(player, team, badgeMarkup) {
-  const teamLogoPath = getFootyLocalTeamLogo(team.name, team.id || team.teamId);
+  const teamId = String(team.id || team.teamId || "").trim();
+  const teamLogoPath = getFootyLocalTeamLogo(team.name, teamId);
   const badgeAssets = [
     teamLogoPath
-      ? `<div class="trading-card-back-corner-logo"><img src="${escapeHtml(teamLogoPath)}" alt="" decoding="async" onerror="this.parentElement.remove()"></div>`
+      ? `<div class="trading-card-back-corner-logo" data-team-logo-id="${escapeHtml(teamId)}"><img src="${escapeHtml(teamLogoPath)}" alt="" decoding="async" onerror="this.parentElement.remove()"></div>`
       : "",
     player.isNew
       ? `<img class="trading-card-back-status-badge" src="assets/trading-card/back/badge-new-player.svg" alt="New player">`

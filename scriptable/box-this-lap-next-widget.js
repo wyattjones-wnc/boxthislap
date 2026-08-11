@@ -12,6 +12,7 @@
 const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
 const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/#next";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
+const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache.json";
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
 
 const COLORS = {
@@ -47,25 +48,71 @@ async function loadNextItems() {
     const request = new Request(`${NEXT_DATA_ENDPOINT}?action=listNextItems&nonce=${Date.now()}`);
     request.timeoutInterval = 20;
     const data = await request.loadJSON();
+    const items = getNormalizedNextItems(data);
 
-    if (!data || data.ok !== true || !Array.isArray(data.items)) {
-      return {
-        ok: false,
-        error: data && data.error ? data.error : "The Next endpoint did not return items.",
-        items: [],
-      };
+    if (!items) {
+      throw new Error(data && data.error ? data.error : "The Next endpoint did not return items.");
     }
 
+    writeJsonCache(NEXT_ITEMS_CACHE_FILE, data);
     return {
       ok: true,
-      items: data.items.map(normalizeItem).filter((nextItem) => nextItem.id && nextItem.thing && nextItem.startDate),
+      items,
     };
   } catch (error) {
+    const cachedData = readJsonCache(NEXT_ITEMS_CACHE_FILE);
+    const cachedItems = getNormalizedNextItems(cachedData);
+
+    if (cachedItems) {
+      console.warn(`Unable to refresh Next data; using the saved cache: ${error}`);
+      return { ok: true, items: cachedItems, cached: true };
+    }
+
     return {
       ok: false,
       error: String(error && error.message ? error.message : error),
       items: [],
     };
+  }
+}
+
+function getNormalizedNextItems(data) {
+  if (!data || data.ok !== true || !Array.isArray(data.items)) {
+    return null;
+  }
+
+  return data.items
+    .map(normalizeItem)
+    .filter((nextItem) => nextItem.id && nextItem.thing && nextItem.startDate);
+}
+
+function readJsonCache(fileName) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), fileName);
+
+  if (!fileManager.fileExists(path)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fileManager.readString(path));
+  } catch (error) {
+    console.warn(`Unable to read ${fileName}: ${error}`);
+    return null;
+  }
+}
+
+function writeJsonCache(fileName, data) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), fileName);
+
+  try {
+    fileManager.writeString(path, JSON.stringify({
+      ...data,
+      cachedAt: new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.warn(`Unable to save ${fileName}: ${error}`);
   }
 }
 

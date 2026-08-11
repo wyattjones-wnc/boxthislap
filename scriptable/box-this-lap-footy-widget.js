@@ -13,6 +13,7 @@ const SCHEDULE_URL = `${SITE_ROOT}data/footy-schedule.json`;
 const SITE_URL = `${SITE_ROOT}#footy`;
 const SITE_ASSET_BASE_URL = SITE_ROOT;
 const MATCH_LIMIT = 3;
+const SCHEDULE_CACHE_FILE = `box-this-lap-footy-schedule-${SITE_CHANNEL}.json`;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
 const WIDGET_LOCAL_BADGE_PATHS = {
   "4": "assets/teams/4/badge.png",
@@ -59,18 +60,67 @@ async function loadFixtures() {
     const request = new Request(`${SCHEDULE_URL}?nonce=${Date.now()}`);
     request.timeoutInterval = 20;
     const schedule = await request.loadJSON();
-    const fixtures = getUniqueFixtures(getScheduleFixtures(schedule))
-      .filter((fixture) => !isFixturePast(fixture))
-      .sort((first, second) => getFixtureTime(first) - getFixtureTime(second))
-      .slice(0, MATCH_LIMIT);
 
-    return { ok: true, fixtures };
+    if (!isValidSchedule(schedule)) {
+      throw new Error("The Footy schedule did not return valid data.");
+    }
+
+    writeJsonCache(SCHEDULE_CACHE_FILE, schedule);
+    return { ok: true, fixtures: getUpcomingFixtures(schedule) };
   } catch (error) {
+    const cachedSchedule = readJsonCache(SCHEDULE_CACHE_FILE);
+
+    if (isValidSchedule(cachedSchedule)) {
+      console.warn(`Unable to refresh Footy data; using the saved cache: ${error}`);
+      return { ok: true, fixtures: getUpcomingFixtures(cachedSchedule), cached: true };
+    }
+
     return {
       ok: false,
       fixtures: [],
       error: String(error && error.message ? error.message : error),
     };
+  }
+}
+
+function isValidSchedule(schedule) {
+  return Array.isArray(schedule && schedule.teamSchedules);
+}
+
+function getUpcomingFixtures(schedule) {
+  return getUniqueFixtures(getScheduleFixtures(schedule))
+    .filter((fixture) => !isFixturePast(fixture))
+    .sort((first, second) => getFixtureTime(first) - getFixtureTime(second))
+    .slice(0, MATCH_LIMIT);
+}
+
+function readJsonCache(fileName) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), fileName);
+
+  if (!fileManager.fileExists(path)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fileManager.readString(path));
+  } catch (error) {
+    console.warn(`Unable to read ${fileName}: ${error}`);
+    return null;
+  }
+}
+
+function writeJsonCache(fileName, data) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), fileName);
+
+  try {
+    fileManager.writeString(path, JSON.stringify({
+      ...data,
+      cachedAt: new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.warn(`Unable to save ${fileName}: ${error}`);
   }
 }
 

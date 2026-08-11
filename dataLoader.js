@@ -18,6 +18,8 @@ const MANAGER_PORTAL_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub";
 const NEXT_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRTQZAN1znMdqJ3eaU_FUtq-UM2HeaOISqqGuTidCE0tCoc8TzA5brhbO-fccCKt-sBOk3pY3Zg0YVW/pub";
+const GUIDES_SHEET_BASE_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8gH2UmVBci0IYeYYAxM5KleyYTz_IN4hMGFTqyYAtcvkwVwTJ7ZMC5c-bOI_DIMYh6efBPlxBsz0M/pub";
 
 export const DATA_SOURCES = {
   sheets: {
@@ -37,6 +39,10 @@ export const DATA_SOURCES = {
     formulaOne2026Weekly: buildFormulaOne2026WeeklyCsvUrl("1508426028"),
     formulaOne2026WeeklyResults: buildFormulaOne2026WeeklyCsvUrl("700652503"),
     formulaOne2026RoundForms: buildFormulaOne2026WeeklyCsvUrl("2022697649"),
+    formulaOne2026CalculatorOptions: buildFormulaOne2026WeeklyCsvUrl("108234327"),
+    formulaOne2026CalculatorSummary: buildFormulaOne2026WeeklyCsvUrl("3933362"),
+    formulaOne2026CalculatorDrivers: buildFormulaOne2026WeeklyCsvUrl("0"),
+    formulaOne2026CalculatorSprints: buildFormulaOne2026WeeklyCsvUrl("1932990040"),
     fantasyOffice2025Draft: buildFantasyOffice2025CsvUrl("1020743771"),
     fantasyOffice2025Movies: buildFantasyOffice2025CsvUrl("517732298"),
     fantasyOffice2025Results: buildFantasyOffice2025CsvUrl("420488658"),
@@ -52,6 +58,9 @@ export const DATA_SOURCES = {
     rankingMcu: buildNextCsvUrl("1257157651"),
     rankingMovies: buildNextCsvUrl("449567167"),
     rankingTv: buildNextCsvUrl("415412107"),
+    todo: `${NEXT_SHEET_BASE_URL}?single=true&output=csv&sheet=To%20Do`,
+    guides: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=0`,
+    walkthroughChecklist: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=1634579309`,
   },
 };
 

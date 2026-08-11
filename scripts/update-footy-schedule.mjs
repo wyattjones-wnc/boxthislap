@@ -20,6 +20,25 @@ const SOURCE_PRIORITY = {
   [SPORTDB_PROVIDER_NAME]: 20,
   [ICALENDAR_PROVIDER_NAME]: 10,
 };
+const FRIENDLY_COMPETITION_IDS = new Set([
+  "4nidzmunvpvxk1ir9b6m8mpay",
+  "4569",
+  "bfbepcvvs13v9didqrb12rh05",
+]);
+const FRIENDLY_COMPETITION_NAMES = new Set([
+  "club friendlies",
+  "club friendly",
+  "emirates cup",
+  "english premier league summer series",
+  "friendly",
+  "friendlies",
+  "trofeo joan gamper",
+]);
+const FOOTBALL_LEAGUE_POINTS = Object.freeze({
+  draw: 1,
+  loss: 0,
+  win: 3,
+});
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
 const SHOULD_VERIFY_FOOTBALL_DATA_TEAMS = isTrueValue(process.env.FOOTY_VERIFY_FOOTBALL_DATA_TEAMS);
@@ -167,6 +186,8 @@ async function main() {
 
   for (const team of activeTeams) {
     const teamRecord = await resolveTeam(team);
+    teamRecord.leagueGames = normalizeLeagueGames(getField(team, "League Games"));
+    teamRecord.leagueIds = getTeamLeagueIds(teamRecord, leagueRowsByTeamId.get(String(teamRecord.id || "")) || []);
     teams.push(teamRecord);
 
     if (teamRecord.warning) {
@@ -217,11 +238,12 @@ async function main() {
   const knownFootyMatchRows = [...footyMatchSeedRows, ...footyMatchRows];
   const registryHydratedFixtures = buildFixturesFromFootyMatchRows(knownFootyMatchRows, teams);
   const dedupedFixtures = mergeFixtures([...registryHydratedFixtures, ...fixtures]).sort(compareFixtures);
+  const matchNotes = await loadFootyMatchNotes();
   const footyMatchRegistry = buildFootyMatchRegistry({
     fixtures: dedupedFixtures,
     generatedAt,
     matchRows: knownFootyMatchRows,
-    matchNotes: new Map(),
+    matchNotes,
     previousSchedules: previousPayload?.teamSchedules,
   });
   const enrichedFixtures = mergeFixtures(applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry)).sort(compareFixtures);
@@ -254,6 +276,7 @@ async function main() {
 
 async function resolveTeam(team) {
   const name = getTeamDisplayName(getField(team, "Name", "Team"));
+  const prettyName = getField(team, "Pretty Name", "PrettyName").trim() || name;
   const configuredId = getFootballDataTeamId(team);
   const badge = await resolveTeamBadge(team);
   const sportDbTeamId = getSportDbTeamId(team);
@@ -262,6 +285,7 @@ async function resolveTeam(team) {
     return {
       id: getField(team, "ID"),
       name: "Unnamed team",
+      prettyName: prettyName || "Unnamed team",
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerTeamId: configuredId,
@@ -276,6 +300,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: "",
@@ -293,6 +318,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: "",
@@ -311,6 +337,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: getField(team, "League").trim(),
@@ -332,6 +359,7 @@ async function resolveTeam(team) {
       id: getField(team, "ID"),
       league: getField(team, "League").trim(),
       name,
+      prettyName,
       priority: getField(team, "Priority"),
       provider: PRIMARY_PROVIDER_NAME,
       providerLeague: "",
@@ -349,6 +377,7 @@ async function resolveTeam(team) {
     id: getField(team, "ID"),
     league: getField(team, "League").trim(),
     name,
+    prettyName,
     priority: getField(team, "Priority"),
     provider: PRIMARY_PROVIDER_NAME,
     providerLeague: providerTeam.runningCompetitions?.[0]?.name || "",
@@ -1457,6 +1486,7 @@ function applyFootyMatchRegistry(fixtures = [], registry) {
     const existingMatchNote = hasMatchNote(fixture.matchNote) ? fixture.matchNote : null;
     const enrichedFixture = {
       ...fixture,
+      isFriendly: isFriendlyCompetition(fixture.leagueId, fixture.league),
       matchId: row?.matchId || fixture.matchId || "",
       sourceIds: mergeSourceIds(row?.sourceIds, fixture.sourceIds),
     };
@@ -1464,6 +1494,14 @@ function applyFootyMatchRegistry(fixtures = [], registry) {
 
     return preservedMatchNote ? { ...enrichedFixture, matchNote: preservedMatchNote } : enrichedFixture;
   });
+}
+
+function isFriendlyCompetition(leagueId, leagueName) {
+  const normalizedLeagueId = String(leagueId || "").trim();
+  const normalizedLeagueName = normalizeText(leagueName);
+
+  return FRIENDLY_COMPETITION_IDS.has(normalizedLeagueId) ||
+    FRIENDLY_COMPETITION_NAMES.has(normalizedLeagueName);
 }
 
 function normalizeFootyMatchRows(rows = []) {
@@ -1868,7 +1906,7 @@ function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [
         ...previousSchedule,
         attemptedAt: generatedAt,
         status: "stale-error",
-        team: buildTeamScheduleTeam(team, previousSchedule.team),
+        team: buildTeamScheduleTeam(team, previousSchedule.team, previousFixtures),
         sources: Array.isArray(previousSchedule.sources) ? previousSchedule.sources : getFixtureSources(previousFixtures),
         fixtureCount: previousFixtures.length,
         fixtures: previousFixtures,
@@ -1887,7 +1925,7 @@ function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [
       updatedAt: generatedAt,
       previousUpdatedAt: previousSchedule?.updatedAt || "",
       status: getTeamScheduleStatus(currentFixtures, teamErrors),
-      team: buildTeamScheduleTeam(team),
+      team: buildTeamScheduleTeam(team, previousSchedule?.team, currentFixtures),
       sources: getFixtureSources(currentFixtures),
       fixtureCount: currentFixtures.length,
       fixtures: currentFixtures,
@@ -1943,14 +1981,102 @@ function getPartialPreservationNotes({ previousFixtures = [], teamErrors = [], t
     : [`Preserved ${preservedCount} registered fixtures that were not returned by providers this run.`];
 }
 
-function buildTeamScheduleTeam(team, previousTeam = {}) {
+function buildTeamScheduleTeam(team, previousTeam = {}, fixtures = []) {
+  const leagueGames = normalizeLeagueGames(team.leagueGames);
+  const projectedPoints = calculateProjectedLeaguePoints(team, fixtures);
+
   return {
     badge: team.badge || previousTeam.badge || "",
     id: team.id || previousTeam.id || "",
     league: team.league || previousTeam.league || "",
+    ...(leagueGames ? { leagueGames, projectedPoints } : {}),
     name: team.name || previousTeam.name || "",
+    prettyName: team.prettyName || previousTeam.prettyName || team.name || previousTeam.name || "",
     priority: team.priority || previousTeam.priority || "",
   };
+}
+
+function calculateProjectedLeaguePoints(team = {}, fixtures = []) {
+  const leagueGames = normalizeLeagueGames(team.leagueGames);
+
+  if (!leagueGames) {
+    return null;
+  }
+
+  const completedMatchIds = new Set();
+  let pointsDropped = 0;
+
+  for (const fixture of Array.isArray(fixtures) ? fixtures : []) {
+    const matchId = normalizeFootyMatchId(fixture?.matchId);
+    const homeScore = parseCompletedScore(fixture?.matchNote?.homeScore);
+    const awayScore = parseCompletedScore(fixture?.matchNote?.awayScore);
+
+    if (!isTeamLeagueFixture(team, fixture) || homeScore === null || awayScore === null || (matchId && completedMatchIds.has(matchId))) {
+      continue;
+    }
+
+    if (matchId) {
+      completedMatchIds.add(matchId);
+    }
+
+    const isHome = typeof fixture.isHome === "boolean"
+      ? fixture.isHome
+      : isSameFootballClubName(fixture.home, team.name);
+    const teamScore = isHome ? homeScore : awayScore;
+    const opponentScore = isHome ? awayScore : homeScore;
+    const earnedPoints = teamScore > opponentScore
+      ? FOOTBALL_LEAGUE_POINTS.win
+      : teamScore === opponentScore
+        ? FOOTBALL_LEAGUE_POINTS.draw
+        : FOOTBALL_LEAGUE_POINTS.loss;
+
+    pointsDropped += FOOTBALL_LEAGUE_POINTS.win - earnedPoints;
+  }
+
+  return Math.max(0, (leagueGames * FOOTBALL_LEAGUE_POINTS.win) - pointsDropped);
+}
+
+function parseCompletedScore(value) {
+  const text = String(value ?? "").trim();
+
+  if (!/^\d+$/.test(text)) {
+    return null;
+  }
+
+  return Number(text);
+}
+
+function normalizeLeagueGames(value) {
+  const leagueGames = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isInteger(leagueGames) && leagueGames > 0 ? leagueGames : null;
+}
+
+function getTeamLeagueIds(team = {}, leagueRows = []) {
+  return [...new Set((Array.isArray(leagueRows) ? leagueRows : [])
+    .filter((league) => areLeagueNamesEquivalent(team.league, getField(league, "Name")))
+    .flatMap((league) => [
+      getField(league, "Provider League ID", "football-data League ID"),
+      getField(league, "SportDB League ID"),
+    ])
+    .map((leagueId) => String(leagueId || "").trim())
+    .filter(Boolean))];
+}
+
+function isTeamLeagueFixture(team = {}, fixture = {}) {
+  const leagueId = String(fixture.leagueId || "").trim();
+
+  if (leagueId && Array.isArray(team.leagueIds) && team.leagueIds.includes(leagueId)) {
+    return true;
+  }
+
+  return areLeagueNamesEquivalent(team.league, fixture.league);
+}
+
+function areLeagueNamesEquivalent(firstLeague, secondLeague) {
+  const first = normalizeText(firstLeague).replace(/\b(english|spanish|season|regular)\b/g, "").replace(/[^a-z0-9]/g, "");
+  const second = normalizeText(secondLeague).replace(/\b(english|spanish|season|regular)\b/g, "").replace(/[^a-z0-9]/g, "");
+
+  return Boolean(first && second && (first.includes(second) || second.includes(first)));
 }
 
 function getFixtureSources(fixtures = []) {

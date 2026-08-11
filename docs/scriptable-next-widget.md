@@ -18,6 +18,8 @@ scripts/next-data-webapp.gs
 
 Redeploy it after this change so the new `listNextItems` action is available.
 
+The Footy Scriptable widget defaults to the production site. Set its Scriptable widget parameter to `dev` when you intentionally want the development schedule and assets.
+
 Quick endpoint check:
 
 ```text
@@ -76,6 +78,7 @@ Shows the first incomplete item whose `Thing` contains `Fantasy Critic`.
 
 ## Notes
 
-- Scriptable controls widget refresh timing. The script asks for a refresh about every 15 minutes, but iOS may choose a slower cadence.
+- Scriptable controls widget refresh timing. The script asks for hourly refreshes normally, and once-per-minute refreshes during the final hour before a timed item. iOS may still choose a slower cadence.
+- Timed items stop showing once their time passes. All-day items show as `Today` during the current day, then fall off after that day ends.
 - Tapping the widget opens the site to the `Next` page.
 - The widget reads data directly from the Apps Script endpoint. It does not depend on the website being open.

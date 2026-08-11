@@ -12,6 +12,7 @@
 const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
 const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/#next";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
+const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache.json";
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
 
 const COLORS = {
@@ -32,7 +33,7 @@ if (result.ok && !config.runsInWidget) {
 
 const savedFocus = readSavedFocus();
 const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM, savedFocus) : null;
-const widget = createWidget(item, result);
+const widget = await createWidget(item, result);
 
 if (config.runsInWidget) {
   Script.setWidget(widget);
@@ -47,25 +48,71 @@ async function loadNextItems() {
     const request = new Request(`${NEXT_DATA_ENDPOINT}?action=listNextItems&nonce=${Date.now()}`);
     request.timeoutInterval = 20;
     const data = await request.loadJSON();
+    const items = getNormalizedNextItems(data);
 
-    if (!data || data.ok !== true || !Array.isArray(data.items)) {
-      return {
-        ok: false,
-        error: data && data.error ? data.error : "The Next endpoint did not return items.",
-        items: [],
-      };
+    if (!items) {
+      throw new Error(data && data.error ? data.error : "The Next endpoint did not return items.");
     }
 
+    writeJsonCache(NEXT_ITEMS_CACHE_FILE, data);
     return {
       ok: true,
-      items: data.items.map(normalizeItem).filter((nextItem) => nextItem.id && nextItem.thing && nextItem.startDate),
+      items,
     };
   } catch (error) {
+    const cachedData = readJsonCache(NEXT_ITEMS_CACHE_FILE);
+    const cachedItems = getNormalizedNextItems(cachedData);
+
+    if (cachedItems) {
+      console.warn(`Unable to refresh Next data; using the saved cache: ${error}`);
+      return { ok: true, items: cachedItems, cached: true };
+    }
+
     return {
       ok: false,
       error: String(error && error.message ? error.message : error),
       items: [],
     };
+  }
+}
+
+function getNormalizedNextItems(data) {
+  if (!data || data.ok !== true || !Array.isArray(data.items)) {
+    return null;
+  }
+
+  return data.items
+    .map(normalizeItem)
+    .filter((nextItem) => nextItem.id && nextItem.thing && nextItem.startDate);
+}
+
+function readJsonCache(fileName) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), fileName);
+
+  if (!fileManager.fileExists(path)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fileManager.readString(path));
+  } catch (error) {
+    console.warn(`Unable to read ${fileName}: ${error}`);
+    return null;
+  }
+}
+
+function writeJsonCache(fileName, data) {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), fileName);
+
+  try {
+    fileManager.writeString(path, JSON.stringify({
+      ...data,
+      cachedAt: new Date().toISOString(),
+    }));
+  } catch (error) {
+    console.warn(`Unable to save ${fileName}: ${error}`);
   }
 }
 
@@ -128,11 +175,7 @@ function isUpcomingItem(item) {
   }
 
   const now = new Date();
-  const relevantEnd = item.endDate
-    ? endOfDay(item.endDate)
-    : item.time
-      ? item.startDate
-      : endOfDay(item.startDate);
+  const relevantEnd = getItemRelevantEnd(item);
 
   return relevantEnd >= now;
 }
@@ -165,19 +208,25 @@ function sortItemsForPicker(items) {
   });
 }
 
-function createWidget(item, result) {
+async function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.url = SITE_URL;
-  widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
   widget.setPadding(14, 14, 14, 14);
+
+  const hasBackgroundImage = item ? await applyItemBackground(widget, item) : false;
+
+  if (hasBackgroundImage) {
+    widget.setPadding(10, 10, 10, 10);
+  }
 
   const header = widget.addStack();
   header.centerAlignContent();
 
   const title = header.addText("Box This Lap");
   title.font = Font.semiboldSystemFont(12);
-  title.textColor = COLORS.muted;
+  title.textColor = hasBackgroundImage ? COLORS.text : COLORS.muted;
+  applyTextShadow(title, hasBackgroundImage);
 
   header.addSpacer();
 
@@ -186,39 +235,80 @@ function createWidget(item, result) {
   image.imageSize = new Size(18, 18);
   image.tintColor = COLORS.accent;
 
-  widget.addSpacer(10);
+  widget.addSpacer(hasBackgroundImage ? 6 : 10);
 
   if (!result.ok) {
+    widget.refreshAfterDate = getWidgetRefreshDate(null);
     addErrorState(widget, result.error);
     return widget;
   }
 
   if (!item) {
+    widget.refreshAfterDate = getWidgetRefreshDate(null);
     addEmptyState(widget);
     return widget;
   }
 
   const eventState = getEventState(item);
-  const name = widget.addText(item.thing);
-  name.font = Font.boldSystemFont(20);
+  widget.refreshAfterDate = getWidgetRefreshDate(item);
+  const content = widget.addStack();
+  content.layoutVertically();
+
+  if (hasBackgroundImage) {
+    content.backgroundColor = new Color("#07101a", 0.76);
+    content.cornerRadius = 10;
+    content.setPadding(6, 9, 6, 9);
+  }
+
+  const name = content.addText(item.thing);
+  name.font = Font.boldSystemFont(hasBackgroundImage ? 18 : 20);
   name.textColor = COLORS.text;
   name.lineLimit = 2;
+  applyTextShadow(name, hasBackgroundImage);
 
-  widget.addSpacer(8);
+  content.addSpacer(hasBackgroundImage ? 5 : 8);
 
-  const countdown = widget.addText(eventState.label);
-  countdown.font = Font.heavySystemFont(24);
+  const countdown = content.addText(eventState.label);
+  countdown.font = Font.heavySystemFont(hasBackgroundImage ? 22 : 24);
   countdown.textColor = eventState.color;
   countdown.minimumScaleFactor = 0.7;
+  applyTextShadow(countdown, hasBackgroundImage);
 
-  widget.addSpacer(6);
+  content.addSpacer(hasBackgroundImage ? 3 : 6);
 
-  const dateLine = widget.addText(formatDateRange(item));
-  dateLine.font = Font.mediumSystemFont(13);
-  dateLine.textColor = COLORS.muted;
+  const dateLine = content.addText(formatDateRange(item));
+  dateLine.font = Font.mediumSystemFont(hasBackgroundImage ? 12 : 13);
+  dateLine.textColor = hasBackgroundImage ? COLORS.text : COLORS.muted;
   dateLine.lineLimit = 2;
+  applyTextShadow(dateLine, hasBackgroundImage);
 
   return widget;
+}
+
+async function applyItemBackground(widget, item) {
+  if (!item.imageUrl) {
+    return false;
+  }
+
+  try {
+    const request = new Request(item.imageUrl);
+    request.timeoutInterval = 15;
+    widget.backgroundImage = await request.loadImage();
+    return true;
+  } catch (error) {
+    console.warn(`Unable to load Next image: ${error}`);
+    return false;
+  }
+}
+
+function applyTextShadow(text, enabled) {
+  if (!enabled) {
+    return;
+  }
+
+  text.shadowColor = new Color("#000000", 0.9);
+  text.shadowOffset = new Point(0, 1);
+  text.shadowRadius = 3;
 }
 
 function readSavedFocus() {
@@ -293,6 +383,7 @@ function normalizeItem(item) {
     priorityLevel: Number(item.priorityLevel || 0),
     completed: item.completed === true || String(item.completed || "").toLowerCase() === "true",
     nonAdmin: item.nonAdmin === true || String(item.nonAdmin || "").toLowerCase() === "true",
+    imageUrl: String(item.imageUrl || item["Image URL"] || "").trim(),
     startDate,
     endDate,
   };
@@ -405,6 +496,10 @@ function getEventState(item) {
     return { label: "In progress", color: COLORS.warning };
   }
 
+  if (!item.time && isSameCalendarDay(now, item.startDate)) {
+    return { label: "Today", color: COLORS.warning };
+  }
+
   if (item.startDate <= now) {
     return { label: "Past", color: COLORS.muted };
   }
@@ -422,7 +517,36 @@ function getEventState(item) {
     return { label: `${hours}h ${minutes}m`, color: COLORS.accent };
   }
 
-  return { label: `${Math.max(minutes, 0)}m`, color: COLORS.accent };
+  return { label: "< 1 hr", color: COLORS.accent };
+}
+
+function getWidgetRefreshDate(item) {
+  const now = new Date();
+
+  if (!item || !item.startDate) {
+    return new Date(now.getTime() + 60 * 60 * 1000);
+  }
+
+  const relevantEnd = getItemRelevantEnd(item);
+  const remaining = item.startDate.getTime() - now.getTime();
+  const refreshMs = remaining > 0 && remaining < 60 * 60 * 1000
+    ? 60 * 1000
+    : 60 * 60 * 1000;
+  const nextRefresh = new Date(now.getTime() + refreshMs);
+
+  if (relevantEnd > now && relevantEnd < nextRefresh) {
+    return new Date(relevantEnd.getTime() + 60 * 1000);
+  }
+
+  return nextRefresh;
+}
+
+function getItemRelevantEnd(item) {
+  if (item.endDate) {
+    return endOfDay(item.endDate);
+  }
+
+  return item.time ? item.startDate : endOfDay(item.startDate);
 }
 
 function formatDateRange(item) {
@@ -453,4 +577,11 @@ function formatDate(date, includeTime) {
 
 function endOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+function isSameCalendarDay(first, second) {
+  return first && second &&
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
 }

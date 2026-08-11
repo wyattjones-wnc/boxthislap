@@ -38,6 +38,31 @@ jobs:
           rsync -a --exclude='.git' --exclude='.github' main-site/ _site/
           mkdir -p _site/dev
           rsync -a --exclude='.git' --exclude='.github' dev-site/ _site/dev/
+          VERSION="$(date -u +'%Y.%m.%d').${GITHUB_RUN_NUMBER}"
+          CACHE_VERSION="$(echo "$VERSION" | tr -cd '0-9')"
+          export VERSION CACHE_VERSION
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
+
+          version = os.environ["VERSION"]
+          cache_version = os.environ["CACHE_VERSION"]
+
+          for index_path in (pathlib.Path("_site/index.html"), pathlib.Path("_site/dev/index.html")):
+              if not index_path.exists():
+                  continue
+
+              html = index_path.read_text(encoding="utf-8")
+              html = re.sub(
+                  r'window\.BOX_THIS_LAP_VERSION = "[^"]+";',
+                  f'window.BOX_THIS_LAP_VERSION = "{version}";',
+                  html,
+              )
+              html = re.sub(r'styles\.css\?v=\d+', f'styles.css?v={cache_version}', html)
+              html = re.sub(r'script\.js\?v=\d+', f'script.js?v={cache_version}', html)
+              index_path.write_text(html, encoding="utf-8")
+          PY
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

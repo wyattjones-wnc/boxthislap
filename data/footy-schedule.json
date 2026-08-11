@@ -58,7 +58,10 @@
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
         "id": "1",
         "league": "Premier League",
+        "leagueGames": 38,
+        "projectedPoints": 114,
         "name": "Arsenal",
+        "prettyName": "Arsenal Football Club",
         "priority": "1"
       },
       "sources": [
@@ -1782,7 +1785,10 @@
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
         "id": "2",
         "league": "La Liga",
+        "leagueGames": 38,
+        "projectedPoints": 114,
         "name": "Barcelona",
+        "prettyName": "Futbol Club Barcelona",
         "priority": "2"
       },
       "sources": [
@@ -4101,7 +4107,10 @@
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
         "id": "3",
         "league": "Championship",
+        "leagueGames": 46,
+        "projectedPoints": 138,
         "name": "Wrexham",
+        "prettyName": "Wrexham Association Football Club",
         "priority": "3"
       },
       "sources": [
@@ -5922,6 +5931,7 @@
         "id": "4",
         "league": "International",
         "name": "USMNT",
+        "prettyName": "United States Men's National Team",
         "priority": "4"
       },
       "sources": [],
@@ -5943,6 +5953,7 @@
         "id": "5",
         "league": "International",
         "name": "USWNT",
+        "prettyName": "United States Women's National Team",
         "priority": "5"
       },
       "sources": [],
@@ -5964,6 +5975,7 @@
         "id": "6",
         "league": "MLS",
         "name": "Charlotte FC",
+        "prettyName": "Charlotte Football Club",
         "priority": "6"
       },
       "sources": [
@@ -6733,6 +6745,7 @@
         "id": "7",
         "league": "MLS",
         "name": "Inter Miami CF",
+        "prettyName": "Club Internacional de Fútbol Miami",
         "priority": "7"
       },
       "sources": [

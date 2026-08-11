@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 100">
+  <path d="M42 8L72 20V50C72 70 58 84 42 92C26 84 12 70 12 50V20Z"
+        fill="none" stroke="#008FC5" stroke-width="5"/>
+  <path d="M42 28L48 40L62 42L52 52L54 66L42 59L30 66L32 52L22 42L36 40Z"
+        fill="#008FC5"/>
+  <text x="92" y="44" fill="#001B3A" font-family="Arial, sans-serif" font-weight="700" font-size="27">NEW</text>
+  <text x="92" y="76" fill="#001B3A" font-family="Arial, sans-serif" font-weight="700" font-size="27">PLAYER</text>
+</svg>

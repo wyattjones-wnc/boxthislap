@@ -636,14 +636,17 @@ function normalizeFootyScheduleTeam(teamSchedule = {}) {
   const name = getFootyDisplayTeamName(team.name);
   const id = String(team.id || "").trim();
   const badge = getFootyTeamBadge(name, team.badge, id);
+  const projectedPoints = String(team.projectedPoints ?? "").trim();
 
   return {
     badge,
     fixtureCount: Array.isArray(teamSchedule.fixtures) ? teamSchedule.fixtures.length : 0,
     id,
+    leagueGames: Number(team.leagueGames) || 0,
     name,
     prettyName: String(team.prettyName || team["Pretty Name"] || "").trim() || name,
     priority: normalizeFootyPriority(team.priority),
+    projectedPoints: projectedPoints && Number.isFinite(Number(projectedPoints)) ? Number(projectedPoints) : null,
     status: String(teamSchedule.status || "").trim(),
     updatedAt: String(teamSchedule.updatedAt || teamSchedule.attemptedAt || "").trim(),
   };
@@ -818,6 +821,14 @@ function renderFootyTeamPage(pageName = activePageName) {
   const nextFixtures = upcomingFixtures.slice(0, 5);
   const recentFixtures = pastFixtures.slice(0, 3);
   const updatedAt = formatFootyGeneratedAt(team.updatedAt || getFootyScheduleUpdatedAt(siteData.footySchedule));
+  const projectedPointsMarkup = team.leagueGames > 0 && team.projectedPoints !== null
+    ? `
+        <div>
+          <dt>Projected Points</dt>
+          <dd>${escapeHtml(String(team.projectedPoints))}</dd>
+        </div>
+      `
+    : "";
   const badgeMarkup = renderFootyBadgeMarkup({
     fallbackSrc: String(team.badge || "").trim(),
     fallbackText: getFootyTeamFallbackBadge(team.name),
@@ -850,6 +861,7 @@ function renderFootyTeamPage(pageName = activePageName) {
           <dt>Past</dt>
           <dd>${escapeHtml(String(pastFixtures.length))}</dd>
         </div>
+        ${projectedPointsMarkup}
       </dl>
     </section>
     ${renderFootyTeamFixtureSection("Next Matches", nextFixtures)}

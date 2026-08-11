@@ -3946,8 +3946,12 @@ function formatFootyFixtureDate(value) {
   }
 
   return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    weekday: "short",
+    year: "numeric",
   }).format(date);
 }
 

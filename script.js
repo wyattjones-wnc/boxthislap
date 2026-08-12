@@ -4191,6 +4191,7 @@ function comparePreviousNextItems(first, second) {
 
 function renderNextItem(item) {
   const isAdmin = isCurrentManagerAdmin();
+  const isPast = isNextItemPast(item, getDateKey(0));
   const dateLabel = formatNextDateRange(item);
   const timeMarkup = item.timeLabel
     ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
@@ -4198,12 +4199,15 @@ function renderNextItem(item) {
   const completedIcon = isAdmin && item.completed
     ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
     : "";
+  const passedStatus = isPast && !item.completed
+    ? `<span class="next-passed-status">Passed <span aria-hidden="true">&middot;</span> awaiting update</span>`
+    : "";
   const classNames = [
     "next-card",
     item.completed ? "next-card--completed" : "",
     isNextEditModeEnabled() ? "next-card--editable" : "",
     activeNextItemId === item.id ? "is-expanded" : "",
-    isNextItemPast(item, getDateKey(0)) ? "next-card--past" : "",
+    isPast ? "next-card--past" : "",
   ].filter(Boolean).join(" ");
   const editButton = isNextEditModeEnabled() && activeNextItemId === item.id
     ? `<button class="action-button next-edit-button" type="button" data-next-edit="${escapeHtml(item.id)}">Edit</button>`
@@ -4222,6 +4226,7 @@ function renderNextItem(item) {
       <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
         ${completedIcon}
         <div>
+          ${passedStatus}
           <h2>${escapeHtml(item.thing)}</h2>
           <p class="next-card-date">
             <span>${escapeHtml(dateLabel)}</span>

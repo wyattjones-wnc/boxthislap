@@ -4027,7 +4027,7 @@ function renderNextList(items = siteData.nextItems || []) {
     <div class="next-list">
       ${visibleItems.map(renderNextItem).join("")}
       ${previousDivider}
-      ${previousTailItems.map(renderNextItem).join("")}
+      ${previousTailItems.map((item) => renderNextItem(item, { showPassedStatus: true })).join("")}
     </div>
   `;
 }
@@ -4189,7 +4189,7 @@ function comparePreviousNextItems(first, second) {
   return first.thing.localeCompare(second.thing);
 }
 
-function renderNextItem(item) {
+function renderNextItem(item, options = {}) {
   const isAdmin = isCurrentManagerAdmin();
   const isPast = isNextItemPast(item, getDateKey(0));
   const dateLabel = formatNextDateRange(item);
@@ -4199,7 +4199,7 @@ function renderNextItem(item) {
   const completedIcon = isAdmin && item.completed
     ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
     : "";
-  const passedStatus = isPast && !item.completed
+  const passedStatus = options.showPassedStatus && isPast && !item.completed
     ? `<span class="next-passed-status">Passed <span aria-hidden="true">&middot;</span> awaiting update</span>`
     : "";
   const classNames = [

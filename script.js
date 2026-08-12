@@ -4010,6 +4010,7 @@ function renderNextList(items = siteData.nextItems || []) {
 
   const normalizedItems = items.map(normalizeNextItem).filter(Boolean);
   const visibleItems = getFilteredNextItems(normalizedItems);
+  const showDefaultPassedStatus = !hasActiveNextFilters();
   const previousTailItems = shouldRenderDefaultNextPreviousTail()
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
@@ -4025,9 +4026,9 @@ function renderNextList(items = siteData.nextItems || []) {
 
   nextList.innerHTML = `
     <div class="next-list">
-      ${visibleItems.map(renderNextItem).join("")}
+      ${visibleItems.map((item) => renderNextItem(item, { showPassedStatus: showDefaultPassedStatus })).join("")}
       ${previousDivider}
-      ${previousTailItems.map((item) => renderNextItem(item, { showPassedStatus: true })).join("")}
+      ${previousTailItems.map(renderNextItem).join("")}
     </div>
   `;
 }
@@ -4199,8 +4200,8 @@ function renderNextItem(item, options = {}) {
   const completedIcon = isAdmin && item.completed
     ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
     : "";
-  const passedStatus = options.showPassedStatus && isPast && !item.completed
-    ? `<span class="next-passed-status">Passed <span aria-hidden="true">&middot;</span> awaiting update</span>`
+  const passedStatus = options.showPassedStatus && hasNextItemTimePassed(item) && !item.completed
+    ? `<span class="next-passed-status" aria-label="Event time has passed" title="Event time has passed">&#10003;</span>`
     : "";
   const classNames = [
     "next-card",
@@ -4420,6 +4421,32 @@ function getNextTimeSortValue(value) {
   const normalizedHour = period === "PM" && hour !== 12 ? hour + 12 : period === "AM" && hour === 12 ? 0 : hour;
 
   return normalizedHour * 60 + minute;
+}
+
+function hasNextItemTimePassed(item, now = new Date()) {
+  const scheduledMinutes = getNextTimeSortValue(item?.raw?.Time);
+  const easternParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(now).map((part) => [part.type, part.value]));
+  const todayKey = [
+    easternParts.year,
+    easternParts.month,
+    easternParts.day,
+  ].join("-");
+
+  return Boolean(
+    item?.dateKey === todayKey &&
+    (!item.endDateKey || item.endDateKey === item.dateKey) &&
+    Number.isFinite(scheduledMinutes) &&
+    scheduledMinutes !== Number.MAX_SAFE_INTEGER &&
+    Number(easternParts.hour) * 60 + Number(easternParts.minute) >= scheduledMinutes
+  );
 }
 
 function clampNextPriority(value) {

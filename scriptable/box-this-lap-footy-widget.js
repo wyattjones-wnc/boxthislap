@@ -42,6 +42,8 @@ const COLORS = {
   muted: new Color("#aab4c5"),
   accent: new Color("#a78bfa"),
   started: new Color("#ff5a7a"),
+  nearMatchText: new Color("#201633"),
+  nearMatchMuted: new Color("#574d68"),
 };
 
 const result = await loadFixtures();
@@ -207,12 +209,12 @@ function addHeader(widget) {
 
 async function addFixture(widget, fixture) {
   const timingLabel = getTimingLabel(fixture);
-  const isStarted = timingLabel === "Started";
+  const appearance = getFixtureAppearance(fixture, timingLabel);
   const cardWidth = getMatchCardWidth();
   const row = widget.addStack();
   row.addSpacer();
   const card = row.addStack();
-  card.backgroundColor = isStarted ? new Color("#3a1f2a") : timingLabel ? new Color("#29243a") : COLORS.card;
+  card.backgroundColor = appearance.card;
   card.cornerRadius = 10;
   card.size = new Size(cardWidth, 40);
   card.setPadding(2, 8, 2, 8);
@@ -231,7 +233,7 @@ async function addFixture(widget, fixture) {
   } else {
     const placeholder = badgeSlot.addImage(SFSymbol.named("soccerball").image);
     placeholder.imageSize = new Size(22, 22);
-    placeholder.tintColor = COLORS.muted;
+    placeholder.tintColor = appearance.mutedText;
   }
   badgeSlot.addSpacer();
 
@@ -242,13 +244,13 @@ async function addFixture(widget, fixture) {
   content.addSpacer();
   const match = content.addText(`${fixture.home || "TBD"} v ${fixture.away || "TBD"}`);
   match.font = Font.semiboldSystemFont(12);
-  match.textColor = COLORS.text;
+  match.textColor = appearance.text;
   match.lineLimit = 1;
 
   if (timingLabel) {
     content.addSpacer(2);
     const chip = content.addStack();
-    chip.backgroundColor = isStarted ? COLORS.started : COLORS.accent;
+    chip.backgroundColor = appearance.chip;
     chip.cornerRadius = 6;
     chip.setPadding(1, 4, 1, 4);
     const label = chip.addText(timingLabel);
@@ -265,7 +267,7 @@ async function addFixture(widget, fixture) {
   dateStack.addSpacer();
   const date = dateStack.addText(formatFixtureDate(fixture));
   date.font = Font.mediumSystemFont(10);
-  date.textColor = COLORS.muted;
+  date.textColor = appearance.mutedText;
   date.rightAlignText();
   date.lineLimit = 2;
   date.minimumScaleFactor = 0.7;
@@ -369,6 +371,43 @@ function getTimingLabel(fixture) {
   }
 
   return "";
+}
+
+function getFixtureAppearance(fixture, timingLabel) {
+  if (timingLabel === "Started") {
+    return {
+      card: new Color("#3a1f2a"),
+      text: COLORS.text,
+      mutedText: COLORS.muted,
+      chip: COLORS.started,
+    };
+  }
+
+  const remaining = getFixtureTime(fixture) - Date.now();
+  const highlightWindow = 24 * 60 * 60 * 1000;
+
+  if (!Number.isFinite(remaining) || remaining < 0 || remaining > highlightWindow) {
+    return { card: COLORS.card, text: COLORS.text, mutedText: COLORS.muted, chip: COLORS.accent };
+  }
+
+  const proximity = 1 - Math.max(0, Math.min(1, remaining / highlightWindow));
+  const useDarkText = proximity >= 0.5;
+
+  return {
+    card: new Color(interpolateHexColor("#29243a", "#e8e0ff", proximity)),
+    text: useDarkText ? COLORS.nearMatchText : COLORS.text,
+    mutedText: useDarkText ? COLORS.nearMatchMuted : COLORS.muted,
+    chip: COLORS.accent,
+  };
+}
+
+function interpolateHexColor(from, to, amount) {
+  const channels = [1, 3, 5].map((offset) => {
+    const start = parseInt(from.slice(offset, offset + 2), 16);
+    const end = parseInt(to.slice(offset, offset + 2), 16);
+    return Math.round(start + (end - start) * amount).toString(16).padStart(2, "0");
+  });
+  return `#${channels.join("")}`;
 }
 
 function formatFixtureDate(fixture) {

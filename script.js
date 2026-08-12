@@ -4311,7 +4311,10 @@ function hasActiveNextFilters() {
 
 function isNextItemPast(item, todayKey = getDateKey(0)) {
   const lastDateKey = item.endDateKey || item.dateKey;
-  return Boolean(lastDateKey && lastDateKey < todayKey);
+  return Boolean(lastDateKey && (
+    lastDateKey < todayKey ||
+    (item.completed && lastDateKey === todayKey)
+  ));
 }
 
 function isNextItemInDateRange(item, dateRange) {

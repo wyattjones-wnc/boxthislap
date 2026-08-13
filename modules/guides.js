@@ -399,22 +399,48 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     renderPage();
   }
 
+  function submitChecklistItemDone(item, done) {
+    if (!item) return false;
+    return saveChecklistDone?.({
+      Done: done,
+      "Guide ID": item.guideId,
+      ID: item.id,
+      "Step ID": item.stepId,
+    });
+  }
+
+  function completeParentWhenChildrenAreDone(item) {
+    if (!item?.parentId) return;
+
+    const parent = checklist?.find((entry) => entry.guideId === item.guideId && entry.id === item.parentId);
+    if (!parent || isItemDone(parent)) return;
+
+    const siblings = checklist.filter((entry) => entry.guideId === item.guideId && entry.parentId === parent.id);
+    if (!siblings.length || !siblings.every(isItemDone)) return;
+
+    const parentKey = getStepKey(parent.guideId, parent.stepId);
+    progressOverrides[parentKey] = true;
+
+    if (!submitChecklistItemDone(parent, true)) {
+      delete progressOverrides[parentKey];
+    }
+  }
+
   function handleChange(event) {
     const stepInput = event.target.closest("[data-guide-step]");
     if (stepInput) {
       progressOverrides[stepInput.dataset.guideStep] = stepInput.checked;
       const item = checklist?.find((entry) => getStepKey(entry.guideId, entry.stepId) === stepInput.dataset.guideStep);
-      const submitted = item && saveChecklistDone?.({
-        Done: stepInput.checked,
-        "Guide ID": item.guideId,
-        ID: item.id,
-        "Step ID": item.stepId,
-      });
+      const submitted = submitChecklistItemDone(item, stepInput.checked);
 
       if (!submitted) {
         delete progressOverrides[stepInput.dataset.guideStep];
         stepInput.checked = !stepInput.checked;
         return;
+      }
+
+      if (stepInput.checked) {
+        completeParentWhenChildrenAreDone(item);
       }
 
       if (stepInput.checked && hideDone) {

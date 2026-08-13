@@ -194,7 +194,6 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   function renderGuideCard(guide) {
     return `
       <a class="guide-card" href="${escapeAttribute(getGuideUrl(guide.id))}" data-guide-open="${escapeAttribute(guide.id)}">
-        <span class="guide-card-kicker">Guide ${escapeHtml(guide.id)}</span>
         <strong>${escapeHtml(guide.name)}</strong>
         ${renderGuideReferences(guide)}
         <span class="guide-card-arrow" aria-hidden="true">&rarr;</span>
@@ -290,8 +289,7 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
           ${context.length ? `<p class="guide-step-context">${context.map(escapeHtml).join("<span aria-hidden=\"true\">&bull;</span>")}</p>` : ""}
           <div class="guide-step-main">
             ${item.type ? `<span class="guide-step-type">${escapeHtml(item.type)}</span>` : ""}
-            <p>${escapeHtml(item.step)}</p>
-            ${renderStepLink(item.url)}
+            <p>${escapeHtml(item.step)}${renderStepLink(item.url)}</p>
           </div>
           ${options.parentKey ? `<p class="guide-step-child-summary"><span>${options.completedChildren} of ${options.childCount} child steps complete</span><span class="guide-step-expand-label">${options.expanded ? "Hide" : "Show"} steps</span></p>` : ""}
         </div>

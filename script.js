@@ -250,7 +250,7 @@ import {
 } from "./modules/domRefs.js?v=202608090001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608100002";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuidesController } from "./modules/guides.js?v=202608100003";
+import { createGuidesController } from "./modules/guides.js?v=202608130001";
 import {
   formatUpdatedTime,
   normalizeLookupName,

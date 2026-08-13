@@ -16,9 +16,11 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   let visibleStepLimit = GUIDE_STEP_BATCH_SIZE;
   let stepObserver = null;
   const progressOverrides = {};
+  const expandedParentKeys = new Set();
 
   view?.addEventListener("click", handleClick);
   view?.addEventListener("change", handleChange);
+  view?.addEventListener("keydown", handleKeydown);
 
   function renderPage() {
     if (!view) return;
@@ -39,6 +41,20 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   function isItemDone(item) {
     const key = getStepKey(item.guideId, item.stepId);
     return Object.prototype.hasOwnProperty.call(progressOverrides, key) ? progressOverrides[key] : item.done;
+  }
+
+  function getChildrenByParent(items) {
+    const itemIds = new Set(items.map((item) => item.id));
+    const childrenByParent = new Map();
+
+    items.forEach((item) => {
+      if (!item.parentId || !itemIds.has(item.parentId)) return;
+      const children = childrenByParent.get(item.parentId) || [];
+      children.push(item);
+      childrenByParent.set(item.parentId, children);
+    });
+
+    return childrenByParent;
   }
 
   async function ensureIndexLoaded() {
@@ -125,16 +141,24 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     }
 
     const allItems = checklist.filter((item) => item.guideId === guide.id);
+    const childrenByParent = getChildrenByParent(allItems);
+    const childIds = new Set([...childrenByParent.values()].flat().map((item) => item.id));
+    const rootItems = allItems.filter((item) => !childIds.has(item.id));
     const completed = allItems.filter(isItemDone).length;
     const remaining = allItems.length - completed;
     const progress = allItems.length ? Math.round((completed / allItems.length) * 100) : 0;
     const filterOptions = getFilterOptions(allItems);
-    const visibleItems = allItems.filter((item) => {
-      if (hideDone && isItemDone(item)) return false;
+    const matchesFilters = (item) => {
       if (dividerFilter && item.divider !== dividerFilter) return false;
       if (sectionFilter && item.section !== sectionFilter) return false;
       if (typeFilter && item.type !== typeFilter) return false;
       return true;
+    };
+    const visibleItems = rootItems.filter((item) => {
+      const children = childrenByParent.get(item.id) || [];
+      if (!matchesFilters(item) && !children.some(matchesFilters)) return false;
+      if (!hideDone) return true;
+      return !isItemDone(item) || children.some((child) => !isItemDone(child));
     });
     const renderedItems = visibleItems.slice(0, visibleStepLimit);
 
@@ -159,10 +183,11 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
       ${renderFilters(filterOptions)}
       <div class="guides-checklist-summary"><span>${visibleItems.length} ${visibleItems.length === 1 ? "match" : "matches"}</span><span>${remaining} remaining</span></div>
       <div class="guides-checklist" id="guides-checklist">
-        ${renderedItems.length ? renderedItems.map(renderChecklistItem).join("") : renderChecklistEmpty(allItems.length, remaining)}
+        ${renderedItems.length ? renderedItems.map((item) => renderChecklistGroup(item, childrenByParent.get(item.id) || [], matchesFilters)).join("") : renderChecklistEmpty(allItems.length, remaining)}
         ${renderedItems.length < visibleItems.length ? renderLoadMore(renderedItems.length, visibleItems.length) : ""}
       </div>
     `;
+    syncParentCheckboxes();
     setupStepObserver();
   }
 
@@ -220,15 +245,45 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     `;
   }
 
-  function renderChecklistItem(item) {
+  function renderChecklistGroup(item, children, matchesFilters) {
+    if (!children.length) return renderChecklistItem(item);
+
+    const parentKey = getParentKey(item);
+    const expanded = expandedParentKeys.has(parentKey);
+    const completedChildren = children.filter(isItemDone).length;
+    const hasActiveChildren = completedChildren < children.length;
+    const visibleChildren = children.filter((child) => matchesFilters(child) && (!hideDone || !isItemDone(child)));
+
+    return `
+      <section class="guide-step-group${expanded ? " is-expanded" : ""}" data-guide-parent-group="${escapeAttribute(parentKey)}">
+        ${renderChecklistItem(item, {
+          childCount: children.length,
+          completedChildren,
+          disableCompletion: !isItemDone(item) && hasActiveChildren,
+          expanded,
+          isMixed: !isItemDone(item) && completedChildren > 0 && hasActiveChildren,
+          parentKey,
+        })}
+        <div class="guide-step-children"${expanded ? "" : " hidden"}>
+          ${visibleChildren.length ? visibleChildren.map((child) => renderChecklistItem(child, { isChild: true })).join("") : `<p class="guide-step-children-empty">No child steps match the current filters.</p>`}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderChecklistItem(item, options = {}) {
     const done = isItemDone(item);
     const context = [item.divider, item.section].filter(Boolean);
     const inputId = `guide-step-${toSafeId(item.guideId)}-${toSafeId(item.stepId)}`;
+    const parentAttributes = options.parentKey
+      ? ` data-guide-parent-toggle="${escapeAttribute(options.parentKey)}" role="button" tabindex="0" aria-expanded="${options.expanded}"`
+      : "";
+    const checkboxTitle = options.disableCompletion ? "Complete all child steps before completing this parent" : "";
     return `
-      <article class="guide-step${done ? " is-done" : ""}" data-guide-step-row="${escapeAttribute(getStepKey(item.guideId, item.stepId))}">
-        <label class="guide-step-check" for="${inputId}">
-          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(getStepKey(item.guideId, item.stepId))}"${done ? " checked" : ""}>
-          <span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m6 12.5 4 4L18 8"></path></svg></span>
+      <article class="guide-step${done ? " is-done" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(getStepKey(item.guideId, item.stepId))}"${parentAttributes}>
+        <label class="guide-step-check" for="${inputId}"${checkboxTitle ? ` title="${escapeAttribute(checkboxTitle)}"` : ""}>
+          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(getStepKey(item.guideId, item.stepId))}"${done ? " checked" : ""}${options.disableCompletion ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
+          <span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="${options.isMixed ? "M6 12h12" : "m6 12.5 4 4L18 8"}"></path></svg></span>
           <span class="sr-only">Mark step ${escapeHtml(item.stepId)} ${done ? "not done" : "done"}</span>
         </label>
         <div class="guide-step-content">
@@ -236,10 +291,24 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
           <div class="guide-step-main">
             ${item.type ? `<span class="guide-step-type">${escapeHtml(item.type)}</span>` : ""}
             <p>${escapeHtml(item.step)}</p>
+            ${renderStepLink(item.url)}
           </div>
+          ${options.parentKey ? `<p class="guide-step-child-summary"><span>${options.completedChildren} of ${options.childCount} child steps complete</span><span class="guide-step-expand-label">${options.expanded ? "Hide" : "Show"} steps</span></p>` : ""}
         </div>
       </article>
     `;
+  }
+
+  function renderStepLink(url) {
+    const safeUrl = getSafeUrl(url);
+    if (!safeUrl) return "";
+    return `<a class="guide-step-link" href="${escapeAttribute(safeUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open more information" title="Open more information"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 13v5H6V6h5"></path></svg></a>`;
+  }
+
+  function syncParentCheckboxes() {
+    view?.querySelectorAll("[data-guide-mixed]").forEach((input) => {
+      input.indeterminate = true;
+    });
   }
 
   function renderChecklistEmpty(total, remaining) {
@@ -275,6 +344,12 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   }
 
   function handleClick(event) {
+    const parentRow = event.target.closest("[data-guide-parent-toggle]");
+    if (parentRow && !event.target.closest("input, label, a, button, select")) {
+      toggleParent(parentRow.dataset.guideParentToggle);
+      return;
+    }
+
     const openLink = event.target.closest("[data-guide-open]");
     if (openLink) {
       event.preventDefault();
@@ -309,6 +384,19 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     if (event.target.closest("[data-guides-retry]")) {
       renderPage();
     }
+  }
+
+  function handleKeydown(event) {
+    const parentRow = event.target.closest("[data-guide-parent-toggle]");
+    if (!parentRow || !["Enter", " "].includes(event.key) || event.target.closest("input, label, a, button, select")) return;
+    event.preventDefault();
+    toggleParent(parentRow.dataset.guideParentToggle);
+  }
+
+  function toggleParent(parentKey) {
+    if (expandedParentKeys.has(parentKey)) expandedParentKeys.delete(parentKey);
+    else expandedParentKeys.add(parentKey);
+    renderPage();
   }
 
   function handleChange(event) {
@@ -412,11 +500,13 @@ function normalizeChecklistItem(row) {
     id: String(row.ID || row.Id || row.id || "").trim(),
     guideId: String(row["Guide ID"] || row.guideId || "").trim(),
     stepId: String(row["Step ID"] || row.stepId || "").trim(),
+    parentId: String(row["Parent ID"] || row.parentId || "").trim(),
     done: parseBoolean(row.Done ?? row.done),
     divider: String(row.Divider || row.divider || "").trim(),
     section: String(row.Section || row.section || "").trim(),
     type: String(row.Type || row.type || "").trim(),
     step: String(row.Step || row.step || "").trim(),
+    url: String(row.Url || row.URL || row.url || "").trim(),
   };
 }
 
@@ -434,6 +524,19 @@ function uniqueValues(values) {
 
 function getStepKey(guideId, stepId) {
   return `${guideId}::${stepId}`;
+}
+
+function getParentKey(item) {
+  return `${item.guideId}::parent::${item.id}`;
+}
+
+function getSafeUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
 }
 
 function getGuideUrl(guideId) {

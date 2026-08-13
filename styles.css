@@ -1745,6 +1745,73 @@ body.has-shell-stale-warning .stale-shell-alert {
   transform: translateX(10px);
 }
 
+.guide-step-group {
+  display: grid;
+  gap: 0;
+}
+
+.guide-step--parent {
+  cursor: pointer;
+  position: relative;
+}
+
+.guide-step--parent:hover,
+.guide-step--parent:focus-visible {
+  border-color: var(--accent-border);
+  outline: none;
+}
+
+.guide-step--parent:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.guide-step-children {
+  border-left: 2px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  display: grid;
+  gap: 8px;
+  margin: 0 0 2px 29px;
+  padding: 9px 0 3px 14px;
+}
+
+.guide-step--child {
+  background: color-mix(in srgb, var(--panel) 88%, var(--soft));
+  border-radius: 7px;
+  box-shadow: 0 4px 14px var(--shadow);
+}
+
+.guide-step-child-summary {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 8px 0 0;
+}
+
+.guide-step-expand-label {
+  color: var(--accent-dark);
+  white-space: nowrap;
+}
+
+.guide-step-expand-label::after {
+  content: "\25be";
+  display: inline-block;
+  margin-left: 5px;
+  transition: transform 150ms ease;
+}
+
+.guide-step-group.is-expanded .guide-step-expand-label::after {
+  transform: rotate(180deg);
+}
+
+.guide-step-children-empty {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 4px 0;
+}
+
 .guide-step-check {
   cursor: pointer;
   display: block;
@@ -1800,6 +1867,20 @@ body.has-shell-stale-warning .stale-shell-alert {
   transform: scale(1);
 }
 
+.guide-step-check input:indeterminate + span {
+  background: color-mix(in srgb, var(--accent) 78%, var(--track));
+  border-color: var(--accent);
+}
+
+.guide-step-check input:indeterminate + span svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.guide-step-check input:disabled + span {
+  cursor: not-allowed;
+}
+
 .guide-step-content {
   min-width: 0;
 }
@@ -1826,6 +1907,31 @@ body.has-shell-stale-warning .stale-shell-alert {
 .guide-step-main p {
   margin: 0;
   min-width: 0;
+}
+
+.guide-step-link {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  margin-top: 1px;
+  padding: 3px;
+}
+
+.guide-step-link:hover,
+.guide-step-link:focus-visible {
+  color: var(--accent-dark);
+}
+
+.guide-step-link svg {
+  fill: none;
+  height: 17px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 17px;
 }
 
 .guide-step-type {
@@ -1928,6 +2034,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   .guide-step {
     gap: 11px;
     padding: 14px 13px;
+  }
+
+  .guide-step-children {
+    margin-left: 14px;
+    padding-left: 9px;
   }
 
   .guide-step-main {

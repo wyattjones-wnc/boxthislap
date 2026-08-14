@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608100002";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608130001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,

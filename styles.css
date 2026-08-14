@@ -6280,6 +6280,10 @@ tr:last-child td {
 }
 
 @media (max-width: 760px) {
+  .platinum-tile.is-expanded {
+    grid-column: 1 / -1;
+  }
+
   .login-row-inner {
     align-items: center;
     gap: 8px;

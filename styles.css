@@ -516,9 +516,15 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .platinum-tile.is-expanded {
+  align-items: center;
   background: var(--panel);
   grid-column: span 2;
+  grid-template-columns: minmax(72px, 96px) minmax(0, 1fr);
   padding: 9px;
+}
+
+.platinum-tile.is-expanded .platinum-caption {
+  padding: 0 4px;
 }
 
 .platinum-image-frame {

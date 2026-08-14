@@ -250,7 +250,7 @@ import {
 } from "./modules/domRefs.js?v=202608090001";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608100002";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuidesController } from "./modules/guides.js?v=202608130003";
+import { createGuidesController } from "./modules/guides.js?v=202608130004";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -426,6 +426,7 @@ const footyNoteGoalAssistEntries = {
 };
 const AUTOCOMPLETE_OPTION_LIMIT = 8;
 const siteData = {};
+let guideLinksLoadPromise = null;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -4806,6 +4807,62 @@ function renderNextListError(error) {
   nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
 }
 
+function ensureGuideLinksLoaded() {
+  if (!isCurrentManagerAdmin()) {
+    return Promise.resolve([]);
+  }
+
+  if (siteData.guideLinks) {
+    return Promise.resolve(siteData.guideLinks);
+  }
+
+  if (guideLinksLoadPromise) {
+    return guideLinksLoadPromise;
+  }
+
+  guideLinksLoadPromise = ensureSharedData("guide-links", () => loadSheet("guides"))
+    .then((rows) => {
+      siteData.guideLinks = rows.map((row) => ({
+        id: String(row.ID || row.Id || row.id || "").trim(),
+        name: String(row.Name || row.name || "").trim(),
+        rankingId: String(row["VG Ranking ID"] || row.rankingId || "").trim(),
+        todoId: String(row["To Do ID"] || row.todoId || "").trim(),
+      })).filter((guide) => guide.id && guide.name);
+
+      if (activePageName === "todo") renderTodoList();
+      if (activePageName === "rankings") renderRankingLists();
+      return siteData.guideLinks;
+    })
+    .catch((error) => {
+      siteData.guideLinks = [];
+      recordDiagnostic("Guide links failed to load", error);
+      return [];
+    });
+
+  return guideLinksLoadPromise;
+}
+
+function renderGuideEntryLinks(kind, itemId) {
+  if (!isCurrentManagerAdmin() || !itemId) return "";
+
+  const idKey = kind === "todo" ? "todoId" : "rankingId";
+  const guides = (siteData.guideLinks || []).filter((guide) => guide[idKey] === String(itemId));
+  if (!guides.length) return "";
+
+  return `<span class="guide-entry-links">${guides.map((guide) => `
+    <a class="guide-entry-link" href="${escapeHtml(getGuideEntryUrl(guide.id))}" aria-label="Open ${escapeHtml(guide.name)} guide" title="Open ${escapeHtml(guide.name)} guide">
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.2 1.2M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.2-1.2"></path></svg>
+    </a>
+  `).join("")}</span>`;
+}
+
+function getGuideEntryUrl(guideId) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("guide", guideId);
+  url.hash = "guides";
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 function renderTodoList(items = siteData.todoItems || []) {
   if (!todoList || !shouldRenderPageSection("todo")) {
     return;
@@ -4815,6 +4872,8 @@ function renderTodoList(items = siteData.todoItems || []) {
     todoList.innerHTML = `<p class="table-message">To Do is available to admin users.</p>`;
     return;
   }
+
+  ensureGuideLinksLoaded();
 
   syncTodoControls();
   ensureTodoRankingDataLoaded();
@@ -4876,7 +4935,7 @@ function renderTodoCalculatedItem(item, rank, currentRows = []) {
       <div class="next-card-main">
         <span class="todo-order-number">${rank}</span>
         <div>
-          <h2>${escapeHtml(item.name)}</h2>
+          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
           <p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p>
           ${renderTodoStatusChips(item)}
           ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
@@ -5116,7 +5175,7 @@ function renderTodoItem(item, children = []) {
       <div class="next-card-main">
         <span class="todo-order-number">${escapeHtml(formatTodoOrderNumber(item))}</span>
         <div>
-          <h2>${escapeHtml(item.name)}</h2>
+          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
           ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
           ${chips}
           ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
@@ -5136,7 +5195,7 @@ function renderTodoChildItem(item) {
   return `
     <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
       <div>
-        <h3>${escapeHtml(item.name)}</h3>
+        <div class="guide-linked-heading"><h3>${escapeHtml(item.name)}</h3>${renderGuideEntryLinks("todo", item.id)}</div>
         ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
         ${chips}
         ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
@@ -6058,6 +6117,7 @@ function normalizeRankingSnapshotItems(rows = []) {
 }
 
 function renderRankingLists() {
+  ensureGuideLinksLoaded();
   syncRankingControls();
   Object.keys(RANKING_CONFIG).forEach(renderRankingList);
 }
@@ -6117,7 +6177,7 @@ function renderRankingItem(kind, item) {
     <article class="ranking-item${isExcluded ? " is-excluded" : ""}" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
       <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
       <span class="ranking-item-main">
-        <strong>${escapeHtml(item.name)}</strong>
+        <span class="guide-linked-heading"><strong>${escapeHtml(item.name)}</strong>${kind === "games" ? renderGuideEntryLinks("ranking", item.id) : ""}</span>
         ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
         ${movement}
         ${meta}
@@ -10824,6 +10884,10 @@ todoList?.addEventListener("click", (event) => {
 
 todoList?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  if (event.target.closest("button, a, input, select, textarea, label, .todo-drag-handle")) {
     return;
   }
 

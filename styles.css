@@ -1553,8 +1553,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 .guides-grid,
 .guides-loading-grid {
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 8px;
+  grid-template-columns: 1fr;
 }
 
 .guide-card {
@@ -1564,10 +1564,9 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 10px;
   box-shadow: 0 10px 26px var(--shadow);
-  display: grid;
-  gap: 8px;
-  min-height: 152px;
-  padding: 20px;
+  display: block;
+  min-height: 0;
+  padding: 12px 14px;
   position: relative;
   text-decoration: none;
   transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
@@ -1582,19 +1581,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .guide-card strong {
-  font-size: 1.24rem;
+  font-size: 1rem;
   line-height: 1.22;
-  padding-right: 32px;
-}
-
-.guide-card-arrow {
-  color: var(--accent-dark);
-  font-size: 1.4rem;
-  font-weight: 900;
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
 }
 
 .guide-references {
@@ -1606,6 +1594,51 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-weight: 800;
   gap: 7px;
   margin: 0;
+}
+
+.guide-linked-heading {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.guide-linked-heading > :first-child {
+  min-width: 0;
+}
+
+.guide-entry-links {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+.guide-entry-link {
+  align-items: center;
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.guide-entry-link:hover,
+.guide-entry-link:focus-visible {
+  background: var(--soft);
+  color: var(--accent-dark);
+  outline: none;
+}
+
+.guide-entry-link svg {
+  fill: none;
+  height: 16px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 16px;
 }
 
 .guides-back-link {
@@ -1980,7 +2013,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .guides-skeleton-card {
-  min-height: 152px;
+  height: 48px;
 }
 
 .guides-skeleton-step {

@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608130001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608140001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -251,6 +251,7 @@ import {
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608140003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608140001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -465,6 +466,7 @@ const guidesController = createGuidesController({
   loadSheet,
   saveChecklistDone: submitGuideChecklistDone,
 });
+const platinumsController = createPlatinumsController({ loadSheet });
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -11971,8 +11973,9 @@ async function handleManagerLogin() {
     setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });
     document.activeElement?.blur?.();
     hideLoginPanel();
-    showPage("manager-hub", { scrollToTop: true });
-    window.location.hash = "manager-hub";
+    const destination = getManagerMeta(manager).isAdmin ? "the-monster-maniac" : "manager-hub";
+    showPage(destination, { scrollToTop: true });
+    window.location.hash = destination;
   } catch (error) {
     setLoginFeedback(error.message, true);
   } finally {
@@ -14036,6 +14039,10 @@ function getPageDataScope(pageName = "") {
     return "guides";
   }
 
+  if (page === "the-monster-maniac") {
+    return "the-monster-maniac";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -14141,6 +14148,10 @@ function loadPageData(scope) {
   if (scope === "guides") {
     guidesController.renderPage();
     return Promise.resolve();
+  }
+
+  if (scope === "the-monster-maniac") {
+    return platinumsController.renderPage();
   }
 
   if (scope === "rankings") {

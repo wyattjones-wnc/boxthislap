@@ -195,6 +195,7 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     return `
       <a class="guide-card" href="${escapeAttribute(getGuideUrl(guide.id))}" data-guide-open="${escapeAttribute(guide.id)}">
         <strong>${escapeHtml(guide.name)}</strong>
+        <span class="guide-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m9 6 6 6-6 6"></path></svg></span>
       </a>
     `;
   }

@@ -1564,7 +1564,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 10px;
   box-shadow: 0 10px 26px var(--shadow);
-  display: block;
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
   min-height: 0;
   padding: 12px 14px;
   position: relative;
@@ -1583,6 +1586,22 @@ body.has-shell-stale-warning .stale-shell-alert {
 .guide-card strong {
   font-size: 1rem;
   line-height: 1.22;
+}
+
+.guide-card-arrow {
+  color: var(--accent-dark);
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.guide-card-arrow svg {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+  width: 18px;
 }
 
 .guide-references {

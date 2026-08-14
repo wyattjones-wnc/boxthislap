@@ -248,7 +248,7 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202608090001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608100002";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608140002";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
 import {
@@ -449,7 +449,7 @@ const router = createRouter({
   pages,
   shouldBlockPage: (pageName) =>
     (pageName === "rankings" && !siteData.managerSession) ||
-    (["todo", "guides"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "guides", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -11804,7 +11804,10 @@ function renderLoginState() {
   });
   syncFootyGoalAssistsButton();
 
-  if (!managerMeta && activePageName === "rankings") {
+  if (
+    (!managerMeta && activePageName === "rankings") ||
+    (!managerMeta?.isAdmin && ["todo", "guides", "the-monster-maniac"].includes(activePageName))
+  ) {
     showPage("footy", { scrollToTop: true });
   }
 

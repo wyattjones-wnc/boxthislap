@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.14.01.14";
+      window.BOX_THIS_LAP_VERSION = "2026.08.14.03.49";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608140114">
+    <link rel="stylesheet" href="styles.css?v=202608140349">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -292,8 +292,6 @@
         <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
           <a href="#footy" data-page-link="footy" role="tab">Footy</a>
           <a href="#next" data-page-link="next" role="tab">Next</a>
-          <a href="#todo" data-page-link="todo" role="tab" data-admin-only hidden>To Do</a>
-          <a href="#guides" data-page-link="guides" role="tab" data-admin-only hidden>Guides</a>
           <a href="#rankings" data-page-link="rankings" role="tab" data-login-only hidden>Rankings</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
         </div>
@@ -352,6 +350,7 @@
                 <span id="profile-name">Manager</span>
               </button>
               <div class="profile-dropdown" id="profile-dropdown" hidden>
+                <a href="#the-monster-maniac" data-page-link="the-monster-maniac" data-admin-only hidden>TheMonsterManiac</a>
                 <a href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
                 <button id="logout-button" type="button">Sign Out</button>
               </div>
@@ -398,6 +397,25 @@
           <button class="action-button" id="login-submit-button" type="submit">Continue</button>
           <p class="login-feedback" id="login-feedback" role="status"></p>
         </form>
+      </section>
+
+      <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
+        <div class="section-heading page-heading-with-action">
+          <div>
+            <h1>TheMonsterManiac</h1>
+            <p class="manager-hub-subtitle">Admin pages</p>
+          </div>
+        </div>
+        <div class="admin-hub-grid">
+          <a class="admin-hub-link" href="#todo" data-page-link="todo">
+            <span>To Do</span>
+            <small>View and manage the To Do list.</small>
+          </a>
+          <a class="admin-hub-link" href="#guides" data-page-link="guides">
+            <span>Guides</span>
+            <small>Open admin walkthroughs and checklists.</small>
+          </a>
+        </div>
       </section>
 
       <section class="page manager-hub-page" id="manager-hub" data-page="manager-hub">
@@ -1936,6 +1954,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608140114"></script>
+    <script type="module" src="script.js?v=202608140349"></script>
   </body>
 </html>

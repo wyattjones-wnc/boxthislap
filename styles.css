@@ -3553,6 +3553,15 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-column: 1 / -1;
 }
 
+@media (min-width: 761px) {
+  .manager-awards-card,
+  .manager-summary-card {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(760px, 100%);
+  }
+}
+
 .workflow-dropdown {
   align-self: start;
   padding: 0;

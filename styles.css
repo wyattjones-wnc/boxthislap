@@ -2771,7 +2771,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-note-grid input,
 .footy-note-grid textarea,
-.next-item-fields input:not([type="checkbox"]) {
+.next-item-fields input:not([type="checkbox"]),
+.next-item-fields select {
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 6px;

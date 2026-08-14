@@ -4603,6 +4603,22 @@ function createNextItemId() {
   return String(Math.max(nextNumericId, Date.now()));
 }
 
+function populateNextTimeOptions() {
+  if (!nextTimeInput) {
+    return;
+  }
+
+  for (let totalMinutes = 0; totalMinutes < 24 * 60; totalMinutes += 15) {
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = formatNextTimeForSheet(value);
+    nextTimeInput.append(option);
+  }
+}
+
 function formatNextTimeForSheet(value) {
   const rawValue = String(value || "").trim();
   const match = rawValue.match(/^(\d{1,2}):(\d{2})$/);
@@ -14782,6 +14798,7 @@ function ensureManagerHubData() {
   });
 }
 
+populateNextTimeOptions();
 syncTestScoringUi();
 syncThemeToggle();
 hydrateStoredManagerSession();

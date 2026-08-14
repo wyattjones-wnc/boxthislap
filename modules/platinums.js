@@ -111,9 +111,9 @@ function comparePlatinums(first, second) {
   const firstNumber = Number(first.number);
   const secondNumber = Number(second.number);
   if (Number.isFinite(firstNumber) && Number.isFinite(secondNumber) && firstNumber !== secondNumber) {
-    return firstNumber - secondNumber;
+    return secondNumber - firstNumber;
   }
-  return first.id.localeCompare(second.id, undefined, { numeric: true });
+  return second.id.localeCompare(first.id, undefined, { numeric: true });
 }
 
 function getSafeImageUrl(value) {

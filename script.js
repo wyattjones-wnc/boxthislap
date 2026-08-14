@@ -251,7 +251,7 @@ import {
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608140003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608140002";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608140003";
 import {
   formatUpdatedTime,
   normalizeLookupName,

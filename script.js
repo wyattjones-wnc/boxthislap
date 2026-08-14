@@ -4598,7 +4598,9 @@ function createNextItemId() {
     .filter((id) => Number.isInteger(id) && id > 0)
     .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
 
-  return String(nextNumericId);
+  // The published sheet can lag behind a recent save or an older open tab.
+  // Use a time-based floor so a stale client cannot reuse an existing row ID.
+  return String(Math.max(nextNumericId, Date.now()));
 }
 
 function formatNextTimeForSheet(value) {

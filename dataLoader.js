@@ -64,6 +64,7 @@ export const DATA_SOURCES = {
     guides: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=0`,
     walkthroughChecklist: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=1000271762`,
     platinums: `${PLATINUMS_SHEET_BASE_URL}?single=true&output=csv&gid=0`,
+    favoriteTrophies: `${PLATINUMS_SHEET_BASE_URL}?single=true&output=csv&gid=58385058`,
   },
 };
 

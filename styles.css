@@ -480,45 +480,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 18px;
 }
 
-.admin-hub-grid {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.admin-hub-link {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 10px 26px var(--shadow);
-  color: var(--ink);
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  text-decoration: none;
-}
-
-.admin-hub-link:hover {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-}
-
-.admin-hub-link span {
-  font-size: 1.15rem;
-  font-weight: 900;
-}
-
-.admin-hub-link small {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-@media (max-width: 640px) {
-  .admin-hub-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .content-shell {
   background: var(--panel);
   border: 1px solid var(--line);

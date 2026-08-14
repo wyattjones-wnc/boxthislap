@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.14.03.49";
+      window.BOX_THIS_LAP_VERSION = "2026.08.14.04.13";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608140349">
+    <link rel="stylesheet" href="styles.css?v=202608140413">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -216,6 +216,9 @@
             >
             <img src="assets/final/default-header.jpg?v=202607210001" alt="" decoding="async" loading="lazy">
           </picture>
+        </div>
+        <div class="header-page-art" data-header-art="the-monster-maniac" aria-hidden="true">
+          <img src="assets/themonstermaniac/themonstermaniac_08132026.png?v=202608140400" alt="" decoding="async">
         </div>
         <div class="header-page-art" data-header-art="world-cup" aria-hidden="true">
           <picture>
@@ -294,6 +297,11 @@
           <a href="#next" data-page-link="next" role="tab">Next</a>
           <a href="#rankings" data-page-link="rankings" role="tab" data-login-only hidden>Rankings</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+        <div class="nav-links" data-nav-scope="the-monster-maniac" role="tablist" aria-label="TheMonsterManiac sections" hidden>
+          <a href="#the-monster-maniac" data-page-link="the-monster-maniac" role="tab">Home</a>
+          <a href="#todo" data-page-link="todo" role="tab">To Do</a>
+          <a href="#guides" data-page-link="guides" role="tab">Guides</a>
         </div>
         <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="World Cup sections" hidden>
           <a href="#results" data-page-link="results" role="tab">Results</a>
@@ -406,15 +414,12 @@
             <p class="manager-hub-subtitle">Admin pages</p>
           </div>
         </div>
-        <div class="admin-hub-grid">
-          <a class="admin-hub-link" href="#todo" data-page-link="todo">
-            <span>To Do</span>
-            <small>View and manage the To Do list.</small>
-          </a>
-          <a class="admin-hub-link" href="#guides" data-page-link="guides">
-            <span>Guides</span>
-            <small>Open admin walkthroughs and checklists.</small>
-          </a>
+        <div class="manager-hub-grid">
+          <section class="manager-hub-card" aria-labelledby="admin-platinums-heading">
+            <div class="manager-hub-card-heading">
+              <h2 id="admin-platinums-heading">Platinums</h2>
+            </div>
+          </section>
         </div>
       </section>
 
@@ -1954,6 +1959,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608140349"></script>
+    <script type="module" src="script.js?v=202608140413"></script>
   </body>
 </html>

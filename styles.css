@@ -545,10 +545,26 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .platinum-caption {
+  display: grid;
   font-size: 0.8rem;
   font-weight: 900;
+  gap: 5px;
   line-height: 1.3;
   padding: 0 3px 3px;
+}
+
+.platinum-caption[hidden] {
+  display: none;
+}
+
+.platinum-caption small {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.7rem;
+  font-weight: 850;
+  gap: 6px;
 }
 
 .platinum-skeleton {

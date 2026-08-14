@@ -47,10 +47,18 @@ export function createPlatinumsController({ loadSheet }) {
     grid.innerHTML = items.map((item) => {
       const expanded = item.id === expandedId;
       const label = [item.platinumName, item.gameName].filter(Boolean).join(" - ") || `Platinum ${item.number || item.id}`;
+      const metadata = [
+        item.number ? `Platinum Number: ${item.number}` : "",
+        item.trophyNumber ? `Trophy Number: ${item.trophyNumber}` : "",
+      ].filter(Boolean);
+      const accessibleLabel = [label, ...metadata].join(", ");
       return `
-        <button class="platinum-tile${expanded ? " is-expanded" : ""}" type="button" data-platinum-id="${escapeAttribute(item.id)}" aria-expanded="${expanded}" aria-label="${expanded ? "Hide" : "Show"} ${escapeAttribute(label)}">
+        <button class="platinum-tile${expanded ? " is-expanded" : ""}" type="button" data-platinum-id="${escapeAttribute(item.id)}" aria-expanded="${expanded}" aria-label="${expanded ? "Hide" : "Show"} ${escapeAttribute(accessibleLabel)}">
           <span class="platinum-image-frame"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>
-          <span class="platinum-caption"${expanded ? "" : " hidden"}>${escapeHtml(label)}</span>
+          <span class="platinum-caption"${expanded ? "" : " hidden"}>
+            <strong>${escapeHtml(label)}</strong>
+            ${metadata.length ? `<small>${metadata.map(escapeHtml).join("<span aria-hidden=\"true\">&bull;</span>")}</small>` : ""}
+          </span>
         </button>
       `;
     }).join("");
@@ -95,6 +103,7 @@ function normalizePlatinum(row) {
     imageUrl: getSafeImageUrl(row["Image Url"] || row["Image URL"] || row.imageUrl),
     number: String(row["Platinum Number"] || row.number || "").trim(),
     platinumName: String(row["Platinum Name"] || row.platinumName || "").trim(),
+    trophyNumber: String(row["Trophy Number"] || row.trophyNumber || "").trim(),
   };
 }
 

@@ -622,7 +622,6 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .platinum-caption small {
   align-items: center;
-  color: var(--muted);
   display: flex;
   flex-wrap: wrap;
   font-size: 0.7rem;
@@ -630,16 +629,20 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 6px;
 }
 
+.trophy-metadata-chip {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  padding: 3px 7px;
+}
+
 .platinum-description {
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1.4;
-}
-
-.platinum-description strong {
-  color: var(--ink);
-  font-size: inherit;
 }
 
 .platinum-skeleton {

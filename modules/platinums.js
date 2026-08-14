@@ -95,14 +95,14 @@ function createTrophyListController({
       ].filter(Boolean);
       const accessibleLabel = [label, ...metadata].join(", ");
       const description = showDescription && item.description
-        ? `<span class="platinum-description"><strong>Description:</strong> ${escapeHtml(item.description)}</span>`
+        ? `<span class="platinum-description">${escapeHtml(item.description)}</span>`
         : "";
       return `
         <button class="platinum-tile${expanded ? " is-expanded" : ""}" type="button" data-trophy-id="${escapeAttribute(item.id)}" aria-expanded="${expanded}" aria-label="${expanded ? "Hide" : "Show"} ${escapeAttribute(accessibleLabel)}">
           <span class="platinum-image-frame"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>
           <span class="platinum-caption"${expanded ? "" : " hidden"}>
             <strong>${escapeHtml(label)}</strong>
-            ${metadata.length ? `<small>${metadata.map(escapeHtml).join("<span aria-hidden=\"true\">&bull;</span>")}</small>` : ""}
+            ${metadata.length ? `<small>${metadata.map((value) => `<span class="trophy-metadata-chip">${escapeHtml(value)}</span>`).join("")}</small>` : ""}
             ${description}
           </span>
         </button>

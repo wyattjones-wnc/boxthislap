@@ -485,15 +485,17 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .favorite-trophies-card {
-  margin-bottom: 12px;
-}
-
-.favorite-trophies-summary {
-  align-items: center;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 6px 14px var(--shadow);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.favorite-trophies-summary {
+  align-items: center;
+  background: transparent;
   color: var(--ink);
   cursor: pointer;
   display: flex;
@@ -526,7 +528,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .favorite-trophies-summary:hover,
 .favorite-trophies-summary:focus-visible {
-  border-color: var(--accent);
+  background: var(--soft);
 }
 
 .favorite-trophies-summary:focus-visible {
@@ -535,7 +537,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .favorite-trophies-card[open] .favorite-trophies-summary {
-  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
 
 .favorite-trophies-card[open] .favorite-trophies-summary::before,
@@ -544,7 +546,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .favorite-trophies-grid {
-  margin-bottom: 18px;
+  padding: 10px;
 }
 
 .platinums-grid {

@@ -11,7 +11,6 @@ const DEFAULT_FOOTY_MATCH_NOTES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gi
 const DEFAULT_FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const FOOTY_MATCH_SEEDS_PATH = path.resolve(process.env.FOOTY_MATCH_SEEDS_PATH || path.join("data", "footy-match-seeds.json"));
-const FIXTURE_OVERRIDES_PATH = path.resolve(process.env.FOOTY_FIXTURE_OVERRIDES_PATH || path.join("data", "footy-fixture-overrides.json"));
 const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
@@ -166,7 +165,6 @@ let lastExternalRequestAt = 0;
 async function main() {
   const generatedAt = new Date().toISOString();
   const previousPayload = await loadPreviousSchedulePayload();
-  const fixtureOverrides = await loadFixtureOverrides();
   const footballData = await loadFootballSheet(process.env.FOOTBALL_TEAMS_CSV_URL || DEFAULT_FOOTBALL_TEAMS_CSV_URL);
   const footyMatchRows = await loadFootyMatchesSheet(process.env.FOOTY_MATCHES_CSV_URL || DEFAULT_FOOTY_MATCHES_CSV_URL);
   const footyMatchSeedRows = await loadFootyMatchSeedRows();
@@ -239,7 +237,7 @@ async function main() {
   fixtures.push(...calendarSchedules.fixtures);
 
   const knownFootyMatchRows = [...footyMatchSeedRows, ...footyMatchRows];
-  const dedupedFixtures = mergeFixtures(applyFixtureOverrides(fixtures, fixtureOverrides)).sort(compareFixtures);
+  const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
   const matchNotes = await loadFootyMatchNotes();
   const footyMatchRegistry = buildFootyMatchRegistry({
     fixtures: dedupedFixtures,
@@ -405,21 +403,6 @@ async function loadPreviousSchedulePayload() {
   } catch (error) {
     console.warn(`Unable to parse existing footy schedule for preservation: ${error.message}`);
     return null;
-  }
-}
-
-async function loadFixtureOverrides() {
-  const text = await tryReadFile(FIXTURE_OVERRIDES_PATH);
-
-  if (!text) {
-    return {};
-  }
-
-  try {
-    const overrides = JSON.parse(text);
-    return overrides && typeof overrides === "object" ? overrides : {};
-  } catch (error) {
-    throw new Error(`Unable to parse ${path.relative(process.cwd(), FIXTURE_OVERRIDES_PATH)}: ${error.message}`);
   }
 }
 
@@ -1454,24 +1437,6 @@ function areSameFixture(firstFixture = {}, secondFixture = {}) {
     String(firstFixture.date || "").trim() === String(secondFixture.date || "").trim() &&
     isSameFootballClubName(firstFixture.home, secondFixture.home) &&
     isSameFootballClubName(firstFixture.away, secondFixture.away);
-}
-
-function applyFixtureOverrides(fixtures = [], overrides = {}) {
-  const excludedMatchIds = new Set((Array.isArray(overrides.excludedMatchIds) ? overrides.excludedMatchIds : [])
-    .map(normalizeFootyMatchId)
-    .filter(Boolean));
-  const excludedSourceIds = new Set(Object.entries(overrides.excludedSourceIds || {})
-    .flatMap(([source, ids]) => (Array.isArray(ids) ? ids : [ids])
-      .map((id) => `${normalizeText(source)}:${String(id || "").trim()}`))
-    .filter((sourceId) => !sourceId.endsWith(":")));
-
-  return fixtures.filter((fixture) => {
-    if (excludedMatchIds.has(normalizeFootyMatchId(fixture.matchId))) {
-      return false;
-    }
-
-    return !getSourceIdKeys(getFixtureSourceIds(fixture)).some((sourceId) => excludedSourceIds.has(sourceId));
-  });
 }
 
 function buildFootyMatchRegistry({ fixtures = [], generatedAt, matchRows = [], matchNotes = new Map(), previousSchedules = [] }) {
@@ -2589,7 +2554,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
 }
 
 export {
-  applyFixtureOverrides,
   getCurrentTeamFixtures,
   getSportDbTimestamp,
   isSameFootballClubName,

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 
 import {
-  applyFixtureOverrides,
   getCurrentTeamFixtures,
   getSportDbTimestamp,
   isSameFootballClubName,
@@ -50,15 +49,6 @@ const [rayo] = mergeFixtures([
 ]);
 assert.deepEqual(rayo.sources, ["football-data.org", "iCalendar"]);
 assert.equal(rayo.away, "Rayo Vallecano de Madrid");
-
-const visibleFixtures = applyFixtureOverrides([
-  fixture({ away: "FC Barcelona", home: "Basel", sourceIds: { iCalendar: "6a777b8554aa884ccf0a746e" } }),
-  fixture({ away: "Al Ahly", sourceIds: { iCalendar: "6a6dd07f54aa884ccf0a384c" } }),
-], {
-  excludedSourceIds: { iCalendar: ["6a777b8554aa884ccf0a746e"] },
-});
-assert.equal(visibleFixtures.length, 1);
-assert.equal(visibleFixtures[0].away, "Al Ahly");
 
 const currentFixtures = getCurrentTeamFixtures({
   generatedAt: "2026-08-16T10:00:00Z",

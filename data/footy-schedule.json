@@ -8,7 +8,7 @@
     "updatedAt": "2026-08-02T11:36:44.043Z",
     "oldestTeamUpdatedAt": "2026-08-02T11:36:44.043Z",
     "teamCount": 7,
-    "fixtureCount": 207,
+    "fixtureCount": 183,
     "statuses": {
       "updated": 5,
       "no-fixtures": 2
@@ -71,7 +71,7 @@
         "football-data.org",
         "iCalendar"
       ],
-      "fixtureCount": 45,
+      "fixtureCount": 43,
       "fixtures": [
         {
           "away": "Arsenal",
@@ -425,15 +425,17 @@
           "priority": "1",
           "round": "5",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + Arsenal.com",
+          "source": "football-data.org + Footy Matches + Arsenal.com + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a3507b354aa884dbe01a44d",
             "Arsenal.com": "4aork3roy705vtmxjs4ichhck",
             "football-data.org": "560586"
           },
           "sources": [
             "football-data.org",
             "Footy Matches",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
@@ -446,40 +448,6 @@
           "matchId": "footy_de8f7b459bb5",
           "isRegistryFixture": true,
           "lastSeen": "2026-08-01T11:36:22.521Z"
-        },
-        {
-          "away": "Arsenal",
-          "awayBadge": "",
-          "date": "2026-09-19",
-          "home": "Brighton and Hove Albion",
-          "homeBadge": "",
-          "id": "iCalendar:6a3507b354aa884dbe01a44d",
-          "leagueId": "",
-          "isHome": false,
-          "league": "Premier League",
-          "opponent": "Brighton and Hove Albion",
-          "priority": "1",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a3507b354aa884dbe01a44d"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
-          "teamId": "1",
-          "teamName": "Arsenal",
-          "time": "14:00:00",
-          "timestamp": "2026-09-19T14:00:00Z",
-          "venue": "American Express Stadium, Falmer",
-          "matchId": "footy_4b7b4d46aecf",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Leeds United FC",
@@ -1711,15 +1679,17 @@
           "priority": "1",
           "round": "38",
           "season": "2026",
-          "source": "football-data.org + Footy Matches + Arsenal.com",
+          "source": "football-data.org + Footy Matches + Arsenal.com + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a3507b354aa884ccf093b1e",
             "Arsenal.com": "7gfy74jkzvxzer7zsyo6mbdas",
             "football-data.org": "560913"
           },
           "sources": [
             "football-data.org",
             "Footy Matches",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "SCHEDULED",
@@ -1732,40 +1702,6 @@
           "matchId": "footy_9b1299311e68",
           "isRegistryFixture": true,
           "lastSeen": "2026-08-01T11:36:22.521Z"
-        },
-        {
-          "away": "Brighton and Hove Albion",
-          "awayBadge": "",
-          "date": "2027-05-30",
-          "home": "Arsenal",
-          "homeBadge": "",
-          "id": "iCalendar:6a3507b354aa884ccf093b1e",
-          "leagueId": "",
-          "isHome": true,
-          "league": "Premier League",
-          "opponent": "Brighton and Hove Albion",
-          "priority": "1",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a3507b354aa884ccf093b1e"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
-          "teamId": "1",
-          "teamName": "Arsenal",
-          "time": "15:00:00",
-          "timestamp": "2027-05-30T15:00:00Z",
-          "venue": "Emirates Stadium, London",
-          "matchId": "footy_16b145f30e40",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
         }
       ],
       "notes": [
@@ -1797,7 +1733,7 @@
         "football-data.org",
         "iCalendar"
       ],
-      "fixtureCount": 67,
+      "fixtureCount": 45,
       "fixtures": [
         {
           "away": "CE Europa",
@@ -1904,40 +1840,6 @@
           "matchId": "footy_7d83a366adec"
         },
         {
-          "away": "Athletic Club",
-          "awayBadge": "",
-          "date": "2026-08-16",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baac2",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Athletic Club",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baac2"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://crests.football-data.org/81.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-08-16T10:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_c9a3f7a08c9a",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
           "away": "Al Ahly",
           "awayBadge": "",
           "date": "2026-08-19",
@@ -2023,14 +1925,15 @@
           "season": "2026",
           "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
-            "football-data.org": "564630",
-            "iCalendar": "6a4455e954aa8848aa0baac2"
+            "iCalendar": "6a4455e954aa8848aa0baac2",
+            "football-data.org": "564630"
           },
           "sources": [
             "football-data.org",
             "Footy Matches",
             "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
@@ -2039,41 +1942,6 @@
           "timestamp": "2026-08-27T19:00:00Z",
           "venue": "Barcelona, Barcelona",
           "matchId": "footy_0c88e0019fd1",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z",
-          "sourceDetail": "calendar-feed"
-        },
-        {
-          "away": "Rayo Vallecano",
-          "awayBadge": "",
-          "date": "2026-08-31",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baac4",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Rayo Vallecano",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baac4"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Scheduled",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "19:30:00",
-          "timestamp": "2026-08-31T19:30:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_e0ee35091aee",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -2091,21 +1959,24 @@
           "priority": "2",
           "round": "3",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baac4",
             "football-data.org": "564650"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:30:00",
           "timestamp": "2026-08-31T19:30:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_8fc604892c2e",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -2150,40 +2021,6 @@
           "away": "FC Barcelona",
           "awayBadge": "",
           "date": "2026-09-13",
-          "home": "Levante",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baac6",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Levante",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baac6"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-09-13T10:00:00Z",
-          "venue": "Valencia, Valencia",
-          "matchId": "footy_72a8654283d6",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2026-09-13",
           "home": "Levante UD",
           "homeBadge": "",
           "id": "564675",
@@ -2194,56 +2031,25 @@
           "priority": "2",
           "round": "5",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baac6",
             "football-data.org": "564675"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
           "timestamp": "2026-09-13T15:00:00Z",
-          "venue": "",
+          "venue": "Valencia, Valencia",
           "matchId": "footy_a7ac6d0d7d69",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "Racing de Santander",
-          "awayBadge": "",
-          "date": "2026-09-16",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baac7",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Racing de Santander",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baac7"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-09-16T10:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_aeb44f1ace1f",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -2261,21 +2067,24 @@
           "priority": "2",
           "round": "6",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baac7",
             "football-data.org": "564687"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
           "timestamp": "2026-09-16T15:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_76fb319e0bc6",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -2356,40 +2165,6 @@
           "away": "FC Barcelona",
           "awayBadge": "",
           "date": "2026-10-18",
-          "home": "Real Betis",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baaca",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Real Betis",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baaca"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-10-18T10:00:00Z",
-          "venue": "Sevilla, Sevilla",
-          "matchId": "footy_f730c2c13125",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2026-10-18",
           "home": "Real Betis Balompié",
           "homeBadge": "",
           "id": "564713",
@@ -2400,21 +2175,24 @@
           "priority": "2",
           "round": "9",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baaca",
             "football-data.org": "564713"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "15:00:00",
           "timestamp": "2026-10-18T15:00:00Z",
-          "venue": "",
+          "venue": "Sevilla, Sevilla",
           "matchId": "footy_1ba74c6488f3",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -2456,40 +2234,6 @@
           "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
-          "away": "Alavés",
-          "awayBadge": "",
-          "date": "2026-11-01",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baacc",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Alavés",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baacc"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-11-01T11:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_2d93fa416016",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
           "away": "Deportivo Alavés",
           "awayBadge": "",
           "date": "2026-11-01",
@@ -2503,56 +2247,25 @@
           "priority": "2",
           "round": "11",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baacc",
             "football-data.org": "564732"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
           "timestamp": "2026-11-01T16:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_c1e303ae400b",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2026-11-08",
-          "home": "Atlético de Madrid",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baacd",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Atlético de Madrid",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baacd"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-11-08T11:00:00Z",
-          "venue": "Madrid, Madrid",
-          "matchId": "footy_2d3258402841",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -2570,21 +2283,24 @@
           "priority": "2",
           "round": "12",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baacd",
             "football-data.org": "564746"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
           "timestamp": "2026-11-08T16:00:00Z",
-          "venue": "",
+          "venue": "Madrid, Madrid",
           "matchId": "footy_e459203932f7",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -2693,40 +2409,6 @@
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
-          "away": "Celta de Vigo",
-          "awayBadge": "",
-          "date": "2026-12-06",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baad0",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Celta de Vigo",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baad0"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-12-06T11:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_bf0e92db5fd1",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
           "away": "RC Celta de Vigo",
           "awayBadge": "",
           "date": "2026-12-06",
@@ -2740,21 +2422,24 @@
           "priority": "2",
           "round": "15",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baad0",
             "football-data.org": "564773"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
           "timestamp": "2026-12-06T16:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_4eb7bc3d5198",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -2796,40 +2481,6 @@
           "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
-          "away": "Real Sociedad",
-          "awayBadge": "",
-          "date": "2026-12-20",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baad2",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Real Sociedad",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baad2"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2026-12-20T11:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_6a3f72de0744",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
           "away": "Real Sociedad de Fútbol",
           "awayBadge": "",
           "date": "2026-12-20",
@@ -2843,56 +2494,25 @@
           "priority": "2",
           "round": "17",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baad2",
             "football-data.org": "564793"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "16:00:00",
           "timestamp": "2026-12-20T16:00:00Z",
-          "venue": "",
-          "matchId": "footy_f50ef9b4088d",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-01-03",
-          "home": "Espanyol",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baad3",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Espanyol",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baad3"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-01-03T11:00:00Z",
           "venue": "Barcelona, Barcelona",
-          "matchId": "footy_52a387e4fc9d",
+          "matchId": "footy_f50ef9b4088d",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -2910,56 +2530,25 @@
           "priority": "2",
           "round": "18",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baad3",
             "football-data.org": "564805"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-01-03T12:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_97059daaa2cb",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-01-10",
-          "home": "Osasuna",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baad4",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Osasuna",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baad4"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-01-10T11:00:00Z",
-          "venue": "Pamplona, Pamplona",
-          "matchId": "footy_0a2cc332e43f",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -2977,21 +2566,24 @@
           "priority": "2",
           "round": "19",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baad4",
             "football-data.org": "564811"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-01-10T12:00:00Z",
-          "venue": "",
+          "venue": "Pamplona, Pamplona",
           "matchId": "footy_12e080bbf8c6",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3036,40 +2628,6 @@
           "away": "FC Barcelona",
           "awayBadge": "",
           "date": "2027-01-24",
-          "home": "Alavés",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baad6",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Alavés",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baad6"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-01-24T11:00:00Z",
-          "venue": "Vitoria-Gasteiz, Vitoria-Gasteiz",
-          "matchId": "footy_e8f69cd442d0",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-01-24",
           "home": "Deportivo Alavés",
           "homeBadge": "",
           "id": "564832",
@@ -3080,21 +2638,24 @@
           "priority": "2",
           "round": "21",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baad6",
             "football-data.org": "564832"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-01-24T12:00:00Z",
-          "venue": "",
+          "venue": "Vitoria-Gasteiz, Vitoria-Gasteiz",
           "matchId": "footy_f1f05095e89f",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3136,40 +2697,6 @@
           "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
-          "away": "Atlético de Madrid",
-          "awayBadge": "",
-          "date": "2027-02-02",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a6dd07f54aa884ccf0a384b",
-          "leagueId": "",
-          "isHome": true,
-          "league": "Spanish Supercopa",
-          "opponent": "Atlético de Madrid",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a6dd07f54aa884ccf0a384b"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-02-02T11:00:00Z",
-          "venue": "TBC",
-          "matchId": "footy_b56fbfb608bc",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-08-01T11:36:22.521Z"
-        },
-        {
           "away": "Atlético Madrid",
           "awayBadge": "",
           "date": "2027-02-02",
@@ -3183,13 +2710,15 @@
           "priority": "2",
           "round": "0",
           "season": "2026-2027",
-          "source": "TheSportsDB + Footy Matches",
+          "source": "TheSportsDB + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a6dd07f54aa884ccf0a384b",
             "TheSportsDB": "2546487"
           },
           "sources": [
             "TheSportsDB",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
           "sourceDetail": "league-season",
           "status": "NS",
@@ -3202,40 +2731,6 @@
           "matchId": "footy_a5b59cc4e61f",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T13:33:58.404Z"
-        },
-        {
-          "away": "Atlético de Madrid",
-          "awayBadge": "",
-          "date": "2027-02-07",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baad8",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Atlético de Madrid",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baad8"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-02-07T11:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_89ebd636b9f2",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
         },
         {
           "away": "Club Atlético de Madrid",
@@ -3251,21 +2746,24 @@
           "priority": "2",
           "round": "23",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baad8",
             "football-data.org": "564857"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-02-07T12:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_206cec2497ed",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3307,40 +2805,6 @@
           "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
-          "away": "Levante",
-          "awayBadge": "",
-          "date": "2027-02-21",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baada",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Levante",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baada"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-02-21T11:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_6be9b1cdf37a",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
           "away": "Levante UD",
           "awayBadge": "",
           "date": "2027-02-21",
@@ -3354,21 +2818,24 @@
           "priority": "2",
           "round": "25",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baada",
             "football-data.org": "564871"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-02-21T12:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_7dce92199a4b",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3410,40 +2877,6 @@
           "lastSeen": "2026-08-01T11:36:22.521Z"
         },
         {
-          "away": "Real Betis",
-          "awayBadge": "",
-          "date": "2027-03-07",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baadc",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Real Betis",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baadc"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-03-07T11:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_efb70eaec446",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
           "away": "Real Betis Balompié",
           "awayBadge": "",
           "date": "2027-03-07",
@@ -3457,21 +2890,24 @@
           "priority": "2",
           "round": "27",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baadc",
             "football-data.org": "564888"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-03-07T12:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_765f30e45388",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3547,40 +2983,6 @@
           "away": "FC Barcelona",
           "awayBadge": "",
           "date": "2027-03-21",
-          "home": "Rayo Vallecano",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baade",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Rayo Vallecano",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baade"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-03-21T11:00:00Z",
-          "venue": "Madrid, Madrid",
-          "matchId": "footy_efb1278c3955",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-03-21",
           "home": "Rayo Vallecano de Madrid",
           "homeBadge": "",
           "id": "564912",
@@ -3591,21 +2993,24 @@
           "priority": "2",
           "round": "29",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baade",
             "football-data.org": "564912"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-03-21T12:00:00Z",
-          "venue": "",
+          "venue": "Madrid, Madrid",
           "matchId": "footy_31fa151419b6",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3650,40 +3055,6 @@
           "away": "FC Barcelona",
           "awayBadge": "",
           "date": "2027-04-11",
-          "home": "Racing de Santander",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baae0",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Racing de Santander",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baae0"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-04-11T10:00:00Z",
-          "venue": "Santander, Santander",
-          "matchId": "footy_17ea25847a05",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-04-11",
           "home": "Real Racing Club de Santander",
           "homeBadge": "",
           "id": "564935",
@@ -3694,56 +3065,25 @@
           "priority": "2",
           "round": "31",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baae0",
             "football-data.org": "564935"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-04-11T12:00:00Z",
-          "venue": "",
+          "venue": "Santander, Santander",
           "matchId": "footy_b42ca2a0cb98",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "Espanyol",
-          "awayBadge": "",
-          "date": "2027-04-18",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baae1",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Espanyol",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baae1"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-04-18T10:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_561fc5f4cd12",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -3761,56 +3101,25 @@
           "priority": "2",
           "round": "32",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baae1",
             "football-data.org": "564939"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-04-18T12:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_2259478f23c8",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-04-21",
-          "home": "Celta de Vigo",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baae2",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Celta de Vigo",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baae2"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-04-21T10:00:00Z",
-          "venue": "Vigo, Vigo",
-          "matchId": "footy_aa256d7b5ac6",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -3828,56 +3137,25 @@
           "priority": "2",
           "round": "33",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baae2",
             "football-data.org": "564950"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-04-21T12:00:00Z",
-          "venue": "",
+          "venue": "Vigo, Vigo",
           "matchId": "footy_4285a763d411",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "Osasuna",
-          "awayBadge": "",
-          "date": "2027-05-02",
-          "home": "FC Barcelona",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baae3",
-          "leagueId": "",
-          "isHome": true,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Osasuna",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baae3"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-05-02T10:00:00Z",
-          "venue": "Barcelona, Barcelona",
-          "matchId": "footy_0d8be2301e29",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
         },
@@ -3895,21 +3173,24 @@
           "priority": "2",
           "round": "34",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baae3",
             "football-data.org": "564961"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-05-02T12:00:00Z",
-          "venue": "",
+          "venue": "Barcelona, Barcelona",
           "matchId": "footy_beaa3d2213fc",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -3954,40 +3235,6 @@
           "away": "FC Barcelona",
           "awayBadge": "",
           "date": "2027-05-16",
-          "home": "Real Sociedad",
-          "homeBadge": "",
-          "id": "iCalendar:6a4455e954aa8848aa0baae5",
-          "leagueId": "",
-          "isHome": false,
-          "league": "LaLiga Season 2026-2027",
-          "opponent": "Real Sociedad",
-          "priority": "2",
-          "round": "",
-          "season": "",
-          "source": "iCalendar + Footy Matches",
-          "sourceIds": {
-            "iCalendar": "6a4455e954aa8848aa0baae5"
-          },
-          "sources": [
-            "iCalendar",
-            "Footy Matches"
-          ],
-          "sourceDetail": "calendar-feed",
-          "status": "Time TBC",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "",
-          "timestamp": "2027-05-16T10:00:00Z",
-          "venue": "San Sebastián, San Sebastián",
-          "matchId": "footy_e66ec65bbf9d",
-          "isRegistryFixture": true,
-          "lastSeen": "2026-07-24T04:22:04.211Z"
-        },
-        {
-          "away": "FC Barcelona",
-          "awayBadge": "",
-          "date": "2027-05-16",
           "home": "Real Sociedad de Fútbol",
           "homeBadge": "",
           "id": "564980",
@@ -3998,21 +3245,24 @@
           "priority": "2",
           "round": "36",
           "season": "2026",
-          "source": "football-data.org + Footy Matches",
+          "source": "football-data.org + Footy Matches + iCalendar",
           "sourceIds": {
+            "iCalendar": "6a4455e954aa8848aa0baae5",
             "football-data.org": "564980"
           },
           "sources": [
             "football-data.org",
-            "Footy Matches"
+            "Footy Matches",
+            "iCalendar"
           ],
+          "sourceDetail": "calendar-feed",
           "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "12:00:00",
           "timestamp": "2027-05-16T12:00:00Z",
-          "venue": "",
+          "venue": "San Sebastián, San Sebastián",
           "matchId": "footy_61fb817b021f",
           "isRegistryFixture": true,
           "lastSeen": "2026-07-24T04:22:04.211Z"
@@ -4093,8 +3343,7 @@
       "notes": [
         "Loaded 38 SCHEDULED matches from 2026-08-02 through 2027-08-02.",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 40 iCalendar fixtures from calendar feed.",
-        "Preserved 1 registered fixtures that were not returned by providers this run."
+        "Loaded 40 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     },
@@ -6730,8 +5979,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 20 iCalendar fixtures from calendar feed.",
-        "Preserved 1 registered fixtures that were not returned by providers this run."
+        "Loaded 20 iCalendar fixtures from calendar feed."
       ],
       "errors": []
     },

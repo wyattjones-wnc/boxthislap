@@ -1,0 +1,10 @@
+{
+  "excludedSourceIds": {
+    "iCalendar": [
+      "6a777b8554aa884ccf0a746e"
+    ],
+    "TheSportsDB": [
+      "2573944"
+    ]
+  }
+}

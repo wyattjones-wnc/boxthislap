@@ -5,6 +5,7 @@ const STATUS_OPTIONS = [
   ["ignored", "Ignored"],
   ["all", "All"],
 ];
+const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
 
 export function createYouTubeInboxController({ endpoint }) {
   const view = document.querySelector("#youtube-inbox-view");
@@ -14,6 +15,7 @@ export function createYouTubeInboxController({ endpoint }) {
     initialized: false,
     lastSyncAt: "",
     loading: false,
+    needsAuth: false,
     playlists: [],
     status: "new",
     syncing: false,
@@ -27,6 +29,7 @@ export function createYouTubeInboxController({ endpoint }) {
       state.initialized = true;
       view.addEventListener("click", handleClick);
       view.addEventListener("change", handleChange);
+      view.addEventListener("submit", handleSubmit);
     }
 
     render();
@@ -53,8 +56,10 @@ export function createYouTubeInboxController({ endpoint }) {
       state.playlists = Array.isArray(playlistData.playlists) ? playlistData.playlists : [];
       state.lastSyncAt = videoData.lastSyncAt || "";
       state.error = "";
+      state.needsAuth = false;
     } catch (error) {
-      state.error = error.message || "Unable to load the YouTube inbox.";
+      state.needsAuth = error.status === 401;
+      state.error = state.needsAuth ? "" : error.message || "Unable to load the YouTube inbox.";
     } finally {
       state.loading = false;
       render();
@@ -100,6 +105,22 @@ export function createYouTubeInboxController({ endpoint }) {
   function renderBody() {
     if (state.loading) {
       return `<div class="youtube-loading-grid" aria-label="Loading YouTube inbox">${Array.from({ length: 3 }, () => `<span class="youtube-skeleton-card"></span>`).join("")}</div>`;
+    }
+
+    if (state.needsAuth) {
+      return `
+        <form class="youtube-state youtube-login-state" data-youtube-login>
+          <span aria-hidden="true">&#128274;</span>
+          <h2>Unlock YouTube inbox</h2>
+          <p>Enter the private inbox passphrase. It is used only to create this browser session.</p>
+          <label class="youtube-login-field">
+            <span>Passphrase</span>
+            <input type="password" name="passphrase" autocomplete="current-password" required>
+          </label>
+          <button class="action-button" type="submit">Unlock</button>
+          <p class="youtube-login-feedback" role="status"></p>
+        </form>
+      `;
     }
 
     if (state.error) {
@@ -205,6 +226,33 @@ export function createYouTubeInboxController({ endpoint }) {
     await load();
   }
 
+  async function handleSubmit(event) {
+    if (!event.target.matches("[data-youtube-login]")) return;
+    event.preventDefault();
+    const form = event.target;
+    const button = form.querySelector("button[type='submit']");
+    const feedback = form.querySelector(".youtube-login-feedback");
+    const passphrase = new FormData(form).get("passphrase");
+    setBusy(button, true);
+    try {
+      const response = await fetch(`${endpoint}/api/auth/login`, {
+        body: JSON.stringify({ passphrase }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.token) throw new Error(data.error || "Unable to unlock the inbox.");
+      sessionStorage.setItem(SESSION_STORAGE_KEY, data.token);
+      state.needsAuth = false;
+      state.videos = [];
+      await load();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Unlock";
+      feedback.textContent = error.message || "Unable to unlock the inbox.";
+    }
+  }
+
   async function sync() {
     state.syncing = true;
     render();
@@ -263,13 +311,17 @@ export function createYouTubeInboxController({ endpoint }) {
   }
 
   async function request(path, options = {}) {
-    const response = await fetch(`${endpoint}${path}`, { credentials: "include", ...options });
+    const token = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    const headers = { ...(options.headers || {}) };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const response = await fetch(`${endpoint}${path}`, { ...options, headers });
     const contentType = response.headers.get("content-type") || "";
     const data = contentType.includes("application/json") ? await response.json() : null;
     if (!response.ok) {
-      throw new Error(data?.error || (response.status === 401 || response.status === 403
-        ? "Open the secure API to sign in with Cloudflare Access, then try again."
-        : `YouTube API request failed (${response.status}).`));
+      const error = new Error(data?.error || `YouTube API request failed (${response.status}).`);
+      error.status = response.status;
+      if (response.status === 401) sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      throw error;
     }
     return data || {};
   }

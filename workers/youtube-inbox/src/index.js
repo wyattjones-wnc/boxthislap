@@ -17,7 +17,11 @@ export default {
         return json({ ok: true, service: "box-this-lap-youtube" }, 200, cors);
       }
 
-      requireAuthorizedOwner(request, env);
+      if (request.method === "POST" && url.pathname === "/api/auth/login") {
+        return json(await login(request, env), 200, cors);
+      }
+
+      await requireAuthorizedSession(request, env);
 
       if (request.method === "GET" && url.pathname === "/api/session") {
         return json({ authenticated: true }, 200, cors);
@@ -355,18 +359,76 @@ async function youtubeRequest(path, accessToken, options = {}) {
   return data;
 }
 
-function requireAuthorizedOwner(request, env) {
-  const ownerEmail = String(env.OWNER_EMAIL || "").trim().toLowerCase();
-  const accessEmail = String(request.headers.get("Cf-Access-Authenticated-User-Email") || "").trim().toLowerCase();
-  if (!ownerEmail || ownerEmail.startsWith("replace_")) throw httpError(503, "OWNER_EMAIL is not configured.");
-  if (!accessEmail) throw httpError(401, "Cloudflare Access sign-in is required.");
-  if (accessEmail !== ownerEmail) throw httpError(403, "This account is not authorized.");
+async function login(request, env) {
+  requireAuthSecrets(env);
+  const { passphrase } = await readJson(request);
+  if (!await secretsMatch(String(passphrase || ""), env.INBOX_PASSPHRASE)) {
+    throw httpError(401, "Incorrect passphrase.");
+  }
+  const payload = encodeBase64Url(JSON.stringify({ exp: Date.now() + (12 * 60 * 60 * 1000) }));
+  return { token: `${payload}.${await sign(payload, env.SESSION_SECRET)}` };
+}
+
+async function requireAuthorizedSession(request, env) {
+  requireAuthSecrets(env);
+  const authorization = request.headers.get("Authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature || !await secretsMatch(signature, await sign(payload, env.SESSION_SECRET))) {
+    throw httpError(401, "YouTube inbox login is required.");
+  }
+  try {
+    const claims = JSON.parse(decodeBase64Url(payload));
+    if (!Number.isFinite(claims.exp) || claims.exp <= Date.now()) throw new Error("expired");
+  } catch {
+    throw httpError(401, "The YouTube inbox session has expired.");
+  }
+}
+
+function requireAuthSecrets(env) {
+  if (!env.INBOX_PASSPHRASE || !env.SESSION_SECRET) {
+    throw httpError(503, "YouTube inbox authentication is not configured.");
+  }
+}
+
+async function sign(value, secret) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { hash: "SHA-256", name: "HMAC" },
+    false,
+    ["sign"],
+  );
+  return encodeBase64Url(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)));
+}
+
+async function secretsMatch(first, second) {
+  const [firstHash, secondHash] = await Promise.all([first, second].map((value) => crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))));
+  const firstBytes = new Uint8Array(firstHash);
+  const secondBytes = new Uint8Array(secondHash);
+  if (firstBytes.length !== secondBytes.length) return false;
+  let difference = 0;
+  for (let index = 0; index < firstBytes.length; index += 1) difference |= firstBytes[index] ^ secondBytes[index];
+  return difference === 0;
+}
+
+function encodeBase64Url(value) {
+  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : new Uint8Array(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+function decodeBase64Url(value) {
+  const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+  const binary = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+  return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
 }
 
 function getCorsHeaders(origin, env) {
   const headers = {
     "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",

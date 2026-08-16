@@ -2452,6 +2452,41 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-decoration: none;
 }
 
+.youtube-login-state {
+  gap: 10px;
+}
+
+.youtube-login-field {
+  display: grid;
+  gap: 5px;
+  max-width: 360px;
+  text-align: left;
+  width: 100%;
+}
+
+.youtube-login-field > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.youtube-login-field input {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.youtube-login-feedback {
+  color: var(--accent-dark);
+  min-height: 1.5em;
+}
+
 .youtube-sync-note {
   color: var(--muted);
   font-size: 0.7rem;

@@ -5,10 +5,16 @@ compatibility_date = "2026-08-16"
 [[d1_databases]]
 binding = "DB"
 database_name = "youtube-inbox"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
-preview_database_id = "REPLACE_WITH_D1_PREVIEW_DATABASE_ID"
+database_id = "4c868739-3589-46d0-9063-0045a7bf35a3"
 
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
-OWNER_EMAIL = "REPLACE_WITH_GOOGLE_ACCOUNT_EMAIL"
 SYNC_CHANNEL_BATCH_SIZE = "20"
+
+[env.preview]
+name = "box-this-lap-youtube-preview"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "youtube-inbox-preview"
+database_id = "825ac828-dea7-4273-b1ce-6c846dd49227"

@@ -1,0 +1,44 @@
+# YouTube Inbox Worker
+
+Private API for the TheMonsterManiac YouTube inbox. It stores inbox state in D1, syncs subscription uploads through YouTube Data API v3, and uses Cloudflare Access as the authentication boundary.
+
+## One-time setup
+
+1. Create a Google Cloud OAuth client, enable YouTube Data API v3, and authorize the scope `https://www.googleapis.com/auth/youtube.force-ssl` for the owner account. Obtain an offline refresh token for that client.
+2. Create the databases from this directory:
+
+   ```powershell
+   npx wrangler d1 create youtube-inbox
+   npx wrangler d1 create youtube-inbox-preview
+   ```
+
+3. Put the returned IDs and owner Google account email into `wrangler.toml`.
+4. Apply the schema:
+
+   ```powershell
+   npx wrangler d1 migrations apply youtube-inbox --remote
+   npx wrangler d1 migrations apply youtube-inbox-preview --remote
+   ```
+
+5. Store credentials as Worker secrets (never add their values to this repository):
+
+   ```powershell
+   npx wrangler secret put GOOGLE_CLIENT_ID
+   npx wrangler secret put GOOGLE_CLIENT_SECRET
+   npx wrangler secret put YOUTUBE_REFRESH_TOKEN
+   ```
+
+6. Deploy with `npx wrangler deploy`.
+7. In Cloudflare Zero Trust, protect `box-this-lap-youtube.boxthislap.workers.dev/*` with an Access self-hosted application and an Allow policy containing only the owner email. Enable CORS credentials for the configured site origin. The Worker also verifies the Access-injected email header against `OWNER_EMAIL`.
+
+The public site is configured for `https://box-this-lap-youtube.boxthislap.workers.dev`. If the Worker is given another hostname, update `YOUTUBE_INBOX_ENDPOINT` in `modules/siteConfig.js`.
+
+## API
+
+- `GET /api/videos?status=new&channel=&limit=100&offset=0`
+- `POST /api/videos/:videoId/status` with `{ "status": "ignored" }`
+- `POST /api/youtube/sync`
+- `GET /api/youtube/playlists`
+- `POST /api/youtube/playlists/:playlistId/videos` with `{ "videoId": "..." }`
+
+Normal inbox operations use D1 only. YouTube is contacted during explicit refreshes, initial playlist-cache population, and explicit playlist saves.

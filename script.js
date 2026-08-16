@@ -8,6 +8,7 @@ import {
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   GUIDES_DATA_ENDPOINT,
+  YOUTUBE_INBOX_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
   BRACKET_STORAGE_KEY,
@@ -25,7 +26,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202608100003";
+} from "./modules/siteConfig.js?v=202608160001";
 
 import {
   pageLinks,
@@ -248,10 +249,11 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202608090001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608140003";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608160001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608140005";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608160001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -450,7 +452,7 @@ const router = createRouter({
   pages,
   shouldBlockPage: (pageName) =>
     (pageName === "rankings" && !siteData.managerSession) ||
-    (["todo", "guides", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "guides", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -467,6 +469,7 @@ const guidesController = createGuidesController({
   saveChecklistDone: submitGuideChecklistDone,
 });
 const platinumsController = createPlatinumsController({ loadSheet });
+const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT });
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -9091,6 +9094,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "youtube") {
+    youtubeInboxController.renderPage();
+    return;
+  }
+
   if (pageName === "rankings") {
     renderRankingsPage();
     return;
@@ -11826,7 +11834,7 @@ function renderLoginState() {
 
   if (
     (!managerMeta && activePageName === "rankings") ||
-    (!managerMeta?.isAdmin && ["todo", "guides", "the-monster-maniac"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "guides", "youtube", "the-monster-maniac"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -14057,6 +14065,10 @@ function getPageDataScope(pageName = "") {
     return "guides";
   }
 
+  if (page === "youtube") {
+    return "youtube";
+  }
+
   if (page === "the-monster-maniac") {
     return "the-monster-maniac";
   }
@@ -14166,6 +14178,10 @@ function loadPageData(scope) {
   if (scope === "guides") {
     guidesController.renderPage();
     return Promise.resolve();
+  }
+
+  if (scope === "youtube") {
+    return youtubeInboxController.load();
   }
 
   if (scope === "the-monster-maniac") {

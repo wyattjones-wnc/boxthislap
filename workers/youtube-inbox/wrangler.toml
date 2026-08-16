@@ -1,0 +1,14 @@
+name = "box-this-lap-youtube"
+main = "src/index.js"
+compatibility_date = "2026-08-16"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "youtube-inbox"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+preview_database_id = "REPLACE_WITH_D1_PREVIEW_DATABASE_ID"
+
+[vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+OWNER_EMAIL = "REPLACE_WITH_GOOGLE_ACCOUNT_EMAIL"
+SYNC_CHANNEL_BATCH_SIZE = "20"

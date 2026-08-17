@@ -16,6 +16,11 @@ const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
 const ICALENDAR_PROVIDER_NAME = "iCalendar";
 const FULL_MLS_CALENDAR_URL = "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/mls.ics";
+const SPORTDB_COMPETITION_FALLBACKS = [
+  { code: "FACS", id: "4571", key: "community shield", name: "FA Community Shield", seasonType: "calendar", type: "SUPER_CUP" },
+  { code: "ELC", id: "4570", key: "efl cup", name: "EFL Cup", seasonType: "split", type: "CUP" },
+  { code: "SDE", id: "4511", key: "supercopa de espana", name: "Supercopa de España", seasonType: "split", type: "SUPER_CUP" },
+];
 const SOURCE_PRIORITY = {
   [PRIMARY_PROVIDER_NAME]: 40,
   [ARSENAL_PROVIDER_NAME]: 30,
@@ -252,8 +257,14 @@ async function main() {
   });
   const enrichedFixtures = mergeFixtures(applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry)).sort(compareFixtures);
   registerRelevantFootballDataCompetitionsFromFixtures(relevantFootballDataCompetitions, enrichedFixtures, teams);
+  const footballDataCompetitionSchedules = await loadFootballDataCompetitionSchedules(relevantFootballDataCompetitions);
+  const sportDbCompetitionFallbackSchedules = await loadSportDbCompetitionFallbackSchedules({
+    followedFixtures: enrichedFixtures,
+    footballDataSchedules: footballDataCompetitionSchedules,
+    teams,
+  });
   const loadedCompetitionSchedules = [
-    ...await loadFootballDataCompetitionSchedules(relevantFootballDataCompetitions),
+    ...applySportDbCompetitionFallbacks(footballDataCompetitionSchedules, sportDbCompetitionFallbackSchedules),
     ...await loadMlsCompetitionSchedules({
       dateFrom,
       dateTo,
@@ -784,6 +795,99 @@ async function loadSportDbLeagueSeason(leagueId, season) {
   }));
 
   return Array.isArray(data.events) ? data.events : [];
+}
+
+async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], footballDataSchedules = [], teams = [] } = {}) {
+  const relevantKeys = new Set([
+    ...followedFixtures
+      .filter((fixture) => !isFriendlyCompetition(fixture.leagueId, fixture.league))
+      .map((fixture) => getCompetitionScheduleKey(fixture.league)),
+    ...footballDataSchedules.map((schedule) => getCompetitionScheduleKey(schedule?.competition?.name)),
+  ].filter(Boolean));
+  const teamPriority = Math.min(...teams.map((team) => Number.parseInt(String(team.priority || "").trim(), 10)).filter(Number.isFinite));
+  const schedules = [];
+
+  for (const competition of SPORTDB_COMPETITION_FALLBACKS.filter((record) => relevantKeys.has(record.key))) {
+    const season = competition.seasonType === "calendar" ? String(new Date().getUTCFullYear()) : getCurrentSeason();
+
+    try {
+      const events = await loadSportDbLeagueSeason(competition.id, season);
+      const fixtures = events.map((event) => normalizeSportDbCompetitionMatch(event));
+
+      schedules.push({
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: competition.code,
+          followedTeamNames: teams
+            .filter((team) => followedFixtures.some((fixture) => (
+              getCompetitionScheduleKey(fixture.league) === competition.key && String(fixture.teamId || "") === String(team.id || "")
+            )))
+            .map((team) => team.name),
+          id: competition.id,
+          key: competition.key,
+          name: competition.name,
+          priority: Number.isFinite(teamPriority) ? teamPriority : null,
+          season: season.slice(0, 4),
+          source: SPORTDB_PROVIDER_NAME,
+          type: competition.type,
+        },
+        errors: fixtures.length > 0 ? [] : [`${SPORTDB_PROVIDER_NAME} returned no ${competition.name} fixtures for ${season}.`],
+        fixtures,
+        notes: fixtures.length > 0 ? [`Loaded all ${fixtures.length} currently published ${competition.name} matches from ${SPORTDB_PROVIDER_NAME}.`] : [],
+      });
+    } catch (error) {
+      schedules.push({
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: competition.code,
+          followedTeamNames: [],
+          id: competition.id,
+          key: competition.key,
+          name: competition.name,
+          priority: Number.isFinite(teamPriority) ? teamPriority : null,
+          season: season.slice(0, 4),
+          source: SPORTDB_PROVIDER_NAME,
+          type: competition.type,
+        },
+        errors: [error.message],
+        fixtures: [],
+        notes: [],
+      });
+    }
+  }
+
+  return schedules;
+}
+
+function normalizeSportDbCompetitionMatch(event = {}) {
+  const fixture = normalizeSportDbMatch(event, {}, "league-season-full");
+  const { isHome, opponent, priority, teamBadge, teamId, teamName, ...competitionFixture } = fixture;
+
+  return {
+    ...competitionFixture,
+    isCompetitionFixture: true,
+  };
+}
+
+function applySportDbCompetitionFallbacks(footballDataSchedules = [], fallbackSchedules = []) {
+  const fallbacksByKey = new Map(
+    fallbackSchedules
+      .filter((schedule) => Array.isArray(schedule.fixtures) && schedule.fixtures.length > 0)
+      .map((schedule) => [getCompetitionScheduleKey(schedule.competition?.name), schedule])
+  );
+  const mergedSchedules = footballDataSchedules.map((schedule) => {
+    const key = getCompetitionScheduleKey(schedule?.competition?.name);
+    const fallback = fallbacksByKey.get(key);
+
+    if (!fallback || schedule.fixtures?.length) {
+      return schedule;
+    }
+
+    fallbacksByKey.delete(key);
+    return fallback;
+  });
+
+  return [...mergedSchedules, ...fallbacksByKey.values()];
 }
 
 async function loadArsenalSchedules({ dateFrom, dateTo, teamRowsById, teams }) {
@@ -2392,6 +2496,18 @@ function getCompetitionScheduleKey(name) {
     return "premier league";
   }
 
+  if (["community shield", "fa community shield"].includes(normalizedName)) {
+    return "community shield";
+  }
+
+  if (["efl cup", "football league cup", "league cup"].includes(normalizedName)) {
+    return "efl cup";
+  }
+
+  if (["spanish super cup", "supercopa de espana", "supercopa de españa"].includes(normalizedName)) {
+    return "supercopa de espana";
+  }
+
   return normalizedName;
 }
 
@@ -2399,9 +2515,12 @@ function getCompetitionScheduleDisplayName(name) {
   const key = getCompetitionScheduleKey(name);
   const displayNames = {
     championship: "Championship",
+    "community shield": "FA Community Shield",
+    "efl cup": "EFL Cup",
     "la liga": "La Liga",
     mls: "MLS",
     "premier league": "Premier League",
+    "supercopa de espana": "Supercopa de España",
   };
 
   return displayNames[key] || String(name || "").trim();

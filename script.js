@@ -1949,6 +1949,18 @@ function getFootyCanonicalCompetition(name) {
     return { key: "premier league", name: "Premier League" };
   }
 
+  if (["community shield", "fa community shield"].includes(normalizedName)) {
+    return { key: "community shield", name: "FA Community Shield" };
+  }
+
+  if (["efl cup", "football league cup", "league cup"].includes(normalizedName)) {
+    return { key: "efl cup", name: "EFL Cup" };
+  }
+
+  if (["spanish super cup", "supercopa de espana"].includes(normalizedName)) {
+    return { key: "supercopa de espana", name: "Supercopa de España" };
+  }
+
   return { key: normalizedName, name: rawName };
 }
 

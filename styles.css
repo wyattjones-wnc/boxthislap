@@ -2296,8 +2296,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
-.youtube-channel-filter select,
-.youtube-playlist-picker select {
+.youtube-channel-filter select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -2403,16 +2402,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-height: 34px;
   padding: 6px 10px;
   text-decoration: none;
-}
-
-.youtube-playlist-picker {
-  display: flex;
-  flex: 1 1 180px;
-  max-width: 280px;
-}
-
-.youtube-playlist-picker select {
-  width: 100%;
 }
 
 .youtube-ignore-button {
@@ -2552,10 +2541,6 @@ body.has-shell-stale-warning .stale-shell-alert {
     padding: 1px 2px 3px;
   }
 
-  .youtube-playlist-picker {
-    max-width: none;
-    min-width: 100%;
-  }
 }
 
 @media (max-width: 700px) {

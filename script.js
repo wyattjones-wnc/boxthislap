@@ -5008,7 +5008,7 @@ function renderWantItem(item) {
 function normalizeWantItem(row) {
   const name = String(row?.Name || row?.name || "").trim();
   if (!name) return null;
-  const rawPrice = String(row?.Prce ?? row?.price ?? "").trim();
+  const rawPrice = String(row?.Price ?? row?.price ?? "").trim();
   const price = Number(rawPrice);
   return {
     archived: isTrueValue(row.Archived || row.archived),
@@ -5114,7 +5114,7 @@ function saveWantItemFromForm() {
     ID: existingId || createWantItemId(),
     Order: String(clampTodoOrder(wantOrderInput?.value, getWantOrderItems().length + 1)),
     Name: name,
-    Prce: String(wantPriceInput?.value || "").trim(),
+    Price: String(wantPriceInput?.value || "").trim(),
     Archived: wantArchivedInput?.checked ? "TRUE" : "FALSE",
     Completed: wantCompletedInput?.checked ? "TRUE" : "FALSE",
     IsDeleted: existing?.IsDeleted || existing?.isDeleted || "FALSE",
@@ -5144,7 +5144,7 @@ function normalizeWantOrdersLocally(movedId = "", requestedOrder = 1) {
   const orderById = new Map(orderable.map((item, index) => [item.id, String(index + 1)]));
   siteData.wantItems = rows.map((item) => ({
     ID: item.id, Order: orderById.get(item.id) || formatWantOrder(item).replace("-", ""), Name: item.name,
-    Prce: item.raw.Prce ?? "", Archived: item.archived ? "TRUE" : "FALSE", Completed: item.completed ? "TRUE" : "FALSE",
+    Price: item.raw.Price ?? "", Archived: item.archived ? "TRUE" : "FALSE", Completed: item.completed ? "TRUE" : "FALSE",
     IsDeleted: item.deleted ? "TRUE" : "FALSE", "Image URL": item.imageUrl,
   })).sort((a, b) => compareWantItems(normalizeWantItem(a), normalizeWantItem(b)));
 }

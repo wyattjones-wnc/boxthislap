@@ -25,7 +25,7 @@ const TODO_ITEM_COLUMNS = [
   "Unpurchased",
   "Image URL",
 ];
-const WANT_ITEM_COLUMNS = ["ID", "Order", "Name", "Prce", "Archived", "Completed", "IsDeleted", "Image URL"];
+const WANT_ITEM_COLUMNS = ["ID", "Order", "Name", "Price", "Archived", "Completed", "IsDeleted", "Image URL"];
 const RANKING_SHEETS = {
   games: "VG Ranking",
   mcu: "MCU Ranking",
@@ -619,7 +619,7 @@ function listWantItems() {
   const context = getSimpleTableContext("Want", WANT_ITEM_COLUMNS, "ID");
   return readSimpleTableDisplayRows(context).map((row) => ({
     ID: String(row.ID || "").trim(), Order: String(row.Order || "").trim(), Name: String(row.Name || "").trim(),
-    Prce: String(row.Prce ?? "").trim(), Archived: isTrueValue(row.Archived), Completed: isTrueValue(row.Completed),
+    Price: String(row.Price ?? "").trim(), Archived: isTrueValue(row.Archived), Completed: isTrueValue(row.Completed),
     IsDeleted: isTrueValue(row.IsDeleted), "Image URL": String(row["Image URL"] || "").trim(),
   })).filter((row) => row.ID && row.Name).sort(compareWantRows);
 }
@@ -633,7 +633,7 @@ function normalizeWantItem(item) {
     ID: String(item.ID || item.Id || item.id || "").trim(),
     Order: clampTodoOrder(item.Order || item.order, Number.MAX_SAFE_INTEGER),
     Name: String(item.Name || item.name || "").trim(),
-    Prce: String(item.Prce ?? item.price ?? "").trim(),
+    Price: String(item.Price ?? item.price ?? "").trim(),
     Archived: normalizeBool(item.Archived || item.archived),
     Completed: normalizeBool(item.Completed || item.completed),
     IsDeleted: normalizeBool(item.IsDeleted || item.isDeleted),

@@ -21,6 +21,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
     playlists: [],
     priorities: [],
     priority: "1",
+    removedChannelIds: [],
     status: "new",
     showFilters: false,
     syncing: false,
@@ -275,6 +276,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
     const configuration = parseYouTubeConfiguration(rows);
     state.configuredChannels = configuration.channels;
     state.priorities = configuration.priorities;
+    state.removedChannelIds = configuration.removedChannelIds;
     state.configurationLoaded = true;
   }
 
@@ -319,7 +321,11 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       let batches = 0;
       const warnings = new Set();
       while (hasMore && batches < 10) {
-        const result = await request("/api/youtube/sync", { method: "POST" });
+        const result = await request("/api/youtube/sync", {
+          body: JSON.stringify({ removedChannelIds: state.removedChannelIds }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
         (result.warnings || []).forEach((warning) => warnings.add(warning));
         hasMore = Boolean(result.hasMore);
         batches += 1;
@@ -427,12 +433,19 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
 function parseYouTubeConfiguration(rows) {
   const channels = [];
   const priorities = [];
+  const removedChannelIds = [];
 
   for (const row of rows) {
     const channelId = String(row["YouTube Channel ID"] || "").trim();
     const displayName = String(row["Display Name"] || "").trim();
     const priorityValue = String(row.Priority || "").trim();
     const priority = Number(priorityValue);
+    const isRemoved = parseBoolean(row.IsRemoved);
+
+    if (channelId && isRemoved) {
+      removedChannelIds.push(channelId);
+      continue;
+    }
 
     if (channelId && displayName && priorityValue && Number.isFinite(priority)) {
       channels.push({ name: displayName, priority, youtubeChannelId: channelId });
@@ -452,7 +465,11 @@ function parseYouTubeConfiguration(rows) {
 
   channels.sort((first, second) => first.name.localeCompare(second.name));
   priorities.sort((first, second) => first.numericValue - second.numericValue);
-  return { channels, priorities };
+  return { channels, priorities, removedChannelIds: [...new Set(removedChannelIds)] };
+}
+
+function parseBoolean(value) {
+  return ["true", "yes", "1", "y"].includes(String(value || "").trim().toLowerCase());
 }
 
 function setBusy(button, busy) {

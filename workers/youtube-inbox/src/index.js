@@ -36,7 +36,7 @@ export default {
         return json({ playlists: await getPlaylists(env) }, 200, cors);
       }
       if (request.method === "POST" && url.pathname === "/api/youtube/sync") {
-        return json(await syncYouTube(env), 200, cors);
+        return json(await syncYouTube(request, env), 200, cors);
       }
 
       const statusMatch = url.pathname.match(/^\/api\/videos\/([^/]+)\/status$/);
@@ -163,18 +163,24 @@ async function getPlaylists(env) {
   return playlists.sort((first, second) => first.name.localeCompare(second.name));
 }
 
-async function syncYouTube(env) {
+async function syncYouTube(request, env) {
+  const body = await readOptionalJson(request);
+  const removedChannelIds = new Set((Array.isArray(body.removedChannelIds) ? body.removedChannelIds : [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .slice(0, 5000));
   const accessToken = await getGoogleAccessToken(env);
   const batchSize = clampNumber(env.SYNC_CHANNEL_BATCH_SIZE, 1, 25, 20);
   const cursorRow = await env.DB.prepare("SELECT value FROM settings WHERE key = 'sync_cursor'").first();
   const requestedStart = Math.max(0, Number.parseInt(cursorRow?.value, 10) || 0);
   let channels;
   if (requestedStart === 0) {
-    channels = await refreshSubscriptions(env, accessToken);
+    channels = await refreshSubscriptions(env, accessToken, removedChannelIds);
     await setSetting(env, "sync_channel_ids", JSON.stringify(channels.map((channel) => channel.youtubeChannelId)));
   } else {
     const snapshotRow = await env.DB.prepare("SELECT value FROM settings WHERE key = 'sync_channel_ids'").first();
-    channels = await getStoredChannels(env, parseJsonArray(snapshotRow?.value));
+    channels = (await getStoredChannels(env, parseJsonArray(snapshotRow?.value)))
+      .filter((channel) => !removedChannelIds.has(channel.youtubeChannelId));
   }
   const start = Math.min(requestedStart, Math.max(0, channels.length - 1));
   const batch = channels.slice(start, start + batchSize);
@@ -246,7 +252,7 @@ async function getStoredChannels(env, channelIds) {
   return channelIds.map((id) => byId.get(id)).filter(Boolean);
 }
 
-async function refreshSubscriptions(env, accessToken) {
+async function refreshSubscriptions(env, accessToken, removedChannelIds = new Set()) {
   const subscriptionChannelIds = [];
   let pageToken = "";
   do {
@@ -258,7 +264,8 @@ async function refreshSubscriptions(env, accessToken) {
   } while (pageToken);
 
   const channels = [];
-  for (const ids of chunk(subscriptionChannelIds, 50)) {
+  const includedChannelIds = subscriptionChannelIds.filter((id) => !removedChannelIds.has(id));
+  for (const ids of chunk(includedChannelIds, 50)) {
     const params = new URLSearchParams({ id: ids.join(","), maxResults: "50", part: "snippet,contentDetails" });
     const data = await youtubeRequest(`/channels?${params}`, accessToken);
     for (const item of data.items || []) {
@@ -517,6 +524,16 @@ function json(data, status, headers) {
 async function readJson(request) {
   try {
     return await request.json();
+  } catch {
+    throw httpError(400, "A valid JSON body is required.");
+  }
+}
+
+async function readOptionalJson(request) {
+  const text = await request.text();
+  if (!text.trim()) return {};
+  try {
+    return JSON.parse(text);
   } catch {
     throw httpError(400, "A valid JSON body is required.");
   }

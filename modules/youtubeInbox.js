@@ -1,7 +1,7 @@
 const STATUS_OPTIONS = [
   ["new", "New"],
   ["saved", "Saved"],
-  ["watched", "Watched"],
+  ["watched", "Seen"],
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";

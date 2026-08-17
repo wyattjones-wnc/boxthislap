@@ -2404,10 +2404,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-decoration: none;
 }
 
-.youtube-ignore-button {
-  color: var(--muted);
-}
-
 .youtube-quick-playlist-button {
   border-color: var(--accent-border);
   color: var(--accent-dark);

@@ -2,7 +2,6 @@ const STATUS_OPTIONS = [
   ["new", "New"],
   ["saved", "Saved"],
   ["watched", "Watched"],
-  ["ignored", "Ignored"],
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
@@ -175,7 +174,6 @@ export function createYouTubeInboxController({ endpoint }) {
             ${quickPlaylists.map(({ name, playlist }) => `<button class="action-button youtube-quick-playlist-button" type="button" data-youtube-quick-save="${escapeAttribute(playlist.youtubePlaylistId)}">Save to ${escapeHtml(name)}</button>`).join("")}
             ${video.status === "new" ? `<button class="action-button" type="button" data-youtube-action="watched">Seen</button>` : ""}
             ${video.status === "new" ? `<button class="action-button youtube-seen-through-button" type="button" data-youtube-seen-through>Seen through here</button>` : ""}
-            ${video.status !== "ignored" ? `<button class="action-button youtube-ignore-button" type="button" data-youtube-action="ignored">Ignore</button>` : ""}
           </div>
         </div>
       </article>

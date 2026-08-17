@@ -142,13 +142,6 @@ async function markVideosSeenThrough(videoId, env) {
 }
 
 async function getPlaylists(env) {
-  const refreshRow = await env.DB.prepare("SELECT value FROM settings WHERE key = 'playlists_refreshed_at'").first();
-  const refreshedAt = Date.parse(refreshRow?.value || "");
-  const isStale = !Number.isFinite(refreshedAt) || Date.now() - refreshedAt > 5 * 60 * 1000;
-  if (isStale) {
-    await refreshPlaylists(env, await getGoogleAccessToken(env));
-  }
-
   let result = await env.DB.prepare(`
     SELECT youtube_playlist_id, name FROM playlists ORDER BY name COLLATE NOCASE
   `).all();
@@ -330,7 +323,6 @@ async function refreshPlaylists(env, accessToken) {
       ON CONFLICT(youtube_playlist_id) DO UPDATE SET name = excluded.name, updated_at = CURRENT_TIMESTAMP
     `).bind(playlist.id, playlist.name)));
   }
-  await setSetting(env, "playlists_refreshed_at", new Date().toISOString());
 }
 
 async function addVideoToPlaylist(playlistId, request, env) {

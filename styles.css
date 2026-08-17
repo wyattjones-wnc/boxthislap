@@ -1084,6 +1084,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   opacity: 1;
 }
 
+[data-want-id].is-actions-open .todo-card-actions {
+  max-height: 104px;
+}
+
 .todo-chip-list {
   display: flex;
   flex-wrap: wrap;

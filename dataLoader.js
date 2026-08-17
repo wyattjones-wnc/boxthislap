@@ -61,6 +61,7 @@ export const DATA_SOURCES = {
     rankingMovies: buildNextCsvUrl("449567167"),
     rankingTv: buildNextCsvUrl("415412107"),
     todo: `${NEXT_SHEET_BASE_URL}?single=true&output=csv&sheet=To%20Do`,
+    want: `${NEXT_SHEET_BASE_URL}?single=true&output=csv&sheet=Want`,
     guides: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=0`,
     walkthroughChecklist: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=1000271762`,
     platinums: `${PLATINUMS_SHEET_BASE_URL}?single=true&output=csv&gid=0`,

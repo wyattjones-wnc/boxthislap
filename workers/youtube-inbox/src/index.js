@@ -77,7 +77,7 @@ async function getVideos(url, env) {
     bindings.push(status);
   }
   if (channel) {
-    clauses.push("c.name = ?");
+    clauses.push("c.youtube_channel_id = ?");
     bindings.push(channel);
   }
 
@@ -142,15 +142,9 @@ async function markVideosSeenThrough(videoId, env) {
 }
 
 async function getPlaylists(env) {
-  let result = await env.DB.prepare(`
+  const result = await env.DB.prepare(`
     SELECT youtube_playlist_id, name FROM playlists ORDER BY name COLLATE NOCASE
   `).all();
-  if (!result.results?.length) {
-    await refreshPlaylists(env, await getGoogleAccessToken(env));
-    result = await env.DB.prepare(`
-      SELECT youtube_playlist_id, name FROM playlists ORDER BY name COLLATE NOCASE
-    `).all();
-  }
   return (result.results || []).map((row) => ({
     name: row.name,
     youtubePlaylistId: row.youtube_playlist_id,
@@ -184,6 +178,7 @@ async function syncYouTube(env) {
 
   const nextCursor = start + batch.length;
   const hasMore = nextCursor < channels.length;
+  const autoSeen = hasMore ? 0 : await markOldNewVideosSeen(env, 30);
   const now = new Date().toISOString();
   await setSetting(env, "sync_cursor", hasMore ? String(nextCursor) : "0");
   await setSetting(env, "last_sync_at", now);
@@ -192,9 +187,20 @@ async function syncYouTube(env) {
     channelsChecked: batch.length,
     hasMore,
     inserted: discovered.length,
+    autoSeen,
     lastSyncAt: now,
     totalChannels: channels.length,
   };
+}
+
+async function markOldNewVideosSeen(env, days) {
+  const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000)).toISOString();
+  const result = await env.DB.prepare(`
+    UPDATE videos
+    SET status = 'watched', processed_at = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE status = 'new' AND published_at < ?
+  `).bind(new Date().toISOString(), cutoff).run();
+  return result.meta?.changes || 0;
 }
 
 async function getStoredChannels(env, channelIds) {

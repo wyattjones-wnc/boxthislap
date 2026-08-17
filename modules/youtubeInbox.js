@@ -5,6 +5,7 @@ const STATUS_OPTIONS = [
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
+const MORE_CONTROLS_STORAGE_KEY = "boxThisLapYouTubeMoreControls";
 
 export function createYouTubeInboxController({ endpoint }) {
   const view = document.querySelector("#youtube-inbox-view");
@@ -14,9 +15,11 @@ export function createYouTubeInboxController({ endpoint }) {
     initialized: false,
     lastSyncAt: "",
     loading: false,
+    moreControls: localStorage.getItem(MORE_CONTROLS_STORAGE_KEY) === "true",
     needsAuth: false,
     playlists: [],
     status: "new",
+    showFilters: false,
     syncing: false,
     videos: [],
   };
@@ -68,32 +71,31 @@ export function createYouTubeInboxController({ endpoint }) {
   function render() {
     if (!view) return;
 
-    const channelNames = state.channels.map((channel) => channel.name).filter(Boolean);
-    const newCount = state.status === "new" ? state.videos.length : "";
-
     view.innerHTML = `
-      <div class="section-heading page-heading-with-action footy-heading youtube-heading">
-        <div>
-          <p class="guides-eyebrow">Subscription inbox</p>
-          <h1>YouTube${newCount !== "" ? ` <span class="youtube-count">${newCount} new</span>` : ""}</h1>
-          <p class="guides-intro">Review new uploads and file the ones worth keeping.</p>
+      <div class="youtube-toolbar" aria-label="YouTube inbox controls">
+        <div class="youtube-status-tabs" role="group" aria-label="Video status">
+          ${STATUS_OPTIONS.map(([value, label]) => `<button type="button" data-youtube-status="${value}" class="${state.status === value ? "is-active" : ""}" aria-pressed="${state.status === value}">${label}</button>`).join("")}
         </div>
-        <div class="heading-actions">
+        <div class="youtube-toolbar-actions">
+          <button class="icon-action-button youtube-filter-toggle${state.showFilters ? " is-active" : ""}" type="button" data-youtube-filter aria-expanded="${state.showFilters}" aria-controls="youtube-filters" aria-label="${state.showFilters ? "Hide" : "Show"} filters">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path></svg>
+          </button>
           <button class="action-button" type="button" data-youtube-refresh${state.syncing ? " disabled" : ""}>
             ${state.syncing ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>
-      <div class="youtube-toolbar" aria-label="YouTube inbox filters">
-        <div class="youtube-status-tabs" role="group" aria-label="Video status">
-          ${STATUS_OPTIONS.map(([value, label]) => `<button type="button" data-youtube-status="${value}" class="${state.status === value ? "is-active" : ""}" aria-pressed="${state.status === value}">${label}</button>`).join("")}
-        </div>
+      <div class="youtube-filter-panel" id="youtube-filters"${state.showFilters ? "" : " hidden"}>
         <label class="youtube-channel-filter">
           <span>Channel</span>
           <select data-youtube-channel>
             <option value="">All channels</option>
-            ${channelNames.map((name) => `<option value="${escapeAttribute(name)}"${state.channel === name ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}
+            ${state.channels.map((channel) => `<option value="${escapeAttribute(channel.youtubeChannelId)}"${state.channel === channel.youtubeChannelId ? " selected" : ""}>${escapeHtml(channel.name)}</option>`).join("")}
           </select>
+        </label>
+        <label class="youtube-more-controls">
+          <input type="checkbox" data-youtube-more-controls${state.moreControls ? " checked" : ""}>
+          <span>More Controls</span>
         </label>
       </div>
       ${renderBody()}
@@ -171,7 +173,7 @@ export function createYouTubeInboxController({ endpoint }) {
           </div>
           <div class="youtube-video-actions">
             ${quickPlaylists.map(({ name, playlist }) => `<button class="action-button youtube-quick-playlist-button" type="button" data-youtube-quick-save="${escapeAttribute(playlist.youtubePlaylistId)}">Save to ${escapeHtml(name)}</button>`).join("")}
-            ${video.status === "new" ? `<button class="action-button" type="button" data-youtube-action="watched">Seen</button>` : ""}
+            ${video.status === "new" && state.moreControls ? `<button class="action-button" type="button" data-youtube-action="watched">Seen</button>` : ""}
             ${video.status === "new" ? `<button class="action-button youtube-seen-through-button" type="button" data-youtube-seen-through>Seen through here</button>` : ""}
           </div>
         </div>
@@ -190,6 +192,12 @@ export function createYouTubeInboxController({ endpoint }) {
 
     if (event.target.closest("[data-youtube-refresh]")) {
       await sync();
+      return;
+    }
+
+    if (event.target.closest("[data-youtube-filter]")) {
+      state.showFilters = !state.showFilters;
+      render();
       return;
     }
 
@@ -220,6 +228,12 @@ export function createYouTubeInboxController({ endpoint }) {
   }
 
   async function handleChange(event) {
+    if (event.target.matches("[data-youtube-more-controls]")) {
+      state.moreControls = event.target.checked;
+      localStorage.setItem(MORE_CONTROLS_STORAGE_KEY, String(state.moreControls));
+      render();
+      return;
+    }
     if (!event.target.matches("[data-youtube-channel]")) return;
     state.channel = event.target.value;
     state.videos = [];

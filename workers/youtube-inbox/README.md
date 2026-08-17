@@ -44,4 +44,6 @@ The public site is configured for `https://box-this-lap-youtube.boxthislap.worke
 - `GET /api/youtube/playlists`
 - `POST /api/youtube/playlists/:playlistId/videos` with `{ "videoId": "..." }`
 
-Normal inbox operations use D1 only. YouTube is contacted during explicit refreshes, initial playlist-cache population, and explicit playlist saves.
+Normal inbox operations use D1 only. YouTube is contacted during explicit refreshes and explicit playlist saves.
+
+Each completed manual sync marks any remaining `new` video older than 30 days as watched. Channel filters use stable YouTube channel IDs while displaying the current channel names.

@@ -2239,6 +2239,23 @@ body.has-shell-stale-warning .stale-shell-alert {
   margin-left: auto;
 }
 
+.youtube-priority-filter {
+  flex: 0 1 180px;
+  min-width: 100px;
+}
+
+.youtube-priority-filter select,
+.youtube-channel-filter select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 34px;
+  padding: 5px 28px 5px 9px;
+  width: 100%;
+}
+
 .youtube-filter-toggle svg {
   fill: none;
   stroke: currentColor;
@@ -2325,16 +2342,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   height: 18px;
   margin: 0;
   width: 18px;
-}
-
-.youtube-channel-filter select {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  color: var(--ink);
-  font: inherit;
-  min-height: 34px;
-  padding: 5px 28px 5px 9px;
 }
 
 .youtube-video-list,
@@ -2550,7 +2557,25 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 @media (max-width: 520px) {
   .youtube-toolbar {
+    display: grid;
     gap: 7px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .youtube-priority-filter {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .youtube-toolbar-actions {
+    grid-column: 2;
+    grid-row: 1;
+    margin-left: 0;
+  }
+
+  .youtube-status-tabs {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .youtube-status-tabs button {
@@ -2558,9 +2583,7 @@ body.has-shell-stale-warning .stale-shell-alert {
     padding-right: 8px;
   }
 
-  .youtube-toolbar-actions {
-    gap: 5px;
-  }
+  .youtube-toolbar-actions { gap: 5px; }
 
   .youtube-video-card {
     grid-template-columns: 1fr;

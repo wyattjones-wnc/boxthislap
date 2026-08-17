@@ -62,7 +62,7 @@ export default {
 
 async function getVideos(url, env) {
   const status = url.searchParams.get("status") || "new";
-  const channel = url.searchParams.get("channel") || "";
+  const channels = [...new Set(url.searchParams.getAll("channel").map((value) => value.trim()).filter(Boolean))];
   const limit = clampNumber(url.searchParams.get("limit"), 1, 100, 50);
   const offset = clampNumber(url.searchParams.get("offset"), 0, 10000, 0);
 
@@ -76,9 +76,9 @@ async function getVideos(url, env) {
     clauses.push("v.status = ?");
     bindings.push(status);
   }
-  if (channel) {
-    clauses.push("c.youtube_channel_id = ?");
-    bindings.push(channel);
+  if (channels.length) {
+    clauses.push("c.youtube_channel_id IN (SELECT value FROM json_each(?))");
+    bindings.push(JSON.stringify(channels));
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";

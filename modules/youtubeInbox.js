@@ -5,19 +5,22 @@ const STATUS_OPTIONS = [
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
-const MORE_CONTROLS_STORAGE_KEY = "boxThisLapYouTubeMoreControls";
 
-export function createYouTubeInboxController({ endpoint }) {
+export function createYouTubeInboxController({ endpoint, loadSheet }) {
   const view = document.querySelector("#youtube-inbox-view");
   const state = {
     channel: "",
     channels: [],
+    configuredChannels: [],
+    configurationLoaded: false,
     initialized: false,
     lastSyncAt: "",
     loading: false,
-    moreControls: localStorage.getItem(MORE_CONTROLS_STORAGE_KEY) === "true",
+    moreControls: false,
     needsAuth: false,
     playlists: [],
+    priorities: [],
+    priority: "1",
     status: "new",
     showFilters: false,
     syncing: false,
@@ -46,15 +49,24 @@ export function createYouTubeInboxController({ endpoint }) {
     render();
 
     try {
+      await loadConfiguration();
       const query = new URLSearchParams({ limit: "100", status: state.status });
-      if (state.channel) query.set("channel", state.channel);
+      const allowedChannels = getAllowedChannels();
+      const selectedChannels = state.channel
+        ? allowedChannels.filter((channel) => channel.youtubeChannelId === state.channel)
+        : allowedChannels;
+      if (selectedChannels.length) {
+        selectedChannels.forEach((channel) => query.append("channel", channel.youtubeChannelId));
+      } else {
+        query.append("channel", "__none__");
+      }
 
       const [videoData, playlistData] = await Promise.all([
         request(`/api/videos?${query}`),
         request("/api/youtube/playlists"),
       ]);
       state.videos = Array.isArray(videoData.videos) ? videoData.videos : [];
-      state.channels = Array.isArray(videoData.channels) ? videoData.channels : [];
+      state.channels = allowedChannels;
       state.playlists = Array.isArray(playlistData.playlists) ? playlistData.playlists : [];
       state.lastSyncAt = videoData.lastSyncAt || "";
       state.error = "";
@@ -76,6 +88,12 @@ export function createYouTubeInboxController({ endpoint }) {
         <div class="youtube-status-tabs" role="group" aria-label="Video status">
           ${STATUS_OPTIONS.map(([value, label]) => `<button type="button" data-youtube-status="${value}" class="${state.status === value ? "is-active" : ""}" aria-pressed="${state.status === value}">${label}</button>`).join("")}
         </div>
+        <label class="youtube-priority-filter">
+          <span class="sr-only">Priority</span>
+          <select data-youtube-priority aria-label="Priority">
+            ${state.priorities.map((priority) => `<option value="${escapeAttribute(priority.value)}"${state.priority === priority.value ? " selected" : ""}>${escapeHtml(priority.label)}</option>`).join("")}
+          </select>
+        </label>
         <div class="youtube-toolbar-actions">
           <button class="icon-action-button youtube-filter-toggle${state.showFilters ? " is-active" : ""}" type="button" data-youtube-filter aria-expanded="${state.showFilters}" aria-controls="youtube-filters" aria-label="${state.showFilters ? "Hide" : "Show"} filters">
             <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path></svg>
@@ -86,17 +104,19 @@ export function createYouTubeInboxController({ endpoint }) {
         </div>
       </div>
       <div class="youtube-filter-panel" id="youtube-filters"${state.showFilters ? "" : " hidden"}>
-        <label class="youtube-channel-filter">
-          <span>Channel</span>
-          <select data-youtube-channel>
-            <option value="">All channels</option>
-            ${state.channels.map((channel) => `<option value="${escapeAttribute(channel.youtubeChannelId)}"${state.channel === channel.youtubeChannelId ? " selected" : ""}>${escapeHtml(channel.name)}</option>`).join("")}
-          </select>
-        </label>
         <label class="youtube-more-controls">
           <input type="checkbox" data-youtube-more-controls${state.moreControls ? " checked" : ""}>
           <span>More Controls</span>
         </label>
+        ${state.moreControls ? `
+          <label class="youtube-channel-filter">
+            <span>Channel</span>
+            <select data-youtube-channel>
+              <option value="">All channels</option>
+              ${state.channels.map((channel) => `<option value="${escapeAttribute(channel.youtubeChannelId)}"${state.channel === channel.youtubeChannelId ? " selected" : ""}>${escapeHtml(channel.name)}</option>`).join("")}
+            </select>
+          </label>
+        ` : ""}
       </div>
       ${renderBody()}
       ${state.lastSyncAt ? `<p class="youtube-sync-note">Last refreshed ${escapeHtml(formatRelativeDate(state.lastSyncAt))}</p>` : ""}
@@ -230,14 +250,35 @@ export function createYouTubeInboxController({ endpoint }) {
   async function handleChange(event) {
     if (event.target.matches("[data-youtube-more-controls]")) {
       state.moreControls = event.target.checked;
-      localStorage.setItem(MORE_CONTROLS_STORAGE_KEY, String(state.moreControls));
+      if (!state.moreControls) state.channel = "";
       render();
       return;
     }
-    if (!event.target.matches("[data-youtube-channel]")) return;
-    state.channel = event.target.value;
+    if (event.target.matches("[data-youtube-priority]")) {
+      state.priority = event.target.value;
+      const allowedIds = new Set(getAllowedChannels().map((channel) => channel.youtubeChannelId));
+      if (state.channel && !allowedIds.has(state.channel)) state.channel = "";
+    } else if (event.target.matches("[data-youtube-channel]")) {
+      state.channel = event.target.value;
+    } else {
+      return;
+    }
     state.videos = [];
     await load();
+  }
+
+  async function loadConfiguration() {
+    if (state.configurationLoaded) return;
+    const rows = await loadSheet("youtube");
+    const configuration = parseYouTubeConfiguration(rows);
+    state.configuredChannels = configuration.channels;
+    state.priorities = configuration.priorities;
+    state.configurationLoaded = true;
+  }
+
+  function getAllowedChannels() {
+    const threshold = Number(state.priority) || 1;
+    return state.configuredChannels.filter((channel) => channel.priority <= threshold);
   }
 
   async function handleSubmit(event) {
@@ -353,6 +394,37 @@ export function createYouTubeInboxController({ endpoint }) {
   }
 
   return { load, renderPage };
+}
+
+function parseYouTubeConfiguration(rows) {
+  const channels = [];
+  const priorities = [];
+
+  for (const row of rows) {
+    const channelId = String(row["YouTube Channel ID"] || "").trim();
+    const displayName = String(row["Display Name"] || "").trim();
+    const priorityValue = String(row.Priority || "").trim();
+    const priority = Number(priorityValue);
+
+    if (channelId && displayName && priorityValue && Number.isFinite(priority)) {
+      channels.push({ name: displayName, priority, youtubeChannelId: channelId });
+      continue;
+    }
+
+    const value = String(row.ID || "").trim();
+    const numericValue = Number(value);
+    if (!channelId && displayName && value && Number.isFinite(numericValue)) {
+      priorities.push({ label: displayName, numericValue, value });
+    }
+  }
+
+  if (!channels.length || !priorities.length) {
+    throw new Error("The YouTube sheet needs both channel and priority rows.");
+  }
+
+  channels.sort((first, second) => first.name.localeCompare(second.name));
+  priorities.sort((first, second) => first.numericValue - second.numericValue);
+  return { channels, priorities };
 }
 
 function setBusy(button, busy) {

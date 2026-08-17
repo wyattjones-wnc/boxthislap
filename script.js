@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608140002";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608170001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -289,7 +289,7 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260816000
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608140005";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170006";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170007";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -520,7 +520,7 @@ const guidesController = createGuidesController({
   saveChecklistDone: submitGuideChecklistDone,
 });
 const platinumsController = createPlatinumsController({ loadSheet });
-const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT });
+const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
 
 function renderLeagueList(year) {
   if (!leagueList) {

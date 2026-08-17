@@ -37,7 +37,7 @@ The public site is configured for `https://box-this-lap-youtube.boxthislap.worke
 
 ## API
 
-- `GET /api/videos?status=new&channel=&limit=100&offset=0`
+- `GET /api/videos?status=new&channel=UC...&channel=UC...&limit=100&offset=0`
 - `POST /api/videos/:videoId/status` with `{ "status": "ignored" }`
 - `POST /api/videos/:videoId/seen-through` marks that video and all newer `new` videos as watched
 - `POST /api/youtube/sync`
@@ -47,3 +47,5 @@ The public site is configured for `https://box-this-lap-youtube.boxthislap.worke
 Normal inbox operations use D1 only. YouTube is contacted during explicit refreshes and explicit playlist saves.
 
 Each completed manual sync marks any remaining `new` video older than 30 days as watched. Channel filters use stable YouTube channel IDs while displaying the current channel names.
+
+The public site's published `YouTube` sheet controls which channels appear and their priority threshold. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, and `Priority`; its priority table uses `Priority` and `Description`.

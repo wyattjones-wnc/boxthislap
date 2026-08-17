@@ -49,3 +49,5 @@ Normal inbox operations use D1 only. YouTube is contacted during explicit refres
 Each completed manual sync marks any remaining `new` video older than 30 days as watched. Channel filters use stable YouTube channel IDs while displaying the current channel names.
 
 The public site's published `YouTube` sheet controls which channels appear and their priority threshold. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, and `Priority`; its priority table uses `Priority` and `Description`.
+
+The `3New` playlist is pinned by its stable YouTube playlist ID so the quick-save button remains available even when YouTube's owned-playlist listing or the D1 cache is stale.

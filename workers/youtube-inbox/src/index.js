@@ -1,6 +1,9 @@
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const VALID_STATUSES = new Set(["new", "ignored", "saved", "watched"]);
+const KNOWN_PLAYLISTS = [
+  { id: "PLGNVOQrF_q_U", name: "3New" },
+];
 
 export default {
   async fetch(request, env) {
@@ -145,10 +148,16 @@ async function getPlaylists(env) {
   const result = await env.DB.prepare(`
     SELECT youtube_playlist_id, name FROM playlists ORDER BY name COLLATE NOCASE
   `).all();
-  return (result.results || []).map((row) => ({
+  const playlists = (result.results || []).map((row) => ({
     name: row.name,
     youtubePlaylistId: row.youtube_playlist_id,
   }));
+  for (const known of KNOWN_PLAYLISTS) {
+    if (!playlists.some((playlist) => playlist.youtubePlaylistId === known.id)) {
+      playlists.push({ name: known.name, youtubePlaylistId: known.id });
+    }
+  }
+  return playlists.sort((first, second) => first.name.localeCompare(second.name));
 }
 
 async function syncYouTube(env) {
@@ -321,6 +330,9 @@ async function refreshPlaylists(env, accessToken) {
   if (watchLaterId && !playlists.some((playlist) => playlist.id === watchLaterId)) {
     playlists.push({ id: watchLaterId, name: "Watch Later" });
   }
+  for (const known of KNOWN_PLAYLISTS) {
+    if (!playlists.some((playlist) => playlist.id === known.id)) playlists.push(known);
+  }
 
   if (playlists.length) {
     await env.DB.batch(playlists.map((playlist) => env.DB.prepare(`
@@ -335,7 +347,18 @@ async function addVideoToPlaylist(playlistId, request, env) {
   const { videoId } = await readJson(request);
   if (!videoId) throw httpError(400, "A video ID is required.");
   const video = await env.DB.prepare("SELECT id FROM videos WHERE youtube_video_id = ?").bind(videoId).first();
-  const playlist = await env.DB.prepare("SELECT id FROM playlists WHERE youtube_playlist_id = ?").bind(playlistId).first();
+  let playlist = await env.DB.prepare("SELECT id FROM playlists WHERE youtube_playlist_id = ?").bind(playlistId).first();
+  if (!playlist) {
+    const known = KNOWN_PLAYLISTS.find((item) => item.id === playlistId);
+    if (known) {
+      await env.DB.prepare(`
+        INSERT INTO playlists (youtube_playlist_id, name, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(youtube_playlist_id) DO UPDATE SET name = excluded.name, updated_at = CURRENT_TIMESTAMP
+      `).bind(known.id, known.name).run();
+      playlist = await env.DB.prepare("SELECT id FROM playlists WHERE youtube_playlist_id = ?").bind(playlistId).first();
+    }
+  }
   if (!video) throw httpError(404, "Video not found.");
   if (!playlist) throw httpError(404, "Playlist not found.");
 

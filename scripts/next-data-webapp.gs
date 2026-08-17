@@ -25,6 +25,7 @@ const TODO_ITEM_COLUMNS = [
   "Unpurchased",
   "Image URL",
 ];
+const WANT_ITEM_COLUMNS = ["ID", "Order", "Name", "Price", "Archived", "Completed", "IsDeleted", "Image URL"];
 const RANKING_SHEETS = {
   games: "VG Ranking",
   mcu: "MCU Ranking",
@@ -63,6 +64,11 @@ const TODO_ELO_SHEET = "To Do Elo";
 const TODO_SEED_SHEET = "To Do Seeds";
 const TODO_SNAPSHOT_SHEET = "To Do Snapshots";
 const TODO_SNAPSHOT_ITEM_SHEET = "To Do Snapshot Items";
+const WANT_CHOICE_SHEET = "Want Choices";
+const WANT_ELO_SHEET = "Want Elo";
+const WANT_SEED_SHEET = "Want Seeds";
+const WANT_SNAPSHOT_SHEET = "Want Snapshots";
+const WANT_SNAPSHOT_ITEM_SHEET = "Want Snapshot Items";
 const TODO_CHOICE_COLUMNS = ["ID", "Item A ID", "Item B ID", "Winner ID", "Loser ID", "Created At"];
 const TODO_ELO_COLUMNS = ["ID", "Item ID", "Rating", "Wins", "Losses", "Last Choice ID", "Updated At"];
 const TODO_SEED_COLUMNS = ["ID", "Item ID", "Seed Rank", "Seed Rating", "Seeded At", "Reason"];
@@ -179,6 +185,11 @@ function doGet(e) {
       return webResponse(e, { ok: true, items: listTodoItems() });
     }
 
+    if (action === "listWantChoices") return webResponse(e, { ok: true, choices: listWantChoices() });
+    if (action === "listWantElo") return webResponse(e, { ok: true, elo: listWantElo() });
+    if (action === "listWantRankingMeta") return webResponse(e, { ok: true, seeds: listWantSeeds(), snapshotItems: listWantSnapshotItems(), snapshots: listWantSnapshots() });
+    if (action === "listWantItems") return webResponse(e, { ok: true, items: listWantItems() });
+
     return webResponse(e, { ok: true, service: "boxthislap-next-data" });
   } catch (error) {
     return webResponse(e, { ok: false, error: String(error && error.message ? error.message : error) });
@@ -201,6 +212,10 @@ function doPost(e) {
       return jsonResponse(saveTodoOrder(payload.items || []));
     }
 
+    if (payload.action === "saveWantItem") return jsonResponse(saveWantItem(payload.item || {}));
+    if (payload.action === "saveWantOrder") return jsonResponse(saveWantOrder(payload.items || []));
+    if (payload.action === "moveWantToTodo") return jsonResponse(moveWantToTodo(payload.itemId));
+
     if (payload.action === "saveRankingItem") {
       return jsonResponse(saveRankingItem(
         payload.ranking,
@@ -222,6 +237,9 @@ function doPost(e) {
     if (payload.action === "saveTodoChoice") {
       return jsonResponse(saveTodoChoice(payload.choice || {}));
     }
+
+    if (payload.action === "saveWantChoice") return jsonResponse(saveWantChoice(payload.choice || {}));
+    if (payload.action === "normalizeWant") return jsonResponse(normalizeWant(payload.normalization || {}));
 
     if (payload.action === "normalizeTodo") {
       return jsonResponse(normalizeTodo(payload.normalization || {}));
@@ -559,6 +577,121 @@ function compareTodoRows(first, second) {
   }
 
   return String(first.ID || "").localeCompare(String(second.ID || ""), undefined, { numeric: true });
+}
+
+function saveWantItem(item) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const context = getSimpleTableContext("Want", WANT_ITEM_COLUMNS, "ID");
+    const rows = getWantRows(context);
+    const rowValues = normalizeWantItem(item);
+    rowValues.ID = rowValues.ID || getNextNumericIdFromRows(rows, "ID");
+    if (!rowValues.ID) throw new Error("ID is required.");
+    if (!rowValues.Name) throw new Error("Name is required.");
+    const nextRows = rows.filter((row) => row.ID !== rowValues.ID).concat([rowValues]);
+    writeWantRows(context, normalizeWantOrder(nextRows, rowValues.ID, rowValues.Order));
+    return { ok: true, id: rowValues.ID, status: rows.some((row) => row.ID === rowValues.ID) ? "updated" : "appended" };
+  } finally { lock.releaseLock(); }
+}
+
+function saveWantOrder(items) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const context = getSimpleTableContext("Want", WANT_ITEM_COLUMNS, "ID");
+    const existingRows = getWantRows(context);
+    const byId = {};
+    existingRows.forEach((row) => { byId[row.ID] = row; });
+    const ordered = items.map((item) => byId[String(item.ID || item.id || "").trim()]).filter((row) => row && isWantOrderable(row));
+    const used = {};
+    ordered.forEach((row) => { used[row.ID] = true; });
+    const remaining = existingRows.filter((row) => isWantOrderable(row) && !used[row.ID]).sort(compareWantRows);
+    const orderById = {};
+    ordered.concat(remaining).forEach((row, index) => { orderById[row.ID] = String(index + 1); });
+    const nextRows = existingRows.map((row) => ({ ...row, Order: orderById[row.ID] || row.Order })).sort(compareWantRows);
+    writeWantRows(context, nextRows);
+    return { ok: true, count: nextRows.length, status: "updated" };
+  } finally { lock.releaseLock(); }
+}
+
+function listWantItems() {
+  const context = getSimpleTableContext("Want", WANT_ITEM_COLUMNS, "ID");
+  return readSimpleTableDisplayRows(context).map((row) => ({
+    ID: String(row.ID || "").trim(), Order: String(row.Order || "").trim(), Name: String(row.Name || "").trim(),
+    Price: String(row.Price ?? "").trim(), Archived: isTrueValue(row.Archived), Completed: isTrueValue(row.Completed),
+    IsDeleted: isTrueValue(row.IsDeleted), "Image URL": String(row["Image URL"] || "").trim(),
+  })).filter((row) => row.ID && row.Name).sort(compareWantRows);
+}
+
+function getWantRows(context) {
+  return readSimpleTableRows(context).map(normalizeWantItem).filter((row) => row.ID && row.Name).sort(compareWantRows);
+}
+
+function normalizeWantItem(item) {
+  return {
+    ID: String(item.ID || item.Id || item.id || "").trim(),
+    Order: clampTodoOrder(item.Order || item.order, Number.MAX_SAFE_INTEGER),
+    Name: String(item.Name || item.name || "").trim(),
+    Price: String(item.Price ?? item.price ?? "").trim(),
+    Archived: normalizeBool(item.Archived || item.archived),
+    Completed: normalizeBool(item.Completed || item.completed),
+    IsDeleted: normalizeBool(item.IsDeleted || item.isDeleted),
+    "Image URL": String(item["Image URL"] || item.imageUrl || "").trim(),
+  };
+}
+
+function normalizeWantOrder(rows, movedId, requestedOrder) {
+  const normalized = rows.map(normalizeWantItem);
+  const moved = normalized.find((row) => row.ID === String(movedId));
+  const ordered = normalized.filter((row) => isWantOrderable(row) && row.ID !== String(movedId)).sort(compareWantRows);
+  if (moved && isWantOrderable(moved)) ordered.splice(clampTodoOrder(requestedOrder, ordered.length + 1) - 1, 0, moved);
+  const orderById = {};
+  ordered.forEach((row, index) => { orderById[row.ID] = String(index + 1); });
+  return normalized.map((row) => ({ ...row, Order: orderById[row.ID] || row.Order || "" })).sort(compareWantRows);
+}
+
+function isWantOrderable(row) {
+  return row && row.Archived !== "TRUE" && row.Completed !== "TRUE" && row.IsDeleted !== "TRUE";
+}
+
+function compareWantRows(first, second) {
+  return Number(first.Order) - Number(second.Order) || String(first.ID || "").localeCompare(String(second.ID || ""), undefined, { numeric: true });
+}
+
+function writeWantRows(context, rows) {
+  const lastRow = context.sheet.getLastRow();
+  const values = rows.map((row) => {
+    const output = Array(context.rowWidth).fill("");
+    WANT_ITEM_COLUMNS.forEach((column) => { output[context.columns[column] - 1] = row[column] === undefined ? "" : row[column]; });
+    return output;
+  });
+  if (values.length) context.sheet.getRange(context.headerRow + 1, 1, values.length, context.rowWidth).setValues(values);
+  const extra = lastRow - context.headerRow - values.length;
+  if (extra > 0) context.sheet.getRange(context.headerRow + 1 + values.length, 1, extra, context.rowWidth).clearContent();
+}
+
+function moveWantToTodo(itemId) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const wantContext = getSimpleTableContext("Want", WANT_ITEM_COLUMNS, "ID");
+    const wantRows = getWantRows(wantContext);
+    const wantItem = wantRows.find((row) => row.ID === String(itemId || "").trim());
+    if (!wantItem) throw new Error("Want item was not found.");
+    if (wantItem.Completed === "TRUE") throw new Error("Want item has already been moved or completed.");
+
+    const todoContext = getSimpleTableContext("To Do", TODO_ITEM_COLUMNS, "ID");
+    const todoRows = getTodoRows(todoContext);
+    const todoId = getNextNumericIdFromRows(todoRows, "ID");
+    const todoItem = normalizeTodoItem({
+      ID: todoId, Order: getTodoDefaultOrderRows(todoRows).length + 1, Name: wantItem.Name,
+      Archived: "FALSE", Completed: "FALSE", IsDeleted: "FALSE", "Image URL": wantItem["Image URL"],
+    });
+    writeTodoRows(todoContext, normalizeTodoOrder(todoRows.concat([todoItem]), { movedId: todoId, requestedOrder: todoItem.Order }));
+    writeWantRows(wantContext, normalizeWantOrder(wantRows.map((row) => row.ID === wantItem.ID ? { ...row, Completed: "TRUE" } : row), wantItem.ID, wantItem.Order));
+    return { ok: true, status: "moved", todoId, wantId: wantItem.ID };
+  } finally { lock.releaseLock(); }
 }
 
 function getNextNumericId(rowsById) {
@@ -925,6 +1058,46 @@ function listTodoSnapshotItems() {
   })).filter((row) => row["Snapshot ID"] && row["Item ID"]);
 }
 
+function listWantChoices() {
+  const context = getSimpleTableContext(WANT_CHOICE_SHEET, TODO_CHOICE_COLUMNS, "ID");
+  return readSimpleTableRows(context).map((row) => ({
+    "Created At": row["Created At"], ID: row.ID, "Item A ID": row["Item A ID"], "Item B ID": row["Item B ID"],
+    "Loser ID": row["Loser ID"], "Manager ID": "want", "Ranking Type": "want", "Winner ID": row["Winner ID"],
+  })).filter((row) => row["Winner ID"] && row["Loser ID"]);
+}
+
+function listWantElo() {
+  const context = getSimpleTableContext(WANT_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
+  return readSimpleTableRows(context).map((row) => ({
+    ID: row.ID, "Item ID": row["Item ID"], "Last Choice ID": row["Last Choice ID"], Losses: row.Losses,
+    "Manager ID": "want", "Ranking Type": "want", Rating: row.Rating, "Updated At": row["Updated At"], Wins: row.Wins,
+  })).filter((row) => row["Item ID"]);
+}
+
+function listWantSeeds() {
+  const context = getSimpleTableContext(WANT_SEED_SHEET, TODO_SEED_COLUMNS, "ID");
+  return readSimpleTableRows(context).map((row) => ({
+    "Item ID": row["Item ID"], "Ranking Type": "want", Reason: row.Reason, "Seed Rank": row["Seed Rank"],
+    "Seed Rating": row["Seed Rating"], "Seeded At": row["Seeded At"],
+  })).filter((row) => row["Item ID"]);
+}
+
+function listWantSnapshots() {
+  const context = getSimpleTableContext(WANT_SNAPSHOT_SHEET, TODO_SNAPSHOT_COLUMNS, "Snapshot ID");
+  return readSimpleTableRows(context).map((row) => ({
+    "Created At": row["Created At"], Label: row.Label, "Manager ID": "want", "Ranking Type": "want",
+    Reason: row.Reason, "Snapshot ID": row["Snapshot ID"], Source: row.Source,
+  })).filter((row) => row["Snapshot ID"]);
+}
+
+function listWantSnapshotItems() {
+  const context = getSimpleTableContext(WANT_SNAPSHOT_ITEM_SHEET, TODO_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+  return readSimpleTableRows(context).map((row) => ({
+    Games: row.Games, "Item ID": row["Item ID"], "Item Name": row["Item Name"], Losses: row.Losses,
+    Rank: row.Rank, Rating: row.Rating, "Snapshot ID": row["Snapshot ID"], Wins: row.Wins,
+  })).filter((row) => row["Snapshot ID"] && row["Item ID"]);
+}
+
 function repairRankingEloDuplicateManagers(options) {
   const fromManagerId = String(options && options.fromManagerId || "6").trim();
   const toManagerId = String(options && options.toManagerId || "8").trim();
@@ -1191,6 +1364,76 @@ function saveTodoChoice(choice) {
   }
 }
 
+function saveWantChoice(choice) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const context = getSimpleTableContext(WANT_CHOICE_SHEET, TODO_CHOICE_COLUMNS, "ID");
+    const rows = readSimpleTableRows(context);
+    const rowValues = {
+      ID: String(choice.ID || choice.id || "").trim() || getNextNumericIdFromRows(rows, "ID"),
+      "Item A ID": String(choice["Item A ID"] || choice.itemAId || "").trim(),
+      "Item B ID": String(choice["Item B ID"] || choice.itemBId || "").trim(),
+      "Winner ID": String(choice["Winner ID"] || choice.winnerId || "").trim(),
+      "Loser ID": String(choice["Loser ID"] || choice.loserId || "").trim(),
+      "Created At": String(choice["Created At"] || choice.createdAt || new Date().toISOString()).trim(),
+    };
+    if (!rowValues["Winner ID"] || !rowValues["Loser ID"]) throw new Error("Winner ID and Loser ID are required.");
+    appendSimpleTableRow(context, rowValues, TODO_CHOICE_COLUMNS);
+    return { choice: rowValues, elo: updateWantEloRows(rowValues), ok: true, status: "appended" };
+  } finally { lock.releaseLock(); }
+}
+
+function updateWantEloRows(choice) {
+  const context = getSimpleTableContext(WANT_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
+  const rows = readSimpleTableRows(context);
+  const winner = getWantEloRow(rows, choice["Winner ID"]);
+  const loser = getWantEloRow(rows, choice["Loser ID"]);
+  const updatedAt = new Date().toISOString();
+  const winnerNext = { ...winner, "Last Choice ID": choice.ID,
+    Rating: Math.round(winner.Rating + getRankingKFactor(winner) * (1 - getRankingExpectedScore(winner.Rating, loser.Rating))),
+    "Updated At": updatedAt, Wins: winner.Wins + 1 };
+  const loserNext = { ...loser, "Last Choice ID": choice.ID, Losses: loser.Losses + 1,
+    Rating: Math.round(loser.Rating + getRankingKFactor(loser) * (0 - getRankingExpectedScore(loser.Rating, winner.Rating))),
+    "Updated At": updatedAt };
+  upsertWantEloRow(context, winnerNext);
+  upsertWantEloRow(context, loserNext);
+  return [winnerNext, loserNext];
+}
+
+function getWantEloRow(rows, itemId) {
+  const row = rows.find((entry) => String(entry["Item ID"] || "").trim() === String(itemId || "").trim());
+  const seed = row ? null : ensureWantSeed(itemId);
+  const wins = Number(row && row.Wins || 0);
+  const losses = Number(row && row.Losses || 0);
+  return { Comparisons: wins + losses, ID: String(row && row.ID || "").trim(), "Item ID": String(itemId || "").trim(),
+    "Last Choice ID": String(row && row["Last Choice ID"] || "").trim(), Losses: losses,
+    Rating: Number(row && row.Rating || seed && seed["Seed Rating"] || RANKING_BASE_RATING), rowNumber: row && row.rowNumber,
+    "Updated At": String(row && row["Updated At"] || "").trim(), Wins: wins };
+}
+
+function ensureWantSeed(itemId) {
+  const context = getSimpleTableContext(WANT_SEED_SHEET, TODO_SEED_COLUMNS, "ID");
+  const rows = readSimpleTableRows(context);
+  const existing = rows.find((row) => String(row["Item ID"] || "").trim() === String(itemId || "").trim());
+  if (existing) return existing;
+  const wantRows = listWantItems().filter((row) => !row.Archived && !row.Completed && !row.IsDeleted);
+  const index = wantRows.findIndex((row) => String(row.ID) === String(itemId));
+  const seedRank = index >= 0 ? index + 1 : wantRows.length + 1;
+  const seed = { ID: getNextNumericIdFromRows(rows, "ID"), "Item ID": String(itemId || "").trim(),
+    Reason: "Initial rating from manual Want order", "Seed Rank": seedRank,
+    "Seed Rating": calculateNormalizedRatingForTable(seedRank, Math.max(wantRows.length, 1)), "Seeded At": new Date().toISOString() };
+  appendSimpleTableRow(context, seed, TODO_SEED_COLUMNS);
+  return seed;
+}
+
+function upsertWantEloRow(context, rowValues) {
+  if (rowValues.rowNumber) return writeSimpleTableCells(context, rowValues.rowNumber, rowValues, TODO_ELO_COLUMNS);
+  const rows = readSimpleTableRows(context);
+  rowValues.ID = rowValues.ID || getNextNumericIdFromRows(rows, "ID");
+  appendSimpleTableRow(context, rowValues, TODO_ELO_COLUMNS);
+}
+
 function updateTodoEloRows(choice) {
   const context = getSimpleTableContext(TODO_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
   const rows = readSimpleTableRows(context);
@@ -1297,6 +1540,38 @@ function normalizeTodo(normalization) {
       const row = { ID: String(index + 1), "Item ID": String(item.itemId || item.id || "").trim(), "Last Choice ID": "", Losses: 0,
         Rating: Number(item.normalizedRating || calculateNormalizedRatingForTable(index + 1, items.length)), "Updated At": createdAt, Wins: 0 };
       appendSimpleTableRow(eloContext, row, TODO_ELO_COLUMNS); eloRows.push(row);
+    });
+    return { elo: eloRows, ok: true, snapshotId, status: "normalized" };
+  } finally { lock.releaseLock(); }
+}
+
+function normalizeWant(normalization) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const items = Array.isArray(normalization.items) ? normalization.items : [];
+    if (!items.length) throw new Error("At least one Want item is required.");
+    const createdAt = String(normalization.createdAt || new Date().toISOString()).trim();
+    const snapshotContext = getSimpleTableContext(WANT_SNAPSHOT_SHEET, TODO_SNAPSHOT_COLUMNS, "Snapshot ID");
+    const snapshotRows = readSimpleTableRows(snapshotContext);
+    const snapshotId = String(normalization.snapshotId || getNextNumericIdFromRows(snapshotRows, "Snapshot ID"));
+    appendSimpleTableRow(snapshotContext, { "Created At": createdAt, Label: String(normalization.label || formatSnapshotLabel(createdAt)).trim(),
+      Reason: String(normalization.reason || "Normalized calculated Want order").trim(), "Snapshot ID": snapshotId,
+      Source: String(normalization.source || "calculated").trim() }, TODO_SNAPSHOT_COLUMNS);
+    const itemContext = getSimpleTableContext(WANT_SNAPSHOT_ITEM_SHEET, TODO_SNAPSHOT_ITEM_COLUMNS, "Snapshot ID");
+    items.forEach((item, index) => appendSimpleTableRow(itemContext, {
+      Games: Number(item.comparisons || item.Games || 0), "Item ID": String(item.itemId || item.id || "").trim(),
+      "Item Name": String(item.itemName || item.name || "").trim(), Losses: Number(item.losses || 0), Rank: index + 1,
+      Rating: Number(item.rating || RANKING_BASE_RATING), "Snapshot ID": snapshotId, Wins: Number(item.wins || 0),
+    }, TODO_SNAPSHOT_ITEM_COLUMNS));
+    const eloContext = getSimpleTableContext(WANT_ELO_SHEET, TODO_ELO_COLUMNS, "ID");
+    deleteSimpleTableRows(eloContext, () => true);
+    const eloRows = [];
+    items.forEach((item, index) => {
+      const row = { ID: String(index + 1), "Item ID": String(item.itemId || item.id || "").trim(), "Last Choice ID": "", Losses: 0,
+        Rating: Number(item.normalizedRating || calculateNormalizedRatingForTable(index + 1, items.length)), "Updated At": createdAt, Wins: 0 };
+      appendSimpleTableRow(eloContext, row, TODO_ELO_COLUMNS);
+      eloRows.push(row);
     });
     return { elo: eloRows, ok: true, snapshotId, status: "normalized" };
   } finally { lock.releaseLock(); }

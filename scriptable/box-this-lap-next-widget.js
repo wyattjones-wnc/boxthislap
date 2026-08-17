@@ -268,10 +268,15 @@ async function createWidget(item, result) {
 
   content.addSpacer(hasBackgroundImage ? 5 : 8);
 
-  const countdown = content.addText(eventState.label);
+  const countdown = eventState.usesLiveTimer
+    ? content.addDate(item.startDate)
+    : content.addText(eventState.label);
   countdown.font = Font.heavySystemFont(hasBackgroundImage ? 22 : 24);
   countdown.textColor = eventState.color;
   countdown.minimumScaleFactor = 0.7;
+  if (eventState.usesLiveTimer) {
+    countdown.applyTimerStyle();
+  }
   applyTextShadow(countdown, hasBackgroundImage);
 
   content.addSpacer(hasBackgroundImage ? 3 : 6);
@@ -514,10 +519,10 @@ function getEventState(item) {
   }
 
   if (hours > 0) {
-    return { label: `${hours}h ${minutes}m`, color: COLORS.accent };
+    return { label: `${hours}h ${minutes}m`, color: COLORS.accent, usesLiveTimer: true };
   }
 
-  return { label: "< 1 hr", color: COLORS.accent };
+  return { label: "< 1 hr", color: COLORS.accent, usesLiveTimer: true };
 }
 
 function getWidgetRefreshDate(item) {
@@ -531,7 +536,9 @@ function getWidgetRefreshDate(item) {
   const remaining = item.startDate.getTime() - now.getTime();
   const refreshMs = remaining > 0 && remaining < 60 * 60 * 1000
     ? 60 * 1000
-    : 60 * 60 * 1000;
+    : remaining > 0 && remaining < 24 * 60 * 60 * 1000
+      ? 15 * 60 * 1000
+      : 60 * 60 * 1000;
   const nextRefresh = new Date(now.getTime() + refreshMs);
 
   if (relevantEnd > now && relevantEnd < nextRefresh) {

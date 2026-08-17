@@ -8,7 +8,8 @@ const PAGE_ALIASES = {
   "player-scores": "standings",
 };
 
-const HOME_PAGES = ["footy", "footy-team", "next", "todo", "guides", "rankings", "footy-goal-assists", "leagues", "login", "manager-hub"];
+const HOME_PAGES = ["footy", "footy-team", "next", "rankings", "footy-goal-assists", "leagues", "login", "manager-hub"];
+const THE_MONSTER_MANIAC_PAGES = ["the-monster-maniac", "todo", "want", "guides", "youtube"];
 const STANDINGS_TABS = ["players-championship", "nations-league", "manager-results"];
 const WORLD_CUP_PAGES = ["today", "tomorrow", "results", "draft", "standings", "rules", "matches", "bracket", "testing"];
 
@@ -112,6 +113,10 @@ export function scrollToPageTop() {
 }
 
 function getHeaderArtName(pageName) {
+  if (getNavScope(pageName) === "the-monster-maniac") {
+    return "the-monster-maniac";
+  }
+
   if (getNavScope(pageName) === "home") {
     return "default";
   }
@@ -154,6 +159,10 @@ function getHeaderArtName(pageName) {
 function getNavScope(pageName) {
   const renderedPageName = getRenderedPageName(pageName);
 
+  if (THE_MONSTER_MANIAC_PAGES.includes(renderedPageName)) {
+    return "the-monster-maniac";
+  }
+
   if (HOME_PAGES.includes(renderedPageName)) {
     return "home";
   }
@@ -194,6 +203,11 @@ function getNavScope(pageName) {
 }
 
 function rememberNavScope(pageName) {
+  if (THE_MONSTER_MANIAC_PAGES.includes(getRenderedPageName(pageName))) {
+    sessionStorage.setItem("boxThisLapActiveNavScope", "the-monster-maniac");
+    return;
+  }
+
   if (pageName.startsWith("formula-1-2024")) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "formula-one-2024");
     return;

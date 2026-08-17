@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608100002";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608170001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -8,6 +8,7 @@ import {
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   GUIDES_DATA_ENDPOINT,
+  YOUTUBE_INBOX_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
   BRACKET_STORAGE_KEY,
@@ -25,7 +26,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202608100003";
+} from "./modules/siteConfig.js?v=202608160001";
 
 import {
   pageLinks,
@@ -178,6 +179,42 @@ import {
   todoItemStatus,
   todoItemClose,
   todoItemCancel,
+  wantList,
+  wantRandomButton,
+  wantRandomDialog,
+  wantRandomContent,
+  wantRandomClose,
+  wantRandomAgain,
+  wantRandomDone,
+  wantCompareButton,
+  wantViewModeButtons,
+  wantSnapshotSelect,
+  wantSnapshotCompareSelect,
+  wantNormalizeButton,
+  wantFilterToggle,
+  wantFilters,
+  wantEditToggle,
+  wantStatusFilters,
+  wantAddButton,
+  wantItemDialog,
+  wantItemForm,
+  wantItemDialogTitle,
+  wantItemId,
+  wantNameInput,
+  wantOrderInput,
+  wantPriceInput,
+  wantImageUrlInput,
+  wantArchivedInput,
+  wantCompletedInput,
+  wantItemStatus,
+  wantItemClose,
+  wantItemCancel,
+  wantMoveDialog,
+  wantMoveName,
+  wantMoveStatus,
+  wantMoveClose,
+  wantMoveCancel,
+  wantMoveConfirm,
   rankingTabs,
   rankingPanels,
   rankingAddButton,
@@ -248,9 +285,11 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202608090001";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608100002";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608160001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuidesController } from "./modules/guides.js?v=202608100003";
+import { createGuidesController } from "./modules/guides.js?v=202608130005";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170011";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -303,10 +342,21 @@ let draggedRankingKind = "";
 let didMoveRankingPointer = false;
 let rankingsLoadPromise = null;
 let todoRankingLoadPromise = null;
+let wantRankingLoadPromise = null;
 let rankingAssetManifestPromise = null;
 let activeRankingBattle = null;
 let normalizingRankingKind = "";
 let activePageName = "";
+let shouldShowWantFilters = false;
+let shouldShowWantEditMode = false;
+let activeWantViewMode = "manual";
+let activeWantSnapshotId = "current";
+let activeWantCompareSnapshotId = "";
+let activeWantStatusFilter = "";
+let activeWantItemId = "";
+let pendingWantMoveItemId = "";
+let draggedWantItemId = "";
+let didMoveWantPointer = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const FOOTY_JSONP_TIMEOUT_MS = 12000;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
@@ -415,6 +465,10 @@ const TODO_RANKING_CONFIG = {
   itemLabel: "To Do Item",
   type: "todo",
 };
+const WANT_RANKING_CONFIG = {
+  itemLabel: "Want Item",
+  type: "want",
+};
 const expandedFootyMatchIds = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
@@ -426,6 +480,7 @@ const footyNoteGoalAssistEntries = {
 };
 const AUTOCOMPLETE_OPTION_LIMIT = 8;
 const siteData = {};
+let guideLinksLoadPromise = null;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -448,7 +503,7 @@ const router = createRouter({
   pages,
   shouldBlockPage: (pageName) =>
     (pageName === "rankings" && !siteData.managerSession) ||
-    (["todo", "guides"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "guides", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -464,6 +519,8 @@ const guidesController = createGuidesController({
   loadSheet,
   saveChecklistDone: submitGuideChecklistDone,
 });
+const platinumsController = createPlatinumsController({ loadSheet });
+const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -4010,6 +4067,7 @@ function renderNextList(items = siteData.nextItems || []) {
 
   const normalizedItems = items.map(normalizeNextItem).filter(Boolean);
   const visibleItems = getFilteredNextItems(normalizedItems);
+  const showDefaultPassedStatus = !hasActiveNextFilters();
   const previousTailItems = shouldRenderDefaultNextPreviousTail()
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
@@ -4025,7 +4083,7 @@ function renderNextList(items = siteData.nextItems || []) {
 
   nextList.innerHTML = `
     <div class="next-list">
-      ${visibleItems.map(renderNextItem).join("")}
+      ${visibleItems.map((item) => renderNextItem(item, { showPassedStatus: showDefaultPassedStatus })).join("")}
       ${previousDivider}
       ${previousTailItems.map(renderNextItem).join("")}
     </div>
@@ -4189,8 +4247,9 @@ function comparePreviousNextItems(first, second) {
   return first.thing.localeCompare(second.thing);
 }
 
-function renderNextItem(item) {
+function renderNextItem(item, options = {}) {
   const isAdmin = isCurrentManagerAdmin();
+  const isPast = isNextItemPast(item, getDateKey(0));
   const dateLabel = formatNextDateRange(item);
   const timeMarkup = item.timeLabel
     ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
@@ -4198,12 +4257,15 @@ function renderNextItem(item) {
   const completedIcon = isAdmin && item.completed
     ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
     : "";
+  const passedStatus = options.showPassedStatus && hasNextItemTimePassed(item) && !item.completed
+    ? `<span class="next-passed-status" aria-label="Event time has passed" title="Event time has passed">&#10003;</span>`
+    : "";
   const classNames = [
     "next-card",
     item.completed ? "next-card--completed" : "",
     isNextEditModeEnabled() ? "next-card--editable" : "",
     activeNextItemId === item.id ? "is-expanded" : "",
-    isNextItemPast(item, getDateKey(0)) ? "next-card--past" : "",
+    isPast ? "next-card--past" : "",
   ].filter(Boolean).join(" ");
   const editButton = isNextEditModeEnabled() && activeNextItemId === item.id
     ? `<button class="action-button next-edit-button" type="button" data-next-edit="${escapeHtml(item.id)}">Edit</button>`
@@ -4222,6 +4284,7 @@ function renderNextItem(item) {
       <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
         ${completedIcon}
         <div>
+          ${passedStatus}
           <h2>${escapeHtml(item.thing)}</h2>
           <p class="next-card-date">
             <span>${escapeHtml(dateLabel)}</span>
@@ -4305,7 +4368,10 @@ function hasActiveNextFilters() {
 
 function isNextItemPast(item, todayKey = getDateKey(0)) {
   const lastDateKey = item.endDateKey || item.dateKey;
-  return Boolean(lastDateKey && lastDateKey < todayKey);
+  return Boolean(lastDateKey && (
+    lastDateKey < todayKey ||
+    (item.completed && lastDateKey === todayKey)
+  ));
 }
 
 function isNextItemInDateRange(item, dateRange) {
@@ -4415,6 +4481,32 @@ function getNextTimeSortValue(value) {
   const normalizedHour = period === "PM" && hour !== 12 ? hour + 12 : period === "AM" && hour === 12 ? 0 : hour;
 
   return normalizedHour * 60 + minute;
+}
+
+function hasNextItemTimePassed(item, now = new Date()) {
+  const scheduledMinutes = getNextTimeSortValue(item?.raw?.Time);
+  const easternParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(now).map((part) => [part.type, part.value]));
+  const todayKey = [
+    easternParts.year,
+    easternParts.month,
+    easternParts.day,
+  ].join("-");
+
+  return Boolean(
+    item?.dateKey === todayKey &&
+    (!item.endDateKey || item.endDateKey === item.dateKey) &&
+    Number.isFinite(scheduledMinutes) &&
+    scheduledMinutes !== Number.MAX_SAFE_INTEGER &&
+    Number(easternParts.hour) * 60 + Number(easternParts.minute) >= scheduledMinutes
+  );
 }
 
 function clampNextPriority(value) {
@@ -4560,7 +4652,25 @@ function createNextItemId() {
     .filter((id) => Number.isInteger(id) && id > 0)
     .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
 
-  return String(nextNumericId);
+  // The published sheet can lag behind a recent save or an older open tab.
+  // Use a time-based floor so a stale client cannot reuse an existing row ID.
+  return String(Math.max(nextNumericId, Date.now()));
+}
+
+function populateNextTimeOptions() {
+  if (!nextTimeInput) {
+    return;
+  }
+
+  for (let totalMinutes = 0; totalMinutes < 24 * 60; totalMinutes += 15) {
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = formatNextTimeForSheet(value);
+    nextTimeInput.append(option);
+  }
 }
 
 function formatNextTimeForSheet(value) {
@@ -4771,6 +4881,388 @@ function renderNextListError(error) {
   nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
 }
 
+function ensureGuideLinksLoaded() {
+  if (!isCurrentManagerAdmin()) {
+    return Promise.resolve([]);
+  }
+
+  if (siteData.guideLinks) {
+    return Promise.resolve(siteData.guideLinks);
+  }
+
+  if (guideLinksLoadPromise) {
+    return guideLinksLoadPromise;
+  }
+
+  guideLinksLoadPromise = ensureSharedData("guide-links", () => loadSheet("guides"))
+    .then((rows) => {
+      siteData.guideLinks = rows.map((row) => ({
+        id: String(row.ID || row.Id || row.id || "").trim(),
+        name: String(row.Name || row.name || "").trim(),
+        rankingId: String(row["VG Ranking ID"] || row.rankingId || "").trim(),
+        todoId: String(row["To Do ID"] || row.todoId || "").trim(),
+      })).filter((guide) => guide.id && guide.name);
+
+      if (activePageName === "todo") renderTodoList();
+      if (activePageName === "rankings") renderRankingLists();
+      return siteData.guideLinks;
+    })
+    .catch((error) => {
+      siteData.guideLinks = [];
+      recordDiagnostic("Guide links failed to load", error);
+      return [];
+    });
+
+  return guideLinksLoadPromise;
+}
+
+function renderGuideEntryLinks(kind, itemId) {
+  if (!isCurrentManagerAdmin() || !itemId) return "";
+
+  const idKey = kind === "todo" ? "todoId" : "rankingId";
+  const guides = (siteData.guideLinks || []).filter((guide) => guide[idKey] === String(itemId));
+  if (!guides.length) return "";
+
+  return `<span class="guide-entry-links">${guides.map((guide) => `
+    <a class="guide-entry-link" href="${escapeHtml(getGuideEntryUrl(guide.id))}" aria-label="Open ${escapeHtml(guide.name)} guide" title="Open ${escapeHtml(guide.name)} guide">
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1.2 1.2M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1.2-1.2"></path></svg>
+    </a>
+  `).join("")}</span>`;
+}
+
+function getGuideEntryUrl(guideId) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("guide", guideId);
+  url.hash = "guides";
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function renderWantList(items = siteData.wantItems || []) {
+  if (!wantList || !shouldRenderPageSection("want")) return;
+  if (!isCurrentManagerAdmin()) {
+    wantList.innerHTML = `<p class="table-message">Want is available to admin users.</p>`;
+    return;
+  }
+
+  syncWantControls();
+  ensureWantRankingDataLoaded();
+  const normalizedItems = items.map(normalizeWantItem).filter(Boolean).sort(compareWantItems);
+  const visibleItems = getVisibleWantItems(normalizedItems);
+
+  if (activeWantViewMode === "calculated") {
+    const currentRows = visibleItems.map((item) => {
+      const elo = getRankingEloForItem("want", item.id);
+      return { ...item, comparisons: elo.comparisons, losses: elo.losses, rating: elo.rating, wins: elo.wins };
+    }).sort(compareCalculatedRankingRows);
+    const visibleIds = new Set(visibleItems.map((item) => item.id));
+    const rows = activeWantSnapshotId === "current"
+      ? currentRows
+      : getRankingSnapshotRows("want", activeWantSnapshotId).filter((item) => visibleIds.has(String(item.id)));
+    wantList.innerHTML = rows.length
+      ? `<div class="next-list todo-list">${rows.map((item, index) => renderWantCalculatedItem(item, index + 1, currentRows)).join("")}</div>`
+      : `<p class="table-message">No Want items found.</p>`;
+    return;
+  }
+
+  wantList.innerHTML = visibleItems.length
+    ? `<div class="next-list todo-list">${visibleItems.map(renderWantItem).join("")}</div>`
+    : `<p class="table-message">No Want items found.</p>`;
+}
+
+function renderWantCalculatedItem(item, rank, currentRows) {
+  const compareRows = activeWantCompareSnapshotId === "current"
+    ? currentRows
+    : activeWantCompareSnapshotId ? getRankingSnapshotRows("want", activeWantCompareSnapshotId) : [];
+  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+  const movement = compareRank ? compareRank - rank : 0;
+  const meta = [
+    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+    `${item.wins || 0}-${item.losses || 0}`,
+    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+    `Manual #${formatWantOrder(item)}`,
+    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getWantSnapshotLabel(activeWantCompareSnapshotId)}` : "",
+  ].filter(Boolean);
+  return `<article class="next-card todo-card"><div class="next-card-main"><span class="todo-order-number">${rank}</span><div><h2>${escapeHtml(item.name)}</h2>${item.price !== null && item.price !== undefined ? `<p class="next-card-date">${escapeHtml(formatWantPrice(item.price))}</p>` : ""}<p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p></div></div></article>`;
+}
+
+function renderWantItem(item) {
+  const expandedClass = shouldShowWantEditMode && activeWantItemId === item.id ? " is-actions-open" : "";
+  const deletedClass = item.deleted ? " todo-card--deleted" : "";
+  const draggable = shouldShowWantEditMode ? ` draggable="true"` : "";
+  const chips = [
+    item.archived ? { key: "archived", label: "Archived" } : null,
+    item.completed ? { key: "completed", label: "Completed" } : null,
+    item.deleted ? { key: "deleted", label: "Deleted" } : null,
+  ].filter(Boolean);
+  return `
+    <article class="next-card todo-card${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-want-id="${escapeHtml(item.id)}" aria-label="${shouldShowWantEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
+      <div class="next-card-main">
+        <span class="todo-order-number">${escapeHtml(formatWantOrder(item))}</span>
+        <div><h2>${escapeHtml(item.name)}</h2>${item.price !== null ? `<p class="next-card-date">${escapeHtml(formatWantPrice(item.price))}</p>` : ""}${chips.length ? `<div class="todo-chip-list">${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${chip.key}">${escapeHtml(chip.label)}</span>`).join("")}</div>` : ""}</div>
+        ${shouldShowWantEditMode ? `<span class="ranking-drag-handle want-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
+      </div>
+      ${shouldShowWantEditMode ? `<div class="todo-card-actions"><button class="ranking-inline-action" type="button" data-want-edit="${escapeHtml(item.id)}">Edit</button><button class="ranking-inline-action" type="button" data-want-move="${escapeHtml(item.id)}">Move to To Do</button><button class="ranking-inline-action" type="button" data-want-delete="${escapeHtml(item.id)}">Delete</button></div>` : ""}
+    </article>`;
+}
+
+function normalizeWantItem(row) {
+  const name = String(row?.Name || row?.name || "").trim();
+  if (!name) return null;
+  const rawPrice = String(row?.Price ?? row?.price ?? "").trim();
+  const price = Number(rawPrice);
+  return {
+    archived: isTrueValue(row.Archived || row.archived),
+    completed: isTrueValue(row.Completed || row.completed),
+    deleted: isTrueValue(row.IsDeleted || row.isDeleted || row.deleted),
+    id: String(row?.ID || row?.Id || row?.id || "").trim(),
+    imageUrl: String(row?.["Image URL"] || row?.imageUrl || "").trim(),
+    name,
+    order: normalizeTodoOrder(row.Order),
+    price: rawPrice && Number.isFinite(price) && price >= 0 ? price : null,
+    raw: row,
+  };
+}
+
+function compareWantItems(first, second) {
+  return first.order - second.order || String(first.id).localeCompare(String(second.id), undefined, { numeric: true });
+}
+
+function getWantItems() {
+  return Array.isArray(siteData.wantItems) ? siteData.wantItems : [];
+}
+
+function getVisibleWantItems(items = getWantItems().map(normalizeWantItem).filter(Boolean)) {
+  return items.filter((item) => activeWantStatusFilter
+    ? activeWantStatusFilter === "all" || Boolean(item[activeWantStatusFilter])
+    : !item.archived && !item.completed && !item.deleted);
+}
+
+function getWantOrderItems(items = getWantItems().map(normalizeWantItem).filter(Boolean)) {
+  return items.filter((item) => !item.archived && !item.completed && !item.deleted).sort(compareWantItems);
+}
+
+function formatWantOrder(item) {
+  return Number.isFinite(item.order) && item.order !== Number.MAX_SAFE_INTEGER ? String(item.order) : "-";
+}
+
+function formatWantPrice(value) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+}
+
+function getWantSnapshotLabel(snapshotId) {
+  return snapshotId === "current" ? "Current" : formatRankingSnapshotOptionLabel(getRankingSnapshotById(snapshotId));
+}
+
+function syncWantControls() {
+  if (wantFilters) wantFilters.hidden = !shouldShowWantFilters;
+  if (wantFilterToggle) {
+    wantFilterToggle.setAttribute("aria-expanded", String(shouldShowWantFilters));
+    wantFilterToggle.classList.toggle("is-active", shouldShowWantFilters);
+  }
+  if (wantEditToggle) {
+    wantEditToggle.checked = shouldShowWantEditMode;
+    wantEditToggle.disabled = activeWantViewMode === "calculated";
+  }
+  wantViewModeButtons?.forEach((button) => {
+    const active = button.dataset.wantViewMode === activeWantViewMode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  const snapshots = getRankingSnapshotsForKind("want");
+  if (wantSnapshotSelect) {
+    wantSnapshotSelect.innerHTML = [`<option value="current">Current</option>`, ...snapshots.map((snapshot) => `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`)].join("");
+    wantSnapshotSelect.value = activeWantSnapshotId;
+  }
+  if (wantSnapshotCompareSelect) {
+    wantSnapshotCompareSelect.innerHTML = [`<option value="">None</option>`, `<option value="current">Current</option>`, ...snapshots.map((snapshot) => `<option value="${escapeHtml(snapshot.id)}">${escapeHtml(formatRankingSnapshotOptionLabel(snapshot))}</option>`)].join("");
+    wantSnapshotCompareSelect.value = activeWantCompareSnapshotId;
+  }
+  wantStatusFilters?.forEach((input) => { input.checked = input.dataset.wantStatusFilter === activeWantStatusFilter; });
+}
+
+function openWantItemDialog(itemId = "") {
+  if (!isCurrentManagerAdmin() || !wantItemDialog) return;
+  const item = itemId ? getWantItems().map(normalizeWantItem).filter(Boolean).find((entry) => entry.id === String(itemId)) : null;
+  const orderItems = getWantOrderItems();
+  if (wantItemDialogTitle) wantItemDialogTitle.textContent = item ? "Edit Want Item" : "Add Want Item";
+  if (wantItemId) wantItemId.value = item?.id || "";
+  if (wantNameInput) wantNameInput.value = item?.name || "";
+  if (wantOrderInput) {
+    wantOrderInput.value = String(item?.order && item.order !== Number.MAX_SAFE_INTEGER ? item.order : orderItems.length + 1);
+    wantOrderInput.max = String(item ? Math.max(orderItems.length, 1) : orderItems.length + 1);
+  }
+  if (wantPriceInput) wantPriceInput.value = item?.price ?? "";
+  if (wantImageUrlInput) wantImageUrlInput.value = item?.imageUrl || "";
+  if (wantArchivedInput) wantArchivedInput.checked = Boolean(item?.archived);
+  if (wantCompletedInput) wantCompletedInput.checked = Boolean(item?.completed);
+  setWantItemStatus("");
+  typeof wantItemDialog.showModal === "function" ? wantItemDialog.showModal() : wantItemDialog.setAttribute("open", "");
+  wantNameInput?.focus();
+}
+
+function closeWantItemDialog() {
+  if (!wantItemDialog) return;
+  typeof wantItemDialog.close === "function" ? wantItemDialog.close() : wantItemDialog.removeAttribute("open");
+}
+
+function saveWantItemFromForm() {
+  const name = String(wantNameInput?.value || "").trim();
+  if (!name) return setWantItemStatus("Name is required.", true);
+  const existingId = String(wantItemId?.value || "").trim();
+  const existing = existingId ? getWantItems().find((row) => String(row.ID || row.id || "") === existingId) : null;
+  const item = {
+    ID: existingId || createWantItemId(),
+    Order: String(clampTodoOrder(wantOrderInput?.value, getWantOrderItems().length + 1)),
+    Name: name,
+    Price: String(wantPriceInput?.value || "").trim(),
+    Archived: wantArchivedInput?.checked ? "TRUE" : "FALSE",
+    Completed: wantCompletedInput?.checked ? "TRUE" : "FALSE",
+    IsDeleted: existing?.IsDeleted || existing?.isDeleted || "FALSE",
+    "Image URL": String(wantImageUrlInput?.value || "").trim(),
+  };
+  upsertWantItemLocally(item);
+  normalizeWantOrdersLocally(item.ID, Number(item.Order));
+  renderWantList();
+  submitNextItemPayload({ action: "saveWantItem", item, sheetName: "Want" });
+  closeWantItemDialog();
+}
+
+function createWantItemId() {
+  return String(getWantItems().map((row) => Number(row.ID || row.id)).filter((id) => Number.isInteger(id) && id > 0).reduce((max, id) => Math.max(max, id), 0) + 1);
+}
+
+function upsertWantItemLocally(item) {
+  const id = String(item.ID || "");
+  siteData.wantItems = [...getWantItems().filter((row) => String(row.ID || row.id || "") !== id), item];
+}
+
+function normalizeWantOrdersLocally(movedId = "", requestedOrder = 1) {
+  const rows = getWantItems().map(normalizeWantItem).filter(Boolean);
+  let orderable = getWantOrderItems(rows).filter((item) => item.id !== String(movedId));
+  const moved = rows.find((item) => item.id === String(movedId));
+  if (moved && !moved.archived && !moved.completed && !moved.deleted) orderable.splice(clampTodoOrder(requestedOrder, orderable.length + 1) - 1, 0, moved);
+  const orderById = new Map(orderable.map((item, index) => [item.id, String(index + 1)]));
+  siteData.wantItems = rows.map((item) => ({
+    ID: item.id, Order: orderById.get(item.id) || formatWantOrder(item).replace("-", ""), Name: item.name,
+    Price: item.raw.Price ?? "", Archived: item.archived ? "TRUE" : "FALSE", Completed: item.completed ? "TRUE" : "FALSE",
+    IsDeleted: item.deleted ? "TRUE" : "FALSE", "Image URL": item.imageUrl,
+  })).sort((a, b) => compareWantItems(normalizeWantItem(a), normalizeWantItem(b)));
+}
+
+function moveWantItem(draggedId, targetId, options = {}) {
+  if (!isCurrentManagerAdmin() || !draggedId || !targetId || draggedId === targetId) return false;
+  const rows = getWantOrderItems();
+  const from = rows.findIndex((item) => item.id === draggedId);
+  const to = rows.findIndex((item) => item.id === targetId);
+  if (from < 0 || to < 0) return false;
+  const [item] = rows.splice(from, 1);
+  rows.splice(to, 0, item);
+  const orderById = new Map(rows.map((entry, index) => [entry.id, String(index + 1)]));
+  siteData.wantItems = getWantItems().map((raw) => ({ ...raw, Order: orderById.get(String(raw.ID || raw.id)) || raw.Order }));
+  renderWantList();
+  if (options.shouldSubmit !== false) submitWantOrder();
+  return true;
+}
+
+function submitWantOrder() {
+  submitNextItemPayload({ action: "saveWantOrder", items: siteData.wantItems, sheetName: "Want" });
+}
+
+function deleteWantItem(itemId) {
+  const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === String(itemId));
+  if (!item) return;
+  const next = { ...item.raw, ID: item.id, IsDeleted: "TRUE" };
+  upsertWantItemLocally(next);
+  normalizeWantOrdersLocally(item.id, item.order);
+  renderWantList();
+  submitNextItemPayload({ action: "saveWantItem", item: next, sheetName: "Want" });
+}
+
+function openWantMoveDialog(itemId) {
+  const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === String(itemId));
+  if (!item || !wantMoveDialog) return;
+  pendingWantMoveItemId = item.id;
+  if (wantMoveName) wantMoveName.textContent = item.name;
+  if (wantMoveStatus) wantMoveStatus.textContent = "";
+  typeof wantMoveDialog.showModal === "function" ? wantMoveDialog.showModal() : wantMoveDialog.setAttribute("open", "");
+}
+
+function closeWantMoveDialog() {
+  pendingWantMoveItemId = "";
+  if (!wantMoveDialog) return;
+  typeof wantMoveDialog.close === "function" ? wantMoveDialog.close() : wantMoveDialog.removeAttribute("open");
+}
+
+function confirmWantMove() {
+  const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === pendingWantMoveItemId);
+  if (!item) return closeWantMoveDialog();
+  const next = { ...item.raw, ID: item.id, Completed: "TRUE" };
+  upsertWantItemLocally(next);
+  normalizeWantOrdersLocally(item.id, item.order);
+  renderWantList();
+  submitNextItemPayload({ action: "moveWantToTodo", itemId: item.id });
+  delete siteData.todoItems;
+  sharedDataPromises.delete("todo");
+  pageDataPromises.delete("todo");
+  closeWantMoveDialog();
+}
+
+function setWantItemStatus(message, isError = false) {
+  if (!wantItemStatus) return;
+  wantItemStatus.textContent = message;
+  wantItemStatus.classList.toggle("is-error", isError);
+}
+
+function renderWantListError(error) {
+  if (wantList) wantList.innerHTML = `<p class="table-message">Unable to load Want items: ${escapeHtml(error.message)}</p>`;
+}
+
+function ensureWantRankingDataLoaded() {
+  if (siteData.wantRankingLoaded || wantRankingLoadPromise || !NEXT_DATA_ENDPOINT) return wantRankingLoadPromise || Promise.resolve();
+  wantRankingLoadPromise = Promise.all([
+    loadOptionalRankingEndpoint("listWantElo", { elo: [] }),
+    loadOptionalRankingEndpoint("listWantChoices", { choices: [] }),
+    loadOptionalRankingEndpoint("listWantRankingMeta", { seeds: [], snapshots: [], snapshotItems: [] }),
+  ]).then(([eloResponse, choicesResponse, metaResponse]) => {
+    siteData.rankingElo = [...(siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) !== "want"), ...normalizeRankingEloRows(eloResponse.elo || [])];
+    siteData.rankingChoices = [...(siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) !== "want"), ...normalizeRankingChoices(choicesResponse.choices || [])];
+    siteData.rankingSeeds = [...(siteData.rankingSeeds || []).filter((row) => normalizeLookupName(row.rankingType) !== "want"), ...normalizeRankingSeedRows(metaResponse.seeds || [])];
+    const oldSnapshotIds = new Set((siteData.rankingSnapshots || []).filter((row) => normalizeLookupName(row.rankingType) === "want").map((row) => String(row.id)));
+    const snapshots = normalizeRankingSnapshots((metaResponse.snapshots || []).map((row) => ({ ...row, "Snapshot ID": `want-${row["Snapshot ID"] || row.snapshotId || ""}` })));
+    const snapshotItems = normalizeRankingSnapshotItems((metaResponse.snapshotItems || []).map((row) => ({ ...row, "Snapshot ID": `want-${row["Snapshot ID"] || row.snapshotId || ""}` })));
+    siteData.rankingSnapshots = [...(siteData.rankingSnapshots || []).filter((row) => normalizeLookupName(row.rankingType) !== "want"), ...snapshots];
+    siteData.rankingSnapshotItems = [...(siteData.rankingSnapshotItems || []).filter((row) => !oldSnapshotIds.has(String(row.snapshotId))), ...snapshotItems];
+    siteData.wantRankingLoaded = true;
+    if (activePageName === "want") renderWantList();
+  }).catch((error) => recordDiagnostic("Want ranking data failed to load", error));
+  return wantRankingLoadPromise;
+}
+
+function openWantRandomDialog() {
+  if (!wantRandomDialog) return;
+  renderRandomWantItem();
+  typeof wantRandomDialog.showModal === "function" ? wantRandomDialog.showModal() : wantRandomDialog.setAttribute("open", "");
+}
+
+function closeWantRandomDialog() {
+  if (!wantRandomDialog) return;
+  typeof wantRandomDialog.close === "function" ? wantRandomDialog.close() : wantRandomDialog.removeAttribute("open");
+}
+
+function renderRandomWantItem() {
+  if (!wantRandomContent) return;
+  const rows = getVisibleWantItems().map((item) => ({ ...item, rating: getRankingEloForItem("want", item.id).rating })).sort(compareCalculatedRankingRows);
+  if (!rows.length) {
+    wantRandomContent.innerHTML = `<p class="table-message">No Want items match the current filters.</p>`;
+    return;
+  }
+  const maxRating = Math.max(...rows.map((item) => Number(item.rating || RANKING_BASE_RATING)));
+  const weights = rows.map((item) => Math.max(1, maxRating - Number(item.rating || RANKING_BASE_RATING) + 100));
+  let target = Math.random() * weights.reduce((sum, weight) => sum + weight, 0);
+  const item = rows.find((entry, index) => ((target -= weights[index]) <= 0)) || rows.at(-1);
+  wantRandomContent.innerHTML = `<article class="todo-random-result"><span class="todo-random-image-frame${item.imageUrl ? "" : " is-empty"}">${item.imageUrl ? `<img src="${escapeHtml(encodeURI(item.imageUrl))}" alt="" loading="lazy">` : ""}<span class="todo-random-rank">#${rows.findIndex((entry) => entry.id === item.id) + 1}</span></span><div><h3>${escapeHtml(item.name)}</h3>${item.price !== null ? `<p>${escapeHtml(formatWantPrice(item.price))}</p>` : ""}</div></article>`;
+}
+
 function renderTodoList(items = siteData.todoItems || []) {
   if (!todoList || !shouldRenderPageSection("todo")) {
     return;
@@ -4780,6 +5272,8 @@ function renderTodoList(items = siteData.todoItems || []) {
     todoList.innerHTML = `<p class="table-message">To Do is available to admin users.</p>`;
     return;
   }
+
+  ensureGuideLinksLoaded();
 
   syncTodoControls();
   ensureTodoRankingDataLoaded();
@@ -4841,7 +5335,7 @@ function renderTodoCalculatedItem(item, rank, currentRows = []) {
       <div class="next-card-main">
         <span class="todo-order-number">${rank}</span>
         <div>
-          <h2>${escapeHtml(item.name)}</h2>
+          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
           <p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p>
           ${renderTodoStatusChips(item)}
           ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
@@ -5081,7 +5575,7 @@ function renderTodoItem(item, children = []) {
       <div class="next-card-main">
         <span class="todo-order-number">${escapeHtml(formatTodoOrderNumber(item))}</span>
         <div>
-          <h2>${escapeHtml(item.name)}</h2>
+          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
           ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
           ${chips}
           ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
@@ -5101,7 +5595,7 @@ function renderTodoChildItem(item) {
   return `
     <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
       <div>
-        <h3>${escapeHtml(item.name)}</h3>
+        <div class="guide-linked-heading"><h3>${escapeHtml(item.name)}</h3>${renderGuideEntryLinks("todo", item.id)}</div>
         ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
         ${chips}
         ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
@@ -5791,14 +6285,19 @@ async function loadRankingSupplementalData() {
     loadOptionalRankingEndpoint("listRankingChoices", { choices: [] }, { managerId: getCurrentManagerId() }),
   ]);
 
-  const todoElo = (siteData.rankingElo || []).filter((row) => normalizeLookupName(row.rankingType) === "todo");
-  const todoChoices = (siteData.rankingChoices || []).filter((row) => normalizeLookupName(row.rankingType) === "todo");
-  siteData.rankingElo = [...normalizeRankingEloRows(eloResponse.elo || []), ...todoElo];
+  const standaloneTypes = new Set(["todo", "want"]);
+  const standaloneElo = (siteData.rankingElo || []).filter((row) => standaloneTypes.has(normalizeLookupName(row.rankingType)));
+  const standaloneChoices = (siteData.rankingChoices || []).filter((row) => standaloneTypes.has(normalizeLookupName(row.rankingType)));
+  const standaloneSeeds = (siteData.rankingSeeds || []).filter((row) => standaloneTypes.has(normalizeLookupName(row.rankingType)));
+  const standaloneSnapshots = (siteData.rankingSnapshots || []).filter((row) => standaloneTypes.has(normalizeLookupName(row.rankingType)));
+  const standaloneSnapshotIds = new Set(standaloneSnapshots.map((row) => String(row.id)));
+  const standaloneSnapshotItems = (siteData.rankingSnapshotItems || []).filter((row) => standaloneSnapshotIds.has(String(row.snapshotId)));
+  siteData.rankingElo = [...normalizeRankingEloRows(eloResponse.elo || []), ...standaloneElo];
   siteData.rankingExclusions = normalizeRankingExclusions(exclusionsResponse.exclusions || []);
-  siteData.rankingSeeds = normalizeRankingSeedRows(seedsResponse.seeds || []);
-  siteData.rankingSnapshots = normalizeRankingSnapshots(snapshotsResponse.snapshots || []);
-  siteData.rankingSnapshotItems = normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []);
-  siteData.rankingChoices = [...normalizeRankingChoices(choicesResponse.choices || []), ...todoChoices];
+  siteData.rankingSeeds = [...normalizeRankingSeedRows(seedsResponse.seeds || []), ...standaloneSeeds];
+  siteData.rankingSnapshots = [...normalizeRankingSnapshots(snapshotsResponse.snapshots || []), ...standaloneSnapshots];
+  siteData.rankingSnapshotItems = [...normalizeRankingSnapshotItems(snapshotsResponse.snapshotItems || []), ...standaloneSnapshotItems];
+  siteData.rankingChoices = [...normalizeRankingChoices(choicesResponse.choices || []), ...standaloneChoices];
 }
 
 async function loadOptionalRankingEndpoint(action, fallback, params = {}) {
@@ -6023,6 +6522,7 @@ function normalizeRankingSnapshotItems(rows = []) {
 }
 
 function renderRankingLists() {
+  ensureGuideLinksLoaded();
   syncRankingControls();
   Object.keys(RANKING_CONFIG).forEach(renderRankingList);
 }
@@ -6082,7 +6582,7 @@ function renderRankingItem(kind, item) {
     <article class="ranking-item${isExcluded ? " is-excluded" : ""}" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
       <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
       <span class="ranking-item-main">
-        <strong>${escapeHtml(item.name)}</strong>
+        <span class="guide-linked-heading"><strong>${escapeHtml(item.name)}</strong>${kind === "games" ? renderGuideEntryLinks("ranking", item.id) : ""}</span>
         ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
         ${movement}
         ${meta}
@@ -6189,6 +6689,9 @@ function getRankingRows(kind = activeRankingKind) {
       ...item,
       rank: item.order,
     })).sort(compareRankingRows);
+  }
+  if (kind === "want") {
+    return getWantItems().map(normalizeWantItem).filter(Boolean).map((item) => ({ ...item, rank: item.order })).sort(compareRankingRows);
   }
   return [...(siteData.rankings?.[kind] || [])].sort(compareRankingRows);
 }
@@ -6415,13 +6918,14 @@ function getCalculatedRankingRankMap(kind = activeRankingKind) {
 
 function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
   const type = getRankingType(kind);
+  const resolvedManagerId = kind === "want" ? "want" : managerId;
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(type) &&
     String(entry.itemId) === String(itemId) &&
-    String(entry.managerId || "") === String(managerId)
+    String(entry.managerId || "") === String(resolvedManagerId)
   );
   const seed = getRankingSeedForItem(kind, itemId);
-  const todoSeedRating = kind === "todo" ? getTodoImplicitSeedRating(itemId) : RANKING_BASE_RATING;
+  const todoSeedRating = ["todo", "want"].includes(kind) ? getStandaloneImplicitSeedRating(kind, itemId) : RANKING_BASE_RATING;
   const rating = row
     ? Number(row.rating || RANKING_BASE_RATING)
     : Number(seed?.seedRating || todoSeedRating);
@@ -6432,7 +6936,7 @@ function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
     comparisons: wins + losses,
     itemId: String(itemId || "").trim(),
     losses,
-    managerId,
+    managerId: resolvedManagerId,
     rating,
     rankingType: type,
     wins,
@@ -6441,6 +6945,12 @@ function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
 
 function getTodoImplicitSeedRating(itemId) {
   const rows = getRankingRows("todo");
+  const index = rows.findIndex((row) => String(row.id) === String(itemId));
+  return calculateNormalizedRating(index >= 0 ? index + 1 : rows.length + 1, Math.max(rows.length, 1));
+}
+
+function getStandaloneImplicitSeedRating(kind, itemId) {
+  const rows = getRankingRows(kind);
   const index = rows.findIndex((row) => String(row.id) === String(itemId));
   return calculateNormalizedRating(index >= 0 ? index + 1 : rows.length + 1, Math.max(rows.length, 1));
 }
@@ -6673,7 +7183,7 @@ function openRankingNormalizeDialog(kind = activeRankingKind) {
   }
 
   if (rankingNormalizeReason) {
-    rankingNormalizeReason.value = kind === "todo" ? "Normalized calculated To Do order" : "Normalized calculated rankings";
+    rankingNormalizeReason.value = kind === "todo" ? "Normalized calculated To Do order" : kind === "want" ? "Normalized calculated Want order" : "Normalized calculated rankings";
   }
   normalizingRankingKind = kind;
 
@@ -6724,12 +7234,13 @@ function normalizeActiveRanking() {
     rating: Math.round(item.rating || RANKING_BASE_RATING),
     wins: Number(item.wins || 0),
   }));
-  const rawSnapshotId = kind === "todo" ? String(Date.now()) : createRankingSnapshotId();
+  const isStandalone = ["todo", "want"].includes(kind);
+  const rawSnapshotId = isStandalone ? String(Date.now()) : createRankingSnapshotId();
   const snapshot = {
     createdAt,
-    id: kind === "todo" ? `todo-${rawSnapshotId}` : rawSnapshotId,
+    id: isStandalone ? `${kind}-${rawSnapshotId}` : rawSnapshotId,
     label: formatRankingSnapshotOptionLabel({ createdAt }),
-    managerId: kind === "todo" ? getCurrentManagerId() : getCurrentManagerId(),
+    managerId: kind === "want" ? "want" : getCurrentManagerId(),
     rankingType: getRankingType(kind),
     reason: String(rankingNormalizeReason?.value || "Normalized calculated rankings").trim(),
     source: "calculated",
@@ -6769,7 +7280,7 @@ function normalizeActiveRanking() {
   ];
 
   submitRankingPayload({
-    action: kind === "todo" ? "normalizeTodo" : "normalizeRanking",
+    action: kind === "todo" ? "normalizeTodo" : kind === "want" ? "normalizeWant" : "normalizeRanking",
     normalization: {
       createdAt,
       items,
@@ -6777,7 +7288,7 @@ function normalizeActiveRanking() {
       managerId: snapshot.managerId,
       rankingType: snapshot.rankingType,
       reason: snapshot.reason,
-      snapshotId: kind === "todo" ? rawSnapshotId : snapshot.id,
+      snapshotId: isStandalone ? rawSnapshotId : snapshot.id,
       source: snapshot.source,
     },
   });
@@ -6785,6 +7296,10 @@ function normalizeActiveRanking() {
     activeTodoSnapshotId = "current";
     activeTodoCompareSnapshotId = snapshot.id;
     renderTodoList();
+  } else if (kind === "want") {
+    activeWantSnapshotId = "current";
+    activeWantCompareSnapshotId = snapshot.id;
+    renderWantList();
   } else {
     activeRankingSnapshotId = "current";
     activeRankingCompareSnapshotId = snapshot.id;
@@ -7000,7 +7515,7 @@ function getRankingItemElement(kind, itemId) {
 }
 
 async function openRankingBattleDialog(kind = activeRankingKind) {
-  if (!rankingBattleDialog || !(RANKING_CONFIG[kind] || kind === "todo")) {
+  if (!rankingBattleDialog || !(RANKING_CONFIG[kind] || ["todo", "want"].includes(kind))) {
     return;
   }
 
@@ -7008,7 +7523,7 @@ async function openRankingBattleDialog(kind = activeRankingKind) {
   if (rankingBattleDialog.parentElement !== document.body) {
     document.body.append(rankingBattleDialog);
   }
-  if (kind !== "todo") {
+  if (!["todo", "want"].includes(kind)) {
     await ensureRankingAssetManifest();
   }
   renderNextRankingBattle(kind);
@@ -7040,7 +7555,7 @@ function renderNextRankingBattle(kind = activeRankingKind) {
 
   if (rankingBattleTitle) {
     rankingBattleTitle.textContent = pair
-      ? `Compare ${(RANKING_CONFIG[kind] || TODO_RANKING_CONFIG).itemLabel}s`
+      ? `Compare ${(RANKING_CONFIG[kind] || (kind === "want" ? WANT_RANKING_CONFIG : TODO_RANKING_CONFIG)).itemLabel}s`
       : "Compare Rankings";
   }
 
@@ -7069,7 +7584,7 @@ function renderRankingBattleExclusionAction(kind, item) {
     return "";
   }
 
-  if (kind === "todo") {
+  if (["todo", "want"].includes(kind)) {
     return `<span class="ranking-battle-actions"><button class="action-button ranking-battle-pick-button" type="button" data-ranking-battle-pick="${escapeHtml(item.id)}">Pick</button></span>`;
   }
 
@@ -7086,7 +7601,7 @@ function renderRankingBattleExclusionAction(kind, item) {
 }
 
 function renderRankingBattleImage(kind, item) {
-  const imagePath = kind === "todo" ? getTodoImageUrl(item) : getRandomRankingAssetPath(kind, item?.id);
+  const imagePath = kind === "todo" ? getTodoImageUrl(item) : kind === "want" ? String(item?.imageUrl || "").trim() : getRandomRankingAssetPath(kind, item?.id);
   const imageMarkup = imagePath
     ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
     : "";
@@ -7129,8 +7644,8 @@ function getRandomRankingAssetPath(kind, itemId) {
 }
 
 function createRankingBattlePair(kind = activeRankingKind) {
-  const rows = (kind === "todo"
-    ? getTodoCompareItems().map((item) => {
+  const rows = (["todo", "want"].includes(kind)
+    ? (kind === "todo" ? getTodoCompareItems() : getVisibleWantItems()).map((item) => {
       const elo = getRankingEloForItem(kind, item.id);
       return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
     })
@@ -7493,10 +8008,11 @@ function chooseRankingBattleWinner(winnerId) {
 
   applyRankingChoiceToElo(choice);
   submitRankingPayload({
-    action: battle.kind === "todo" ? "saveTodoChoice" : "saveRankingChoice",
+    action: battle.kind === "todo" ? "saveTodoChoice" : battle.kind === "want" ? "saveWantChoice" : "saveRankingChoice",
     choice,
   });
   if (battle.kind === "todo") renderTodoList();
+  else if (battle.kind === "want") renderWantList();
   else renderRankingLists();
   setRankingBattleStatus(`${winner.name} saved.`);
   renderNextRankingBattle(battle.kind);
@@ -7533,13 +8049,15 @@ function applyRankingChoiceToElo(choice) {
 }
 
 function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentManagerId()) {
+  const normalizedType = normalizeLookupName(rankingType);
+  const resolvedManagerId = normalizedType === "want" ? "want" : managerId;
   const row = (siteData.rankingElo || []).find((entry) =>
     normalizeLookupName(entry.rankingType) === normalizeLookupName(rankingType) &&
     String(entry.itemId) === String(itemId) &&
-    String(entry.managerId || "") === String(managerId)
+    String(entry.managerId || "") === String(resolvedManagerId)
   );
   const seed = getRankingSeedForItemByType(rankingType, itemId);
-  const fallbackRating = normalizeLookupName(rankingType) === "todo" ? getTodoImplicitSeedRating(itemId) : RANKING_BASE_RATING;
+  const fallbackRating = ["todo", "want"].includes(normalizedType) ? getStandaloneImplicitSeedRating(normalizedType, itemId) : RANKING_BASE_RATING;
   const rating = row
     ? Number(row.rating || RANKING_BASE_RATING)
     : Number(seed?.seedRating || fallbackRating);
@@ -7552,7 +8070,7 @@ function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentM
     itemId: String(itemId || "").trim(),
     lastChoiceId: row?.lastChoiceId || "",
     losses,
-    managerId,
+    managerId: resolvedManagerId,
     rating,
     rankingType,
     updatedAt: row?.updatedAt || "",
@@ -8973,6 +9491,20 @@ function renderActivePageContent(pageName = "") {
 
   if (pageName === "guides") {
     guidesController.renderPage();
+    return;
+  }
+
+  if (pageName === "want") {
+    if (Array.isArray(siteData.wantItems)) {
+      renderWantList();
+    } else if (wantList) {
+      wantList.innerHTML = renderLoadingMessage("Loading Want items...");
+    }
+    return;
+  }
+
+  if (pageName === "youtube") {
+    youtubeInboxController.renderPage();
     return;
   }
 
@@ -10792,6 +11324,10 @@ todoList?.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (event.target.closest("button, a, input, select, textarea, label, .todo-drag-handle")) {
+    return;
+  }
+
   const card = event.target.closest("[data-todo-id]");
 
   if (!card || !shouldShowTodoEditMode) {
@@ -10844,6 +11380,72 @@ todoParentInput?.addEventListener("change", () => {
     todoParentIdInput.value = parentResolution.id || "";
   }
 });
+
+wantAddButton?.addEventListener("click", () => openWantItemDialog());
+wantFilterToggle?.addEventListener("click", () => {
+  shouldShowWantFilters = !shouldShowWantFilters;
+  renderWantList();
+});
+wantCompareButton?.addEventListener("click", () => openRankingBattleDialog("want"));
+wantRandomButton?.addEventListener("click", openWantRandomDialog);
+wantRandomAgain?.addEventListener("click", renderRandomWantItem);
+[wantRandomClose, wantRandomDone].forEach((button) => button?.addEventListener("click", closeWantRandomDialog));
+wantNormalizeButton?.addEventListener("click", () => openRankingNormalizeDialog("want"));
+wantSnapshotSelect?.addEventListener("change", () => {
+  activeWantSnapshotId = wantSnapshotSelect.value || "current";
+  activeWantViewMode = "calculated";
+  renderWantList();
+});
+wantSnapshotCompareSelect?.addEventListener("change", () => {
+  activeWantCompareSnapshotId = wantSnapshotCompareSelect.value || "";
+  renderWantList();
+});
+wantViewModeButtons?.forEach((button) => button.addEventListener("click", () => {
+  const mode = button.dataset.wantViewMode;
+  if (!["manual", "calculated"].includes(mode)) return;
+  activeWantViewMode = mode;
+  if (mode === "calculated") shouldShowWantEditMode = false;
+  renderWantList();
+}));
+wantEditToggle?.addEventListener("change", () => {
+  shouldShowWantEditMode = Boolean(wantEditToggle.checked);
+  activeWantItemId = "";
+  renderWantList();
+});
+wantStatusFilters?.forEach((input) => input.addEventListener("change", () => {
+  activeWantStatusFilter = input.checked ? input.dataset.wantStatusFilter || "" : "";
+  renderWantList();
+}));
+wantList?.addEventListener("click", (event) => {
+  const edit = event.target.closest("[data-want-edit]");
+  const move = event.target.closest("[data-want-move]");
+  const remove = event.target.closest("[data-want-delete]");
+  if (edit) {
+    event.preventDefault(); event.stopPropagation(); openWantItemDialog(edit.getAttribute("data-want-edit")); return;
+  }
+  if (move) {
+    event.preventDefault(); event.stopPropagation(); openWantMoveDialog(move.getAttribute("data-want-move")); return;
+  }
+  if (remove) {
+    event.preventDefault(); event.stopPropagation(); deleteWantItem(remove.getAttribute("data-want-delete")); return;
+  }
+  const card = event.target.closest("[data-want-id]");
+  if (!card || !shouldShowWantEditMode || event.target.closest("button, a, input, select, textarea, label, .want-drag-handle")) return;
+  activeWantItemId = activeWantItemId === card.getAttribute("data-want-id") ? "" : card.getAttribute("data-want-id") || "";
+  renderWantList();
+});
+wantList?.addEventListener("keydown", (event) => {
+  if (!["Enter", " "].includes(event.key) || event.target.closest("button, a, input, select, textarea, label, .want-drag-handle")) return;
+  const card = event.target.closest("[data-want-id]");
+  if (!card || !shouldShowWantEditMode) return;
+  event.preventDefault();
+  activeWantItemId = activeWantItemId === card.getAttribute("data-want-id") ? "" : card.getAttribute("data-want-id") || "";
+  renderWantList();
+});
+wantItemForm?.addEventListener("submit", (event) => { event.preventDefault(); saveWantItemFromForm(); });
+[wantItemClose, wantItemCancel].forEach((button) => button?.addEventListener("click", closeWantItemDialog));
+[wantMoveClose, wantMoveCancel].forEach((button) => button?.addEventListener("click", closeWantMoveDialog));
+wantMoveConfirm?.addEventListener("click", confirmWantMove);
 
 rankingTabs?.forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -11094,6 +11696,57 @@ document.addEventListener("pointercancel", () => {
   draggedRankingKind = "";
   didMoveRankingPointer = false;
 });
+
+document.addEventListener("dragstart", (event) => {
+  const item = event.target.closest("[data-want-id]");
+  if (!item || !isCurrentManagerAdmin() || !shouldShowWantEditMode || !event.target.closest(".want-drag-handle")) return;
+  draggedWantItemId = item.getAttribute("data-want-id") || "";
+  event.dataTransfer?.setData("text/plain", draggedWantItemId);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  item.classList.add("is-dragging");
+});
+document.addEventListener("dragend", (event) => {
+  event.target.closest("[data-want-id]")?.classList.remove("is-dragging");
+  draggedWantItemId = "";
+});
+document.addEventListener("dragover", (event) => {
+  if (draggedWantItemId && event.target.closest("[data-want-id]")) event.preventDefault();
+});
+document.addEventListener("drop", (event) => {
+  const target = event.target.closest("[data-want-id]");
+  if (!target || !draggedWantItemId) return;
+  event.preventDefault();
+  moveWantItem(draggedWantItemId, target.getAttribute("data-want-id") || "");
+  draggedWantItemId = "";
+});
+
+document.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest(".want-drag-handle");
+  const item = handle?.closest("[data-want-id]");
+  if (!item || !isCurrentManagerAdmin() || !shouldShowWantEditMode) return;
+  draggedWantItemId = item.getAttribute("data-want-id") || "";
+  didMoveWantPointer = false;
+  if (!draggedWantItemId) return;
+  event.preventDefault();
+  item.classList.add("is-dragging");
+  handle.setPointerCapture?.(event.pointerId);
+}, true);
+document.addEventListener("pointermove", (event) => {
+  if (!draggedWantItemId) return;
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-want-id]");
+  const targetId = target?.getAttribute("data-want-id") || "";
+  if (targetId && targetId !== draggedWantItemId) {
+    event.preventDefault();
+    if (moveWantItem(draggedWantItemId, targetId, { shouldSubmit: false })) didMoveWantPointer = true;
+  }
+}, true);
+document.addEventListener("pointerup", () => {
+  if (!draggedWantItemId) return;
+  wantList?.querySelector(`[data-want-id="${CSS.escape(draggedWantItemId)}"]`)?.classList.remove("is-dragging");
+  if (didMoveWantPointer) submitWantOrder();
+  draggedWantItemId = "";
+  didMoveWantPointer = false;
+}, true);
 
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-todo-id]");
@@ -11705,7 +12358,10 @@ function renderLoginState() {
   });
   syncFootyGoalAssistsButton();
 
-  if (!managerMeta && activePageName === "rankings") {
+  if (
+    (!managerMeta && activePageName === "rankings") ||
+    (!managerMeta?.isAdmin && ["todo", "want", "guides", "youtube", "the-monster-maniac"].includes(activePageName))
+  ) {
     showPage("footy", { scrollToTop: true });
   }
 
@@ -11869,8 +12525,9 @@ async function handleManagerLogin() {
     setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });
     document.activeElement?.blur?.();
     hideLoginPanel();
-    showPage("manager-hub", { scrollToTop: true });
-    window.location.hash = "manager-hub";
+    const destination = getManagerMeta(manager).isAdmin ? "the-monster-maniac" : "manager-hub";
+    showPage(destination, { scrollToTop: true });
+    window.location.hash = destination;
   } catch (error) {
     setLoginFeedback(error.message, true);
   } finally {
@@ -13930,8 +14587,20 @@ function getPageDataScope(pageName = "") {
     return "todo";
   }
 
+  if (page === "want") {
+    return "want";
+  }
+
   if (page === "guides") {
     return "guides";
+  }
+
+  if (page === "youtube") {
+    return "youtube";
+  }
+
+  if (page === "the-monster-maniac") {
+    return "the-monster-maniac";
   }
 
   if (page === "rankings") {
@@ -14036,9 +14705,21 @@ function loadPageData(scope) {
     return ensureTodoData();
   }
 
+  if (scope === "want") {
+    return ensureWantData();
+  }
+
   if (scope === "guides") {
     guidesController.renderPage();
     return Promise.resolve();
+  }
+
+  if (scope === "youtube") {
+    return youtubeInboxController.load();
+  }
+
+  if (scope === "the-monster-maniac") {
+    return platinumsController.renderPage();
   }
 
   if (scope === "rankings") {
@@ -14114,6 +14795,10 @@ function renderPageDataError(scope, error) {
 
   if (scope === "todo") {
     renderTodoListError(error);
+  }
+
+  if (scope === "want") {
+    renderWantListError(error);
   }
 
   if (scope === "world-cup-results" && dynamicResultImages) {
@@ -14233,6 +14918,26 @@ function ensureTodoData() {
     return items;
   }).catch((error) => {
     siteData.todoItemsError = error;
+    throw error;
+  });
+}
+
+function ensureWantData() {
+  return ensureSharedData("want", async () => {
+    let items;
+    try {
+      const response = await loadNextDataEndpoint("listWantItems");
+      items = response.items || response.wantItems || [];
+    } catch (error) {
+      recordDiagnostic("Want endpoint failed to load; using published sheet", error);
+      items = await loadSheet("want");
+    }
+    siteData.wantItems = items;
+    renderWantList(items);
+    console.info("Box This Lap Want data loaded", items);
+    return items;
+  }).catch((error) => {
+    siteData.wantItemsError = error;
     throw error;
   });
 }
@@ -14667,6 +15372,7 @@ function ensureManagerHubData() {
   });
 }
 
+populateNextTimeOptions();
 syncTestScoringUi();
 syncThemeToggle();
 hydrateStoredManagerSession();

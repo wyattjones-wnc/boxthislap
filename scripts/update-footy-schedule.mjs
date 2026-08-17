@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -236,8 +237,7 @@ async function main() {
   fixtures.push(...calendarSchedules.fixtures);
 
   const knownFootyMatchRows = [...footyMatchSeedRows, ...footyMatchRows];
-  const registryHydratedFixtures = buildFixturesFromFootyMatchRows(knownFootyMatchRows, teams);
-  const dedupedFixtures = mergeFixtures([...registryHydratedFixtures, ...fixtures]).sort(compareFixtures);
+  const dedupedFixtures = mergeFixtures(fixtures).sort(compareFixtures);
   const matchNotes = await loadFootyMatchNotes();
   const footyMatchRegistry = buildFootyMatchRegistry({
     fixtures: dedupedFixtures,
@@ -1401,21 +1401,42 @@ function getErrorMessageFromText(text) {
 }
 
 function mergeFixtures(fixtures) {
-  const fixtureMap = new Map();
+  const mergedFixtures = [];
 
   for (const fixture of fixtures) {
-    const key = getFixtureMergeKey(fixture);
-    const existingFixture = fixtureMap.get(key);
+    const existingIndex = mergedFixtures.findIndex((existingFixture) => areSameFixture(existingFixture, fixture));
 
-    if (!existingFixture) {
-      fixtureMap.set(key, fixture);
+    if (existingIndex === -1) {
+      mergedFixtures.push(fixture);
       continue;
     }
 
-    fixtureMap.set(key, mergeFixture(existingFixture, fixture));
+    mergedFixtures[existingIndex] = mergeFixture(mergedFixtures[existingIndex], fixture);
   }
 
-  return [...fixtureMap.values()];
+  return mergedFixtures;
+}
+
+function areSameFixture(firstFixture = {}, secondFixture = {}) {
+  const firstMatchId = normalizeFootyMatchId(firstFixture.matchId);
+  const secondMatchId = normalizeFootyMatchId(secondFixture.matchId);
+
+  if (firstMatchId && secondMatchId && firstMatchId === secondMatchId) {
+    return true;
+  }
+
+  const firstSourceIds = new Set(getSourceIdKeys(getFixtureSourceIds(firstFixture)));
+  const hasSharedSourceId = getSourceIdKeys(getFixtureSourceIds(secondFixture))
+    .some((sourceId) => firstSourceIds.has(sourceId));
+
+  if (hasSharedSourceId) {
+    return true;
+  }
+
+  return String(firstFixture.teamId || "").trim() === String(secondFixture.teamId || "").trim() &&
+    String(firstFixture.date || "").trim() === String(secondFixture.date || "").trim() &&
+    isSameFootballClubName(firstFixture.home, secondFixture.home) &&
+    isSameFootballClubName(firstFixture.away, secondFixture.away);
 }
 
 function buildFootyMatchRegistry({ fixtures = [], generatedAt, matchRows = [], matchNotes = new Map(), previousSchedules = [] }) {
@@ -1538,107 +1559,34 @@ function previousFootyMatchRows(previousSchedules = []) {
   });
 }
 
-function buildFixturesFromFootyMatchRows(rows = [], teams = []) {
-  const teamByName = buildTeamNameLookup(teams);
-
-  return normalizeFootyMatchRows(rows).map((row) => {
-    const team = getTeamByName(teamByName, row.followedTeam) || {};
-    const timestamp = buildFootyRegistryTimestamp(row.date, row.time);
-    const followedTeamName = team.name || row.followedTeam;
-    const isHome = isSameFootballClubName(row.home, followedTeamName);
-    const opponent = isHome ? row.away : row.home;
-
-    return {
-      away: row.away,
-      awayBadge: "",
-      date: row.date,
-      home: row.home,
-      homeBadge: "",
-      id: row.matchId,
-      isRegistryFixture: true,
-      isHome,
-      lastSeen: row.lastSeen,
-      league: row.competition,
-      opponent,
-      priority: team.priority || "",
-      source: "Footy Matches",
-      sourceIds: row.sourceIds,
-      sources: ["Footy Matches"],
-      teamBadge: team.badge || "",
-      teamId: team.id || row.followedTeam,
-      teamName: followedTeamName,
-      time: row.time,
-      timestamp,
-    };
-  });
-}
-
-function buildTeamNameLookup(teams = []) {
-  const lookup = new Map();
-
-  teams
-    .filter((team) => team?.name)
-    .forEach((team) => {
-      getFootballClubNameLookupKeys(team.name).forEach((key) => {
-        if (key && !lookup.has(key)) {
-          lookup.set(key, team);
-        }
-      });
-    });
-
-  return lookup;
-}
-
-function getTeamByName(teamByName, name) {
-  for (const key of getFootballClubNameLookupKeys(name)) {
-    const team = teamByName.get(key);
-
-    if (team) {
-      return team;
-    }
-  }
-
-  return null;
-}
-
 function isSameFootballClubName(firstName, secondName) {
   const first = normalizeFootballClubName(firstName);
   const second = normalizeFootballClubName(secondName);
 
-  return Boolean(first && second && first === second);
-}
-
-function getFootballClubNameLookupKeys(name) {
-  return [
-    normalizeText(name),
-    normalizeFootballClubName(name),
-  ].filter(Boolean);
-}
-
-function buildFootyRegistryTimestamp(date, time) {
-  const normalizedDate = String(date || "").trim();
-  const normalizedTime = normalizeFootyRegistryTime(time);
-
-  if (!normalizedDate) {
-    return "";
+  if (!first || !second) {
+    return false;
   }
 
-  return normalizedTime ? `${normalizedDate}T${normalizedTime}` : normalizedDate;
-}
-
-function normalizeFootyRegistryTime(time) {
-  const normalizedTime = String(time || "").trim();
-  const match = normalizedTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-
-  if (!match) {
-    return normalizedTime;
+  if (first === second) {
+    return true;
   }
 
-  return [
-    match[1].padStart(2, "0"),
-    match[2],
-    match[3] || "00",
-  ].join(":");
+  const firstTokens = getFootballClubIdentityTokens(first);
+  const secondTokens = getFootballClubIdentityTokens(second);
+  const shorterTokens = firstTokens.length <= secondTokens.length ? firstTokens : secondTokens;
+  const longerTokens = new Set(firstTokens.length <= secondTokens.length ? secondTokens : firstTokens);
+
+  return shorterTokens.length > 0 &&
+    shorterTokens.reduce((length, token) => length + token.length, 0) >= 6 &&
+    shorterTokens.every((token) => longerTokens.has(token));
+}
+
+function getFootballClubIdentityTokens(value) {
+  return normalizeText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token && !["de", "del", "la", "the"].includes(token));
 }
 
 function registerFootyMatchRow(row, { entriesByFingerprint, entriesBySourceId, registryRowsById, usedMatchIds }) {
@@ -1918,7 +1866,7 @@ function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [
       };
     }
 
-    const currentFixtures = getCurrentTeamFixtures({ previousFixtures, teamErrors, teamFixtures });
+    const currentFixtures = getCurrentTeamFixtures({ generatedAt, previousFixtures, teamErrors, teamFixtures });
 
     return {
       attemptedAt: generatedAt,
@@ -1931,7 +1879,7 @@ function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [
       fixtures: currentFixtures,
       notes: [...new Set([
         ...teamNotes,
-        ...getPartialPreservationNotes({ previousFixtures, teamErrors, teamFixtures }),
+        ...getPartialPreservationNotes({ generatedAt, previousFixtures, teamErrors, teamFixtures }),
       ])],
       errors: [...new Set(teamErrors)],
     };
@@ -1956,20 +1904,25 @@ function shouldPreservePreviousTeamSchedule({ previousSchedule, teamErrors = [],
     previousSchedule.fixtures.length > 0;
 }
 
-function getCurrentTeamFixtures({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
+function getCurrentTeamFixtures({ generatedAt = "", previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
   if (previousFixtures.length === 0) {
     return teamFixtures;
   }
 
-  return mergeFixtures([...previousFixtures, ...teamFixtures]).sort(compareFixtures);
+  const updateDate = String(generatedAt || "").slice(0, 10);
+  const fixturesToPreserve = teamErrors.length > 0
+    ? previousFixtures
+    : previousFixtures.filter((fixture) => String(fixture.date || "") < updateDate);
+
+  return mergeFixtures([...fixturesToPreserve, ...teamFixtures]).sort(compareFixtures);
 }
 
-function getPartialPreservationNotes({ previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
+function getPartialPreservationNotes({ generatedAt = "", previousFixtures = [], teamErrors = [], teamFixtures = [] }) {
   if (previousFixtures.length === 0 || teamFixtures.length === 0) {
     return [];
   }
 
-  const mergedCount = mergeFixtures([...previousFixtures, ...teamFixtures]).length;
+  const mergedCount = getCurrentTeamFixtures({ generatedAt, previousFixtures, teamErrors, teamFixtures }).length;
   const preservedCount = Math.max(0, mergedCount - teamFixtures.length);
 
   if (preservedCount === 0) {
@@ -2164,27 +2117,6 @@ function stripTeamMessagePrefix(teamName, message) {
   return message;
 }
 
-function getFixtureMergeKey(fixture) {
-  const matchId = normalizeFootyMatchId(fixture.matchId);
-
-  if (matchId) {
-    return `match:${matchId}`;
-  }
-
-  const sourceKeys = getSourceIdKeys(getFixtureSourceIds(fixture));
-
-  if (sourceKeys.length > 0) {
-    return `sources:${sourceKeys.join("|")}`;
-  }
-
-  return [
-    fixture.teamId,
-    fixture.date,
-    normalizeTeamName(fixture.home),
-    normalizeTeamName(fixture.away),
-  ].join("|");
-}
-
 function mergeFixture(existingFixture, incomingFixture) {
   const primaryFixture = getFixtureSourcePriority(existingFixture) > getFixtureSourcePriority(incomingFixture) ? existingFixture : incomingFixture;
   const secondaryFixture = primaryFixture === existingFixture ? incomingFixture : existingFixture;
@@ -2270,7 +2202,7 @@ function isCalendarEventInRange(event, dateFrom, dateTo) {
 
 function getSportDbTimestamp(event) {
   if (event.strTimestamp) {
-    return event.strTimestamp;
+    return normalizeUtcTimestamp(event.strTimestamp);
   }
 
   const date = String(event.dateEvent || "").trim();
@@ -2286,6 +2218,16 @@ function getSportDbTimestamp(event) {
   }
 
   return `${date}T${time.replace(/\+00:00$/, "")}Z`;
+}
+
+function normalizeUtcTimestamp(value) {
+  const timestamp = String(value || "").trim();
+
+  if (!timestamp || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(timestamp)) {
+    return timestamp;
+  }
+
+  return /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp) ? timestamp : `${timestamp}Z`;
 }
 
 function getArsenalTimestamp(matchInfo) {
@@ -2604,7 +2546,16 @@ function assertRequiredProviderConfiguration(activeTeams = []) {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+export {
+  getCurrentTeamFixtures,
+  getSportDbTimestamp,
+  isSameFootballClubName,
+  mergeFixtures,
+};

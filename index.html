@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.11.22.22";
+      window.BOX_THIS_LAP_VERSION = "2026.08.17.19.11";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608112222">
+    <link rel="stylesheet" href="styles.css?v=202608171911">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -216,6 +216,9 @@
             >
             <img src="assets/final/default-header.jpg?v=202607210001" alt="" decoding="async" loading="lazy">
           </picture>
+        </div>
+        <div class="header-page-art" data-header-art="the-monster-maniac" aria-hidden="true">
+          <img src="assets/themonstermaniac/themonstermaniac_08132026.png?v=202608140400" alt="" decoding="async">
         </div>
         <div class="header-page-art" data-header-art="world-cup" aria-hidden="true">
           <picture>
@@ -292,10 +295,15 @@
         <div class="nav-links" data-nav-scope="home" role="tablist" aria-label="Site sections">
           <a href="#footy" data-page-link="footy" role="tab">Footy</a>
           <a href="#next" data-page-link="next" role="tab">Next</a>
-          <a href="#todo" data-page-link="todo" role="tab" data-admin-only hidden>To Do</a>
-          <a href="#guides" data-page-link="guides" role="tab" data-admin-only hidden>Guides</a>
           <a href="#rankings" data-page-link="rankings" role="tab" data-login-only hidden>Rankings</a>
           <a href="#leagues" data-page-link="leagues" role="tab">Leagues</a>
+        </div>
+        <div class="nav-links" data-nav-scope="the-monster-maniac" role="tablist" aria-label="TheMonsterManiac sections" hidden>
+          <a href="#the-monster-maniac" data-page-link="the-monster-maniac" role="tab">Home</a>
+          <a href="#todo" data-page-link="todo" role="tab">To Do</a>
+          <a href="#want" data-page-link="want" role="tab">Want</a>
+          <a href="#guides" data-page-link="guides" role="tab">Guides</a>
+          <a href="#youtube" data-page-link="youtube" role="tab">YouTube</a>
         </div>
         <div class="nav-links" data-nav-scope="world-cup" role="tablist" aria-label="World Cup sections" hidden>
           <a href="#results" data-page-link="results" role="tab">Results</a>
@@ -352,6 +360,7 @@
                 <span id="profile-name">Manager</span>
               </button>
               <div class="profile-dropdown" id="profile-dropdown" hidden>
+                <a href="#the-monster-maniac" data-page-link="the-monster-maniac" data-admin-only hidden>TheMonsterManiac</a>
                 <a href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
                 <button id="logout-button" type="button">Sign Out</button>
               </div>
@@ -400,6 +409,36 @@
         </form>
       </section>
 
+      <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
+        <details class="favorite-trophies-card" id="favorite-trophies-card">
+          <summary class="favorite-trophies-summary">
+            <span>Favorite Trophies</span>
+          </summary>
+          <div class="platinums-grid favorite-trophies-grid" id="favorite-trophies-grid" aria-live="polite" aria-busy="true">
+            <span class="platinum-skeleton"></span>
+            <span class="platinum-skeleton"></span>
+            <span class="platinum-skeleton"></span>
+            <span class="platinum-skeleton"></span>
+          </div>
+        </details>
+        <div class="manager-hub-grid">
+          <section class="manager-hub-card" aria-labelledby="admin-platinums-heading">
+            <div class="manager-hub-card-heading">
+              <h2 id="admin-platinums-heading">Platinums</h2>
+            </div>
+            <div class="platinums-grid" id="admin-platinums-grid" aria-live="polite" aria-busy="true">
+              <span class="platinum-skeleton"></span>
+              <span class="platinum-skeleton"></span>
+              <span class="platinum-skeleton"></span>
+              <span class="platinum-skeleton"></span>
+              <span class="platinum-skeleton"></span>
+              <span class="platinum-skeleton"></span>
+            </div>
+            <button class="action-button platinums-show-more" id="admin-platinums-show-more" type="button" aria-controls="admin-platinums-grid" aria-expanded="false" hidden>Show More</button>
+          </section>
+        </div>
+      </section>
+
       <section class="page manager-hub-page" id="manager-hub" data-page="manager-hub">
         <div class="section-heading page-heading-with-action">
           <div>
@@ -432,7 +471,7 @@
             </div>
           </section>
 
-          <section class="manager-hub-card" aria-labelledby="manager-summary-heading">
+          <section class="manager-hub-card manager-summary-card" aria-labelledby="manager-summary-heading">
             <div class="manager-hub-card-heading">
               <h2 id="manager-summary-heading">Results</h2>
               <label class="manager-summary-year-control">
@@ -718,7 +757,9 @@
               </label>
               <label>
                 <span>Time</span>
-                <input id="next-time" type="time">
+                <select id="next-time">
+                  <option value="">No time</option>
+                </select>
               </label>
               <label>
                 <span>Priority</span>
@@ -908,6 +949,88 @@
         </dialog>
       </section>
 
+      <section class="page" id="want" data-page="want">
+        <div class="section-heading page-heading-with-action footy-heading">
+          <h1>Want</h1>
+          <div class="page-heading-actions">
+            <button class="icon-action-button todo-random-button" id="want-random-button" type="button" aria-label="Pick a weighted random Want item" title="Pick a weighted random Want item">?</button>
+            <button class="action-button ranking-compare-button" id="want-compare-button" type="button">Compare</button>
+            <button class="icon-action-button ranking-filter-toggle" id="want-filter-toggle" type="button" aria-expanded="false" aria-controls="want-filters" aria-label="Show Want filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path></svg>
+            </button>
+            <button class="icon-action-button next-add-button" id="want-add-button" type="button" aria-label="Add Want item" data-admin-only hidden>+</button>
+          </div>
+        </div>
+        <div class="ranking-filters todo-filters" id="want-filters" hidden>
+          <div class="segmented-control ranking-mode-toggle" role="group" aria-label="Want view">
+            <button class="is-active" type="button" data-want-view-mode="manual" aria-pressed="true">Manual</button>
+            <button type="button" data-want-view-mode="calculated" aria-pressed="false">Calculated</button>
+          </div>
+          <label class="toggle-row todo-edit-filter">
+            <span>Edit</span>
+            <input id="want-edit-toggle" type="checkbox">
+          </label>
+          <label class="ranking-select-control">
+            <span>Snapshot</span>
+            <select id="want-snapshot-select"><option value="current">Current</option></select>
+          </label>
+          <label class="ranking-select-control">
+            <span>Compare</span>
+            <select id="want-snapshot-compare-select"><option value="">None</option></select>
+          </label>
+          <button class="action-button ranking-normalize-button" id="want-normalize-button" type="button">Normalize</button>
+          <div class="todo-filter-group" role="group" aria-label="Want status filters">
+            <label class="toggle-row"><span>Archived</span><input type="checkbox" data-want-status-filter="archived"></label>
+            <label class="toggle-row"><span>Completed</span><input type="checkbox" data-want-status-filter="completed"></label>
+            <label class="toggle-row"><span>Deleted</span><input type="checkbox" data-want-status-filter="deleted"></label>
+            <label class="toggle-row"><span>All</span><input type="checkbox" data-want-status-filter="all"></label>
+          </div>
+        </div>
+        <div class="content-shell" id="want-list"><p class="table-message">Want items will load here.</p></div>
+
+        <dialog class="footy-note-dialog next-item-dialog" id="want-item-dialog">
+          <form class="footy-note-form next-item-form" id="want-item-form" method="dialog">
+            <header>
+              <div><h2 id="want-item-dialog-title">Add Want Item</h2></div>
+              <button class="icon-action-button footy-note-close" id="want-item-close" type="button" aria-label="Close Want item dialog">X</button>
+            </header>
+            <input id="want-item-id" type="hidden">
+            <div class="next-item-fields">
+              <label class="next-item-wide"><span>Name</span><input id="want-name" type="text" autocomplete="off" required></label>
+              <label><span>Order</span><input id="want-order" type="number" min="1" step="1" value="1"></label>
+              <label><span>Price</span><input id="want-price" type="number" min="0" step="0.01" inputmode="decimal"></label>
+              <label class="next-item-wide"><span>Image URL</span><input id="want-image-url" type="url" autocomplete="url"></label>
+              <div class="next-dialog-checks">
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="want-archived" type="checkbox"><span>Archived</span></label>
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="want-completed" type="checkbox"><span>Completed</span></label>
+              </div>
+            </div>
+            <p class="footy-note-status" id="want-item-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="want-item-cancel" type="button">Cancel</button>
+              <button class="action-button" type="submit">Save</button>
+            </footer>
+          </form>
+        </dialog>
+
+        <dialog class="footy-note-dialog todo-random-dialog" id="want-random-dialog">
+          <form class="footy-note-form ranking-battle-form" method="dialog">
+            <header><div><h2>Random Want</h2></div><button class="icon-action-button footy-note-close" id="want-random-close" type="button" aria-label="Close random Want dialog">&times;</button></header>
+            <div id="want-random-content"></div>
+            <footer><button class="action-button" id="want-random-again" type="button">Pick Again</button><button class="action-button" id="want-random-done" type="button">Done</button></footer>
+          </form>
+        </dialog>
+
+        <dialog class="footy-note-dialog" id="want-move-dialog">
+          <form class="footy-note-form" method="dialog">
+            <header><div><h2>Move to To Do?</h2></div><button class="icon-action-button footy-note-close" id="want-move-close" type="button" aria-label="Close move confirmation">X</button></header>
+            <p>Move <strong id="want-move-name"></strong> from Want to To Do? The Want item will be marked completed.</p>
+            <p class="footy-note-status" id="want-move-status" aria-live="polite"></p>
+            <footer><button class="action-button" id="want-move-cancel" type="button">Cancel</button><button class="action-button" id="want-move-confirm" type="button">Move to To Do</button></footer>
+          </form>
+        </dialog>
+      </section>
+
       <section class="page guides-page" id="guides" data-page="guides">
         <div id="guides-view">
           <div class="section-heading page-heading-with-action footy-heading">
@@ -920,6 +1043,16 @@
             <span class="guides-skeleton-card"></span>
             <span class="guides-skeleton-card"></span>
             <span class="guides-skeleton-card"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="page youtube-page" id="youtube" data-page="youtube">
+        <div id="youtube-inbox-view">
+          <div class="youtube-loading-grid" aria-label="Loading YouTube inbox">
+            <span class="youtube-skeleton-card"></span>
+            <span class="youtube-skeleton-card"></span>
+            <span class="youtube-skeleton-card"></span>
           </div>
         </div>
       </section>
@@ -1936,6 +2069,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608112222"></script>
+    <script type="module" src="script.js?v=202608171911"></script>
   </body>
 </html>

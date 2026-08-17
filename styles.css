@@ -660,6 +660,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-column: 1 / -1;
 }
 
+.platinums-show-more {
+  display: block;
+  margin: 14px auto 0;
+  min-width: 150px;
+}
+
+.platinums-show-more[hidden] {
+  display: none;
+}
+
 .content-shell {
   background: var(--panel);
   border: 1px solid var(--line);

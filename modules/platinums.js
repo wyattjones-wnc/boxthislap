@@ -4,7 +4,9 @@ export function createPlatinumsController({ loadSheet }) {
     emptyMessage: "No platinum icons are available yet.",
     errorLabel: "Platinums",
     grid: document.querySelector("#admin-platinums-grid"),
+    initialItemLimit: 6,
     loadSheet,
+    showMoreButton: document.querySelector("#admin-platinums-show-more"),
     source: "platinums",
     sortItems: comparePlatinums,
   });
@@ -37,7 +39,9 @@ function createTrophyListController({
   emptyMessage,
   errorLabel,
   grid,
+  initialItemLimit = 0,
   loadSheet,
+  showMoreButton = null,
   showDescription = false,
   sortItems,
   source,
@@ -45,8 +49,10 @@ function createTrophyListController({
   let items = null;
   let loadPromise = null;
   let expandedId = "";
+  let showAll = false;
 
   grid?.addEventListener("click", handleClick);
+  showMoreButton?.addEventListener("click", handleShowMoreClick);
 
   function renderPage() {
     if (!grid) return Promise.resolve([]);
@@ -86,7 +92,8 @@ function createTrophyListController({
       return;
     }
 
-    grid.innerHTML = items.map((item) => {
+    const visibleItems = initialItemLimit && !showAll ? items.slice(0, initialItemLimit) : items;
+    grid.innerHTML = visibleItems.map((item) => {
       const expanded = item.id === expandedId;
       const label = [item.platinumName, item.gameName].filter(Boolean).join(" - ") || `Trophy ${item.trophyNumber || item.id}`;
       const metadata = [
@@ -108,11 +115,14 @@ function createTrophyListController({
         </button>
       `;
     }).join("");
+
+    renderShowMoreButton();
   }
 
   function renderLoading() {
     grid.setAttribute("aria-busy", "true");
-    grid.innerHTML = Array.from({ length: 8 }, () => `<span class="platinum-skeleton"></span>`).join("");
+    const skeletonCount = initialItemLimit || 8;
+    grid.innerHTML = Array.from({ length: skeletonCount }, () => `<span class="platinum-skeleton"></span>`).join("");
   }
 
   function renderError(error) {
@@ -137,6 +147,20 @@ function createTrophyListController({
     expandedId = expandedId === itemId ? "" : itemId;
     renderItems();
     grid.querySelector(`[data-trophy-id="${CSS.escape(itemId)}"]`)?.focus();
+  }
+
+  function handleShowMoreClick() {
+    showAll = !showAll;
+    renderItems();
+    showMoreButton?.focus();
+  }
+
+  function renderShowMoreButton() {
+    if (!showMoreButton) return;
+    const hasMoreItems = Boolean(initialItemLimit && items?.length > initialItemLimit);
+    showMoreButton.hidden = !hasMoreItems;
+    showMoreButton.textContent = showAll ? "Show Less" : "Show More";
+    showMoreButton.setAttribute("aria-expanded", String(showAll));
   }
 
   return { renderPage };

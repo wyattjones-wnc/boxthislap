@@ -46,7 +46,7 @@ export default {
 
       const seenThroughMatch = url.pathname.match(/^\/api\/videos\/([^/]+)\/seen-through$/);
       if (request.method === "POST" && seenThroughMatch) {
-        return json(await markVideosSeenThrough(decodeURIComponent(seenThroughMatch[1]), env), 200, cors);
+        return json(await markVideosSeenThrough(decodeURIComponent(seenThroughMatch[1]), request, env), 200, cors);
       }
 
       const playlistMatch = url.pathname.match(/^\/api\/youtube\/playlists\/([^/]+)\/videos$/);
@@ -129,18 +129,21 @@ async function updateVideoStatus(videoId, request, env) {
   return { ok: true, status: body.status, videoId };
 }
 
-async function markVideosSeenThrough(videoId, env) {
-  const selected = await env.DB.prepare(`
-    SELECT published_at FROM videos WHERE youtube_video_id = ?
-  `).bind(videoId).first();
-  if (!selected) throw httpError(404, "Video not found.");
+async function markVideosSeenThrough(videoId, request, env) {
+  const body = await readJson(request);
+  const videoIds = [...new Set((Array.isArray(body.videoIds) ? body.videoIds : [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean))].slice(0, 100);
+  if (!videoIds.length || !videoIds.includes(videoId)) {
+    throw httpError(400, "The visible video selection is required.");
+  }
 
   const processedAt = new Date().toISOString();
   const result = await env.DB.prepare(`
     UPDATE videos
     SET status = 'watched', processed_at = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE status = 'new' AND published_at >= ?
-  `).bind(processedAt, selected.published_at).run();
+    WHERE status = 'new' AND youtube_video_id IN (SELECT value FROM json_each(?))
+  `).bind(processedAt, JSON.stringify(videoIds)).run();
   return { ok: true, updated: result.meta?.changes || 0, videoId };
 }
 

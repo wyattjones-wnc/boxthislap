@@ -39,7 +39,7 @@ The public site is configured for `https://box-this-lap-youtube.boxthislap.worke
 
 - `GET /api/videos?status=new&channel=UC...&channel=UC...&limit=100&offset=0`
 - `POST /api/videos/:videoId/status` with `{ "status": "ignored" }`
-- `POST /api/videos/:videoId/seen-through` marks that video and all newer `new` videos as watched
+- `POST /api/videos/:videoId/seen-through` with `{ "videoIds": ["..."] }` marks only the supplied visible `new` videos as watched
 - `POST /api/youtube/sync`
 - `GET /api/youtube/playlists`
 - `POST /api/youtube/playlists/:playlistId/videos` with `{ "videoId": "..." }`

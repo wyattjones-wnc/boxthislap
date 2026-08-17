@@ -376,18 +376,26 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
   async function markSeenThrough(videoId, button) {
     setBusy(button, true);
     try {
-      await request(`/api/videos/${encodeURIComponent(videoId)}/seen-through`, { method: "POST" });
-      const selected = state.videos.find((video) => video.youtubeVideoId === videoId);
-      const cutoff = new Date(selected?.publishedAt || 0).getTime();
+      const selectedIndex = state.videos.findIndex((video) => video.youtubeVideoId === videoId);
+      if (selectedIndex < 0) throw new Error("That video is no longer in the visible list. Refresh and try again.");
+      const videoIds = state.videos
+        .slice(0, selectedIndex + 1)
+        .filter((video) => video.status === "new")
+        .map((video) => video.youtubeVideoId);
+      await request(`/api/videos/${encodeURIComponent(videoId)}/seen-through`, {
+        body: JSON.stringify({ videoIds }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const markedIds = new Set(videoIds);
       if (state.status === "all") {
         state.videos = state.videos.map((video) => {
-          const publishedAt = new Date(video.publishedAt).getTime();
-          return video.status === "new" && Number.isFinite(cutoff) && publishedAt >= cutoff
+          return markedIds.has(video.youtubeVideoId)
             ? { ...video, status: "watched" }
             : video;
         });
       } else {
-        state.videos = state.videos.filter((video) => new Date(video.publishedAt).getTime() < cutoff);
+        state.videos = state.videos.filter((video) => !markedIds.has(video.youtubeVideoId));
       }
       state.syncMessage = "";
       render();

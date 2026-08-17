@@ -3324,6 +3324,20 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.footy-fixture-card--competition {
+  grid-template-columns: 58px minmax(0, 1fr) max-content;
+}
+
+.footy-competition-badge-pair {
+  align-items: center;
+  display: flex;
+  width: 58px;
+}
+
+.footy-competition-badge-pair .footy-fixture-badge + .footy-fixture-badge {
+  margin-left: -14px;
+}
+
 .footy-fixture-card[role="button"] {
   cursor: pointer;
 }
@@ -7024,6 +7038,14 @@ tr:last-child td {
   .footy-fixture-card {
     align-items: start;
     grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .footy-fixture-card--competition {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .footy-competition-badge-pair {
+    width: 52px;
   }
 
   .footy-fixture-card strong {

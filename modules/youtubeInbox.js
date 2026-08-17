@@ -377,10 +377,22 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
     setBusy(button, true);
     try {
       await request(`/api/videos/${encodeURIComponent(videoId)}/seen-through`, { method: "POST" });
-      state.videos = [];
-      await load();
+      const selected = state.videos.find((video) => video.youtubeVideoId === videoId);
+      const cutoff = new Date(selected?.publishedAt || 0).getTime();
+      if (state.status === "all") {
+        state.videos = state.videos.map((video) => {
+          const publishedAt = new Date(video.publishedAt).getTime();
+          return video.status === "new" && Number.isFinite(cutoff) && publishedAt >= cutoff
+            ? { ...video, status: "watched" }
+            : video;
+        });
+      } else {
+        state.videos = state.videos.filter((video) => new Date(video.publishedAt).getTime() < cutoff);
+      }
+      state.syncMessage = "";
+      render();
     } catch (error) {
-      state.error = error.message || "Unable to mark the videos as seen.";
+      state.syncMessage = error.message || "Unable to mark the videos as seen.";
       render();
     }
   }

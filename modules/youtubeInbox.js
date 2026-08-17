@@ -153,6 +153,7 @@ export function createYouTubeInboxController({ endpoint }) {
   function renderVideo(video) {
     const videoId = escapeAttribute(video.youtubeVideoId);
     const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(video.youtubeVideoId)}`;
+    const quickPlaylist = state.playlists.find((playlist) => playlist.name.trim().toLowerCase() === "3new");
     const playlistOptions = state.playlists.map((playlist) => `<option value="${escapeAttribute(playlist.youtubePlaylistId)}">${escapeHtml(playlist.name)}</option>`).join("");
     const details = [formatDuration(video.durationSeconds), formatRelativeDate(video.publishedAt)].filter(Boolean).join(" \u00b7 ");
 
@@ -169,6 +170,7 @@ export function createYouTubeInboxController({ endpoint }) {
           </div>
           <div class="youtube-video-actions">
             <a class="action-button" href="${watchUrl}" target="_blank" rel="noopener">Watch</a>
+            ${quickPlaylist ? `<button class="action-button youtube-quick-playlist-button" type="button" data-youtube-quick-save="${escapeAttribute(quickPlaylist.youtubePlaylistId)}">Add to 3New</button>` : ""}
             ${state.playlists.length ? `
               <label class="youtube-playlist-picker">
                 <span class="sr-only">Playlist for ${escapeHtml(video.title)}</span>
@@ -176,7 +178,8 @@ export function createYouTubeInboxController({ endpoint }) {
               </label>
               <button class="action-button" type="button" data-youtube-save>Save</button>
             ` : ""}
-            ${video.status !== "watched" ? `<button class="action-button" type="button" data-youtube-action="watched">Done</button>` : ""}
+            ${video.status === "new" ? `<button class="action-button" type="button" data-youtube-action="watched">Seen</button>` : ""}
+            ${video.status === "new" ? `<button class="action-button youtube-seen-through-button" type="button" data-youtube-seen-through>Seen through here</button>` : ""}
             ${video.status !== "ignored" ? `<button class="action-button youtube-ignore-button" type="button" data-youtube-action="ignored">Ignore</button>` : ""}
           </div>
         </div>
@@ -209,6 +212,18 @@ export function createYouTubeInboxController({ endpoint }) {
     const actionButton = event.target.closest("[data-youtube-action]");
     if (actionButton) {
       await updateStatus(card.dataset.youtubeVideo, actionButton.dataset.youtubeAction, actionButton);
+      return;
+    }
+
+    const seenThroughButton = event.target.closest("[data-youtube-seen-through]");
+    if (seenThroughButton) {
+      await markSeenThrough(card.dataset.youtubeVideo, seenThroughButton);
+      return;
+    }
+
+    const quickSaveButton = event.target.closest("[data-youtube-quick-save]");
+    if (quickSaveButton) {
+      await saveToPlaylist(card.dataset.youtubeVideo, quickSaveButton.dataset.youtubeQuickSave, quickSaveButton);
       return;
     }
 
@@ -306,6 +321,18 @@ export function createYouTubeInboxController({ endpoint }) {
       render();
     } catch (error) {
       state.error = error.message || "Unable to save the video.";
+      render();
+    }
+  }
+
+  async function markSeenThrough(videoId, button) {
+    setBusy(button, true);
+    try {
+      await request(`/api/videos/${encodeURIComponent(videoId)}/seen-through`, { method: "POST" });
+      state.videos = [];
+      await load();
+    } catch (error) {
+      state.error = error.message || "Unable to mark the videos as seen.";
       render();
     }
   }

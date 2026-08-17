@@ -2419,6 +2419,15 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--muted);
 }
 
+.youtube-quick-playlist-button {
+  border-color: var(--accent-border);
+  color: var(--accent-dark);
+}
+
+.youtube-seen-through-button {
+  color: var(--muted);
+}
+
 .youtube-state {
   align-items: center;
   background: var(--panel);

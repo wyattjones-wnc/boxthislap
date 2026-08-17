@@ -41,6 +41,11 @@ export default {
         return json(await updateVideoStatus(decodeURIComponent(statusMatch[1]), request, env), 200, cors);
       }
 
+      const seenThroughMatch = url.pathname.match(/^\/api\/videos\/([^/]+)\/seen-through$/);
+      if (request.method === "POST" && seenThroughMatch) {
+        return json(await markVideosSeenThrough(decodeURIComponent(seenThroughMatch[1]), env), 200, cors);
+      }
+
       const playlistMatch = url.pathname.match(/^\/api\/youtube\/playlists\/([^/]+)\/videos$/);
       if (request.method === "POST" && playlistMatch) {
         return json(await addVideoToPlaylist(decodeURIComponent(playlistMatch[1]), request, env), 200, cors);
@@ -119,6 +124,21 @@ async function updateVideoStatus(videoId, request, env) {
   `).bind(body.status, processedAt, videoId).run();
   if (!result.meta?.changes) throw httpError(404, "Video not found.");
   return { ok: true, status: body.status, videoId };
+}
+
+async function markVideosSeenThrough(videoId, env) {
+  const selected = await env.DB.prepare(`
+    SELECT published_at FROM videos WHERE youtube_video_id = ?
+  `).bind(videoId).first();
+  if (!selected) throw httpError(404, "Video not found.");
+
+  const processedAt = new Date().toISOString();
+  const result = await env.DB.prepare(`
+    UPDATE videos
+    SET status = 'watched', processed_at = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE status = 'new' AND published_at >= ?
+  `).bind(processedAt, selected.published_at).run();
+  return { ok: true, updated: result.meta?.changes || 0, videoId };
 }
 
 async function getPlaylists(env) {

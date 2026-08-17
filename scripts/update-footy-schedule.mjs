@@ -192,6 +192,7 @@ async function main() {
     teamRecord.leagueGames = normalizeLeagueGames(getField(team, "League Games"));
     teamRecord.leagueIds = getTeamLeagueIds(teamRecord, leagueRowsByTeamId.get(String(teamRecord.id || "")) || []);
     teams.push(teamRecord);
+    registerFootballDataTeamCompetitions(relevantFootballDataCompetitions, teamRecord);
 
     if (teamRecord.warning) {
       coverageNotes.push(`${teamRecord.name}: ${teamRecord.warning}`);
@@ -263,6 +264,7 @@ async function main() {
   const competitionSchedules = buildCompetitionSchedules({
     generatedAt,
     loadedSchedules: loadedCompetitionSchedules,
+    preserveUnloaded: !FOOTBALL_DATA_API_KEY,
     previousSchedules: previousPayload?.competitionSchedules,
     teams,
     followedFixtures: enrichedFixtures,
@@ -519,15 +521,50 @@ function registerRelevantFootballDataCompetitions(competitionsByKey, matches = [
   }
 }
 
+function registerFootballDataTeamCompetitions(competitionsByKey, team = {}) {
+  const seasonYear = getCurrentSeason().slice(0, 4);
+
+  for (const competition of Array.isArray(team.providerLeagues) ? team.providerLeagues : []) {
+    const competitionId = String(competition.id || "").trim();
+
+    if (!competitionId || isFriendlyCompetition(competitionId, competition.name)) {
+      continue;
+    }
+
+    const key = `${competitionId}|${seasonYear}`;
+    const existing = competitionsByKey.get(key) || {
+      code: competition.code || "",
+      followedTeamNames: new Set(),
+      id: competitionId,
+      name: competition.name || "Competition",
+      priority: Number.MAX_SAFE_INTEGER,
+      season: seasonYear,
+      type: competition.type || "",
+    };
+    const priority = Number.parseInt(String(team.priority || "").trim(), 10);
+
+    if (team.name) {
+      existing.followedTeamNames.add(team.name);
+    }
+
+    if (Number.isFinite(priority)) {
+      existing.priority = Math.min(existing.priority, priority);
+    }
+
+    competitionsByKey.set(key, existing);
+  }
+}
+
 function registerRelevantFootballDataCompetitionsFromFixtures(competitionsByKey, fixtures = [], teams = []) {
   const teamsById = new Map(teams.map((team) => [String(team.id || ""), team]));
 
   fixtures.forEach((fixture) => {
+    const fixtureSources = getSingleFixtureSources(fixture);
     const footballDataId = String(getFixtureSourceIds(fixture)[PRIMARY_PROVIDER_NAME] || "").trim();
     const competitionId = String(fixture.leagueId || "").trim();
     const seasonYear = String(fixture.season || "").slice(0, 4);
 
-    if (!footballDataId || !competitionId || !seasonYear || isFriendlyCompetition(competitionId, fixture.league)) {
+    if (!fixtureSources.includes(PRIMARY_PROVIDER_NAME) || !footballDataId || !competitionId || !seasonYear || isFriendlyCompetition(competitionId, fixture.league)) {
       return;
     }
 
@@ -1728,6 +1765,7 @@ function normalizeRunningCompetitions(competitions = []) {
     id: String(competition.id || ""),
     name: competition.name || "",
     code: competition.code || "",
+    type: competition.type || "",
   })).filter((competition) => competition.id || competition.name || competition.code);
 }
 
@@ -2191,14 +2229,14 @@ function createShortHash(value) {
   return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 12);
 }
 
-function buildCompetitionSchedules({ generatedAt, loadedSchedules = [], previousSchedules = [], teams = [], followedFixtures = [] }) {
+function buildCompetitionSchedules({ generatedAt, loadedSchedules = [], preserveUnloaded = false, previousSchedules = [], teams = [], followedFixtures = [] }) {
   const previousByKey = new Map(
     (Array.isArray(previousSchedules) ? previousSchedules : [])
       .map((schedule) => [getCompetitionScheduleRecordKey(schedule?.competition), schedule])
       .filter(([key]) => key)
   );
 
-  return loadedSchedules.map((loadedSchedule) => {
+  const schedules = loadedSchedules.map((loadedSchedule) => {
     const competition = loadedSchedule?.competition || {};
     const recordKey = getCompetitionScheduleRecordKey(competition);
     const previousSchedule = previousByKey.get(recordKey);
@@ -2240,6 +2278,31 @@ function buildCompetitionSchedules({ generatedAt, loadedSchedules = [], previous
       updatedAt: generatedAt,
     };
   });
+
+  if (preserveUnloaded) {
+    const loadedKeys = new Set(schedules.map((schedule) => getCompetitionScheduleRecordKey(schedule.competition)));
+
+    for (const previousSchedule of Array.isArray(previousSchedules) ? previousSchedules : []) {
+      const recordKey = getCompetitionScheduleRecordKey(previousSchedule?.competition);
+
+      if (!recordKey || loadedKeys.has(recordKey) || !previousSchedule?.fixtures?.length || previousSchedule?.competition?.source !== PRIMARY_PROVIDER_NAME) {
+        continue;
+      }
+
+      schedules.push({
+        ...previousSchedule,
+        attemptedAt: generatedAt,
+        errors: [`Unable to refresh the full ${previousSchedule.competition.name} schedule: missing FOOTBALL_DATA_API_KEY.`],
+        notes: [...new Set([
+          ...(Array.isArray(previousSchedule.notes) ? previousSchedule.notes : []),
+          `Preserved ${previousSchedule.fixtures?.length || 0} matches from the previous successful competition update.`,
+        ])],
+        status: "stale-error",
+      });
+    }
+  }
+
+  return schedules;
 }
 
 function attachFollowedTeamDetailsToCompetitionFixtures(fixtures = [], { followedFixtures = [], teams = [] } = {}) {

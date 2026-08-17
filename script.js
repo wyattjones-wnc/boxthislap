@@ -289,7 +289,7 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260816000
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608140005";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170004";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170005";
 import {
   formatUpdatedTime,
   normalizeLookupName,

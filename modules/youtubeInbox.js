@@ -170,7 +170,6 @@ export function createYouTubeInboxController({ endpoint }) {
             <span>${escapeHtml(details)}</span>
           </div>
           <div class="youtube-video-actions">
-            <a class="action-button" href="${watchUrl}" target="_blank" rel="noopener">Watch</a>
             ${quickPlaylists.map(({ name, playlist }) => `<button class="action-button youtube-quick-playlist-button" type="button" data-youtube-quick-save="${escapeAttribute(playlist.youtubePlaylistId)}">Save to ${escapeHtml(name)}</button>`).join("")}
             ${video.status === "new" ? `<button class="action-button" type="button" data-youtube-action="watched">Seen</button>` : ""}
             ${video.status === "new" ? `<button class="action-button youtube-seen-through-button" type="button" data-youtube-seen-through>Seen through here</button>` : ""}

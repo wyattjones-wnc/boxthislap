@@ -2531,6 +2531,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-align: right;
 }
 
+.youtube-sync-message {
+  color: var(--accent-dark);
+  font-size: 0.76rem;
+  font-weight: 800;
+  margin: 11px 2px 0;
+}
+
 .youtube-skeleton-card {
   animation: skeleton-shimmer 1.15s linear infinite;
   background: linear-gradient(100deg, var(--soft) 25%, var(--soft-strong) 45%, var(--soft) 65%);

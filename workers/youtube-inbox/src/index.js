@@ -176,14 +176,29 @@ async function syncYouTube(env) {
   const start = Math.min(requestedStart, Math.max(0, channels.length - 1));
   const batch = channels.slice(start, start + batchSize);
   const discovered = [];
+  const warnings = [];
 
   for (const group of chunk(batch, 5)) {
-    const groupResults = await Promise.all(group.map((channel) => syncChannel(channel, env, accessToken)));
-    discovered.push(...groupResults.flat());
+    const groupResults = await Promise.allSettled(group.map((channel) => syncChannel(channel, env, accessToken)));
+    groupResults.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        discovered.push(...result.value);
+      } else {
+        warnings.push(`${group[index].name}: ${result.reason?.message || "Channel refresh failed."}`);
+      }
+    });
   }
 
-  await fillVideoDurations(discovered, env, accessToken);
-  await refreshPlaylists(env, accessToken);
+  try {
+    await fillVideoDurations(discovered, env, accessToken);
+  } catch (error) {
+    warnings.push(`Video durations: ${error.message || "Refresh failed."}`);
+  }
+  try {
+    await refreshPlaylists(env, accessToken);
+  } catch (error) {
+    warnings.push(`Playlists: ${error.message || "Refresh failed."}`);
+  }
 
   const nextCursor = start + batch.length;
   const hasMore = nextCursor < channels.length;
@@ -199,6 +214,7 @@ async function syncYouTube(env) {
     autoSeen,
     lastSyncAt: now,
     totalChannels: channels.length,
+    warnings: warnings.slice(0, 10),
   };
 }
 

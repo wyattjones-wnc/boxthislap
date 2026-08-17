@@ -24,6 +24,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
     status: "new",
     showFilters: false,
     syncing: false,
+    syncMessage: "",
     videos: [],
   };
 
@@ -119,6 +120,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
         ` : ""}
       </div>
       ${renderBody()}
+      ${state.syncMessage ? `<p class="youtube-sync-message" role="status">${escapeHtml(state.syncMessage)}</p>` : ""}
       ${state.lastSyncAt ? `<p class="youtube-sync-note">Last refreshed ${escapeHtml(formatRelativeDate(state.lastSyncAt))}</p>` : ""}
     `;
   }
@@ -310,19 +312,25 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
 
   async function sync() {
     state.syncing = true;
+    state.syncMessage = "";
     render();
     try {
       let hasMore = true;
       let batches = 0;
+      const warnings = new Set();
       while (hasMore && batches < 10) {
         const result = await request("/api/youtube/sync", { method: "POST" });
+        (result.warnings || []).forEach((warning) => warnings.add(warning));
         hasMore = Boolean(result.hasMore);
         batches += 1;
       }
       state.videos = [];
       state.error = "";
+      state.syncMessage = warnings.size
+        ? `Refresh completed with warnings: ${[...warnings].join(" ")}`
+        : "Refresh complete.";
     } catch (error) {
-      state.error = error.message || "Unable to refresh YouTube uploads.";
+      state.syncMessage = `Refresh stopped: ${error.message || "Unable to refresh YouTube uploads."}`;
     } finally {
       state.syncing = false;
       await load();

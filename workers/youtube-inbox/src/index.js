@@ -385,7 +385,7 @@ async function login(request, env) {
   if (!await secretsMatch(String(passphrase || ""), env.INBOX_PASSPHRASE)) {
     throw httpError(401, "Incorrect passphrase.");
   }
-  const payload = encodeBase64Url(JSON.stringify({ exp: Date.now() + (12 * 60 * 60 * 1000) }));
+  const payload = encodeBase64Url(JSON.stringify({ exp: Date.now() + (30 * 24 * 60 * 60 * 1000) }));
   return { token: `${payload}.${await sign(payload, env.SESSION_SECRET)}` };
 }
 

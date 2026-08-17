@@ -111,7 +111,7 @@ export function createYouTubeInboxController({ endpoint }) {
         <form class="youtube-state youtube-login-state" data-youtube-login>
           <span aria-hidden="true">&#128274;</span>
           <h2>Unlock YouTube inbox</h2>
-          <p>Enter the private inbox passphrase. It is used only to create this browser session.</p>
+          <p>Enter the private inbox passphrase. This browser will stay unlocked for 30 days.</p>
           <label class="youtube-login-field">
             <span>Passphrase</span>
             <input type="password" name="passphrase" autocomplete="current-password" required>
@@ -243,7 +243,7 @@ export function createYouTubeInboxController({ endpoint }) {
       });
       const data = await response.json();
       if (!response.ok || !data.token) throw new Error(data.error || "Unable to unlock the inbox.");
-      sessionStorage.setItem(SESSION_STORAGE_KEY, data.token);
+      localStorage.setItem(SESSION_STORAGE_KEY, data.token);
       state.needsAuth = false;
       state.videos = [];
       await load();
@@ -324,7 +324,7 @@ export function createYouTubeInboxController({ endpoint }) {
   }
 
   async function request(path, options = {}) {
-    const token = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    const token = localStorage.getItem(SESSION_STORAGE_KEY);
     const headers = { ...(options.headers || {}) };
     if (token) headers.Authorization = `Bearer ${token}`;
     const response = await fetch(`${endpoint}${path}`, { ...options, headers });
@@ -333,7 +333,7 @@ export function createYouTubeInboxController({ endpoint }) {
     if (!response.ok) {
       const error = new Error(data?.error || `YouTube API request failed (${response.status}).`);
       error.status = response.status;
-      if (response.status === 401) sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      if (response.status === 401) localStorage.removeItem(SESSION_STORAGE_KEY);
       throw error;
     }
     return data || {};

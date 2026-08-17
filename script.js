@@ -72,6 +72,9 @@ import {
   leagueYearSelect,
   leagueList,
   footyPastToggle,
+  footyCompetitionToggle,
+  footyCompetitionControls,
+  footyCompetitionSelect,
   footyNotificationToggle,
   footyNotificationStatus,
   footyFilterToggle,
@@ -284,7 +287,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608090001";
+} from "./modules/domRefs.js?v=202608170002";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608160001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
@@ -314,6 +317,8 @@ let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
+let activeFootyScheduleMode = "teams";
+let activeFootyCompetitionKey = "";
 let shouldSuppressNextFootyDropdownClick = false;
 let activeFootyTeamViewMode = "schedule";
 let shouldExportFootyTradingCards = false;
@@ -584,22 +589,32 @@ function renderFootySchedule(schedule) {
 
   const fixtures = getFootyScheduleFixtures(schedule);
   syncFootyFilters(fixtures);
-  const visibleFixtures = getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures))
+  const competitionRecords = syncFootyCompetitionControls(fixtures);
+  const isCompetitionMode = activeFootyScheduleMode === "competitions";
+  const modeFixtures = isCompetitionMode
+    ? getFootyCompetitionFixtures(getFilteredFootyFixtures(fixtures), activeFootyCompetitionKey)
+    : getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
+  const visibleFixtures = modeFixtures
     .sort(compareVisibleFootyFixtures);
-  const renderedFixtures = shouldShowAllFootyFixtures
+  const renderedFixtures = isCompetitionMode || shouldShowAllFootyFixtures
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
   const generatedAt = formatFootyGeneratedAt(getFootyScheduleUpdatedAt(schedule));
   const adminDiagnosticsMarkup = renderFootyAdminUpdateDiagnostics(schedule);
+  const selectedCompetition = competitionRecords.find((record) => record.key === activeFootyCompetitionKey);
   const emptyMessage = hasActiveFootyFilters()
     ? "No matches found for the current filters."
+    : isCompetitionMode && selectedCompetition
+    ? `No ${selectedCompetition.name} fixtures were loaded yet.`
+    : isCompetitionMode
+    ? "No competition fixtures were loaded yet."
     : shouldShowPastFootyFixtures
     ? "No past football fixtures were loaded yet."
     : "No upcoming football fixtures were loaded yet.";
   const updatedMarkup = generatedAt ? `<p class="footy-updated">Updated ${escapeHtml(generatedAt)}</p>` : "";
 
-  syncFootyPastToggle(fixtures);
+  syncFootyPastToggle(fixtures, isCompetitionMode);
 
   if (shouldWaitForFootyMatchNotes()) {
     footyScheduleList.innerHTML = `
@@ -636,7 +651,7 @@ function renderFootySchedule(schedule) {
     <div class="footy-list">
       ${renderedFixtures.map(renderFootyFixture).join("")}
     </div>
-    ${renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
+    ${isCompetitionMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
   `;
 }
 
@@ -1691,7 +1706,9 @@ function getFootyScheduleFixtures(schedule) {
       return teamFixtures.map((fixture) => ({
         ...fixture,
         teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge, fixture.teamId || team.id),
+        teamLeague: team.league || "",
         teamName: getFootyDisplayTeamName(fixture.teamName || team.name),
+        teamPriority: team.priority || fixture.priority || "",
       }));
     });
   const teamBadges = getFootyTeamBadgeMap(fixtures);
@@ -1791,6 +1808,188 @@ function renderFootyShowAllControl(hiddenFixtureCount, totalFixtureCount) {
   `;
 }
 
+function syncFootyCompetitionControls(fixtures = []) {
+  const records = getFootyCompetitionRecords(fixtures);
+  const isCompetitionMode = activeFootyScheduleMode === "competitions";
+
+  if (records.length > 0 && !records.some((record) => record.key === activeFootyCompetitionKey)) {
+    activeFootyCompetitionKey = records[0].key;
+  }
+
+  if (footyCompetitionToggle) {
+    const label = isCompetitionMode ? "Show team schedule" : "Show competition schedules";
+    footyCompetitionToggle.hidden = records.length === 0;
+    footyCompetitionToggle.classList.toggle("is-active", isCompetitionMode);
+    footyCompetitionToggle.setAttribute("aria-pressed", String(isCompetitionMode));
+    footyCompetitionToggle.setAttribute("aria-label", label);
+    footyCompetitionToggle.title = label;
+  }
+
+  if (footyCompetitionControls) {
+    footyCompetitionControls.hidden = !isCompetitionMode || records.length === 0;
+  }
+
+  if (footyCompetitionSelect) {
+    const leagueRecords = records.filter((record) => record.isLeague);
+    const otherRecords = records.filter((record) => !record.isLeague);
+    const renderOptions = (items) => items.map((record) => (
+      `<option value="${escapeHtml(record.key)}">${escapeHtml(record.name)} (${escapeHtml(String(record.matchCount))})</option>`
+    )).join("");
+
+    footyCompetitionSelect.innerHTML = [
+      leagueRecords.length > 0 ? `<optgroup label="Leagues">${renderOptions(leagueRecords)}</optgroup>` : "",
+      otherRecords.length > 0 ? `<optgroup label="Cups & other competitions">${renderOptions(otherRecords)}</optgroup>` : "",
+    ].join("");
+    footyCompetitionSelect.value = activeFootyCompetitionKey;
+  }
+
+  return records;
+}
+
+function getFootyCompetitionRecords(fixtures = []) {
+  const recordsByKey = new Map();
+
+  fixtures.forEach((fixture) => {
+    const competition = getFootyCanonicalCompetition(fixture.league);
+
+    if (!competition.key) {
+      return;
+    }
+
+    const teamCompetition = getFootyCanonicalCompetition(fixture.teamLeague);
+    const isLeague = Boolean(teamCompetition.key && teamCompetition.key === competition.key);
+    const existing = recordsByKey.get(competition.key) || {
+      fixtures: [],
+      isLeague: false,
+      key: competition.key,
+      name: competition.name,
+      priority: Number.MAX_SAFE_INTEGER,
+    };
+
+    existing.fixtures.push(fixture);
+    existing.isLeague ||= isLeague;
+    existing.priority = Math.min(existing.priority, getFootyCompetitionPriority(fixture));
+
+    if (isLeague && teamCompetition.name) {
+      existing.name = teamCompetition.name;
+    }
+
+    recordsByKey.set(competition.key, existing);
+  });
+
+  return [...recordsByKey.values()]
+    .map((record) => ({
+      ...record,
+      matchCount: getFootyCompetitionFixtures(record.fixtures, record.key).length,
+    }))
+    .sort((first, second) => (
+      Number(second.isLeague) - Number(first.isLeague) ||
+      first.priority - second.priority ||
+      first.name.localeCompare(second.name)
+    ));
+}
+
+function getFootyCanonicalCompetition(name) {
+  const rawName = String(name || "").trim();
+  const normalizedName = normalizeLookupName(rawName);
+
+  if (!normalizedName) {
+    return { key: "", name: "" };
+  }
+
+  if (["la liga", "primera division"].includes(normalizedName) || normalizedName.startsWith("laliga season")) {
+    return { key: "la liga", name: "La Liga" };
+  }
+
+  if (["mls", "mls - regular season", "mls regular season", "major league soccer"].includes(normalizedName)) {
+    return { key: "mls", name: "MLS" };
+  }
+
+  if (["championship", "efl championship", "english league championship"].includes(normalizedName)) {
+    return { key: "championship", name: "Championship" };
+  }
+
+  if (["premier league", "english premier league"].includes(normalizedName)) {
+    return { key: "premier league", name: "Premier League" };
+  }
+
+  return { key: normalizedName, name: rawName };
+}
+
+function getFootyCompetitionPriority(fixture = {}) {
+  const value = Number.parseInt(String(fixture.teamPriority || fixture.priority || "").trim(), 10);
+  return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+}
+
+function getFootyCompetitionFixtures(fixtures = [], competitionKey = "") {
+  const fixturesByTeamDate = new Map();
+
+  fixtures
+    .filter((fixture) => getFootyCanonicalCompetition(fixture.league).key === competitionKey)
+    .forEach((fixture) => {
+      const identity = getFootyTeamDateFixtureIdentity(fixture);
+      const existing = fixturesByTeamDate.get(identity);
+
+      if (!existing) {
+        fixturesByTeamDate.set(identity, {
+          ...fixture,
+          followedTeamNames: [fixture.teamName].filter(Boolean),
+        });
+        return;
+      }
+
+      fixturesByTeamDate.set(identity, mergeFootyCompetitionFixtures(existing, fixture));
+    });
+
+  const fixturesByMatch = new Map();
+
+  fixturesByTeamDate.forEach((fixture) => {
+    const identity = getFootySharedMatchIdentity(fixture);
+    const existing = fixturesByMatch.get(identity);
+    fixturesByMatch.set(identity, existing
+      ? mergeFootyCompetitionFixtures(existing, fixture)
+      : fixture);
+  });
+
+  return [...fixturesByMatch.values()];
+}
+
+function mergeFootyCompetitionFixtures(existing = {}, fixture = {}) {
+  const followedTeamNames = [...new Set([
+    ...(existing.followedTeamNames || [existing.teamName]),
+    ...(fixture.followedTeamNames || [fixture.teamName]),
+  ].filter(Boolean))];
+
+  return {
+    ...existing,
+    ...(hasFootyMatchNoteData(fixture) ? fixture : {}),
+    followedTeamNames,
+  };
+}
+
+function getFootyTeamDateFixtureIdentity(fixture = {}) {
+  return [
+    getFootyFixtureDateKey(fixture),
+    getFootyTeamFilterKey(fixture.teamName),
+    getFootyCanonicalCompetition(fixture.league).key,
+  ].join("|");
+}
+
+function getFootySharedMatchIdentity(fixture = {}) {
+  const matchId = String(fixture.matchId || "").trim();
+
+  if (matchId) {
+    return matchId;
+  }
+
+  return [
+    getFootyFixtureDateKey(fixture),
+    normalizeLookupName(fixture.home),
+    normalizeLookupName(fixture.away),
+    getFootyCanonicalCompetition(fixture.league).key,
+  ].join("|");
+}
+
 function getFilteredFootyFixtures(fixtures) {
   const searchTerm = normalizeLookupName(footySearchInput?.value || "");
   const dateRange = getFootyDateFilterRange();
@@ -1810,7 +2009,7 @@ function getFilteredFootyFixtures(fixtures) {
       return false;
     }
 
-    if (selectedTeams.size === 0 && defaultPrioritySet.size > 0 && !defaultPrioritySet.has(normalizeFootyPriority(fixture.priority))) {
+    if (activeFootyScheduleMode !== "competitions" && selectedTeams.size === 0 && defaultPrioritySet.size > 0 && !defaultPrioritySet.has(normalizeFootyPriority(fixture.priority))) {
       return false;
     }
 
@@ -2039,7 +2238,7 @@ function getVisibleFootyFixtures(fixtures) {
 }
 
 function compareVisibleFootyFixtures(firstFixture, secondFixture) {
-  return shouldShowPastFootyFixtures
+  return activeFootyScheduleMode !== "competitions" && shouldShowPastFootyFixtures
     ? compareFootyFixturesDescending(firstFixture, secondFixture)
     : compareFootyFixturesAscending(firstFixture, secondFixture);
 }
@@ -2168,15 +2367,17 @@ function isFootyFixtureCurrent(fixture) {
   return fixtureTime <= now && now <= pastCutoffTime;
 }
 
-function syncFootyPastToggle(fixtures = []) {
+function syncFootyPastToggle(fixtures = [], isCompetitionMode = activeFootyScheduleMode === "competitions") {
   if (!footyPastToggle) {
     syncFootyGoalAssistsButton();
     syncFootyNotificationToggle();
     return;
   }
 
-  footyPastToggle.hidden = fixtures.length === 0;
-  footyPastToggle.textContent = shouldShowPastFootyFixtures ? "Upcoming Matches" : "Past Matches";
+  const label = shouldShowPastFootyFixtures ? "Upcoming Matches" : "Past Matches";
+  footyPastToggle.hidden = fixtures.length === 0 || isCompetitionMode;
+  footyPastToggle.querySelector("span").textContent = label;
+  footyPastToggle.setAttribute("aria-label", label);
   footyPastToggle.setAttribute("aria-pressed", String(shouldShowPastFootyFixtures));
   footyPastToggle.disabled = false;
   syncFootyGoalAssistsButton();
@@ -2605,6 +2806,9 @@ function renderFootyFixture(fixture) {
     `
     : "";
   const detailsMarkup = isExpanded ? renderFootyFixtureDetails(fixture) : "";
+  const followedTeamLabel = Array.isArray(fixture.followedTeamNames) && fixture.followedTeamNames.length > 0
+    ? fixture.followedTeamNames.join(" · ")
+    : fixture.teamName || "";
 
   return `
     <article class="${cardClasses}" data-footy-match-id="${escapeHtml(matchId)}" ${matchId ? `role="button" tabindex="0" aria-expanded="${String(Boolean(isExpanded))}"` : ""}>
@@ -2618,7 +2822,7 @@ function renderFootyFixture(fixture) {
       <div>
         <h2>${titleMarkup}</h2>
         <p class="footy-fixture-meta">
-          <span>${escapeHtml(fixture.teamName || "")}</span>
+          <span>${escapeHtml(followedTeamLabel)}</span>
           <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
         </p>
@@ -10942,6 +11146,19 @@ leagueYearSelect?.addEventListener("change", () => {
 footyPastToggle?.addEventListener("click", () => {
   shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
   shouldShowAllFootyFixtures = false;
+  renderFootySchedule(siteData.footySchedule);
+});
+
+footyCompetitionToggle?.addEventListener("click", () => {
+  activeFootyScheduleMode = activeFootyScheduleMode === "competitions" ? "teams" : "competitions";
+  shouldShowAllFootyFixtures = false;
+  renderFootySchedule(siteData.footySchedule);
+});
+
+footyCompetitionSelect?.addEventListener("change", () => {
+  activeFootyCompetitionKey = String(footyCompetitionSelect.value || "");
+  shouldShowAllFootyFixtures = false;
+  expandedFootyMatchIds.clear();
   renderFootySchedule(siteData.footySchedule);
 });
 

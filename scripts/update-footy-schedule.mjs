@@ -636,12 +636,13 @@ async function loadCalendarSchedules({ dateFrom, dateTo, teamRowsById, teams }) 
     }
 
     try {
+      const scheduleDateFrom = getTeamScheduleStartDate(teamRow || {}, dateFrom);
       const events = parseICalendarEvents(await loadText(normalizeCalendarUrl(calendarUrl), { extension: "ics" }));
       const matchEvents = events
         .filter((event) => isCalendarMatchEvent(event, team))
-        .filter((event) => isCalendarEventInRange(event, dateFrom, dateTo));
+        .filter((event) => isCalendarEventInRange(event, scheduleDateFrom, dateTo));
       fixtures.push(...matchEvents.map((event) => normalizeCalendarMatch(event, team)));
-      notes.push(`${team.name}: Loaded ${matchEvents.length} ${ICALENDAR_PROVIDER_NAME} fixtures from calendar feed.`);
+      notes.push(`${team.name}: Loaded ${matchEvents.length} ${ICALENDAR_PROVIDER_NAME} fixtures from ${scheduleDateFrom} through ${dateTo}.`);
     } catch (error) {
       errors.push(`${team.name}: Unable to load ${ICALENDAR_PROVIDER_NAME} fixtures: ${error.message}`);
     }
@@ -1358,6 +1359,37 @@ function getScheduleSeasons(team) {
     .filter(Boolean);
 
   return configuredSeasons.length > 0 ? configuredSeasons : [getCurrentSeason()];
+}
+
+function getTeamScheduleStartDate(team, fallbackDate) {
+  const fallbackYear = String(fallbackDate || "").slice(0, 4);
+  const league = normalizeText(getField(team, "League", "Competition"));
+
+  if (["international", "major league soccer", "mls"].includes(league) && /^\d{4}$/.test(fallbackYear)) {
+    return `${fallbackYear}-01-01`;
+  }
+
+  const seasonStartDates = getScheduleSeasons(team)
+    .map(getSeasonStartDate)
+    .filter(Boolean)
+    .sort();
+  const activeSeasonStart = seasonStartDates
+    .filter((startDate) => startDate <= fallbackDate)
+    .at(-1);
+
+  return activeSeasonStart || fallbackDate;
+}
+
+function getSeasonStartDate(season) {
+  const normalizedSeason = String(season || "").trim();
+  const calendarYearMatch = normalizedSeason.match(/^(\d{4})$/);
+
+  if (calendarYearMatch) {
+    return `${calendarYearMatch[1]}-01-01`;
+  }
+
+  const splitSeasonMatch = normalizedSeason.match(/^(\d{4})\s*[-/]\s*\d{2,4}$/);
+  return splitSeasonMatch ? `${splitSeasonMatch[1]}-07-01` : "";
 }
 
 function getCurrentSeason(date = new Date()) {

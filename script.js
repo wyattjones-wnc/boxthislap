@@ -2889,7 +2889,7 @@ function syncFootyMatchPeriodFilter(fixtures = []) {
 function getFootyMatchPeriod(fixture = {}) {
   const rawRound = String(fixture.round || "").trim();
 
-  if (!rawRound || isFootyCupCompetition(fixture)) {
+  if (!rawRound || !isFootyLeagueMatchWeekCompetition(fixture)) {
     return null;
   }
 
@@ -2907,6 +2907,11 @@ function getFootyMatchPeriod(fixture = {}) {
   }
 
   return null;
+}
+
+function isFootyLeagueMatchWeekCompetition(fixture = {}) {
+  const competitionKey = getFootyCanonicalCompetition(fixture.league).key;
+  return ["premier league", "la liga", "championship", "mls"].includes(competitionKey);
 }
 
 function renderFootyCalendarWeekGroups(fixtures = []) {

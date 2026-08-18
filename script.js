@@ -40,6 +40,7 @@ import {
   copyCurrentPageLinkButton,
   siteVersion,
   imageCacheToggle,
+  imageCachePurge,
   imageCacheStatus,
   adminOnlyElements,
   loginOnlyElements,
@@ -2640,6 +2641,7 @@ async function initializeImageCache() {
 
   if (!("serviceWorker" in navigator) || !window.isSecureContext) {
     imageCacheToggle.disabled = true;
+    imageCachePurge.disabled = true;
     setImageCacheStatus("Unavailable in this browser.");
     return;
   }
@@ -2648,19 +2650,21 @@ async function initializeImageCache() {
     const registration = await registerBoxThisLapServiceWorker();
     await navigator.serviceWorker.ready;
     imageCacheToggle.disabled = false;
+    imageCachePurge.disabled = false;
     syncImageCacheControl();
 
     navigator.serviceWorker.addEventListener("message", handleImageCacheMessage);
-    imageCacheToggle.addEventListener("click", () => toggleImageCache(registration));
+    imageCacheToggle.addEventListener("click", () => saveImageCache(registration));
+    imageCachePurge.addEventListener("click", () => purgeImageCache(registration));
   } catch (error) {
     imageCacheToggle.disabled = true;
+    imageCachePurge.disabled = true;
     setImageCacheStatus("Unable to start image caching.");
     recordDiagnostic("image cache initialization failed", error);
   }
 }
 
-async function toggleImageCache(registration) {
-  const enabled = getStoredBoolean(IMAGE_CACHE_STORAGE_KEY);
+async function saveImageCache(registration) {
   const worker = registration?.active || navigator.serviceWorker.controller;
 
   if (!worker) {
@@ -2669,16 +2673,26 @@ async function toggleImageCache(registration) {
   }
 
   imageCacheToggle.disabled = true;
-
-  if (enabled) {
-    worker.postMessage({ type: "CLEAR_IMAGE_CACHE" });
-    return;
-  }
+  imageCachePurge.disabled = true;
 
   setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, true);
   syncImageCacheControl();
   setImageCacheStatus("Preparing download…");
   worker.postMessage({ type: "CACHE_ALL_IMAGES" });
+}
+
+async function purgeImageCache(registration) {
+  const worker = registration?.active || navigator.serviceWorker.controller;
+
+  if (!worker) {
+    setImageCacheStatus("Reload once, then try again.");
+    return;
+  }
+
+  imageCacheToggle.disabled = true;
+  imageCachePurge.disabled = true;
+  setImageCacheStatus("Purging saved images…");
+  worker.postMessage({ type: "CLEAR_IMAGE_CACHE" });
 }
 
 function handleImageCacheMessage(event) {
@@ -2691,6 +2705,7 @@ function handleImageCacheMessage(event) {
 
   if (message.type === "IMAGE_CACHE_COMPLETE") {
     imageCacheToggle.disabled = false;
+    imageCachePurge.disabled = false;
     if (message.failed) {
       setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, false);
       setImageCacheStatus(`${message.saved} images saved; ${message.failed} skipped. Tap Save images to retry.`);
@@ -2704,6 +2719,7 @@ function handleImageCacheMessage(event) {
   if (message.type === "IMAGE_CACHE_CLEARED") {
     setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, false);
     imageCacheToggle.disabled = false;
+    imageCachePurge.disabled = false;
     setImageCacheStatus("Saved images removed.");
     syncImageCacheControl();
     return;
@@ -2712,6 +2728,7 @@ function handleImageCacheMessage(event) {
   if (message.type === "IMAGE_CACHE_ERROR") {
     setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, false);
     imageCacheToggle.disabled = false;
+    imageCachePurge.disabled = false;
     setImageCacheStatus(`Download stopped: ${message.message}`);
     syncImageCacheControl();
   }
@@ -2719,8 +2736,7 @@ function handleImageCacheMessage(event) {
 
 function syncImageCacheControl() {
   const enabled = getStoredBoolean(IMAGE_CACHE_STORAGE_KEY);
-  imageCacheToggle.textContent = enabled ? "Remove saved images" : "Save images";
-  imageCacheToggle.setAttribute("aria-pressed", String(enabled));
+  imageCacheToggle.textContent = "Save images";
 
   if (!imageCacheStatus.textContent) {
     setImageCacheStatus(enabled ? "Images are saved for offline use." : "Viewed images cache automatically.");
@@ -13037,13 +13053,13 @@ function renderLoginState() {
   renderRankingsPage();
 }
 
-function syncSiteVersionDisplay(managerMeta = null) {
+function syncSiteVersionDisplay() {
   if (!siteVersion) {
     return;
   }
 
   siteVersion.textContent = `v${SITE_VERSION}`;
-  siteVersion.hidden = !managerMeta?.isAdmin;
+  siteVersion.hidden = true;
 }
 
 function syncBrandLogo() {

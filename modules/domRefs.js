@@ -9,6 +9,7 @@ export const themeToggle = document.querySelector("[data-theme-toggle]");
 export const copyCurrentPageLinkButton = document.querySelector("#copy-current-page-link");
 export const siteVersion = document.querySelector("#site-version");
 export const imageCacheToggle = document.querySelector("#image-cache-toggle");
+export const imageCachePurge = document.querySelector("#image-cache-purge");
 export const imageCacheStatus = document.querySelector("#image-cache-status");
 export const adminOnlyElements = document.querySelectorAll("[data-admin-only]");
 export const loginOnlyElements = document.querySelectorAll("[data-login-only]");

@@ -6715,6 +6715,21 @@ tr:last-child td {
   justify-content: flex-end;
 }
 
+.image-cache-control {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.image-cache-status {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  max-width: 220px;
+}
+
 .theme-toggle {
   background: var(--panel);
   border: 1px solid var(--line);

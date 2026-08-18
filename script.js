@@ -39,6 +39,8 @@ import {
   themeToggle,
   copyCurrentPageLinkButton,
   siteVersion,
+  imageCacheToggle,
+  imageCacheStatus,
   adminOnlyElements,
   loginOnlyElements,
   testRulesLinks,
@@ -374,6 +376,7 @@ const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notification
 const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
 const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
 const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
+const IMAGE_CACHE_STORAGE_KEY = "boxthislap-image-cache-enabled";
 const FOOTY_NOTIFICATION_OFFSETS = [
   { key: "2h", label: "in 2 hours", minutes: 120 },
   { key: "1h", label: "in 1 hour", minutes: 60 },
@@ -2628,6 +2631,106 @@ async function registerBoxThisLapServiceWorker() {
   }
 
   return navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+}
+
+async function initializeImageCache() {
+  if (!imageCacheToggle) {
+    return;
+  }
+
+  if (!("serviceWorker" in navigator) || !window.isSecureContext) {
+    imageCacheToggle.disabled = true;
+    setImageCacheStatus("Unavailable in this browser.");
+    return;
+  }
+
+  try {
+    const registration = await registerBoxThisLapServiceWorker();
+    await navigator.serviceWorker.ready;
+    imageCacheToggle.disabled = false;
+    syncImageCacheControl();
+
+    navigator.serviceWorker.addEventListener("message", handleImageCacheMessage);
+    imageCacheToggle.addEventListener("click", () => toggleImageCache(registration));
+  } catch (error) {
+    imageCacheToggle.disabled = true;
+    setImageCacheStatus("Unable to start image caching.");
+    recordDiagnostic("image cache initialization failed", error);
+  }
+}
+
+async function toggleImageCache(registration) {
+  const enabled = getStoredBoolean(IMAGE_CACHE_STORAGE_KEY);
+  const worker = registration?.active || navigator.serviceWorker.controller;
+
+  if (!worker) {
+    setImageCacheStatus("Reload once, then try again.");
+    return;
+  }
+
+  imageCacheToggle.disabled = true;
+
+  if (enabled) {
+    worker.postMessage({ type: "CLEAR_IMAGE_CACHE" });
+    return;
+  }
+
+  setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, true);
+  syncImageCacheControl();
+  setImageCacheStatus("Preparing download…");
+  worker.postMessage({ type: "CACHE_ALL_IMAGES" });
+}
+
+function handleImageCacheMessage(event) {
+  const message = event.data || {};
+
+  if (message.type === "IMAGE_CACHE_PROGRESS") {
+    setImageCacheStatus(`Saving ${message.completed} of ${message.total}…`);
+    return;
+  }
+
+  if (message.type === "IMAGE_CACHE_COMPLETE") {
+    imageCacheToggle.disabled = false;
+    setImageCacheStatus(`${message.total} images saved (${formatFileSize(message.bytes)}).`);
+    syncImageCacheControl();
+    return;
+  }
+
+  if (message.type === "IMAGE_CACHE_CLEARED") {
+    setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, false);
+    imageCacheToggle.disabled = false;
+    setImageCacheStatus("Saved images removed.");
+    syncImageCacheControl();
+    return;
+  }
+
+  if (message.type === "IMAGE_CACHE_ERROR") {
+    setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, false);
+    imageCacheToggle.disabled = false;
+    setImageCacheStatus(`Download stopped: ${message.message}`);
+    syncImageCacheControl();
+  }
+}
+
+function syncImageCacheControl() {
+  const enabled = getStoredBoolean(IMAGE_CACHE_STORAGE_KEY);
+  imageCacheToggle.textContent = enabled ? "Remove saved images" : "Save images";
+  imageCacheToggle.setAttribute("aria-pressed", String(enabled));
+
+  if (!imageCacheStatus.textContent) {
+    setImageCacheStatus(enabled ? "Images are saved for offline use." : "Viewed images cache automatically.");
+  }
+}
+
+function setImageCacheStatus(message) {
+  if (imageCacheStatus) {
+    imageCacheStatus.textContent = message;
+  }
+}
+
+function formatFileSize(bytes) {
+  const megabytes = Number(bytes || 0) / (1024 * 1024);
+  return `${megabytes.toFixed(megabytes >= 10 ? 0 : 1)} MB`;
 }
 
 async function subscribeFootyPushNotifications() {
@@ -15945,6 +16048,7 @@ function ensureManagerHubData() {
 populateNextTimeOptions();
 syncTestScoringUi();
 syncThemeToggle();
+initializeImageCache();
 hydrateStoredManagerSession();
 hydrateBracketSubmitter();
 hydrateManagerAuthStatusCache();

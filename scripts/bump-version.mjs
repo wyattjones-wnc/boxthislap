@@ -1,9 +1,12 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INDEX_PATH = path.join(ROOT_DIR, "index.html");
+const execFileAsync = promisify(execFile);
 
 const now = new Date();
 const version = [
@@ -23,4 +26,5 @@ html = html
   .replace(/script\.js\?v=\d+/g, `script.js?v=${cacheVersion}`);
 
 await writeFile(INDEX_PATH, html, "utf8");
+await execFileAsync(process.execPath, [path.join(ROOT_DIR, "scripts", "generate-image-cache-manifest.mjs")]);
 console.log(`Bumped site version to ${version}`);

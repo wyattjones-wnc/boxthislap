@@ -1,0 +1,3584 @@
+{
+  "images": [
+    {
+      "bytes": 2620931,
+      "path": "assets/1E354AA2-0C6D-416E-891F-E18B529CE01A.png"
+    },
+    {
+      "bytes": 2109505,
+      "path": "assets/538A1F22-7B4D-47FD-A482-528E4D4A795F.png"
+    },
+    {
+      "bytes": 2169329,
+      "path": "assets/5CA1D387-4664-4440-9804-9909FB1A5CB8.png"
+    },
+    {
+      "bytes": 2058111,
+      "path": "assets/AE5AE546-46CB-4E9D-9EAA-1B368EB5BACE.png"
+    },
+    {
+      "bytes": 29634,
+      "path": "assets/apple-touch-icon.png"
+    },
+    {
+      "bytes": 316546,
+      "path": "assets/australia-turkiye-2-0.jpg"
+    },
+    {
+      "bytes": 799156,
+      "path": "assets/awards/fantasy-critic-2025.png"
+    },
+    {
+      "bytes": 493860,
+      "path": "assets/awards/fantasy-office-2025.png"
+    },
+    {
+      "bytes": 601881,
+      "path": "assets/awards/formula-one-2024-bets.png"
+    },
+    {
+      "bytes": 440396,
+      "path": "assets/awards/formula-one-2025-bets.png"
+    },
+    {
+      "bytes": 1227399,
+      "path": "assets/awards/formula-one-2025-weekly-championship.png"
+    },
+    {
+      "bytes": 167594,
+      "path": "assets/awards/world-cup-2026-nations-league.jpg"
+    },
+    {
+      "bytes": 711557,
+      "path": "assets/awards/world-cup-2026-nations-league.png"
+    },
+    {
+      "bytes": 243591,
+      "path": "assets/awards/world-cup-2026-players-championship.jpg"
+    },
+    {
+      "bytes": 1068452,
+      "path": "assets/awards/world-cup-2026-players-championship.png"
+    },
+    {
+      "bytes": 108672,
+      "path": "assets/box-this-lap-logo.jpg"
+    },
+    {
+      "bytes": 251428,
+      "path": "assets/brazil-morocco-1-1.jpg"
+    },
+    {
+      "bytes": 33503,
+      "path": "assets/dev-apple-touch-icon.png"
+    },
+    {
+      "bytes": 38004,
+      "path": "assets/dev-icon-192.png"
+    },
+    {
+      "bytes": 259468,
+      "path": "assets/dev-icon-512.png"
+    },
+    {
+      "bytes": 1950285,
+      "path": "assets/ECE3D028-28DC-46E1-9EC9-0424DE1B4573.png"
+    },
+    {
+      "bytes": 62610,
+      "path": "assets/fantasy-critic-2025-header-landscape.jpg"
+    },
+    {
+      "bytes": 97952,
+      "path": "assets/fantasy-critic-2025-header.jpg"
+    },
+    {
+      "bytes": 2620931,
+      "path": "assets/fantasy-critic-2026-header-landscape.png"
+    },
+    {
+      "bytes": 518911,
+      "path": "assets/fantasy-critic-2026-header.png"
+    },
+    {
+      "bytes": 336439,
+      "path": "assets/fantasy-office-2025-header-landscape.jpg"
+    },
+    {
+      "bytes": 141646,
+      "path": "assets/fantasy-office-2025-header.jpg"
+    },
+    {
+      "bytes": 2598816,
+      "path": "assets/fantasy-office-2026-header-landscape.png"
+    },
+    {
+      "bytes": 455919,
+      "path": "assets/fantasy-office-2026-header.png"
+    },
+    {
+      "bytes": 112198,
+      "path": "assets/final/2024-formula-1-header-small.jpg"
+    },
+    {
+      "bytes": 105754,
+      "path": "assets/final/2024-formula-1-header.jpg"
+    },
+    {
+      "bytes": 89272,
+      "path": "assets/final/2025-fantasy-critic-header-small.jpg"
+    },
+    {
+      "bytes": 101250,
+      "path": "assets/final/2025-fantasy-critic-header.jpg"
+    },
+    {
+      "bytes": 266857,
+      "path": "assets/final/2025-fantasy-office-header-small.jpg"
+    },
+    {
+      "bytes": 170360,
+      "path": "assets/final/2025-fantasy-office-header.jpg"
+    },
+    {
+      "bytes": 127693,
+      "path": "assets/final/2025-formual-1-header-small.jpg"
+    },
+    {
+      "bytes": 133698,
+      "path": "assets/final/2025-formual-1-header.jpg"
+    },
+    {
+      "bytes": 154034,
+      "path": "assets/final/2026-formula-1-header-small.jpg"
+    },
+    {
+      "bytes": 176202,
+      "path": "assets/final/2026-formula-1-header.jpg"
+    },
+    {
+      "bytes": 56624,
+      "path": "assets/final/2026-world-cup-header-small.jpg"
+    },
+    {
+      "bytes": 70253,
+      "path": "assets/final/2026-world-cup-header.jpg"
+    },
+    {
+      "bytes": 76047,
+      "path": "assets/final/default-header-small.jpg"
+    },
+    {
+      "bytes": 79580,
+      "path": "assets/final/default-header.jpg"
+    },
+    {
+      "bytes": 78760,
+      "path": "assets/formula-1-2024-header-landscape.jpg"
+    },
+    {
+      "bytes": 76551,
+      "path": "assets/formula-1-2024-header.jpg"
+    },
+    {
+      "bytes": 88191,
+      "path": "assets/formula-1-2025-header-landscape.jpg"
+    },
+    {
+      "bytes": 110933,
+      "path": "assets/formula-1-2025-header.jpg"
+    },
+    {
+      "bytes": 112199,
+      "path": "assets/formula-1-2026-header-landscape.jpg"
+    },
+    {
+      "bytes": 184236,
+      "path": "assets/formula-1-2026-header.jpg"
+    },
+    {
+      "bytes": 193112,
+      "path": "assets/germany-curacao-7-1.jpg"
+    },
+    {
+      "bytes": 307392,
+      "path": "assets/germany-paraguay.jpg"
+    },
+    {
+      "bytes": 374120,
+      "path": "assets/haiti-scotland-0-1.jpg"
+    },
+    {
+      "bytes": 33819,
+      "path": "assets/icon-192.png"
+    },
+    {
+      "bytes": 235661,
+      "path": "assets/icon-512.png"
+    },
+    {
+      "bytes": 169156,
+      "path": "assets/ivory-coast-ecuador-1-0.jpg"
+    },
+    {
+      "bytes": 197024,
+      "path": "assets/netherlands-japan-2-2.jpg"
+    },
+    {
+      "bytes": 67512,
+      "path": "assets/players/2026_27/1/1/david-raya.webp"
+    },
+    {
+      "bytes": 64708,
+      "path": "assets/players/2026_27/1/1/trading-card.webp"
+    },
+    {
+      "bytes": 77096,
+      "path": "assets/players/2026_27/1/10/eberechi_eze.webp"
+    },
+    {
+      "bytes": 109410,
+      "path": "assets/players/2026_27/1/10/trading-card.webp"
+    },
+    {
+      "bytes": 79112,
+      "path": "assets/players/2026_27/1/11/gabriel_martinelli.webp"
+    },
+    {
+      "bytes": 108384,
+      "path": "assets/players/2026_27/1/11/trading-card.webp"
+    },
+    {
+      "bytes": 68690,
+      "path": "assets/players/2026_27/1/12/jurrien_timber.webp"
+    },
+    {
+      "bytes": 29096,
+      "path": "assets/players/2026_27/1/12/trading-card.webp"
+    },
+    {
+      "bytes": 69618,
+      "path": "assets/players/2026_27/1/13/kepa-arrizabalaga.webp"
+    },
+    {
+      "bytes": 90446,
+      "path": "assets/players/2026_27/1/13/trading-card.webp"
+    },
+    {
+      "bytes": 99294,
+      "path": "assets/players/2026_27/1/14/trading-card.webp"
+    },
+    {
+      "bytes": 77414,
+      "path": "assets/players/2026_27/1/14/viktor_gyokeres.webp"
+    },
+    {
+      "bytes": 78792,
+      "path": "assets/players/2026_27/1/146/marli_salmon.webp"
+    },
+    {
+      "bytes": 79916,
+      "path": "assets/players/2026_27/1/15/christian_norgaard.webp"
+    },
+    {
+      "bytes": 61606,
+      "path": "assets/players/2026_27/1/15/trading-card.webp"
+    },
+    {
+      "bytes": 53778,
+      "path": "assets/players/2026_27/1/16/christos_tzolis.webp"
+    },
+    {
+      "bytes": 36430,
+      "path": "assets/players/2026_27/1/16/trading-card.webp"
+    },
+    {
+      "bytes": 75654,
+      "path": "assets/players/2026_27/1/17/noni_madueke.webp"
+    },
+    {
+      "bytes": 67086,
+      "path": "assets/players/2026_27/1/17/trading-card.webp"
+    },
+    {
+      "bytes": 73076,
+      "path": "assets/players/2026_27/1/18/fabio_vieira.webp"
+    },
+    {
+      "bytes": 47424,
+      "path": "assets/players/2026_27/1/18/trading-card.webp"
+    },
+    {
+      "bytes": 81286,
+      "path": "assets/players/2026_27/1/19/ethan_nwaneri.webp"
+    },
+    {
+      "bytes": 80002,
+      "path": "assets/players/2026_27/1/19/trading-card.webp"
+    },
+    {
+      "bytes": 71134,
+      "path": "assets/players/2026_27/1/2/trading-card.webp"
+    },
+    {
+      "bytes": 72378,
+      "path": "assets/players/2026_27/1/2/william-saliba.webp"
+    },
+    {
+      "bytes": 75942,
+      "path": "assets/players/2026_27/1/20/mikel_merino.webp"
+    },
+    {
+      "bytes": 75736,
+      "path": "assets/players/2026_27/1/20/trading-card.webp"
+    },
+    {
+      "bytes": 60442,
+      "path": "assets/players/2026_27/1/21/reiss_nelson.webp"
+    },
+    {
+      "bytes": 76222,
+      "path": "assets/players/2026_27/1/22/kai_havertz.webp"
+    },
+    {
+      "bytes": 45178,
+      "path": "assets/players/2026_27/1/23/illan-meslier.webp"
+    },
+    {
+      "bytes": 36430,
+      "path": "assets/players/2026_27/1/23/trading-card.webp"
+    },
+    {
+      "bytes": 79712,
+      "path": "assets/players/2026_27/1/24/riccardo_calafiori.webp"
+    },
+    {
+      "bytes": 69740,
+      "path": "assets/players/2026_27/1/25/tommy-setford.webp"
+    },
+    {
+      "bytes": 77444,
+      "path": "assets/players/2026_27/1/26/martin_zubimendi.webp"
+    },
+    {
+      "bytes": 79022,
+      "path": "assets/players/2026_27/1/27/declan_rice.webp"
+    },
+    {
+      "bytes": 78506,
+      "path": "assets/players/2026_27/1/28/myles-lewis-skelly.webp"
+    },
+    {
+      "bytes": 84382,
+      "path": "assets/players/2026_27/1/29/max_dowman.webp"
+    },
+    {
+      "bytes": 75642,
+      "path": "assets/players/2026_27/1/3/cristhian-mosquera.webp"
+    },
+    {
+      "bytes": 80742,
+      "path": "assets/players/2026_27/1/3/trading-card.webp"
+    },
+    {
+      "bytes": 83856,
+      "path": "assets/players/2026_27/1/4/ben-white.webp"
+    },
+    {
+      "bytes": 55446,
+      "path": "assets/players/2026_27/1/4/trading-card.webp"
+    },
+    {
+      "bytes": 74540,
+      "path": "assets/players/2026_27/1/5/piero_hincapie.webp"
+    },
+    {
+      "bytes": 108780,
+      "path": "assets/players/2026_27/1/5/trading-card.webp"
+    },
+    {
+      "bytes": 71402,
+      "path": "assets/players/2026_27/1/6/gabriel.webp"
+    },
+    {
+      "bytes": 107920,
+      "path": "assets/players/2026_27/1/6/trading-card.webp"
+    },
+    {
+      "bytes": 75754,
+      "path": "assets/players/2026_27/1/7/bukayo_saka.webp"
+    },
+    {
+      "bytes": 81956,
+      "path": "assets/players/2026_27/1/7/trading-card.webp"
+    },
+    {
+      "bytes": 72618,
+      "path": "assets/players/2026_27/1/8/martin_odegaard.webp"
+    },
+    {
+      "bytes": 134650,
+      "path": "assets/players/2026_27/1/8/trading-card.webp"
+    },
+    {
+      "bytes": 74214,
+      "path": "assets/players/2026_27/1/9/gabriel_jesus.webp"
+    },
+    {
+      "bytes": 113740,
+      "path": "assets/players/2026_27/1/9/trading-card.webp"
+    },
+    {
+      "bytes": 91532,
+      "path": "assets/players/2026_27/2/30/joan_garcia.webp"
+    },
+    {
+      "bytes": 72670,
+      "path": "assets/players/2026_27/2/30/trading-card.webp"
+    },
+    {
+      "bytes": 74302,
+      "path": "assets/players/2026_27/2/31/marc-andre-ter-stegen.webp"
+    },
+    {
+      "bytes": 82628,
+      "path": "assets/players/2026_27/2/31/trading-card.webp"
+    },
+    {
+      "bytes": 67436,
+      "path": "assets/players/2026_27/2/32/trading-card.webp"
+    },
+    {
+      "bytes": 73474,
+      "path": "assets/players/2026_27/2/32/wojciech_szczesny.webp"
+    },
+    {
+      "bytes": 64372,
+      "path": "assets/players/2026_27/2/33/alejandro_balde.webp"
+    },
+    {
+      "bytes": 63290,
+      "path": "assets/players/2026_27/2/34/ronald_araujo.webp"
+    },
+    {
+      "bytes": 65114,
+      "path": "assets/players/2026_27/2/35/pau_cubarsi.webp"
+    },
+    {
+      "bytes": 69866,
+      "path": "assets/players/2026_27/2/36/andreas_christensen.webp"
+    },
+    {
+      "bytes": 68200,
+      "path": "assets/players/2026_27/2/37/gerard_martin.webp"
+    },
+    {
+      "bytes": 61318,
+      "path": "assets/players/2026_27/2/38/jules_kounde.webp"
+    },
+    {
+      "bytes": 66186,
+      "path": "assets/players/2026_27/2/39/eric_garcia.webp"
+    },
+    {
+      "bytes": 72714,
+      "path": "assets/players/2026_27/2/40/hector_fort.webp"
+    },
+    {
+      "bytes": 70228,
+      "path": "assets/players/2026_27/2/41/gavi.webp"
+    },
+    {
+      "bytes": 68324,
+      "path": "assets/players/2026_27/2/42/pedri.webp"
+    },
+    {
+      "bytes": 68180,
+      "path": "assets/players/2026_27/2/43/fermin_lopez.webp"
+    },
+    {
+      "bytes": 71750,
+      "path": "assets/players/2026_27/2/44/marc_casado.webp"
+    },
+    {
+      "bytes": 67546,
+      "path": "assets/players/2026_27/2/45/dani_olmo.webp"
+    },
+    {
+      "bytes": 71658,
+      "path": "assets/players/2026_27/2/46/frenkie_de_jong.webp"
+    },
+    {
+      "bytes": 67122,
+      "path": "assets/players/2026_27/2/47/marc_bernal.webp"
+    },
+    {
+      "bytes": 67982,
+      "path": "assets/players/2026_27/2/48/ferran_torres.webp"
+    },
+    {
+      "bytes": 66404,
+      "path": "assets/players/2026_27/2/49/lamine_yamal.webp"
+    },
+    {
+      "bytes": 66012,
+      "path": "assets/players/2026_27/2/50/raphina.webp"
+    },
+    {
+      "bytes": 64512,
+      "path": "assets/players/2026_27/2/51/roony_bardghji.webp"
+    },
+    {
+      "bytes": 69740,
+      "path": "assets/players/2026_27/2/52/anthony_gordon.webp"
+    },
+    {
+      "bytes": 66876,
+      "path": "assets/players/2026_27/2/53/karim_adeyemi.webp"
+    },
+    {
+      "bytes": 36320,
+      "path": "assets/players/2026_27/2/54/jofre_torrents.webp"
+    },
+    {
+      "bytes": 38028,
+      "path": "assets/players/2026_27/2/55/guillermo_fernandez.webp"
+    },
+    {
+      "bytes": 36754,
+      "path": "assets/players/2026_27/2/56/toni_fernandez.webp"
+    },
+    {
+      "bytes": 30496,
+      "path": "assets/players/2026_27/6/88/kristijan_kahlina.webp"
+    },
+    {
+      "bytes": 31820,
+      "path": "assets/players/2026_27/6/89/tim_ream.webp"
+    },
+    {
+      "bytes": 29382,
+      "path": "assets/players/2026_27/6/90/andrew_privett.webp"
+    },
+    {
+      "bytes": 31838,
+      "path": "assets/players/2026_27/6/91/archie_goodwin.webp"
+    },
+    {
+      "bytes": 30878,
+      "path": "assets/players/2026_27/6/92/ashley_westwood.webp"
+    },
+    {
+      "bytes": 35464,
+      "path": "assets/players/2026_27/6/93/idan_toklomati.webp"
+    },
+    {
+      "bytes": 31054,
+      "path": "assets/players/2026_27/7/116/gonzalo_lujan.webp"
+    },
+    {
+      "bytes": 34836,
+      "path": "assets/players/2026_27/7/120/rodrigo_de_paul.webp"
+    },
+    {
+      "bytes": 33324,
+      "path": "assets/players/2026_27/7/121/telasco_segovia.webp"
+    },
+    {
+      "bytes": 31702,
+      "path": "assets/players/2026_27/7/122/luis_suarez.webp"
+    },
+    {
+      "bytes": 42746,
+      "path": "assets/players/2026_27/7/123/lionel_messi.webp"
+    },
+    {
+      "bytes": 31770,
+      "path": "assets/players/2026_27/7/124/luis_barraza.webp"
+    },
+    {
+      "bytes": 37270,
+      "path": "assets/players/2026_27/7/127/ian_fray.webp"
+    },
+    {
+      "bytes": 35668,
+      "path": "assets/players/2026_27/7/129/santiago_morales.webp"
+    },
+    {
+      "bytes": 31412,
+      "path": "assets/players/2026_27/7/130/tadeo_allende.webp"
+    },
+    {
+      "bytes": 33726,
+      "path": "assets/players/2026_27/7/132/mateo_silvetti.webp"
+    },
+    {
+      "bytes": 29332,
+      "path": "assets/players/2026_27/7/133/tyler_hall.webp"
+    },
+    {
+      "bytes": 34814,
+      "path": "assets/players/2026_27/7/134/noah_allen.webp"
+    },
+    {
+      "bytes": 59294,
+      "path": "assets/players/2026_27/7/136/maximiliano_falcon.webp"
+    },
+    {
+      "bytes": 38478,
+      "path": "assets/players/2026_27/7/137/david_ruiz.webp"
+    },
+    {
+      "bytes": 33686,
+      "path": "assets/players/2026_27/7/138/yannick_bright.webp"
+    },
+    {
+      "bytes": 34708,
+      "path": "assets/players/2026_27/7/139/daniel_pinter.webp"
+    },
+    {
+      "bytes": 33196,
+      "path": "assets/players/2026_27/7/140/preston_plambeck.webp"
+    },
+    {
+      "bytes": 28718,
+      "path": "assets/players/2026_27/7/141/israel_boatwright.webp"
+    },
+    {
+      "bytes": 37788,
+      "path": "assets/players/2026_27/7/145/dayne_st_clair.webp"
+    },
+    {
+      "bytes": 34146,
+      "path": "assets/players/2026_27/7/148/rocco_rios_novo.webp"
+    },
+    {
+      "bytes": 153829,
+      "path": "assets/qatar-switzerland-1-1.jpg"
+    },
+    {
+      "bytes": 29716,
+      "path": "assets/ranking/games/1/1 - rdr2.webp"
+    },
+    {
+      "bytes": 29022,
+      "path": "assets/ranking/games/1/2 - rdr2.webp"
+    },
+    {
+      "bytes": 41236,
+      "path": "assets/ranking/games/1/3 - rdr2.webp"
+    },
+    {
+      "bytes": 29474,
+      "path": "assets/ranking/games/1/4 - rdr2.webp"
+    },
+    {
+      "bytes": 49144,
+      "path": "assets/ranking/games/1/5 - rdr2.webp"
+    },
+    {
+      "bytes": 19962,
+      "path": "assets/ranking/games/1/6 - rdr2.webp"
+    },
+    {
+      "bytes": 12846,
+      "path": "assets/ranking/games/1/7 - rdr2.webp"
+    },
+    {
+      "bytes": 32638,
+      "path": "assets/ranking/games/10/1 - p4g.webp"
+    },
+    {
+      "bytes": 32164,
+      "path": "assets/ranking/games/10/2 - p4g.webp"
+    },
+    {
+      "bytes": 46612,
+      "path": "assets/ranking/games/10/3 - p4g.webp"
+    },
+    {
+      "bytes": 31688,
+      "path": "assets/ranking/games/10/4 - p4g.webp"
+    },
+    {
+      "bytes": 44666,
+      "path": "assets/ranking/games/10/5 - p4g.webp"
+    },
+    {
+      "bytes": 41124,
+      "path": "assets/ranking/games/11/1 - gow.webp"
+    },
+    {
+      "bytes": 46260,
+      "path": "assets/ranking/games/11/2 - gow.webp"
+    },
+    {
+      "bytes": 51726,
+      "path": "assets/ranking/games/11/3 - gow.webp"
+    },
+    {
+      "bytes": 40422,
+      "path": "assets/ranking/games/11/4 - gow.webp"
+    },
+    {
+      "bytes": 49364,
+      "path": "assets/ranking/games/11/5 - gow.webp"
+    },
+    {
+      "bytes": 34122,
+      "path": "assets/ranking/games/12/1 - me2.webp"
+    },
+    {
+      "bytes": 27000,
+      "path": "assets/ranking/games/12/2 - me2.webp"
+    },
+    {
+      "bytes": 48162,
+      "path": "assets/ranking/games/12/3 - me2.webp"
+    },
+    {
+      "bytes": 55082,
+      "path": "assets/ranking/games/12/4 - me2.webp"
+    },
+    {
+      "bytes": 33080,
+      "path": "assets/ranking/games/12/5 - me2.webp"
+    },
+    {
+      "bytes": 52962,
+      "path": "assets/ranking/games/13/1 - hzd.webp"
+    },
+    {
+      "bytes": 22468,
+      "path": "assets/ranking/games/13/2 - hzd.webp"
+    },
+    {
+      "bytes": 48678,
+      "path": "assets/ranking/games/13/3 - hzd.webp"
+    },
+    {
+      "bytes": 35064,
+      "path": "assets/ranking/games/13/4 - hzd.webp"
+    },
+    {
+      "bytes": 43262,
+      "path": "assets/ranking/games/13/5 - hzd.webp"
+    },
+    {
+      "bytes": 42586,
+      "path": "assets/ranking/games/13/6 - hzd.webp"
+    },
+    {
+      "bytes": 40142,
+      "path": "assets/ranking/games/14/1 - got.webp"
+    },
+    {
+      "bytes": 31526,
+      "path": "assets/ranking/games/14/2 - got.webp"
+    },
+    {
+      "bytes": 35650,
+      "path": "assets/ranking/games/14/3 - got.webp"
+    },
+    {
+      "bytes": 34100,
+      "path": "assets/ranking/games/14/4 - got.webp"
+    },
+    {
+      "bytes": 38494,
+      "path": "assets/ranking/games/14/5 - got.webp"
+    },
+    {
+      "bytes": 37856,
+      "path": "assets/ranking/games/15/1 - listc.webp"
+    },
+    {
+      "bytes": 32768,
+      "path": "assets/ranking/games/15/2 - listc.webp"
+    },
+    {
+      "bytes": 37714,
+      "path": "assets/ranking/games/15/3 - listc.webp"
+    },
+    {
+      "bytes": 56616,
+      "path": "assets/ranking/games/15/4 - listc.webp"
+    },
+    {
+      "bytes": 36180,
+      "path": "assets/ranking/games/15/5 - listc.webp"
+    },
+    {
+      "bytes": 26160,
+      "path": "assets/ranking/games/16/1 - wroef.webp"
+    },
+    {
+      "bytes": 31642,
+      "path": "assets/ranking/games/16/2 - wroef.webp"
+    },
+    {
+      "bytes": 27688,
+      "path": "assets/ranking/games/16/3 - wroef.webp"
+    },
+    {
+      "bytes": 39658,
+      "path": "assets/ranking/games/16/4 - wroef.webp"
+    },
+    {
+      "bytes": 40060,
+      "path": "assets/ranking/games/16/5 - wroef.webp"
+    },
+    {
+      "bytes": 35524,
+      "path": "assets/ranking/games/17/1 - s2bot.webp"
+    },
+    {
+      "bytes": 30042,
+      "path": "assets/ranking/games/17/2 - s2bot.webp"
+    },
+    {
+      "bytes": 20216,
+      "path": "assets/ranking/games/17/3 - s2bot.webp"
+    },
+    {
+      "bytes": 35014,
+      "path": "assets/ranking/games/17/4 - s2bot.webp"
+    },
+    {
+      "bytes": 18336,
+      "path": "assets/ranking/games/17/5 - s2bot.webp"
+    },
+    {
+      "bytes": 38462,
+      "path": "assets/ranking/games/18/1 - s3hat.webp"
+    },
+    {
+      "bytes": 32858,
+      "path": "assets/ranking/games/18/2 - s3hat.webp"
+    },
+    {
+      "bytes": 37010,
+      "path": "assets/ranking/games/18/3 - s3hat.webp"
+    },
+    {
+      "bytes": 21378,
+      "path": "assets/ranking/games/18/4 - s3hat.webp"
+    },
+    {
+      "bytes": 38346,
+      "path": "assets/ranking/games/18/5 - s3hat.webp"
+    },
+    {
+      "bytes": 41684,
+      "path": "assets/ranking/games/19/1 - y5.webp"
+    },
+    {
+      "bytes": 32594,
+      "path": "assets/ranking/games/19/2 - y5.webp"
+    },
+    {
+      "bytes": 27680,
+      "path": "assets/ranking/games/19/3 - y5.webp"
+    },
+    {
+      "bytes": 21614,
+      "path": "assets/ranking/games/19/4 - y5.webp"
+    },
+    {
+      "bytes": 46158,
+      "path": "assets/ranking/games/19/5 - y5.webp"
+    },
+    {
+      "bytes": 16930,
+      "path": "assets/ranking/games/2/1 - tlou2.webp"
+    },
+    {
+      "bytes": 30406,
+      "path": "assets/ranking/games/2/2 - tlou2.webp"
+    },
+    {
+      "bytes": 35694,
+      "path": "assets/ranking/games/2/3 - tlou2.webp"
+    },
+    {
+      "bytes": 16246,
+      "path": "assets/ranking/games/2/4 - tlou2.webp"
+    },
+    {
+      "bytes": 28400,
+      "path": "assets/ranking/games/2/5 - tlou2.webp"
+    },
+    {
+      "bytes": 44274,
+      "path": "assets/ranking/games/2/6 - tlou2.webp"
+    },
+    {
+      "bytes": 6256,
+      "path": "assets/ranking/games/2/7 - tlou2.webp"
+    },
+    {
+      "bytes": 30864,
+      "path": "assets/ranking/games/2/8 - tlou2.webp"
+    },
+    {
+      "bytes": 53372,
+      "path": "assets/ranking/games/20/1 - y6.webp"
+    },
+    {
+      "bytes": 32268,
+      "path": "assets/ranking/games/20/2 - y6.webp"
+    },
+    {
+      "bytes": 49220,
+      "path": "assets/ranking/games/20/3 - y6.webp"
+    },
+    {
+      "bytes": 45324,
+      "path": "assets/ranking/games/20/4 - y6.webp"
+    },
+    {
+      "bytes": 23278,
+      "path": "assets/ranking/games/20/5 - y6.webp"
+    },
+    {
+      "bytes": 49566,
+      "path": "assets/ranking/games/21/1 - ok.webp"
+    },
+    {
+      "bytes": 54004,
+      "path": "assets/ranking/games/21/2 - ok.webp"
+    },
+    {
+      "bytes": 51894,
+      "path": "assets/ranking/games/21/3 - ok.webp"
+    },
+    {
+      "bytes": 30556,
+      "path": "assets/ranking/games/21/4 - ok.webp"
+    },
+    {
+      "bytes": 38538,
+      "path": "assets/ranking/games/21/5 - ok.webp"
+    },
+    {
+      "bytes": 19772,
+      "path": "assets/ranking/games/22/1 - latle.webp"
+    },
+    {
+      "bytes": 18630,
+      "path": "assets/ranking/games/22/2 - latle.webp"
+    },
+    {
+      "bytes": 16900,
+      "path": "assets/ranking/games/22/3 - latle.webp"
+    },
+    {
+      "bytes": 17270,
+      "path": "assets/ranking/games/22/4 - latle.webp"
+    },
+    {
+      "bytes": 26546,
+      "path": "assets/ranking/games/22/5 - latle.webp"
+    },
+    {
+      "bytes": 44844,
+      "path": "assets/ranking/games/23/1 - pn2.webp"
+    },
+    {
+      "bytes": 34638,
+      "path": "assets/ranking/games/23/2 - pn2.webp"
+    },
+    {
+      "bytes": 40780,
+      "path": "assets/ranking/games/23/3 - pn2.webp"
+    },
+    {
+      "bytes": 47768,
+      "path": "assets/ranking/games/23/4 - pn2.webp"
+    },
+    {
+      "bytes": 40078,
+      "path": "assets/ranking/games/23/5 - pn2.webp"
+    },
+    {
+      "bytes": 39374,
+      "path": "assets/ranking/games/23/6 - pn2.webp"
+    },
+    {
+      "bytes": 44028,
+      "path": "assets/ranking/games/24/1 - sctit.webp"
+    },
+    {
+      "bytes": 38114,
+      "path": "assets/ranking/games/24/2 - sctit.webp"
+    },
+    {
+      "bytes": 44106,
+      "path": "assets/ranking/games/24/3 - sctit.webp"
+    },
+    {
+      "bytes": 28722,
+      "path": "assets/ranking/games/24/4 - sctit.webp"
+    },
+    {
+      "bytes": 39498,
+      "path": "assets/ranking/games/24/5 - sctit.webp"
+    },
+    {
+      "bytes": 44478,
+      "path": "assets/ranking/games/25/1 - sg.webp"
+    },
+    {
+      "bytes": 22068,
+      "path": "assets/ranking/games/25/2 - sg.webp"
+    },
+    {
+      "bytes": 26624,
+      "path": "assets/ranking/games/25/3 - sg.webp"
+    },
+    {
+      "bytes": 28196,
+      "path": "assets/ranking/games/25/4 - sg.webp"
+    },
+    {
+      "bytes": 18234,
+      "path": "assets/ranking/games/25/5 - sg.webp"
+    },
+    {
+      "bytes": 40676,
+      "path": "assets/ranking/games/26/1 - y0.webp"
+    },
+    {
+      "bytes": 54566,
+      "path": "assets/ranking/games/26/2 - y0.webp"
+    },
+    {
+      "bytes": 37972,
+      "path": "assets/ranking/games/26/3 - y0.webp"
+    },
+    {
+      "bytes": 29124,
+      "path": "assets/ranking/games/26/4 - y0.webp"
+    },
+    {
+      "bytes": 31734,
+      "path": "assets/ranking/games/26/5 - y0.webp"
+    },
+    {
+      "bytes": 27848,
+      "path": "assets/ranking/games/27/1 - u4.webp"
+    },
+    {
+      "bytes": 28594,
+      "path": "assets/ranking/games/27/2 - u4.webp"
+    },
+    {
+      "bytes": 34806,
+      "path": "assets/ranking/games/27/3 - u4.webp"
+    },
+    {
+      "bytes": 45022,
+      "path": "assets/ranking/games/27/4 - u4.webp"
+    },
+    {
+      "bytes": 54174,
+      "path": "assets/ranking/games/27/5 - u4.webp"
+    },
+    {
+      "bytes": 25858,
+      "path": "assets/ranking/games/28/1 - swjfo.webp"
+    },
+    {
+      "bytes": 33308,
+      "path": "assets/ranking/games/28/2 - swjfo.webp"
+    },
+    {
+      "bytes": 28802,
+      "path": "assets/ranking/games/28/3 - swjfo.webp"
+    },
+    {
+      "bytes": 20970,
+      "path": "assets/ranking/games/28/4 - swjfo.webp"
+    },
+    {
+      "bytes": 23642,
+      "path": "assets/ranking/games/28/5 - swjfo.webp"
+    },
+    {
+      "bytes": 28706,
+      "path": "assets/ranking/games/29/1 - smmm.webp"
+    },
+    {
+      "bytes": 19610,
+      "path": "assets/ranking/games/29/2 - smmm.webp"
+    },
+    {
+      "bytes": 18300,
+      "path": "assets/ranking/games/29/3 - smmm.webp"
+    },
+    {
+      "bytes": 30388,
+      "path": "assets/ranking/games/29/4 - smmm.webp"
+    },
+    {
+      "bytes": 34858,
+      "path": "assets/ranking/games/29/5 - smmm.webp"
+    },
+    {
+      "bytes": 28060,
+      "path": "assets/ranking/games/3/1 - tlou.webp"
+    },
+    {
+      "bytes": 16588,
+      "path": "assets/ranking/games/3/2 - tlou.webp"
+    },
+    {
+      "bytes": 46544,
+      "path": "assets/ranking/games/3/3 - tlou.webp"
+    },
+    {
+      "bytes": 36140,
+      "path": "assets/ranking/games/3/4 - tlou.webp"
+    },
+    {
+      "bytes": 40502,
+      "path": "assets/ranking/games/3/5 - tlou.webp"
+    },
+    {
+      "bytes": 21348,
+      "path": "assets/ranking/games/3/6 - tlou.webp"
+    },
+    {
+      "bytes": 17292,
+      "path": "assets/ranking/games/3/7 - tlou.webp"
+    },
+    {
+      "bytes": 34912,
+      "path": "assets/ranking/games/30/1 - sm.webp"
+    },
+    {
+      "bytes": 22668,
+      "path": "assets/ranking/games/30/2 - sm.webp"
+    },
+    {
+      "bytes": 11514,
+      "path": "assets/ranking/games/30/3 - sm.webp"
+    },
+    {
+      "bytes": 32512,
+      "path": "assets/ranking/games/30/4 - sm.webp"
+    },
+    {
+      "bytes": 31548,
+      "path": "assets/ranking/games/30/5 - sm.webp"
+    },
+    {
+      "bytes": 20776,
+      "path": "assets/ranking/games/31/1 - ctrl.webp"
+    },
+    {
+      "bytes": 3770,
+      "path": "assets/ranking/games/31/2 - ctrl.webp"
+    },
+    {
+      "bytes": 20698,
+      "path": "assets/ranking/games/31/3 - ctrl.webp"
+    },
+    {
+      "bytes": 35806,
+      "path": "assets/ranking/games/31/4 - ctrl.webp"
+    },
+    {
+      "bytes": 23998,
+      "path": "assets/ranking/games/31/5 - ctrl.webp"
+    },
+    {
+      "bytes": 41490,
+      "path": "assets/ranking/games/32/1 - rdr.webp"
+    },
+    {
+      "bytes": 44790,
+      "path": "assets/ranking/games/32/2 - rdr.webp"
+    },
+    {
+      "bytes": 26898,
+      "path": "assets/ranking/games/32/3 - rdr.webp"
+    },
+    {
+      "bytes": 46230,
+      "path": "assets/ranking/games/32/4 - rdr.webp"
+    },
+    {
+      "bytes": 43720,
+      "path": "assets/ranking/games/32/5 - rdr.webp"
+    },
+    {
+      "bytes": 39836,
+      "path": "assets/ranking/games/33/1 - mde.webp"
+    },
+    {
+      "bytes": 31604,
+      "path": "assets/ranking/games/33/2 - mde.webp"
+    },
+    {
+      "bytes": 42252,
+      "path": "assets/ranking/games/33/3 - mde.webp"
+    },
+    {
+      "bytes": 21550,
+      "path": "assets/ranking/games/33/4 - mde.webp"
+    },
+    {
+      "bytes": 45662,
+      "path": "assets/ranking/games/33/5 - mde.webp"
+    },
+    {
+      "bytes": 18276,
+      "path": "assets/ranking/games/34/1 - dbh.webp"
+    },
+    {
+      "bytes": 23208,
+      "path": "assets/ranking/games/34/2 - dbh.webp"
+    },
+    {
+      "bytes": 27794,
+      "path": "assets/ranking/games/34/3 - dbh.webp"
+    },
+    {
+      "bytes": 12446,
+      "path": "assets/ranking/games/34/4 - dbh.webp"
+    },
+    {
+      "bytes": 14048,
+      "path": "assets/ranking/games/34/5 - dbh.webp"
+    },
+    {
+      "bytes": 40404,
+      "path": "assets/ranking/games/35/1 - awo.webp"
+    },
+    {
+      "bytes": 38428,
+      "path": "assets/ranking/games/35/2 - awo.webp"
+    },
+    {
+      "bytes": 42676,
+      "path": "assets/ranking/games/35/3 - awo.webp"
+    },
+    {
+      "bytes": 34574,
+      "path": "assets/ranking/games/35/4 - awo.webp"
+    },
+    {
+      "bytes": 14572,
+      "path": "assets/ranking/games/35/5 - awo.webp"
+    },
+    {
+      "bytes": 34922,
+      "path": "assets/ranking/games/36/1 - tttwds2.webp"
+    },
+    {
+      "bytes": 56336,
+      "path": "assets/ranking/games/36/2 - tttwds2.webp"
+    },
+    {
+      "bytes": 38482,
+      "path": "assets/ranking/games/36/3 - tttwds2.webp"
+    },
+    {
+      "bytes": 33748,
+      "path": "assets/ranking/games/36/4 - tttwds2.webp"
+    },
+    {
+      "bytes": 44852,
+      "path": "assets/ranking/games/36/5 - tttwds2.webp"
+    },
+    {
+      "bytes": 36852,
+      "path": "assets/ranking/games/37/1 - bi.webp"
+    },
+    {
+      "bytes": 44696,
+      "path": "assets/ranking/games/37/2 - bi.webp"
+    },
+    {
+      "bytes": 40936,
+      "path": "assets/ranking/games/37/3 - bi.webp"
+    },
+    {
+      "bytes": 29698,
+      "path": "assets/ranking/games/37/4 - bi.webp"
+    },
+    {
+      "bytes": 50682,
+      "path": "assets/ranking/games/37/5 - bi.webp"
+    },
+    {
+      "bytes": 24704,
+      "path": "assets/ranking/games/38/1 - 34h.webp"
+    },
+    {
+      "bytes": 12810,
+      "path": "assets/ranking/games/38/2 - 34h.webp"
+    },
+    {
+      "bytes": 22388,
+      "path": "assets/ranking/games/38/3 - 34h.webp"
+    },
+    {
+      "bytes": 25546,
+      "path": "assets/ranking/games/39/1 - lisbts.webp"
+    },
+    {
+      "bytes": 36284,
+      "path": "assets/ranking/games/39/2 - lisbts.webp"
+    },
+    {
+      "bytes": 22568,
+      "path": "assets/ranking/games/39/3 - lisbts.webp"
+    },
+    {
+      "bytes": 29498,
+      "path": "assets/ranking/games/39/4 - lisbts.webp"
+    },
+    {
+      "bytes": 28348,
+      "path": "assets/ranking/games/39/5 - lisbts.webp"
+    },
+    {
+      "bytes": 33728,
+      "path": "assets/ranking/games/4/1 - me3.webp"
+    },
+    {
+      "bytes": 38530,
+      "path": "assets/ranking/games/4/2 - me3.webp"
+    },
+    {
+      "bytes": 35128,
+      "path": "assets/ranking/games/4/3 - me3.webp"
+    },
+    {
+      "bytes": 43056,
+      "path": "assets/ranking/games/4/4 - me3.webp"
+    },
+    {
+      "bytes": 24428,
+      "path": "assets/ranking/games/4/5 - me3.webp"
+    },
+    {
+      "bytes": 12230,
+      "path": "assets/ranking/games/40/1 - jo.webp"
+    },
+    {
+      "bytes": 18670,
+      "path": "assets/ranking/games/40/2 - jo.webp"
+    },
+    {
+      "bytes": 12662,
+      "path": "assets/ranking/games/40/3 - jo.webp"
+    },
+    {
+      "bytes": 12812,
+      "path": "assets/ranking/games/40/4 - jo.webp"
+    },
+    {
+      "bytes": 13604,
+      "path": "assets/ranking/games/40/5 - jo.webp"
+    },
+    {
+      "bytes": 43170,
+      "path": "assets/ranking/games/41/1 - p5.webp"
+    },
+    {
+      "bytes": 49988,
+      "path": "assets/ranking/games/41/2 - p5.webp"
+    },
+    {
+      "bytes": 40910,
+      "path": "assets/ranking/games/41/3 - p5.webp"
+    },
+    {
+      "bytes": 41720,
+      "path": "assets/ranking/games/41/4 - p5.webp"
+    },
+    {
+      "bytes": 40082,
+      "path": "assets/ranking/games/41/5 - p5.webp"
+    },
+    {
+      "bytes": 38070,
+      "path": "assets/ranking/games/42/1 - tae.webp"
+    },
+    {
+      "bytes": 20632,
+      "path": "assets/ranking/games/42/2 - tae.webp"
+    },
+    {
+      "bytes": 44822,
+      "path": "assets/ranking/games/42/3 - tae.webp"
+    },
+    {
+      "bytes": 18954,
+      "path": "assets/ranking/games/42/4 - tae.webp"
+    },
+    {
+      "bytes": 35220,
+      "path": "assets/ranking/games/42/5 - tae.webp"
+    },
+    {
+      "bytes": 36078,
+      "path": "assets/ranking/games/43/1 - ull.webp"
+    },
+    {
+      "bytes": 37354,
+      "path": "assets/ranking/games/43/2 - ull.webp"
+    },
+    {
+      "bytes": 29362,
+      "path": "assets/ranking/games/43/3 - ull.webp"
+    },
+    {
+      "bytes": 27362,
+      "path": "assets/ranking/games/43/4 - ull.webp"
+    },
+    {
+      "bytes": 51510,
+      "path": "assets/ranking/games/43/5 - ull.webp"
+    },
+    {
+      "bytes": 20718,
+      "path": "assets/ranking/games/44/1 - bio.webp"
+    },
+    {
+      "bytes": 30802,
+      "path": "assets/ranking/games/44/2 - bio.webp"
+    },
+    {
+      "bytes": 37540,
+      "path": "assets/ranking/games/44/3 - bio.webp"
+    },
+    {
+      "bytes": 41956,
+      "path": "assets/ranking/games/44/4 - bio.webp"
+    },
+    {
+      "bytes": 33950,
+      "path": "assets/ranking/games/44/5 - bio.webp"
+    },
+    {
+      "bytes": 33984,
+      "path": "assets/ranking/games/45/1 - wiitnc.webp"
+    },
+    {
+      "bytes": 40878,
+      "path": "assets/ranking/games/45/2 - wiitnc.webp"
+    },
+    {
+      "bytes": 25262,
+      "path": "assets/ranking/games/45/3 - wiitnc.webp"
+    },
+    {
+      "bytes": 31182,
+      "path": "assets/ranking/games/45/4 - wiitnc.webp"
+    },
+    {
+      "bytes": 33130,
+      "path": "assets/ranking/games/45/5 - wiitnc.webp"
+    },
+    {
+      "bytes": 41104,
+      "path": "assets/ranking/games/46/1 - tftb.webp"
+    },
+    {
+      "bytes": 45350,
+      "path": "assets/ranking/games/46/2 - tftb.webp"
+    },
+    {
+      "bytes": 54110,
+      "path": "assets/ranking/games/46/3 - tftb.webp"
+    },
+    {
+      "bytes": 31614,
+      "path": "assets/ranking/games/46/4 - tftb.webp"
+    },
+    {
+      "bytes": 43246,
+      "path": "assets/ranking/games/46/5 - tftb.webp"
+    },
+    {
+      "bytes": 38296,
+      "path": "assets/ranking/games/47/1 - bmak.webp"
+    },
+    {
+      "bytes": 38420,
+      "path": "assets/ranking/games/47/2 - bmak.webp"
+    },
+    {
+      "bytes": 21008,
+      "path": "assets/ranking/games/47/3 - bmak.webp"
+    },
+    {
+      "bytes": 30570,
+      "path": "assets/ranking/games/47/4 - bmak.webp"
+    },
+    {
+      "bytes": 21588,
+      "path": "assets/ranking/games/47/5 - bmak.webp"
+    },
+    {
+      "bytes": 24048,
+      "path": "assets/ranking/games/48/1 - me.webp"
+    },
+    {
+      "bytes": 17022,
+      "path": "assets/ranking/games/48/2 - me.webp"
+    },
+    {
+      "bytes": 38898,
+      "path": "assets/ranking/games/48/3 - me.webp"
+    },
+    {
+      "bytes": 23484,
+      "path": "assets/ranking/games/48/4 - me.webp"
+    },
+    {
+      "bytes": 38706,
+      "path": "assets/ranking/games/48/5 - me.webp"
+    },
+    {
+      "bytes": 39046,
+      "path": "assets/ranking/games/49/1 - scattr.webp"
+    },
+    {
+      "bytes": 34190,
+      "path": "assets/ranking/games/49/2 - scattr.webp"
+    },
+    {
+      "bytes": 23412,
+      "path": "assets/ranking/games/49/3 - scattr.webp"
+    },
+    {
+      "bytes": 24570,
+      "path": "assets/ranking/games/49/4 - scattr.webp"
+    },
+    {
+      "bytes": 26972,
+      "path": "assets/ranking/games/49/5 - scattr.webp"
+    },
+    {
+      "bytes": 22168,
+      "path": "assets/ranking/games/5/1 - tttwds1.webp"
+    },
+    {
+      "bytes": 18820,
+      "path": "assets/ranking/games/5/2 - tttwds1.webp"
+    },
+    {
+      "bytes": 44764,
+      "path": "assets/ranking/games/5/3 - tttwds1.webp"
+    },
+    {
+      "bytes": 35652,
+      "path": "assets/ranking/games/5/4 - tttwds1.webp"
+    },
+    {
+      "bytes": 32368,
+      "path": "assets/ranking/games/5/5 - tttwds1.webp"
+    },
+    {
+      "bytes": 35814,
+      "path": "assets/ranking/games/50/1 - wtno.webp"
+    },
+    {
+      "bytes": 28020,
+      "path": "assets/ranking/games/50/2 - wtno.webp"
+    },
+    {
+      "bytes": 37646,
+      "path": "assets/ranking/games/50/3 - wtno.webp"
+    },
+    {
+      "bytes": 40602,
+      "path": "assets/ranking/games/50/4 - wtno.webp"
+    },
+    {
+      "bytes": 14130,
+      "path": "assets/ranking/games/50/5 - wtno.webp"
+    },
+    {
+      "bytes": 24820,
+      "path": "assets/ranking/games/51/1 - to1886.webp"
+    },
+    {
+      "bytes": 18540,
+      "path": "assets/ranking/games/51/2 - to1886.webp"
+    },
+    {
+      "bytes": 39974,
+      "path": "assets/ranking/games/51/3 - to1886.webp"
+    },
+    {
+      "bytes": 17060,
+      "path": "assets/ranking/games/51/4 - to1886.webp"
+    },
+    {
+      "bytes": 17060,
+      "path": "assets/ranking/games/51/5 - to1886.webp"
+    },
+    {
+      "bytes": 5894,
+      "path": "assets/ranking/games/52/1 - tus.webp"
+    },
+    {
+      "bytes": 24992,
+      "path": "assets/ranking/games/52/2 - tus.webp"
+    },
+    {
+      "bytes": 9190,
+      "path": "assets/ranking/games/52/3 - tus.webp"
+    },
+    {
+      "bytes": 12868,
+      "path": "assets/ranking/games/52/4 - tus.webp"
+    },
+    {
+      "bytes": 16320,
+      "path": "assets/ranking/games/52/5 - tus.webp"
+    },
+    {
+      "bytes": 43970,
+      "path": "assets/ranking/games/53/1 - twau.webp"
+    },
+    {
+      "bytes": 37846,
+      "path": "assets/ranking/games/53/2 - twau.webp"
+    },
+    {
+      "bytes": 46166,
+      "path": "assets/ranking/games/53/3 - twau.webp"
+    },
+    {
+      "bytes": 31768,
+      "path": "assets/ranking/games/53/4 - twau.webp"
+    },
+    {
+      "bytes": 34684,
+      "path": "assets/ranking/games/53/5 - twau.webp"
+    },
+    {
+      "bytes": 33794,
+      "path": "assets/ranking/games/54/1 - rime.webp"
+    },
+    {
+      "bytes": 23026,
+      "path": "assets/ranking/games/54/2 - rime.webp"
+    },
+    {
+      "bytes": 22706,
+      "path": "assets/ranking/games/54/3 - rime.webp"
+    },
+    {
+      "bytes": 14586,
+      "path": "assets/ranking/games/54/4 - rime.webp"
+    },
+    {
+      "bytes": 19126,
+      "path": "assets/ranking/games/54/5 - rime.webp"
+    },
+    {
+      "bytes": 34948,
+      "path": "assets/ranking/games/55/1 - ba.webp"
+    },
+    {
+      "bytes": 24472,
+      "path": "assets/ranking/games/55/2 - ba.webp"
+    },
+    {
+      "bytes": 32152,
+      "path": "assets/ranking/games/55/3 - ba.webp"
+    },
+    {
+      "bytes": 32052,
+      "path": "assets/ranking/games/55/4 - ba.webp"
+    },
+    {
+      "bytes": 24890,
+      "path": "assets/ranking/games/55/5 - ba.webp"
+    },
+    {
+      "bytes": 60076,
+      "path": "assets/ranking/games/56/1 - bas.webp"
+    },
+    {
+      "bytes": 44274,
+      "path": "assets/ranking/games/56/2 - bas.webp"
+    },
+    {
+      "bytes": 54168,
+      "path": "assets/ranking/games/56/3 - bas.webp"
+    },
+    {
+      "bytes": 42706,
+      "path": "assets/ranking/games/56/4 - bas.webp"
+    },
+    {
+      "bytes": 59930,
+      "path": "assets/ranking/games/56/5 - bas.webp"
+    },
+    {
+      "bytes": 29500,
+      "path": "assets/ranking/games/57/1 - bmaa.webp"
+    },
+    {
+      "bytes": 23478,
+      "path": "assets/ranking/games/57/2 - bmaa.webp"
+    },
+    {
+      "bytes": 36090,
+      "path": "assets/ranking/games/57/3 - bmaa.webp"
+    },
+    {
+      "bytes": 31196,
+      "path": "assets/ranking/games/57/4 - bmaa.webp"
+    },
+    {
+      "bytes": 40790,
+      "path": "assets/ranking/games/57/5 - bmaa.webp"
+    },
+    {
+      "bytes": 37334,
+      "path": "assets/ranking/games/58/1 - pup.webp"
+    },
+    {
+      "bytes": 43774,
+      "path": "assets/ranking/games/58/2 - pup.webp"
+    },
+    {
+      "bytes": 46430,
+      "path": "assets/ranking/games/58/3 - pup.webp"
+    },
+    {
+      "bytes": 39888,
+      "path": "assets/ranking/games/58/4 - pup.webp"
+    },
+    {
+      "bytes": 27620,
+      "path": "assets/ranking/games/58/5 - pup.webp"
+    },
+    {
+      "bytes": 37774,
+      "path": "assets/ranking/games/59/1 - bmao.webp"
+    },
+    {
+      "bytes": 33806,
+      "path": "assets/ranking/games/59/2 - bmao.webp"
+    },
+    {
+      "bytes": 41002,
+      "path": "assets/ranking/games/59/3 - bmao.webp"
+    },
+    {
+      "bytes": 32822,
+      "path": "assets/ranking/games/59/4 - bmao.webp"
+    },
+    {
+      "bytes": 35086,
+      "path": "assets/ranking/games/59/5 - bmao.webp"
+    },
+    {
+      "bytes": 25210,
+      "path": "assets/ranking/games/6/1 - coe33.webp"
+    },
+    {
+      "bytes": 45946,
+      "path": "assets/ranking/games/6/2 - coe33.webp"
+    },
+    {
+      "bytes": 24282,
+      "path": "assets/ranking/games/6/3 - coe33.webp"
+    },
+    {
+      "bytes": 37372,
+      "path": "assets/ranking/games/6/4 - coe33.webp"
+    },
+    {
+      "bytes": 33656,
+      "path": "assets/ranking/games/6/5 - coe33.webp"
+    },
+    {
+      "bytes": 26176,
+      "path": "assets/ranking/games/60/1 - sd.webp"
+    },
+    {
+      "bytes": 38470,
+      "path": "assets/ranking/games/60/2 - sd.webp"
+    },
+    {
+      "bytes": 23726,
+      "path": "assets/ranking/games/60/3 - sd.webp"
+    },
+    {
+      "bytes": 46042,
+      "path": "assets/ranking/games/60/4 - sd.webp"
+    },
+    {
+      "bytes": 38266,
+      "path": "assets/ranking/games/60/5 - sd.webp"
+    },
+    {
+      "bytes": 39630,
+      "path": "assets/ranking/games/61/1 - iss.webp"
+    },
+    {
+      "bytes": 33972,
+      "path": "assets/ranking/games/61/2 - iss.webp"
+    },
+    {
+      "bytes": 16710,
+      "path": "assets/ranking/games/61/3 - iss.webp"
+    },
+    {
+      "bytes": 15594,
+      "path": "assets/ranking/games/61/4 - iss.webp"
+    },
+    {
+      "bytes": 38458,
+      "path": "assets/ranking/games/61/5 - iss.webp"
+    },
+    {
+      "bytes": 60986,
+      "path": "assets/ranking/games/62/1 - mesow.webp"
+    },
+    {
+      "bytes": 31306,
+      "path": "assets/ranking/games/62/2 - mesow.webp"
+    },
+    {
+      "bytes": 54818,
+      "path": "assets/ranking/games/62/3 - mesow.webp"
+    },
+    {
+      "bytes": 44582,
+      "path": "assets/ranking/games/62/4 - mesow.webp"
+    },
+    {
+      "bytes": 49294,
+      "path": "assets/ranking/games/62/5 - mesow.webp"
+    },
+    {
+      "bytes": 50162,
+      "path": "assets/ranking/games/63/1 - mesom.webp"
+    },
+    {
+      "bytes": 41664,
+      "path": "assets/ranking/games/63/2 - mesom.webp"
+    },
+    {
+      "bytes": 39906,
+      "path": "assets/ranking/games/63/3 - mesom.webp"
+    },
+    {
+      "bytes": 37140,
+      "path": "assets/ranking/games/63/4 - mesom.webp"
+    },
+    {
+      "bytes": 43836,
+      "path": "assets/ranking/games/63/5 - mesom.webp"
+    },
+    {
+      "bytes": 36798,
+      "path": "assets/ranking/games/64/1 - vf.webp"
+    },
+    {
+      "bytes": 31722,
+      "path": "assets/ranking/games/64/2 - vf.webp"
+    },
+    {
+      "bytes": 24084,
+      "path": "assets/ranking/games/64/3 - vf.webp"
+    },
+    {
+      "bytes": 27640,
+      "path": "assets/ranking/games/64/4 - vf.webp"
+    },
+    {
+      "bytes": 35484,
+      "path": "assets/ranking/games/64/5 - vf.webp"
+    },
+    {
+      "bytes": 37684,
+      "path": "assets/ranking/games/65/1 - trs.webp"
+    },
+    {
+      "bytes": 32412,
+      "path": "assets/ranking/games/65/2 - trs.webp"
+    },
+    {
+      "bytes": 25434,
+      "path": "assets/ranking/games/65/3 - trs.webp"
+    },
+    {
+      "bytes": 30656,
+      "path": "assets/ranking/games/65/4 - trs.webp"
+    },
+    {
+      "bytes": 19012,
+      "path": "assets/ranking/games/65/5 - trs.webp"
+    },
+    {
+      "bytes": 60074,
+      "path": "assets/ranking/games/66/1 - egttr.webp"
+    },
+    {
+      "bytes": 43354,
+      "path": "assets/ranking/games/66/2 - egttr.webp"
+    },
+    {
+      "bytes": 32630,
+      "path": "assets/ranking/games/66/3 - egttr.webp"
+    },
+    {
+      "bytes": 18642,
+      "path": "assets/ranking/games/66/4 - egttr.webp"
+    },
+    {
+      "bytes": 53392,
+      "path": "assets/ranking/games/66/5 - egttr.webp"
+    },
+    {
+      "bytes": 36222,
+      "path": "assets/ranking/games/67/1 - vhtgw.webp"
+    },
+    {
+      "bytes": 37916,
+      "path": "assets/ranking/games/67/2 - vhtgw.webp"
+    },
+    {
+      "bytes": 44930,
+      "path": "assets/ranking/games/67/3 - vhtgw.webp"
+    },
+    {
+      "bytes": 43050,
+      "path": "assets/ranking/games/67/4 - vhtgw.webp"
+    },
+    {
+      "bytes": 27576,
+      "path": "assets/ranking/games/67/5 - vhtgw.webp"
+    },
+    {
+      "bytes": 29620,
+      "path": "assets/ranking/games/68/1 - tw.webp"
+    },
+    {
+      "bytes": 33952,
+      "path": "assets/ranking/games/68/2 - tw.webp"
+    },
+    {
+      "bytes": 27318,
+      "path": "assets/ranking/games/68/3 - tw.webp"
+    },
+    {
+      "bytes": 25838,
+      "path": "assets/ranking/games/68/4 - tw.webp"
+    },
+    {
+      "bytes": 28544,
+      "path": "assets/ranking/games/68/5 - tw.webp"
+    },
+    {
+      "bytes": 34054,
+      "path": "assets/ranking/games/69/1 - gf.webp"
+    },
+    {
+      "bytes": 36170,
+      "path": "assets/ranking/games/69/2 - gf.webp"
+    },
+    {
+      "bytes": 42768,
+      "path": "assets/ranking/games/69/3 - gf.webp"
+    },
+    {
+      "bytes": 29174,
+      "path": "assets/ranking/games/69/4 - gf.webp"
+    },
+    {
+      "bytes": 32700,
+      "path": "assets/ranking/games/69/5 - gf.webp"
+    },
+    {
+      "bytes": 42064,
+      "path": "assets/ranking/games/7/1 - ab.webp"
+    },
+    {
+      "bytes": 36342,
+      "path": "assets/ranking/games/7/2 - ab.webp"
+    },
+    {
+      "bytes": 44414,
+      "path": "assets/ranking/games/7/3 - ab.webp"
+    },
+    {
+      "bytes": 35430,
+      "path": "assets/ranking/games/7/4 - ab.webp"
+    },
+    {
+      "bytes": 42340,
+      "path": "assets/ranking/games/7/5 - ab.webp"
+    },
+    {
+      "bytes": 32792,
+      "path": "assets/ranking/games/7/6 - ab.webp"
+    },
+    {
+      "bytes": 37360,
+      "path": "assets/ranking/games/70/1 - tf2.webp"
+    },
+    {
+      "bytes": 42148,
+      "path": "assets/ranking/games/70/2 - tf2.webp"
+    },
+    {
+      "bytes": 37896,
+      "path": "assets/ranking/games/70/3 - tf2.webp"
+    },
+    {
+      "bytes": 47330,
+      "path": "assets/ranking/games/70/4 - tf2.webp"
+    },
+    {
+      "bytes": 33122,
+      "path": "assets/ranking/games/70/5 - tf2.webp"
+    },
+    {
+      "bytes": 58358,
+      "path": "assets/ranking/games/71/1 - flwr.webp"
+    },
+    {
+      "bytes": 26932,
+      "path": "assets/ranking/games/71/2 - flwr.webp"
+    },
+    {
+      "bytes": 34388,
+      "path": "assets/ranking/games/71/3 - flwr.webp"
+    },
+    {
+      "bytes": 23478,
+      "path": "assets/ranking/games/71/4 - flwr.webp"
+    },
+    {
+      "bytes": 31684,
+      "path": "assets/ranking/games/71/5 - flwr.webp"
+    },
+    {
+      "bytes": 32436,
+      "path": "assets/ranking/games/72/1 - ifl.webp"
+    },
+    {
+      "bytes": 36120,
+      "path": "assets/ranking/games/72/2 - ifl.webp"
+    },
+    {
+      "bytes": 37470,
+      "path": "assets/ranking/games/72/3 - ifl.webp"
+    },
+    {
+      "bytes": 21756,
+      "path": "assets/ranking/games/72/4 - ifl.webp"
+    },
+    {
+      "bytes": 30472,
+      "path": "assets/ranking/games/72/5 - ifl.webp"
+    },
+    {
+      "bytes": 30816,
+      "path": "assets/ranking/games/73/1 - v2x.webp"
+    },
+    {
+      "bytes": 40176,
+      "path": "assets/ranking/games/73/2 - v2x.webp"
+    },
+    {
+      "bytes": 25308,
+      "path": "assets/ranking/games/73/3 - v2x.webp"
+    },
+    {
+      "bytes": 24932,
+      "path": "assets/ranking/games/73/4 - v2x.webp"
+    },
+    {
+      "bytes": 25372,
+      "path": "assets/ranking/games/73/5 - v2x.webp"
+    },
+    {
+      "bytes": 17422,
+      "path": "assets/ranking/games/74/1 - sotc.webp"
+    },
+    {
+      "bytes": 33906,
+      "path": "assets/ranking/games/74/2 - sotc.webp"
+    },
+    {
+      "bytes": 24278,
+      "path": "assets/ranking/games/74/3 - sotc.webp"
+    },
+    {
+      "bytes": 36246,
+      "path": "assets/ranking/games/74/4 - sotc.webp"
+    },
+    {
+      "bytes": 39440,
+      "path": "assets/ranking/games/74/5 - sotc.webp"
+    },
+    {
+      "bytes": 31154,
+      "path": "assets/ranking/games/75/1 - imm.webp"
+    },
+    {
+      "bytes": 35832,
+      "path": "assets/ranking/games/75/2 - imm.webp"
+    },
+    {
+      "bytes": 21096,
+      "path": "assets/ranking/games/75/3 - imm.webp"
+    },
+    {
+      "bytes": 12840,
+      "path": "assets/ranking/games/75/4 - imm.webp"
+    },
+    {
+      "bytes": 22906,
+      "path": "assets/ranking/games/75/5 - imm.webp"
+    },
+    {
+      "bytes": 6908,
+      "path": "assets/ranking/games/76/1 - twa.webp"
+    },
+    {
+      "bytes": 4950,
+      "path": "assets/ranking/games/76/2 - twa.webp"
+    },
+    {
+      "bytes": 6848,
+      "path": "assets/ranking/games/76/3 - twa.webp"
+    },
+    {
+      "bytes": 5312,
+      "path": "assets/ranking/games/76/4 - twa.webp"
+    },
+    {
+      "bytes": 7186,
+      "path": "assets/ranking/games/76/5 - twa.webp"
+    },
+    {
+      "bytes": 36594,
+      "path": "assets/ranking/games/77/1 - sotl.webp"
+    },
+    {
+      "bytes": 53852,
+      "path": "assets/ranking/games/77/2 - sotl.webp"
+    },
+    {
+      "bytes": 25296,
+      "path": "assets/ranking/games/77/3 - sotl.webp"
+    },
+    {
+      "bytes": 29462,
+      "path": "assets/ranking/games/77/4 - sotl.webp"
+    },
+    {
+      "bytes": 18340,
+      "path": "assets/ranking/games/77/5 - sotl.webp"
+    },
+    {
+      "bytes": 32536,
+      "path": "assets/ranking/games/78/1 - col.webp"
+    },
+    {
+      "bytes": 37630,
+      "path": "assets/ranking/games/78/2 - col.webp"
+    },
+    {
+      "bytes": 34132,
+      "path": "assets/ranking/games/78/3 - col.webp"
+    },
+    {
+      "bytes": 28378,
+      "path": "assets/ranking/games/78/4 - col.webp"
+    },
+    {
+      "bytes": 35316,
+      "path": "assets/ranking/games/78/5 - col.webp"
+    },
+    {
+      "bytes": 40648,
+      "path": "assets/ranking/games/79/1 - vu.webp"
+    },
+    {
+      "bytes": 37250,
+      "path": "assets/ranking/games/79/2 - vu.webp"
+    },
+    {
+      "bytes": 24724,
+      "path": "assets/ranking/games/79/3 - vu.webp"
+    },
+    {
+      "bytes": 30794,
+      "path": "assets/ranking/games/79/4 - vu.webp"
+    },
+    {
+      "bytes": 42530,
+      "path": "assets/ranking/games/8/1 - sm2.webp"
+    },
+    {
+      "bytes": 34792,
+      "path": "assets/ranking/games/8/2 - sm2.webp"
+    },
+    {
+      "bytes": 32418,
+      "path": "assets/ranking/games/8/3 - sm2.webp"
+    },
+    {
+      "bytes": 36768,
+      "path": "assets/ranking/games/8/4 - sm2.webp"
+    },
+    {
+      "bytes": 59296,
+      "path": "assets/ranking/games/8/5 - sm2.webp"
+    },
+    {
+      "bytes": 31734,
+      "path": "assets/ranking/games/80/1 - gm.webp"
+    },
+    {
+      "bytes": 23608,
+      "path": "assets/ranking/games/80/2 - gm.webp"
+    },
+    {
+      "bytes": 40104,
+      "path": "assets/ranking/games/80/3 - gm.webp"
+    },
+    {
+      "bytes": 39410,
+      "path": "assets/ranking/games/80/4 - gm.webp"
+    },
+    {
+      "bytes": 35850,
+      "path": "assets/ranking/games/80/5 - gm.webp"
+    },
+    {
+      "bytes": 45116,
+      "path": "assets/ranking/games/81/1 - dok.webp"
+    },
+    {
+      "bytes": 37424,
+      "path": "assets/ranking/games/81/2 - dok.webp"
+    },
+    {
+      "bytes": 23384,
+      "path": "assets/ranking/games/81/3 - dok.webp"
+    },
+    {
+      "bytes": 30434,
+      "path": "assets/ranking/games/81/4 - dok.webp"
+    },
+    {
+      "bytes": 24382,
+      "path": "assets/ranking/games/81/5 - dok.webp"
+    },
+    {
+      "bytes": 54304,
+      "path": "assets/ranking/games/82/1 - bl2.webp"
+    },
+    {
+      "bytes": 50836,
+      "path": "assets/ranking/games/82/2 - bl2.webp"
+    },
+    {
+      "bytes": 28042,
+      "path": "assets/ranking/games/82/3 - bl2.webp"
+    },
+    {
+      "bytes": 38602,
+      "path": "assets/ranking/games/82/4 - bl2.webp"
+    },
+    {
+      "bytes": 51660,
+      "path": "assets/ranking/games/82/5 - bl2.webp"
+    },
+    {
+      "bytes": 35864,
+      "path": "assets/ranking/games/83/1 - mb.webp"
+    },
+    {
+      "bytes": 40532,
+      "path": "assets/ranking/games/83/2 - mb.webp"
+    },
+    {
+      "bytes": 36236,
+      "path": "assets/ranking/games/83/3 - mb.webp"
+    },
+    {
+      "bytes": 40174,
+      "path": "assets/ranking/games/83/4 - mb.webp"
+    },
+    {
+      "bytes": 41688,
+      "path": "assets/ranking/games/83/5 - mb.webp"
+    },
+    {
+      "bytes": 29500,
+      "path": "assets/ranking/games/84/1 - goy.webp"
+    },
+    {
+      "bytes": 36334,
+      "path": "assets/ranking/games/84/10 - goy.webp"
+    },
+    {
+      "bytes": 36238,
+      "path": "assets/ranking/games/84/11 - goy.webp"
+    },
+    {
+      "bytes": 36944,
+      "path": "assets/ranking/games/84/12 - goy.webp"
+    },
+    {
+      "bytes": 20164,
+      "path": "assets/ranking/games/84/2 - goy.webp"
+    },
+    {
+      "bytes": 25362,
+      "path": "assets/ranking/games/84/3 - goy.webp"
+    },
+    {
+      "bytes": 41864,
+      "path": "assets/ranking/games/84/4 - goy.webp"
+    },
+    {
+      "bytes": 42150,
+      "path": "assets/ranking/games/84/5 - goy.webp"
+    },
+    {
+      "bytes": 19984,
+      "path": "assets/ranking/games/84/6 - goy.webp"
+    },
+    {
+      "bytes": 28526,
+      "path": "assets/ranking/games/84/7 - goy.webp"
+    },
+    {
+      "bytes": 20016,
+      "path": "assets/ranking/games/84/8 - goy.webp"
+    },
+    {
+      "bytes": 31776,
+      "path": "assets/ranking/games/84/9 - goy.webp"
+    },
+    {
+      "bytes": 29378,
+      "path": "assets/ranking/games/9/1 - lis.webp"
+    },
+    {
+      "bytes": 17112,
+      "path": "assets/ranking/games/9/2 - lis.webp"
+    },
+    {
+      "bytes": 26322,
+      "path": "assets/ranking/games/9/3 - lis.webp"
+    },
+    {
+      "bytes": 31736,
+      "path": "assets/ranking/games/9/4 - lis.webp"
+    },
+    {
+      "bytes": 21954,
+      "path": "assets/ranking/games/9/5 - lis.webp"
+    },
+    {
+      "bytes": 14232,
+      "path": "assets/ranking/mcu/1/1 - ae.webp"
+    },
+    {
+      "bytes": 7818,
+      "path": "assets/ranking/mcu/1/2 - ae.webp"
+    },
+    {
+      "bytes": 6130,
+      "path": "assets/ranking/mcu/1/3 - ae.webp"
+    },
+    {
+      "bytes": 8918,
+      "path": "assets/ranking/mcu/1/4 - ae.webp"
+    },
+    {
+      "bytes": 11014,
+      "path": "assets/ranking/mcu/1/5 - ae.webp"
+    },
+    {
+      "bytes": 12932,
+      "path": "assets/ranking/mcu/10/1 - tr.webp"
+    },
+    {
+      "bytes": 23644,
+      "path": "assets/ranking/mcu/10/2 - tr.webp"
+    },
+    {
+      "bytes": 16396,
+      "path": "assets/ranking/mcu/10/3 - tr.webp"
+    },
+    {
+      "bytes": 17600,
+      "path": "assets/ranking/mcu/10/4 - tr.webp"
+    },
+    {
+      "bytes": 9316,
+      "path": "assets/ranking/mcu/10/5 - tr.webp"
+    },
+    {
+      "bytes": 15766,
+      "path": "assets/ranking/mcu/10/6 - tr.webp"
+    },
+    {
+      "bytes": 12310,
+      "path": "assets/ranking/mcu/10/7 - tr.webp"
+    },
+    {
+      "bytes": 16692,
+      "path": "assets/ranking/mcu/10/8 - tr.webp"
+    },
+    {
+      "bytes": 9870,
+      "path": "assets/ranking/mcu/10/9 - tr.webp"
+    },
+    {
+      "bytes": 23896,
+      "path": "assets/ranking/mcu/11/1 - dsatmom.webp"
+    },
+    {
+      "bytes": 14962,
+      "path": "assets/ranking/mcu/11/10 - dsatmom.webp"
+    },
+    {
+      "bytes": 28680,
+      "path": "assets/ranking/mcu/11/11 - dsatmom.webp"
+    },
+    {
+      "bytes": 37592,
+      "path": "assets/ranking/mcu/11/12 - dsatmom.webp"
+    },
+    {
+      "bytes": 35970,
+      "path": "assets/ranking/mcu/11/2 - dsatmom.webp"
+    },
+    {
+      "bytes": 15486,
+      "path": "assets/ranking/mcu/11/3 - dsatmom.webp"
+    },
+    {
+      "bytes": 31902,
+      "path": "assets/ranking/mcu/11/4 - dsatmom.webp"
+    },
+    {
+      "bytes": 33962,
+      "path": "assets/ranking/mcu/11/5 - dsatmom.webp"
+    },
+    {
+      "bytes": 25072,
+      "path": "assets/ranking/mcu/11/6 - dsatmom.webp"
+    },
+    {
+      "bytes": 14852,
+      "path": "assets/ranking/mcu/11/7 - dsatmom.webp"
+    },
+    {
+      "bytes": 12040,
+      "path": "assets/ranking/mcu/11/8 - dsatmom.webp"
+    },
+    {
+      "bytes": 12460,
+      "path": "assets/ranking/mcu/11/9 - dsatmom.webp"
+    },
+    {
+      "bytes": 9634,
+      "path": "assets/ranking/mcu/12/1 - loki.webp"
+    },
+    {
+      "bytes": 14284,
+      "path": "assets/ranking/mcu/12/10 - loki.webp"
+    },
+    {
+      "bytes": 12230,
+      "path": "assets/ranking/mcu/12/11 - loki.webp"
+    },
+    {
+      "bytes": 13326,
+      "path": "assets/ranking/mcu/12/2 - loki.webp"
+    },
+    {
+      "bytes": 14600,
+      "path": "assets/ranking/mcu/12/3 - loki.webp"
+    },
+    {
+      "bytes": 18940,
+      "path": "assets/ranking/mcu/12/4 - loki.webp"
+    },
+    {
+      "bytes": 17508,
+      "path": "assets/ranking/mcu/12/5 - loki.webp"
+    },
+    {
+      "bytes": 12054,
+      "path": "assets/ranking/mcu/12/6 - loki.webp"
+    },
+    {
+      "bytes": 15644,
+      "path": "assets/ranking/mcu/12/7 - loki.webp"
+    },
+    {
+      "bytes": 18664,
+      "path": "assets/ranking/mcu/12/8 - loki.webp"
+    },
+    {
+      "bytes": 19752,
+      "path": "assets/ranking/mcu/12/9 - loki.webp"
+    },
+    {
+      "bytes": 8602,
+      "path": "assets/ranking/mcu/13/1 - he.webp"
+    },
+    {
+      "bytes": 20460,
+      "path": "assets/ranking/mcu/13/2 - he.webp"
+    },
+    {
+      "bytes": 22364,
+      "path": "assets/ranking/mcu/13/3 - he.webp"
+    },
+    {
+      "bytes": 8220,
+      "path": "assets/ranking/mcu/13/4 - he.webp"
+    },
+    {
+      "bytes": 12348,
+      "path": "assets/ranking/mcu/13/5 - he.webp"
+    },
+    {
+      "bytes": 10852,
+      "path": "assets/ranking/mcu/13/6 - he.webp"
+    },
+    {
+      "bytes": 11784,
+      "path": "assets/ranking/mcu/13/7 - he.webp"
+    },
+    {
+      "bytes": 23086,
+      "path": "assets/ranking/mcu/14/1 - daw.webp"
+    },
+    {
+      "bytes": 8904,
+      "path": "assets/ranking/mcu/14/10 - daw.webp"
+    },
+    {
+      "bytes": 12272,
+      "path": "assets/ranking/mcu/14/11 - daw.webp"
+    },
+    {
+      "bytes": 17974,
+      "path": "assets/ranking/mcu/14/12 - daw.webp"
+    },
+    {
+      "bytes": 14438,
+      "path": "assets/ranking/mcu/14/13 - daw.webp"
+    },
+    {
+      "bytes": 13186,
+      "path": "assets/ranking/mcu/14/2 - daw.webp"
+    },
+    {
+      "bytes": 23780,
+      "path": "assets/ranking/mcu/14/3 - daw.webp"
+    },
+    {
+      "bytes": 21928,
+      "path": "assets/ranking/mcu/14/4 - daw.webp"
+    },
+    {
+      "bytes": 16360,
+      "path": "assets/ranking/mcu/14/5 - daw.webp"
+    },
+    {
+      "bytes": 10940,
+      "path": "assets/ranking/mcu/14/6 - daw.webp"
+    },
+    {
+      "bytes": 9826,
+      "path": "assets/ranking/mcu/14/7 - daw.webp"
+    },
+    {
+      "bytes": 8726,
+      "path": "assets/ranking/mcu/14/8 - daw.webp"
+    },
+    {
+      "bytes": 14198,
+      "path": "assets/ranking/mcu/14/9 - daw.webp"
+    },
+    {
+      "bytes": 22404,
+      "path": "assets/ranking/mcu/15/1 - shaal.webp"
+    },
+    {
+      "bytes": 18984,
+      "path": "assets/ranking/mcu/15/10 - shaal.webp"
+    },
+    {
+      "bytes": 12296,
+      "path": "assets/ranking/mcu/15/11 - shaal.webp"
+    },
+    {
+      "bytes": 23480,
+      "path": "assets/ranking/mcu/15/2 - shaal.webp"
+    },
+    {
+      "bytes": 21398,
+      "path": "assets/ranking/mcu/15/3 - shaal.webp"
+    },
+    {
+      "bytes": 11410,
+      "path": "assets/ranking/mcu/15/4 - shaal.webp"
+    },
+    {
+      "bytes": 10764,
+      "path": "assets/ranking/mcu/15/5 - shaal.webp"
+    },
+    {
+      "bytes": 15358,
+      "path": "assets/ranking/mcu/15/6 - shaal.webp"
+    },
+    {
+      "bytes": 17728,
+      "path": "assets/ranking/mcu/15/7 - shaal.webp"
+    },
+    {
+      "bytes": 10196,
+      "path": "assets/ranking/mcu/15/8 - shaal.webp"
+    },
+    {
+      "bytes": 10252,
+      "path": "assets/ranking/mcu/15/9 - shaal.webp"
+    },
+    {
+      "bytes": 16434,
+      "path": "assets/ranking/mcu/16/1 - msm.webp"
+    },
+    {
+      "bytes": 23140,
+      "path": "assets/ranking/mcu/16/2 - msm.webp"
+    },
+    {
+      "bytes": 25598,
+      "path": "assets/ranking/mcu/16/3 - msm.webp"
+    },
+    {
+      "bytes": 21616,
+      "path": "assets/ranking/mcu/16/4 - msm.webp"
+    },
+    {
+      "bytes": 20170,
+      "path": "assets/ranking/mcu/16/5 - msm.webp"
+    },
+    {
+      "bytes": 15092,
+      "path": "assets/ranking/mcu/16/6 - msm.webp"
+    },
+    {
+      "bytes": 20720,
+      "path": "assets/ranking/mcu/16/7 - msm.webp"
+    },
+    {
+      "bytes": 20324,
+      "path": "assets/ranking/mcu/16/8 - msm.webp"
+    },
+    {
+      "bytes": 25320,
+      "path": "assets/ranking/mcu/16/9 - msm.webp"
+    },
+    {
+      "bytes": 6368,
+      "path": "assets/ranking/mcu/17/1 - wwbn.webp"
+    },
+    {
+      "bytes": 11356,
+      "path": "assets/ranking/mcu/17/2 - wwbn.webp"
+    },
+    {
+      "bytes": 6168,
+      "path": "assets/ranking/mcu/17/3 - wwbn.webp"
+    },
+    {
+      "bytes": 11436,
+      "path": "assets/ranking/mcu/17/4 - wwbn.webp"
+    },
+    {
+      "bytes": 10178,
+      "path": "assets/ranking/mcu/17/5 - wwbn.webp"
+    },
+    {
+      "bytes": 7240,
+      "path": "assets/ranking/mcu/17/6 - wwbn.webp"
+    },
+    {
+      "bytes": 21348,
+      "path": "assets/ranking/mcu/17/7 - wwbn.webp"
+    },
+    {
+      "bytes": 11588,
+      "path": "assets/ranking/mcu/17/8 - wwbn.webp"
+    },
+    {
+      "bytes": 18522,
+      "path": "assets/ranking/mcu/18/1 - ds.webp"
+    },
+    {
+      "bytes": 16094,
+      "path": "assets/ranking/mcu/18/10 - ds.webp"
+    },
+    {
+      "bytes": 10734,
+      "path": "assets/ranking/mcu/18/11 - ds.webp"
+    },
+    {
+      "bytes": 13902,
+      "path": "assets/ranking/mcu/18/12 - ds.webp"
+    },
+    {
+      "bytes": 18842,
+      "path": "assets/ranking/mcu/18/13 - ds.webp"
+    },
+    {
+      "bytes": 14106,
+      "path": "assets/ranking/mcu/18/14 - ds.webp"
+    },
+    {
+      "bytes": 23314,
+      "path": "assets/ranking/mcu/18/2 - ds.webp"
+    },
+    {
+      "bytes": 26292,
+      "path": "assets/ranking/mcu/18/3 - ds.webp"
+    },
+    {
+      "bytes": 13906,
+      "path": "assets/ranking/mcu/18/4 - ds.webp"
+    },
+    {
+      "bytes": 8248,
+      "path": "assets/ranking/mcu/18/5 - ds.webp"
+    },
+    {
+      "bytes": 8254,
+      "path": "assets/ranking/mcu/18/6 - ds.webp"
+    },
+    {
+      "bytes": 15056,
+      "path": "assets/ranking/mcu/18/7 - ds.webp"
+    },
+    {
+      "bytes": 8102,
+      "path": "assets/ranking/mcu/18/8 - ds.webp"
+    },
+    {
+      "bytes": 4534,
+      "path": "assets/ranking/mcu/18/9 - ds.webp"
+    },
+    {
+      "bytes": 9116,
+      "path": "assets/ranking/mcu/19/1 - gotg.webp"
+    },
+    {
+      "bytes": 37278,
+      "path": "assets/ranking/mcu/19/10 - gotg.webp"
+    },
+    {
+      "bytes": 6448,
+      "path": "assets/ranking/mcu/19/11 - gotg.webp"
+    },
+    {
+      "bytes": 14548,
+      "path": "assets/ranking/mcu/19/12 - gotg.webp"
+    },
+    {
+      "bytes": 12868,
+      "path": "assets/ranking/mcu/19/13 - gotg.webp"
+    },
+    {
+      "bytes": 13384,
+      "path": "assets/ranking/mcu/19/14 - gotg.webp"
+    },
+    {
+      "bytes": 14832,
+      "path": "assets/ranking/mcu/19/15 - gotg.webp"
+    },
+    {
+      "bytes": 24212,
+      "path": "assets/ranking/mcu/19/2 - gotg.webp"
+    },
+    {
+      "bytes": 10198,
+      "path": "assets/ranking/mcu/19/3 - gotg.webp"
+    },
+    {
+      "bytes": 15856,
+      "path": "assets/ranking/mcu/19/4 - gotg.webp"
+    },
+    {
+      "bytes": 15554,
+      "path": "assets/ranking/mcu/19/5 - gotg.webp"
+    },
+    {
+      "bytes": 15542,
+      "path": "assets/ranking/mcu/19/6 - gotg.webp"
+    },
+    {
+      "bytes": 23722,
+      "path": "assets/ranking/mcu/19/7 - gotg.webp"
+    },
+    {
+      "bytes": 17166,
+      "path": "assets/ranking/mcu/19/8 - gotg.webp"
+    },
+    {
+      "bytes": 12690,
+      "path": "assets/ranking/mcu/19/9 - gotg.webp"
+    },
+    {
+      "bytes": 14526,
+      "path": "assets/ranking/mcu/2/1 - aiw.webp"
+    },
+    {
+      "bytes": 15134,
+      "path": "assets/ranking/mcu/2/2 - aiw.webp"
+    },
+    {
+      "bytes": 18644,
+      "path": "assets/ranking/mcu/2/3 - aiw.webp"
+    },
+    {
+      "bytes": 14658,
+      "path": "assets/ranking/mcu/2/4 - aiw.webp"
+    },
+    {
+      "bytes": 15560,
+      "path": "assets/ranking/mcu/2/5 - aiw.webp"
+    },
+    {
+      "bytes": 16982,
+      "path": "assets/ranking/mcu/20/1 - f4fs.webp"
+    },
+    {
+      "bytes": 10270,
+      "path": "assets/ranking/mcu/20/10 - f4fs.webp"
+    },
+    {
+      "bytes": 15556,
+      "path": "assets/ranking/mcu/20/11 - f4fs.webp"
+    },
+    {
+      "bytes": 8956,
+      "path": "assets/ranking/mcu/20/12 - f4fs.webp"
+    },
+    {
+      "bytes": 15524,
+      "path": "assets/ranking/mcu/20/13 - f4fs.webp"
+    },
+    {
+      "bytes": 23090,
+      "path": "assets/ranking/mcu/20/14 - f4fs.webp"
+    },
+    {
+      "bytes": 19868,
+      "path": "assets/ranking/mcu/20/2 - f4fs.webp"
+    },
+    {
+      "bytes": 20538,
+      "path": "assets/ranking/mcu/20/3 - f4fs.webp"
+    },
+    {
+      "bytes": 20016,
+      "path": "assets/ranking/mcu/20/4 - f4fs.webp"
+    },
+    {
+      "bytes": 17474,
+      "path": "assets/ranking/mcu/20/5 - f4fs.webp"
+    },
+    {
+      "bytes": 17090,
+      "path": "assets/ranking/mcu/20/6 - f4fs.webp"
+    },
+    {
+      "bytes": 14156,
+      "path": "assets/ranking/mcu/20/7 - f4fs.webp"
+    },
+    {
+      "bytes": 10340,
+      "path": "assets/ranking/mcu/20/8 - f4fs.webp"
+    },
+    {
+      "bytes": 9850,
+      "path": "assets/ranking/mcu/20/9 - f4fs.webp"
+    },
+    {
+      "bytes": 15796,
+      "path": "assets/ranking/mcu/21/1 - wv.webp"
+    },
+    {
+      "bytes": 24772,
+      "path": "assets/ranking/mcu/21/10 - wv.webp"
+    },
+    {
+      "bytes": 24656,
+      "path": "assets/ranking/mcu/21/11 - wv.webp"
+    },
+    {
+      "bytes": 14792,
+      "path": "assets/ranking/mcu/21/2 - wv.webp"
+    },
+    {
+      "bytes": 18348,
+      "path": "assets/ranking/mcu/21/3 - wv.webp"
+    },
+    {
+      "bytes": 12954,
+      "path": "assets/ranking/mcu/21/4 - wv.webp"
+    },
+    {
+      "bytes": 20598,
+      "path": "assets/ranking/mcu/21/5 - wv.webp"
+    },
+    {
+      "bytes": 21794,
+      "path": "assets/ranking/mcu/21/6 - wv.webp"
+    },
+    {
+      "bytes": 26178,
+      "path": "assets/ranking/mcu/21/7 - wv.webp"
+    },
+    {
+      "bytes": 21992,
+      "path": "assets/ranking/mcu/21/8 - wv.webp"
+    },
+    {
+      "bytes": 31214,
+      "path": "assets/ranking/mcu/21/9 - wv.webp"
+    },
+    {
+      "bytes": 18340,
+      "path": "assets/ranking/mcu/22/1 - gotgv2.webp"
+    },
+    {
+      "bytes": 20706,
+      "path": "assets/ranking/mcu/22/10 - gotgv2.webp"
+    },
+    {
+      "bytes": 14746,
+      "path": "assets/ranking/mcu/22/11 - gotgv2.webp"
+    },
+    {
+      "bytes": 10040,
+      "path": "assets/ranking/mcu/22/12 - gotgv2.webp"
+    },
+    {
+      "bytes": 20016,
+      "path": "assets/ranking/mcu/22/13 - gotgv2.webp"
+    },
+    {
+      "bytes": 19090,
+      "path": "assets/ranking/mcu/22/2 - gotgv2.webp"
+    },
+    {
+      "bytes": 15636,
+      "path": "assets/ranking/mcu/22/3 - gotgv2.webp"
+    },
+    {
+      "bytes": 14574,
+      "path": "assets/ranking/mcu/22/4 - gotgv2.webp"
+    },
+    {
+      "bytes": 13240,
+      "path": "assets/ranking/mcu/22/5 - gotgv2.webp"
+    },
+    {
+      "bytes": 27646,
+      "path": "assets/ranking/mcu/22/6 - gotgv2.webp"
+    },
+    {
+      "bytes": 12668,
+      "path": "assets/ranking/mcu/22/7 - gotgv2.webp"
+    },
+    {
+      "bytes": 15020,
+      "path": "assets/ranking/mcu/22/8 - gotgv2.webp"
+    },
+    {
+      "bytes": 14638,
+      "path": "assets/ranking/mcu/22/9 - gotgv2.webp"
+    },
+    {
+      "bytes": 8802,
+      "path": "assets/ranking/mcu/23/1 - bp.webp"
+    },
+    {
+      "bytes": 17244,
+      "path": "assets/ranking/mcu/23/10 - bp.webp"
+    },
+    {
+      "bytes": 25760,
+      "path": "assets/ranking/mcu/23/11 - bp.webp"
+    },
+    {
+      "bytes": 18228,
+      "path": "assets/ranking/mcu/23/12 - bp.webp"
+    },
+    {
+      "bytes": 15844,
+      "path": "assets/ranking/mcu/23/13 - bp.webp"
+    },
+    {
+      "bytes": 11678,
+      "path": "assets/ranking/mcu/23/14 - bp.webp"
+    },
+    {
+      "bytes": 35066,
+      "path": "assets/ranking/mcu/23/2 - bp.webp"
+    },
+    {
+      "bytes": 18742,
+      "path": "assets/ranking/mcu/23/3 - bp.webp"
+    },
+    {
+      "bytes": 12898,
+      "path": "assets/ranking/mcu/23/4 - bp.webp"
+    },
+    {
+      "bytes": 23286,
+      "path": "assets/ranking/mcu/23/5 - bp.webp"
+    },
+    {
+      "bytes": 13842,
+      "path": "assets/ranking/mcu/23/6 - bp.webp"
+    },
+    {
+      "bytes": 18968,
+      "path": "assets/ranking/mcu/23/7 - bp.webp"
+    },
+    {
+      "bytes": 28754,
+      "path": "assets/ranking/mcu/23/8 - bp.webp"
+    },
+    {
+      "bytes": 16568,
+      "path": "assets/ranking/mcu/23/9 - bp.webp"
+    },
+    {
+      "bytes": 14924,
+      "path": "assets/ranking/mcu/24/1 - im.webp"
+    },
+    {
+      "bytes": 15852,
+      "path": "assets/ranking/mcu/24/10 - im.webp"
+    },
+    {
+      "bytes": 42220,
+      "path": "assets/ranking/mcu/24/11 - im.webp"
+    },
+    {
+      "bytes": 19574,
+      "path": "assets/ranking/mcu/24/2 - im.webp"
+    },
+    {
+      "bytes": 28236,
+      "path": "assets/ranking/mcu/24/3 - im.webp"
+    },
+    {
+      "bytes": 13508,
+      "path": "assets/ranking/mcu/24/4 - im.webp"
+    },
+    {
+      "bytes": 20956,
+      "path": "assets/ranking/mcu/24/5 - im.webp"
+    },
+    {
+      "bytes": 29294,
+      "path": "assets/ranking/mcu/24/6 - im.webp"
+    },
+    {
+      "bytes": 10100,
+      "path": "assets/ranking/mcu/24/7 - im.webp"
+    },
+    {
+      "bytes": 15262,
+      "path": "assets/ranking/mcu/24/8 - im.webp"
+    },
+    {
+      "bytes": 15806,
+      "path": "assets/ranking/mcu/24/9 - im.webp"
+    },
+    {
+      "bytes": 15378,
+      "path": "assets/ranking/mcu/3/1 - catws.webp"
+    },
+    {
+      "bytes": 11526,
+      "path": "assets/ranking/mcu/3/2 - catws.webp"
+    },
+    {
+      "bytes": 6966,
+      "path": "assets/ranking/mcu/3/3 - catws.webp"
+    },
+    {
+      "bytes": 22176,
+      "path": "assets/ranking/mcu/3/4 - catws.webp"
+    },
+    {
+      "bytes": 22880,
+      "path": "assets/ranking/mcu/3/5 - catws.webp"
+    },
+    {
+      "bytes": 12580,
+      "path": "assets/ranking/mcu/3/6 - catws.webp"
+    },
+    {
+      "bytes": 15584,
+      "path": "assets/ranking/mcu/3/7 - catws.webp"
+    },
+    {
+      "bytes": 23646,
+      "path": "assets/ranking/mcu/4/1 - smnwh.webp"
+    },
+    {
+      "bytes": 7110,
+      "path": "assets/ranking/mcu/4/10 - smnwh.webp"
+    },
+    {
+      "bytes": 11004,
+      "path": "assets/ranking/mcu/4/11 - smnwh.webp"
+    },
+    {
+      "bytes": 12208,
+      "path": "assets/ranking/mcu/4/12 - smnwh.webp"
+    },
+    {
+      "bytes": 19364,
+      "path": "assets/ranking/mcu/4/13 - smnwh.webp"
+    },
+    {
+      "bytes": 11382,
+      "path": "assets/ranking/mcu/4/14 - smnwh.webp"
+    },
+    {
+      "bytes": 14546,
+      "path": "assets/ranking/mcu/4/2 - smnwh.webp"
+    },
+    {
+      "bytes": 5062,
+      "path": "assets/ranking/mcu/4/3 - smnwh.webp"
+    },
+    {
+      "bytes": 22322,
+      "path": "assets/ranking/mcu/4/4 - smnwh.webp"
+    },
+    {
+      "bytes": 9012,
+      "path": "assets/ranking/mcu/4/5 - smnwh.webp"
+    },
+    {
+      "bytes": 9144,
+      "path": "assets/ranking/mcu/4/6 - smnwh.webp"
+    },
+    {
+      "bytes": 12866,
+      "path": "assets/ranking/mcu/4/7 - smnwh.webp"
+    },
+    {
+      "bytes": 25752,
+      "path": "assets/ranking/mcu/4/8 - smnwh.webp"
+    },
+    {
+      "bytes": 16708,
+      "path": "assets/ranking/mcu/4/9 - smnwh.webp"
+    },
+    {
+      "bytes": 20160,
+      "path": "assets/ranking/mcu/5/1 - smhc.webp"
+    },
+    {
+      "bytes": 8550,
+      "path": "assets/ranking/mcu/5/2 - smhc.webp"
+    },
+    {
+      "bytes": 13636,
+      "path": "assets/ranking/mcu/5/3 - smhc.webp"
+    },
+    {
+      "bytes": 21374,
+      "path": "assets/ranking/mcu/5/4 - smhc.webp"
+    },
+    {
+      "bytes": 19312,
+      "path": "assets/ranking/mcu/5/5 - smhc.webp"
+    },
+    {
+      "bytes": 8032,
+      "path": "assets/ranking/mcu/5/6 - smhc.webp"
+    },
+    {
+      "bytes": 16124,
+      "path": "assets/ranking/mcu/5/7 - smhc.webp"
+    },
+    {
+      "bytes": 7468,
+      "path": "assets/ranking/mcu/5/8 - smhc.webp"
+    },
+    {
+      "bytes": 15576,
+      "path": "assets/ranking/mcu/6/1 - cacw.webp"
+    },
+    {
+      "bytes": 24866,
+      "path": "assets/ranking/mcu/6/10 - cacw.webp"
+    },
+    {
+      "bytes": 20286,
+      "path": "assets/ranking/mcu/6/11 - cacw.webp"
+    },
+    {
+      "bytes": 20806,
+      "path": "assets/ranking/mcu/6/12 - cacw.webp"
+    },
+    {
+      "bytes": 14268,
+      "path": "assets/ranking/mcu/6/13 - cacw.webp"
+    },
+    {
+      "bytes": 20278,
+      "path": "assets/ranking/mcu/6/14 - cacw.webp"
+    },
+    {
+      "bytes": 13266,
+      "path": "assets/ranking/mcu/6/2 - cacw.webp"
+    },
+    {
+      "bytes": 21886,
+      "path": "assets/ranking/mcu/6/3 - cacw.webp"
+    },
+    {
+      "bytes": 28388,
+      "path": "assets/ranking/mcu/6/4 - cacw.webp"
+    },
+    {
+      "bytes": 15564,
+      "path": "assets/ranking/mcu/6/5 - cacw.webp"
+    },
+    {
+      "bytes": 20862,
+      "path": "assets/ranking/mcu/6/6 - cacw.webp"
+    },
+    {
+      "bytes": 15456,
+      "path": "assets/ranking/mcu/6/7 - cacw.webp"
+    },
+    {
+      "bytes": 11376,
+      "path": "assets/ranking/mcu/6/8 - cacw.webp"
+    },
+    {
+      "bytes": 17416,
+      "path": "assets/ranking/mcu/6/9 - cacw.webp"
+    },
+    {
+      "bytes": 27262,
+      "path": "assets/ranking/mcu/7/1 - bpwf.webp"
+    },
+    {
+      "bytes": 11178,
+      "path": "assets/ranking/mcu/7/2 - bpwf.webp"
+    },
+    {
+      "bytes": 9880,
+      "path": "assets/ranking/mcu/7/3 - bpwf.webp"
+    },
+    {
+      "bytes": 18702,
+      "path": "assets/ranking/mcu/7/4 - bpwf.webp"
+    },
+    {
+      "bytes": 21162,
+      "path": "assets/ranking/mcu/7/5 - bpwf.webp"
+    },
+    {
+      "bytes": 14612,
+      "path": "assets/ranking/mcu/7/6 - bpwf.webp"
+    },
+    {
+      "bytes": 15596,
+      "path": "assets/ranking/mcu/7/7 - bpwf.webp"
+    },
+    {
+      "bytes": 21182,
+      "path": "assets/ranking/mcu/7/8 - bpwf.webp"
+    },
+    {
+      "bytes": 25162,
+      "path": "assets/ranking/mcu/8/1 - smffh.webp"
+    },
+    {
+      "bytes": 15688,
+      "path": "assets/ranking/mcu/8/10 - smffh.webp"
+    },
+    {
+      "bytes": 18456,
+      "path": "assets/ranking/mcu/8/11 - smffh.webp"
+    },
+    {
+      "bytes": 15058,
+      "path": "assets/ranking/mcu/8/12 - smffh.webp"
+    },
+    {
+      "bytes": 9018,
+      "path": "assets/ranking/mcu/8/13 - smffh.webp"
+    },
+    {
+      "bytes": 10244,
+      "path": "assets/ranking/mcu/8/14 - smffh.webp"
+    },
+    {
+      "bytes": 24962,
+      "path": "assets/ranking/mcu/8/15 - smffh.webp"
+    },
+    {
+      "bytes": 19368,
+      "path": "assets/ranking/mcu/8/16 - smffh.webp"
+    },
+    {
+      "bytes": 10602,
+      "path": "assets/ranking/mcu/8/2 - smffh.webp"
+    },
+    {
+      "bytes": 29408,
+      "path": "assets/ranking/mcu/8/3 - smffh.webp"
+    },
+    {
+      "bytes": 12624,
+      "path": "assets/ranking/mcu/8/4 - smffh.webp"
+    },
+    {
+      "bytes": 17524,
+      "path": "assets/ranking/mcu/8/5 - smffh.webp"
+    },
+    {
+      "bytes": 15206,
+      "path": "assets/ranking/mcu/8/6 - smffh.webp"
+    },
+    {
+      "bytes": 21570,
+      "path": "assets/ranking/mcu/8/7 - smffh.webp"
+    },
+    {
+      "bytes": 16258,
+      "path": "assets/ranking/mcu/8/8 - smffh.webp"
+    },
+    {
+      "bytes": 20636,
+      "path": "assets/ranking/mcu/8/9 - smffh.webp"
+    },
+    {
+      "bytes": 9420,
+      "path": "assets/ranking/mcu/9/1 - tb.webp"
+    },
+    {
+      "bytes": 19648,
+      "path": "assets/ranking/mcu/9/10 - tb.webp"
+    },
+    {
+      "bytes": 8268,
+      "path": "assets/ranking/mcu/9/11 - tb.webp"
+    },
+    {
+      "bytes": 6442,
+      "path": "assets/ranking/mcu/9/12 - tb.webp"
+    },
+    {
+      "bytes": 18420,
+      "path": "assets/ranking/mcu/9/13 - tb.webp"
+    },
+    {
+      "bytes": 19524,
+      "path": "assets/ranking/mcu/9/2 - tb.webp"
+    },
+    {
+      "bytes": 11002,
+      "path": "assets/ranking/mcu/9/3 - tb.webp"
+    },
+    {
+      "bytes": 21798,
+      "path": "assets/ranking/mcu/9/4 - tb.webp"
+    },
+    {
+      "bytes": 11586,
+      "path": "assets/ranking/mcu/9/5 - tb.webp"
+    },
+    {
+      "bytes": 6564,
+      "path": "assets/ranking/mcu/9/6 - tb.webp"
+    },
+    {
+      "bytes": 13878,
+      "path": "assets/ranking/mcu/9/7 - tb.webp"
+    },
+    {
+      "bytes": 17948,
+      "path": "assets/ranking/mcu/9/8 - tb.webp"
+    },
+    {
+      "bytes": 18842,
+      "path": "assets/ranking/mcu/9/9 - tb.webp"
+    },
+    {
+      "bytes": 179112,
+      "path": "assets/sweden-tunisia-5-1.jpg"
+    },
+    {
+      "bytes": 127571,
+      "path": "assets/teams/1/badge.png"
+    },
+    {
+      "bytes": 7709,
+      "path": "assets/teams/1/logo.svg"
+    },
+    {
+      "bytes": 80725,
+      "path": "assets/teams/2/badge.png"
+    },
+    {
+      "bytes": 15050,
+      "path": "assets/teams/2/logo.svg"
+    },
+    {
+      "bytes": 133834,
+      "path": "assets/teams/3/badge.svg"
+    },
+    {
+      "bytes": 60723,
+      "path": "assets/teams/3/logo.svg"
+    },
+    {
+      "bytes": 7440,
+      "path": "assets/teams/4/badge.png"
+    },
+    {
+      "bytes": 2001,
+      "path": "assets/teams/4/badge.svg"
+    },
+    {
+      "bytes": 8313,
+      "path": "assets/teams/5/badge.png"
+    },
+    {
+      "bytes": 9233,
+      "path": "assets/teams/5/badge.svg"
+    },
+    {
+      "bytes": 26107,
+      "path": "assets/teams/6/badge.png"
+    },
+    {
+      "bytes": 70015,
+      "path": "assets/teams/6/badge.svg"
+    },
+    {
+      "bytes": 264913,
+      "path": "assets/teams/6/logo.svg"
+    },
+    {
+      "bytes": 33091,
+      "path": "assets/teams/7/badge.png"
+    },
+    {
+      "bytes": 58671,
+      "path": "assets/teams/7/badge.svg"
+    },
+    {
+      "bytes": 45606,
+      "path": "assets/teams/7/logo.svg"
+    },
+    {
+      "bytes": 121948,
+      "path": "assets/themonstermaniac/themonstermaniac_08132026.png"
+    },
+    {
+      "bytes": 28920,
+      "path": "assets/todo/31/gravity-rush.webp"
+    },
+    {
+      "bytes": 592,
+      "path": "assets/trading-card/back/badge-academy-product.svg"
+    },
+    {
+      "bytes": 529,
+      "path": "assets/trading-card/back/badge-new-player.svg"
+    },
+    {
+      "bytes": 351,
+      "path": "assets/trading-card/back/bottom-stripes.svg"
+    },
+    {
+      "bytes": 221,
+      "path": "assets/trading-card/back/card-shell.svg"
+    },
+    {
+      "bytes": 533,
+      "path": "assets/trading-card/back/icon-appearances-stadium.svg"
+    },
+    {
+      "bytes": 446,
+      "path": "assets/trading-card/back/icon-birthday.svg"
+    },
+    {
+      "bytes": 353,
+      "path": "assets/trading-card/back/icon-club-joined-from.svg"
+    },
+    {
+      "bytes": 462,
+      "path": "assets/trading-card/back/icon-home-country.svg"
+    },
+    {
+      "bytes": 433,
+      "path": "assets/trading-card/back/icon-year-joined.svg"
+    },
+    {
+      "bytes": 242,
+      "path": "assets/trading-card/back/left-rail.svg"
+    },
+    {
+      "bytes": 125,
+      "path": "assets/trading-card/back/section-divider.svg"
+    },
+    {
+      "bytes": 245,
+      "path": "assets/trading-card/back/team-logo.svg"
+    },
+    {
+      "bytes": 100101,
+      "path": "assets/trading-card/trading-card.png"
+    },
+    {
+      "bytes": 93490,
+      "path": "assets/trading-card/trading-card.svg"
+    },
+    {
+      "bytes": 43726,
+      "path": "assets/world-cup-2026-header-landscape.jpg"
+    },
+    {
+      "bytes": 50453,
+      "path": "assets/world-cup-2026-header.jpg"
+    }
+  ]
+}

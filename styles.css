@@ -683,6 +683,41 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-list--calendar-weeks {
+  gap: 22px;
+}
+
+.footy-calendar-week {
+  display: grid;
+  gap: 10px;
+}
+
+.footy-calendar-week-header {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 0 2px 8px;
+}
+
+.footy-calendar-week-header h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.footy-calendar-week-header span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.footy-calendar-week-matches {
+  display: grid;
+  gap: 12px;
+}
+
 .footy-list-actions {
   display: flex;
   justify-content: center;
@@ -704,6 +739,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   flex-wrap: nowrap;
 }
 
+.footy-past-toggle-icon {
+  display: none;
+  fill: none;
+}
+
 .footy-notification-status {
   color: var(--muted);
   font-size: 0.88rem;
@@ -720,6 +760,46 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--success);
 }
 
+.footy-competition-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 18px;
+}
+
+.footy-competition-controls[hidden] {
+  display: none;
+}
+
+.footy-competition-controls label {
+  display: grid;
+  gap: 5px;
+  max-width: 360px;
+  min-width: 0;
+  width: min(100%, 360px);
+}
+
+.footy-competition-controls label > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.footy-competition-controls select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  max-width: 100%;
+  min-height: 42px;
+  min-width: 0;
+  padding: 9px 34px 9px 10px;
+  width: 100%;
+}
+
 .icon-action-button {
   align-items: center;
   background: var(--panel);
@@ -734,6 +814,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   height: 44px;
   justify-content: center;
   line-height: 1;
+  text-decoration: none;
   width: 44px;
 }
 
@@ -775,7 +856,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: 0 10px 26px var(--shadow);
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(160px, 1.3fr) minmax(140px, 0.7fr) minmax(160px, 1fr) max-content;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(140px, 0.8fr) minmax(145px, 0.8fr) minmax(160px, 1fr) max-content;
   margin: -8px 0 18px;
   padding: 14px;
 }
@@ -2770,7 +2851,17 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-filters select {
-  min-height: 96px;
+  min-height: 42px;
+}
+
+@media (max-width: 1100px) {
+  .footy-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footy-filters .footy-checkbox-control {
+    justify-self: start;
+  }
 }
 
 .multi-filter {
@@ -3279,6 +3370,20 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.footy-fixture-card--competition {
+  grid-template-columns: 58px minmax(0, 1fr) max-content;
+}
+
+.footy-competition-badge-pair {
+  align-items: center;
+  display: flex;
+  width: 58px;
+}
+
+.footy-competition-badge-pair .footy-fixture-badge + .footy-fixture-badge {
+  margin-left: -14px;
+}
+
 .footy-fixture-card[role="button"] {
   cursor: pointer;
 }
@@ -3366,6 +3471,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-content: center;
   line-height: 1;
   width: 22px;
+}
+
+.footy-match-period-chip {
+  background: color-mix(in srgb, var(--track) 16%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--track) 38%, var(--line));
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
 }
 
 .footy-match-note {
@@ -3550,6 +3667,12 @@ body.has-shell-stale-warning .stale-shell-alert {
 .footy-team-fixture-section h2 {
   font-size: 1.05rem;
   margin: 0;
+}
+
+.footy-team-fixture-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
 }
 
 .footy-team-player-section {
@@ -4125,6 +4248,52 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 6px;
   margin: 10px 0 0;
   padding-left: 18px;
+}
+
+.manager-awards-button {
+  flex: 0 0 auto;
+}
+
+.manager-awards-page .section-heading {
+  max-width: 760px;
+}
+
+.manager-awards-page .back-link {
+  color: var(--muted);
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: 900;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.manager-awards-page .back-link:hover,
+.manager-awards-page .back-link:focus-visible {
+  color: var(--ink);
+}
+
+.manager-awards-page .section-heading h1 {
+  margin-bottom: 8px;
+}
+
+.league-awards-groups {
+  display: grid;
+  gap: 18px;
+  margin: 0 auto;
+  max-width: 760px;
+}
+
+.league-awards-group {
+  min-width: 0;
+}
+
+.league-awards-list {
+  display: grid;
+  gap: 10px;
+}
+
+.award-card--league {
+  grid-template-columns: 72px minmax(0, 1fr);
 }
 
 .manager-awards-card {
@@ -6546,6 +6715,21 @@ tr:last-child td {
   justify-content: flex-end;
 }
 
+.image-cache-control {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.image-cache-status {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  max-width: 220px;
+}
+
 .theme-toggle {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -6583,7 +6767,13 @@ tr:last-child td {
   white-space: nowrap;
 }
 
-.footer-test-toggle {
+.standings-test-control {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.standings-test-toggle {
   align-items: center;
   color: var(--muted);
   display: inline-flex;
@@ -6593,7 +6783,7 @@ tr:last-child td {
   justify-content: center;
 }
 
-.footer-test-toggle input {
+.standings-test-toggle input {
   accent-color: var(--accent);
   height: 18px;
   width: 18px;
@@ -6981,6 +7171,14 @@ tr:last-child td {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 
+  .footy-fixture-card--competition {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .footy-competition-badge-pair {
+    width: 52px;
+  }
+
   .footy-fixture-card strong {
     grid-column: 2;
     text-align: left;
@@ -6989,6 +7187,17 @@ tr:last-child td {
   .page-heading-with-action {
     align-items: stretch;
     display: grid;
+  }
+
+  .manager-hub-page .page-heading-with-action {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .manager-hub-page .manager-awards-button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
   }
 
   .results-heading {
@@ -7031,7 +7240,35 @@ tr:last-child td {
   }
 
   .footy-heading .heading-actions {
+    gap: 6px;
     justify-self: end;
+  }
+
+  .footy-heading .icon-action-button,
+  .footy-heading .footy-past-toggle {
+    height: 40px;
+    width: 40px;
+  }
+
+  .footy-past-toggle {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .footy-past-toggle-icon {
+    display: block;
+    height: 22px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 22px;
+  }
+
+  .footy-past-toggle span {
+    display: none;
   }
 
   .footy-filters {

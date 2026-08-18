@@ -15,6 +15,12 @@ const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
 const ICALENDAR_PROVIDER_NAME = "iCalendar";
+const FULL_MLS_CALENDAR_URL = "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/mls.ics";
+const SPORTDB_COMPETITION_FALLBACKS = [
+  { code: "FACS", id: "4571", key: "community shield", name: "FA Community Shield", seasonType: "calendar", type: "SUPER_CUP" },
+  { code: "ELC", id: "4570", key: "efl cup", name: "EFL Cup", seasonType: "split", type: "CUP" },
+  { code: "SDE", id: "4511", key: "supercopa de espana", name: "Supercopa de España", seasonType: "split", type: "SUPER_CUP" },
+];
 const SOURCE_PRIORITY = {
   [PRIMARY_PROVIDER_NAME]: 40,
   [ARSENAL_PROVIDER_NAME]: 30,
@@ -181,6 +187,7 @@ async function main() {
   const fixtures = [];
   const errors = [];
   const coverageNotes = [];
+  const relevantFootballDataCompetitions = new Map();
   const prioritySets = normalizePrioritySets(footballData.prioritySetRows);
   const teamRowsById = new Map(activeTeams.map((team) => [getField(team, "ID").trim(), team]));
   const leagueRowsByTeamId = groupBy(footballData.leagueRows, (league) => getField(league, "Team ID").trim());
@@ -190,6 +197,7 @@ async function main() {
     teamRecord.leagueGames = normalizeLeagueGames(getField(team, "League Games"));
     teamRecord.leagueIds = getTeamLeagueIds(teamRecord, leagueRowsByTeamId.get(String(teamRecord.id || "")) || []);
     teams.push(teamRecord);
+    registerFootballDataTeamCompetitions(relevantFootballDataCompetitions, teamRecord);
 
     if (teamRecord.warning) {
       coverageNotes.push(`${teamRecord.name}: ${teamRecord.warning}`);
@@ -207,6 +215,7 @@ async function main() {
 
     try {
       const schedule = await loadTeamSchedule(teamRecord, { dateFrom, dateTo });
+      registerRelevantFootballDataCompetitions(relevantFootballDataCompetitions, schedule.matches, teamRecord);
       coverageNotes.push(...schedule.notes.map((note) => `${teamRecord.name}: ${note}`));
       errors.push(...schedule.errors.map((error) => `${teamRecord.name}: ${error}`));
       fixtures.push(...schedule.matches.map((match) => normalizeFootballDataMatch(match, teamRecord)));
@@ -247,6 +256,30 @@ async function main() {
     previousSchedules: previousPayload?.teamSchedules,
   });
   const enrichedFixtures = mergeFixtures(applyFootyMatchRegistry(dedupedFixtures, footyMatchRegistry)).sort(compareFixtures);
+  registerRelevantFootballDataCompetitionsFromFixtures(relevantFootballDataCompetitions, enrichedFixtures, teams);
+  const footballDataCompetitionSchedules = await loadFootballDataCompetitionSchedules(relevantFootballDataCompetitions);
+  const sportDbCompetitionFallbackSchedules = await loadSportDbCompetitionFallbackSchedules({
+    followedFixtures: enrichedFixtures,
+    footballDataSchedules: footballDataCompetitionSchedules,
+    teams,
+  });
+  const loadedCompetitionSchedules = [
+    ...applySportDbCompetitionFallbacks(footballDataCompetitionSchedules, sportDbCompetitionFallbackSchedules),
+    ...await loadMlsCompetitionSchedules({
+      dateFrom,
+      dateTo,
+      followedFixtures: enrichedFixtures,
+      teams,
+    }),
+  ];
+  const competitionSchedules = buildCompetitionSchedules({
+    generatedAt,
+    loadedSchedules: loadedCompetitionSchedules,
+    preserveUnloaded: !FOOTBALL_DATA_API_KEY,
+    previousSchedules: previousPayload?.competitionSchedules,
+    teams,
+    followedFixtures: enrichedFixtures,
+  });
   const teamSchedules = stripTeamScheduleMatchNotes(buildTeamSchedules({
     errors,
     fixtures: enrichedFixtures,
@@ -258,14 +291,15 @@ async function main() {
   const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
   const payload = {
     generatedAt,
-    schemaVersion: 2,
+    schemaVersion: 3,
     source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
-    updateTracker: buildFileUpdateTracker({ generatedAt, teamSchedules }),
+    updateTracker: buildFileUpdateTracker({ competitionSchedules, generatedAt, teamSchedules }),
     prioritySets,
     footyMatchRegistry: {
       matchCount: footyMatchRegistry.rows.length,
       sync: footyMatchSync,
     },
+    competitionSchedules,
     teamSchedules,
   };
 
@@ -464,6 +498,210 @@ function normalizeFootballDataMatch(match, team) {
   };
 }
 
+function registerRelevantFootballDataCompetitions(competitionsByKey, matches = [], team = {}) {
+  for (const match of Array.isArray(matches) ? matches : []) {
+    const competition = match.competition || {};
+    const competitionId = String(competition.id || "").trim();
+    const seasonYear = String(match.season?.startDate || "").slice(0, 4);
+
+    if (!competitionId || !seasonYear || isFriendlyCompetition(competitionId, competition.name)) {
+      continue;
+    }
+
+    const key = `${competitionId}|${seasonYear}`;
+    const existing = competitionsByKey.get(key) || {
+      code: competition.code || "",
+      followedTeamNames: new Set(),
+      id: competitionId,
+      name: competition.name || "Competition",
+      priority: Number.MAX_SAFE_INTEGER,
+      season: seasonYear,
+      type: competition.type || "",
+    };
+    const priority = Number.parseInt(String(team.priority || "").trim(), 10);
+
+    if (team.name) {
+      existing.followedTeamNames.add(team.name);
+    }
+
+    if (Number.isFinite(priority)) {
+      existing.priority = Math.min(existing.priority, priority);
+    }
+
+    competitionsByKey.set(key, existing);
+  }
+}
+
+function registerFootballDataTeamCompetitions(competitionsByKey, team = {}) {
+  const seasonYear = getCurrentSeason().slice(0, 4);
+
+  for (const competition of Array.isArray(team.providerLeagues) ? team.providerLeagues : []) {
+    const competitionId = String(competition.id || "").trim();
+
+    if (!competitionId || isFriendlyCompetition(competitionId, competition.name)) {
+      continue;
+    }
+
+    const key = `${competitionId}|${seasonYear}`;
+    const existing = competitionsByKey.get(key) || {
+      code: competition.code || "",
+      followedTeamNames: new Set(),
+      id: competitionId,
+      name: competition.name || "Competition",
+      priority: Number.MAX_SAFE_INTEGER,
+      season: seasonYear,
+      type: competition.type || "",
+    };
+    const priority = Number.parseInt(String(team.priority || "").trim(), 10);
+
+    if (team.name) {
+      existing.followedTeamNames.add(team.name);
+    }
+
+    if (Number.isFinite(priority)) {
+      existing.priority = Math.min(existing.priority, priority);
+    }
+
+    competitionsByKey.set(key, existing);
+  }
+}
+
+function registerRelevantFootballDataCompetitionsFromFixtures(competitionsByKey, fixtures = [], teams = []) {
+  const teamsById = new Map(teams.map((team) => [String(team.id || ""), team]));
+
+  fixtures.forEach((fixture) => {
+    const fixtureSources = getSingleFixtureSources(fixture);
+    const footballDataId = String(getFixtureSourceIds(fixture)[PRIMARY_PROVIDER_NAME] || "").trim();
+    const competitionId = String(fixture.leagueId || "").trim();
+    const seasonYear = String(fixture.season || "").slice(0, 4);
+
+    if (!fixtureSources.includes(PRIMARY_PROVIDER_NAME) || !footballDataId || !competitionId || !seasonYear || isFriendlyCompetition(competitionId, fixture.league)) {
+      return;
+    }
+
+    const team = teamsById.get(String(fixture.teamId || "")) || {};
+    const key = `${competitionId}|${seasonYear}`;
+    const existing = competitionsByKey.get(key) || {
+      code: "",
+      followedTeamNames: new Set(),
+      id: competitionId,
+      name: fixture.league || "Competition",
+      priority: Number.MAX_SAFE_INTEGER,
+      season: seasonYear,
+      type: "",
+    };
+    const priority = Number.parseInt(String(team.priority || fixture.priority || "").trim(), 10);
+
+    if (team.name || fixture.teamName) {
+      existing.followedTeamNames.add(team.name || fixture.teamName);
+    }
+
+    if (Number.isFinite(priority)) {
+      existing.priority = Math.min(existing.priority, priority);
+    }
+
+    competitionsByKey.set(key, existing);
+  });
+}
+
+async function loadFootballDataCompetitionSchedules(competitionsByKey = new Map()) {
+  if (!FOOTBALL_DATA_API_KEY) {
+    return [...competitionsByKey.values()].map((competition) => ({
+      attemptedAt: new Date().toISOString(),
+      competition: {
+        code: competition.code || "",
+        followedTeamNames: [...competition.followedTeamNames],
+        id: competition.id,
+        key: getCompetitionScheduleKey(competition.name),
+        name: competition.name,
+        priority: Number.isFinite(competition.priority) ? competition.priority : null,
+        season: competition.season,
+        source: PRIMARY_PROVIDER_NAME,
+        type: competition.type || "",
+      },
+      errors: [`Unable to load the full ${competition.name} schedule: missing FOOTBALL_DATA_API_KEY.`],
+      fixtures: [],
+      notes: [],
+    }));
+  }
+
+  const schedules = [];
+
+  for (const competition of competitionsByKey.values()) {
+    const followedTeamNames = [...competition.followedTeamNames];
+
+    try {
+      const query = new URLSearchParams({ season: competition.season });
+      const data = await loadFootballDataJson(`/competitions/${encodeURIComponent(competition.id)}/matches?${query.toString()}`);
+      const matches = Array.isArray(data.matches) ? data.matches : [];
+      const responseCompetition = data.competition || {};
+
+      schedules.push({
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: responseCompetition.code || competition.code || "",
+          followedTeamNames,
+          id: String(responseCompetition.id || competition.id),
+          key: getCompetitionScheduleKey(responseCompetition.name || competition.name),
+          name: responseCompetition.name || competition.name,
+          priority: Number.isFinite(competition.priority) ? competition.priority : null,
+          season: competition.season,
+          source: PRIMARY_PROVIDER_NAME,
+          type: responseCompetition.type || competition.type || "",
+        },
+        errors: getFootballDataErrorMessages(data),
+        fixtures: matches.map((match) => normalizeFootballDataCompetitionMatch(match)),
+        notes: [`Loaded the full ${responseCompetition.name || competition.name} ${competition.season} schedule (${matches.length} matches).`],
+      });
+    } catch (error) {
+      schedules.push({
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: competition.code || "",
+          followedTeamNames,
+          id: competition.id,
+          key: getCompetitionScheduleKey(competition.name),
+          name: competition.name,
+          priority: Number.isFinite(competition.priority) ? competition.priority : null,
+          season: competition.season,
+          source: PRIMARY_PROVIDER_NAME,
+          type: competition.type || "",
+        },
+        errors: [error.message],
+        fixtures: [],
+        notes: [],
+      });
+    }
+  }
+
+  return schedules;
+}
+
+function normalizeFootballDataCompetitionMatch(match) {
+  const timestamp = match.utcDate || "";
+
+  return {
+    away: match.awayTeam?.name || "",
+    awayBadge: match.awayTeam?.crest || "",
+    date: timestamp.slice(0, 10),
+    home: match.homeTeam?.name || "",
+    homeBadge: match.homeTeam?.crest || "",
+    id: String(match.id || ""),
+    isCompetitionFixture: true,
+    leagueId: String(match.competition?.id || ""),
+    league: match.competition?.name || "",
+    round: match.matchday ? String(match.matchday) : match.stage || "",
+    season: match.season?.startDate ? match.season.startDate.slice(0, 4) : "",
+    source: PRIMARY_PROVIDER_NAME,
+    sourceIds: buildSourceIds(PRIMARY_PROVIDER_NAME, match.id),
+    sources: [PRIMARY_PROVIDER_NAME],
+    status: match.status || "",
+    time: timestamp.slice(11, 19),
+    timestamp,
+    venue: match.venue || "",
+  };
+}
+
 async function loadSportDbSchedules({ dateFrom, dateTo, leagueRowsByTeamId, teamRowsById, teams }) {
   const errors = [];
   const fixtures = [];
@@ -559,6 +797,99 @@ async function loadSportDbLeagueSeason(leagueId, season) {
   return Array.isArray(data.events) ? data.events : [];
 }
 
+async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], footballDataSchedules = [], teams = [] } = {}) {
+  const relevantKeys = new Set([
+    ...followedFixtures
+      .filter((fixture) => !isFriendlyCompetition(fixture.leagueId, fixture.league))
+      .map((fixture) => getCompetitionScheduleKey(fixture.league)),
+    ...footballDataSchedules.map((schedule) => getCompetitionScheduleKey(schedule?.competition?.name)),
+  ].filter(Boolean));
+  const teamPriority = Math.min(...teams.map((team) => Number.parseInt(String(team.priority || "").trim(), 10)).filter(Number.isFinite));
+  const schedules = [];
+
+  for (const competition of SPORTDB_COMPETITION_FALLBACKS.filter((record) => relevantKeys.has(record.key))) {
+    const season = competition.seasonType === "calendar" ? String(new Date().getUTCFullYear()) : getCurrentSeason();
+
+    try {
+      const events = await loadSportDbLeagueSeason(competition.id, season);
+      const fixtures = events.map((event) => normalizeSportDbCompetitionMatch(event));
+
+      schedules.push({
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: competition.code,
+          followedTeamNames: teams
+            .filter((team) => followedFixtures.some((fixture) => (
+              getCompetitionScheduleKey(fixture.league) === competition.key && String(fixture.teamId || "") === String(team.id || "")
+            )))
+            .map((team) => team.name),
+          id: competition.id,
+          key: competition.key,
+          name: competition.name,
+          priority: Number.isFinite(teamPriority) ? teamPriority : null,
+          season: season.slice(0, 4),
+          source: SPORTDB_PROVIDER_NAME,
+          type: competition.type,
+        },
+        errors: fixtures.length > 0 ? [] : [`${SPORTDB_PROVIDER_NAME} returned no ${competition.name} fixtures for ${season}.`],
+        fixtures,
+        notes: fixtures.length > 0 ? [`Loaded all ${fixtures.length} currently published ${competition.name} matches from ${SPORTDB_PROVIDER_NAME}.`] : [],
+      });
+    } catch (error) {
+      schedules.push({
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: competition.code,
+          followedTeamNames: [],
+          id: competition.id,
+          key: competition.key,
+          name: competition.name,
+          priority: Number.isFinite(teamPriority) ? teamPriority : null,
+          season: season.slice(0, 4),
+          source: SPORTDB_PROVIDER_NAME,
+          type: competition.type,
+        },
+        errors: [error.message],
+        fixtures: [],
+        notes: [],
+      });
+    }
+  }
+
+  return schedules;
+}
+
+function normalizeSportDbCompetitionMatch(event = {}) {
+  const fixture = normalizeSportDbMatch(event, {}, "league-season-full");
+  const { isHome, opponent, priority, teamBadge, teamId, teamName, ...competitionFixture } = fixture;
+
+  return {
+    ...competitionFixture,
+    isCompetitionFixture: true,
+  };
+}
+
+function applySportDbCompetitionFallbacks(footballDataSchedules = [], fallbackSchedules = []) {
+  const fallbacksByKey = new Map(
+    fallbackSchedules
+      .filter((schedule) => Array.isArray(schedule.fixtures) && schedule.fixtures.length > 0)
+      .map((schedule) => [getCompetitionScheduleKey(schedule.competition?.name), schedule])
+  );
+  const mergedSchedules = footballDataSchedules.map((schedule) => {
+    const key = getCompetitionScheduleKey(schedule?.competition?.name);
+    const fallback = fallbacksByKey.get(key);
+
+    if (!fallback || schedule.fixtures?.length) {
+      return schedule;
+    }
+
+    fallbacksByKey.delete(key);
+    return fallback;
+  });
+
+  return [...mergedSchedules, ...fallbacksByKey.values()];
+}
+
 async function loadArsenalSchedules({ dateFrom, dateTo, teamRowsById, teams }) {
   const errors = [];
   const fixtures = [];
@@ -636,12 +967,13 @@ async function loadCalendarSchedules({ dateFrom, dateTo, teamRowsById, teams }) 
     }
 
     try {
+      const scheduleDateFrom = getTeamScheduleStartDate(teamRow || {}, dateFrom);
       const events = parseICalendarEvents(await loadText(normalizeCalendarUrl(calendarUrl), { extension: "ics" }));
       const matchEvents = events
         .filter((event) => isCalendarMatchEvent(event, team))
-        .filter((event) => isCalendarEventInRange(event, dateFrom, dateTo));
+        .filter((event) => isCalendarEventInRange(event, scheduleDateFrom, dateTo));
       fixtures.push(...matchEvents.map((event) => normalizeCalendarMatch(event, team)));
-      notes.push(`${team.name}: Loaded ${matchEvents.length} ${ICALENDAR_PROVIDER_NAME} fixtures from calendar feed.`);
+      notes.push(`${team.name}: Loaded ${matchEvents.length} ${ICALENDAR_PROVIDER_NAME} fixtures from ${scheduleDateFrom} through ${dateTo}.`);
     } catch (error) {
       errors.push(`${team.name}: Unable to load ${ICALENDAR_PROVIDER_NAME} fixtures: ${error.message}`);
     }
@@ -753,6 +1085,140 @@ function normalizeCalendarMatch(event, team) {
     teamBadge: team.badge || "",
     teamId: team.id,
     teamName: team.name,
+    time: isTimeTbc ? "" : timestamp.slice(11, 19),
+    timestamp,
+    venue: event.LOCATION || "",
+  };
+}
+
+async function loadMlsCompetitionSchedules({ dateFrom, dateTo, followedFixtures = [], teams = [] }) {
+  const mlsTeams = teams.filter((team) => getCompetitionScheduleKey(team.league) === "mls");
+
+  if (mlsTeams.length === 0) {
+    return [];
+  }
+
+  const mlsTeamIds = new Set(mlsTeams.map((team) => String(team.id || "")));
+  const relevantCompetitions = new Map();
+
+  followedFixtures
+    .filter((fixture) => mlsTeamIds.has(String(fixture.teamId || "")))
+    .filter((fixture) => !isFriendlyCompetition(fixture.leagueId, fixture.league))
+    .forEach((fixture) => {
+      const key = getCompetitionScheduleKey(fixture.league);
+
+      if (!key) {
+        return;
+      }
+
+      const existing = relevantCompetitions.get(key) || {
+        followedTeamNames: new Set(),
+        name: getCompetitionScheduleDisplayName(fixture.league),
+        priority: Number.MAX_SAFE_INTEGER,
+      };
+      const priority = Number.parseInt(String(fixture.priority || "").trim(), 10);
+
+      if (fixture.teamName) {
+        existing.followedTeamNames.add(fixture.teamName);
+      }
+
+      if (Number.isFinite(priority)) {
+        existing.priority = Math.min(existing.priority, priority);
+      }
+
+      relevantCompetitions.set(key, existing);
+    });
+
+  if (relevantCompetitions.size === 0) {
+    return [];
+  }
+
+  try {
+    const calendarText = await loadText(FULL_MLS_CALENDAR_URL, { extension: "ics" });
+    const seasonDateFrom = `${String(dateFrom || "").slice(0, 4)}-01-01`;
+    const fixturesByCompetition = new Map();
+
+    parseICalendarEvents(calendarText)
+      .filter((event) => isCalendarEventInRange(event, seasonDateFrom, dateTo))
+      .map(normalizeFullCalendarMatch)
+      .forEach((fixture) => {
+        const key = getCompetitionScheduleKey(fixture.league);
+
+        if (!key || !relevantCompetitions.has(key)) {
+          return;
+        }
+
+        if (!fixturesByCompetition.has(key)) {
+          fixturesByCompetition.set(key, []);
+        }
+
+        fixturesByCompetition.get(key).push(fixture);
+      });
+
+    return [...relevantCompetitions.entries()].map(([key, competition]) => {
+      const fixtures = mergeFixtures(fixturesByCompetition.get(key) || []).sort(compareFixtures);
+
+      return {
+        attemptedAt: new Date().toISOString(),
+        competition: {
+          code: key === "mls" ? "MLS" : "",
+          followedTeamNames: [...competition.followedTeamNames],
+          id: key,
+          key,
+          name: competition.name,
+          priority: Number.isFinite(competition.priority) ? competition.priority : null,
+          season: String(dateFrom || "").slice(0, 4),
+          source: ICALENDAR_PROVIDER_NAME,
+          type: key === "mls" ? "LEAGUE" : "CUP",
+        },
+        errors: fixtures.length > 0 ? [] : [`The league-wide MLS calendar returned no ${competition.name} fixtures.`],
+        fixtures,
+        notes: fixtures.length > 0 ? [`Loaded the full available ${competition.name} schedule (${fixtures.length} matches).`] : [],
+      };
+    });
+  } catch (error) {
+    return [...relevantCompetitions.entries()].map(([key, competition]) => ({
+      attemptedAt: new Date().toISOString(),
+      competition: {
+        code: key === "mls" ? "MLS" : "",
+        followedTeamNames: [...competition.followedTeamNames],
+        id: key,
+        key,
+        name: competition.name,
+        priority: Number.isFinite(competition.priority) ? competition.priority : null,
+        season: String(dateFrom || "").slice(0, 4),
+        source: ICALENDAR_PROVIDER_NAME,
+        type: key === "mls" ? "LEAGUE" : "CUP",
+      },
+      errors: [error.message],
+      fixtures: [],
+      notes: [],
+    }));
+  }
+}
+
+function normalizeFullCalendarMatch(event) {
+  const parsedSummary = parseFullCalendarMatchSummary(event.SUMMARY || "");
+  const timestamp = getCalendarTimestamp(event.DTSTART || "");
+  const isTimeTbc = /\btime\s+tbc\b/i.test(event.SUMMARY || "");
+
+  return {
+    away: parsedSummary.away,
+    awayBadge: "",
+    date: timestamp.slice(0, 10),
+    home: parsedSummary.home,
+    homeBadge: "",
+    id: event.UID ? `${ICALENDAR_PROVIDER_NAME}:${event.UID}` : "",
+    isCompetitionFixture: true,
+    leagueId: "",
+    league: parsedSummary.league || getCalendarLeague(event.DESCRIPTION || ""),
+    round: "",
+    season: timestamp.slice(0, 4),
+    source: ICALENDAR_PROVIDER_NAME,
+    sourceIds: buildSourceIds(ICALENDAR_PROVIDER_NAME, event.UID),
+    sources: [ICALENDAR_PROVIDER_NAME],
+    sourceDetail: "league-calendar-feed",
+    status: isTimeTbc ? "Time TBC" : "Scheduled",
     time: isTimeTbc ? "" : timestamp.slice(11, 19),
     timestamp,
     venue: event.LOCATION || "",
@@ -1360,6 +1826,37 @@ function getScheduleSeasons(team) {
   return configuredSeasons.length > 0 ? configuredSeasons : [getCurrentSeason()];
 }
 
+function getTeamScheduleStartDate(team, fallbackDate) {
+  const fallbackYear = String(fallbackDate || "").slice(0, 4);
+  const league = normalizeText(getField(team, "League", "Competition"));
+
+  if (["international", "major league soccer", "mls"].includes(league) && /^\d{4}$/.test(fallbackYear)) {
+    return `${fallbackYear}-01-01`;
+  }
+
+  const seasonStartDates = getScheduleSeasons(team)
+    .map(getSeasonStartDate)
+    .filter(Boolean)
+    .sort();
+  const activeSeasonStart = seasonStartDates
+    .filter((startDate) => startDate <= fallbackDate)
+    .at(-1);
+
+  return activeSeasonStart || fallbackDate;
+}
+
+function getSeasonStartDate(season) {
+  const normalizedSeason = String(season || "").trim();
+  const calendarYearMatch = normalizedSeason.match(/^(\d{4})$/);
+
+  if (calendarYearMatch) {
+    return `${calendarYearMatch[1]}-01-01`;
+  }
+
+  const splitSeasonMatch = normalizedSeason.match(/^(\d{4})\s*[-/]\s*\d{2,4}$/);
+  return splitSeasonMatch ? `${splitSeasonMatch[1]}-07-01` : "";
+}
+
 function getCurrentSeason(date = new Date()) {
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth() + 1;
@@ -1372,6 +1869,7 @@ function normalizeRunningCompetitions(competitions = []) {
     id: String(competition.id || ""),
     name: competition.name || "",
     code: competition.code || "",
+    type: competition.type || "",
   })).filter((competition) => competition.id || competition.name || competition.code);
 }
 
@@ -1522,7 +2020,8 @@ function isFriendlyCompetition(leagueId, leagueName) {
   const normalizedLeagueName = normalizeText(leagueName);
 
   return FRIENDLY_COMPETITION_IDS.has(normalizedLeagueId) ||
-    FRIENDLY_COMPETITION_NAMES.has(normalizedLeagueName);
+    FRIENDLY_COMPETITION_NAMES.has(normalizedLeagueName) ||
+    /\bfriendl(?:y|ies)\b/.test(normalizedLeagueName);
 }
 
 function normalizeFootyMatchRows(rows = []) {
@@ -1834,6 +2333,199 @@ function createShortHash(value) {
   return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 12);
 }
 
+function buildCompetitionSchedules({ generatedAt, loadedSchedules = [], preserveUnloaded = false, previousSchedules = [], teams = [], followedFixtures = [] }) {
+  const previousByKey = new Map(
+    (Array.isArray(previousSchedules) ? previousSchedules : [])
+      .map((schedule) => [getCompetitionScheduleRecordKey(schedule?.competition), schedule])
+      .filter(([key]) => key)
+  );
+
+  const schedules = loadedSchedules.map((loadedSchedule) => {
+    const competition = loadedSchedule?.competition || {};
+    const recordKey = getCompetitionScheduleRecordKey(competition);
+    const previousSchedule = previousByKey.get(recordKey);
+    const loadedFixtures = mergeFixtures(Array.isArray(loadedSchedule?.fixtures) ? loadedSchedule.fixtures : [])
+      .sort(compareFixtures);
+    const errors = [...new Set((Array.isArray(loadedSchedule?.errors) ? loadedSchedule.errors : []).filter(Boolean))];
+
+    if (loadedFixtures.length === 0 && previousSchedule?.fixtures?.length) {
+      return {
+        ...previousSchedule,
+        attemptedAt: loadedSchedule.attemptedAt || generatedAt,
+        status: "stale-error",
+        errors,
+        notes: [...new Set([
+          ...(Array.isArray(loadedSchedule.notes) ? loadedSchedule.notes : []),
+          `Preserved ${previousSchedule.fixtures.length} matches from the previous successful competition update.`,
+        ])],
+      };
+    }
+
+    const fixtures = attachFollowedTeamDetailsToCompetitionFixtures(loadedFixtures, {
+      followedFixtures,
+      teams,
+    }).map((fixture) => {
+      const { matchNote, ...fixtureWithoutMatchNote } = fixture;
+      return fixtureWithoutMatchNote;
+    });
+
+    return {
+      attemptedAt: loadedSchedule.attemptedAt || generatedAt,
+      competition,
+      errors,
+      fixtureCount: fixtures.length,
+      fixtures,
+      notes: [...new Set((Array.isArray(loadedSchedule.notes) ? loadedSchedule.notes : []).filter(Boolean))],
+      previousUpdatedAt: previousSchedule?.updatedAt || "",
+      sources: getFixtureSources(fixtures),
+      status: errors.length > 0 ? "partial" : fixtures.length > 0 ? "updated" : "no-fixtures",
+      updatedAt: generatedAt,
+    };
+  });
+
+  if (preserveUnloaded) {
+    const loadedKeys = new Set(schedules.map((schedule) => getCompetitionScheduleRecordKey(schedule.competition)));
+
+    for (const previousSchedule of Array.isArray(previousSchedules) ? previousSchedules : []) {
+      const recordKey = getCompetitionScheduleRecordKey(previousSchedule?.competition);
+
+      if (!recordKey || loadedKeys.has(recordKey) || !previousSchedule?.fixtures?.length || previousSchedule?.competition?.source !== PRIMARY_PROVIDER_NAME) {
+        continue;
+      }
+
+      schedules.push({
+        ...previousSchedule,
+        attemptedAt: generatedAt,
+        errors: [`Unable to refresh the full ${previousSchedule.competition.name} schedule: missing FOOTBALL_DATA_API_KEY.`],
+        notes: [...new Set([
+          ...(Array.isArray(previousSchedule.notes) ? previousSchedule.notes : []),
+          `Preserved ${previousSchedule.fixtures?.length || 0} matches from the previous successful competition update.`,
+        ])],
+        status: "stale-error",
+      });
+    }
+  }
+
+  return schedules;
+}
+
+function attachFollowedTeamDetailsToCompetitionFixtures(fixtures = [], { followedFixtures = [], teams = [] } = {}) {
+  const followedBySourceId = new Map();
+  const followedByMatch = new Map();
+
+  followedFixtures.forEach((fixture) => {
+    getSourceIdKeys(getFixtureSourceIds(fixture)).forEach((sourceId) => {
+      if (!followedBySourceId.has(sourceId)) {
+        followedBySourceId.set(sourceId, fixture);
+      }
+    });
+    followedByMatch.set(getCompetitionFixtureFingerprint(fixture), fixture);
+  });
+
+  return fixtures.map((fixture) => {
+    const sourceMatch = getSourceIdKeys(getFixtureSourceIds(fixture))
+      .map((sourceId) => followedBySourceId.get(sourceId))
+      .find(Boolean);
+    const followedMatch = sourceMatch || followedByMatch.get(getCompetitionFixtureFingerprint(fixture));
+    const followedTeams = teams.filter((team) => (
+      isSameFootballClubName(team.name, fixture.home) ||
+      isSameFootballClubName(team.resolvedName, fixture.home) ||
+      isSameFootballClubName(team.name, fixture.away) ||
+      isSameFootballClubName(team.resolvedName, fixture.away)
+    ));
+    const followedTeamNames = followedTeams.map((team) => team.name).filter(Boolean);
+    const primaryTeam = followedTeams[0];
+    const primaryIsHome = Boolean(primaryTeam) && (
+      isSameFootballClubName(primaryTeam.name, fixture.home) ||
+      isSameFootballClubName(primaryTeam.resolvedName, fixture.home)
+    );
+
+    return {
+      ...fixture,
+      ...(followedMatch ? {
+        matchId: followedMatch.matchId || "",
+        sourceIds: mergeSourceIds(fixture.sourceIds, followedMatch.sourceIds),
+      } : {}),
+      followedTeamNames,
+      isCompetitionFixture: true,
+      isHome: primaryTeam ? primaryIsHome : null,
+      opponent: primaryTeam ? (primaryIsHome ? fixture.away : fixture.home) : "",
+      priority: primaryTeam?.priority || "",
+      teamBadge: primaryTeam?.badge || "",
+      teamId: primaryTeam?.id || "",
+      teamName: primaryTeam?.name || "",
+    };
+  });
+}
+
+function getCompetitionFixtureFingerprint(fixture = {}) {
+  return [
+    String(fixture.date || "").trim(),
+    normalizeFootballClubName(fixture.home),
+    normalizeFootballClubName(fixture.away),
+    getCompetitionScheduleKey(fixture.league),
+  ].join("|");
+}
+
+function getCompetitionScheduleRecordKey(competition = {}) {
+  const key = competition.key || getCompetitionScheduleKey(competition.name);
+  const season = String(competition.season || "").trim();
+  return key ? `${key}|${season}` : "";
+}
+
+function getCompetitionScheduleKey(name) {
+  const normalizedName = normalizeText(name);
+
+  if (!normalizedName) {
+    return "";
+  }
+
+  if (["la liga", "primera division"].includes(normalizedName) || normalizedName.startsWith("laliga season")) {
+    return "la liga";
+  }
+
+  if (["mls", "mls - regular season", "mls regular season", "major league soccer"].includes(normalizedName)) {
+    return "mls";
+  }
+
+  if (["championship", "efl championship", "english league championship"].includes(normalizedName)) {
+    return "championship";
+  }
+
+  if (["premier league", "english premier league"].includes(normalizedName)) {
+    return "premier league";
+  }
+
+  if (["community shield", "fa community shield"].includes(normalizedName)) {
+    return "community shield";
+  }
+
+  if (["efl cup", "football league cup", "league cup"].includes(normalizedName)) {
+    return "efl cup";
+  }
+
+  if (["spanish super cup", "supercopa de espana", "supercopa de españa"].includes(normalizedName)) {
+    return "supercopa de espana";
+  }
+
+  return normalizedName;
+}
+
+function getCompetitionScheduleDisplayName(name) {
+  const key = getCompetitionScheduleKey(name);
+  const displayNames = {
+    championship: "Championship",
+    "community shield": "FA Community Shield",
+    "efl cup": "EFL Cup",
+    "la liga": "La Liga",
+    mls: "MLS",
+    "premier league": "Premier League",
+    "supercopa de espana": "Supercopa de España",
+  };
+
+  return displayNames[key] || String(name || "").trim();
+}
+
 function buildTeamSchedules({ errors = [], fixtures = [], generatedAt, notes = [], previousSchedules = [], teams = [] }) {
   const fixturesByTeamId = groupBy(fixtures, (fixture) => String(fixture.teamId || "").trim());
   const previousScheduleByTeamId = new Map(
@@ -2042,8 +2734,9 @@ function getSingleFixtureSources(fixture = {}) {
   return Array.isArray(fixture.sources) ? fixture.sources : [fixture.source].filter(Boolean);
 }
 
-function buildFileUpdateTracker({ generatedAt, teamSchedules = [] }) {
+function buildFileUpdateTracker({ competitionSchedules = [], generatedAt, teamSchedules = [] }) {
   const schedules = Array.isArray(teamSchedules) ? teamSchedules : [];
+  const competitions = Array.isArray(competitionSchedules) ? competitionSchedules : [];
   const updatedTimes = schedules
     .map((schedule) => schedule.updatedAt)
     .filter(Boolean)
@@ -2063,6 +2756,8 @@ function buildFileUpdateTracker({ generatedAt, teamSchedules = [] }) {
     attemptedAt: attemptedTimes.at(-1) || generatedAt,
     updatedAt: updatedTimes.at(-1) || generatedAt,
     oldestTeamUpdatedAt: updatedTimes[0] || "",
+    competitionCount: competitions.length,
+    competitionFixtureCount: competitions.reduce((sum, schedule) => sum + (Number(schedule.fixtureCount) || 0), 0),
     teamCount: schedules.length,
     fixtureCount: schedules.reduce((sum, schedule) => sum + (Number(schedule.fixtureCount) || 0), 0),
     statuses,
@@ -2378,6 +3073,26 @@ function parseCalendarMatchSummary(summary, team) {
   };
 }
 
+function parseFullCalendarMatchSummary(summary) {
+  let cleanedSummary = String(summary || "")
+    .replace(/^[^\w]+/u, "")
+    .replace(/\s+\(Time TBC\)\s*$/i, "")
+    .replace(/\s+\([HAN]\)\s*$/i, "")
+    .trim();
+  const prefixedMatch = cleanedSummary.match(/^([^:]+):\s+(.+\s+v(?:s)?\.?\s+.+)$/i);
+  const league = prefixedMatch ? prefixedMatch[1].trim() : "";
+
+  if (prefixedMatch) {
+    cleanedSummary = prefixedMatch[2].trim();
+  }
+
+  const [home = "", away = ""] = cleanedSummary
+    .split(/\s+v(?:s)?\.?\s+/i)
+    .map((value) => value.replace(/\*+$/g, "").trim());
+
+  return { away, home, league };
+}
+
 function getCalendarLeague(description) {
   const firstLine = String(description || "").split(/\n/)[0] || "";
   const [league = ""] = firstLine.split("|").map((value) => value.trim());
@@ -2526,7 +3241,7 @@ function getScheduleFreshnessValue(schedule) {
 function compareFixtures(first, second) {
   return String(first.timestamp || first.date).localeCompare(String(second.timestamp || second.date)) ||
     comparePriority(first.teamId, second.teamId) ||
-    first.teamName.localeCompare(second.teamName);
+    String(first.teamName || "").localeCompare(String(second.teamName || ""));
 }
 
 function assertRequiredProviderConfiguration(activeTeams = []) {

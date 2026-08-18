@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.18.04.48";
+      window.BOX_THIS_LAP_VERSION = "2026.08.18.04.49";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608180448">
+    <link rel="stylesheet" href="styles.css?v=202608180449">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1548,6 +1548,13 @@
             </table>
           </div>
         </div>
+
+        <div class="standings-test-control" data-admin-only hidden>
+          <label class="standings-test-toggle">
+            <input id="nation-test-scoring-toggle" type="checkbox">
+            <span>Test</span>
+          </label>
+        </div>
       </section>
 
       <section class="page rules-page" id="rules" data-page="rules">
@@ -2101,10 +2108,6 @@
           loading="lazy"
         >
       </div>
-      <label class="footer-test-toggle" data-admin-only hidden>
-        <input id="nation-test-scoring-toggle" type="checkbox">
-        <span>Test</span>
-      </label>
       <button class="footer-copy-link" type="button" id="copy-current-page-link" hidden>
         Copy URL
       </button>
@@ -2122,6 +2125,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608180448"></script>
+    <script type="module" src="script.js?v=202608180449"></script>
   </body>
 </html>

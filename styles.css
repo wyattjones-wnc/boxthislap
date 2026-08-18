@@ -6767,7 +6767,13 @@ tr:last-child td {
   white-space: nowrap;
 }
 
-.footer-test-toggle {
+.standings-test-control {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.standings-test-toggle {
   align-items: center;
   color: var(--muted);
   display: inline-flex;
@@ -6777,7 +6783,7 @@ tr:last-child td {
   justify-content: center;
 }
 
-.footer-test-toggle input {
+.standings-test-toggle input {
   accent-color: var(--accent);
   height: 18px;
   width: 18px;

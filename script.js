@@ -2691,7 +2691,12 @@ function handleImageCacheMessage(event) {
 
   if (message.type === "IMAGE_CACHE_COMPLETE") {
     imageCacheToggle.disabled = false;
-    setImageCacheStatus(`${message.total} images saved (${formatFileSize(message.bytes)}).`);
+    if (message.failed) {
+      setStoredBoolean(IMAGE_CACHE_STORAGE_KEY, false);
+      setImageCacheStatus(`${message.saved} images saved; ${message.failed} skipped. Tap Save images to retry.`);
+    } else {
+      setImageCacheStatus(`${message.total} images saved (${formatFileSize(message.bytes)}).`);
+    }
     syncImageCacheControl();
     return;
   }

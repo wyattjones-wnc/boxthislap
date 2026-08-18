@@ -140,26 +140,66 @@ async function cacheAllImages(client) {
     }));
     let completed = 0;
     let bytes = 0;
+    const failed = [];
 
-    for (const batch of chunk(images, 6)) {
+    for (const batch of chunk(images, 3)) {
       await Promise.all(batch.map(async (image) => {
-        const response = await fetch(image.path, { cache: "no-store" });
-
-        if (!response.ok) {
-          throw new Error(`Unable to save ${image.path} (${response.status}).`);
+        try {
+          const response = await fetchImageWithRetry(image.path);
+          await cache.put(image.path, response);
+          bytes += Number(image.bytes || 0);
+        } catch (error) {
+          failed.push({ message: error.message || "Unknown error.", path: image.path });
+        } finally {
+          completed += 1;
         }
-
-        await cache.put(image.path, response);
-        completed += 1;
-        bytes += Number(image.bytes || 0);
       }));
       postToClient(client, { type: "IMAGE_CACHE_PROGRESS", completed, total: images.length });
     }
 
-    postToClient(client, { type: "IMAGE_CACHE_COMPLETE", bytes, total: images.length });
+    postToClient(client, {
+      type: "IMAGE_CACHE_COMPLETE",
+      bytes,
+      failed: failed.length,
+      saved: images.length - failed.length,
+      total: images.length,
+    });
   } catch (error) {
     postToClient(client, { type: "IMAGE_CACHE_ERROR", message: error.message || "Unknown error." });
   }
+}
+
+async function fetchImageWithRetry(path, attempts = 3) {
+  let lastStatus = 0;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(path, { cache: "no-store" });
+      lastStatus = response.status;
+
+      if (response.ok) {
+        return response;
+      }
+
+      if (response.status < 500 || attempt === attempts) {
+        break;
+      }
+
+      await delay(300 * attempt);
+    } catch (error) {
+      if (attempt === attempts) {
+        throw error;
+      }
+
+      await delay(300 * attempt);
+    }
+  }
+
+  throw new Error(`Unable to save ${path}${lastStatus ? ` (${lastStatus})` : ""}.`);
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function clearImageCache(client) {

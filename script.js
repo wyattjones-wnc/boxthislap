@@ -322,6 +322,7 @@ let activeFootyScheduleMode = "teams";
 let activeFootyCompetitionKey = "";
 let shouldSuppressNextFootyDropdownClick = false;
 let activeFootyTeamViewMode = "schedule";
+const footyTeamFixtureLimits = new Map();
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
@@ -651,8 +652,8 @@ function renderFootySchedule(schedule) {
   footyScheduleList.innerHTML = `
     ${updatedMarkup}
     ${adminDiagnosticsMarkup}
-    <div class="footy-list">
-      ${renderFootyCalendarWeekGroups(renderedFixtures)}
+    <div class="footy-list${isCompetitionMode ? " footy-list--calendar-weeks" : ""}">
+      ${isCompetitionMode ? renderFootyCalendarWeekGroups(renderedFixtures) : renderedFixtures.map(renderFootyFixture).join("")}
     </div>
     ${isCompetitionMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
   `;
@@ -893,7 +894,9 @@ function renderFootyTeamPage(pageName = activePageName) {
     .filter((fixture) => isSameFootyTeamName(fixture.teamName, team.name));
   const upcomingFixtures = fixtures.filter((fixture) => !isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures);
   const pastFixtures = fixtures.filter((fixture) => isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures).reverse();
-  const nextFixtures = upcomingFixtures.slice(0, 5);
+  const teamSlug = getFootyTeamSlug(team.name);
+  const nextFixtureLimit = footyTeamFixtureLimits.get(teamSlug) || 5;
+  const nextFixtures = upcomingFixtures.slice(0, nextFixtureLimit);
   const recentFixtures = pastFixtures.slice(0, 3);
   const updatedAt = formatFootyGeneratedAt(team.updatedAt || getFootyScheduleUpdatedAt(siteData.footySchedule));
   const projectedPointsMarkup = team.leagueGames > 0 && team.projectedPoints !== null
@@ -939,7 +942,10 @@ function renderFootyTeamPage(pageName = activePageName) {
         ${projectedPointsMarkup}
       </dl>
     </section>
-    ${renderFootyTeamFixtureSection("Next Matches", nextFixtures)}
+    ${renderFootyTeamFixtureSection("Next Matches", nextFixtures, {
+      hiddenCount: Math.max(0, upcomingFixtures.length - nextFixtures.length),
+      teamSlug,
+    })}
     ${renderFootyTeamFixtureSection("Recent Matches", recentFixtures)}
   `;
 }
@@ -1685,13 +1691,20 @@ function slugifyFileName(value) {
     .replace(/^-+|-+$/g, "") || "card";
 }
 
-function renderFootyTeamFixtureSection(title, fixtures = []) {
+function renderFootyTeamFixtureSection(title, fixtures = [], { hiddenCount = 0, teamSlug = "" } = {}) {
   return `
     <section class="footy-team-fixture-section">
       <h2>${escapeHtml(title)}</h2>
       ${fixtures.length
-        ? `<div class="footy-list footy-team-fixture-list">${renderFootyCalendarWeekGroups(fixtures)}</div>`
+        ? `<div class="footy-list footy-team-fixture-list">${fixtures.map(renderFootyFixture).join("")}</div>`
         : `<p class="table-message">No ${escapeHtml(title.toLowerCase())} loaded.</p>`}
+      ${hiddenCount > 0 && teamSlug ? `
+        <div class="footy-team-fixture-actions">
+          <button class="action-button" type="button" data-footy-team-show-more="${escapeHtml(teamSlug)}">
+            Show more (${escapeHtml(String(hiddenCount))} remaining)
+          </button>
+        </div>
+      ` : ""}
     </section>
   `;
 }
@@ -2235,7 +2248,13 @@ function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
     return;
   }
 
-  syncFootyMatchPeriodFilter(matchPeriodFixtures);
+  syncFootyMatchPeriodFilter(activeFootyScheduleMode === "competitions" ? matchPeriodFixtures : []);
+
+  const matchPeriodField = footyMatchPeriodFilter?.closest("label");
+
+  if (matchPeriodField) {
+    matchPeriodField.hidden = activeFootyScheduleMode !== "competitions";
+  }
 
   const teamFilterField = footyTeamFilter.closest("label");
 
@@ -2997,7 +3016,7 @@ function renderFootyFixture(fixture) {
   const isExpanded = matchId && expandedFootyMatchIds.has(matchId);
   const score = getFootyMatchScore(fixture);
   const resultClass = getFootyFixtureResultClass(fixture);
-  const matchPeriod = getFootyMatchPeriod(fixture);
+  const matchPeriod = isCompetitionFixture ? getFootyMatchPeriod(fixture) : null;
   const cardClasses = [
     "footy-fixture-card",
     isCompetitionFixture ? "footy-fixture-card--competition" : "",
@@ -11340,6 +11359,19 @@ function handleFootyFixtureListKeydown(event) {
 });
 
 footyTeamContent?.addEventListener("click", (event) => {
+  const showMoreButton = event.target.closest("[data-footy-team-show-more]");
+
+  if (showMoreButton) {
+    const teamSlug = String(showMoreButton.getAttribute("data-footy-team-show-more") || "").trim();
+
+    if (teamSlug) {
+      footyTeamFixtureLimits.set(teamSlug, (footyTeamFixtureLimits.get(teamSlug) || 5) + 5);
+      renderFootyTeamPage();
+    }
+
+    return;
+  }
+
   const exportToggle = event.target.closest("[data-trading-card-export-toggle]");
 
   if (exportToggle) {

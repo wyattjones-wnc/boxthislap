@@ -680,6 +680,10 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-list {
   display: grid;
+  gap: 12px;
+}
+
+.footy-list--calendar-weeks {
   gap: 22px;
 }
 
@@ -3662,6 +3666,12 @@ body.has-shell-stale-warning .stale-shell-alert {
 .footy-team-fixture-section h2 {
   font-size: 1.05rem;
   margin: 0;
+}
+
+.footy-team-fixture-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
 }
 
 .footy-team-player-section {

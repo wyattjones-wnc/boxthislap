@@ -67,6 +67,7 @@ import {
   managerSummaryList,
   managerSummaryYearSelect,
   managerAwardsList,
+  leagueAwardsList,
   standingsAwards,
   standingsAwardsList,
   leagueYearSelect,
@@ -9983,6 +9984,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "manager-awards") {
+    renderLeagueAwards();
+    return;
+  }
+
   if (pageName === "results") {
     if (siteData.resultImages) {
       renderResultImages(siteData.resultImages);
@@ -13870,6 +13876,58 @@ function renderManagerAwards(managerId) {
   managerAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "manager")).join("");
 }
 
+function renderLeagueAwards() {
+  if (!leagueAwardsList) {
+    return;
+  }
+
+  if (!siteData.managerSession) {
+    leagueAwardsList.innerHTML = `<section class="manager-hub-card league-awards-group"><p class="table-message">Log in to load league awards.</p></section>`;
+    return;
+  }
+
+  if (!siteData.portalDrafts) {
+    leagueAwardsList.innerHTML = `<section class="manager-hub-card league-awards-group"><p class="table-message">Loading league awards...</p></section>`;
+    return;
+  }
+
+  const awards = getResolvedAwards().sort((first, second) => {
+    return Number(second.year || 0) - Number(first.year || 0) ||
+      String(first.competition || "").localeCompare(String(second.competition || "")) ||
+      String(first.label || "").localeCompare(String(second.label || ""));
+  });
+
+  if (!awards.length) {
+    leagueAwardsList.innerHTML = `<section class="manager-hub-card league-awards-group"><p class="table-message">No completed league awards yet.</p></section>`;
+    return;
+  }
+
+  const awardsByCompetition = new Map();
+
+  awards.forEach((award) => {
+    const competition = award.competition || "League Awards";
+    const competitionAwards = awardsByCompetition.get(competition) || [];
+    competitionAwards.push(award);
+    awardsByCompetition.set(competition, competitionAwards);
+  });
+
+  leagueAwardsList.innerHTML = [...awardsByCompetition.entries()].map(([competition, competitionAwards]) => {
+    const awardCount = competitionAwards.length;
+
+    return `
+      <section class="manager-hub-card league-awards-group">
+        <div class="manager-hub-card-heading">
+          <h2>${escapeHtml(competition)}</h2>
+          <span>${awardCount} ${awardCount === 1 ? "award" : "awards"}</span>
+        </div>
+        <div class="league-awards-list">
+          ${competitionAwards.map((award) => renderAwardCard(award, "league")).join("")}
+        </div>
+      </section>
+    `;
+  }).join("");
+}
+
 function getManagerSummarySelectedYear() {
   const value = managerSummaryYearSelect?.value || "current";
 
@@ -14238,15 +14296,17 @@ function renderAwardCard(award, context = "standings-summary") {
 }
 
 function getAwardSecondaryText(award, context) {
+  const managerName = award.manager?.displayName || award.manager?.name || "";
+
   if (context === "manager") {
     return "";
   }
 
-  if (award.manager?.displayName) {
-    return award.manager.displayName;
+  if (context === "league" && managerName) {
+    return `Winner: ${managerName}`;
   }
 
-  return award.manager?.name || "";
+  return managerName;
 }
 
 function renderAwardBadge(award, context = "standings") {
@@ -15111,6 +15171,10 @@ function getPageDataScope(pageName = "") {
     return "manager-hub";
   }
 
+  if (page === "manager-awards") {
+    return "manager-awards";
+  }
+
   if (page === "results") {
     return "world-cup-results";
   }
@@ -15228,6 +15292,15 @@ function loadPageData(scope) {
 
   if (scope === "manager-hub") {
     return ensureManagerHubData();
+  }
+
+  if (scope === "manager-awards") {
+    if (!siteData.managerSession) {
+      renderLeagueAwards();
+      return ensurePortalManagersData();
+    }
+
+    return ensurePortalData().then(() => renderLeagueAwards());
   }
 
   if (scope === "world-cup-results") {
@@ -15484,6 +15557,7 @@ function ensurePortalData() {
     runPortalRender("login manager options", renderLoginManagerOptions);
     runPortalRender("login state", renderLoginState);
     runPortalRender("manager hub", renderManagerHub);
+    runPortalRender("league awards", renderLeagueAwards);
     runPortalRender("standings awards", renderStandingsAwards);
     runPortalRender("Fantasy Critic awards", renderFantasyCriticPage);
     runPortalRender("2025 Fantasy Office awards", () => renderFantasyOfficeResults(2025, siteData.fantasyOffice2025?.results || []));

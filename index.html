@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.18.01.11";
+      window.BOX_THIS_LAP_VERSION = "2026.08.18.04.11";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608180111">
+    <link rel="stylesheet" href="styles.css?v=202608180411">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -445,6 +445,14 @@
             <h1>Manager Hub</h1>
             <p class="manager-hub-subtitle" id="manager-hub-subtitle" hidden></p>
           </div>
+          <a class="icon-action-button manager-awards-button" href="#manager-awards" data-page-link="manager-awards" aria-label="View all league awards" title="View all league awards">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"></path>
+              <path d="M7 6H4v1a4 4 0 0 0 4 4"></path>
+              <path d="M17 6h3v1a4 4 0 0 1-4 4"></path>
+              <path d="M12 13v7M8 20h8"></path>
+            </svg>
+          </a>
         </div>
 
         <div class="manager-hub-grid">
@@ -489,6 +497,19 @@
                 <p class="table-message">Log in to load manager results.</p>
               </article>
             </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page manager-awards-page" id="manager-awards" data-page="manager-awards">
+        <div class="section-heading">
+          <a class="back-link" href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
+          <h1>League Awards</h1>
+          <p class="body-copy">Championships and award winners from completed leagues.</p>
+        </div>
+        <div class="league-awards-groups" id="league-awards-list" aria-live="polite">
+          <section class="manager-hub-card league-awards-group">
+            <p class="table-message">Log in to load league awards.</p>
           </section>
         </div>
       </section>
@@ -2095,6 +2116,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608180111"></script>
+    <script type="module" src="script.js?v=202608180411"></script>
   </body>
 </html>

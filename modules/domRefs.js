@@ -36,6 +36,7 @@ export const workflowList = document.querySelector("#workflow-list");
 export const managerSummaryList = document.querySelector("#manager-summary-list");
 export const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
 export const managerAwardsList = document.querySelector("#manager-awards-list");
+export const leagueAwardsList = document.querySelector("#league-awards-list");
 export const standingsAwards = document.querySelector("#standings-awards");
 export const standingsAwardsList = document.querySelector("#standings-awards-list");
 export const leagueYearSelect = document.querySelector("#league-year-select");

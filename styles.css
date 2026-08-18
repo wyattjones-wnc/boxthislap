@@ -680,6 +680,37 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-list {
   display: grid;
+  gap: 22px;
+}
+
+.footy-calendar-week {
+  display: grid;
+  gap: 10px;
+}
+
+.footy-calendar-week-header {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 0 2px 8px;
+}
+
+.footy-calendar-week-header h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.footy-calendar-week-header span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.footy-calendar-week-matches {
+  display: grid;
   gap: 12px;
 }
 
@@ -820,7 +851,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: 0 10px 26px var(--shadow);
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(160px, 1.3fr) minmax(140px, 0.7fr) minmax(160px, 1fr) max-content;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(140px, 0.8fr) minmax(145px, 0.8fr) minmax(160px, 1fr) max-content;
   margin: -8px 0 18px;
   padding: 14px;
 }
@@ -2815,7 +2846,17 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-filters select {
-  min-height: 96px;
+  min-height: 42px;
+}
+
+@media (max-width: 1100px) {
+  .footy-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footy-filters .footy-checkbox-control {
+    justify-self: start;
+  }
 }
 
 .multi-filter {
@@ -3425,6 +3466,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-content: center;
   line-height: 1;
   width: 22px;
+}
+
+.footy-match-period-chip {
+  background: color-mix(in srgb, var(--track) 16%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--track) 38%, var(--line));
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
 }
 
 .footy-match-note {

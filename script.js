@@ -82,6 +82,7 @@ import {
   footySearchInput,
   footyDateFromFilter,
   footyDateToFilter,
+  footyMatchPeriodFilter,
   footyFriendliesFilter,
   footyTeamFilter,
   footyScheduleList,
@@ -287,7 +288,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608170002";
+} from "./modules/domRefs.js?v=202608170003";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608160001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
@@ -589,12 +590,13 @@ function renderFootySchedule(schedule) {
 
   const fixtures = getFootyScheduleFixtures(schedule);
   const competitionSchedules = getFootyCompetitionSchedules(schedule);
-  syncFootyFilters(fixtures);
   const competitionRecords = syncFootyCompetitionControls(fixtures, competitionSchedules);
   const isCompetitionMode = activeFootyScheduleMode === "competitions";
-  const modeFixtures = isCompetitionMode
-    ? getFilteredFootyFixtures(getFootyCompetitionFixtures(fixtures, activeFootyCompetitionKey, competitionSchedules))
-    : getFilteredFootyFixtures(getVisibleFootyFixtures(fixtures));
+  const unfilteredModeFixtures = isCompetitionMode
+    ? getFootyCompetitionFixtures(fixtures, activeFootyCompetitionKey, competitionSchedules)
+    : getVisibleFootyFixtures(fixtures);
+  syncFootyFilters(fixtures, unfilteredModeFixtures);
+  const modeFixtures = getFilteredFootyFixtures(unfilteredModeFixtures);
   const visibleFixtures = modeFixtures
     .sort(compareVisibleFootyFixtures);
   const renderedFixtures = isCompetitionMode || shouldShowAllFootyFixtures
@@ -650,7 +652,7 @@ function renderFootySchedule(schedule) {
     ${updatedMarkup}
     ${adminDiagnosticsMarkup}
     <div class="footy-list">
-      ${renderedFixtures.map(renderFootyFixture).join("")}
+      ${renderFootyCalendarWeekGroups(renderedFixtures)}
     </div>
     ${isCompetitionMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
   `;
@@ -1688,7 +1690,7 @@ function renderFootyTeamFixtureSection(title, fixtures = []) {
     <section class="footy-team-fixture-section">
       <h2>${escapeHtml(title)}</h2>
       ${fixtures.length
-        ? `<div class="footy-list footy-team-fixture-list">${fixtures.map(renderFootyFixture).join("")}</div>`
+        ? `<div class="footy-list footy-team-fixture-list">${renderFootyCalendarWeekGroups(fixtures)}</div>`
         : `<p class="table-message">No ${escapeHtml(title.toLowerCase())} loaded.</p>`}
     </section>
   `;
@@ -2069,6 +2071,7 @@ function getFootySharedMatchIdentity(fixture = {}) {
 function getFilteredFootyFixtures(fixtures) {
   const searchTerm = normalizeLookupName(footySearchInput?.value || "");
   const dateRange = getFootyDateFilterRange();
+  const matchPeriodKey = String(footyMatchPeriodFilter?.value || "").trim();
   const selectedTeams = getSelectedFootyTeams();
   const defaultPrioritySet = getDefaultFootyPrioritySet();
 
@@ -2078,6 +2081,10 @@ function getFilteredFootyFixtures(fixtures) {
     }
 
     if (dateRange && !isFootyFixtureInDateRange(fixture, dateRange)) {
+      return false;
+    }
+
+    if (matchPeriodKey && getFootyMatchPeriod(fixture)?.key !== matchPeriodKey) {
       return false;
     }
 
@@ -2126,6 +2133,7 @@ function hasActiveFootyFilters() {
     String(footySearchInput?.value || "").trim() ||
     String(footyDateFromFilter?.value || "").trim() ||
     String(footyDateToFilter?.value || "").trim() ||
+    String(footyMatchPeriodFilter?.value || "").trim() ||
     (footyFriendliesFilter && !footyFriendliesFilter.checked) ||
     (activeFootyScheduleMode !== "competitions" && getSelectedFootyTeams().size > 0)
   );
@@ -2213,7 +2221,7 @@ function getFootyFixtureDateKey(fixture) {
   return parsedDate.toISOString().slice(0, 10);
 }
 
-function syncFootyFilters(fixtures = []) {
+function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
   if (footyFilters) {
     footyFilters.hidden = !shouldShowFootyFilters;
   }
@@ -2226,6 +2234,8 @@ function syncFootyFilters(fixtures = []) {
   if (!footyTeamFilter) {
     return;
   }
+
+  syncFootyMatchPeriodFilter(matchPeriodFixtures);
 
   const teamFilterField = footyTeamFilter.closest("label");
 
@@ -2846,6 +2856,121 @@ function syncFootyGoalAssistsButton() {
   footyGoalAssistsButton.hidden = activeFootyScheduleMode === "competitions" || !isCurrentManagerAdmin() || !shouldShowPastFootyFixtures;
 }
 
+function syncFootyMatchPeriodFilter(fixtures = []) {
+  if (!footyMatchPeriodFilter) {
+    return;
+  }
+
+  const selectedValue = String(footyMatchPeriodFilter.value || "");
+  const recordsByKey = new Map();
+
+  fixtures.forEach((fixture) => {
+    const record = getFootyMatchPeriod(fixture);
+
+    if (record && !recordsByKey.has(record.key)) {
+      recordsByKey.set(record.key, record);
+    }
+  });
+
+  const records = [...recordsByKey.values()].sort((first, second) => (
+    first.sortGroup - second.sortGroup ||
+    first.sortNumber - second.sortNumber ||
+    first.label.localeCompare(second.label)
+  ));
+
+  footyMatchPeriodFilter.innerHTML = [
+    '<option value="">All match weeks / days</option>',
+    ...records.map((record) => `<option value="${escapeHtml(record.key)}">${escapeHtml(record.label)}</option>`),
+  ].join("");
+  footyMatchPeriodFilter.value = recordsByKey.has(selectedValue) ? selectedValue : "";
+  footyMatchPeriodFilter.disabled = records.length === 0;
+}
+
+function getFootyMatchPeriod(fixture = {}) {
+  const rawRound = String(fixture.round || "").trim();
+
+  if (!rawRound || isFootyCupCompetition(fixture)) {
+    return null;
+  }
+
+  const numericMatch = rawRound.match(/^\d+$/) || rawRound.match(/^(?:match\s*(?:week|day)|gameweek|mw)\s*(\d+)$/i);
+
+  if (numericMatch) {
+    const number = Number(numericMatch[1] || numericMatch[0]);
+
+    return {
+      key: `match-week:${number}`,
+      label: `Match Week ${number}`,
+      sortGroup: 1,
+      sortNumber: number,
+    };
+  }
+
+  return null;
+}
+
+function renderFootyCalendarWeekGroups(fixtures = []) {
+  const groups = [];
+
+  fixtures.forEach((fixture) => {
+    const week = getFootyCalendarWeek(fixture);
+    let group = groups.find((record) => record.key === week.key);
+
+    if (!group) {
+      group = { ...week, fixtures: [] };
+      groups.push(group);
+    }
+
+    group.fixtures.push(fixture);
+  });
+
+  return groups.map((group) => `
+    <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
+      <header class="footy-calendar-week-header">
+        <h2>${escapeHtml(group.label)}</h2>
+        <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
+      </header>
+      <div class="footy-calendar-week-matches">
+        ${group.fixtures.map(renderFootyFixture).join("")}
+      </div>
+    </section>
+  `).join("");
+}
+
+function getFootyCalendarWeek(fixture = {}) {
+  const dateKey = getFootyFixtureDateKey(fixture);
+
+  if (!dateKey) {
+    return { key: "date-tbc", label: "Date TBC" };
+  }
+
+  const fixtureDate = new Date(`${dateKey}T12:00:00`);
+
+  if (Number.isNaN(fixtureDate.getTime())) {
+    return { key: "date-tbc", label: "Date TBC" };
+  }
+
+  const weekStart = new Date(fixtureDate);
+  const daysSinceMonday = (weekStart.getDay() + 6) % 7;
+  weekStart.setDate(weekStart.getDate() - daysSinceMonday);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const startLabel = weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const endLabel = weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  return {
+    key: formatLocalDateKey(weekStart),
+    label: `${startLabel} – ${endLabel}`,
+  };
+}
+
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function closeProfileDropdown() {
   profileMenuButton?.setAttribute("aria-expanded", "false");
 
@@ -2867,6 +2992,7 @@ function renderFootyFixture(fixture) {
   const isExpanded = matchId && expandedFootyMatchIds.has(matchId);
   const score = getFootyMatchScore(fixture);
   const resultClass = getFootyFixtureResultClass(fixture);
+  const matchPeriod = getFootyMatchPeriod(fixture);
   const cardClasses = [
     "footy-fixture-card",
     isCompetitionFixture ? "footy-fixture-card--competition" : "",
@@ -2919,6 +3045,7 @@ function renderFootyFixture(fixture) {
         <p class="footy-fixture-meta">
           ${followedTeamMarkup}
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
+          ${matchPeriod ? `<span class="footy-match-period-chip">${escapeHtml(matchPeriod.label)}</span>` : ""}
         </p>
         ${venueMarkup}
       </div>
@@ -11488,7 +11615,7 @@ function markFootyTeamSelectionExplicit(event) {
 footyTeamFilter?.addEventListener("input", markFootyTeamSelectionExplicit);
 footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
 
-[footySearchInput, footyDateFromFilter, footyDateToFilter, footyFriendliesFilter, footyTeamFilter].forEach((control) => {
+[footySearchInput, footyDateFromFilter, footyDateToFilter, footyMatchPeriodFilter, footyFriendliesFilter, footyTeamFilter].forEach((control) => {
   control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });

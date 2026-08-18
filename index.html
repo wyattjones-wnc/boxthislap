@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.17.23.14";
+      window.BOX_THIS_LAP_VERSION = "2026.08.18.00.07";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608172314">
+    <link rel="stylesheet" href="styles.css?v=202608180007">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -545,6 +545,12 @@
               <input id="footy-date-from-filter" type="date" aria-label="Date from">
               <input id="footy-date-to-filter" type="date" aria-label="Date to">
             </div>
+          </label>
+          <label>
+            <span>Match Week / Day</span>
+            <select id="footy-match-period-filter" aria-label="Match week or matchday">
+              <option value="">All match weeks / days</option>
+            </select>
           </label>
           <label>
             <span>Teams</span>
@@ -2089,6 +2095,6 @@
       </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608172314"></script>
+    <script type="module" src="script.js?v=202608180007"></script>
   </body>
 </html>

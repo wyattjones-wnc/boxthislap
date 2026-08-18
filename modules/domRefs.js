@@ -51,6 +51,7 @@ export const footyFilters = document.querySelector("#footy-filters");
 export const footySearchInput = document.querySelector("#footy-search");
 export const footyDateFromFilter = document.querySelector("#footy-date-from-filter");
 export const footyDateToFilter = document.querySelector("#footy-date-to-filter");
+export const footyMatchPeriodFilter = document.querySelector("#footy-match-period-filter");
 export const footyFriendliesFilter = document.querySelector("#footy-friendlies-filter");
 export const footyTeamFilter = document.querySelector("#footy-team-filter");
 export const footyScheduleList = document.querySelector("#footy-schedule-list");

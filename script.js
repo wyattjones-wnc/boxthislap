@@ -15344,11 +15344,20 @@ function ensurePageData(pageName = activePageName) {
 
   const existingPromise = pageDataPromises.get(scope);
   if (existingPromise) {
-    return existingPromise;
+    return existingPromise.then(() => {
+      if (["todo", "want"].includes(scope) && activePageName === pageName) {
+        renderActivePageContent(pageName);
+      }
+    });
   }
 
   const promise = Promise.resolve()
     .then(() => loadPageData(scope))
+    .then(() => {
+      if (["todo", "want"].includes(scope) && activePageName === pageName) {
+        renderActivePageContent(pageName);
+      }
+    })
     .catch((error) => {
       recordDiagnostic(`${scope} page data failed to load`, error);
       renderPageDataError(scope, error);

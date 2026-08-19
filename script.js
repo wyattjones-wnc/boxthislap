@@ -13059,7 +13059,7 @@ function syncSiteVersionDisplay() {
   }
 
   siteVersion.textContent = `v${SITE_VERSION}`;
-  siteVersion.hidden = true;
+  siteVersion.hidden = false;
 }
 
 function syncBrandLogo() {

@@ -2820,6 +2820,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   white-space: nowrap;
 }
 
+.footy-filter-toggles {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
 .footy-checkbox-control input {
   accent-color: var(--track);
   height: 18px;

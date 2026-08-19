@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.19.01.55";
+      window.BOX_THIS_LAP_VERSION = "2026.08.19.02.01";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608190155">
+    <link rel="stylesheet" href="styles.css?v=202608190201">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -608,10 +608,6 @@
               <option value="">All match weeks / days</option>
             </select>
           </label>
-          <label class="footy-checkbox-control" id="footy-competition-past-control">
-            <input id="footy-competition-past-filter" type="checkbox">
-            <span>Past Matches</span>
-          </label>
           <label>
             <span>Teams</span>
             <div class="multi-filter" id="footy-team-filter">
@@ -621,10 +617,16 @@
               <div class="multi-filter-options" hidden></div>
             </div>
           </label>
-          <label class="footy-checkbox-control">
-            <input id="footy-friendlies-filter" type="checkbox" checked>
-            <span>Friendlies</span>
-          </label>
+          <div class="footy-filter-toggles">
+            <label class="footy-checkbox-control" id="footy-competition-past-control">
+              <input id="footy-competition-past-filter" type="checkbox">
+              <span>Past Matches</span>
+            </label>
+            <label class="footy-checkbox-control">
+              <input id="footy-friendlies-filter" type="checkbox" checked>
+              <span>Friendlies</span>
+            </label>
+          </div>
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
@@ -2152,6 +2154,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608190155"></script>
+    <script type="module" src="script.js?v=202608190201"></script>
   </body>
 </html>

@@ -87,6 +87,7 @@ import {
   footyDateFromFilter,
   footyDateToFilter,
   footyMatchPeriodFilter,
+  footyCompetitionPastFilter,
   footyFriendliesFilter,
   footyTeamFilter,
   footyScheduleList,
@@ -292,7 +293,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608170003";
+} from "./modules/domRefs.js?v=202608180004";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608160001";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuidesController } from "./modules/guides.js?v=202608130005";
@@ -2090,6 +2091,7 @@ function getFilteredFootyFixtures(fixtures) {
   const searchTerm = normalizeLookupName(footySearchInput?.value || "");
   const dateRange = getFootyDateFilterRange();
   const matchPeriodKey = String(footyMatchPeriodFilter?.value || "").trim();
+  const shouldShowCompetitionPastFixtures = Boolean(footyCompetitionPastFilter?.checked);
   const selectedTeams = getSelectedFootyTeams();
   const defaultPrioritySet = getDefaultFootyPrioritySet();
 
@@ -2103,6 +2105,10 @@ function getFilteredFootyFixtures(fixtures) {
     }
 
     if (matchPeriodKey && getFootyMatchPeriod(fixture)?.key !== matchPeriodKey) {
+      return false;
+    }
+
+    if (activeFootyScheduleMode === "competitions" && !shouldShowCompetitionPastFixtures && isFootyFixturePast(fixture)) {
       return false;
     }
 
@@ -2152,6 +2158,7 @@ function hasActiveFootyFilters() {
     String(footyDateFromFilter?.value || "").trim() ||
     String(footyDateToFilter?.value || "").trim() ||
     String(footyMatchPeriodFilter?.value || "").trim() ||
+    (activeFootyScheduleMode === "competitions" && Boolean(footyCompetitionPastFilter?.checked)) ||
     (footyFriendliesFilter && !footyFriendliesFilter.checked) ||
     (activeFootyScheduleMode !== "competitions" && getSelectedFootyTeams().size > 0)
   );
@@ -2259,6 +2266,12 @@ function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
 
   if (matchPeriodField) {
     matchPeriodField.hidden = activeFootyScheduleMode !== "competitions";
+  }
+
+  const competitionPastField = footyCompetitionPastFilter?.closest("label");
+
+  if (competitionPastField) {
+    competitionPastField.hidden = activeFootyScheduleMode !== "competitions";
   }
 
   const teamFilterField = footyTeamFilter.closest("label");
@@ -3142,9 +3155,11 @@ function renderFootyFixture(fixture) {
   const score = getFootyMatchScore(fixture);
   const resultClass = getFootyFixtureResultClass(fixture);
   const matchPeriod = isCompetitionFixture ? getFootyMatchPeriod(fixture) : null;
+  const isPastCompetitionFixture = isCompetitionFixture && isFootyFixturePast(fixture);
   const cardClasses = [
     "footy-fixture-card",
     isCompetitionFixture ? "footy-fixture-card--competition" : "",
+    isPastCompetitionFixture ? "footy-fixture-card--past" : "",
     isHighlighted ? "footy-fixture-card--soon" : "",
     resultClass,
     isExpanded ? "is-expanded" : "",
@@ -11782,7 +11797,7 @@ function markFootyTeamSelectionExplicit(event) {
 footyTeamFilter?.addEventListener("input", markFootyTeamSelectionExplicit);
 footyTeamFilter?.addEventListener("change", markFootyTeamSelectionExplicit);
 
-[footySearchInput, footyDateFromFilter, footyDateToFilter, footyMatchPeriodFilter, footyFriendliesFilter, footyTeamFilter].forEach((control) => {
+[footySearchInput, footyDateFromFilter, footyDateToFilter, footyMatchPeriodFilter, footyCompetitionPastFilter, footyFriendliesFilter, footyTeamFilter].forEach((control) => {
   control?.addEventListener("input", () => renderFootySchedule(siteData.footySchedule));
   control?.addEventListener("change", () => renderFootySchedule(siteData.footySchedule));
 });

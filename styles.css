@@ -3374,6 +3374,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   grid-template-columns: 58px minmax(0, 1fr) max-content;
 }
 
+.footy-fixture-card--past {
+  background: color-mix(in srgb, var(--soft) 72%, var(--panel));
+  filter: grayscale(0.45);
+  opacity: 0.58;
+}
+
 .footy-competition-badge-pair {
   align-items: center;
   display: flex;

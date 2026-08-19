@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.19.01.40";
+      window.BOX_THIS_LAP_VERSION = "2026.08.19.01.55";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608190140">
+    <link rel="stylesheet" href="styles.css?v=202608190155">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -607,6 +607,10 @@
             <select id="footy-match-period-filter" aria-label="Match week or matchday">
               <option value="">All match weeks / days</option>
             </select>
+          </label>
+          <label class="footy-checkbox-control" id="footy-competition-past-control">
+            <input id="footy-competition-past-filter" type="checkbox">
+            <span>Past Matches</span>
           </label>
           <label>
             <span>Teams</span>
@@ -2148,6 +2152,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608190140"></script>
+    <script type="module" src="script.js?v=202608190155"></script>
   </body>
 </html>

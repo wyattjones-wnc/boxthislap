@@ -15595,7 +15595,8 @@ function ensureNextData() {
 
 function ensureTodoData() {
   return ensureSharedData("todo", async () => {
-    const items = await loadSheet("todo");
+    const response = await loadNextDataEndpoint("listTodoItems");
+    const items = response.items || response.todoItems || [];
 
     siteData.todoItems = items;
     renderTodoList(items);
@@ -15609,7 +15610,8 @@ function ensureTodoData() {
 
 function ensureWantData() {
   return ensureSharedData("want", async () => {
-    const items = await loadSheet("want");
+    const response = await loadNextDataEndpoint("listWantItems");
+    const items = response.items || response.wantItems || [];
     siteData.wantItems = items;
     renderWantList(items);
     console.info("Box This Lap Want data loaded", items);

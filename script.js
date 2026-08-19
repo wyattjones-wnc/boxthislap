@@ -15344,20 +15344,11 @@ function ensurePageData(pageName = activePageName) {
 
   const existingPromise = pageDataPromises.get(scope);
   if (existingPromise) {
-    return existingPromise.then(() => {
-      if (["todo", "want"].includes(scope) && activePageName === pageName) {
-        renderActivePageContent(pageName);
-      }
-    });
+    return existingPromise;
   }
 
   const promise = Promise.resolve()
     .then(() => loadPageData(scope))
-    .then(() => {
-      if (["todo", "want"].includes(scope) && activePageName === pageName) {
-        renderActivePageContent(pageName);
-      }
-    })
     .catch((error) => {
       recordDiagnostic(`${scope} page data failed to load`, error);
       renderPageDataError(scope, error);
@@ -15433,7 +15424,7 @@ function loadPageData(scope) {
       return ensurePortalManagersData();
     }
 
-    return ensurePortalData().then(() => renderLeagueAwards());
+    return ensurePortalAwardsData().then(() => renderLeagueAwards());
   }
 
   if (scope === "world-cup-results") {
@@ -15604,15 +15595,7 @@ function ensureNextData() {
 
 function ensureTodoData() {
   return ensureSharedData("todo", async () => {
-    let items;
-
-    try {
-      const response = await loadNextDataEndpoint("listTodoItems");
-      items = response.items || response.todoItems || [];
-    } catch (error) {
-      recordDiagnostic("To Do endpoint failed to load; using published sheet", error);
-      items = await loadSheet("todo");
-    }
+    const items = await loadSheet("todo");
 
     siteData.todoItems = items;
     renderTodoList(items);
@@ -15626,14 +15609,7 @@ function ensureTodoData() {
 
 function ensureWantData() {
   return ensureSharedData("want", async () => {
-    let items;
-    try {
-      const response = await loadNextDataEndpoint("listWantItems");
-      items = response.items || response.wantItems || [];
-    } catch (error) {
-      recordDiagnostic("Want endpoint failed to load; using published sheet", error);
-      items = await loadSheet("want");
-    }
+    const items = await loadSheet("want");
     siteData.wantItems = items;
     renderWantList(items);
     console.info("Box This Lap Want data loaded", items);
@@ -15662,28 +15638,21 @@ function ensurePortalManagersData() {
 
 function ensurePortalData() {
   return ensureSharedData("portal-data", async () => {
-    const [managersResult, draftsResult, logsResult] = await Promise.allSettled([
-      ensurePortalManagersData(),
-      loadSheet("portalDrafts"),
+    const [awardsResult, logsResult] = await Promise.allSettled([
+      ensurePortalAwardsData(),
       loadSheet("portalLogs"),
     ]);
 
-    if (managersResult.status === "fulfilled") {
-      siteData.portalManagers = managersResult.value;
-    }
-    siteData.portalManagers ||= [...DEFAULT_PORTAL_MANAGERS];
-    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
     siteData.portalLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
 
     console.info("Box This Lap manager portal load results", {
-      drafts: getSettledLog(draftsResult),
+      awards: getSettledLog(awardsResult),
       logs: getSettledLog(logsResult),
-      managers: getSettledLog(managersResult),
     });
 
-    [draftsResult, logsResult].forEach((result, index) => {
+    [awardsResult, logsResult].forEach((result, index) => {
       if (result.status === "rejected") {
-        recordDiagnostic(index === 0 ? "portal drafts failed to load" : "portal logs failed to load", result.reason);
+        recordDiagnostic(index === 0 ? "portal awards failed to load" : "portal logs failed to load", result.reason);
       }
     });
 
@@ -15698,6 +15667,29 @@ function ensurePortalData() {
     runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
     runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
     runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
+    return siteData.portalDrafts;
+  });
+}
+
+function ensurePortalAwardsData() {
+  return ensureSharedData("portal-awards", async () => {
+    const [managersResult, draftsResult] = await Promise.allSettled([
+      ensurePortalManagersData(),
+      loadSheet("portalDrafts"),
+    ]);
+
+    if (managersResult.status === "fulfilled") {
+      siteData.portalManagers = managersResult.value;
+    }
+    siteData.portalManagers ||= [...DEFAULT_PORTAL_MANAGERS];
+    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
+
+    if (draftsResult.status === "rejected") {
+      recordDiagnostic("portal drafts failed to load", draftsResult.reason);
+    }
+
+    runPortalRender("league awards", renderLeagueAwards);
+    runPortalRender("standings awards", renderStandingsAwards);
     return siteData.portalDrafts;
   });
 }

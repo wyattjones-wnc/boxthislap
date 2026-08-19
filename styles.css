@@ -2059,9 +2059,39 @@ body.has-shell-stale-warning .stale-shell-alert {
   opacity: 0.66;
 }
 
+.guide-step.is-saving {
+  border-color: var(--accent-border);
+}
+
+.guide-step.has-save-error {
+  border-color: #d94b4b;
+}
+
 .guide-step.is-completing {
   opacity: 0;
   transform: translateX(10px);
+}
+
+.guide-step-save-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+}
+
+.guide-step-save-status.is-error {
+  color: #c63d3d;
+}
+
+.guide-step-save-status button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+  text-decoration: underline;
 }
 
 .guide-step-group {

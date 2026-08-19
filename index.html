@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.18.17.41";
+      window.BOX_THIS_LAP_VERSION = "2026.08.19.02.54";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608181741">
+    <link rel="stylesheet" href="styles.css?v=202608190254">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -362,6 +362,7 @@
               <div class="profile-dropdown" id="profile-dropdown" hidden>
                 <a href="#the-monster-maniac" data-page-link="the-monster-maniac" data-admin-only hidden>TheMonsterManiac</a>
                 <a href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
+                <a href="#account-settings" data-page-link="account-settings">Account Settings</a>
                 <button id="logout-button" type="button">Sign Out</button>
               </div>
             </div>
@@ -407,6 +408,40 @@
           <button class="action-button" id="login-submit-button" type="submit">Continue</button>
           <p class="login-feedback" id="login-feedback" role="status"></p>
         </form>
+      </section>
+
+      <section class="page account-settings-page" id="account-settings" data-page="account-settings">
+        <div class="section-heading">
+          <h1>Account Settings</h1>
+          <p>Manage how Box This Lap looks and stores images on this device.</p>
+        </div>
+        <div class="account-settings-grid">
+          <section class="account-settings-card" aria-labelledby="appearance-settings-heading">
+            <div>
+              <h2 id="appearance-settings-heading">Appearance</h2>
+              <p>Switch between the dark and light site themes.</p>
+            </div>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="true">Dark</button>
+          </section>
+          <section class="account-settings-card account-settings-card--stacked" aria-labelledby="image-settings-heading">
+            <div>
+              <h2 id="image-settings-heading">Offline Images</h2>
+              <p>Save site images for offline use or remove images already saved on this device.</p>
+            </div>
+            <div class="image-cache-control">
+              <button class="footer-copy-link" type="button" id="image-cache-toggle">Save images</button>
+              <button class="footer-copy-link" type="button" id="image-cache-purge">Purge images</button>
+              <span class="image-cache-status" id="image-cache-status" role="status" aria-live="polite"></span>
+            </div>
+          </section>
+          <section class="account-settings-card" aria-labelledby="version-settings-heading">
+            <div>
+              <h2 id="version-settings-heading">About</h2>
+              <p>Current Box This Lap site version.</p>
+            </div>
+            <span class="footer-version" id="site-version"></span>
+          </section>
+        </div>
       </section>
 
       <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
@@ -582,10 +617,16 @@
               <div class="multi-filter-options" hidden></div>
             </div>
           </label>
-          <label class="footy-checkbox-control">
-            <input id="footy-friendlies-filter" type="checkbox" checked>
-            <span>Friendlies</span>
-          </label>
+          <div class="footy-filter-toggles">
+            <label class="footy-checkbox-control" id="footy-competition-past-control">
+              <input id="footy-competition-past-filter" type="checkbox">
+              <span>Past Matches</span>
+            </label>
+            <label class="footy-checkbox-control">
+              <input id="footy-friendlies-filter" type="checkbox" checked>
+              <span>Friendlies</span>
+            </label>
+          </div>
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
@@ -2111,23 +2152,8 @@
       <button class="footer-copy-link" type="button" id="copy-current-page-link" hidden>
         Copy URL
       </button>
-      <span class="footer-version" id="site-version" hidden></span>
-      <div class="image-cache-control">
-        <button class="footer-copy-link" type="button" id="image-cache-toggle">
-          Save images
-        </button>
-        <button class="footer-copy-link" type="button" id="image-cache-purge">
-          Purge images
-        </button>
-        <span class="image-cache-status" id="image-cache-status" role="status" aria-live="polite"></span>
-      </div>
-      <div class="theme-control">
-        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="true">
-          Dark
-        </button>
-      </div>
     </footer>
 
-    <script type="module" src="script.js?v=202608181741"></script>
+    <script type="module" src="script.js?v=202608190254"></script>
   </body>
 </html>

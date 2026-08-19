@@ -2820,6 +2820,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   white-space: nowrap;
 }
 
+.footy-filter-toggles {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
 .footy-checkbox-control input {
   accent-color: var(--track);
   height: 18px;
@@ -3372,6 +3380,12 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-fixture-card--competition {
   grid-template-columns: 58px minmax(0, 1fr) max-content;
+}
+
+.footy-fixture-card--past {
+  background: color-mix(in srgb, var(--soft) 72%, var(--panel));
+  filter: grayscale(0.45);
+  opacity: 0.58;
 }
 
 .footy-competition-badge-pair {
@@ -6687,6 +6701,59 @@ tr:last-child td {
   margin: 0 auto;
   max-width: 1120px;
   padding: 20px;
+}
+
+.account-settings-page .section-heading,
+.account-settings-grid {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 720px;
+}
+
+.account-settings-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.account-settings-card {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px var(--shadow);
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.account-settings-card h2,
+.account-settings-card p {
+  margin: 0;
+}
+
+.account-settings-card h2 {
+  font-size: 1rem;
+}
+
+.account-settings-card p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+.account-settings-card--stacked {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.account-settings-card .image-cache-control {
+  justify-content: flex-start;
+}
+
+.account-settings-card .image-cache-status {
+  max-width: none;
+  width: 100%;
 }
 
 .view-counter {

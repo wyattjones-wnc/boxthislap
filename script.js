@@ -8271,12 +8271,7 @@ function createRankingBattlePair(kind = activeRankingKind) {
   const comparisonCounts = getRankingComparisonCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
   const pairCounts = getRankingPairCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
   const pairCandidates = createRankingPairCandidates(rows, comparisonCounts, pairCounts);
-  const strategy = Math.random();
-  const [itemA, itemB] = strategy < 0.5
-    ? chooseExploratoryRankingPair(pairCandidates)
-    : strategy < 0.8
-      ? chooseNearbyRankingPair(pairCandidates)
-      : chooseRandomRankingPair(pairCandidates);
+  const [itemA, itemB] = chooseBalancedRandomRankingPair(pairCandidates);
 
   if (!itemA || !itemB) {
     return null;
@@ -8436,13 +8431,11 @@ function createRankingPairCandidates(rows, comparisonCounts, pairCounts) {
       const firstCount = comparisonCounts.get(first.id) || 0;
       const secondCount = comparisonCounts.get(second.id) || 0;
       const pairCount = pairCounts.get(getRankingPairKey(first.id, second.id)) || 0;
-      const ratingDistance = Math.abs(Number(first.rating || RANKING_BASE_RATING) - Number(second.rating || RANKING_BASE_RATING));
 
       candidates.push({
         first,
         firstCount,
         pairCount,
-        ratingDistance,
         second,
         secondCount,
       });
@@ -8452,27 +8445,13 @@ function createRankingPairCandidates(rows, comparisonCounts, pairCounts) {
   return candidates;
 }
 
-function chooseExploratoryRankingPair(candidates) {
+function chooseBalancedRandomRankingPair(candidates) {
   return chooseRankingPairByScore(candidates, (candidate) =>
-    (candidate.pairCount * 35) +
-    ((candidate.firstCount + candidate.secondCount) * 12) +
-    (Math.min(candidate.firstCount, candidate.secondCount) * 18) +
-    (Math.random() * 30)
-  );
-}
-
-function chooseNearbyRankingPair(candidates) {
-  return chooseRankingPairByScore(candidates, (candidate) =>
-    (candidate.pairCount * 28) +
-    (candidate.ratingDistance / 12) +
+    (candidate.pairCount * 30) +
     ((candidate.firstCount + candidate.secondCount) * 4) +
-    (Math.random() * 18)
+    (Math.min(candidate.firstCount, candidate.secondCount) * 6) +
+    (Math.random() * 90)
   );
-}
-
-function chooseRandomRankingPair(candidates) {
-  const candidate = candidates[Math.floor(Math.random() * candidates.length)];
-  return [candidate?.first, candidate?.second];
 }
 
 function chooseRankingPairByScore(candidates, getScore) {
@@ -8656,6 +8635,7 @@ function applyRankingChoiceToElo(choice) {
 
   upsertRankingEloRow(nextWinner);
   upsertRankingEloRow(nextLoser);
+  siteData.rankingChoices = [...(siteData.rankingChoices || []), choice];
 }
 
 function getRankingEloForItemByType(rankingType, itemId, managerId = getCurrentManagerId()) {

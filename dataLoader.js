@@ -18,8 +18,6 @@ const MANAGER_PORTAL_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub";
 const NEXT_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRTQZAN1znMdqJ3eaU_FUtq-UM2HeaOISqqGuTidCE0tCoc8TzA5brhbO-fccCKt-sBOk3pY3Zg0YVW/pub";
-const GUIDES_SHEET_BASE_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8gH2UmVBci0IYeYYAxM5KleyYTz_IN4hMGFTqyYAtcvkwVwTJ7ZMC5c-bOI_DIMYh6efBPlxBsz0M/pub";
 const PLATINUMS_SHEET_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTlv0UaXpCysp8RNYQKSjVo-iHdcfHWDpZIq1iF7nk5kErsL00TdmPM5ZN8bijESAbDw69KKbXd8pTk/pub";
 
@@ -62,8 +60,6 @@ export const DATA_SOURCES = {
     rankingTv: buildNextCsvUrl("415412107"),
     todo: `${NEXT_SHEET_BASE_URL}?single=true&output=csv&sheet=To%20Do`,
     want: `${NEXT_SHEET_BASE_URL}?single=true&output=csv&sheet=Want`,
-    guides: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=0`,
-    walkthroughChecklist: `${GUIDES_SHEET_BASE_URL}?single=true&output=csv&gid=1000271762`,
     platinums: `${PLATINUMS_SHEET_BASE_URL}?single=true&output=csv&gid=0`,
     favoriteTrophies: `${PLATINUMS_SHEET_BASE_URL}?single=true&output=csv&gid=58385058`,
     youtube: `${PLATINUMS_SHEET_BASE_URL}?single=true&output=csv&gid=807443976`,
@@ -74,9 +70,10 @@ const FETCH_TIMEOUT_MS = 12000;
 const FETCH_RETRY_DELAYS_MS = [350, 1200];
 const resourcePromises = new Map();
 
-export async function loadJson(path) {
-  return loadResource(`json:${path}`, async () => {
-    const response = await fetchWithRetry(path, { cache: "no-store" });
+export async function loadJson(path, options = {}) {
+  const cache = options.cache || "no-store";
+  return loadResource(`json:${cache}:${path}`, async () => {
+    const response = await fetchWithRetry(path, { cache });
 
     if (!response.ok) {
       throw new Error(`Failed to load JSON from ${path}: ${response.status}`);

@@ -1,11 +1,10 @@
 const GUIDE_STEP_BATCH_SIZE = 60;
 
-export function createGuidesController({ getManagerId, loadSheet, progressEndpoint }) {
+export function createGuidesController({ getManagerId, loadData, progressEndpoint }) {
   const view = document.querySelector("#guides-view");
   let guides = null;
   let checklist = null;
-  let guidesPromise = null;
-  let checklistPromise = null;
+  let dataPromise = null;
   let progressPromise = null;
   let progressManagerId = "";
   let selectedGuideId = "";
@@ -60,44 +59,30 @@ export function createGuidesController({ getManagerId, loadSheet, progressEndpoi
     return childrenByParent;
   }
 
-  async function ensureIndexLoaded() {
-    if (guides) return guides;
-    if (!guidesPromise) {
-      guidesPromise = loadSheet("guides")
-        .then((rows) => {
-          guides = rows.map(normalizeGuide).filter((guide) => guide.id && guide.name);
-          return guides;
-        })
-        .catch((error) => {
-          guidesPromise = null;
-          throw error;
-        });
-    }
-    return guidesPromise;
-  }
-
-  async function ensureChecklistLoaded() {
-    if (checklist) return checklist;
-    if (!checklistPromise) {
-      checklistPromise = loadSheet("walkthroughChecklist")
-        .then((rows) => {
+  async function ensureDataLoaded() {
+    if (guides && checklist) return { guides, steps: checklist };
+    if (!dataPromise) {
+      dataPromise = loadData()
+        .then((snapshot) => {
+          guides = (snapshot.guides || []).map(normalizeGuide).filter((guide) => guide.id && guide.name);
           const seenIds = new Set();
           const seenPairs = new Set();
-          checklist = rows.map(normalizeChecklistItem).filter((item) => {
+          checklist = (snapshot.steps || []).map(normalizeChecklistItem).filter((item) => {
+            const itemKey = `${item.guideId}::${item.id}`;
             const pairKey = getStepKey(item.guideId, item.stepId);
-            if (!item.id || !item.guideId || !item.stepId || seenIds.has(item.id) || seenPairs.has(pairKey)) return false;
-            seenIds.add(item.id);
+            if (!item.id || !item.guideId || !item.stepId || seenIds.has(itemKey) || seenPairs.has(pairKey)) return false;
+            seenIds.add(itemKey);
             seenPairs.add(pairKey);
             return true;
           });
-          return checklist;
+          return snapshot;
         })
         .catch((error) => {
-          checklistPromise = null;
+          dataPromise = null;
           throw error;
         });
     }
-    return checklistPromise;
+    return dataPromise;
   }
 
   async function ensureProgressLoaded() {
@@ -131,7 +116,7 @@ export function createGuidesController({ getManagerId, loadSheet, progressEndpoi
   function renderGuideIndex() {
     if (!guides) {
       view.innerHTML = renderIndexLoading();
-      ensureIndexLoaded().then(renderPage).catch((error) => renderError("guides", error));
+      ensureDataLoaded().then(renderPage).catch((error) => renderError("guides", error));
       return;
     }
 
@@ -152,7 +137,7 @@ export function createGuidesController({ getManagerId, loadSheet, progressEndpoi
   function renderGuideDetail() {
     if (!guides) {
       view.innerHTML = renderDetailLoading();
-      ensureIndexLoaded().then(renderPage).catch((error) => renderError("guide", error));
+      ensureDataLoaded().then(renderPage).catch((error) => renderError("guide", error));
       return;
     }
 
@@ -167,7 +152,7 @@ export function createGuidesController({ getManagerId, loadSheet, progressEndpoi
 
     if (!checklist || !progressPromise || progressManagerId !== String(getManagerId?.() || "").trim()) {
       view.innerHTML = renderDetailLoading(guide.name);
-      Promise.all([ensureChecklistLoaded(), ensureProgressLoaded()])
+      Promise.all([ensureDataLoaded(), ensureProgressLoaded()])
         .then(renderPage)
         .catch((error) => renderError("guide progress", error));
       return;

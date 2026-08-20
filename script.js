@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608170001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -296,7 +296,8 @@ import {
 } from "./modules/domRefs.js?v=202608180004";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuidesController } from "./modules/guides.js?v=202608190003";
+import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
+import { createGuidesController } from "./modules/guides.js?v=202608200001";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170011";
 import {
@@ -529,9 +530,13 @@ const { syncThemeToggle } = createThemeController({
   toggle: themeToggle,
 });
 
+const loadGuideData = createGuideDataLoader({
+  loadJson: (path) => loadJson(path, { cache: "force-cache" }),
+  path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
+});
 const guidesController = createGuidesController({
   getManagerId: getCurrentManagerId,
-  loadSheet,
+  loadData: loadGuideData,
   progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });
 const platinumsController = createPlatinumsController({ loadSheet });
@@ -5467,13 +5472,13 @@ function ensureGuideLinksLoaded() {
     return guideLinksLoadPromise;
   }
 
-  guideLinksLoadPromise = ensureSharedData("guide-links", () => loadSheet("guides"))
-    .then((rows) => {
-      siteData.guideLinks = rows.map((row) => ({
-        id: String(row.ID || row.Id || row.id || "").trim(),
-        name: String(row.Name || row.name || "").trim(),
-        rankingId: String(row["VG Ranking ID"] || row.rankingId || "").trim(),
-        todoId: String(row["To Do ID"] || row.todoId || "").trim(),
+  guideLinksLoadPromise = ensureSharedData("guide-links", loadGuideData)
+    .then((snapshot) => {
+      siteData.guideLinks = (snapshot.guides || []).map((guide) => ({
+        id: String(guide.id || "").trim(),
+        name: String(guide.name || "").trim(),
+        rankingId: String(guide.rankingId || "").trim(),
+        todoId: String(guide.todoId || "").trim(),
       })).filter((guide) => guide.id && guide.name);
 
       if (activePageName === "todo") renderTodoList();

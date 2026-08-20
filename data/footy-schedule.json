@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-19T10:49:03.713Z",
+  "generatedAt": "2026-08-20T10:50:41.614Z",
   "schemaVersion": 3,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-08-19T10:49:03.713Z",
-    "attemptedAt": "2026-08-19T10:49:03.713Z",
-    "updatedAt": "2026-08-19T10:49:03.713Z",
-    "oldestTeamUpdatedAt": "2026-08-19T10:49:03.713Z",
+    "generatedAt": "2026-08-20T10:50:41.614Z",
+    "attemptedAt": "2026-08-20T10:50:41.614Z",
+    "updatedAt": "2026-08-20T10:50:41.614Z",
+    "oldestTeamUpdatedAt": "2026-08-20T10:50:41.614Z",
     "competitionCount": 10,
     "competitionFixtureCount": 1971,
     "teamCount": 7,
@@ -45,14 +45,14 @@
     "sync": {
       "status": "synced",
       "rows": 225,
-      "syncedAt": "2026-08-19T10:49:03.713Z",
+      "syncedAt": "2026-08-20T10:50:41.614Z",
       "appended": 0,
       "updated": 225
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-08-19T10:54:16.046Z",
+      "attemptedAt": "2026-08-20T10:55:53.931Z",
       "competition": {
         "code": "FACS",
         "followedTeamNames": [],
@@ -108,15 +108,15 @@
       "notes": [
         "Loaded all 1 currently published FA Community Shield matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:53:50.616Z",
+      "attemptedAt": "2026-08-20T10:55:28.400Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -2990,9 +2990,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "matchId": "footy_eaca5d9a2c3e",
           "followedTeamNames": [
@@ -3024,9 +3024,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3055,9 +3055,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3086,9 +3086,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3117,9 +3117,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3148,9 +3148,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3179,9 +3179,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3210,9 +3210,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3241,9 +3241,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3272,9 +3272,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3303,9 +3303,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3334,9 +3334,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3365,9 +3365,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3396,9 +3396,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3427,9 +3427,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3458,9 +3458,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3489,9 +3489,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3520,9 +3520,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3551,9 +3551,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3584,9 +3584,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
           "matchId": "footy_c37276de968b",
           "followedTeamNames": [
@@ -3618,9 +3618,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3649,9 +3649,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3682,9 +3682,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "matchId": "footy_f1d43f044a8d",
           "followedTeamNames": [
@@ -3716,9 +3716,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3747,9 +3747,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3778,9 +3778,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3809,9 +3809,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3840,9 +3840,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3871,9 +3871,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3902,9 +3902,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3933,9 +3933,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3964,9 +3964,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -3995,9 +3995,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4026,9 +4026,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4057,9 +4057,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4090,9 +4090,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "matchId": "footy_fcfe1a707a9f",
           "followedTeamNames": [
@@ -4124,9 +4124,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4155,9 +4155,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4186,9 +4186,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4217,9 +4217,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4250,9 +4250,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "matchId": "footy_12719cecbc9c",
           "followedTeamNames": [
@@ -4284,9 +4284,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4315,9 +4315,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4346,9 +4346,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4377,9 +4377,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4408,9 +4408,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4439,9 +4439,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4470,9 +4470,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4501,9 +4501,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4532,9 +4532,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4563,9 +4563,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4594,9 +4594,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4625,9 +4625,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4656,9 +4656,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4687,9 +4687,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4718,9 +4718,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4751,9 +4751,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "matchId": "footy_e2fbc7ac730e",
           "followedTeamNames": [
@@ -4785,9 +4785,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4816,9 +4816,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4847,9 +4847,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4878,9 +4878,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4909,9 +4909,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4940,9 +4940,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -4971,9 +4971,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5002,9 +5002,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5033,9 +5033,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5064,9 +5064,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5097,9 +5097,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "matchId": "footy_f8cd42a14544",
           "followedTeamNames": [
@@ -5131,9 +5131,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5162,9 +5162,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5193,9 +5193,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5224,9 +5224,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5257,9 +5257,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "matchId": "footy_8aec9afb0622",
           "followedTeamNames": [
@@ -5291,9 +5291,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5322,9 +5322,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5353,9 +5353,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5384,9 +5384,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5415,9 +5415,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5446,9 +5446,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5477,9 +5477,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5510,9 +5510,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "matchId": "footy_372f9c98907a",
           "followedTeamNames": [
@@ -5544,9 +5544,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5575,9 +5575,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5606,9 +5606,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5637,9 +5637,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5668,9 +5668,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5699,9 +5699,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5730,9 +5730,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5761,9 +5761,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5792,9 +5792,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5823,9 +5823,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5854,9 +5854,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5885,9 +5885,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5918,9 +5918,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "matchId": "footy_cc2f1cbb220c",
           "followedTeamNames": [
@@ -5952,9 +5952,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -5983,9 +5983,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6014,9 +6014,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6045,9 +6045,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6076,9 +6076,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6107,9 +6107,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6140,9 +6140,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "matchId": "footy_5502ac6f7335",
           "followedTeamNames": [
@@ -6174,9 +6174,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6205,9 +6205,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6236,9 +6236,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6267,9 +6267,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6298,9 +6298,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6329,9 +6329,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6360,9 +6360,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6391,9 +6391,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6422,9 +6422,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6453,9 +6453,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6484,9 +6484,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6515,9 +6515,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6546,9 +6546,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6577,9 +6577,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6608,9 +6608,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6639,9 +6639,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6670,9 +6670,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6703,9 +6703,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "matchId": "footy_7c8d394d087f",
           "followedTeamNames": [
@@ -6737,9 +6737,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6768,9 +6768,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6799,9 +6799,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6830,9 +6830,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6861,9 +6861,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6894,9 +6894,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "matchId": "footy_6314e9da2b0c",
           "followedTeamNames": [
@@ -6928,9 +6928,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6959,9 +6959,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -6990,9 +6990,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7021,9 +7021,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7052,9 +7052,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7083,9 +7083,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7114,9 +7114,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7145,9 +7145,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7176,9 +7176,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7207,9 +7207,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7238,9 +7238,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7269,9 +7269,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7300,9 +7300,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7333,9 +7333,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "matchId": "footy_a1c6d7043170",
           "followedTeamNames": [
@@ -7367,9 +7367,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7400,9 +7400,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "matchId": "footy_ac01d8fd9fcf",
           "followedTeamNames": [
@@ -7434,9 +7434,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7465,9 +7465,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7496,9 +7496,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7527,9 +7527,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7558,9 +7558,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7589,9 +7589,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7620,9 +7620,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7651,9 +7651,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7682,9 +7682,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7713,9 +7713,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7744,9 +7744,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7775,9 +7775,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7806,9 +7806,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7837,9 +7837,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7868,9 +7868,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7899,9 +7899,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7930,9 +7930,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7961,9 +7961,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -7994,9 +7994,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "",
           "matchId": "footy_7245e74fda4c",
           "followedTeamNames": [
@@ -8028,9 +8028,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8059,9 +8059,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8090,9 +8090,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8121,9 +8121,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8152,9 +8152,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8185,9 +8185,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "matchId": "footy_72ff2e385bdb",
           "followedTeamNames": [
@@ -8219,9 +8219,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8250,9 +8250,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8281,9 +8281,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8312,9 +8312,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8343,9 +8343,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8376,9 +8376,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "matchId": "footy_d8cc7963d3a2",
           "followedTeamNames": [
@@ -8410,9 +8410,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8441,9 +8441,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8472,9 +8472,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8503,9 +8503,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8534,9 +8534,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8565,9 +8565,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8596,9 +8596,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8627,9 +8627,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8658,9 +8658,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8689,9 +8689,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8720,9 +8720,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8753,9 +8753,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "matchId": "footy_484f5e302307",
           "followedTeamNames": [
@@ -8787,9 +8787,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8818,9 +8818,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8849,9 +8849,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8880,9 +8880,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8911,9 +8911,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8942,9 +8942,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -8973,9 +8973,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9004,9 +9004,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9035,9 +9035,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9066,9 +9066,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9097,9 +9097,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9128,9 +9128,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9161,9 +9161,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "matchId": "footy_562fd9ea4e7a",
           "followedTeamNames": [
@@ -9195,9 +9195,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9226,9 +9226,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9257,9 +9257,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9288,9 +9288,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9319,9 +9319,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9350,9 +9350,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9381,9 +9381,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9414,9 +9414,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "matchId": "footy_47e9ca2cf328",
           "followedTeamNames": [
@@ -9448,9 +9448,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9479,9 +9479,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9510,9 +9510,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9541,9 +9541,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9572,9 +9572,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9603,9 +9603,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9634,9 +9634,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9665,9 +9665,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9696,9 +9696,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9727,9 +9727,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9760,9 +9760,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "matchId": "footy_7bf4e83cd821",
           "followedTeamNames": [
@@ -9794,9 +9794,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9825,9 +9825,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9856,9 +9856,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9887,9 +9887,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9918,9 +9918,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9949,9 +9949,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -9980,9 +9980,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10011,9 +10011,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10042,9 +10042,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10075,9 +10075,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "matchId": "footy_67ba025a9319",
           "followedTeamNames": [
@@ -10109,9 +10109,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10140,9 +10140,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10171,9 +10171,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10202,9 +10202,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10233,9 +10233,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10266,9 +10266,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "matchId": "footy_6f4960192ccd",
           "followedTeamNames": [
@@ -10300,9 +10300,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10331,9 +10331,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10362,9 +10362,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10393,9 +10393,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10424,9 +10424,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10455,9 +10455,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10486,9 +10486,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10517,9 +10517,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10548,9 +10548,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10579,9 +10579,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10610,9 +10610,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10641,9 +10641,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10672,9 +10672,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10703,9 +10703,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10734,9 +10734,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10767,9 +10767,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "matchId": "footy_532c5a14344e",
           "followedTeamNames": [
@@ -10801,9 +10801,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10832,9 +10832,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10863,9 +10863,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10896,9 +10896,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "matchId": "footy_40f840a3862f",
           "followedTeamNames": [
@@ -10930,9 +10930,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10961,9 +10961,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -10992,9 +10992,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11023,9 +11023,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11054,9 +11054,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11085,9 +11085,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11116,9 +11116,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11147,9 +11147,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11178,9 +11178,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11209,9 +11209,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11240,9 +11240,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11271,9 +11271,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11302,9 +11302,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11333,9 +11333,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11364,9 +11364,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11395,9 +11395,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11426,9 +11426,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11459,9 +11459,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "",
           "matchId": "footy_dd887e014368",
           "followedTeamNames": [
@@ -11493,9 +11493,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11524,9 +11524,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11555,9 +11555,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11586,9 +11586,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11617,9 +11617,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11648,9 +11648,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11679,9 +11679,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11710,9 +11710,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11743,9 +11743,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "matchId": "footy_f809314e3194",
           "followedTeamNames": [
@@ -11777,9 +11777,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11808,9 +11808,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11841,9 +11841,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "matchId": "footy_9b1299311e68",
           "followedTeamNames": [
@@ -11875,9 +11875,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11906,9 +11906,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11937,9 +11937,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11968,9 +11968,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -11999,9 +11999,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -12030,9 +12030,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -12061,9 +12061,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -12092,9 +12092,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "",
           "followedTeamNames": [],
           "isHome": null,
@@ -12108,15 +12108,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:53:57.033Z",
+      "attemptedAt": "2026-08-20T10:55:34.993Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -12309,7 +12309,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "19:00:00",
           "timestamp": "2026-08-19T19:00:00Z",
           "venue": "",
@@ -12555,7 +12555,8 @@
           "source": "football-data.org",
           "sourceIds": {
             "football-data.org": "564642",
-            "iCalendar": "6a4455e954aa8848aa0baac3"
+            "iCalendar": "6a4455e954aa8848aa0baac3",
+            "TheSportsDB": "2506188"
           },
           "sources": [
             "football-data.org"
@@ -24139,15 +24140,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:04.464Z",
+      "attemptedAt": "2026-08-20T10:55:41.935Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -41466,15 +41467,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:16.047Z",
+      "attemptedAt": "2026-08-20T10:55:53.933Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [],
@@ -41657,15 +41658,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:16.048Z",
+      "attemptedAt": "2026-08-20T10:55:53.933Z",
       "competition": {
         "code": "SDE",
         "followedTeamNames": [
@@ -41754,15 +41755,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:22.755Z",
+      "attemptedAt": "2026-08-20T10:56:00.665Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -58277,15 +58278,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:22.762Z",
+      "attemptedAt": "2026-08-20T10:56:00.673Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -60843,15 +60844,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (79 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:22.767Z",
+      "attemptedAt": "2026-08-20T10:56:00.677Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -62842,15 +62843,15 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (61 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     },
     {
-      "attemptedAt": "2026-08-19T10:54:22.767Z",
+      "attemptedAt": "2026-08-20T10:56:00.677Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -62906,19 +62907,19 @@
       "notes": [
         "Loaded the full available Campeones Cup schedule (1 matches)."
       ],
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-19T10:49:03.713Z"
+      "updatedAt": "2026-08-20T10:50:41.614Z"
     }
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -63495,12 +63496,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-11-07T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-11-07T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_eaca5d9a2c3e",
@@ -63532,12 +63533,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-11-21T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-11-21T15:00:00Z",
           "venue": "St. James' Park",
           "lastSeen": "",
           "matchId": "footy_c37276de968b",
@@ -63569,12 +63570,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-11-28T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-11-28T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_f1d43f044a8d",
@@ -63606,12 +63607,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-12-02T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2026-12-02T20:00:00Z",
           "venue": "Gtech Community Stadium",
           "lastSeen": "",
           "matchId": "footy_fcfe1a707a9f",
@@ -63643,12 +63644,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-12-05T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-12-05T15:00:00Z",
           "venue": "Tottenham Hotspur Stadium",
           "lastSeen": "",
           "matchId": "footy_12719cecbc9c",
@@ -63680,12 +63681,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-12-12T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-12-12T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_e2fbc7ac730e",
@@ -63717,12 +63718,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-12-19T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-12-19T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_f8cd42a14544",
@@ -63754,12 +63755,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-12-26T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2026-12-26T15:00:00Z",
           "venue": "Selhurst Park",
           "lastSeen": "",
           "matchId": "footy_8aec9afb0622",
@@ -63791,12 +63792,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2026-12-30T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2026-12-30T20:00:00Z",
           "venue": "Craven Cottage",
           "lastSeen": "",
           "matchId": "footy_372f9c98907a",
@@ -63828,12 +63829,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-01-02T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-01-02T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_cc2f1cbb220c",
@@ -63865,12 +63866,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-01-06T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2027-01-06T20:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_5502ac6f7335",
@@ -63902,12 +63903,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-01-16T15:00:00Z",
           "venue": "MKM Stadium",
           "lastSeen": "",
           "matchId": "footy_7c8d394d087f",
@@ -63939,12 +63940,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-01-23T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_6314e9da2b0c",
@@ -63976,12 +63977,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-01-30T15:00:00Z",
           "venue": "Etihad Stadium",
           "lastSeen": "",
           "matchId": "footy_a1c6d7043170",
@@ -64013,12 +64014,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-02-06T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_ac01d8fd9fcf",
@@ -64050,12 +64051,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-02-10T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2027-02-10T20:00:00Z",
           "venue": "Portman Road",
           "lastSeen": "",
           "matchId": "footy_7245e74fda4c",
@@ -64087,12 +64088,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-02-20T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_72ff2e385bdb",
@@ -64124,12 +64125,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-02-27T15:00:00Z",
           "venue": "Old Trafford",
           "lastSeen": "",
           "matchId": "footy_d8cc7963d3a2",
@@ -64161,12 +64162,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-03-03T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2027-03-03T20:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_484f5e302307",
@@ -64198,12 +64199,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-03-13T15:00:00Z",
           "venue": "Stamford Bridge",
           "lastSeen": "",
           "matchId": "footy_562fd9ea4e7a",
@@ -64235,12 +64236,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-03-20T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_47e9ca2cf328",
@@ -64272,12 +64273,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-04-10T14:00:00Z",
           "venue": "Coventry Building Society Arena",
           "lastSeen": "",
           "matchId": "footy_7bf4e83cd821",
@@ -64309,12 +64310,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-04-17T14:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_67ba025a9319",
@@ -64346,12 +64347,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-04-24T14:00:00Z",
           "venue": "Vitality Stadium",
           "lastSeen": "",
           "matchId": "footy_6f4960192ccd",
@@ -64383,12 +64384,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-05-01T14:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_532c5a14344e",
@@ -64420,12 +64421,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-05-08T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-05-08T14:00:00Z",
           "venue": "Elland Road",
           "lastSeen": "",
           "matchId": "footy_40f840a3862f",
@@ -64457,12 +64458,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-05-15T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-05-15T14:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_dd887e014368",
@@ -64494,12 +64495,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-05-23T00:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2027-05-23T14:00:00Z",
           "venue": "Hill Dickinson Stadium",
           "lastSeen": "",
           "matchId": "footy_f809314e3194",
@@ -64531,12 +64532,12 @@
             "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "00:00:00",
-          "timestamp": "2027-05-30T00:00:00Z",
+          "time": "15:00:00",
+          "timestamp": "2027-05-30T15:00:00Z",
           "venue": "Emirates Stadium",
           "lastSeen": "",
           "matchId": "footy_9b1299311e68",
@@ -64544,18 +64545,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-08-19 through 2027-08-19.",
+        "Loaded 38 SCHEDULED matches from 2026-08-20 through 2027-08-20.",
         "Running competitions: FA Community Shield (COM), Premier League (PL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
         "Loaded 38 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 44 iCalendar fixtures from 2026-07-01 through 2027-08-19."
+        "Loaded 44 iCalendar fixtures from 2026-07-01 through 2027-08-20."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -64750,9 +64751,9 @@
           "time": "18:00:00",
           "timestamp": "2026-08-19T18:00:00Z",
           "venue": "Spotify Camp Nou",
-          "lastSeen": "",
+          "isFriendly": true,
           "matchId": "footy_711a83959e6c",
-          "isFriendly": true
+          "lastSeen": ""
         },
         {
           "away": "FC Barcelona",
@@ -64768,23 +64769,25 @@
           "priority": "2",
           "round": "2",
           "season": "2026",
-          "source": "football-data.org + iCalendar",
+          "source": "football-data.org + TheSportsDB + iCalendar",
           "sourceIds": {
             "iCalendar": "6a4455e954aa8848aa0baac3",
-            "football-data.org": "564642"
+            "football-data.org": "564642",
+            "TheSportsDB": "2506188"
           },
           "sources": [
             "football-data.org",
+            "TheSportsDB",
             "iCalendar"
           ],
-          "sourceDetail": "calendar-feed",
+          "sourceDetail": "team-upcoming",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "19:30:00",
           "timestamp": "2026-08-23T19:30:00Z",
-          "venue": "Elche, Elche",
+          "venue": "Estadio Martínez Valero",
           "lastSeen": "",
           "matchId": "footy_57d0c2e5e6c3",
           "isFriendly": false
@@ -66177,18 +66180,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-08-19 through 2027-08-19.",
+        "Loaded 38 SCHEDULED matches from 2026-08-20 through 2027-08-20.",
         "Running competitions: Primera Division (PD).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-08-19.",
+        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-08-20.",
         "Preserved 2 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -67967,18 +67970,18 @@
         }
       ],
       "notes": [
-        "Loaded 45 SCHEDULED matches from 2026-08-19 through 2027-08-19.",
+        "Loaded 45 SCHEDULED matches from 2026-08-20 through 2027-08-20.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-08-19.",
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-08-20.",
         "Preserved 3 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -67998,9 +68001,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -68020,9 +68023,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -68574,7 +68577,8 @@
           "timestamp": "2026-08-19T23:30:00Z",
           "venue": "BMO Field, Toronto, ON",
           "isFriendly": false,
-          "matchId": "footy_4dcc0a1cf9dc"
+          "matchId": "footy_4dcc0a1cf9dc",
+          "lastSeen": ""
         },
         {
           "away": "D.C. United",
@@ -68996,15 +69000,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 25 iCalendar fixtures from 2026-01-01 through 2027-08-19.",
+        "Loaded 25 iCalendar fixtures from 2026-01-01 through 2027-08-20.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-19T10:49:03.713Z",
-      "updatedAt": "2026-08-19T10:49:03.713Z",
-      "previousUpdatedAt": "2026-08-17T23:14:41.488Z",
+      "attemptedAt": "2026-08-20T10:50:41.614Z",
+      "updatedAt": "2026-08-20T10:50:41.614Z",
+      "previousUpdatedAt": "2026-08-19T10:49:03.713Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -69391,7 +69395,8 @@
           "timestamp": "2026-08-19T23:30:00Z",
           "venue": "Subaru Park, Chester, PA",
           "isFriendly": false,
-          "matchId": "footy_9f09e3550e00"
+          "matchId": "footy_9f09e3550e00",
+          "lastSeen": ""
         },
         {
           "away": "Toronto FC",
@@ -69878,7 +69883,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 22 iCalendar fixtures from 2026-01-01 through 2027-08-19.",
+        "Loaded 22 iCalendar fixtures from 2026-01-01 through 2027-08-20.",
         "Preserved 4 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

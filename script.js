@@ -8,6 +8,7 @@ import {
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
+  RANKINGS_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
@@ -233,6 +234,11 @@ import {
   rankingFilters,
   rankingMoreDataToggle,
   rankingShowExcludedToggle,
+  rankingManagerSelect,
+  rankingReadOnly,
+  rankingShowArchivedControl,
+  rankingShowArchivedToggle,
+  rankingOwnerOnlyElements,
   rankingViewModeButtons,
   rankingSnapshotSelect,
   rankingCompareSelect,
@@ -244,7 +250,6 @@ import {
   rankingItemId,
   rankingItemName,
   rankingItemRank,
-  rankingItemNormalize,
   rankingItemStatus,
   rankingItemClose,
   rankingItemCancel,
@@ -351,6 +356,10 @@ let activeRankingCompareSnapshotId = "";
 let shouldShowRankingFilters = false;
 let shouldShowRankingMoreData = false;
 let shouldShowRankingExcluded = false;
+let shouldShowRankingArchived = false;
+let activeRankingManagerId = "";
+let rankingCatalog = null;
+const rankingSets = new Map();
 let draggedRankingItemId = "";
 let draggedRankingKind = "";
 let didMoveRankingPointer = false;
@@ -6759,22 +6768,23 @@ function renderRankingsPage() {
     return;
   }
 
-  if (!isCurrentManagerAdmin()) {
-    activeRankingViewMode = "calculated";
-  }
+  activeRankingManagerId = activeRankingManagerId || getCurrentManagerId();
 
   syncRankingTabs();
+  syncRankingManagerOptions();
 
   ensureRankingsLoaded();
   renderRankingLists();
 }
 
 function ensureRankingsLoaded() {
-  if (siteData.rankingsLoaded) {
+  const managerId = getActiveRankingManagerId();
+  if (!managerId) return Promise.resolve({});
+  if (siteData.rankingsLoadedForManager === managerId) {
     return Promise.resolve(siteData.rankings);
   }
 
-  if (rankingsLoadPromise) {
+  if (rankingsLoadPromise?.managerId === managerId) {
     return rankingsLoadPromise;
   }
 
@@ -6786,39 +6796,41 @@ function ensureRankingsLoaded() {
   );
   renderRankingLists();
 
-  const supplementalPromise = loadRankingSupplementalData()
-    .catch((error) => {
-      recordDiagnostic("ranking supplemental data failed to load", error);
-      siteData.rankingErrors = [
-        ...(siteData.rankingErrors || []),
-        `Ranking supplemental data: ${error.message}`,
-      ];
-      siteData.rankingElo = [];
-      siteData.rankingExclusions = [];
-      siteData.rankingSeeds = [];
-      siteData.rankingSnapshots = [];
-      siteData.rankingSnapshotItems = [];
-    })
-    .then(() => renderRankingLists());
-
-  const rankingPromises = Object.entries(RANKING_CONFIG).map(([kind, config]) =>
-    loadSheet(config.source)
-      .then((rows) => {
-        siteData.rankings[kind] = normalizeRankingRows(rows);
-      })
-      .catch((error) => {
-        siteData.rankings[kind] = [];
-        siteData.rankingErrorsByKind[kind] = `${config.sheetName}: ${error.message || error}`;
-      })
-      .finally(() => {
+  const promise = Promise.all([
+    rankingCatalog ? Promise.resolve(rankingCatalog) : loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "force-cache" })
+      .then((snapshot) => {
+        if (snapshot?.schemaVersion !== 1 || !Array.isArray(snapshot.items)) throw new Error("MCU ranking catalog has an unsupported format.");
+        rankingCatalog = snapshot.items;
+        return rankingCatalog;
+      }),
+    ...Object.keys(RANKING_CONFIG).map((kind) => loadManagerRankingSet(managerId, kind)),
+  ]).then(([mcuItems, ...sets]) => {
+      const standalone = new Set(["todo", "want"]);
+      siteData.rankingElo = (siteData.rankingElo || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+      siteData.rankingExclusions = (siteData.rankingExclusions || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+      siteData.rankingSeeds = (siteData.rankingSeeds || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+      siteData.rankingPairCounts = [];
+      const standaloneSnapshots = (siteData.rankingSnapshots || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+      const standaloneSnapshotIds = new Set(standaloneSnapshots.map((row) => String(row.id)));
+      siteData.rankingSnapshots = standaloneSnapshots;
+      siteData.rankingSnapshotItems = (siteData.rankingSnapshotItems || []).filter((row) => standaloneSnapshotIds.has(String(row.snapshotId)));
+      siteData.rankingRevisions = {};
+      sets.forEach((set, index) => {
+        const kind = Object.keys(RANKING_CONFIG)[index];
+        rankingSets.set(`${managerId}:${kind}`, set);
+        siteData.rankingRevisions[kind] = Number(set.revision || 0);
+        siteData.rankings[kind] = kind === "mcu"
+          ? mergeMcuRankingItems(mcuItems, set.items || [])
+          : (set.items || []).map((item) => ({ ...item, rank: Number(item.manualRank || 0), nameKey: "Name" })).sort(compareRankingRows);
+        siteData.rankingElo.push(...(set.elo || []).map((row) => ({ ...row, managerId, rankingType: kind })));
+        siteData.rankingExclusions.push(...(set.exclusions || []).map((row) => ({ ...row, managerId, rankingType: kind })));
+        siteData.rankingSeeds.push(...(set.seeds || []).map((row) => ({ ...row, managerId, rankingType: kind })));
+        siteData.rankingPairCounts.push(...(set.pairCounts || []).map((row) => ({ ...row, managerId, rankingType: kind })));
+        siteData.rankingSnapshots.push(...(set.snapshots || []).map((row) => ({ ...row, managerId, rankingType: kind })));
+        siteData.rankingSnapshotItems.push(...(set.snapshotItems || []));
         siteData.rankingLoading[kind] = false;
-        renderRankingList(kind);
-      })
-  );
-
-  rankingsLoadPromise = Promise.allSettled([...rankingPromises, supplementalPromise])
-    .then(() => {
-      siteData.rankingsLoaded = true;
+      });
+      siteData.rankingsLoadedForManager = managerId;
       renderRankingLists();
       return siteData.rankings;
     })
@@ -6827,8 +6839,140 @@ function ensureRankingsLoaded() {
       renderRankingAdminMessage(`Unable to load rankings: ${error.message}`);
       throw error;
     });
+  promise.managerId = managerId;
+  rankingsLoadPromise = promise;
+  return promise;
+}
 
-  return rankingsLoadPromise;
+function mergeMcuRankingItems(catalog, manualItems) {
+  const ranks = new Map((manualItems || []).map((item) => [String(item.id), Number(item.manualRank)]));
+  return catalog.map((item) => ({
+    id: String(item.id),
+    name: String(item.name),
+    nameKey: "Entry",
+    rank: ranks.get(String(item.id)) || Number(item.rank),
+    archived: false,
+  })).sort(compareRankingRows).map((item, index) => ({ ...item, rank: index + 1 }));
+}
+
+async function loadManagerRankingSet(managerId, kind) {
+  if (!RANKINGS_ENDPOINT) throw new Error("Rankings service is not configured.");
+  const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/managers/${encodeURIComponent(managerId)}/rankings/${encodeURIComponent(kind)}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  });
+  const value = await response.json().catch(() => ({}));
+  if (!response.ok || !value.ok) throw new Error(value.error || `Unable to load ${kind} rankings.`);
+  return value;
+}
+
+function syncRankingManagerOptions() {
+  if (!rankingManagerSelect) return;
+  const managers = getPortalManagers();
+  const managerId = getActiveRankingManagerId();
+  rankingManagerSelect.innerHTML = managers.map((manager) => {
+    const meta = getManagerMeta(manager);
+    return `<option value="${escapeHtml(meta.id)}"${String(meta.id) === String(managerId) ? " selected" : ""}>${escapeHtml(meta.displayName)}</option>`;
+  }).join("");
+}
+
+function getActiveRankingManagerId() {
+  return String(activeRankingManagerId || getCurrentManagerId()).trim();
+}
+
+function canEditActiveRankingManager() {
+  return Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
+}
+
+function resetRankingManagerData() {
+  rankingsLoadPromise = null;
+  siteData.rankingsLoadedForManager = "";
+  siteData.rankings = {};
+  const standalone = new Set(["todo", "want"]);
+  siteData.rankingElo = (siteData.rankingElo || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+  siteData.rankingExclusions = (siteData.rankingExclusions || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+  siteData.rankingSeeds = (siteData.rankingSeeds || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+  siteData.rankingPairCounts = [];
+  const standaloneSnapshots = (siteData.rankingSnapshots || []).filter((row) => standalone.has(normalizeLookupName(row.rankingType)));
+  const standaloneSnapshotIds = new Set(standaloneSnapshots.map((row) => String(row.id)));
+  siteData.rankingSnapshots = standaloneSnapshots;
+  siteData.rankingSnapshotItems = (siteData.rankingSnapshotItems || []).filter((row) => standaloneSnapshotIds.has(String(row.snapshotId)));
+  siteData.rankingRevisions = {};
+  activeRankingSnapshotId = "current";
+  activeRankingCompareSnapshotId = "";
+}
+
+async function ensureRankingAuthorization() {
+  const session = siteData.managerSession;
+  if (!session?.managerId) throw new Error("Sign in to edit rankings.");
+  const auth = session.rankingAuth || {};
+  if (auth.accessToken && Date.parse(auth.accessExpiresAt || "") > Date.now() + 30000) return auth.accessToken;
+  let response;
+  if (auth.refreshToken && Date.parse(auth.refreshExpiresAt || "") > Date.now() + 30000) {
+    response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: auth.refreshToken }),
+      signal: AbortSignal.timeout(12000),
+    });
+  } else {
+    response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/bootstrap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ managerId: session.managerId, signedInAt: session.signedInAt }),
+      signal: AbortSignal.timeout(12000),
+    });
+  }
+  const value = await response.json().catch(() => ({}));
+  if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize ranking edits.");
+  siteData.managerSession = { ...session, rankingAuth: value };
+  try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+  return value.accessToken;
+}
+
+async function requestRankingAuthorizationForLogin(managerId, passphrase) {
+  if (!RANKINGS_ENDPOINT || !managerId || !passphrase) return null;
+  const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ managerId, passphrase }),
+    signal: AbortSignal.timeout(12000),
+  });
+  const value = await response.json().catch(() => ({}));
+  if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize ranking edits.");
+  return value;
+}
+
+async function rankingApiRequest(path, options = {}, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}${path}`, {
+    ...options,
+    headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${accessToken}`, ...(options.headers || {}) },
+    signal: AbortSignal.timeout(12000),
+  });
+  const value = await response.json().catch(() => ({}));
+  if (response.status === 401 && !retried) {
+    siteData.managerSession = { ...siteData.managerSession, rankingAuth: { ...(siteData.managerSession?.rankingAuth || {}), accessToken: "", accessExpiresAt: "" } };
+    try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+    return rankingApiRequest(path, options, true);
+  }
+  if (!response.ok || !value.ok) {
+    const error = new Error(value.error || "Ranking change was not saved.");
+    error.status = response.status;
+    throw error;
+  }
+  return value;
+}
+
+function rankingWritePath(kind, suffix) {
+  return `/api/managers/${encodeURIComponent(getCurrentManagerId())}/rankings/${encodeURIComponent(kind)}${suffix}`;
+}
+
+async function reloadActiveRankings() {
+  resetRankingManagerData();
+  await ensureRankingsLoaded();
+  renderRankingLists();
 }
 
 function renderRankingAdminMessage(message) {
@@ -7131,7 +7275,12 @@ function renderRankingList(kind) {
     : "";
 
   if (!rows.length) {
-    list.innerHTML = `${errorMarkup}<p class="table-message">No ${escapeHtml(config.itemLabel.toLowerCase())} rankings loaded yet.</p>`;
+    const manager = getPortalManagerById(getActiveRankingManagerId());
+    const name = manager ? getManagerMeta(manager).displayName : "This manager";
+    const action = canEditActiveRankingManager() && kind !== "mcu"
+      ? ` <button class="ranking-inline-action" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add one</button>`
+      : "";
+    list.innerHTML = `${errorMarkup}<p class="table-message">${escapeHtml(name)} has not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.${action}</p>`;
     return;
   }
 
@@ -7149,9 +7298,9 @@ function renderLoadingMessage(message = "Loading...") {
 }
 
 function renderRankingItem(kind, item) {
-  const isAdmin = isCurrentManagerAdmin();
-  const isSnapshotView = isAdmin && activeRankingSnapshotId !== "current";
-  const isManualView = isAdmin && activeRankingViewMode === "manual" && !isSnapshotView;
+  const isOwner = canEditActiveRankingManager();
+  const isSnapshotView = isOwner && activeRankingSnapshotId !== "current";
+  const isManualView = isOwner && activeRankingViewMode === "manual" && !isSnapshotView;
   const draggable = isManualView ? ` draggable="true"` : "";
   const isExcluded = isRankingItemExcluded(kind, item.id);
   const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
@@ -7169,12 +7318,13 @@ function renderRankingItem(kind, item) {
         ${exclusionAction}
       </span>
       ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
+      ${isOwner && kind !== "mcu" && !isSnapshotView ? `<span class="ranking-item-actions"><button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button></span>` : ""}
     </article>
   `;
 }
 
 function renderRankingExclusionAction(kind, item) {
-  if (!siteData.managerSession || isCurrentManagerAdmin() && activeRankingSnapshotId !== "current") {
+  if (!canEditActiveRankingManager() || activeRankingSnapshotId !== "current") {
     return "";
   }
 
@@ -7191,7 +7341,7 @@ function renderRankingExclusionAction(kind, item) {
 }
 
 function renderRankingMovement(kind, item) {
-  if (!isCurrentManagerAdmin() || !activeRankingCompareSnapshotId) {
+  if (!canEditActiveRankingManager() || !activeRankingCompareSnapshotId) {
     return "";
   }
 
@@ -7281,19 +7431,23 @@ function getDisplayedRankingRows(kind = activeRankingKind) {
     ? rows
     : rows.filter((item) => !isRankingItemExcluded(kind, item.id));
 
-  if (isCurrentManagerAdmin() && activeRankingSnapshotId !== "current") {
+  if (canEditActiveRankingManager() && activeRankingSnapshotId !== "current") {
     return getRankingSnapshotRows(kind, activeRankingSnapshotId);
   }
 
-  if (!isCurrentManagerAdmin()) {
-    return filterExcludedRows(getCalculatedRankingRows(kind));
-  }
-
   if (activeRankingViewMode === "calculated") {
-    return filterExcludedRows(getCalculatedRankingRows(kind));
+    const rows = getCalculatedRankingRows(kind);
+    const activeRows = rows.filter((item) => !item.archived);
+    const archivedRows = rows.filter((item) => item.archived);
+    return filterExcludedRows(kind !== "mcu" && shouldShowRankingArchived ? [...activeRows, ...archivedRows] : activeRows)
+      .map((item, index) => ({ ...item, displayRank: index + 1 }));
   }
 
-  return filterExcludedRows(getManualRankingRowsWithElo(kind));
+  const rows = getManualRankingRowsWithElo(kind);
+  const activeRows = rows.filter((item) => !item.archived);
+  const archivedRows = rows.filter((item) => item.archived);
+  return filterExcludedRows(kind !== "mcu" && shouldShowRankingArchived ? [...activeRows, ...archivedRows] : activeRows)
+    .map((item, index) => ({ ...item, displayRank: index + 1 }));
 }
 
 function getRankingSnapshotRows(kind = activeRankingKind, snapshotId = activeRankingSnapshotId) {
@@ -7496,7 +7650,7 @@ function getCalculatedRankingRankMap(kind = activeRankingKind) {
   return new Map(getCalculatedRankingRows(kind).map((item) => [item.id, item.calculatedRank]));
 }
 
-function getRankingEloForItem(kind, itemId, managerId = getCurrentManagerId()) {
+function getRankingEloForItem(kind, itemId, managerId = ["todo", "want"].includes(kind) ? getCurrentManagerId() : getActiveRankingManagerId()) {
   const type = getRankingType(kind);
   const resolvedManagerId = kind === "want" ? "want" : managerId;
   const row = (siteData.rankingElo || []).find((entry) =>
@@ -7562,7 +7716,7 @@ function getRankingItemMetaParts(item) {
     statusLabel,
   ];
 
-  if (!isCurrentManagerAdmin()) {
+  if (!canEditActiveRankingManager()) {
     return scoreParts.filter(Boolean);
   }
 
@@ -7599,7 +7753,7 @@ function getRankingType(kind = activeRankingKind) {
 }
 
 function syncRankingControls() {
-  const isAdmin = isCurrentManagerAdmin();
+  const isOwner = canEditActiveRankingManager();
 
   if (rankingFilters) {
     rankingFilters.hidden = !shouldShowRankingFilters;
@@ -7617,6 +7771,16 @@ function syncRankingControls() {
   if (rankingShowExcludedToggle) {
     rankingShowExcludedToggle.checked = shouldShowRankingExcluded;
   }
+  if (rankingShowArchivedToggle) rankingShowArchivedToggle.checked = shouldShowRankingArchived;
+  if (rankingShowArchivedControl) rankingShowArchivedControl.hidden = activeRankingKind === "mcu";
+  if (rankingReadOnly) {
+    const selected = getPortalManagerById(getActiveRankingManagerId());
+    rankingReadOnly.textContent = `Viewing ${selected ? getManagerMeta(selected).displayName : "manager"} — read only`;
+    rankingReadOnly.hidden = isOwner;
+  }
+  rankingOwnerOnlyElements?.forEach((element) => { element.hidden = !isOwner; });
+  if (rankingAddButton) rankingAddButton.hidden = !isOwner || activeRankingKind === "mcu";
+  if (rankingCompareButton) rankingCompareButton.hidden = !isOwner;
 
   syncRankingSnapshotControls();
 
@@ -7625,7 +7789,7 @@ function syncRankingControls() {
     const container = button.closest(".ranking-mode-toggle");
 
     if (container) {
-      container.hidden = !isAdmin;
+      container.hidden = false;
     }
 
     button.classList.toggle("is-active", isActive);
@@ -7634,7 +7798,7 @@ function syncRankingControls() {
 }
 
 function syncRankingSnapshotControls() {
-  const isAdmin = isCurrentManagerAdmin();
+  const isOwner = canEditActiveRankingManager();
   const snapshots = getRankingSnapshotsForKind(activeRankingKind);
   const snapshotOptions = [
     `<option value="current">Current</option>`,
@@ -7651,7 +7815,7 @@ function syncRankingSnapshotControls() {
   ];
 
   if (rankingSnapshotSelect) {
-    rankingSnapshotSelect.closest("[data-admin-only]")?.toggleAttribute("hidden", !isAdmin);
+    rankingSnapshotSelect.closest("[data-ranking-owner-only]")?.toggleAttribute("hidden", !isOwner);
     rankingSnapshotSelect.innerHTML = snapshotOptions.join("");
     if (!["current", ...snapshots.map((snapshot) => String(snapshot.id))].includes(String(activeRankingSnapshotId))) {
       activeRankingSnapshotId = "current";
@@ -7660,7 +7824,7 @@ function syncRankingSnapshotControls() {
   }
 
   if (rankingCompareSelect) {
-    rankingCompareSelect.closest("[data-admin-only]")?.toggleAttribute("hidden", !isAdmin);
+    rankingCompareSelect.closest("[data-ranking-owner-only]")?.toggleAttribute("hidden", !isOwner);
     rankingCompareSelect.innerHTML = compareOptions.join("");
     if (!["", "current", ...snapshots.map((snapshot) => String(snapshot.id))].includes(String(activeRankingCompareSnapshotId))) {
       activeRankingCompareSnapshotId = "";
@@ -7669,7 +7833,7 @@ function syncRankingSnapshotControls() {
   }
 
   if (rankingNormalizeButton) {
-    rankingNormalizeButton.hidden = !isAdmin;
+    rankingNormalizeButton.hidden = !isOwner;
     rankingNormalizeButton.disabled = activeRankingSnapshotId !== "current";
   }
 }
@@ -7701,16 +7865,17 @@ function setActiveRankingKind(kind) {
   renderRankingsPage();
 }
 
-function openRankingItemDialog(kind = activeRankingKind) {
-  if (!isCurrentManagerAdmin() || !rankingItemDialog || !RANKING_CONFIG[kind]) {
+function openRankingItemDialog(kind = activeRankingKind, itemId = "") {
+  if (!canEditActiveRankingManager() || kind === "mcu" || !rankingItemDialog || !RANKING_CONFIG[kind]) {
     return;
   }
 
   const rows = getRankingRows(kind);
   const config = RANKING_CONFIG[kind];
+  const existing = rows.find((row) => String(row.id) === String(itemId));
 
   if (rankingItemDialogTitle) {
-    rankingItemDialogTitle.textContent = config.addLabel;
+    rankingItemDialogTitle.textContent = existing ? `Edit ${config.itemLabel}` : config.addLabel;
   }
 
   if (rankingItemKind) {
@@ -7718,20 +7883,16 @@ function openRankingItemDialog(kind = activeRankingKind) {
   }
 
   if (rankingItemId) {
-    rankingItemId.value = "";
+    rankingItemId.value = existing?.id || "";
   }
 
   if (rankingItemName) {
-    rankingItemName.value = "";
+    rankingItemName.value = existing?.name || "";
   }
 
   if (rankingItemRank) {
     rankingItemRank.max = String(rows.length + 1);
-    rankingItemRank.value = String(rows.length + 1);
-  }
-
-  if (rankingItemNormalize) {
-    rankingItemNormalize.checked = true;
+    rankingItemRank.value = String(existing?.rank || rows.length + 1);
   }
 
   setRankingItemStatus("");
@@ -7758,7 +7919,8 @@ function closeRankingItemDialog() {
 }
 
 function openRankingNormalizeDialog(kind = activeRankingKind) {
-  if (!isCurrentManagerAdmin() || !rankingNormalizeDialog) {
+  const canNormalize = ["todo", "want"].includes(kind) ? isCurrentManagerAdmin() : canEditActiveRankingManager();
+  if (!canNormalize || !rankingNormalizeDialog) {
     return;
   }
 
@@ -7789,16 +7951,39 @@ function closeRankingNormalizeDialog() {
   }
 }
 
-function normalizeActiveRanking() {
-  if (!isCurrentManagerAdmin()) {
+async function normalizeActiveRanking() {
+  const kind = normalizingRankingKind || activeRankingKind;
+  const isStandalone = ["todo", "want"].includes(kind);
+  if (isStandalone ? !isCurrentManagerAdmin() : !canEditActiveRankingManager()) {
     return;
   }
-
-  const kind = normalizingRankingKind || activeRankingKind;
-  const rows = getCalculatedRankingRows(kind);
+  const rows = getCalculatedRankingRows(kind).filter((item) => !item.archived);
 
   if (!rows.length) {
     setRankingNormalizeStatus("There are no rankings to normalize.", true);
+    return;
+  }
+
+  if (!isStandalone) {
+    setRankingNormalizeStatus("Saving snapshot and normalizing...");
+    try {
+      const response = await rankingApiRequest(rankingWritePath(kind, "/normalize"), {
+        method: "POST",
+        body: JSON.stringify({
+          itemIds: rows.map((item) => item.id),
+          label: new Date().toISOString(),
+          reason: String(rankingNormalizeReason?.value || "Normalized calculated rankings").trim(),
+          revision: Number(siteData.rankingRevisions?.[kind] || 0),
+        }),
+      });
+      activeRankingSnapshotId = "current";
+      activeRankingCompareSnapshotId = response.snapshotId || "";
+      await reloadActiveRankings();
+      closeRankingNormalizeDialog();
+    } catch (error) {
+      setRankingNormalizeStatus(error.message, true);
+      if (error.status === 409) await reloadActiveRankings();
+    }
     return;
   }
 
@@ -7814,7 +7999,6 @@ function normalizeActiveRanking() {
     rating: Math.round(item.rating || RANKING_BASE_RATING),
     wins: Number(item.wins || 0),
   }));
-  const isStandalone = ["todo", "want"].includes(kind);
   const rawSnapshotId = isStandalone ? String(Date.now()) : createRankingSnapshotId();
   const snapshot = {
     createdAt,
@@ -7903,11 +8087,9 @@ function createRankingSnapshotId() {
   return String(nextId);
 }
 
-function saveRankingItemFromForm() {
+async function saveRankingItemFromForm() {
   const kind = String(rankingItemKind?.value || activeRankingKind).trim();
-  const config = RANKING_CONFIG[kind];
-
-  if (!config) {
+  if (!RANKING_CONFIG[kind] || kind === "mcu" || !canEditActiveRankingManager()) {
     setRankingItemStatus("Choose a ranking list.", true);
     return;
   }
@@ -7919,68 +8101,38 @@ function saveRankingItemFromForm() {
     return;
   }
 
-  const rows = getRankingRows(kind);
-  const rank = clampRankingRank(rankingItemRank?.value, rows.length + 1);
-  const shouldNormalizeAfterAdd = Boolean(rankingItemNormalize?.checked);
-  const preInsertSnapshotItems = shouldNormalizeAfterAdd
-    ? createRankingSnapshotItemsFromRows(getCalculatedRankingRows(kind))
-    : [];
-  const item = {
-    id: createRankingItemId(kind),
-    name,
-    nameKey: config.itemLabel,
-    rank,
-  };
-  const seed = createRankingSeedForNewItem(kind, item.id, rank);
-  const createdAt = new Date().toISOString();
-  const snapshot = shouldNormalizeAfterAdd
-    ? createRankingSnapshotForKind(kind, createdAt, "Before adding ranking item", "pre-add calculated")
-    : null;
-  const normalizedItems = shouldNormalizeAfterAdd
-    ? createNormalizedRankingItemsAfterAdd(kind, item, rank)
-    : [];
-
-  siteData.rankings = siteData.rankings || {};
-  siteData.rankings[kind] = insertRankingItem(rows, item, rank);
-  upsertRankingSeed(seed);
-  if (shouldNormalizeAfterAdd) {
-    applyRankingNormalizationLocally(kind, snapshot, preInsertSnapshotItems, normalizedItems, createdAt);
-  } else {
-    upsertRankingEloRow({
-      itemId: item.id,
-      lastChoiceId: "",
-      losses: 0,
-      managerId: getCurrentManagerId(),
-      rating: seed.seedRating,
-      rankingType: seed.rankingType,
-      updatedAt: seed.seededAt,
-      wins: 0,
+  const itemId = String(rankingItemId?.value || "").trim();
+  const rank = clampRankingRank(rankingItemRank?.value, getRankingRows(kind).length + 1);
+  setRankingItemStatus(itemId ? "Saving changes..." : "Adding item...");
+  try {
+    await rankingApiRequest(rankingWritePath(kind, itemId ? `/items/${encodeURIComponent(itemId)}` : "/items"), {
+      method: itemId ? "PATCH" : "POST",
+      body: JSON.stringify({ name, manualRank: rank, revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
     });
+    await reloadActiveRankings();
+    closeRankingItemDialog();
+  } catch (error) {
+    setRankingItemStatus(error.message, true);
+    if (error.status === 409) await reloadActiveRankings();
   }
-  renderRankingList(kind);
-  submitRankingPayload({
-    action: "saveRankingItem",
-    item: {
-      ID: item.id,
-      Rank: item.rank,
-      Name: item.name,
-    },
-    normalization: shouldNormalizeAfterAdd ? {
-      createdAt,
-      items: normalizedItems,
-      label: snapshot.label,
-      managerId: snapshot.managerId,
-      rankingType: snapshot.rankingType,
-      reason: snapshot.reason,
-      snapshotId: snapshot.id,
-      snapshotItems: preInsertSnapshotItems,
-      source: snapshot.source,
-    } : null,
-    ranking: kind,
-    seed,
-    sheetName: config.sheetName,
-  });
-  closeRankingItemDialog();
+}
+
+async function setRankingItemArchived(kind, itemId, archived) {
+  if (!canEditActiveRankingManager() || kind === "mcu") return;
+  const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
+  if (!item) return;
+  setRankingItemStatus(`${archived ? "Archiving" : "Restoring"} ${item.name}...`);
+  try {
+    await rankingApiRequest(rankingWritePath(kind, `/items/${encodeURIComponent(itemId)}`), {
+      method: "PATCH",
+      body: JSON.stringify({ archived, revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
+    });
+    await reloadActiveRankings();
+    setRankingItemStatus(`${item.name} ${archived ? "archived" : "restored"}.`);
+  } catch (error) {
+    setRankingItemStatus(error.message, true);
+    if (error.status === 409) await reloadActiveRankings();
+  }
 }
 
 function createRankingSeedForNewItem(kind, itemId, seedRank) {
@@ -8063,7 +8215,7 @@ function createRankingItemId(kind) {
 }
 
 function moveRankingItem(kind, draggedId, targetId, options = {}) {
-  if (!isCurrentManagerAdmin() || !draggedId || !targetId || draggedId === targetId) {
+  if (!canEditActiveRankingManager() || !draggedId || !targetId || draggedId === targetId) {
     return false;
   }
 
@@ -8229,17 +8381,16 @@ function createRankingBattlePair(kind = activeRankingKind) {
       const elo = getRankingEloForItem(kind, item.id);
       return { ...item, rank: item.order, rating: elo.rating, wins: elo.wins, losses: elo.losses, comparisons: elo.comparisons };
     })
-    : isCurrentManagerAdmin()
-    ? getManualRankingRowsWithElo(kind)
-    : getDisplayedRankingRows(kind))
-    .filter((item) => !isRankingItemExcluded(kind, item.id));
+    : getManualRankingRowsWithElo(kind))
+    .filter((item) => !item.archived && !isRankingItemExcluded(kind, item.id));
 
   if (rows.length < 2) {
     return null;
   }
 
-  const comparisonCounts = getRankingComparisonCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
-  const pairCounts = getRankingPairCounts(kind, { managerScoped: !isCurrentManagerAdmin() });
+  const managerScoped = !["todo", "want"].includes(kind) || !isCurrentManagerAdmin();
+  const comparisonCounts = getRankingComparisonCounts(kind, { managerScoped });
+  const pairCounts = getRankingPairCounts(kind, { managerScoped });
   const pairCandidates = createRankingPairCandidates(rows, comparisonCounts, pairCounts);
   const [itemA, itemB] = chooseBalancedRandomRankingPair(pairCandidates);
 
@@ -8372,6 +8523,12 @@ function getRankingPairCounts(kind = activeRankingKind, options = {}) {
   const managerId = String(options.managerId || getCurrentManagerId()).trim();
   const counts = new Map();
 
+  (siteData.rankingPairCounts || []).forEach((entry) => {
+    if (normalizeLookupName(entry.rankingType) !== rankingType || String(entry.managerId || "") !== managerId) return;
+    const pairKey = getRankingPairKey(entry.itemAId, entry.itemBId);
+    if (pairKey) counts.set(pairKey, (counts.get(pairKey) || 0) + Number(entry.count || 0));
+  });
+
   (siteData.rankingChoices || []).forEach((choice) => {
     if (normalizeLookupName(choice.rankingType) !== rankingType) {
       return;
@@ -8441,7 +8598,7 @@ function getCurrentManagerId() {
   return String(siteData.managerSession?.managerId || "").trim();
 }
 
-function getRankingExclusion(kind, itemId, managerId = getCurrentManagerId()) {
+function getRankingExclusion(kind, itemId, managerId = ["todo", "want"].includes(kind) ? getCurrentManagerId() : getActiveRankingManagerId()) {
   const rankingType = normalizeLookupName(getRankingType(kind));
 
   return (siteData.rankingExclusions || []).find((entry) =>
@@ -8451,11 +8608,30 @@ function getRankingExclusion(kind, itemId, managerId = getCurrentManagerId()) {
   ) || null;
 }
 
-function isRankingItemExcluded(kind, itemId, managerId = getCurrentManagerId()) {
+function isRankingItemExcluded(kind, itemId, managerId = ["todo", "want"].includes(kind) ? getCurrentManagerId() : getActiveRankingManagerId()) {
   return Boolean(getRankingExclusion(kind, itemId, managerId)?.excluded);
 }
 
 async function setRankingItemExcluded(kind, itemId, excluded) {
+  if (!["todo", "want"].includes(kind)) {
+    if (!canEditActiveRankingManager()) return;
+    const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
+    if (!item) return;
+    setRankingItemStatus(`Saving ${item.name}...`);
+    try {
+      await rankingApiRequest(rankingWritePath(kind, `/exclusions/${encodeURIComponent(itemId)}`), {
+        method: "PUT",
+        body: JSON.stringify({ excluded: Boolean(excluded), revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
+      });
+      await reloadActiveRankings();
+      setRankingItemStatus(`${item.name} ${excluded ? "excluded" : "included"}.`);
+      if (activeRankingBattle?.kind === kind) renderNextRankingBattle(kind);
+    } catch (error) {
+      setRankingItemStatus(error.message, true);
+      if (error.status === 409) await reloadActiveRankings();
+    }
+    return;
+  }
   const managerId = getCurrentManagerId();
   const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
 
@@ -8540,7 +8716,7 @@ function createRankingExclusionId() {
   return String(nextId);
 }
 
-function chooseRankingBattleWinner(winnerId) {
+async function chooseRankingBattleWinner(winnerId) {
   const battle = activeRankingBattle;
 
   if (!battle || !winnerId) {
@@ -8564,6 +8740,24 @@ function chooseRankingBattleWinner(winnerId) {
     rankingType: battle.rankingType,
     winnerId: winner.id,
   };
+
+  if (!["todo", "want"].includes(battle.kind)) {
+    if (!canEditActiveRankingManager()) return;
+    setRankingBattleStatus(`Saving ${winner.name}...`);
+    try {
+      await rankingApiRequest(rankingWritePath(battle.kind, "/choices"), {
+        method: "POST",
+        body: JSON.stringify({ winnerId: winner.id, loserId: loser.id, revision: Number(siteData.rankingRevisions?.[battle.kind] || 0) }),
+      });
+      await reloadActiveRankings();
+      setRankingBattleStatus(`${winner.name} saved.`);
+      renderNextRankingBattle(battle.kind);
+    } catch (error) {
+      setRankingBattleStatus(error.message, true);
+      if (error.status === 409) await reloadActiveRankings();
+    }
+    return;
+  }
 
   applyRankingChoiceToElo(choice);
   submitRankingPayload({
@@ -8674,7 +8868,26 @@ function setRankingBattleStatus(message, isError = false) {
   rankingBattleStatus.classList.toggle("is-error", isError);
 }
 
-function submitRankingOrder(kind) {
+async function submitRankingOrder(kind) {
+  if (!["todo", "want"].includes(kind)) {
+    if (!canEditActiveRankingManager()) return;
+    setRankingItemStatus("Saving ranking order...");
+    try {
+      const response = await rankingApiRequest(rankingWritePath(kind, "/order"), {
+        method: "PUT",
+        body: JSON.stringify({
+          itemIds: getRankingRows(kind).filter((item) => !item.archived).map((item) => item.id),
+          revision: Number(siteData.rankingRevisions?.[kind] || 0),
+        }),
+      });
+      siteData.rankingRevisions[kind] = response.revision;
+      setRankingItemStatus("Ranking order saved.");
+    } catch (error) {
+      setRankingItemStatus(error.message, true);
+      await reloadActiveRankings();
+    }
+    return;
+  }
   const config = RANKING_CONFIG[kind];
   const items = getRankingRows(kind).map((item) => ({
     ID: item.id,
@@ -12067,6 +12280,18 @@ rankingShowExcludedToggle?.addEventListener("change", () => {
   renderRankingLists();
 });
 
+rankingShowArchivedToggle?.addEventListener("change", () => {
+  shouldShowRankingArchived = Boolean(rankingShowArchivedToggle.checked);
+  renderRankingLists();
+});
+
+rankingManagerSelect?.addEventListener("change", () => {
+  activeRankingManagerId = rankingManagerSelect.value || getCurrentManagerId();
+  activeRankingViewMode = "manual";
+  resetRankingManagerData();
+  renderRankingsPage();
+});
+
 rankingSnapshotSelect?.addEventListener("change", () => {
   activeRankingSnapshotId = rankingSnapshotSelect.value || "current";
   renderRankingLists();
@@ -12143,6 +12368,29 @@ rankingBattleOptions?.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const emptyAddAction = event.target.closest("[data-ranking-empty-add]");
+  if (emptyAddAction) {
+    event.preventDefault();
+    openRankingItemDialog(emptyAddAction.getAttribute("data-ranking-empty-add") || activeRankingKind);
+    return;
+  }
+  const editAction = event.target.closest("[data-ranking-edit]");
+  if (editAction) {
+    event.preventDefault();
+    event.stopPropagation();
+    openRankingItemDialog(editAction.getAttribute("data-ranking-kind") || activeRankingKind, editAction.getAttribute("data-ranking-edit") || "");
+    return;
+  }
+  const archiveAction = event.target.closest("[data-ranking-archive]");
+  if (archiveAction) {
+    event.preventDefault();
+    event.stopPropagation();
+    const kind = archiveAction.getAttribute("data-ranking-kind") || activeRankingKind;
+    const itemId = archiveAction.getAttribute("data-ranking-archive") || "";
+    const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
+    setRankingItemArchived(kind, itemId, !item?.archived);
+    return;
+  }
   const exclusionAction = event.target.closest("[data-ranking-exclusion-toggle]");
 
   if (exclusionAction) {
@@ -12178,7 +12426,7 @@ document.addEventListener("click", (event) => {
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-ranking-id]");
 
-  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") {
+  if (!item || !canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") {
     return;
   }
 
@@ -12222,7 +12470,7 @@ document.addEventListener("pointerdown", (event) => {
   const handle = event.target.closest(".ranking-drag-handle");
   const item = handle?.closest("[data-ranking-id]");
 
-  if (!item || !isCurrentManagerAdmin() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") {
+  if (!item || !canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") {
     return;
   }
 
@@ -12852,6 +13100,8 @@ function hydrateStoredManagerSession() {
 
 function saveManagerSession(session) {
   siteData.managerSession = session;
+  activeRankingManagerId = String(session?.managerId || "");
+  resetRankingManagerData();
 
   try {
     localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -12871,6 +13121,8 @@ function saveManagerSession(session) {
 
 function signOutManager() {
   siteData.managerSession = null;
+  activeRankingManagerId = "";
+  resetRankingManagerData();
 
   try {
     localStorage.removeItem(MANAGER_SESSION_STORAGE_KEY);
@@ -12970,8 +13222,8 @@ function renderLoginState() {
     activeNextItemId = "";
   }
 
-  if (!managerMeta?.isAdmin) {
-    activeRankingViewMode = "calculated";
+  if (!managerMeta) {
+    activeRankingViewMode = "manual";
     shouldShowRankingFilters = false;
     shouldShowRankingMoreData = false;
   }
@@ -13112,9 +13364,18 @@ async function handleManagerLogin() {
     }
 
     const manager = getPortalManagerById(managerId) ?? response.manager ?? { id: managerId, name: response.displayName };
+    let rankingAuth = response.rankingAuth || null;
+    if (!rankingAuth) {
+      try {
+        rankingAuth = await requestRankingAuthorizationForLogin(managerId, passphrase);
+      } catch (error) {
+        recordDiagnostic("ranking login authorization failed", error);
+      }
+    }
     saveManagerSession({
       manager,
       managerId: String(managerId),
+      rankingAuth,
       signedInAt: new Date().toISOString(),
     });
     setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });

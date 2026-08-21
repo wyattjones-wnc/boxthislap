@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.21.05.06";
+      window.BOX_THIS_LAP_VERSION = "2026.08.21.13.37";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608210506">
+    <link rel="stylesheet" href="styles.css?v=202608211337">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1158,12 +1158,17 @@
                 <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
               </svg>
             </button>
-            <button class="icon-action-button ranking-add-button" id="ranking-add-button" type="button" aria-label="Add ranking item" data-admin-only hidden>
+            <button class="icon-action-button ranking-add-button" id="ranking-add-button" type="button" aria-label="Add ranking item" hidden>
               +
             </button>
           </div>
         </div>
         <div class="ranking-filters" id="ranking-filters" hidden>
+          <label class="ranking-select-control">
+            <span>Manager</span>
+            <select id="ranking-manager-select"></select>
+          </label>
+          <span class="ranking-read-only" id="ranking-read-only" hidden>Read only</span>
           <label class="ranking-checkbox-control">
             <input id="ranking-more-data-toggle" type="checkbox">
             <span>More Data</span>
@@ -1172,23 +1177,27 @@
             <input id="ranking-show-excluded-toggle" type="checkbox">
             <span>Show Excluded</span>
           </label>
-          <div class="segmented-control ranking-mode-toggle" role="group" aria-label="Ranking view" data-admin-only hidden>
+          <label class="ranking-checkbox-control" id="ranking-show-archived-control">
+            <input id="ranking-show-archived-toggle" type="checkbox">
+            <span>Show Archived</span>
+          </label>
+          <div class="segmented-control ranking-mode-toggle" role="group" aria-label="Ranking view">
             <button class="is-active" type="button" data-ranking-view-mode="manual" aria-pressed="true">Manual</button>
             <button type="button" data-ranking-view-mode="calculated" aria-pressed="false">Calculated</button>
           </div>
-          <label class="ranking-select-control" data-admin-only hidden>
+          <label class="ranking-select-control" data-ranking-owner-only hidden>
             <span>Snapshot</span>
             <select id="ranking-snapshot-select">
               <option value="current">Current</option>
             </select>
           </label>
-          <label class="ranking-select-control" data-admin-only hidden>
+          <label class="ranking-select-control" data-ranking-owner-only hidden>
             <span>Compare</span>
             <select id="ranking-compare-select">
               <option value="">None</option>
             </select>
           </label>
-          <button class="action-button ranking-normalize-button" id="ranking-normalize-button" type="button" data-admin-only hidden>
+          <button class="action-button ranking-normalize-button" id="ranking-normalize-button" type="button" data-ranking-owner-only hidden>
             Normalize
           </button>
         </div>
@@ -1243,13 +1252,6 @@
                 <input id="ranking-item-rank" type="number" min="1" step="1" required>
               </label>
             </div>
-            <label class="ranking-checkbox-control ranking-item-normalize-control">
-              <input id="ranking-item-normalize" type="checkbox" checked>
-              <span>Normalize after adding</span>
-            </label>
-            <p class="body-copy ranking-dialog-note">
-              Saves a snapshot, resets old comparisons, and starts this list from the new order.
-            </p>
             <p class="footy-note-status" id="ranking-item-status" aria-live="polite"></p>
             <footer>
               <button class="action-button" id="ranking-item-cancel" type="button">
@@ -2155,6 +2157,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608210506"></script>
+    <script type="module" src="script.js?v=202608211337"></script>
   </body>
 </html>

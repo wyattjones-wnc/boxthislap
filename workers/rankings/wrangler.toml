@@ -1,0 +1,30 @@
+name = "box-this-lap-rankings"
+main = "src/index.js"
+compatibility_date = "2026-08-21"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rankings"
+database_id = "45c405ab-a0cd-442a-b135-b7ffe4b7d933"
+
+[vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+BOOTSTRAP_ORIGINS = "https://wyattjones-wnc.github.io"
+LEGACY_BOOTSTRAP_CUTOFF = "2026-09-20T23:59:59Z"
+CATALOG_URL = "https://wyattjones-wnc.github.io/boxthislap/data/rankings.json"
+MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec"
+
+[env.preview]
+name = "box-this-lap-rankings-preview"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "rankings-preview"
+database_id = "b003335d-3795-475d-b45d-9359d1ac34da"
+
+[env.preview.vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+BOOTSTRAP_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+LEGACY_BOOTSTRAP_CUTOFF = "2026-09-20T23:59:59Z"
+CATALOG_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/rankings.json"
+MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec"

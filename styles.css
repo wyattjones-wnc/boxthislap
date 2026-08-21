@@ -1570,6 +1570,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.ranking-read-only {
+  align-self: end;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 8px 11px;
+  text-transform: uppercase;
+}
+
 .ranking-mode-toggle {
   background: var(--soft);
   border: 1px solid var(--line);

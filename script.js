@@ -43,6 +43,7 @@ import {
   imageCachePurge,
   imageCacheStatus,
   adminOnlyElements,
+  nonAdminOnlyElements,
   loginOnlyElements,
   testRulesLinks,
   loginOpenButton,
@@ -12942,6 +12943,9 @@ function renderLoginState() {
   adminOnlyElements.forEach((element) => {
     element.hidden = !managerMeta?.isAdmin;
   });
+  nonAdminOnlyElements.forEach((element) => {
+    element.hidden = !managerMeta || managerMeta.isAdmin;
+  });
   loginOnlyElements.forEach((element) => {
     element.hidden = !managerMeta;
   });
@@ -13194,7 +13198,6 @@ async function updateLoginModeForSelectedManager(options = {}) {
   siteData.loginRecoveryVerifiedManagerId = "";
   siteData.loginRecoveryAnswer = "";
   hideLoginPanel();
-  renderLoginMode({ isLoading: Boolean(managerId) && !options.skipRemoteCheck });
 
   if (!managerId) {
     renderLoginMode({ isIdle: true });
@@ -13212,6 +13215,9 @@ async function updateLoginModeForSelectedManager(options = {}) {
     renderLoginMode(cachedStatus);
     setLoginFeedback("");
   } else {
+    // Keep the standard passphrase field writable while setup status is checked.
+    // A slow auth-status request should never make the login form feel broken.
+    renderLoginMode({ hasPassphrase: true });
     loginSubmitButton.disabled = true;
     setLoginFeedback("Checking manager setup...");
   }

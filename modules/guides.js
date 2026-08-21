@@ -1,4 +1,5 @@
 const GUIDE_STEP_BATCH_SIZE = 60;
+const GUIDE_COMPLETION_CONFIRMATION_MS = 1000;
 
 export function createGuidesController({ getManagerId, getIsAdmin, loadData, progressEndpoint }) {
   const view = document.querySelector("#guides-view");
@@ -18,6 +19,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
   let stepObserver = null;
   const completedStepKeys = new Set();
   const pendingStepKeys = new Set();
+  const confirmedStepKeys = new Set();
   const saveErrors = new Map();
   const expandedParentKeys = new Set();
 
@@ -94,6 +96,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       progressPromise = null;
       completedStepKeys.clear();
       pendingStepKeys.clear();
+      confirmedStepKeys.clear();
       saveErrors.clear();
     }
 
@@ -177,7 +180,9 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       const children = childrenByParent.get(item.id) || [];
       if (!matchesFilters(item) && !children.some(matchesFilters)) return false;
       if (!hideDone) return true;
-      return !isItemDone(item) || children.some((child) => !isItemDone(child));
+      return !isItemDone(item) || confirmedStepKeys.has(getStepKey(item.guideId, item.stepId)) || children.some((child) =>
+        !isItemDone(child) || confirmedStepKeys.has(getStepKey(child.guideId, child.stepId))
+      );
     });
     const renderedItems = visibleItems.slice(0, visibleStepLimit);
 
@@ -273,7 +278,9 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     const expanded = expandedParentKeys.has(parentKey);
     const completedChildren = children.filter(isItemDone).length;
     const hasActiveChildren = completedChildren < children.length;
-    const visibleChildren = children.filter((child) => matchesFilters(child) && (!hideDone || !isItemDone(child)));
+    const visibleChildren = children.filter((child) => matchesFilters(child) && (
+      !hideDone || !isItemDone(child) || confirmedStepKeys.has(getStepKey(child.guideId, child.stepId))
+    ));
 
     return `
       <section class="guide-step-group${expanded ? " is-expanded" : ""}" data-guide-parent-group="${escapeAttribute(parentKey)}">
@@ -296,6 +303,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     const done = isItemDone(item);
     const stepKey = getStepKey(item.guideId, item.stepId);
     const isPending = pendingStepKeys.has(stepKey);
+    const isConfirmed = confirmedStepKeys.has(stepKey);
     const saveError = saveErrors.get(stepKey);
     const context = [item.divider, item.section].filter(Boolean);
     const inputId = `guide-step-${toSafeId(item.guideId)}-${toSafeId(item.stepId)}`;
@@ -304,9 +312,9 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       : "";
     const checkboxTitle = options.disableCompletion ? "Complete all child steps before completing this parent" : "";
     return `
-      <article class="guide-step${done ? " is-done" : ""}${isPending ? " is-saving" : ""}${saveError ? " has-save-error" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(stepKey)}"${parentAttributes}>
+      <article class="guide-step${done ? " is-done" : ""}${isPending ? " is-saving" : ""}${isConfirmed ? " is-confirmed" : ""}${saveError ? " has-save-error" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(stepKey)}"${parentAttributes}>
         <label class="guide-step-check" for="${inputId}"${checkboxTitle ? ` title="${escapeAttribute(checkboxTitle)}"` : ""}>
-          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(stepKey)}"${done ? " checked" : ""}${options.disableCompletion || isPending ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
+          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(stepKey)}"${done ? " checked" : ""}${options.disableCompletion || isPending || isConfirmed ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
           <span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="${options.isMixed ? "M6 12h12" : "m6 12.5 4 4L18 8"}"></path></svg></span>
           <span class="sr-only">Mark step ${escapeHtml(item.stepId)} ${done ? "not done" : "done"}</span>
         </label>
@@ -318,6 +326,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
           </div>
           ${options.parentKey ? `<p class="guide-step-child-summary"><span>${options.completedChildren} of ${options.childCount} child steps complete</span><span class="guide-step-expand-label">${options.expanded ? "Hide" : "Show"} steps</span></p>` : ""}
           ${isPending ? `<p class="guide-step-save-status" role="status">Saving…</p>` : ""}
+          ${isConfirmed ? `<p class="guide-step-save-status" role="status">Saved</p>` : ""}
           ${saveError ? `<p class="guide-step-save-status is-error" role="alert">Not saved. <button type="button" data-guide-retry-step="${escapeAttribute(stepKey)}">Try again</button></p>` : ""}
         </div>
       </article>
@@ -457,12 +466,20 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       if (done) completedStepKeys.add(stepKey);
       else completedStepKeys.delete(stepKey);
       saveErrors.delete(stepKey);
+      pendingStepKeys.delete(stepKey);
+      if (done) confirmedStepKeys.add(stepKey);
+      renderPage();
+      if (done) {
+        await wait(GUIDE_COMPLETION_CONFIRMATION_MS);
+        confirmedStepKeys.delete(stepKey);
+      }
     } catch (error) {
       if (previousDone) completedStepKeys.add(stepKey);
       else completedStepKeys.delete(stepKey);
       saveErrors.set(stepKey, { done, error, item });
     } finally {
       pendingStepKeys.delete(stepKey);
+      if (!done || !completedStepKeys.has(stepKey)) confirmedStepKeys.delete(stepKey);
       renderPage();
     }
 
@@ -541,6 +558,10 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
   }
 
   return { renderPage };
+}
+
+function wait(durationMs) {
+  return new Promise((resolve) => window.setTimeout(resolve, durationMs));
 }
 
 function normalizeGuide(row) {

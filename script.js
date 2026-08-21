@@ -7772,7 +7772,7 @@ function syncRankingControls() {
     rankingShowExcludedToggle.checked = shouldShowRankingExcluded;
   }
   if (rankingShowArchivedToggle) rankingShowArchivedToggle.checked = shouldShowRankingArchived;
-  if (rankingShowArchivedControl) rankingShowArchivedControl.hidden = activeRankingKind === "mcu";
+  if (rankingShowArchivedControl) rankingShowArchivedControl.hidden = activeRankingKind === "mcu" || !isOwner;
   if (rankingReadOnly) {
     const selected = getPortalManagerById(getActiveRankingManagerId());
     rankingReadOnly.textContent = `Viewing ${selected ? getManagerMeta(selected).displayName : "manager"} — read only`;
@@ -12288,6 +12288,7 @@ rankingShowArchivedToggle?.addEventListener("change", () => {
 rankingManagerSelect?.addEventListener("change", () => {
   activeRankingManagerId = rankingManagerSelect.value || getCurrentManagerId();
   activeRankingViewMode = "manual";
+  shouldShowRankingArchived = false;
   resetRankingManagerData();
   renderRankingsPage();
 });

@@ -12,6 +12,7 @@ export const imageCacheToggle = document.querySelector("#image-cache-toggle");
 export const imageCachePurge = document.querySelector("#image-cache-purge");
 export const imageCacheStatus = document.querySelector("#image-cache-status");
 export const adminOnlyElements = document.querySelectorAll("[data-admin-only]");
+export const nonAdminOnlyElements = document.querySelectorAll("[data-non-admin-only]");
 export const loginOnlyElements = document.querySelectorAll("[data-login-only]");
 export const testRulesLinks = document.querySelectorAll("[data-test-rules-link]");
 export const loginOpenButton = document.querySelector("#login-open-button");

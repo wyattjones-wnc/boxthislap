@@ -2059,9 +2059,39 @@ body.has-shell-stale-warning .stale-shell-alert {
   opacity: 0.66;
 }
 
+.guide-step.is-saving {
+  border-color: var(--accent-border);
+}
+
+.guide-step.has-save-error {
+  border-color: #d94b4b;
+}
+
 .guide-step.is-completing {
   opacity: 0;
   transform: translateX(10px);
+}
+
+.guide-step-save-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+}
+
+.guide-step-save-status.is-error {
+  color: #c63d3d;
+}
+
+.guide-step-save-status button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+  text-decoration: underline;
 }
 
 .guide-step-group {
@@ -2540,6 +2570,49 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .youtube-seen-through-button {
   color: var(--muted);
+}
+
+.youtube-video-actions .youtube-seen-through-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 0;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 30px;
+  overflow: hidden;
+  padding: 5px 7px;
+  transition: border-color 0.15s ease, color 0.15s ease, gap 0.2s ease, padding 0.2s ease;
+}
+
+.youtube-seen-through-button svg {
+  fill: none;
+  flex: 0 0 auto;
+  height: 15px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  width: 15px;
+}
+
+.youtube-seen-through-button span {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.15s ease;
+}
+
+.youtube-video-actions .youtube-seen-through-button.is-confirming {
+  border-color: var(--accent-border);
+  color: var(--accent-dark);
+  gap: 6px;
+  padding: 6px 10px;
+}
+
+.youtube-seen-through-button.is-confirming span {
+  max-width: 120px;
+  opacity: 1;
 }
 
 .youtube-state {

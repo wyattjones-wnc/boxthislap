@@ -1,4 +1,4 @@
-import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608170001";
+import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -7,7 +7,7 @@ import {
   FOOTY_DATA_ENDPOINT,
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
-  GUIDES_DATA_ENDPOINT,
+  GUIDES_PROGRESS_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
@@ -26,7 +26,7 @@ import {
   FANTASY_CRITIC_LEAGUE_METADATA,
   FANTASY_CRITIC_PUBLISHER_MANAGERS,
   DEFAULT_PORTAL_MANAGERS,
-} from "./modules/siteConfig.js?v=202608160001";
+} from "./modules/siteConfig.js?v=202608190003";
 
 import {
   pageLinks,
@@ -43,6 +43,7 @@ import {
   imageCachePurge,
   imageCacheStatus,
   adminOnlyElements,
+  nonAdminOnlyElements,
   loginOnlyElements,
   testRulesLinks,
   loginOpenButton,
@@ -294,11 +295,12 @@ import {
   rulesNationBreakdown,
   testingPlayerRows,
 } from "./modules/domRefs.js?v=202608180004";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608160001";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuidesController } from "./modules/guides.js?v=202608130005";
+import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
+import { createGuidesController } from "./modules/guides.js?v=202608200001";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608170011";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608210001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -516,7 +518,8 @@ const router = createRouter({
   pages,
   shouldBlockPage: (pageName) =>
     (pageName === "rankings" && !siteData.managerSession) ||
-    (["todo", "want", "guides", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
+    (pageName === "guides" && !siteData.managerSession) ||
+    (["todo", "want", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -528,9 +531,15 @@ const { syncThemeToggle } = createThemeController({
   toggle: themeToggle,
 });
 
+const loadGuideData = createGuideDataLoader({
+  loadJson: (path) => loadJson(path, { cache: "force-cache" }),
+  path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
+});
 const guidesController = createGuidesController({
-  loadSheet,
-  saveChecklistDone: submitGuideChecklistDone,
+  getManagerId: getCurrentManagerId,
+  getIsAdmin: isCurrentManagerAdmin,
+  loadData: loadGuideData,
+  progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });
 const platinumsController = createPlatinumsController({ loadSheet });
 const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
@@ -5366,45 +5375,6 @@ function submitNextItemPayload(payload) {
   });
 }
 
-function submitGuideChecklistDone(item) {
-  return submitAppsScriptPayload({
-    action: "saveWalkthroughChecklistDone",
-    item,
-  }, {
-    endpoint: GUIDES_DATA_ENDPOINT,
-    fallback: submitGuideChecklistDoneWithForm,
-    missingMessage: "Guide checklist data endpoint is not configured.",
-    submitLabel: "guide checklist progress",
-  });
-}
-
-function submitGuideChecklistDoneWithForm(payload) {
-  const iframeName = "guides-data-frame";
-  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
-
-  if (!iframe) {
-    iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.hidden = true;
-    document.body.append(iframe);
-  }
-
-  const form = document.createElement("form");
-  form.action = GUIDES_DATA_ENDPOINT;
-  form.method = "POST";
-  form.target = iframeName;
-  form.hidden = true;
-
-  const payloadInput = document.createElement("input");
-  payloadInput.name = "payload";
-  payloadInput.value = JSON.stringify(payload);
-  form.append(payloadInput);
-
-  document.body.append(form);
-  form.submit();
-  form.remove();
-}
-
 function submitNextItemPayloadWithForm(payload) {
   const iframeName = "next-data-frame";
   let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
@@ -5504,13 +5474,13 @@ function ensureGuideLinksLoaded() {
     return guideLinksLoadPromise;
   }
 
-  guideLinksLoadPromise = ensureSharedData("guide-links", () => loadSheet("guides"))
-    .then((rows) => {
-      siteData.guideLinks = rows.map((row) => ({
-        id: String(row.ID || row.Id || row.id || "").trim(),
-        name: String(row.Name || row.name || "").trim(),
-        rankingId: String(row["VG Ranking ID"] || row.rankingId || "").trim(),
-        todoId: String(row["To Do ID"] || row.todoId || "").trim(),
+  guideLinksLoadPromise = ensureSharedData("guide-links", loadGuideData)
+    .then((snapshot) => {
+      siteData.guideLinks = (snapshot.guides || []).map((guide) => ({
+        id: String(guide.id || "").trim(),
+        name: String(guide.name || "").trim(),
+        rankingId: String(guide.rankingId || "").trim(),
+        todoId: String(guide.todoId || "").trim(),
       })).filter((guide) => guide.id && guide.name);
 
       if (activePageName === "todo") renderTodoList();
@@ -12974,6 +12944,9 @@ function renderLoginState() {
   adminOnlyElements.forEach((element) => {
     element.hidden = !managerMeta?.isAdmin;
   });
+  nonAdminOnlyElements.forEach((element) => {
+    element.hidden = !managerMeta || managerMeta.isAdmin;
+  });
   loginOnlyElements.forEach((element) => {
     element.hidden = !managerMeta;
   });
@@ -12981,7 +12954,8 @@ function renderLoginState() {
 
   if (
     (!managerMeta && activePageName === "rankings") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "guides", "youtube", "the-monster-maniac"].includes(activePageName))
+    (!managerMeta && activePageName === "guides") ||
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -13225,7 +13199,6 @@ async function updateLoginModeForSelectedManager(options = {}) {
   siteData.loginRecoveryVerifiedManagerId = "";
   siteData.loginRecoveryAnswer = "";
   hideLoginPanel();
-  renderLoginMode({ isLoading: Boolean(managerId) && !options.skipRemoteCheck });
 
   if (!managerId) {
     renderLoginMode({ isIdle: true });
@@ -13243,6 +13216,9 @@ async function updateLoginModeForSelectedManager(options = {}) {
     renderLoginMode(cachedStatus);
     setLoginFeedback("");
   } else {
+    // Keep the standard passphrase field writable while setup status is checked.
+    // A slow auth-status request should never make the login form feel broken.
+    renderLoginMode({ hasPassphrase: true });
     loginSubmitButton.disabled = true;
     setLoginFeedback("Checking manager setup...");
   }

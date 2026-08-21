@@ -1,11 +1,12 @@
 const GUIDE_STEP_BATCH_SIZE = 60;
 
-export function createGuidesController({ loadSheet, saveChecklistDone }) {
+export function createGuidesController({ getManagerId, getIsAdmin, loadData, progressEndpoint }) {
   const view = document.querySelector("#guides-view");
   let guides = null;
   let checklist = null;
-  let guidesPromise = null;
-  let checklistPromise = null;
+  let dataPromise = null;
+  let progressPromise = null;
+  let progressManagerId = "";
   let selectedGuideId = "";
   let shouldShowFilters = false;
   let shouldShowStats = false;
@@ -15,7 +16,9 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   let typeFilter = "";
   let visibleStepLimit = GUIDE_STEP_BATCH_SIZE;
   let stepObserver = null;
-  const progressOverrides = {};
+  const completedStepKeys = new Set();
+  const pendingStepKeys = new Set();
+  const saveErrors = new Map();
   const expandedParentKeys = new Set();
 
   view?.addEventListener("click", handleClick);
@@ -39,8 +42,7 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   }
 
   function isItemDone(item) {
-    const key = getStepKey(item.guideId, item.stepId);
-    return Object.prototype.hasOwnProperty.call(progressOverrides, key) ? progressOverrides[key] : item.done;
+    return completedStepKeys.has(getStepKey(item.guideId, item.stepId));
   }
 
   function getChildrenByParent(items) {
@@ -57,53 +59,68 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     return childrenByParent;
   }
 
-  async function ensureIndexLoaded() {
-    if (guides) return guides;
-    if (!guidesPromise) {
-      guidesPromise = loadSheet("guides")
-        .then((rows) => {
-          guides = rows.map(normalizeGuide).filter((guide) => guide.id && guide.name);
-          return guides;
-        })
-        .catch((error) => {
-          guidesPromise = null;
-          throw error;
-        });
-    }
-    return guidesPromise;
-  }
-
-  async function ensureChecklistLoaded() {
-    if (checklist) return checklist;
-    if (!checklistPromise) {
-      checklistPromise = loadSheet("walkthroughChecklist")
-        .then((rows) => {
+  async function ensureDataLoaded() {
+    if (guides && checklist) return { guides, steps: checklist };
+    if (!dataPromise) {
+      dataPromise = loadData()
+        .then((snapshot) => {
+          guides = (snapshot.guides || []).map(normalizeGuide).filter((guide) => guide.id && guide.name);
           const seenIds = new Set();
           const seenPairs = new Set();
-          checklist = rows.map(normalizeChecklistItem).filter((item) => {
+          checklist = (snapshot.steps || []).map(normalizeChecklistItem).filter((item) => {
+            const itemKey = `${item.guideId}::${item.id}`;
             const pairKey = getStepKey(item.guideId, item.stepId);
-            if (!item.id || !item.guideId || !item.stepId || seenIds.has(item.id) || seenPairs.has(pairKey)) return false;
-            seenIds.add(item.id);
+            if (!item.id || !item.guideId || !item.stepId || seenIds.has(itemKey) || seenPairs.has(pairKey)) return false;
+            seenIds.add(itemKey);
             seenPairs.add(pairKey);
             return true;
           });
-          return checklist;
+          return snapshot;
         })
         .catch((error) => {
-          checklistPromise = null;
+          dataPromise = null;
           throw error;
         });
     }
-    return checklistPromise;
+    return dataPromise;
+  }
+
+  async function ensureProgressLoaded() {
+    const managerId = String(getManagerId?.() || "").trim();
+    if (!managerId) throw new Error("Sign in to load your guide progress.");
+
+    if (progressManagerId !== managerId) {
+      progressManagerId = managerId;
+      progressPromise = null;
+      completedStepKeys.clear();
+      pendingStepKeys.clear();
+      saveErrors.clear();
+    }
+
+    if (!progressPromise) {
+      progressPromise = requestGuideProgress(progressEndpoint, managerId)
+        .then((rows) => {
+          completedStepKeys.clear();
+          rows.forEach((row) => completedStepKeys.add(getStepKey(row.guideId, row.stepId)));
+          return rows;
+        })
+        .catch((error) => {
+          progressPromise = null;
+          throw error;
+        });
+    }
+
+    return progressPromise;
   }
 
   function renderGuideIndex() {
     if (!guides) {
       view.innerHTML = renderIndexLoading();
-      ensureIndexLoaded().then(renderPage).catch((error) => renderError("guides", error));
+      ensureDataLoaded().then(renderPage).catch((error) => renderError("guides", error));
       return;
     }
 
+    const visibleGuides = guides.filter(canViewGuide);
     view.innerHTML = `
       <div class="section-heading page-heading-with-action footy-heading">
         <div>
@@ -113,7 +130,7 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
         </div>
       </div>
       <div class="guides-grid">
-        ${guides.length ? guides.map(renderGuideCard).join("") : `<p class="table-message">No guides are available yet.</p>`}
+        ${visibleGuides.length ? visibleGuides.map(renderGuideCard).join("") : `<p class="table-message">No guides are available yet.</p>`}
       </div>
     `;
   }
@@ -121,11 +138,11 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
   function renderGuideDetail() {
     if (!guides) {
       view.innerHTML = renderDetailLoading();
-      ensureIndexLoaded().then(renderPage).catch((error) => renderError("guide", error));
+      ensureDataLoaded().then(renderPage).catch((error) => renderError("guide", error));
       return;
     }
 
-    const guide = guides.find((entry) => entry.id === selectedGuideId);
+    const guide = guides.find((entry) => entry.id === selectedGuideId && canViewGuide(entry));
     if (!guide) {
       view.innerHTML = `
         <a class="guides-back-link" href="${escapeAttribute(getGuidesUrl())}" data-guides-back>&larr; All Guides</a>
@@ -134,9 +151,11 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
       return;
     }
 
-    if (!checklist) {
+    if (!checklist || !progressPromise || progressManagerId !== String(getManagerId?.() || "").trim()) {
       view.innerHTML = renderDetailLoading(guide.name);
-      ensureChecklistLoaded().then(renderPage).catch((error) => renderError("checklist", error));
+      Promise.all([ensureDataLoaded(), ensureProgressLoaded()])
+        .then(renderPage)
+        .catch((error) => renderError("guide progress", error));
       return;
     }
 
@@ -198,6 +217,10 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
         <span class="guide-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m9 6 6 6-6 6"></path></svg></span>
       </a>
     `;
+  }
+
+  function canViewGuide(guide) {
+    return Boolean(getIsAdmin?.()) || !guide.isAdmin;
   }
 
   function renderGuideReferences(guide) {
@@ -271,6 +294,9 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
 
   function renderChecklistItem(item, options = {}) {
     const done = isItemDone(item);
+    const stepKey = getStepKey(item.guideId, item.stepId);
+    const isPending = pendingStepKeys.has(stepKey);
+    const saveError = saveErrors.get(stepKey);
     const context = [item.divider, item.section].filter(Boolean);
     const inputId = `guide-step-${toSafeId(item.guideId)}-${toSafeId(item.stepId)}`;
     const parentAttributes = options.parentKey
@@ -278,9 +304,9 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
       : "";
     const checkboxTitle = options.disableCompletion ? "Complete all child steps before completing this parent" : "";
     return `
-      <article class="guide-step${done ? " is-done" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(getStepKey(item.guideId, item.stepId))}"${parentAttributes}>
+      <article class="guide-step${done ? " is-done" : ""}${isPending ? " is-saving" : ""}${saveError ? " has-save-error" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(stepKey)}"${parentAttributes}>
         <label class="guide-step-check" for="${inputId}"${checkboxTitle ? ` title="${escapeAttribute(checkboxTitle)}"` : ""}>
-          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(getStepKey(item.guideId, item.stepId))}"${done ? " checked" : ""}${options.disableCompletion ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
+          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(stepKey)}"${done ? " checked" : ""}${options.disableCompletion || isPending ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
           <span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="${options.isMixed ? "M6 12h12" : "m6 12.5 4 4L18 8"}"></path></svg></span>
           <span class="sr-only">Mark step ${escapeHtml(item.stepId)} ${done ? "not done" : "done"}</span>
         </label>
@@ -291,6 +317,8 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
             <p>${escapeHtml(item.step)}${renderStepLink(item.url)}</p>
           </div>
           ${options.parentKey ? `<p class="guide-step-child-summary"><span>${options.completedChildren} of ${options.childCount} child steps complete</span><span class="guide-step-expand-label">${options.expanded ? "Hide" : "Show"} steps</span></p>` : ""}
+          ${isPending ? `<p class="guide-step-save-status" role="status">Saving…</p>` : ""}
+          ${saveError ? `<p class="guide-step-save-status is-error" role="alert">Not saved. <button type="button" data-guide-retry-step="${escapeAttribute(stepKey)}">Try again</button></p>` : ""}
         </div>
       </article>
     `;
@@ -380,6 +408,13 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
 
     if (event.target.closest("[data-guides-retry]")) {
       renderPage();
+      return;
+    }
+
+    const retryButton = event.target.closest("[data-guide-retry-step]");
+    if (retryButton) {
+      const errorState = saveErrors.get(retryButton.dataset.guideRetryStep);
+      if (errorState) void saveChecklistItem(errorState.item, errorState.done);
     }
   }
 
@@ -396,17 +431,7 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     renderPage();
   }
 
-  function submitChecklistItemDone(item, done) {
-    if (!item) return false;
-    return saveChecklistDone?.({
-      Done: done,
-      "Guide ID": item.guideId,
-      ID: item.id,
-      "Step ID": item.stepId,
-    });
-  }
-
-  function completeParentWhenChildrenAreDone(item) {
+  async function completeParentWhenChildrenAreDone(item) {
     if (!item?.parentId) return;
 
     const parent = checklist?.find((entry) => entry.guideId === item.guideId && entry.id === item.parentId);
@@ -415,35 +440,44 @@ export function createGuidesController({ loadSheet, saveChecklistDone }) {
     const siblings = checklist.filter((entry) => entry.guideId === item.guideId && entry.parentId === parent.id);
     if (!siblings.length || !siblings.every(isItemDone)) return;
 
-    const parentKey = getStepKey(parent.guideId, parent.stepId);
-    progressOverrides[parentKey] = true;
+    await saveChecklistItem(parent, true);
+  }
 
-    if (!submitChecklistItemDone(parent, true)) {
-      delete progressOverrides[parentKey];
+  async function saveChecklistItem(item, done) {
+    if (!item) return;
+    const managerId = String(getManagerId?.() || "").trim();
+    const stepKey = getStepKey(item.guideId, item.stepId);
+    const previousDone = completedStepKeys.has(stepKey);
+    pendingStepKeys.add(stepKey);
+    saveErrors.delete(stepKey);
+    renderPage();
+
+    try {
+      await saveGuideProgress(progressEndpoint, managerId, item, done);
+      if (done) completedStepKeys.add(stepKey);
+      else completedStepKeys.delete(stepKey);
+      saveErrors.delete(stepKey);
+    } catch (error) {
+      if (previousDone) completedStepKeys.add(stepKey);
+      else completedStepKeys.delete(stepKey);
+      saveErrors.set(stepKey, { done, error, item });
+    } finally {
+      pendingStepKeys.delete(stepKey);
+      renderPage();
+    }
+
+    if (done && completedStepKeys.has(stepKey)) {
+      await completeParentWhenChildrenAreDone(item);
     }
   }
 
   function handleChange(event) {
     const stepInput = event.target.closest("[data-guide-step]");
     if (stepInput) {
-      progressOverrides[stepInput.dataset.guideStep] = stepInput.checked;
       const item = checklist?.find((entry) => getStepKey(entry.guideId, entry.stepId) === stepInput.dataset.guideStep);
-      const submitted = submitChecklistItemDone(item, stepInput.checked);
-
-      if (!submitted) {
-        delete progressOverrides[stepInput.dataset.guideStep];
-        stepInput.checked = !stepInput.checked;
-        return;
-      }
-
-      if (stepInput.checked) {
-        completeParentWhenChildrenAreDone(item);
-      }
-
-      if (stepInput.checked && hideDone) {
-        stepInput.closest(".guide-step")?.classList.add("is-completing");
-      }
-      window.setTimeout(renderPage, 500);
+      const requestedDone = stepInput.checked;
+      stepInput.checked = isItemDone(item);
+      void saveChecklistItem(item, requestedDone);
       return;
     }
 
@@ -515,6 +549,7 @@ function normalizeGuide(row) {
     name: String(row.Name || row.name || "").trim(),
     todoId: String(row["To Do ID"] || row.todoId || "").trim(),
     rankingId: String(row["VG Ranking ID"] || row.rankingId || "").trim(),
+    isAdmin: row.isAdmin === true,
   };
 }
 
@@ -524,7 +559,6 @@ function normalizeChecklistItem(row) {
     guideId: String(row["Guide ID"] || row.guideId || "").trim(),
     stepId: String(row["Step ID"] || row.stepId || "").trim(),
     parentId: String(row["Parent ID"] || row.parentId || "").trim(),
-    done: parseBoolean(row.Done ?? row.done),
     divider: String(row.Divider || row.divider || "").trim(),
     section: String(row.Section || row.section || "").trim(),
     type: String(row.Type || row.type || "").trim(),
@@ -576,10 +610,6 @@ function getGuidesUrl() {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function parseBoolean(value) {
-  return ["true", "yes", "1", "done", "complete", "completed"].includes(String(value || "").trim().toLowerCase());
-}
-
 function toSafeId(value) {
   return String(value).replace(/[^a-zA-Z0-9_-]/g, "-");
 }
@@ -595,4 +625,52 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value);
+}
+
+async function requestGuideProgress(endpoint, managerId) {
+  if (!endpoint) throw new Error("Guide progress service is not configured.");
+  const response = await fetchWithTimeout(`${endpoint.replace(/\/$/, "")}/api/managers/${encodeURIComponent(managerId)}/progress`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const data = await readJsonResponse(response);
+  if (!response.ok || !data.ok || !Array.isArray(data.progress)) {
+    throw new Error(data.error || `Unable to load guide progress (${response.status}).`);
+  }
+  return data.progress;
+}
+
+async function saveGuideProgress(endpoint, managerId, item, done) {
+  if (!endpoint || !managerId) throw new Error("Guide progress service is not configured.");
+  const url = `${endpoint.replace(/\/$/, "")}/api/managers/${encodeURIComponent(managerId)}/guides/${encodeURIComponent(item.guideId)}/steps/${encodeURIComponent(item.stepId)}`;
+  const response = await fetchWithTimeout(url, {
+    headers: { Accept: "application/json" },
+    method: done ? "PUT" : "DELETE",
+  });
+  const data = await readJsonResponse(response);
+  if (!response.ok || !data.ok || Boolean(data.completed) !== Boolean(done)) {
+    throw new Error(data.error || `Unable to save guide progress (${response.status}).`);
+  }
+  return data;
+}
+
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+async function fetchWithTimeout(url, options, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("The guide progress service did not respond in time.");
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }

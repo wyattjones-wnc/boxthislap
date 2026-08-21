@@ -10,6 +10,9 @@ const IS_DEV_DEPLOYMENT = IS_LOCAL_DEPLOYMENT || globalThis.location?.pathname?.
 export const GUIDES_PROGRESS_ENDPOINT = IS_DEV_DEPLOYMENT
   ? "https://box-this-lap-guides-preview.boxthislap.workers.dev"
   : "https://box-this-lap-guides.boxthislap.workers.dev";
+export const RANKINGS_ENDPOINT = IS_DEV_DEPLOYMENT
+  ? "https://box-this-lap-rankings-preview.boxthislap.workers.dev"
+  : "https://box-this-lap-rankings.boxthislap.workers.dev";
 export const YOUTUBE_INBOX_ENDPOINT = "https://box-this-lap-youtube.boxthislap.workers.dev";
 export const AWARD_DEFINITIONS = [
   {

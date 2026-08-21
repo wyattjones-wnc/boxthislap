@@ -1,0 +1,57 @@
+name: Publish Rankings
+
+on:
+  schedule:
+    - cron: "27 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: publish-rankings-${{ github.ref || 'dev' }}
+  cancel-in-progress: false
+
+jobs:
+  publish-rankings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Choose branch
+        id: branch
+        run: echo "name=${GITHUB_REF_NAME:-dev}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.branch.outputs.name }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Generate and validate MCU snapshot
+        run: node scripts/generate-rankings-data.mjs
+
+      - name: Commit changed snapshot
+        id: commit
+        run: |
+          if git diff --quiet -- data/rankings.json; then
+            echo "MCU snapshot is already current."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/rankings.json
+          git commit -m "Publish MCU ranking data"
+          git pull --rebase origin "${{ steps.branch.outputs.name }}"
+          git push origin "HEAD:${{ steps.branch.outputs.name }}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy changed snapshot
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref "${{ steps.branch.outputs.name }}"

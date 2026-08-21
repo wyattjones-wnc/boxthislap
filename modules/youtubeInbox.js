@@ -197,7 +197,12 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
           <div class="youtube-video-actions">
             ${quickPlaylists.map(({ name, playlist }) => `<button class="action-button youtube-quick-playlist-button" type="button" data-youtube-quick-save="${escapeAttribute(playlist.youtubePlaylistId)}">Save to ${escapeHtml(name)}</button>`).join("")}
             ${video.status === "new" && state.moreControls ? `<button class="action-button" type="button" data-youtube-action="watched">Seen</button>` : ""}
-            ${video.status === "new" ? `<button class="action-button youtube-seen-through-button" type="button" data-youtube-seen-through>Seen through here</button>` : ""}
+            ${video.status === "new" ? `
+              <button class="action-button youtube-seen-through-button" type="button" data-youtube-seen-through aria-expanded="false" aria-label="Seen through here">
+                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg>
+                <span>Seen through here</span>
+              </button>
+            ` : ""}
           </div>
         </div>
       </article>
@@ -240,6 +245,15 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
 
     const seenThroughButton = event.target.closest("[data-youtube-seen-through]");
     if (seenThroughButton) {
+      if (!seenThroughButton.classList.contains("is-confirming")) {
+        view.querySelectorAll("[data-youtube-seen-through].is-confirming").forEach((button) => {
+          button.classList.remove("is-confirming");
+          button.setAttribute("aria-expanded", "false");
+        });
+        seenThroughButton.classList.add("is-confirming");
+        seenThroughButton.setAttribute("aria-expanded", "true");
+        return;
+      }
       await markSeenThrough(card.dataset.youtubeVideo, seenThroughButton);
       return;
     }

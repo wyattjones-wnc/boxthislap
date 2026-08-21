@@ -5,14 +5,8 @@ export const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfyc
 export const FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 export const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
 export const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
-const IS_LOCAL_DEPLOYMENT = ["localhost", "127.0.0.1"].includes(globalThis.location?.hostname);
-const IS_DEV_DEPLOYMENT = IS_LOCAL_DEPLOYMENT || globalThis.location?.pathname?.split("/").includes("dev");
-export const GUIDES_PROGRESS_ENDPOINT = IS_DEV_DEPLOYMENT
-  ? "https://box-this-lap-guides-preview.boxthislap.workers.dev"
-  : "https://box-this-lap-guides.boxthislap.workers.dev";
-export const RANKINGS_ENDPOINT = IS_DEV_DEPLOYMENT
-  ? "https://box-this-lap-rankings-preview.boxthislap.workers.dev"
-  : "https://box-this-lap-rankings.boxthislap.workers.dev";
+export const GUIDES_PROGRESS_ENDPOINT = "https://box-this-lap-guides.boxthislap.workers.dev";
+export const RANKINGS_ENDPOINT = "https://box-this-lap-rankings.boxthislap.workers.dev";
 export const YOUTUBE_INBOX_ENDPOINT = "https://box-this-lap-youtube.boxthislap.workers.dev";
 export const AWARD_DEFINITIONS = [
   {

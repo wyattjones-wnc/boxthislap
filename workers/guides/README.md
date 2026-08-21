@@ -15,3 +15,5 @@ Before production promotion, create `guides-progress`, add a top-level `DB` bind
 ## Publishing checklist changes
 
 Run the **Publish Guides** GitHub workflow on the desired branch after editing the spreadsheet. It validates both tabs, commits `data/guides.json` only when the guide content changed, and triggers the Pages deployment. The last valid JSON remains deployed if Google Sheets or validation fails.
+
+Every Guides row must set `IsAdmin` to `TRUE` or `FALSE`. Non-admin managers only see guides marked `FALSE`; admins can see both.

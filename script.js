@@ -537,6 +537,7 @@ const loadGuideData = createGuideDataLoader({
 });
 const guidesController = createGuidesController({
   getManagerId: getCurrentManagerId,
+  getIsAdmin: isCurrentManagerAdmin,
   loadData: loadGuideData,
   progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });

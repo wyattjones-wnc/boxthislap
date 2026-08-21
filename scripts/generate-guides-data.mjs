@@ -13,12 +13,16 @@ const [guideRows, checklistRows] = await Promise.all([
   loadCsv(CHECKLIST_URL, "WalkthroughChecklist"),
 ]);
 
-const guides = guideRows.map((row) => ({
-  id: clean(row.ID || row.Id || row.id),
-  name: clean(row.Name || row.name),
-  rankingId: clean(row["VG Ranking ID"] || row.rankingId),
-  todoId: clean(row["To Do ID"] || row.todoId),
-}));
+const guides = guideRows.map((row) => {
+  const id = clean(row.ID || row.Id || row.id);
+  return {
+    id,
+    name: clean(row.Name || row.name),
+    rankingId: clean(row["VG Ranking ID"] || row.rankingId),
+    todoId: clean(row["To Do ID"] || row.todoId),
+    isAdmin: parseBoolean(row.IsAdmin ?? row.isAdmin, `Guide ${id || "without an ID"} IsAdmin`),
+  };
+});
 let ignoredBlankRows = 0;
 const steps = checklistRows.map((row) => ({
   id: clean(row.ID || row.Id || row.id),
@@ -45,7 +49,7 @@ const unchanged = previous &&
   JSON.stringify(previous.guides) === JSON.stringify(guides) &&
   JSON.stringify(previous.steps) === JSON.stringify(steps);
 const snapshot = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: unchanged ? previous.generatedAt : new Date().toISOString(),
   guides,
   steps,
@@ -83,6 +87,7 @@ function validateSnapshot(snapshot) {
   const guideIds = new Set();
   for (const guide of snapshot.guides) {
     if (!guide.id || !guide.name) throw new Error("Every Guide requires ID and Name.");
+    if (typeof guide.isAdmin !== "boolean") throw new Error(`Guide ${guide.id} requires a valid IsAdmin value.`);
     if (guideIds.has(guide.id)) throw new Error(`Duplicate Guide ID: ${guide.id}`);
     guideIds.add(guide.id);
   }
@@ -135,7 +140,7 @@ function validateSnapshot(snapshot) {
 async function readExistingSnapshot() {
   try {
     const value = JSON.parse(await readFile(OUTPUT_PATH, "utf8"));
-    return value?.schemaVersion === 1 ? value : null;
+    return value?.schemaVersion === 2 ? value : null;
   } catch {
     return null;
   }
@@ -174,6 +179,13 @@ function parseCsv(text) {
 
 function clean(value) {
   return String(value ?? "").trim();
+}
+
+function parseBoolean(value, label) {
+  const normalized = clean(value).toLowerCase();
+  if (["true", "yes", "1"].includes(normalized)) return true;
+  if (["false", "no", "0"].includes(normalized)) return false;
+  throw new Error(`${label} must be TRUE or FALSE.`);
 }
 
 function wait(milliseconds) {

@@ -1,4 +1,4 @@
-const GUIDE_DATA_CACHE_KEY = "boxThisLapGuideData:v1";
+const GUIDE_DATA_CACHE_KEY = "boxThisLapGuideData:v2";
 
 export function createGuideDataLoader({ loadJson, path = "data/guides.json" }) {
   let loadPromise = null;
@@ -28,10 +28,12 @@ export function createGuideDataLoader({ loadJson, path = "data/guides.json" }) {
 }
 
 function validateGuideData(snapshot) {
-  if (snapshot?.schemaVersion !== 1 || !Array.isArray(snapshot.guides) || !Array.isArray(snapshot.steps)) {
+  if (snapshot?.schemaVersion !== 2 || !Array.isArray(snapshot.guides) || !Array.isArray(snapshot.steps)) {
     throw new Error("Guide data has an unsupported format.");
   }
-  if (!snapshot.guides.every((guide) => String(guide?.id || "").trim() && String(guide?.name || "").trim())) {
+  if (!snapshot.guides.every((guide) =>
+    String(guide?.id || "").trim() && String(guide?.name || "").trim() && typeof guide?.isAdmin === "boolean"
+  )) {
     throw new Error("Guide data contains an invalid Guide.");
   }
   if (!snapshot.steps.every((step) =>

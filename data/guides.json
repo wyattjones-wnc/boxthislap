@@ -1,36 +1,41 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-20T20:25:53.037Z",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-21T04:46:25.073Z",
   "guides": [
     {
       "id": "1",
       "name": "Grim Fandango",
       "rankingId": "69",
-      "todoId": "47"
+      "todoId": "47",
+      "isAdmin": false
     },
     {
       "id": "2",
       "name": "Persona 5 Royal",
       "rankingId": "41",
-      "todoId": "5"
+      "todoId": "5",
+      "isAdmin": false
     },
     {
       "id": "3",
       "name": "Coffee Talk Episode 2: Hibiscus & Butterfly",
       "rankingId": "",
-      "todoId": "1"
+      "todoId": "1",
+      "isAdmin": true
     },
     {
       "id": "4",
       "name": "Star Wars Jedi Survivor",
       "rankingId": "",
-      "todoId": "33"
+      "todoId": "33",
+      "isAdmin": true
     },
     {
       "id": "5",
       "name": "Car Mechanic Simulator 2021",
       "rankingId": "",
-      "todoId": "8"
+      "todoId": "8",
+      "isAdmin": true
     }
   ],
   "steps": [

@@ -1,6 +1,6 @@
 const GUIDE_STEP_BATCH_SIZE = 60;
 
-export function createGuidesController({ getManagerId, loadData, progressEndpoint }) {
+export function createGuidesController({ getManagerId, getIsAdmin, loadData, progressEndpoint }) {
   const view = document.querySelector("#guides-view");
   let guides = null;
   let checklist = null;
@@ -120,6 +120,7 @@ export function createGuidesController({ getManagerId, loadData, progressEndpoin
       return;
     }
 
+    const visibleGuides = guides.filter(canViewGuide);
     view.innerHTML = `
       <div class="section-heading page-heading-with-action footy-heading">
         <div>
@@ -129,7 +130,7 @@ export function createGuidesController({ getManagerId, loadData, progressEndpoin
         </div>
       </div>
       <div class="guides-grid">
-        ${guides.length ? guides.map(renderGuideCard).join("") : `<p class="table-message">No guides are available yet.</p>`}
+        ${visibleGuides.length ? visibleGuides.map(renderGuideCard).join("") : `<p class="table-message">No guides are available yet.</p>`}
       </div>
     `;
   }
@@ -141,7 +142,7 @@ export function createGuidesController({ getManagerId, loadData, progressEndpoin
       return;
     }
 
-    const guide = guides.find((entry) => entry.id === selectedGuideId);
+    const guide = guides.find((entry) => entry.id === selectedGuideId && canViewGuide(entry));
     if (!guide) {
       view.innerHTML = `
         <a class="guides-back-link" href="${escapeAttribute(getGuidesUrl())}" data-guides-back>&larr; All Guides</a>
@@ -216,6 +217,10 @@ export function createGuidesController({ getManagerId, loadData, progressEndpoin
         <span class="guide-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m9 6 6 6-6 6"></path></svg></span>
       </a>
     `;
+  }
+
+  function canViewGuide(guide) {
+    return Boolean(getIsAdmin?.()) || !guide.isAdmin;
   }
 
   function renderGuideReferences(guide) {
@@ -544,6 +549,7 @@ function normalizeGuide(row) {
     name: String(row.Name || row.name || "").trim(),
     todoId: String(row["To Do ID"] || row.todoId || "").trim(),
     rankingId: String(row["VG Ranking ID"] || row.rankingId || "").trim(),
+    isAdmin: row.isAdmin === true,
   };
 }
 

@@ -5,6 +5,11 @@ compatibility_date = "2026-08-19"
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "guides-progress"
+database_id = "5533e6a1-8179-4ea2-9c97-9a4e27f67512"
+
 [env.preview]
 name = "box-this-lap-guides-preview"
 

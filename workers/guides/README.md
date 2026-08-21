@@ -10,7 +10,7 @@ The browser only marks or hides a step after this Worker returns a successful re
 2. Apply migrations with `npx wrangler d1 migrations apply DB --remote --env preview`.
 3. Deploy with `npx wrangler deploy --env preview`.
 
-Before production promotion, create `guides-progress`, add a top-level `DB` binding, apply the same migrations, and deploy without `--env preview`.
+Production uses the top-level `guides-progress` D1 binding. Apply migrations with `npx wrangler d1 migrations apply DB --remote`, then deploy with `npx wrangler deploy`.
 
 ## Publishing checklist changes
 

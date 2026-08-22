@@ -305,7 +305,7 @@ import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608210001";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608210001";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608210002";
 import {
   formatUpdatedTime,
   normalizeLookupName,

@@ -67,7 +67,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
         request(`/api/videos?${query}`),
         request("/api/youtube/playlists"),
       ]);
-      state.videos = Array.isArray(videoData.videos) ? videoData.videos : [];
+      state.videos = filterVideosByPriority(Array.isArray(videoData.videos) ? videoData.videos : [], allowedChannels);
       state.channels = allowedChannels;
       state.playlists = Array.isArray(playlistData.playlists) ? playlistData.playlists : [];
       state.lastSyncAt = videoData.lastSyncAt || "";
@@ -447,6 +447,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
 function parseYouTubeConfiguration(rows) {
   const channels = [];
   const priorities = [];
+  const priorityFilters = new Map();
   const removedChannelIds = [];
 
   for (const row of rows) {
@@ -469,7 +470,9 @@ function parseYouTubeConfiguration(rows) {
     const value = String(row.ID || "").trim();
     const numericValue = Number(value);
     if (!channelId && displayName && value && Number.isFinite(numericValue)) {
-      priorities.push({ label: displayName, numericValue, value });
+      const filter = String(row.Filter || "").trim();
+      priorities.push({ filter, label: displayName, numericValue, value });
+      priorityFilters.set(numericValue, filter);
     }
   }
 
@@ -477,9 +480,21 @@ function parseYouTubeConfiguration(rows) {
     throw new Error("The YouTube sheet needs both channel and priority rows.");
   }
 
+  channels.forEach((channel) => {
+    channel.filter = priorityFilters.get(channel.priority) || "";
+  });
   channels.sort((first, second) => first.name.localeCompare(second.name));
   priorities.sort((first, second) => first.numericValue - second.numericValue);
   return { channels, priorities, removedChannelIds: [...new Set(removedChannelIds)] };
+}
+
+function filterVideosByPriority(videos, channels) {
+  const channelsById = new Map(channels.map((channel) => [channel.youtubeChannelId, channel]));
+  return videos.filter((video) => {
+    const channelId = String(video.channel?.youtubeChannelId || video.youtubeChannelId || "").trim();
+    const filter = channelsById.get(channelId)?.filter;
+    return !filter || String(video.title || "").toLocaleLowerCase().includes(filter.toLocaleLowerCase());
+  });
 }
 
 function parseBoolean(value) {

@@ -738,26 +738,26 @@
       "assets/ranking/mcu/11/12 - dsatmom.webp"
     ],
     "12": [
-      "assets/ranking/mcu/12/1 - loki.webp",
-      "assets/ranking/mcu/12/2 - loki.webp",
-      "assets/ranking/mcu/12/3 - loki.webp",
-      "assets/ranking/mcu/12/4 - loki.webp",
-      "assets/ranking/mcu/12/5 - loki.webp",
-      "assets/ranking/mcu/12/6 - loki.webp",
-      "assets/ranking/mcu/12/7 - loki.webp",
-      "assets/ranking/mcu/12/8 - loki.webp",
-      "assets/ranking/mcu/12/9 - loki.webp",
-      "assets/ranking/mcu/12/10 - loki.webp",
-      "assets/ranking/mcu/12/11 - loki.webp"
+      "assets/ranking/mcu/12/1 - he.webp",
+      "assets/ranking/mcu/12/2 - he.webp",
+      "assets/ranking/mcu/12/3 - he.webp",
+      "assets/ranking/mcu/12/4 - he.webp",
+      "assets/ranking/mcu/12/5 - he.webp",
+      "assets/ranking/mcu/12/6 - he.webp",
+      "assets/ranking/mcu/12/7 - he.webp"
     ],
     "13": [
-      "assets/ranking/mcu/13/1 - he.webp",
-      "assets/ranking/mcu/13/2 - he.webp",
-      "assets/ranking/mcu/13/3 - he.webp",
-      "assets/ranking/mcu/13/4 - he.webp",
-      "assets/ranking/mcu/13/5 - he.webp",
-      "assets/ranking/mcu/13/6 - he.webp",
-      "assets/ranking/mcu/13/7 - he.webp"
+      "assets/ranking/mcu/13/1 - loki.webp",
+      "assets/ranking/mcu/13/2 - loki.webp",
+      "assets/ranking/mcu/13/3 - loki.webp",
+      "assets/ranking/mcu/13/4 - loki.webp",
+      "assets/ranking/mcu/13/5 - loki.webp",
+      "assets/ranking/mcu/13/6 - loki.webp",
+      "assets/ranking/mcu/13/7 - loki.webp",
+      "assets/ranking/mcu/13/8 - loki.webp",
+      "assets/ranking/mcu/13/9 - loki.webp",
+      "assets/ranking/mcu/13/10 - loki.webp",
+      "assets/ranking/mcu/13/11 - loki.webp"
     ],
     "14": [
       "assets/ranking/mcu/14/1 - daw.webp",
@@ -912,7 +912,42 @@
       "assets/ranking/mcu/24/8 - im.webp",
       "assets/ranking/mcu/24/9 - im.webp",
       "assets/ranking/mcu/24/10 - im.webp",
-      "assets/ranking/mcu/24/11 - im.webp"
+      "assets/ranking/mcu/24/11 - im.webp",
+      "assets/ranking/mcu/24/12 - im.webp",
+      "assets/ranking/mcu/24/13 - im.webp",
+      "assets/ranking/mcu/24/14 - im.webp",
+      "assets/ranking/mcu/24/15 - im.webp",
+      "assets/ranking/mcu/24/16 - im.webp",
+      "assets/ranking/mcu/24/17 - im.webp",
+      "assets/ranking/mcu/24/18 - im.webp",
+      "assets/ranking/mcu/24/19 - im.webp",
+      "assets/ranking/mcu/24/20 - im.webp",
+      "assets/ranking/mcu/24/21 - im.webp",
+      "assets/ranking/mcu/24/22 - im.webp"
+    ],
+    "25": [
+      "assets/ranking/mcu/25/1 - ta.webp",
+      "assets/ranking/mcu/25/2 - ta.webp",
+      "assets/ranking/mcu/25/3 - ta.webp",
+      "assets/ranking/mcu/25/4 - ta.webp",
+      "assets/ranking/mcu/25/5 - ta.webp",
+      "assets/ranking/mcu/25/6 - ta.webp",
+      "assets/ranking/mcu/25/7 - ta.webp",
+      "assets/ranking/mcu/25/8 - ta.webp",
+      "assets/ranking/mcu/25/9 - ta.webp",
+      "assets/ranking/mcu/25/10 - ta.webp",
+      "assets/ranking/mcu/25/11 - ta.webp",
+      "assets/ranking/mcu/25/12 - ta.webp",
+      "assets/ranking/mcu/25/13 - ta.webp",
+      "assets/ranking/mcu/25/14 - ta.webp",
+      "assets/ranking/mcu/25/15 - ta.webp",
+      "assets/ranking/mcu/25/16 - ta.webp",
+      "assets/ranking/mcu/25/17 - ta.webp",
+      "assets/ranking/mcu/25/18 - ta.webp",
+      "assets/ranking/mcu/25/19 - ta.webp"
+    ],
+    "26": [
+      "assets/ranking/mcu/26/1 - aaa.webp"
     ]
   }
 }

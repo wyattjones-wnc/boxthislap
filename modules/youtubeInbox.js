@@ -336,7 +336,10 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       const warnings = new Set();
       while (hasMore && batches < 10) {
         const result = await request("/api/youtube/sync", {
-          body: JSON.stringify({ removedChannelIds: state.removedChannelIds }),
+          body: JSON.stringify({
+            configuredChannelIds: state.configuredChannels.map((channel) => channel.youtubeChannelId),
+            removedChannelIds: state.removedChannelIds,
+          }),
           headers: { "Content-Type": "application/json" },
           method: "POST",
         });

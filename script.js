@@ -820,13 +820,10 @@ function getFootyDisplayTeamName(teamName) {
 }
 
 function getFootyTeamBadge(teamName, explicitBadge = "", teamId = "") {
+  const localBadge = getFootyLocalTeamBadge(teamName, teamId);
   const badge = String(explicitBadge || "").trim();
 
-  if (badge) {
-    return badge;
-  }
-
-  return getFootyLocalTeamBadge(teamName, teamId);
+  return localBadge || badge;
 }
 
 function getFootyLocalTeamBadge(teamName, teamId = "") {
@@ -2024,6 +2021,7 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
         .filter((fixture) => fixture.matchId)
         .map((fixture) => [String(fixture.matchId), fixture])
     );
+    const followedBadges = getFootyFollowedTeamBadgeMap(fixtures);
 
     return (Array.isArray(fullSchedule.fixtures) ? fullSchedule.fixtures : []).map((fixture) => {
       const followedFixture = followedByMatchId.get(String(fixture.matchId || ""));
@@ -2031,6 +2029,8 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
       return {
         ...fixture,
         ...(followedFixture?.matchNote ? { matchNote: followedFixture.matchNote } : {}),
+        followedAwayBadge: getFootyFollowedTeamBadge(followedBadges, fixture.away),
+        followedHomeBadge: getFootyFollowedTeamBadge(followedBadges, fixture.home),
         followedTeamNames: Array.isArray(fixture.followedTeamNames) ? fixture.followedTeamNames : [],
         isCompetitionFixture: true,
       };
@@ -3241,11 +3241,10 @@ function renderFootyFixture(fixture) {
 }
 
 function renderFootyCompetitionBadgePair(fixture = {}) {
-  const followedBadge = String(fixture.teamBadge || "").trim();
   const homeBadge = String(fixture.homeBadge || "").trim();
   const awayBadge = String(fixture.awayBadge || "").trim();
-  const followedHomeBadge = fixture.isHome === true ? followedBadge : "";
-  const followedAwayBadge = fixture.isHome === false ? followedBadge : "";
+  const followedHomeBadge = String(fixture.followedHomeBadge || "").trim();
+  const followedAwayBadge = String(fixture.followedAwayBadge || "").trim();
 
   return `
     <div class="footy-competition-badge-pair" aria-hidden="true">
@@ -3265,6 +3264,31 @@ function renderFootyCompetitionBadgePair(fixture = {}) {
       </span>
     </div>
   `;
+}
+
+function getFootyFollowedTeamBadgeMap(fixtures = []) {
+  const badges = new Map();
+
+  fixtures.forEach((fixture) => {
+    const badge = String(fixture.teamBadge || "").trim();
+    const teamName = String(fixture.teamName || "").trim();
+
+    if (!badge || !teamName) {
+      return;
+    }
+
+    [normalizeLookupName(teamName), normalizeFootyClubName(teamName)]
+      .filter(Boolean)
+      .forEach((key) => badges.set(key, badge));
+  });
+
+  return badges;
+}
+
+function getFootyFollowedTeamBadge(badges, teamName) {
+  return badges.get(normalizeLookupName(teamName)) ||
+    badges.get(normalizeFootyClubName(teamName)) ||
+    "";
 }
 
 function shouldRenderFootyNoteEditButton(fixture) {

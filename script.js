@@ -7305,12 +7305,10 @@ function renderRankingList(kind) {
     : "";
 
   if (!rows.length) {
-    const manager = getPortalManagerById(getActiveRankingManagerId());
-    const name = manager ? getManagerMeta(manager).displayName : "This manager";
     const action = canEditActiveRankingManager() && kind !== "mcu"
-      ? ` <button class="ranking-inline-action" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add one</button>`
+      ? `<button class="action-button ranking-empty-add" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add One</button>`
       : "";
-    list.innerHTML = `${errorMarkup}<p class="table-message">${escapeHtml(name)} has not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.${action}</p>`;
+    list.innerHTML = `${errorMarkup}<div class="table-message ranking-empty-state"><span>You have not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.</span>${action}</div>`;
     return;
   }
 
@@ -7345,10 +7343,9 @@ function renderRankingItem(kind, item) {
         ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
         ${movement}
         ${meta}
-        ${exclusionAction}
       </span>
       ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
-      ${isOwner && kind !== "mcu" && !isSnapshotView ? `<span class="ranking-item-actions"><button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button></span>` : ""}
+      ${(exclusionAction || (isOwner && kind !== "mcu" && !isSnapshotView)) ? `<span class="ranking-item-actions">${exclusionAction}${isOwner && kind !== "mcu" && !isSnapshotView ? `<button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button>` : ""}</span>` : ""}
     </article>
   `;
 }
@@ -7361,13 +7358,7 @@ function renderRankingExclusionAction(kind, item) {
   const isExcluded = isRankingItemExcluded(kind, item.id);
   const label = isExcluded ? "Include" : "Exclude";
 
-  return `
-    <span class="ranking-item-actions">
-      <button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
-        ${escapeHtml(label)}
-      </button>
-    </span>
-  `;
+  return `<button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${escapeHtml(label)}</button>`;
 }
 
 function renderRankingMovement(kind, item) {

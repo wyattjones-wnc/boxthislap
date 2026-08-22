@@ -1473,8 +1473,9 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .ranking-item-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  grid-column: 2 / -1;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -1484,6 +1485,19 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-item.is-actions-open .ranking-item-actions {
   max-height: 48px;
   opacity: 1;
+}
+
+.ranking-empty-state {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.ranking-empty-add {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding-inline: 18px;
 }
 
 .ranking-inline-action {

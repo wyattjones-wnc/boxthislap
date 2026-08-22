@@ -3208,7 +3208,7 @@ function renderFootyFixture(fixture) {
     `
     : "";
   const badgeMarkup = isCompetitionFixture
-    ? renderFootyCompetitionBadgePair(fixture)
+    ? renderFootyCompetitionFollowedTeamBadge(fixture)
     : `
       <div class="footy-fixture-badge" aria-hidden="true">
         ${renderFootyBadgeMarkup({
@@ -3240,23 +3240,26 @@ function renderFootyFixture(fixture) {
   `;
 }
 
-function renderFootyCompetitionBadgePair(fixture = {}) {
+function renderFootyCompetitionFollowedTeamBadge(fixture = {}) {
+  const followedTeam = String(fixture.teamName || "").trim();
+
+  if (!followedTeam) {
+    return "";
+  }
+
+  const sideBadge = fixture.isHome === true
+    ? fixture.homeBadge
+    : fixture.isHome === false
+      ? fixture.awayBadge
+      : "";
+
   return `
-    <div class="footy-competition-badge-pair" aria-hidden="true">
-      <span class="footy-fixture-badge">
-        ${renderFootyBadgeMarkup({
-          fallbackSrc: "",
-          fallbackText: getFootyTeamFallbackBadge(fixture.home),
-          primarySrc: String(fixture.homeBadge || "").trim(),
-        })}
-      </span>
-      <span class="footy-fixture-badge">
-        ${renderFootyBadgeMarkup({
-          fallbackSrc: "",
-          fallbackText: getFootyTeamFallbackBadge(fixture.away),
-          primarySrc: String(fixture.awayBadge || "").trim(),
-        })}
-      </span>
+    <div class="footy-fixture-badge" aria-hidden="true">
+      ${renderFootyBadgeMarkup({
+        fallbackSrc: String(sideBadge || "").trim(),
+        fallbackText: getFootyTeamFallbackBadge(followedTeam),
+        primarySrc: String(fixture.teamBadge || "").trim(),
+      })}
     </div>
   `;
 }

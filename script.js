@@ -3208,7 +3208,7 @@ function renderFootyFixture(fixture) {
     `
     : "";
   const badgeMarkup = isCompetitionFixture
-    ? renderFootyCompetitionFollowedTeamBadge(fixture)
+    ? renderFootyCompetitionBadgePair(fixture)
     : `
       <div class="footy-fixture-badge" aria-hidden="true">
         ${renderFootyBadgeMarkup({
@@ -3240,26 +3240,29 @@ function renderFootyFixture(fixture) {
   `;
 }
 
-function renderFootyCompetitionFollowedTeamBadge(fixture = {}) {
-  const followedTeam = String(fixture.teamName || "").trim();
-
-  if (!followedTeam) {
-    return "";
-  }
-
-  const sideBadge = fixture.isHome === true
-    ? fixture.homeBadge
-    : fixture.isHome === false
-      ? fixture.awayBadge
-      : "";
+function renderFootyCompetitionBadgePair(fixture = {}) {
+  const followedBadge = String(fixture.teamBadge || "").trim();
+  const homeBadge = String(fixture.homeBadge || "").trim();
+  const awayBadge = String(fixture.awayBadge || "").trim();
+  const followedHomeBadge = fixture.isHome === true ? followedBadge : "";
+  const followedAwayBadge = fixture.isHome === false ? followedBadge : "";
 
   return `
-    <div class="footy-fixture-badge" aria-hidden="true">
-      ${renderFootyBadgeMarkup({
-        fallbackSrc: String(sideBadge || "").trim(),
-        fallbackText: getFootyTeamFallbackBadge(followedTeam),
-        primarySrc: String(fixture.teamBadge || "").trim(),
-      })}
+    <div class="footy-competition-badge-pair" aria-hidden="true">
+      <span class="footy-fixture-badge">
+        ${renderFootyBadgeMarkup({
+          fallbackSrc: homeBadge ? followedHomeBadge : "",
+          fallbackText: getFootyTeamFallbackBadge(fixture.home),
+          primarySrc: homeBadge || followedHomeBadge,
+        })}
+      </span>
+      <span class="footy-fixture-badge">
+        ${renderFootyBadgeMarkup({
+          fallbackSrc: awayBadge ? followedAwayBadge : "",
+          fallbackText: getFootyTeamFallbackBadge(fixture.away),
+          primarySrc: awayBadge || followedAwayBadge,
+        })}
+      </span>
     </div>
   `;
 }

@@ -295,8 +295,8 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
   }
 
   function getAllowedChannels() {
-    const threshold = Number(state.priority) || 1;
-    return state.configuredChannels.filter((channel) => channel.priority <= threshold);
+    const selectedPriority = Number(state.priority) || 1;
+    return state.configuredChannels.filter((channel) => channel.priority === selectedPriority);
   }
 
   async function handleSubmit(event) {

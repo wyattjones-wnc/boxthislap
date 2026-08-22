@@ -50,6 +50,6 @@ Refresh advances past individual channel, duration, or playlist-metadata failure
 
 Each completed manual sync marks any remaining `new` video older than 30 days as watched. Channel filters use stable YouTube channel IDs while displaying the current channel names.
 
-The public site's published `YouTube` sheet controls which channels are synced, which channels appear, and their priority threshold. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, `Priority`, and `IsRemoved`; rows with a true `IsRemoved` value are excluded from display and manual refreshes. Its priority table uses `Priority`, `Description`, and optional `Filter` columns.
+The public site's published `YouTube` sheet controls which channels are synced, which channels appear for each exact priority selection, and their title filters. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, `Priority`, and `IsRemoved`; rows with a true `IsRemoved` value are excluded from display and manual refreshes. Its priority table uses `Priority`, `Description`, and optional `Filter` columns.
 
 The `3New` playlist is pinned by its stable YouTube playlist ID so the quick-save button remains available even when YouTube's owned-playlist listing or the D1 cache is stale.

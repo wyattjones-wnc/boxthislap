@@ -2064,6 +2064,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 13px;
   grid-template-columns: auto minmax(0, 1fr);
   padding: 15px 16px;
+  position: relative;
   transition: opacity 260ms ease, transform 260ms ease;
 }
 
@@ -2087,7 +2088,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 .guide-step-save-status {
   color: var(--muted);
   font-size: 0.82rem;
-  margin: 8px 0 0;
+  margin: 0;
+  position: absolute;
+  right: 16px;
+  top: 15px;
+  z-index: 1;
 }
 
 .guide-step-save-status.is-error {
@@ -2244,6 +2249,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .guide-step-content {
   min-width: 0;
+  padding-right: 58px;
 }
 
 .guide-step-context {
@@ -2822,6 +2828,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   .guide-step {
     gap: 11px;
     padding: 14px 13px;
+  }
+
+  .guide-step-save-status {
+    right: 13px;
+    top: 14px;
   }
 
   .guide-step-children {

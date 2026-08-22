@@ -1,5 +1,5 @@
 const GUIDE_STEP_BATCH_SIZE = 60;
-const GUIDE_COMPLETION_CONFIRMATION_MS = 1000;
+const GUIDE_COMPLETION_CONFIRMATION_MS = 500;
 
 export function createGuidesController({ getManagerId, getIsAdmin, loadData, progressEndpoint }) {
   const view = document.querySelector("#guides-view");
@@ -313,6 +313,9 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     const checkboxTitle = options.disableCompletion ? "Complete all child steps before completing this parent" : "";
     return `
       <article class="guide-step${done ? " is-done" : ""}${isPending ? " is-saving" : ""}${isConfirmed ? " is-confirmed" : ""}${saveError ? " has-save-error" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(stepKey)}"${parentAttributes}>
+        ${isPending ? `<p class="guide-step-save-status" role="status">Saving…</p>` : ""}
+        ${isConfirmed ? `<p class="guide-step-save-status" role="status">Saved</p>` : ""}
+        ${saveError ? `<p class="guide-step-save-status is-error" role="alert">Not saved. <button type="button" data-guide-retry-step="${escapeAttribute(stepKey)}">Try again</button></p>` : ""}
         <label class="guide-step-check" for="${inputId}"${checkboxTitle ? ` title="${escapeAttribute(checkboxTitle)}"` : ""}>
           <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(stepKey)}"${done ? " checked" : ""}${options.disableCompletion || isPending || isConfirmed ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
           <span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="${options.isMixed ? "M6 12h12" : "m6 12.5 4 4L18 8"}"></path></svg></span>
@@ -325,9 +328,6 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
             <p>${escapeHtml(item.step)}${renderStepLink(item.url)}</p>
           </div>
           ${options.parentKey ? `<p class="guide-step-child-summary"><span>${options.completedChildren} of ${options.childCount} child steps complete</span><span class="guide-step-expand-label">${options.expanded ? "Hide" : "Show"} steps</span></p>` : ""}
-          ${isPending ? `<p class="guide-step-save-status" role="status">Saving…</p>` : ""}
-          ${isConfirmed ? `<p class="guide-step-save-status" role="status">Saved</p>` : ""}
-          ${saveError ? `<p class="guide-step-save-status is-error" role="alert">Not saved. <button type="button" data-guide-retry-step="${escapeAttribute(stepKey)}">Try again</button></p>` : ""}
         </div>
       </article>
     `;

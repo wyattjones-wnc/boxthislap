@@ -8,7 +8,7 @@ const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
 const DEFAULT_FOOTBALL_TEAMS_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=0&single=true&output=csv`;
 const DEFAULT_FOOTY_MATCHES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=1436836758&single=true&output=csv`;
 const DEFAULT_FOOTY_MATCH_NOTES_CSV_URL = `${DEFAULT_FOOTY_WORKBOOK_BASE_URL}?gid=866481448&single=true&output=csv`;
-const DEFAULT_FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
+const DEFAULT_FOOTY_MATCH_NOTES_ENDPOINT = "https://box-this-lap-footy-notes.boxthislap.workers.dev/api/match-notes";
 const OUTPUT_PATH = path.resolve(process.env.FOOTY_SCHEDULE_OUTPUT_PATH || path.join("data", "footy-schedule.json"));
 const FOOTY_MATCH_SEEDS_PATH = path.resolve(process.env.FOOTY_MATCH_SEEDS_PATH || path.join("data", "footy-match-seeds.json"));
 const PRIMARY_PROVIDER_NAME = "football-data.org";
@@ -1305,30 +1305,26 @@ async function loadFootyMatchNotesSheet(url) {
 }
 
 async function loadFootyMatchNotes() {
-  const notesFromSheet = await loadFootyMatchNotesSheet(process.env.FOOTY_MATCH_NOTES_CSV_URL || DEFAULT_FOOTY_MATCH_NOTES_CSV_URL);
+  const endpoint = process.env.FOOTY_MATCH_NOTES_ENDPOINT || DEFAULT_FOOTY_MATCH_NOTES_ENDPOINT;
 
-  if (notesFromSheet.size > 0) {
-    return notesFromSheet;
-  }
-
-  const endpoint = process.env.FOOTY_DATA_ENDPOINT || DEFAULT_FOOTY_DATA_ENDPOINT;
-
-  if (!endpoint) {
-    return notesFromSheet;
+  if (endpoint) {
+    try {
+      return await loadFootyMatchNotesEndpoint(endpoint);
+    } catch (error) {
+      console.warn(`Unable to load Footy match notes from Cloudflare: ${error.message}`);
+    }
   }
 
   try {
-    return await loadFootyMatchNotesEndpoint(endpoint);
+    return await loadFootyMatchNotesSheet(process.env.FOOTY_MATCH_NOTES_CSV_URL || DEFAULT_FOOTY_MATCH_NOTES_CSV_URL);
   } catch (error) {
-    console.warn(`Unable to load Footy match notes from web app endpoint: ${error.message}`);
-    return notesFromSheet;
+    console.warn(`Unable to load Footy match notes from the legacy sheet: ${error.message}`);
+    return new Map();
   }
 }
 
 async function loadFootyMatchNotesEndpoint(endpoint) {
-  const url = new URL(endpoint);
-  url.searchParams.set("action", "listFootyMatchNotes");
-  const data = JSON.parse(await loadText(url.toString(), { extension: "json" }));
+  const data = JSON.parse(await loadText(endpoint, { extension: "json" }));
   const notesByMatchId = new Map();
 
   if (!data.ok || !Array.isArray(data.notes)) {

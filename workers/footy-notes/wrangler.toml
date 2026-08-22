@@ -1,0 +1,13 @@
+name = "box-this-lap-footy-notes"
+main = "src/index.js"
+compatibility_date = "2026-08-22"
+
+[vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+ADMIN_MANAGER_IDS = "6"
+MANAGER_AUTH_ENDPOINT = "https://box-this-lap-rankings.boxthislap.workers.dev/api/auth/verify"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "footy-match-notes"
+database_id = "af010919-5364-4324-8b89-72c832c215ed"

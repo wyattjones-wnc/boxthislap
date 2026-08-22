@@ -27,6 +27,9 @@ export default {
       if (request.method === "POST" && url.pathname === "/api/auth/refresh") {
         return json(await refreshAuth(request, env), 200, cors);
       }
+      if (request.method === "POST" && url.pathname === "/api/auth/verify") {
+        return json(await verifyAuth(request, env), 200, cors);
+      }
 
       const setMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)$/);
       if (request.method === "GET" && setMatch) {
@@ -127,6 +130,13 @@ async function refreshAuth(request, env) {
   const body = await readBody(request);
   const payload = await verifyToken(env, body.refreshToken, "refresh");
   return issueTokens(env, payload.sub);
+}
+
+async function verifyAuth(request, env) {
+  const authorization = request.headers.get("Authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const payload = await verifyToken(env, token, "access");
+  return { ok: true, managerId: String(payload.sub) };
 }
 
 async function issueTokens(env, managerId) {

@@ -5,6 +5,7 @@ import {
   MANAGER_SESSION_STORAGE_KEY,
   MANAGER_PORTAL_ENDPOINT,
   FOOTY_DATA_ENDPOINT,
+  FOOTY_MATCH_NOTES_ENDPOINT,
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
@@ -381,7 +382,6 @@ let pendingWantMoveItemId = "";
 let draggedWantItemId = "";
 let didMoveWantPointer = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
-const FOOTY_JSONP_TIMEOUT_MS = 12000;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
 const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
@@ -3562,6 +3562,7 @@ function buildFootyMatchNoteFromDialog() {
 
   return {
     matchId: activeFootyNoteMatchId,
+    revision: Number(getFootyFixtureByMatchId(activeFootyNoteMatchId)?.matchNote?.revision || 0),
     homeScore: String(footyNoteHomeScore?.value ?? "").trim(),
     awayScore: String(footyNoteAwayScore?.value ?? "").trim(),
     followGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.follow),
@@ -3704,8 +3705,8 @@ async function saveFootyMatchNoteFromDialog() {
     return;
   }
 
-  if (!FOOTY_DATA_ENDPOINT) {
-    setFootyNoteStatus("Footy data endpoint is not configured.", true);
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
+    setFootyNoteStatus("Footy match notes endpoint is not configured.", true);
     return;
   }
 
@@ -3722,12 +3723,7 @@ async function saveFootyMatchNoteFromDialog() {
   setFootyNoteStatus("Saving match note...");
 
   try {
-    const response = await submitFootyDataPayload({
-      action: "saveFootyMatchNote",
-      note,
-      pageUrl: window.location.href,
-      submittedAt: new Date().toISOString(),
-    });
+    const response = await saveFootyMatchNote(note);
     const savedNote = response.savedNote || note;
 
     upsertFootyMatchNote(savedNote);
@@ -3755,7 +3751,7 @@ function shouldWaitForFootyMatchNotes() {
 }
 
 function ensureFootyMatchNotes({ force = false } = {}) {
-  if (!FOOTY_DATA_ENDPOINT) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
     siteData.footyMatchNotes = [];
     siteData.footyMatchNotesLoadedAt = new Date().toISOString();
     return Promise.resolve([]);
@@ -3817,54 +3813,21 @@ function wait(durationMs) {
 }
 
 function loadFootyMatchNotes() {
-  if (!FOOTY_DATA_ENDPOINT) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
     return Promise.resolve([]);
   }
 
-  const callbackName = `boxThisLapFootyNotes${Date.now()}${Math.random().toString(36).slice(2)}`;
-  const callbackId = `footy-notes-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-  return new Promise((resolve, reject) => {
-    let script;
-    const timeout = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("No response from the footy match notes endpoint."));
-    }, FOOTY_JSONP_TIMEOUT_MS);
-
-    function cleanup() {
-      window.clearTimeout(timeout);
-      delete window[callbackName];
-      script?.remove();
-    }
-
-    window[callbackName] = (data) => {
-      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
-        return;
+  return fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/match-notes`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  })
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || `Footy match notes endpoint returned ${response.status}.`);
       }
-
-      cleanup();
-
-      if (!data.ok) {
-        reject(new Error(data.error || "Unable to load footy match notes."));
-        return;
-      }
-
-      resolve(Array.isArray(data.notes) ? data.notes : []);
-    };
-
-    const url = new URL(FOOTY_DATA_ENDPOINT);
-    url.searchParams.set("action", "listFootyMatchNotes");
-    url.searchParams.set("callback", callbackName);
-    url.searchParams.set("callbackId", callbackId);
-    script = document.createElement("script");
-    script.async = true;
-    script.src = url.toString();
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Unable to reach the footy match notes endpoint."));
-    };
-    document.head.append(script);
-  });
+      return Array.isArray(data.notes) ? data.notes : [];
+    });
 }
 
 function ensureFootyRosters() {
@@ -4292,69 +4255,41 @@ function upsertFootyMatchNote(note) {
   siteData.footyMatchNotesLoadedAt = new Date().toISOString();
 }
 
-function submitFootyDataPayload(payload) {
-  return submitFootyDataPayloadWithPost(payload);
-}
+async function saveFootyMatchNote(note, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const endpoint = FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "");
+  const response = await fetch(`${endpoint}/api/match-notes/${encodeURIComponent(note.matchId)}`, {
+    body: JSON.stringify(note),
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    method: "PUT",
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
 
-async function submitFootyDataPayloadWithPost(payload) {
-  let reachedEndpoint = false;
-
-  try {
-    const response = await window.fetch(FOOTY_DATA_ENDPOINT, {
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
+  if (response.status === 401 && !retried) {
+    siteData.managerSession = {
+      ...siteData.managerSession,
+      rankingAuth: {
+        ...(siteData.managerSession?.rankingAuth || {}),
+        accessToken: "",
+        accessExpiresAt: "",
       },
-      method: "POST",
-    });
-    reachedEndpoint = true;
-    const data = await response.json();
-
-    if (!response.ok || !data?.ok) {
-      throw new Error(data?.error || `Footy data endpoint returned ${response.status}.`);
-    }
-
-    return data;
-  } catch (error) {
-    if (reachedEndpoint) {
-      throw error;
-    }
-
-    console.warn("Unable to submit Footy data with fetch; falling back to form post.", error);
-    submitFootyDataPayloadWithForm(payload);
-    return {
-      ok: true,
-      savedNote: payload.note,
-      status: "submitted",
     };
-  }
-}
-
-function submitFootyDataPayloadWithForm(payload) {
-  const iframeName = "footy-data-frame";
-  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
-
-  if (!iframe) {
-    iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.hidden = true;
-    document.body.append(iframe);
+    try {
+      localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession));
+    } catch {}
+    return saveFootyMatchNote(note, true);
   }
 
-  const form = document.createElement("form");
-  form.action = FOOTY_DATA_ENDPOINT;
-  form.method = "POST";
-  form.target = iframeName;
-  form.hidden = true;
+  if (!response.ok || !data?.ok || !data.savedNote) {
+    throw new Error(data?.error || "Match note was not saved.");
+  }
 
-  const payloadInput = document.createElement("input");
-  payloadInput.name = "payload";
-  payloadInput.value = JSON.stringify(payload);
-  form.append(payloadInput);
-
-  document.body.append(form);
-  form.submit();
-  form.remove();
+  return data;
 }
 
 function clearFootyScheduleMatchNotes(schedule) {
@@ -4392,6 +4327,8 @@ function updateFootyFixtureMatchNote(note) {
           homeScore: note.homeScore,
           note: note.note,
           opponentGoalAssists: note.opponentGoalAssists,
+          revision: Number(note.revision || 0),
+          updatedAt: note.updatedAt || "",
         };
       }
     });

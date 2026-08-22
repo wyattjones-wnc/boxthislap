@@ -449,8 +449,27 @@ function parseYouTubeConfiguration(rows) {
   const priorities = [];
   const priorityFilters = new Map();
   const removedChannelIds = [];
+  let section = "channels";
 
   for (const row of rows) {
+    if (String(row.ID || "").trim().toLowerCase() === "priority" &&
+        String(row["Display Name"] || "").trim().toLowerCase() === "description") {
+      section = "priorities";
+      continue;
+    }
+
+    if (section === "priorities") {
+      const value = String(row.ID || "").trim();
+      const numericValue = Number(value);
+      const label = String(row["Display Name"] || "").trim();
+      const filter = String(row["YouTube Channel ID"] || row.Filter || "").trim();
+      if (label && value && Number.isFinite(numericValue)) {
+        priorities.push({ filter, label, numericValue, value });
+        priorityFilters.set(numericValue, filter);
+      }
+      continue;
+    }
+
     const channelId = String(row["YouTube Channel ID"] || "").trim();
     const displayName = String(row["Display Name"] || "").trim();
     const priorityValue = String(row.Priority || "").trim();
@@ -467,13 +486,6 @@ function parseYouTubeConfiguration(rows) {
       continue;
     }
 
-    const value = String(row.ID || "").trim();
-    const numericValue = Number(value);
-    if (!channelId && displayName && value && Number.isFinite(numericValue)) {
-      const filter = String(row.Filter || "").trim();
-      priorities.push({ filter, label: displayName, numericValue, value });
-      priorityFilters.set(numericValue, filter);
-    }
   }
 
   if (!channels.length || !priorities.length) {

@@ -9558,7 +9558,9 @@ function getFormulaOneCalculatorState(year, data) {
   const hiddenDrivers = new Set(storedState.hiddenDrivers ?? []);
   const state = {
     filtersExpanded: false,
+    viewMode: "simple",
     knownDrivers: new Set(data.driversToWatch),
+    simpleSelections: storedState.simpleSelections && typeof storedState.simpleSelections === "object" ? storedState.simpleSelections : {},
     selections: storedState.selections && typeof storedState.selections === "object" ? storedState.selections : {},
     visibleDrivers: new Set(data.driversToWatch.filter((driver) => !hiddenDrivers.has(driver))),
   };
@@ -9578,6 +9580,7 @@ function persistFormulaOneCalculatorState(year, data, state) {
   try {
     localStorage.setItem(getFormulaOneCalculatorStorageKey(year), JSON.stringify({
       hiddenDrivers: data.driversToWatch.filter((driver) => !state.visibleDrivers.has(driver)),
+      simpleSelections: state.simpleSelections,
       selections: state.selections,
     }));
   } catch {
@@ -9615,6 +9618,38 @@ function getFormulaOneCalculatorRoundName(round) {
 
 function getFormulaOneCalculatorSelectionKey(type, roundId, driver) {
   return `${type}:${roundId}:${driver}`;
+}
+
+function getFormulaOneCalculatorSimpleEventPosition(data, event, position) {
+  if (!position) {
+    return "";
+  }
+
+  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
+  if (options.some((option) => option.position === position)) {
+    return position;
+  }
+
+  if (event.type === "sprint") {
+    return options.find((option) => option.position.startsWith("<"))?.position ?? "";
+  }
+
+  return position;
+}
+
+function applyFormulaOneCalculatorSimpleSelection(data, state, events, driver, position) {
+  if (position) {
+    state.simpleSelections[driver] = position;
+  } else {
+    delete state.simpleSelections[driver];
+  }
+
+  events.forEach((event) => {
+    const key = getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver);
+    const eventPosition = getFormulaOneCalculatorSimpleEventPosition(data, event, position);
+    if (eventPosition) state.selections[key] = eventPosition;
+    else delete state.selections[key];
+  });
 }
 
 function getFormulaOneCalculatorSelectedPoints(data, state, event, driver) {
@@ -9688,7 +9723,7 @@ function renderFormulaOneCalculator(year) {
     <section class="formula-one-calculator-card formula-one-calculator-intro">
       <div>
         <h3>Season scenarios</h3>
-        <p>Choose a finishing position for any remaining race or sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
+        <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
       </div>
       <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
     </section>
@@ -9699,6 +9734,21 @@ function renderFormulaOneCalculator(year) {
           <h3>Points calculator</h3>
           <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
         </div>
+        <div class="formula-one-calculator-heading-actions">
+          <div class="formula-one-calculator-view-toggle" role="group" aria-label="Calculator view">
+            <button
+              type="button"
+              class="${state.viewMode === "simple" ? "is-active" : ""}"
+              data-formula-one-calculator-view="simple"
+              aria-pressed="${state.viewMode === "simple" ? "true" : "false"}"
+            >Simple</button>
+            <button
+              type="button"
+              class="${state.viewMode === "expanded" ? "is-active" : ""}"
+              data-formula-one-calculator-view="expanded"
+              aria-pressed="${state.viewMode === "expanded" ? "true" : "false"}"
+            >Expanded</button>
+          </div>
         <button
           class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
           type="button"
@@ -9711,6 +9761,7 @@ function renderFormulaOneCalculator(year) {
             <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
           </svg>
         </button>
+        </div>
       </div>
       ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers)}
       <div class="table-wrap formula-one-calculator-table-wrap">
@@ -9769,6 +9820,10 @@ function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, so
 }
 
 function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
+  if (state.viewMode === "simple") {
+    return renderFormulaOneCalculatorSimpleTable(data, state, events, visibleDrivers);
+  }
+
   const eventHeaders = events.map((event) => {
     const eventLabel = event.type === "sprint" ? "Sprint" : "Race";
     return `<th title="${escapeHtml(`${event.round.name} ${eventLabel}`)}"><span>R${escapeHtml(event.round.id)}</span>${escapeHtml(eventLabel)}</th>`;
@@ -9806,6 +9861,61 @@ function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
           <th>Driver</th>
           <th>Current</th>
           ${eventHeaders}
+          <th>Projected</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderFormulaOneCalculatorSimpleTable(data, state, events, visibleDrivers) {
+  const rows = visibleDrivers.length ? visibleDrivers.map((driver) => {
+    const currentPoints = getFormulaOneCalculatorCurrentPoints(data, driver);
+    const projectedPoints = getFormulaOneCalculatorProjectedPoints(data, state, events, driver);
+    const selectedPosition = state.simpleSelections[driver] || "";
+    return `
+      <tr>
+        <th scope="row">
+          <span class="formula-one-calculator-driver" style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
+            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
+            ${renderFormulaOneCalculatorDriverName(driver)}
+          </span>
+        </th>
+        <td class="formula-one-calculator-total">${escapeHtml(currentPoints)}</td>
+        <td>
+          <select
+            aria-label="${escapeHtml(`${driver}, position for every remaining round`)}"
+            data-formula-one-calculator-simple-position
+            data-driver="${escapeHtml(driver)}"
+          >
+            <option value="">—</option>
+            ${data.raceOptions.map((option) => `
+              <option value="${escapeHtml(option.position)}" ${option.position === selectedPosition ? "selected" : ""}>
+                ${escapeHtml(option.position)}
+              </option>
+            `).join("")}
+          </select>
+        </td>
+        <td class="formula-one-calculator-total formula-one-calculator-projected">
+          ${escapeHtml(projectedPoints)}
+          <small>+${escapeHtml(projectedPoints - currentPoints)}</small>
+        </td>
+      </tr>
+    `;
+  }).join("") : `
+    <tr>
+      <td class="table-message" colspan="4">No drivers are selected. Use the driver filters above to add one.</td>
+    </tr>
+  `;
+
+  return `
+    <table class="formula-one-calculator-table formula-one-calculator-table--simple">
+      <thead>
+        <tr>
+          <th>Driver</th>
+          <th>Current</th>
+          <th>Position</th>
           <th>Projected</th>
         </tr>
       </thead>
@@ -12738,6 +12848,19 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
 
     const state = getFormulaOneCalculatorState(year, data);
     const filter = event.target.closest("[data-formula-one-calculator-filter]");
+    const simplePositionSelect = event.target.closest("[data-formula-one-calculator-simple-position]");
+    if (simplePositionSelect) {
+      applyFormulaOneCalculatorSimpleSelection(
+        data,
+        state,
+        getFormulaOneCalculatorEvents(data),
+        simplePositionSelect.dataset.driver,
+        simplePositionSelect.value
+      );
+      persistFormulaOneCalculatorState(year, data, state);
+      renderFormulaOneCalculator(year);
+      return;
+    }
     if (filter) {
       if (filter.checked) {
         state.visibleDrivers.add(filter.dataset.driver);
@@ -12762,6 +12885,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       } else {
         delete state.selections[key];
       }
+      delete state.simpleSelections[positionSelect.dataset.driver];
       persistFormulaOneCalculatorState(year, data, state);
       renderFormulaOneCalculator(year);
       const tableWrap = view.calculator.querySelector(".formula-one-calculator-table-wrap");
@@ -12772,10 +12896,11 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   });
 
   view.calculator?.addEventListener("click", (event) => {
+    const viewToggle = event.target.closest("[data-formula-one-calculator-view]");
     const filterToggle = event.target.closest("[data-formula-one-calculator-filter-toggle]");
     const showAllButton = event.target.closest("[data-formula-one-calculator-show-all]");
     const hideAllButton = event.target.closest("[data-formula-one-calculator-hide-all]");
-    if (!filterToggle && !showAllButton && !hideAllButton) {
+    if (!viewToggle && !filterToggle && !showAllButton && !hideAllButton) {
       return;
     }
 
@@ -12785,6 +12910,12 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     }
 
     const state = getFormulaOneCalculatorState(year, data);
+    if (viewToggle) {
+      state.viewMode = viewToggle.dataset.formulaOneCalculatorView === "expanded" ? "expanded" : "simple";
+      renderFormulaOneCalculator(year);
+      return;
+    }
+
     if (filterToggle) {
       state.filtersExpanded = !state.filtersExpanded;
       renderFormulaOneCalculator(year);

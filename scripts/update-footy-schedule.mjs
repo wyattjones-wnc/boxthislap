@@ -2188,15 +2188,15 @@ async function syncFootyMatchesToSheet(rows = [], { generatedAt }) {
 }
 
 function createFootyMatchId(fixture, sourceIds, usedMatchIds) {
-  const sourceKey = getSourceIdKeys(sourceIds).join("|");
-  const seed = sourceKey || getFootyMatchFingerprint({
+  const providerMatchId = createFootyCompetitionMatchId({ ...fixture, sourceIds });
+  const seed = getFootyMatchFingerprint({
     away: fixture.away,
     competition: fixture.league,
     date: fixture.date,
     followedTeam: fixture.teamName,
     home: fixture.home,
   });
-  const baseId = `footy_${createShortHash(seed)}`;
+  const baseId = providerMatchId || `footy_${createShortHash(seed)}`;
   let matchId = baseId;
   let suffix = 2;
 
@@ -2438,10 +2438,8 @@ function attachFollowedTeamDetailsToCompetitionFixtures(fixtures = [], { followe
 
     return {
       ...fixture,
-      ...(followedMatch ? {
-        matchId: followedMatch.matchId || "",
-        sourceIds: mergeSourceIds(fixture.sourceIds, followedMatch.sourceIds),
-      } : {}),
+      matchId: followedMatch?.matchId || createFootyCompetitionMatchId(fixture),
+      sourceIds: mergeSourceIds(fixture.sourceIds, followedMatch?.sourceIds),
       followedTeamNames,
       isCompetitionFixture: true,
       isHome: primaryTeam ? primaryIsHome : null,
@@ -2452,6 +2450,20 @@ function attachFollowedTeamDetailsToCompetitionFixtures(fixtures = [], { followe
       teamName: primaryTeam?.name || "",
     };
   });
+}
+
+function createFootyCompetitionMatchId(fixture = {}) {
+  const sourceKey = getSourceIdKeys(getFixtureSourceIds(fixture))[0] || "";
+
+  if (!sourceKey) {
+    return "";
+  }
+
+  const identity = normalizeText(sourceKey)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return identity ? `footy_comp_${identity}`.slice(0, 200) : "";
 }
 
 function getCompetitionFixtureFingerprint(fixture = {}) {

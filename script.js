@@ -2026,11 +2026,14 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
     const followedBadges = getFootyFollowedTeamBadgeMap(fixtures);
 
     return (Array.isArray(fullSchedule.fixtures) ? fullSchedule.fixtures : []).map((fixture) => {
-      const followedFixture = followedByMatchId.get(String(fixture.matchId || ""));
+      const matchId = getFootyCompetitionFixtureMatchId(fixture);
+      const followedFixture = followedByMatchId.get(matchId);
+      const matchNote = followedFixture?.matchNote || getFootyMatchNoteById(matchId);
 
       return {
         ...fixture,
-        ...(followedFixture?.matchNote ? { matchNote: followedFixture.matchNote } : {}),
+        matchId,
+        ...(matchNote ? { matchNote } : {}),
         followedAwayBadge: getFootyFollowedTeamBadge(followedBadges, fixture.away),
         followedHomeBadge: getFootyFollowedTeamBadge(followedBadges, fixture.home),
         followedTeamNames: Array.isArray(fixture.followedTeamNames) ? fixture.followedTeamNames : [],
@@ -2069,6 +2072,43 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
   });
 
   return [...fixturesByMatch.values()];
+}
+
+function getFootyCompetitionFixtureMatchId(fixture = {}) {
+  const existingId = String(fixture.matchId || "").trim();
+
+  if (existingId) {
+    return existingId;
+  }
+
+  const sourceIds = fixture.sourceIds && typeof fixture.sourceIds === "object"
+    ? fixture.sourceIds
+    : {};
+  const sourceKeys = Object.entries(sourceIds)
+    .map(([source, id]) => `${normalizeLookupName(source)}:${String(id || "").trim()}`)
+    .filter((value) => !value.startsWith(":") && !value.endsWith(":"));
+
+  if (sourceKeys.length === 0 && fixture.source && fixture.id) {
+    sourceKeys.push(`${normalizeLookupName(fixture.source)}:${String(fixture.id).trim()}`);
+  }
+
+  const sourceKey = sourceKeys.sort()[0] || "";
+  const identity = normalizeLookupName(sourceKey)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return identity ? `footy_comp_${identity}`.slice(0, 200) : "";
+}
+
+function getFootyMatchNoteById(matchId) {
+  const normalizedId = normalizeFootyMatchId(matchId);
+
+  if (!normalizedId) {
+    return null;
+  }
+
+  return (Array.isArray(siteData.footyMatchNotes) ? siteData.footyMatchNotes : [])
+    .find((note) => normalizeFootyMatchId(note?.matchId) === normalizedId) || null;
 }
 
 function mergeFootyCompetitionFixtures(existing = {}, fixture = {}) {
@@ -3415,6 +3455,10 @@ function getFootyFixtureSides(fixture) {
     }
   }
 
+  if (fixture?.isCompetitionFixture && !followedTeam) {
+    return { followed: "home", opponent: "away" };
+  }
+
   return fixture?.isHome
     ? { followed: "home", opponent: "away" }
     : { followed: "away", opponent: "home" };
@@ -3451,6 +3495,8 @@ function openFootyNoteDialog(matchId) {
   if (footyNoteTitle) {
     footyNoteTitle.textContent = `${fixture.home || "Home"} v ${fixture.away || "Away"}`;
   }
+
+  syncFootyNoteGoalAssistLabels(fixture);
 
   if (footyNoteHomeScore) {
     footyNoteHomeScore.value = String(note.homeScore ?? "");
@@ -3492,6 +3538,20 @@ function openFootyNoteDialog(matchId) {
   }
 }
 
+function syncFootyNoteGoalAssistLabels(fixture) {
+  const isUnfollowedCompetitionMatch = Boolean(fixture?.isCompetitionFixture && !fixture?.teamName);
+  const followSummary = getFootyNoteGoalAssistBuilder("follow")?.querySelector("summary");
+  const opponentSummary = getFootyNoteGoalAssistBuilder("opponent")?.querySelector("summary");
+
+  if (followSummary) {
+    followSummary.textContent = isUnfollowedCompetitionMatch ? "Home G/A" : "Follow G/A";
+  }
+
+  if (opponentSummary) {
+    opponentSummary.textContent = isUnfollowedCompetitionMatch ? "Away G/A" : "Opp G/A";
+  }
+}
+
 function closeFootyNoteDialog() {
   activeFootyNoteMatchId = "";
   closeAutocompleteDropdown();
@@ -3514,8 +3574,21 @@ function getFootyFixtureByMatchId(matchId) {
     return null;
   }
 
-  return getFootyScheduleFixtures(siteData.footySchedule)
-    .find((fixture) => String(fixture.matchId || "").trim() === normalizedId) || null;
+  const followedFixture = getFootyScheduleFixtures(siteData.footySchedule)
+    .find((fixture) => String(fixture.matchId || "").trim() === normalizedId);
+
+  if (followedFixture) {
+    return followedFixture;
+  }
+
+  return getFootyCompetitionSchedules(siteData.footySchedule)
+    .flatMap((schedule) => Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
+    .map((fixture) => ({
+      ...fixture,
+      matchId: getFootyCompetitionFixtureMatchId(fixture),
+      isCompetitionFixture: true,
+    }))
+    .find((fixture) => fixture.matchId === normalizedId) || null;
 }
 
 function normalizeFootyGoalAssistForNote(event) {
@@ -3620,7 +3693,9 @@ function renderFootyNoteGoalAssistEntries(side) {
 
   const savedList = document.querySelector(`[data-footy-note-ga-saved="${side}"]`);
   const entries = footyNoteGoalAssistEntries[side];
-  const emptyLabel = side === "follow" ? "No saved followed-team entries." : "No saved opponent entries.";
+  const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
+  const sideLabel = getFootyNoteGoalAssistSideLabel(side, fixture);
+  const emptyLabel = `No saved ${sideLabel.toLowerCase()} entries.`;
 
   if (!savedList) {
     return;
@@ -3632,10 +3707,18 @@ function renderFootyNoteGoalAssistEntries(side) {
   }
 
   savedList.innerHTML = `
-    <ul class="footy-goal-assists-chip-list" aria-label="${side === "follow" ? "Followed team" : "Opponent"} goal assist entries">
+    <ul class="footy-goal-assists-chip-list" aria-label="${escapeHtml(sideLabel)} goal assist entries">
       ${entries.map((entry, index) => renderFootyNoteGoalAssistChip(entry, side, index)).join("")}
     </ul>
   `;
+}
+
+function getFootyNoteGoalAssistSideLabel(side, fixture) {
+  if (fixture?.isCompetitionFixture && !fixture?.teamName) {
+    return side === "follow" ? "Home" : "Away";
+  }
+
+  return side === "follow" ? "Followed team" : "Opponent";
 }
 
 function renderFootyNoteGoalAssistChip(entry, side, index) {
@@ -4020,7 +4103,7 @@ function getFootyPlayerAutocompleteOptions(input) {
   const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
   const teamName = side === "opponent"
     ? getFootyFixtureOpponentRosterName(fixture)
-    : fixture?.teamName;
+    : getFootyFollowedSideName(fixture);
 
   return getFootyRosterPlayersForTeam(teamName).map((player) => ({
     label: player.name,
@@ -4228,6 +4311,10 @@ function getFootyFixtureOpponentRosterName(fixture) {
     return fixture.home;
   }
 
+  if (fixture.isCompetitionFixture && !fixture.teamName) {
+    return fixture.away;
+  }
+
   return "";
 }
 
@@ -4295,12 +4382,12 @@ async function saveFootyMatchNote(note, retried = false) {
 }
 
 function clearFootyScheduleMatchNotes(schedule) {
-  if (!Array.isArray(schedule?.teamSchedules)) {
+  if (!schedule) {
     return;
   }
 
-  schedule.teamSchedules.forEach((teamSchedule) => {
-    const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+  [...(schedule.teamSchedules || []), ...(schedule.competitionSchedules || [])].forEach((fixtureGroup) => {
+    const fixtures = Array.isArray(fixtureGroup?.fixtures) ? fixtureGroup.fixtures : [];
 
     fixtures.forEach((fixture) => {
       if (Object.prototype.hasOwnProperty.call(fixture, "matchNote")) {
@@ -4313,15 +4400,23 @@ function clearFootyScheduleMatchNotes(schedule) {
 function updateFootyFixtureMatchNote(note) {
   const normalizedId = normalizeFootyMatchId(note.matchId);
 
-  if (!normalizedId || !Array.isArray(siteData.footySchedule?.teamSchedules)) {
+  if (!normalizedId || !siteData.footySchedule) {
     return;
   }
 
-  siteData.footySchedule.teamSchedules.forEach((teamSchedule) => {
-    const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+  [
+    ...(siteData.footySchedule.teamSchedules || []),
+    ...(siteData.footySchedule.competitionSchedules || []),
+  ].forEach((fixtureGroup) => {
+    const fixtures = Array.isArray(fixtureGroup?.fixtures) ? fixtureGroup.fixtures : [];
 
     fixtures.forEach((fixture) => {
-      if (normalizeFootyMatchId(fixture.matchId) === normalizedId) {
+      const fixtureMatchId = fixture.isCompetitionFixture
+        ? getFootyCompetitionFixtureMatchId(fixture)
+        : fixture.matchId;
+
+      if (normalizeFootyMatchId(fixtureMatchId) === normalizedId) {
+        fixture.matchId = fixtureMatchId;
         fixture.matchNote = {
           awayScore: note.awayScore,
           followGoalAssists: note.followGoalAssists,

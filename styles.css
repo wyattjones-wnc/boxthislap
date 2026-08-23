@@ -1596,6 +1596,16 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
+.ranking-filter-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.ranking-filter-status.is-error {
+  color: var(--accent-dark);
+}
+
 .ranking-mode-toggle {
   background: var(--soft);
   border: 1px solid var(--line);

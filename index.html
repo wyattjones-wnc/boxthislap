@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.23.02.22";
+      window.BOX_THIS_LAP_VERSION = "2026.08.23.02.34";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608230222">
+    <link rel="stylesheet" href="styles.css?v=202608230234">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1200,6 +1200,10 @@
           <button class="action-button ranking-normalize-button" id="ranking-normalize-button" type="button" data-ranking-owner-only hidden>
             Normalize
           </button>
+          <button class="action-button" id="ranking-manual-to-elo-button" type="button" data-ranking-owner-only hidden>
+            Set Elo from Manual
+          </button>
+          <span class="ranking-filter-status" id="ranking-manual-to-elo-status" aria-live="polite"></span>
         </div>
         <div class="tabs ranking-tabs" role="tablist" aria-label="Ranking lists">
           <button class="tab is-active" type="button" data-ranking-tab="games" aria-selected="true" role="tab">Games</button>
@@ -2157,6 +2161,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608230222"></script>
+    <script type="module" src="script.js?v=202608230234"></script>
   </body>
 </html>

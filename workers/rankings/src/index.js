@@ -59,6 +59,14 @@ export default {
         return json({ ok: true, ...(await saveOrder(env, managerId, type, await readBody(request))) }, 200, cors);
       }
 
+      const manualToEloMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)\/manual-to-elo$/);
+      if (request.method === "POST" && manualToEloMatch) {
+        const managerId = parseId(manualToEloMatch[1], "manager ID");
+        const type = parseType(manualToEloMatch[2]);
+        await requireOwner(request, env, managerId);
+        return json({ ok: true, ...(await setEloFromManual(env, managerId, type, await readBody(request))) }, 200, cors);
+      }
+
       const choiceMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)\/choices$/);
       if (request.method === "POST" && choiceMatch) {
         const managerId = parseId(choiceMatch[1], "manager ID");
@@ -251,6 +259,29 @@ async function saveOrder(env, managerId, type, body) {
   const statements = itemIds.map((itemId, index) => type === "mcu"
     ? env.DB.prepare("INSERT INTO ranking_manual_order (manager_id, ranking_type, item_id, manual_rank, updated_at) VALUES (?, 'mcu', ?, ?, CURRENT_TIMESTAMP) ON CONFLICT (manager_id, ranking_type, item_id) DO UPDATE SET manual_rank = excluded.manual_rank, updated_at = excluded.updated_at").bind(managerId, itemId, index + 1)
     : env.DB.prepare("UPDATE ranking_items SET manual_rank = ?, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND ranking_type = ? AND item_id = ? AND archived = 0").bind(index + 1, managerId, type, itemId));
+  await runMutationBatch(env, managerId, type, body.revision, statements);
+  return { revision: Number(body.revision) + 1 };
+}
+
+async function setEloFromManual(env, managerId, type, body) {
+  await assertRevision(env, managerId, type, body.revision);
+  const itemIds = uniqueIds(body.itemIds);
+  if (!itemIds.length) throw httpError(400, "At least one item is required.");
+  await assertRankingItems(env, managerId, type, itemIds, { requireCompleteActiveSet: true });
+  const midpoint = (itemIds.length + 1) / 2;
+  const statements = [];
+  for (let index = 0; index < itemIds.length; index += 1) {
+    const itemId = itemIds[index];
+    const current = await readElo(env, managerId, type, itemId);
+    statements.push(type === "mcu"
+      ? env.DB.prepare("INSERT INTO ranking_manual_order (manager_id, ranking_type, item_id, manual_rank, updated_at) VALUES (?, 'mcu', ?, ?, CURRENT_TIMESTAMP) ON CONFLICT (manager_id, ranking_type, item_id) DO UPDATE SET manual_rank = excluded.manual_rank, updated_at = excluded.updated_at").bind(managerId, itemId, index + 1)
+      : env.DB.prepare("UPDATE ranking_items SET manual_rank = ?, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND ranking_type = ? AND item_id = ? AND archived = 0").bind(index + 1, managerId, type, itemId));
+    statements.push(eloStatement(env, managerId, type, itemId, {
+      rating: Math.round(BASE_RATING + (midpoint - (index + 1)) * 8),
+      wins: current.wins,
+      losses: current.losses,
+    }, ""));
+  }
   await runMutationBatch(env, managerId, type, body.revision, statements);
   return { revision: Number(body.revision) + 1 };
 }

@@ -507,8 +507,12 @@ function filterVideosByPriority(videos, channels) {
   const channelsById = new Map(channels.map((channel) => [channel.youtubeChannelId, channel]));
   return videos.filter((video) => {
     const channelId = String(video.channel?.youtubeChannelId || video.youtubeChannelId || "").trim();
-    const filter = channelsById.get(channelId)?.filter;
-    return !filter || String(video.title || "").toLocaleLowerCase().includes(filter.toLocaleLowerCase());
+    const filters = String(channelsById.get(channelId)?.filter || "")
+      .split(",")
+      .map((filter) => filter.trim().toLocaleLowerCase())
+      .filter(Boolean);
+    const title = String(video.title || "").toLocaleLowerCase();
+    return filters.length === 0 || filters.some((filter) => title.includes(filter));
   });
 }
 

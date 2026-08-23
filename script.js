@@ -244,8 +244,8 @@ import {
   rankingSnapshotSelect,
   rankingCompareSelect,
   rankingNormalizeButton,
-  rankingManualToEloButton,
-  rankingManualToEloStatus,
+  rankingEloToManualButton,
+  rankingEloToManualStatus,
   rankingItemDialog,
   rankingItemForm,
   rankingItemDialogTitle,
@@ -7754,8 +7754,8 @@ function syncRankingControls() {
   rankingOwnerOnlyElements?.forEach((element) => { element.hidden = !isOwner; });
   if (rankingAddButton) rankingAddButton.hidden = !isOwner || activeRankingKind === "mcu";
   if (rankingCompareButton) rankingCompareButton.hidden = !isOwner;
-  if (rankingManualToEloButton) {
-    rankingManualToEloButton.hidden = !isOwner || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current";
+  if (rankingEloToManualButton) {
+    rankingEloToManualButton.hidden = !isOwner || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current";
   }
 
   syncRankingSnapshotControls();
@@ -8879,38 +8879,36 @@ async function submitRankingOrder(kind) {
   });
 }
 
-function setRankingManualToEloStatus(message, isError = false) {
-  if (!rankingManualToEloStatus) return;
-  rankingManualToEloStatus.textContent = message;
-  rankingManualToEloStatus.classList.toggle("is-error", isError);
+function setRankingEloToManualStatus(message, isError = false) {
+  if (!rankingEloToManualStatus) return;
+  rankingEloToManualStatus.textContent = message;
+  rankingEloToManualStatus.classList.toggle("is-error", isError);
 }
 
-async function setRankingEloFromManual(kind = activeRankingKind) {
+async function setRankingManualFromElo(kind = activeRankingKind) {
   if (!canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") return;
-  const itemIds = getRankingRows(kind).filter((item) => !item.archived).map((item) => item.id);
+  const itemIds = getCalculatedRankingRows(kind).filter((item) => !item.archived).map((item) => item.id);
   if (!itemIds.length) {
-    setRankingManualToEloStatus("There are no rankings to copy.", true);
+    setRankingEloToManualStatus("There are no Elo rankings to copy.", true);
     return;
   }
-  if (!window.confirm("Save this manual order and replace the current Elo order with it?")) return;
+  if (!window.confirm("Replace and save the current manual order with the Elo order?")) return;
 
-  rankingManualToEloButton.disabled = true;
-  setRankingManualToEloStatus("Saving manual order and updating Elo...");
+  rankingEloToManualButton.disabled = true;
+  setRankingEloToManualStatus("Copying Elo order to Manual Rank...");
   try {
-    const response = await rankingApiRequest(rankingWritePath(kind, "/manual-to-elo"), {
-      method: "POST",
+    const response = await rankingApiRequest(rankingWritePath(kind, "/order"), {
+      method: "PUT",
       body: JSON.stringify({ itemIds, revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
     });
     siteData.rankingRevisions[kind] = response.revision;
     await reloadActiveRankings();
-    activeRankingViewMode = "calculated";
-    renderRankingLists();
-    setRankingManualToEloStatus("Elo now matches the saved manual order.");
+    setRankingEloToManualStatus("Manual Rank now matches the current Elo order.");
   } catch (error) {
-    setRankingManualToEloStatus(error.message, true);
+    setRankingEloToManualStatus(error.message, true);
     if (error.status === 409) await reloadActiveRankings();
   } finally {
-    rankingManualToEloButton.disabled = false;
+    rankingEloToManualButton.disabled = false;
   }
 }
 
@@ -12318,8 +12316,8 @@ rankingNormalizeButton?.addEventListener("click", () => {
   openRankingNormalizeDialog();
 });
 
-rankingManualToEloButton?.addEventListener("click", () => {
-  setRankingEloFromManual();
+rankingEloToManualButton?.addEventListener("click", () => {
+  setRankingManualFromElo();
 });
 
 rankingViewModeButtons?.forEach((button) => {

@@ -8887,6 +8887,7 @@ function setRankingEloToManualStatus(message, isError = false) {
 
 async function setRankingManualFromElo(kind = activeRankingKind) {
   if (!canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") return;
+  const currentManualItemIds = getRankingRows(kind).filter((item) => !item.archived).map((item) => item.id);
   const itemIds = getCalculatedRankingRows(kind).filter((item) => !item.archived).map((item) => item.id);
   if (!itemIds.length) {
     setRankingEloToManualStatus("There are no Elo rankings to copy.", true);
@@ -8897,13 +8898,18 @@ async function setRankingManualFromElo(kind = activeRankingKind) {
   rankingEloToManualButton.disabled = true;
   setRankingEloToManualStatus("Copying Elo order to Manual Rank...");
   try {
-    const response = await rankingApiRequest(rankingWritePath(kind, "/order"), {
-      method: "PUT",
-      body: JSON.stringify({ itemIds, revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
+    const response = await rankingApiRequest(rankingWritePath(kind, "/manual-from-elo"), {
+      method: "POST",
+      body: JSON.stringify({
+        currentManualItemIds,
+        itemIds,
+        label: new Date().toISOString(),
+        revision: Number(siteData.rankingRevisions?.[kind] || 0),
+      }),
     });
     siteData.rankingRevisions[kind] = response.revision;
     await reloadActiveRankings();
-    setRankingEloToManualStatus("Manual Rank now matches the current Elo order.");
+    setRankingEloToManualStatus("Previous Manual Rank saved as a snapshot. Manual now matches Elo.");
   } catch (error) {
     setRankingEloToManualStatus(error.message, true);
     if (error.status === 409) await reloadActiveRankings();

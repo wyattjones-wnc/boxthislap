@@ -142,7 +142,8 @@ async function refreshAuth(request, env) {
 
 async function verifyAuth(request, env) {
   const authorization = request.headers.get("Authorization") || "";
-  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const body = authorization.startsWith("Bearer ") ? null : await readBody(request);
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : String(body?.accessToken || "");
   const payload = await verifyToken(env, token, "access");
   return { ok: true, managerId: String(payload.sub) };
 }

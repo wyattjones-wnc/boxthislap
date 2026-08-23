@@ -165,6 +165,10 @@ async function getPlaylists(env) {
 
 async function syncYouTube(request, env) {
   const body = await readOptionalJson(request);
+  const configuredChannelIds = new Set((Array.isArray(body.configuredChannelIds) ? body.configuredChannelIds : [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .slice(0, 5000));
   const removedChannelIds = new Set((Array.isArray(body.removedChannelIds) ? body.removedChannelIds : [])
     .map((value) => String(value || "").trim())
     .filter(Boolean)
@@ -175,7 +179,7 @@ async function syncYouTube(request, env) {
   const requestedStart = Math.max(0, Number.parseInt(cursorRow?.value, 10) || 0);
   let channels;
   if (requestedStart === 0) {
-    channels = await refreshSubscriptions(env, accessToken, removedChannelIds);
+    channels = await refreshSubscriptions(env, accessToken, configuredChannelIds, removedChannelIds);
     await setSetting(env, "sync_channel_ids", JSON.stringify(channels.map((channel) => channel.youtubeChannelId)));
   } else {
     const snapshotRow = await env.DB.prepare("SELECT value FROM settings WHERE key = 'sync_channel_ids'").first();
@@ -252,7 +256,7 @@ async function getStoredChannels(env, channelIds) {
   return channelIds.map((id) => byId.get(id)).filter(Boolean);
 }
 
-async function refreshSubscriptions(env, accessToken, removedChannelIds = new Set()) {
+async function refreshSubscriptions(env, accessToken, configuredChannelIds = new Set(), removedChannelIds = new Set()) {
   const subscriptionChannelIds = [];
   let pageToken = "";
   do {
@@ -264,7 +268,8 @@ async function refreshSubscriptions(env, accessToken, removedChannelIds = new Se
   } while (pageToken);
 
   const channels = [];
-  const includedChannelIds = subscriptionChannelIds.filter((id) => !removedChannelIds.has(id));
+  const includedChannelIds = [...new Set([...subscriptionChannelIds, ...configuredChannelIds])]
+    .filter((id) => !removedChannelIds.has(id));
   for (const ids of chunk(includedChannelIds, 50)) {
     const params = new URLSearchParams({ id: ids.join(","), maxResults: "50", part: "snippet,contentDetails" });
     const data = await youtubeRequest(`/channels?${params}`, accessToken);

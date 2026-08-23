@@ -5,6 +5,7 @@ import {
   MANAGER_SESSION_STORAGE_KEY,
   MANAGER_PORTAL_ENDPOINT,
   FOOTY_DATA_ENDPOINT,
+  FOOTY_MATCH_NOTES_ENDPOINT,
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
@@ -243,6 +244,8 @@ import {
   rankingSnapshotSelect,
   rankingCompareSelect,
   rankingNormalizeButton,
+  rankingEloToManualButton,
+  rankingEloToManualStatus,
   rankingItemDialog,
   rankingItemForm,
   rankingItemDialogTitle,
@@ -305,7 +308,7 @@ import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608230220";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608210001";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608220002";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -381,7 +384,6 @@ let pendingWantMoveItemId = "";
 let draggedWantItemId = "";
 let didMoveWantPointer = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
-const FOOTY_JSONP_TIMEOUT_MS = 12000;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
 const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
@@ -820,13 +822,10 @@ function getFootyDisplayTeamName(teamName) {
 }
 
 function getFootyTeamBadge(teamName, explicitBadge = "", teamId = "") {
+  const localBadge = getFootyLocalTeamBadge(teamName, teamId);
   const badge = String(explicitBadge || "").trim();
 
-  if (badge) {
-    return badge;
-  }
-
-  return getFootyLocalTeamBadge(teamName, teamId);
+  return localBadge || badge;
 }
 
 function getFootyLocalTeamBadge(teamName, teamId = "") {
@@ -2024,6 +2023,7 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
         .filter((fixture) => fixture.matchId)
         .map((fixture) => [String(fixture.matchId), fixture])
     );
+    const followedBadges = getFootyFollowedTeamBadgeMap(fixtures);
 
     return (Array.isArray(fullSchedule.fixtures) ? fullSchedule.fixtures : []).map((fixture) => {
       const followedFixture = followedByMatchId.get(String(fixture.matchId || ""));
@@ -2031,6 +2031,8 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
       return {
         ...fixture,
         ...(followedFixture?.matchNote ? { matchNote: followedFixture.matchNote } : {}),
+        followedAwayBadge: getFootyFollowedTeamBadge(followedBadges, fixture.away),
+        followedHomeBadge: getFootyFollowedTeamBadge(followedBadges, fixture.home),
         followedTeamNames: Array.isArray(fixture.followedTeamNames) ? fixture.followedTeamNames : [],
         isCompetitionFixture: true,
       };
@@ -3241,24 +3243,54 @@ function renderFootyFixture(fixture) {
 }
 
 function renderFootyCompetitionBadgePair(fixture = {}) {
+  const homeBadge = String(fixture.homeBadge || "").trim();
+  const awayBadge = String(fixture.awayBadge || "").trim();
+  const followedHomeBadge = String(fixture.followedHomeBadge || "").trim();
+  const followedAwayBadge = String(fixture.followedAwayBadge || "").trim();
+
   return `
     <div class="footy-competition-badge-pair" aria-hidden="true">
       <span class="footy-fixture-badge">
         ${renderFootyBadgeMarkup({
-          fallbackSrc: "",
+          fallbackSrc: homeBadge ? followedHomeBadge : "",
           fallbackText: getFootyTeamFallbackBadge(fixture.home),
-          primarySrc: String(fixture.homeBadge || "").trim(),
+          primarySrc: homeBadge || followedHomeBadge,
         })}
       </span>
       <span class="footy-fixture-badge">
         ${renderFootyBadgeMarkup({
-          fallbackSrc: "",
+          fallbackSrc: awayBadge ? followedAwayBadge : "",
           fallbackText: getFootyTeamFallbackBadge(fixture.away),
-          primarySrc: String(fixture.awayBadge || "").trim(),
+          primarySrc: awayBadge || followedAwayBadge,
         })}
       </span>
     </div>
   `;
+}
+
+function getFootyFollowedTeamBadgeMap(fixtures = []) {
+  const badges = new Map();
+
+  fixtures.forEach((fixture) => {
+    const badge = String(fixture.teamBadge || "").trim();
+    const teamName = String(fixture.teamName || "").trim();
+
+    if (!badge || !teamName) {
+      return;
+    }
+
+    [normalizeLookupName(teamName), normalizeFootyClubName(teamName)]
+      .filter(Boolean)
+      .forEach((key) => badges.set(key, badge));
+  });
+
+  return badges;
+}
+
+function getFootyFollowedTeamBadge(badges, teamName) {
+  return badges.get(normalizeLookupName(teamName)) ||
+    badges.get(normalizeFootyClubName(teamName)) ||
+    "";
 }
 
 function shouldRenderFootyNoteEditButton(fixture) {
@@ -3532,6 +3564,7 @@ function buildFootyMatchNoteFromDialog() {
 
   return {
     matchId: activeFootyNoteMatchId,
+    revision: Number(getFootyFixtureByMatchId(activeFootyNoteMatchId)?.matchNote?.revision || 0),
     homeScore: String(footyNoteHomeScore?.value ?? "").trim(),
     awayScore: String(footyNoteAwayScore?.value ?? "").trim(),
     followGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.follow),
@@ -3674,8 +3707,8 @@ async function saveFootyMatchNoteFromDialog() {
     return;
   }
 
-  if (!FOOTY_DATA_ENDPOINT) {
-    setFootyNoteStatus("Footy data endpoint is not configured.", true);
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
+    setFootyNoteStatus("Footy match notes endpoint is not configured.", true);
     return;
   }
 
@@ -3692,12 +3725,7 @@ async function saveFootyMatchNoteFromDialog() {
   setFootyNoteStatus("Saving match note...");
 
   try {
-    const response = await submitFootyDataPayload({
-      action: "saveFootyMatchNote",
-      note,
-      pageUrl: window.location.href,
-      submittedAt: new Date().toISOString(),
-    });
+    const response = await saveFootyMatchNote(note);
     const savedNote = response.savedNote || note;
 
     upsertFootyMatchNote(savedNote);
@@ -3725,7 +3753,7 @@ function shouldWaitForFootyMatchNotes() {
 }
 
 function ensureFootyMatchNotes({ force = false } = {}) {
-  if (!FOOTY_DATA_ENDPOINT) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
     siteData.footyMatchNotes = [];
     siteData.footyMatchNotesLoadedAt = new Date().toISOString();
     return Promise.resolve([]);
@@ -3787,54 +3815,21 @@ function wait(durationMs) {
 }
 
 function loadFootyMatchNotes() {
-  if (!FOOTY_DATA_ENDPOINT) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
     return Promise.resolve([]);
   }
 
-  const callbackName = `boxThisLapFootyNotes${Date.now()}${Math.random().toString(36).slice(2)}`;
-  const callbackId = `footy-notes-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-  return new Promise((resolve, reject) => {
-    let script;
-    const timeout = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("No response from the footy match notes endpoint."));
-    }, FOOTY_JSONP_TIMEOUT_MS);
-
-    function cleanup() {
-      window.clearTimeout(timeout);
-      delete window[callbackName];
-      script?.remove();
-    }
-
-    window[callbackName] = (data) => {
-      if (!data || data.source !== "boxthislap-footy-data" || data.callbackId !== callbackId) {
-        return;
+  return fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/match-notes`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  })
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || `Footy match notes endpoint returned ${response.status}.`);
       }
-
-      cleanup();
-
-      if (!data.ok) {
-        reject(new Error(data.error || "Unable to load footy match notes."));
-        return;
-      }
-
-      resolve(Array.isArray(data.notes) ? data.notes : []);
-    };
-
-    const url = new URL(FOOTY_DATA_ENDPOINT);
-    url.searchParams.set("action", "listFootyMatchNotes");
-    url.searchParams.set("callback", callbackName);
-    url.searchParams.set("callbackId", callbackId);
-    script = document.createElement("script");
-    script.async = true;
-    script.src = url.toString();
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Unable to reach the footy match notes endpoint."));
-    };
-    document.head.append(script);
-  });
+      return Array.isArray(data.notes) ? data.notes : [];
+    });
 }
 
 function ensureFootyRosters() {
@@ -4262,69 +4257,41 @@ function upsertFootyMatchNote(note) {
   siteData.footyMatchNotesLoadedAt = new Date().toISOString();
 }
 
-function submitFootyDataPayload(payload) {
-  return submitFootyDataPayloadWithPost(payload);
-}
+async function saveFootyMatchNote(note, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const endpoint = FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "");
+  const response = await fetch(`${endpoint}/api/match-notes/${encodeURIComponent(note.matchId)}`, {
+    body: JSON.stringify(note),
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    method: "PUT",
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
 
-async function submitFootyDataPayloadWithPost(payload) {
-  let reachedEndpoint = false;
-
-  try {
-    const response = await window.fetch(FOOTY_DATA_ENDPOINT, {
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
+  if (response.status === 401 && !retried) {
+    siteData.managerSession = {
+      ...siteData.managerSession,
+      rankingAuth: {
+        ...(siteData.managerSession?.rankingAuth || {}),
+        accessToken: "",
+        accessExpiresAt: "",
       },
-      method: "POST",
-    });
-    reachedEndpoint = true;
-    const data = await response.json();
-
-    if (!response.ok || !data?.ok) {
-      throw new Error(data?.error || `Footy data endpoint returned ${response.status}.`);
-    }
-
-    return data;
-  } catch (error) {
-    if (reachedEndpoint) {
-      throw error;
-    }
-
-    console.warn("Unable to submit Footy data with fetch; falling back to form post.", error);
-    submitFootyDataPayloadWithForm(payload);
-    return {
-      ok: true,
-      savedNote: payload.note,
-      status: "submitted",
     };
-  }
-}
-
-function submitFootyDataPayloadWithForm(payload) {
-  const iframeName = "footy-data-frame";
-  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
-
-  if (!iframe) {
-    iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.hidden = true;
-    document.body.append(iframe);
+    try {
+      localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession));
+    } catch {}
+    return saveFootyMatchNote(note, true);
   }
 
-  const form = document.createElement("form");
-  form.action = FOOTY_DATA_ENDPOINT;
-  form.method = "POST";
-  form.target = iframeName;
-  form.hidden = true;
+  if (!response.ok || !data?.ok || !data.savedNote) {
+    throw new Error(data?.error || "Match note was not saved.");
+  }
 
-  const payloadInput = document.createElement("input");
-  payloadInput.name = "payload";
-  payloadInput.value = JSON.stringify(payload);
-  form.append(payloadInput);
-
-  document.body.append(form);
-  form.submit();
-  form.remove();
+  return data;
 }
 
 function clearFootyScheduleMatchNotes(schedule) {
@@ -4362,6 +4329,8 @@ function updateFootyFixtureMatchNote(note) {
           homeScore: note.homeScore,
           note: note.note,
           opponentGoalAssists: note.opponentGoalAssists,
+          revision: Number(note.revision || 0),
+          updatedAt: note.updatedAt || "",
         };
       }
     });
@@ -7288,12 +7257,10 @@ function renderRankingList(kind) {
     : "";
 
   if (!rows.length) {
-    const manager = getPortalManagerById(getActiveRankingManagerId());
-    const name = manager ? getManagerMeta(manager).displayName : "This manager";
     const action = canEditActiveRankingManager() && kind !== "mcu"
-      ? ` <button class="ranking-inline-action" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add one</button>`
+      ? `<button class="action-button ranking-empty-add" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add One</button>`
       : "";
-    list.innerHTML = `${errorMarkup}<p class="table-message">${escapeHtml(name)} has not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.${action}</p>`;
+    list.innerHTML = `${errorMarkup}<div class="table-message ranking-empty-state"><span>You have not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.</span>${action}</div>`;
     return;
   }
 
@@ -7328,10 +7295,9 @@ function renderRankingItem(kind, item) {
         ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
         ${movement}
         ${meta}
-        ${exclusionAction}
       </span>
       ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
-      ${isOwner && kind !== "mcu" && !isSnapshotView ? `<span class="ranking-item-actions"><button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button></span>` : ""}
+      ${(exclusionAction || (isOwner && kind !== "mcu" && !isSnapshotView)) ? `<span class="ranking-item-actions">${exclusionAction}${isOwner && kind !== "mcu" && !isSnapshotView ? `<button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button>` : ""}</span>` : ""}
     </article>
   `;
 }
@@ -7344,13 +7310,7 @@ function renderRankingExclusionAction(kind, item) {
   const isExcluded = isRankingItemExcluded(kind, item.id);
   const label = isExcluded ? "Include" : "Exclude";
 
-  return `
-    <span class="ranking-item-actions">
-      <button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
-        ${escapeHtml(label)}
-      </button>
-    </span>
-  `;
+  return `<button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${escapeHtml(label)}</button>`;
 }
 
 function renderRankingMovement(kind, item) {
@@ -7794,6 +7754,9 @@ function syncRankingControls() {
   rankingOwnerOnlyElements?.forEach((element) => { element.hidden = !isOwner; });
   if (rankingAddButton) rankingAddButton.hidden = !isOwner || activeRankingKind === "mcu";
   if (rankingCompareButton) rankingCompareButton.hidden = !isOwner;
+  if (rankingEloToManualButton) {
+    rankingEloToManualButton.hidden = !isOwner || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current";
+  }
 
   syncRankingSnapshotControls();
 
@@ -8914,6 +8877,45 @@ async function submitRankingOrder(kind) {
     ranking: kind,
     sheetName: config.sheetName,
   });
+}
+
+function setRankingEloToManualStatus(message, isError = false) {
+  if (!rankingEloToManualStatus) return;
+  rankingEloToManualStatus.textContent = message;
+  rankingEloToManualStatus.classList.toggle("is-error", isError);
+}
+
+async function setRankingManualFromElo(kind = activeRankingKind) {
+  if (!canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") return;
+  const currentManualItemIds = getRankingRows(kind).filter((item) => !item.archived).map((item) => item.id);
+  const itemIds = getCalculatedRankingRows(kind).filter((item) => !item.archived).map((item) => item.id);
+  if (!itemIds.length) {
+    setRankingEloToManualStatus("There are no Elo rankings to copy.", true);
+    return;
+  }
+  if (!window.confirm("Replace and save the current manual order with the Elo order?")) return;
+
+  rankingEloToManualButton.disabled = true;
+  setRankingEloToManualStatus("Copying Elo order to Manual Rank...");
+  try {
+    const response = await rankingApiRequest(rankingWritePath(kind, "/manual-from-elo"), {
+      method: "POST",
+      body: JSON.stringify({
+        currentManualItemIds,
+        itemIds,
+        label: new Date().toISOString(),
+        revision: Number(siteData.rankingRevisions?.[kind] || 0),
+      }),
+    });
+    siteData.rankingRevisions[kind] = response.revision;
+    await reloadActiveRankings();
+    setRankingEloToManualStatus("Previous Manual Rank saved as a snapshot. Manual now matches Elo.");
+  } catch (error) {
+    setRankingEloToManualStatus(error.message, true);
+    if (error.status === 409) await reloadActiveRankings();
+  } finally {
+    rankingEloToManualButton.disabled = false;
+  }
 }
 
 function submitRankingPayload(payload) {
@@ -12318,6 +12320,10 @@ rankingCompareSelect?.addEventListener("change", () => {
 
 rankingNormalizeButton?.addEventListener("click", () => {
   openRankingNormalizeDialog();
+});
+
+rankingEloToManualButton?.addEventListener("click", () => {
+  setRankingManualFromElo();
 });
 
 rankingViewModeButtons?.forEach((button) => {

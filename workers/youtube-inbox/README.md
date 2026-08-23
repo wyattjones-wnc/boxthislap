@@ -40,7 +40,7 @@ The public site is configured for `https://box-this-lap-youtube.boxthislap.worke
 - `GET /api/videos?status=new&channel=UC...&channel=UC...&limit=100&offset=0`
 - `POST /api/videos/:videoId/status` with `{ "status": "ignored" }`
 - `POST /api/videos/:videoId/seen-through` with `{ "videoIds": ["..."] }` marks only the supplied visible `new` videos as watched
-- `POST /api/youtube/sync` with `{ "removedChannelIds": ["UC..."] }`
+- `POST /api/youtube/sync` with `{ "configuredChannelIds": ["UC..."], "removedChannelIds": ["UC..."] }`
 - `GET /api/youtube/playlists`
 - `POST /api/youtube/playlists/:playlistId/videos` with `{ "videoId": "..." }`
 
@@ -50,6 +50,6 @@ Refresh advances past individual channel, duration, or playlist-metadata failure
 
 Each completed manual sync marks any remaining `new` video older than 30 days as watched. Channel filters use stable YouTube channel IDs while displaying the current channel names.
 
-The public site's published `YouTube` sheet controls which channels appear and their priority threshold. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, `Priority`, and `IsRemoved`; rows with a true `IsRemoved` value are excluded from display and manual refreshes. Its priority table uses `Priority` and `Description`.
+The public site's published `YouTube` sheet controls which channels are synced, which channels appear for each exact priority selection, and their title filters. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, `Priority`, and `IsRemoved`; rows with a true `IsRemoved` value are excluded from display and manual refreshes. Its priority table uses `Priority`, `Description`, and optional `Filter` columns.
 
 The `3New` playlist is pinned by its stable YouTube playlist ID so the quick-save button remains available even when YouTube's owned-playlist listing or the D1 cache is stale.

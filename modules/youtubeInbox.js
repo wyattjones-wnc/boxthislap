@@ -67,7 +67,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
         request(`/api/videos?${query}`),
         request("/api/youtube/playlists"),
       ]);
-      state.videos = Array.isArray(videoData.videos) ? videoData.videos : [];
+      state.videos = filterVideosByPriority(Array.isArray(videoData.videos) ? videoData.videos : [], allowedChannels);
       state.channels = allowedChannels;
       state.playlists = Array.isArray(playlistData.playlists) ? playlistData.playlists : [];
       state.lastSyncAt = videoData.lastSyncAt || "";
@@ -295,8 +295,8 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
   }
 
   function getAllowedChannels() {
-    const threshold = Number(state.priority) || 1;
-    return state.configuredChannels.filter((channel) => channel.priority <= threshold);
+    const selectedPriority = Number(state.priority) || 1;
+    return state.configuredChannels.filter((channel) => channel.priority === selectedPriority);
   }
 
   async function handleSubmit(event) {
@@ -336,7 +336,10 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       const warnings = new Set();
       while (hasMore && batches < 10) {
         const result = await request("/api/youtube/sync", {
-          body: JSON.stringify({ removedChannelIds: state.removedChannelIds }),
+          body: JSON.stringify({
+            configuredChannelIds: state.configuredChannels.map((channel) => channel.youtubeChannelId),
+            removedChannelIds: state.removedChannelIds,
+          }),
           headers: { "Content-Type": "application/json" },
           method: "POST",
         });
@@ -447,9 +450,29 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
 function parseYouTubeConfiguration(rows) {
   const channels = [];
   const priorities = [];
+  const priorityFilters = new Map();
   const removedChannelIds = [];
+  let section = "channels";
 
   for (const row of rows) {
+    if (String(row.ID || "").trim().toLowerCase() === "priority" &&
+        String(row["Display Name"] || "").trim().toLowerCase() === "description") {
+      section = "priorities";
+      continue;
+    }
+
+    if (section === "priorities") {
+      const value = String(row.ID || "").trim();
+      const numericValue = Number(value);
+      const label = String(row["Display Name"] || "").trim();
+      const filter = String(row["YouTube Channel ID"] || row.Filter || "").trim();
+      if (label && value && Number.isFinite(numericValue)) {
+        priorities.push({ filter, label, numericValue, value });
+        priorityFilters.set(numericValue, filter);
+      }
+      continue;
+    }
+
     const channelId = String(row["YouTube Channel ID"] || "").trim();
     const displayName = String(row["Display Name"] || "").trim();
     const priorityValue = String(row.Priority || "").trim();
@@ -466,20 +489,27 @@ function parseYouTubeConfiguration(rows) {
       continue;
     }
 
-    const value = String(row.ID || "").trim();
-    const numericValue = Number(value);
-    if (!channelId && displayName && value && Number.isFinite(numericValue)) {
-      priorities.push({ label: displayName, numericValue, value });
-    }
   }
 
   if (!channels.length || !priorities.length) {
     throw new Error("The YouTube sheet needs both channel and priority rows.");
   }
 
+  channels.forEach((channel) => {
+    channel.filter = priorityFilters.get(channel.priority) || "";
+  });
   channels.sort((first, second) => first.name.localeCompare(second.name));
   priorities.sort((first, second) => first.numericValue - second.numericValue);
   return { channels, priorities, removedChannelIds: [...new Set(removedChannelIds)] };
+}
+
+function filterVideosByPriority(videos, channels) {
+  const channelsById = new Map(channels.map((channel) => [channel.youtubeChannelId, channel]));
+  return videos.filter((video) => {
+    const channelId = String(video.channel?.youtubeChannelId || video.youtubeChannelId || "").trim();
+    const filter = channelsById.get(channelId)?.filter;
+    return !filter || String(video.title || "").toLocaleLowerCase().includes(filter.toLocaleLowerCase());
+  });
 }
 
 function parseBoolean(value) {

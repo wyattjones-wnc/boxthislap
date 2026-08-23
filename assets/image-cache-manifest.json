@@ -2497,76 +2497,76 @@
       "path": "assets/ranking/mcu/11/9 - dsatmom.webp"
     },
     {
-      "bytes": 9634,
-      "path": "assets/ranking/mcu/12/1 - loki.webp"
-    },
-    {
-      "bytes": 14284,
-      "path": "assets/ranking/mcu/12/10 - loki.webp"
-    },
-    {
-      "bytes": 12230,
-      "path": "assets/ranking/mcu/12/11 - loki.webp"
-    },
-    {
-      "bytes": 13326,
-      "path": "assets/ranking/mcu/12/2 - loki.webp"
-    },
-    {
-      "bytes": 14600,
-      "path": "assets/ranking/mcu/12/3 - loki.webp"
-    },
-    {
-      "bytes": 18940,
-      "path": "assets/ranking/mcu/12/4 - loki.webp"
-    },
-    {
-      "bytes": 17508,
-      "path": "assets/ranking/mcu/12/5 - loki.webp"
-    },
-    {
-      "bytes": 12054,
-      "path": "assets/ranking/mcu/12/6 - loki.webp"
-    },
-    {
-      "bytes": 15644,
-      "path": "assets/ranking/mcu/12/7 - loki.webp"
-    },
-    {
-      "bytes": 18664,
-      "path": "assets/ranking/mcu/12/8 - loki.webp"
-    },
-    {
-      "bytes": 19752,
-      "path": "assets/ranking/mcu/12/9 - loki.webp"
-    },
-    {
       "bytes": 8602,
-      "path": "assets/ranking/mcu/13/1 - he.webp"
+      "path": "assets/ranking/mcu/12/1 - he.webp"
     },
     {
       "bytes": 20460,
-      "path": "assets/ranking/mcu/13/2 - he.webp"
+      "path": "assets/ranking/mcu/12/2 - he.webp"
     },
     {
       "bytes": 22364,
-      "path": "assets/ranking/mcu/13/3 - he.webp"
+      "path": "assets/ranking/mcu/12/3 - he.webp"
     },
     {
       "bytes": 8220,
-      "path": "assets/ranking/mcu/13/4 - he.webp"
+      "path": "assets/ranking/mcu/12/4 - he.webp"
     },
     {
       "bytes": 12348,
-      "path": "assets/ranking/mcu/13/5 - he.webp"
+      "path": "assets/ranking/mcu/12/5 - he.webp"
     },
     {
       "bytes": 10852,
-      "path": "assets/ranking/mcu/13/6 - he.webp"
+      "path": "assets/ranking/mcu/12/6 - he.webp"
     },
     {
       "bytes": 11784,
-      "path": "assets/ranking/mcu/13/7 - he.webp"
+      "path": "assets/ranking/mcu/12/7 - he.webp"
+    },
+    {
+      "bytes": 9634,
+      "path": "assets/ranking/mcu/13/1 - loki.webp"
+    },
+    {
+      "bytes": 14284,
+      "path": "assets/ranking/mcu/13/10 - loki.webp"
+    },
+    {
+      "bytes": 12230,
+      "path": "assets/ranking/mcu/13/11 - loki.webp"
+    },
+    {
+      "bytes": 13326,
+      "path": "assets/ranking/mcu/13/2 - loki.webp"
+    },
+    {
+      "bytes": 14600,
+      "path": "assets/ranking/mcu/13/3 - loki.webp"
+    },
+    {
+      "bytes": 18940,
+      "path": "assets/ranking/mcu/13/4 - loki.webp"
+    },
+    {
+      "bytes": 17508,
+      "path": "assets/ranking/mcu/13/5 - loki.webp"
+    },
+    {
+      "bytes": 12054,
+      "path": "assets/ranking/mcu/13/6 - loki.webp"
+    },
+    {
+      "bytes": 15644,
+      "path": "assets/ranking/mcu/13/7 - loki.webp"
+    },
+    {
+      "bytes": 18664,
+      "path": "assets/ranking/mcu/13/8 - loki.webp"
+    },
+    {
+      "bytes": 19752,
+      "path": "assets/ranking/mcu/13/9 - loki.webp"
     },
     {
       "bytes": 23086,
@@ -3089,8 +3089,52 @@
       "path": "assets/ranking/mcu/24/11 - im.webp"
     },
     {
+      "bytes": 12094,
+      "path": "assets/ranking/mcu/24/12 - im.webp"
+    },
+    {
+      "bytes": 16888,
+      "path": "assets/ranking/mcu/24/13 - im.webp"
+    },
+    {
+      "bytes": 24234,
+      "path": "assets/ranking/mcu/24/14 - im.webp"
+    },
+    {
+      "bytes": 19792,
+      "path": "assets/ranking/mcu/24/15 - im.webp"
+    },
+    {
+      "bytes": 19532,
+      "path": "assets/ranking/mcu/24/16 - im.webp"
+    },
+    {
+      "bytes": 14226,
+      "path": "assets/ranking/mcu/24/17 - im.webp"
+    },
+    {
+      "bytes": 19720,
+      "path": "assets/ranking/mcu/24/18 - im.webp"
+    },
+    {
+      "bytes": 25882,
+      "path": "assets/ranking/mcu/24/19 - im.webp"
+    },
+    {
       "bytes": 19574,
       "path": "assets/ranking/mcu/24/2 - im.webp"
+    },
+    {
+      "bytes": 24830,
+      "path": "assets/ranking/mcu/24/20 - im.webp"
+    },
+    {
+      "bytes": 13518,
+      "path": "assets/ranking/mcu/24/21 - im.webp"
+    },
+    {
+      "bytes": 10810,
+      "path": "assets/ranking/mcu/24/22 - im.webp"
     },
     {
       "bytes": 28236,
@@ -3119,6 +3163,86 @@
     {
       "bytes": 15806,
       "path": "assets/ranking/mcu/24/9 - im.webp"
+    },
+    {
+      "bytes": 11736,
+      "path": "assets/ranking/mcu/25/1 - ta.webp"
+    },
+    {
+      "bytes": 11848,
+      "path": "assets/ranking/mcu/25/10 - ta.webp"
+    },
+    {
+      "bytes": 10884,
+      "path": "assets/ranking/mcu/25/11 - ta.webp"
+    },
+    {
+      "bytes": 31512,
+      "path": "assets/ranking/mcu/25/12 - ta.webp"
+    },
+    {
+      "bytes": 25642,
+      "path": "assets/ranking/mcu/25/13 - ta.webp"
+    },
+    {
+      "bytes": 30646,
+      "path": "assets/ranking/mcu/25/14 - ta.webp"
+    },
+    {
+      "bytes": 17924,
+      "path": "assets/ranking/mcu/25/15 - ta.webp"
+    },
+    {
+      "bytes": 21358,
+      "path": "assets/ranking/mcu/25/16 - ta.webp"
+    },
+    {
+      "bytes": 6136,
+      "path": "assets/ranking/mcu/25/17 - ta.webp"
+    },
+    {
+      "bytes": 22872,
+      "path": "assets/ranking/mcu/25/18 - ta.webp"
+    },
+    {
+      "bytes": 37520,
+      "path": "assets/ranking/mcu/25/19 - ta.webp"
+    },
+    {
+      "bytes": 20518,
+      "path": "assets/ranking/mcu/25/2 - ta.webp"
+    },
+    {
+      "bytes": 22110,
+      "path": "assets/ranking/mcu/25/3 - ta.webp"
+    },
+    {
+      "bytes": 16034,
+      "path": "assets/ranking/mcu/25/4 - ta.webp"
+    },
+    {
+      "bytes": 14026,
+      "path": "assets/ranking/mcu/25/5 - ta.webp"
+    },
+    {
+      "bytes": 19986,
+      "path": "assets/ranking/mcu/25/6 - ta.webp"
+    },
+    {
+      "bytes": 5476,
+      "path": "assets/ranking/mcu/25/7 - ta.webp"
+    },
+    {
+      "bytes": 11100,
+      "path": "assets/ranking/mcu/25/8 - ta.webp"
+    },
+    {
+      "bytes": 8358,
+      "path": "assets/ranking/mcu/25/9 - ta.webp"
+    },
+    {
+      "bytes": 10648,
+      "path": "assets/ranking/mcu/26/1 - aaa.webp"
     },
     {
       "bytes": 15378,

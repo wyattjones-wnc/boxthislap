@@ -27,6 +27,9 @@ export default {
       if (request.method === "POST" && url.pathname === "/api/auth/refresh") {
         return json(await refreshAuth(request, env), 200, cors);
       }
+      if (request.method === "POST" && url.pathname === "/api/auth/verify") {
+        return json(await verifyAuth(request, env), 200, cors);
+      }
 
       const setMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)$/);
       if (request.method === "GET" && setMatch) {
@@ -54,6 +57,14 @@ export default {
         const type = parseType(orderMatch[2]);
         await requireOwner(request, env, managerId);
         return json({ ok: true, ...(await saveOrder(env, managerId, type, await readBody(request))) }, 200, cors);
+      }
+
+      const manualFromEloMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)\/manual-from-elo$/);
+      if (request.method === "POST" && manualFromEloMatch) {
+        const managerId = parseId(manualFromEloMatch[1], "manager ID");
+        const type = parseType(manualFromEloMatch[2]);
+        await requireOwner(request, env, managerId);
+        return json({ ok: true, ...(await saveManualFromElo(env, managerId, type, await readBody(request))) }, 200, cors);
       }
 
       const choiceMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)\/choices$/);
@@ -127,6 +138,13 @@ async function refreshAuth(request, env) {
   const body = await readBody(request);
   const payload = await verifyToken(env, body.refreshToken, "refresh");
   return issueTokens(env, payload.sub);
+}
+
+async function verifyAuth(request, env) {
+  const authorization = request.headers.get("Authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const payload = await verifyToken(env, token, "access");
+  return { ok: true, managerId: String(payload.sub) };
 }
 
 async function issueTokens(env, managerId) {
@@ -243,6 +261,36 @@ async function saveOrder(env, managerId, type, body) {
     : env.DB.prepare("UPDATE ranking_items SET manual_rank = ?, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND ranking_type = ? AND item_id = ? AND archived = 0").bind(index + 1, managerId, type, itemId));
   await runMutationBatch(env, managerId, type, body.revision, statements);
   return { revision: Number(body.revision) + 1 };
+}
+
+async function saveManualFromElo(env, managerId, type, body) {
+  await assertRevision(env, managerId, type, body.revision);
+  const currentManualItemIds = uniqueIds(body.currentManualItemIds);
+  const itemIds = uniqueIds(body.itemIds);
+  if (!currentManualItemIds.length || !itemIds.length) throw httpError(400, "Current Manual and Elo orders are required.");
+  await assertRankingItems(env, managerId, type, currentManualItemIds, { requireCompleteActiveSet: true });
+  await assertRankingItems(env, managerId, type, itemIds, { requireCompleteActiveSet: true });
+
+  const itemNames = await readRankingItemNames(env, managerId, type);
+  const snapshotId = crypto.randomUUID();
+  const statements = [
+    env.DB.prepare("INSERT INTO ranking_snapshots (snapshot_id, manager_id, ranking_type, label, reason, source) VALUES (?, ?, ?, ?, 'Saved before replacing Manual Rank with Elo order', 'manual')")
+      .bind(snapshotId, managerId, type, String(body.label || "")),
+  ];
+
+  for (let index = 0; index < currentManualItemIds.length; index += 1) {
+    const itemId = currentManualItemIds[index];
+    const current = await readElo(env, managerId, type, itemId);
+    statements.push(env.DB.prepare("INSERT INTO ranking_snapshot_items (snapshot_id, item_id, item_name, rank, rating, wins, losses, games) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(snapshotId, itemId, itemNames.get(itemId) || "", index + 1, current.rating, current.wins, current.losses, current.wins + current.losses));
+  }
+
+  itemIds.forEach((itemId, index) => statements.push(type === "mcu"
+    ? env.DB.prepare("INSERT INTO ranking_manual_order (manager_id, ranking_type, item_id, manual_rank, updated_at) VALUES (?, 'mcu', ?, ?, CURRENT_TIMESTAMP) ON CONFLICT (manager_id, ranking_type, item_id) DO UPDATE SET manual_rank = excluded.manual_rank, updated_at = excluded.updated_at").bind(managerId, itemId, index + 1)
+    : env.DB.prepare("UPDATE ranking_items SET manual_rank = ?, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND ranking_type = ? AND item_id = ? AND archived = 0").bind(index + 1, managerId, type, itemId)));
+
+  await runMutationBatch(env, managerId, type, body.revision, statements);
+  return { snapshotId, revision: Number(body.revision) + 1 };
 }
 
 async function saveChoice(env, managerId, type, body) {

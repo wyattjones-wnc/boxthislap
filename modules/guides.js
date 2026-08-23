@@ -1,5 +1,5 @@
 const GUIDE_STEP_BATCH_SIZE = 60;
-const GUIDE_COMPLETION_CONFIRMATION_MS = 500;
+const GUIDE_COMPLETION_CONFIRMATION_MS = 250;
 
 export function createGuidesController({ getManagerId, getIsAdmin, loadData, progressEndpoint }) {
   const view = document.querySelector("#guides-view");

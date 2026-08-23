@@ -4360,17 +4360,7 @@ async function saveFootyMatchNote(note, retried = false) {
   const data = await response.json().catch(() => ({}));
 
   if (response.status === 401 && !retried) {
-    siteData.managerSession = {
-      ...siteData.managerSession,
-      rankingAuth: {
-        ...(siteData.managerSession?.rankingAuth || {}),
-        accessToken: "",
-        accessExpiresAt: "",
-      },
-    };
-    try {
-      localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession));
-    } catch {}
+    clearRankingAuthorization();
     return saveFootyMatchNote(note, true);
   }
 
@@ -7008,6 +6998,12 @@ async function ensureRankingAuthorization() {
   return value.accessToken;
 }
 
+function clearRankingAuthorization() {
+  if (!siteData.managerSession) return;
+  siteData.managerSession = { ...siteData.managerSession, rankingAuth: null };
+  try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+}
+
 async function requestRankingAuthorizationForLogin(managerId, passphrase) {
   if (!RANKINGS_ENDPOINT || !managerId || !passphrase) return null;
   const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/login`, {
@@ -7030,8 +7026,7 @@ async function rankingApiRequest(path, options = {}, retried = false) {
   });
   const value = await response.json().catch(() => ({}));
   if (response.status === 401 && !retried) {
-    siteData.managerSession = { ...siteData.managerSession, rankingAuth: { ...(siteData.managerSession?.rankingAuth || {}), accessToken: "", accessExpiresAt: "" } };
-    try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+    clearRankingAuthorization();
     return rankingApiRequest(path, options, true);
   }
   if (!response.ok || !value.ok) {

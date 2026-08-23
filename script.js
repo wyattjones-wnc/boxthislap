@@ -6771,7 +6771,19 @@ function renderRankingsPage() {
   activeRankingManagerId = activeRankingManagerId || getCurrentManagerId();
 
   syncRankingTabs();
-  syncRankingManagerOptions();
+  if (!Array.isArray(siteData.portalManagers)) {
+    if (rankingManagerSelect) {
+      rankingManagerSelect.disabled = true;
+      rankingManagerSelect.innerHTML = `<option value="">Loading managers…</option>`;
+    }
+    void ensurePortalManagersData().then(() => {
+      if (activePageName !== "rankings") return;
+      syncRankingManagerOptions();
+      renderRankingLists();
+    });
+  } else {
+    syncRankingManagerOptions();
+  }
 
   ensureRankingsLoaded();
   renderRankingLists();
@@ -6871,6 +6883,7 @@ function syncRankingManagerOptions() {
   if (!rankingManagerSelect) return;
   const managers = getPortalManagers();
   const managerId = getActiveRankingManagerId();
+  rankingManagerSelect.disabled = false;
   rankingManagerSelect.innerHTML = managers.map((manager) => {
     const meta = getManagerMeta(manager);
     return `<option value="${escapeHtml(meta.id)}"${String(meta.id) === String(managerId) ? " selected" : ""}>${escapeHtml(meta.displayName)}</option>`;
@@ -15640,7 +15653,10 @@ function loadPageData(scope) {
   }
 
   if (scope === "rankings") {
-    return ensureRankingsLoaded();
+    return Promise.all([ensurePortalManagersData(), ensureRankingsLoaded()]).then(([, rankings]) => {
+      syncRankingManagerOptions();
+      return rankings;
+    });
   }
 
   if (scope === "login") {
@@ -15858,7 +15874,10 @@ function ensureWantData() {
 function ensurePortalManagersData() {
   return ensureSharedData("portal-managers", async () => {
     try {
-      siteData.portalManagers = await loadSheet("portalManagers");
+      const managers = await loadSheet("portalManagers");
+      siteData.portalManagers = Array.isArray(managers) && managers.length
+        ? managers
+        : [...DEFAULT_PORTAL_MANAGERS];
     } catch (error) {
       siteData.portalManagers = [...DEFAULT_PORTAL_MANAGERS];
       siteData.portalManagersError = error;

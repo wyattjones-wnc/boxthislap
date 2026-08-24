@@ -2486,10 +2486,22 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 9px;
   display: flex;
+  flex: 1 1 auto;
   gap: 2px;
   overflow-x: auto;
   padding: 3px;
   scrollbar-width: none;
+}
+
+.youtube-video-count {
+  align-self: center;
+  color: var(--muted);
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 900;
+  margin-left: auto;
+  padding: 0 9px;
+  white-space: nowrap;
 }
 
 .youtube-status-tabs::-webkit-scrollbar {

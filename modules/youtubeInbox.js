@@ -89,6 +89,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       <div class="youtube-toolbar" aria-label="YouTube inbox controls">
         <div class="youtube-status-tabs" role="group" aria-label="Video status">
           ${STATUS_OPTIONS.map(([value, label]) => `<button type="button" data-youtube-status="${value}" class="${state.status === value ? "is-active" : ""}" aria-pressed="${state.status === value}">${label}</button>`).join("")}
+          <span class="youtube-video-count" aria-label="${state.videos.length} videos currently showing">(${state.videos.length})</span>
         </div>
         <label class="youtube-priority-filter">
           <span class="sr-only">Priority</span>

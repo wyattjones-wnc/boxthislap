@@ -23,6 +23,7 @@ const fixture = (overrides = {}) => ({
 assert.equal(getSportDbTimestamp({ strTimestamp: "2026-08-19T18:00:00" }), "2026-08-19T18:00:00Z");
 assert.equal(getSportDbTimestamp({ strTimestamp: "2026-08-19T18:00:00+00:00" }), "2026-08-19T18:00:00+00:00");
 assert.equal(isSameFootballClubName("Rayo Vallecano", "Rayo Vallecano de Madrid"), true);
+assert.equal(isSameFootballClubName("Athletic Club", "Athletic Bilbao"), true);
 
 const [rescheduledAthletic] = mergeFixtures([
   fixture({
@@ -49,6 +50,13 @@ const [rayo] = mergeFixtures([
 ]);
 assert.deepEqual(rayo.sources, ["football-data.org", "iCalendar"]);
 assert.equal(rayo.away, "Rayo Vallecano de Madrid");
+
+const [athletic] = mergeFixtures([
+  fixture({ away: "Athletic Club", date: "2026-08-27", source: "football-data.org", sourceIds: { "football-data.org": "564630" }, sources: ["football-data.org"] }),
+  fixture({ away: "Athletic Bilbao", date: "2026-08-27", source: "TheSportsDB", sourceIds: { TheSportsDB: "2506169" }, sources: ["TheSportsDB"] }),
+]);
+assert.deepEqual(athletic.sources, ["football-data.org", "TheSportsDB"]);
+assert.equal(athletic.away, "Athletic Club");
 
 const currentFixtures = getCurrentTeamFixtures({
   generatedAt: "2026-08-16T10:00:00Z",

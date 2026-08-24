@@ -10,7 +10,7 @@
     "competitionCount": 10,
     "competitionFixtureCount": 1971,
     "teamCount": 7,
-    "fixtureCount": 195,
+    "fixtureCount": 194,
     "statuses": {
       "updated": 5,
       "no-fixtures": 2
@@ -64576,7 +64576,7 @@
         "football-data.org",
         "iCalendar"
       ],
-      "fixtureCount": 47,
+      "fixtureCount": 46,
       "fixtures": [
         {
           "away": "CE Europa",
@@ -64808,14 +64808,16 @@
           "priority": "2",
           "round": "1",
           "season": "2026",
-          "source": "football-data.org + iCalendar",
+          "source": "football-data.org + iCalendar + TheSportsDB",
           "sourceIds": {
+            "TheSportsDB": "2506169",
             "football-data.org": "564630",
             "iCalendar": "6a4455e954aa8848aa0baac2"
           },
           "sources": [
             "football-data.org",
-            "iCalendar"
+            "iCalendar",
+            "TheSportsDB"
           ],
           "sourceDetail": "calendar-feed",
           "status": "TIMED",
@@ -64825,41 +64827,9 @@
           "time": "19:00:00",
           "timestamp": "2026-08-27T19:00:00Z",
           "venue": "Barcelona, Barcelona",
-          "lastSeen": "",
-          "matchId": "footy_0c88e0019fd1",
-          "isFriendly": false
-        },
-        {
-          "away": "Athletic Bilbao",
-          "awayBadge": "",
-          "date": "2026-08-27",
-          "home": "Barcelona",
-          "homeBadge": "",
-          "id": "TheSportsDB:2506169",
-          "leagueId": "4335",
-          "isHome": true,
-          "league": "Spanish La Liga",
-          "opponent": "Athletic Bilbao",
-          "priority": "2",
-          "round": "1",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2506169"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "team-upcoming",
-          "status": "NS",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "19:00:00",
-          "timestamp": "2026-08-27T19:00:00Z",
-          "venue": "Spotify Camp Nou",
           "isFriendly": false,
-          "matchId": "footy_15bca0de3e27"
+          "matchId": "footy_0c88e0019fd1",
+          "lastSeen": ""
         },
         {
           "away": "Rayo Vallecano de Madrid",

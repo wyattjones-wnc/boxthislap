@@ -46,6 +46,9 @@ const FOOTBALL_LEAGUE_POINTS = Object.freeze({
   loss: 0,
   win: 3,
 });
+const FOOTBALL_CLUB_NAME_ALIASES = Object.freeze({
+  "athletic bilbao": "athletic club",
+});
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
 const SHOULD_VERIFY_FOOTBALL_DATA_TEAMS = isTrueValue(process.env.FOOTY_VERIFY_FOOTBALL_DATA_TEAMS);
@@ -3197,10 +3200,12 @@ function normalizeFootyMatchId(value) {
 }
 
 function normalizeFootballClubName(value) {
-  return normalizeText(value)
+  const normalizedName = normalizeText(value)
     .replace(/\b(afc|cf|fc|sc)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  return FOOTBALL_CLUB_NAME_ALIASES[normalizedName] || normalizedName;
 }
 
 function isFalseValue(value) {

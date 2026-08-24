@@ -5,7 +5,10 @@ compatibility_date = "2026-08-22"
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
 ADMIN_MANAGER_IDS = "6"
-MANAGER_AUTH_ENDPOINT = "https://box-this-lap-rankings.boxthislap.workers.dev/api/auth/verify"
+
+[[services]]
+binding = "MANAGER_AUTH"
+service = "box-this-lap-rankings"
 
 [[d1_databases]]
 binding = "DB"

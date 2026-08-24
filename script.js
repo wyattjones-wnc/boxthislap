@@ -308,7 +308,7 @@ import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608230220";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608220002";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608240001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -626,7 +626,8 @@ function renderFootySchedule(schedule) {
   const modeFixtures = getFilteredFootyFixtures(unfilteredModeFixtures);
   const visibleFixtures = modeFixtures
     .sort(compareVisibleFootyFixtures);
-  const renderedFixtures = isCompetitionMode || shouldShowAllFootyFixtures
+  const isPastWeekMode = !isCompetitionMode && shouldShowPastFootyFixtures;
+  const renderedFixtures = isCompetitionMode || isPastWeekMode || shouldShowAllFootyFixtures
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
@@ -678,10 +679,14 @@ function renderFootySchedule(schedule) {
   footyScheduleList.innerHTML = `
     ${updatedMarkup}
     ${adminDiagnosticsMarkup}
-    <div class="footy-list${isCompetitionMode ? " footy-list--calendar-weeks" : ""}">
-      ${isCompetitionMode ? renderFootyCalendarWeekGroups(renderedFixtures) : renderedFixtures.map(renderFootyFixture).join("")}
+    <div class="footy-list${isCompetitionMode ? " footy-list--calendar-weeks" : ""}${isPastWeekMode ? " footy-list--past-weeks" : ""}">
+      ${isCompetitionMode
+        ? renderFootyCalendarWeekGroups(renderedFixtures)
+        : isPastWeekMode
+        ? renderFootyPastWeekGroups(renderedFixtures)
+        : renderedFixtures.map(renderFootyFixture).join("")}
     </div>
-    ${isCompetitionMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
+    ${isCompetitionMode || isPastWeekMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
   `;
 }
 
@@ -2026,11 +2031,14 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
     const followedBadges = getFootyFollowedTeamBadgeMap(fixtures);
 
     return (Array.isArray(fullSchedule.fixtures) ? fullSchedule.fixtures : []).map((fixture) => {
-      const followedFixture = followedByMatchId.get(String(fixture.matchId || ""));
+      const matchId = getFootyCompetitionFixtureMatchId(fixture);
+      const followedFixture = followedByMatchId.get(matchId);
+      const matchNote = followedFixture?.matchNote || getFootyMatchNoteById(matchId);
 
       return {
         ...fixture,
-        ...(followedFixture?.matchNote ? { matchNote: followedFixture.matchNote } : {}),
+        matchId,
+        ...(matchNote ? { matchNote } : {}),
         followedAwayBadge: getFootyFollowedTeamBadge(followedBadges, fixture.away),
         followedHomeBadge: getFootyFollowedTeamBadge(followedBadges, fixture.home),
         followedTeamNames: Array.isArray(fixture.followedTeamNames) ? fixture.followedTeamNames : [],
@@ -2069,6 +2077,43 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
   });
 
   return [...fixturesByMatch.values()];
+}
+
+function getFootyCompetitionFixtureMatchId(fixture = {}) {
+  const existingId = String(fixture.matchId || "").trim();
+
+  if (existingId) {
+    return existingId;
+  }
+
+  const sourceIds = fixture.sourceIds && typeof fixture.sourceIds === "object"
+    ? fixture.sourceIds
+    : {};
+  const sourceKeys = Object.entries(sourceIds)
+    .map(([source, id]) => `${normalizeLookupName(source)}:${String(id || "").trim()}`)
+    .filter((value) => !value.startsWith(":") && !value.endsWith(":"));
+
+  if (sourceKeys.length === 0 && fixture.source && fixture.id) {
+    sourceKeys.push(`${normalizeLookupName(fixture.source)}:${String(fixture.id).trim()}`);
+  }
+
+  const sourceKey = sourceKeys.sort()[0] || "";
+  const identity = normalizeLookupName(sourceKey)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return identity ? `footy_comp_${identity}`.slice(0, 200) : "";
+}
+
+function getFootyMatchNoteById(matchId) {
+  const normalizedId = normalizeFootyMatchId(matchId);
+
+  if (!normalizedId) {
+    return null;
+  }
+
+  return (Array.isArray(siteData.footyMatchNotes) ? siteData.footyMatchNotes : [])
+    .find((note) => normalizeFootyMatchId(note?.matchId) === normalizedId) || null;
 }
 
 function mergeFootyCompetitionFixtures(existing = {}, fixture = {}) {
@@ -3092,6 +3137,36 @@ function isFootyLeagueMatchWeekCompetition(fixture = {}) {
 }
 
 function renderFootyCalendarWeekGroups(fixtures = []) {
+  const groups = groupFootyFixturesByCalendarWeek(fixtures);
+
+  return groups.map((group) => `
+    <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
+      <header class="footy-calendar-week-header">
+        <h2>${escapeHtml(group.label)}</h2>
+        <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
+      </header>
+      <div class="footy-calendar-week-matches">
+        ${group.fixtures.map(renderFootyFixture).join("")}
+      </div>
+    </section>
+  `).join("");
+}
+
+function renderFootyPastWeekGroups(fixtures = []) {
+  return groupFootyFixturesByCalendarWeek(fixtures).map((group) => `
+    <details class="footy-past-week">
+      <summary class="footy-past-week-summary">
+        <span>Week of ${escapeHtml(group.label)}</span>
+        <small>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</small>
+      </summary>
+      <div class="footy-past-week-matches">
+        ${group.fixtures.map(renderFootyFixture).join("")}
+      </div>
+    </details>
+  `).join("");
+}
+
+function groupFootyFixturesByCalendarWeek(fixtures = []) {
   const groups = [];
 
   fixtures.forEach((fixture) => {
@@ -3106,17 +3181,7 @@ function renderFootyCalendarWeekGroups(fixtures = []) {
     group.fixtures.push(fixture);
   });
 
-  return groups.map((group) => `
-    <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
-      <header class="footy-calendar-week-header">
-        <h2>${escapeHtml(group.label)}</h2>
-        <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
-      </header>
-      <div class="footy-calendar-week-matches">
-        ${group.fixtures.map(renderFootyFixture).join("")}
-      </div>
-    </section>
-  `).join("");
+  return groups;
 }
 
 function getFootyCalendarWeek(fixture = {}) {
@@ -3415,6 +3480,10 @@ function getFootyFixtureSides(fixture) {
     }
   }
 
+  if (fixture?.isCompetitionFixture && !followedTeam) {
+    return { followed: "home", opponent: "away" };
+  }
+
   return fixture?.isHome
     ? { followed: "home", opponent: "away" }
     : { followed: "away", opponent: "home" };
@@ -3451,6 +3520,8 @@ function openFootyNoteDialog(matchId) {
   if (footyNoteTitle) {
     footyNoteTitle.textContent = `${fixture.home || "Home"} v ${fixture.away || "Away"}`;
   }
+
+  syncFootyNoteGoalAssistLabels(fixture);
 
   if (footyNoteHomeScore) {
     footyNoteHomeScore.value = String(note.homeScore ?? "");
@@ -3492,6 +3563,20 @@ function openFootyNoteDialog(matchId) {
   }
 }
 
+function syncFootyNoteGoalAssistLabels(fixture) {
+  const isUnfollowedCompetitionMatch = Boolean(fixture?.isCompetitionFixture && !fixture?.teamName);
+  const followSummary = getFootyNoteGoalAssistBuilder("follow")?.querySelector("summary");
+  const opponentSummary = getFootyNoteGoalAssistBuilder("opponent")?.querySelector("summary");
+
+  if (followSummary) {
+    followSummary.textContent = isUnfollowedCompetitionMatch ? "Home G/A" : "Follow G/A";
+  }
+
+  if (opponentSummary) {
+    opponentSummary.textContent = isUnfollowedCompetitionMatch ? "Away G/A" : "Opp G/A";
+  }
+}
+
 function closeFootyNoteDialog() {
   activeFootyNoteMatchId = "";
   closeAutocompleteDropdown();
@@ -3514,8 +3599,21 @@ function getFootyFixtureByMatchId(matchId) {
     return null;
   }
 
-  return getFootyScheduleFixtures(siteData.footySchedule)
-    .find((fixture) => String(fixture.matchId || "").trim() === normalizedId) || null;
+  const followedFixture = getFootyScheduleFixtures(siteData.footySchedule)
+    .find((fixture) => String(fixture.matchId || "").trim() === normalizedId);
+
+  if (followedFixture) {
+    return followedFixture;
+  }
+
+  return getFootyCompetitionSchedules(siteData.footySchedule)
+    .flatMap((schedule) => Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
+    .map((fixture) => ({
+      ...fixture,
+      matchId: getFootyCompetitionFixtureMatchId(fixture),
+      isCompetitionFixture: true,
+    }))
+    .find((fixture) => fixture.matchId === normalizedId) || null;
 }
 
 function normalizeFootyGoalAssistForNote(event) {
@@ -3620,7 +3718,9 @@ function renderFootyNoteGoalAssistEntries(side) {
 
   const savedList = document.querySelector(`[data-footy-note-ga-saved="${side}"]`);
   const entries = footyNoteGoalAssistEntries[side];
-  const emptyLabel = side === "follow" ? "No saved followed-team entries." : "No saved opponent entries.";
+  const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
+  const sideLabel = getFootyNoteGoalAssistSideLabel(side, fixture);
+  const emptyLabel = `No saved ${sideLabel.toLowerCase()} entries.`;
 
   if (!savedList) {
     return;
@@ -3632,10 +3732,18 @@ function renderFootyNoteGoalAssistEntries(side) {
   }
 
   savedList.innerHTML = `
-    <ul class="footy-goal-assists-chip-list" aria-label="${side === "follow" ? "Followed team" : "Opponent"} goal assist entries">
+    <ul class="footy-goal-assists-chip-list" aria-label="${escapeHtml(sideLabel)} goal assist entries">
       ${entries.map((entry, index) => renderFootyNoteGoalAssistChip(entry, side, index)).join("")}
     </ul>
   `;
+}
+
+function getFootyNoteGoalAssistSideLabel(side, fixture) {
+  if (fixture?.isCompetitionFixture && !fixture?.teamName) {
+    return side === "follow" ? "Home" : "Away";
+  }
+
+  return side === "follow" ? "Followed team" : "Opponent";
 }
 
 function renderFootyNoteGoalAssistChip(entry, side, index) {
@@ -4020,7 +4128,7 @@ function getFootyPlayerAutocompleteOptions(input) {
   const fixture = getFootyFixtureByMatchId(activeFootyNoteMatchId);
   const teamName = side === "opponent"
     ? getFootyFixtureOpponentRosterName(fixture)
-    : fixture?.teamName;
+    : getFootyFollowedSideName(fixture);
 
   return getFootyRosterPlayersForTeam(teamName).map((player) => ({
     label: player.name,
@@ -4060,6 +4168,12 @@ function renderAutocompleteDropdown(input, options = [], emptyMessage = "No matc
     .slice(0, AUTOCOMPLETE_OPTION_LIMIT);
 
   if (!filteredOptions.length) {
+    if (!emptyMessage) {
+      dropdown.classList.remove("is-open");
+      dropdown.innerHTML = "";
+      return;
+    }
+
     dropdown.innerHTML = `<p class="autocomplete-empty">${escapeHtml(emptyMessage)}</p>`;
     dropdown.classList.add("is-open");
     return;
@@ -4092,7 +4206,6 @@ function selectAutocompleteOption(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("change", { bubbles: true }));
   closeAutocompleteDropdown();
-  input.focus({ preventScroll: true });
 }
 
 function renderFootyPlayerAutocomplete(input) {
@@ -4120,7 +4233,7 @@ function renderFootyPlayerAutocomplete(input) {
     return;
   }
 
-  renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "No roster matches");
+  renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "");
 }
 
 function getFootyRosterPlayersForTeam(teamInput) {
@@ -4228,6 +4341,10 @@ function getFootyFixtureOpponentRosterName(fixture) {
     return fixture.home;
   }
 
+  if (fixture.isCompetitionFixture && !fixture.teamName) {
+    return fixture.away;
+  }
+
   return "";
 }
 
@@ -4273,17 +4390,7 @@ async function saveFootyMatchNote(note, retried = false) {
   const data = await response.json().catch(() => ({}));
 
   if (response.status === 401 && !retried) {
-    siteData.managerSession = {
-      ...siteData.managerSession,
-      rankingAuth: {
-        ...(siteData.managerSession?.rankingAuth || {}),
-        accessToken: "",
-        accessExpiresAt: "",
-      },
-    };
-    try {
-      localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession));
-    } catch {}
+    clearRankingAuthorization();
     return saveFootyMatchNote(note, true);
   }
 
@@ -4295,12 +4402,12 @@ async function saveFootyMatchNote(note, retried = false) {
 }
 
 function clearFootyScheduleMatchNotes(schedule) {
-  if (!Array.isArray(schedule?.teamSchedules)) {
+  if (!schedule) {
     return;
   }
 
-  schedule.teamSchedules.forEach((teamSchedule) => {
-    const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+  [...(schedule.teamSchedules || []), ...(schedule.competitionSchedules || [])].forEach((fixtureGroup) => {
+    const fixtures = Array.isArray(fixtureGroup?.fixtures) ? fixtureGroup.fixtures : [];
 
     fixtures.forEach((fixture) => {
       if (Object.prototype.hasOwnProperty.call(fixture, "matchNote")) {
@@ -4313,15 +4420,23 @@ function clearFootyScheduleMatchNotes(schedule) {
 function updateFootyFixtureMatchNote(note) {
   const normalizedId = normalizeFootyMatchId(note.matchId);
 
-  if (!normalizedId || !Array.isArray(siteData.footySchedule?.teamSchedules)) {
+  if (!normalizedId || !siteData.footySchedule) {
     return;
   }
 
-  siteData.footySchedule.teamSchedules.forEach((teamSchedule) => {
-    const fixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
+  [
+    ...(siteData.footySchedule.teamSchedules || []),
+    ...(siteData.footySchedule.competitionSchedules || []),
+  ].forEach((fixtureGroup) => {
+    const fixtures = Array.isArray(fixtureGroup?.fixtures) ? fixtureGroup.fixtures : [];
 
     fixtures.forEach((fixture) => {
-      if (normalizeFootyMatchId(fixture.matchId) === normalizedId) {
+      const fixtureMatchId = fixture.isCompetitionFixture
+        ? getFootyCompetitionFixtureMatchId(fixture)
+        : fixture.matchId;
+
+      if (normalizeFootyMatchId(fixtureMatchId) === normalizedId) {
+        fixture.matchId = fixtureMatchId;
         fixture.matchNote = {
           awayScore: note.awayScore,
           followGoalAssists: note.followGoalAssists,
@@ -6913,6 +7028,12 @@ async function ensureRankingAuthorization() {
   return value.accessToken;
 }
 
+function clearRankingAuthorization() {
+  if (!siteData.managerSession) return;
+  siteData.managerSession = { ...siteData.managerSession, rankingAuth: null };
+  try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+}
+
 async function requestRankingAuthorizationForLogin(managerId, passphrase) {
   if (!RANKINGS_ENDPOINT || !managerId || !passphrase) return null;
   const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/login`, {
@@ -6935,8 +7056,7 @@ async function rankingApiRequest(path, options = {}, retried = false) {
   });
   const value = await response.json().catch(() => ({}));
   if (response.status === 401 && !retried) {
-    siteData.managerSession = { ...siteData.managerSession, rankingAuth: { ...(siteData.managerSession?.rankingAuth || {}), accessToken: "", accessExpiresAt: "" } };
-    try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+    clearRankingAuthorization();
     return rankingApiRequest(path, options, true);
   }
   if (!response.ok || !value.ok) {
@@ -9558,7 +9678,9 @@ function getFormulaOneCalculatorState(year, data) {
   const hiddenDrivers = new Set(storedState.hiddenDrivers ?? []);
   const state = {
     filtersExpanded: false,
+    viewMode: "simple",
     knownDrivers: new Set(data.driversToWatch),
+    simpleSelections: storedState.simpleSelections && typeof storedState.simpleSelections === "object" ? storedState.simpleSelections : {},
     selections: storedState.selections && typeof storedState.selections === "object" ? storedState.selections : {},
     visibleDrivers: new Set(data.driversToWatch.filter((driver) => !hiddenDrivers.has(driver))),
   };
@@ -9578,6 +9700,7 @@ function persistFormulaOneCalculatorState(year, data, state) {
   try {
     localStorage.setItem(getFormulaOneCalculatorStorageKey(year), JSON.stringify({
       hiddenDrivers: data.driversToWatch.filter((driver) => !state.visibleDrivers.has(driver)),
+      simpleSelections: state.simpleSelections,
       selections: state.selections,
     }));
   } catch {
@@ -9615,6 +9738,38 @@ function getFormulaOneCalculatorRoundName(round) {
 
 function getFormulaOneCalculatorSelectionKey(type, roundId, driver) {
   return `${type}:${roundId}:${driver}`;
+}
+
+function getFormulaOneCalculatorSimpleEventPosition(data, event, position) {
+  if (!position) {
+    return "";
+  }
+
+  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
+  if (options.some((option) => option.position === position)) {
+    return position;
+  }
+
+  if (event.type === "sprint") {
+    return options.find((option) => option.position.startsWith("<"))?.position ?? "";
+  }
+
+  return position;
+}
+
+function applyFormulaOneCalculatorSimpleSelection(data, state, events, driver, position) {
+  if (position) {
+    state.simpleSelections[driver] = position;
+  } else {
+    delete state.simpleSelections[driver];
+  }
+
+  events.forEach((event) => {
+    const key = getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver);
+    const eventPosition = getFormulaOneCalculatorSimpleEventPosition(data, event, position);
+    if (eventPosition) state.selections[key] = eventPosition;
+    else delete state.selections[key];
+  });
 }
 
 function getFormulaOneCalculatorSelectedPoints(data, state, event, driver) {
@@ -9688,7 +9843,7 @@ function renderFormulaOneCalculator(year) {
     <section class="formula-one-calculator-card formula-one-calculator-intro">
       <div>
         <h3>Season scenarios</h3>
-        <p>Choose a finishing position for any remaining race or sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
+        <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
       </div>
       <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
     </section>
@@ -9699,6 +9854,21 @@ function renderFormulaOneCalculator(year) {
           <h3>Points calculator</h3>
           <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
         </div>
+        <div class="formula-one-calculator-heading-actions">
+          <div class="formula-one-calculator-view-toggle" role="group" aria-label="Calculator view">
+            <button
+              type="button"
+              class="${state.viewMode === "simple" ? "is-active" : ""}"
+              data-formula-one-calculator-view="simple"
+              aria-pressed="${state.viewMode === "simple" ? "true" : "false"}"
+            >Simple</button>
+            <button
+              type="button"
+              class="${state.viewMode === "expanded" ? "is-active" : ""}"
+              data-formula-one-calculator-view="expanded"
+              aria-pressed="${state.viewMode === "expanded" ? "true" : "false"}"
+            >Expanded</button>
+          </div>
         <button
           class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
           type="button"
@@ -9711,6 +9881,7 @@ function renderFormulaOneCalculator(year) {
             <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
           </svg>
         </button>
+        </div>
       </div>
       ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers)}
       <div class="table-wrap formula-one-calculator-table-wrap">
@@ -9769,6 +9940,10 @@ function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, so
 }
 
 function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
+  if (state.viewMode === "simple") {
+    return renderFormulaOneCalculatorSimpleTable(data, state, events, visibleDrivers);
+  }
+
   const eventHeaders = events.map((event) => {
     const eventLabel = event.type === "sprint" ? "Sprint" : "Race";
     return `<th title="${escapeHtml(`${event.round.name} ${eventLabel}`)}"><span>R${escapeHtml(event.round.id)}</span>${escapeHtml(eventLabel)}</th>`;
@@ -9806,6 +9981,61 @@ function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
           <th>Driver</th>
           <th>Current</th>
           ${eventHeaders}
+          <th>Projected</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderFormulaOneCalculatorSimpleTable(data, state, events, visibleDrivers) {
+  const rows = visibleDrivers.length ? visibleDrivers.map((driver) => {
+    const currentPoints = getFormulaOneCalculatorCurrentPoints(data, driver);
+    const projectedPoints = getFormulaOneCalculatorProjectedPoints(data, state, events, driver);
+    const selectedPosition = state.simpleSelections[driver] || "";
+    return `
+      <tr>
+        <th scope="row">
+          <span class="formula-one-calculator-driver" style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
+            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
+            ${renderFormulaOneCalculatorDriverName(driver)}
+          </span>
+        </th>
+        <td class="formula-one-calculator-total">${escapeHtml(currentPoints)}</td>
+        <td>
+          <select
+            aria-label="${escapeHtml(`${driver}, position for every remaining round`)}"
+            data-formula-one-calculator-simple-position
+            data-driver="${escapeHtml(driver)}"
+          >
+            <option value="">—</option>
+            ${data.raceOptions.map((option) => `
+              <option value="${escapeHtml(option.position)}" ${option.position === selectedPosition ? "selected" : ""}>
+                ${escapeHtml(option.position)}
+              </option>
+            `).join("")}
+          </select>
+        </td>
+        <td class="formula-one-calculator-total formula-one-calculator-projected">
+          ${escapeHtml(projectedPoints)}
+          <small>+${escapeHtml(projectedPoints - currentPoints)}</small>
+        </td>
+      </tr>
+    `;
+  }).join("") : `
+    <tr>
+      <td class="table-message" colspan="4">No drivers are selected. Use the driver filters above to add one.</td>
+    </tr>
+  `;
+
+  return `
+    <table class="formula-one-calculator-table formula-one-calculator-table--simple">
+      <thead>
+        <tr>
+          <th>Driver</th>
+          <th>Current</th>
+          <th>Position</th>
           <th>Projected</th>
         </tr>
       </thead>
@@ -12738,6 +12968,19 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
 
     const state = getFormulaOneCalculatorState(year, data);
     const filter = event.target.closest("[data-formula-one-calculator-filter]");
+    const simplePositionSelect = event.target.closest("[data-formula-one-calculator-simple-position]");
+    if (simplePositionSelect) {
+      applyFormulaOneCalculatorSimpleSelection(
+        data,
+        state,
+        getFormulaOneCalculatorEvents(data),
+        simplePositionSelect.dataset.driver,
+        simplePositionSelect.value
+      );
+      persistFormulaOneCalculatorState(year, data, state);
+      renderFormulaOneCalculator(year);
+      return;
+    }
     if (filter) {
       if (filter.checked) {
         state.visibleDrivers.add(filter.dataset.driver);
@@ -12762,6 +13005,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       } else {
         delete state.selections[key];
       }
+      delete state.simpleSelections[positionSelect.dataset.driver];
       persistFormulaOneCalculatorState(year, data, state);
       renderFormulaOneCalculator(year);
       const tableWrap = view.calculator.querySelector(".formula-one-calculator-table-wrap");
@@ -12772,10 +13016,11 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   });
 
   view.calculator?.addEventListener("click", (event) => {
+    const viewToggle = event.target.closest("[data-formula-one-calculator-view]");
     const filterToggle = event.target.closest("[data-formula-one-calculator-filter-toggle]");
     const showAllButton = event.target.closest("[data-formula-one-calculator-show-all]");
     const hideAllButton = event.target.closest("[data-formula-one-calculator-hide-all]");
-    if (!filterToggle && !showAllButton && !hideAllButton) {
+    if (!viewToggle && !filterToggle && !showAllButton && !hideAllButton) {
       return;
     }
 
@@ -12785,6 +13030,12 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     }
 
     const state = getFormulaOneCalculatorState(year, data);
+    if (viewToggle) {
+      state.viewMode = viewToggle.dataset.formulaOneCalculatorView === "expanded" ? "expanded" : "simple";
+      renderFormulaOneCalculator(year);
+      return;
+    }
+
     if (filterToggle) {
       state.filtersExpanded = !state.filtersExpanded;
       renderFormulaOneCalculator(year);

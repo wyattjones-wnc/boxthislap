@@ -718,6 +718,60 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-list--past-weeks {
+  gap: 8px;
+}
+
+.footy-past-week {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.footy-past-week-summary {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  font-size: 0.88rem;
+  font-weight: 900;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  list-style: none;
+  padding: 9px 12px;
+}
+
+.footy-past-week-summary::-webkit-details-marker {
+  display: none;
+}
+
+.footy-past-week-summary::before {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  content: "";
+  height: 6px;
+  transform: rotate(-45deg);
+  transition: transform 160ms ease;
+  width: 6px;
+}
+
+.footy-past-week[open] > .footy-past-week-summary::before {
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+
+.footy-past-week-summary small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.footy-past-week-matches {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
 .footy-list-actions {
   display: flex;
   justify-content: center;
@@ -2432,10 +2486,22 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 9px;
   display: flex;
+  flex: 1 1 auto;
   gap: 2px;
   overflow-x: auto;
   padding: 3px;
   scrollbar-width: none;
+}
+
+.youtube-video-count {
+  align-self: center;
+  color: var(--muted);
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 900;
+  margin-left: auto;
+  padding: 0 9px;
+  white-space: nowrap;
 }
 
 .youtube-status-tabs::-webkit-scrollbar {
@@ -5411,6 +5477,41 @@ main {
   padding: 7px 11px;
 }
 
+.formula-one-calculator-heading-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.formula-one-calculator-view-toggle {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-grid;
+  gap: 3px;
+  grid-template-columns: repeat(2, auto);
+  padding: 3px;
+}
+
+.formula-one-calculator-view-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.formula-one-calculator-view-toggle button.is-active {
+  background: var(--accent);
+  color: var(--button-text);
+}
+
 .formula-one-calculator-filter-toggle {
   flex: 0 0 auto;
 }
@@ -5498,6 +5599,16 @@ main {
   margin: 0;
   max-height: min(70vh, 680px);
   overflow: auto;
+}
+
+.formula-one-calculator-table--simple {
+  min-width: 480px;
+  width: 100%;
+}
+
+.formula-one-calculator-table--simple th:nth-child(3),
+.formula-one-calculator-table--simple td:nth-child(3) {
+  min-width: 100px;
 }
 
 .formula-one-calculator-table {
@@ -7559,6 +7670,11 @@ tr:last-child td {
     display: grid;
   }
 
+  .formula-one-calculator-section-heading > .formula-one-calculator-heading-actions {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+  }
+
   .formula-one-calculator-driver-filters {
     padding: 12px 13px 13px;
   }
@@ -7604,6 +7720,18 @@ tr:last-child td {
     padding-left: 5px;
     padding-right: 5px;
     width: 78px;
+  }
+
+  .formula-one-calculator-table--simple {
+    min-width: 349px;
+  }
+
+  .formula-one-calculator-table--simple th:nth-child(3),
+  .formula-one-calculator-table--simple td:nth-child(3) {
+    min-width: 93px;
+    padding-left: 6px;
+    padding-right: 6px;
+    width: 93px;
   }
 
   .formula-one-calculator-table thead th {

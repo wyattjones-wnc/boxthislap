@@ -145,11 +145,13 @@ async function saveMatchNote(env, matchId, body, managerId) {
 async function requireAdmin(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in as an admin to edit match notes.");
-  if (!env.MANAGER_AUTH_ENDPOINT) throw new Error("Manager authorization is not configured.");
+  if (!env.MANAGER_AUTH) throw new Error("Manager authorization is not configured.");
+  const accessToken = authorization.slice(7);
 
-  const response = await fetch(env.MANAGER_AUTH_ENDPOINT, {
+  const response = await env.MANAGER_AUTH.fetch("https://rankings.internal/api/auth/verify", {
     method: "POST",
-    headers: { Authorization: authorization, Accept: "application/json" },
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken }),
   });
   const value = await response.json().catch(() => null);
 

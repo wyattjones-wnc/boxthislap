@@ -89,6 +89,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       <div class="youtube-toolbar" aria-label="YouTube inbox controls">
         <div class="youtube-status-tabs" role="group" aria-label="Video status">
           ${STATUS_OPTIONS.map(([value, label]) => `<button type="button" data-youtube-status="${value}" class="${state.status === value ? "is-active" : ""}" aria-pressed="${state.status === value}">${label}</button>`).join("")}
+          <span class="youtube-video-count" aria-label="${state.videos.length} videos currently showing">(${state.videos.length})</span>
         </div>
         <label class="youtube-priority-filter">
           <span class="sr-only">Priority</span>
@@ -507,8 +508,12 @@ function filterVideosByPriority(videos, channels) {
   const channelsById = new Map(channels.map((channel) => [channel.youtubeChannelId, channel]));
   return videos.filter((video) => {
     const channelId = String(video.channel?.youtubeChannelId || video.youtubeChannelId || "").trim();
-    const filter = channelsById.get(channelId)?.filter;
-    return !filter || String(video.title || "").toLocaleLowerCase().includes(filter.toLocaleLowerCase());
+    const filters = String(channelsById.get(channelId)?.filter || "")
+      .split(",")
+      .map((filter) => filter.trim().toLocaleLowerCase())
+      .filter(Boolean);
+    const title = String(video.title || "").toLocaleLowerCase();
+    return filters.length === 0 || filters.some((filter) => title.includes(filter));
   });
 }
 

@@ -626,7 +626,8 @@ function renderFootySchedule(schedule) {
   const modeFixtures = getFilteredFootyFixtures(unfilteredModeFixtures);
   const visibleFixtures = modeFixtures
     .sort(compareVisibleFootyFixtures);
-  const renderedFixtures = isCompetitionMode || shouldShowAllFootyFixtures
+  const isPastWeekMode = !isCompetitionMode && shouldShowPastFootyFixtures;
+  const renderedFixtures = isCompetitionMode || isPastWeekMode || shouldShowAllFootyFixtures
     ? visibleFixtures
     : visibleFixtures.slice(0, FOOTY_INITIAL_FIXTURE_LIMIT);
   const hiddenFixtureCount = Math.max(0, visibleFixtures.length - renderedFixtures.length);
@@ -678,10 +679,14 @@ function renderFootySchedule(schedule) {
   footyScheduleList.innerHTML = `
     ${updatedMarkup}
     ${adminDiagnosticsMarkup}
-    <div class="footy-list${isCompetitionMode ? " footy-list--calendar-weeks" : ""}">
-      ${isCompetitionMode ? renderFootyCalendarWeekGroups(renderedFixtures) : renderedFixtures.map(renderFootyFixture).join("")}
+    <div class="footy-list${isCompetitionMode ? " footy-list--calendar-weeks" : ""}${isPastWeekMode ? " footy-list--past-weeks" : ""}">
+      ${isCompetitionMode
+        ? renderFootyCalendarWeekGroups(renderedFixtures)
+        : isPastWeekMode
+        ? renderFootyPastWeekGroups(renderedFixtures)
+        : renderedFixtures.map(renderFootyFixture).join("")}
     </div>
-    ${isCompetitionMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
+    ${isCompetitionMode || isPastWeekMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
   `;
 }
 
@@ -3132,6 +3137,36 @@ function isFootyLeagueMatchWeekCompetition(fixture = {}) {
 }
 
 function renderFootyCalendarWeekGroups(fixtures = []) {
+  const groups = groupFootyFixturesByCalendarWeek(fixtures);
+
+  return groups.map((group) => `
+    <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
+      <header class="footy-calendar-week-header">
+        <h2>${escapeHtml(group.label)}</h2>
+        <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
+      </header>
+      <div class="footy-calendar-week-matches">
+        ${group.fixtures.map(renderFootyFixture).join("")}
+      </div>
+    </section>
+  `).join("");
+}
+
+function renderFootyPastWeekGroups(fixtures = []) {
+  return groupFootyFixturesByCalendarWeek(fixtures).map((group) => `
+    <details class="footy-past-week">
+      <summary class="footy-past-week-summary">
+        <span>Week of ${escapeHtml(group.label)}</span>
+        <small>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</small>
+      </summary>
+      <div class="footy-past-week-matches">
+        ${group.fixtures.map(renderFootyFixture).join("")}
+      </div>
+    </details>
+  `).join("");
+}
+
+function groupFootyFixturesByCalendarWeek(fixtures = []) {
   const groups = [];
 
   fixtures.forEach((fixture) => {
@@ -3146,17 +3181,7 @@ function renderFootyCalendarWeekGroups(fixtures = []) {
     group.fixtures.push(fixture);
   });
 
-  return groups.map((group) => `
-    <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
-      <header class="footy-calendar-week-header">
-        <h2>${escapeHtml(group.label)}</h2>
-        <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
-      </header>
-      <div class="footy-calendar-week-matches">
-        ${group.fixtures.map(renderFootyFixture).join("")}
-      </div>
-    </section>
-  `).join("");
+  return groups;
 }
 
 function getFootyCalendarWeek(fixture = {}) {

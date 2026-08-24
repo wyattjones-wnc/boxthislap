@@ -718,6 +718,60 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-list--past-weeks {
+  gap: 8px;
+}
+
+.footy-past-week {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.footy-past-week-summary {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  font-size: 0.88rem;
+  font-weight: 900;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  list-style: none;
+  padding: 9px 12px;
+}
+
+.footy-past-week-summary::-webkit-details-marker {
+  display: none;
+}
+
+.footy-past-week-summary::before {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  content: "";
+  height: 6px;
+  transform: rotate(-45deg);
+  transition: transform 160ms ease;
+  width: 6px;
+}
+
+.footy-past-week[open] > .footy-past-week-summary::before {
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+
+.footy-past-week-summary small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.footy-past-week-matches {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
 .footy-list-actions {
   display: flex;
   justify-content: center;

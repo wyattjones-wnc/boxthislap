@@ -4143,6 +4143,12 @@ function renderAutocompleteDropdown(input, options = [], emptyMessage = "No matc
     .slice(0, AUTOCOMPLETE_OPTION_LIMIT);
 
   if (!filteredOptions.length) {
+    if (!emptyMessage) {
+      dropdown.classList.remove("is-open");
+      dropdown.innerHTML = "";
+      return;
+    }
+
     dropdown.innerHTML = `<p class="autocomplete-empty">${escapeHtml(emptyMessage)}</p>`;
     dropdown.classList.add("is-open");
     return;
@@ -4175,7 +4181,6 @@ function selectAutocompleteOption(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("change", { bubbles: true }));
   closeAutocompleteDropdown();
-  input.focus({ preventScroll: true });
 }
 
 function renderFootyPlayerAutocomplete(input) {
@@ -4203,7 +4208,7 @@ function renderFootyPlayerAutocomplete(input) {
     return;
   }
 
-  renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "No roster matches");
+  renderAutocompleteDropdown(input, getFootyPlayerAutocompleteOptions(input), "");
 }
 
 function getFootyRosterPlayersForTeam(teamInput) {

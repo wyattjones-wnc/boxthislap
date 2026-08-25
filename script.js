@@ -307,7 +307,7 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260819000
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608230220";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608171756";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608252243";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608240001";
 import {
   formatUpdatedTime,

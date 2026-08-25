@@ -1,6 +1,7 @@
 export function createPlatinumsController({ loadSheet }) {
   const favoriteDetails = document.querySelector("#favorite-trophies-card");
   const platinums = createTrophyListController({
+    countElement: document.querySelector("#admin-platinums-count"),
     emptyMessage: "No platinum icons are available yet.",
     errorLabel: "Platinums",
     grid: document.querySelector("#admin-platinums-grid"),
@@ -36,6 +37,7 @@ export function createPlatinumsController({ loadSheet }) {
 }
 
 function createTrophyListController({
+  countElement = null,
   emptyMessage,
   errorLabel,
   grid,
@@ -86,6 +88,10 @@ function createTrophyListController({
   function renderItems() {
     if (!grid) return;
     grid.setAttribute("aria-busy", "false");
+    if (countElement) {
+      const platinumNumber = items[0]?.number || String(items.length);
+      countElement.textContent = `(${platinumNumber})`;
+    }
 
     if (!items.length) {
       grid.innerHTML = `<p class="table-message">${escapeHtml(emptyMessage)}</p>`;

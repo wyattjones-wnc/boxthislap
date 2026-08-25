@@ -341,6 +341,7 @@ const footyTeamFixtureLimits = new Map();
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
+let isSavingNextItem = false;
 let shouldShowTodoFilters = false;
 let shouldShowTodoMoreData = false;
 let shouldShowTodoEditMode = false;
@@ -5427,7 +5428,11 @@ function formatNextTimeInputValue(value) {
   return `${String(normalizedHour).padStart(2, "0")}:${minute}`;
 }
 
-function saveNextItemFromForm() {
+async function saveNextItemFromForm() {
+  if (isSavingNextItem) {
+    return;
+  }
+
   const item = buildNextItemPayloadFromForm();
 
   if (!item.Thing) {
@@ -5440,14 +5445,83 @@ function saveNextItemFromForm() {
     return;
   }
 
+  isSavingNextItem = true;
+  setNextItemFormSavingState(true);
+  setNextItemStatus("Saving...");
+
   if (!submitNextItemPayload({ action: "saveNextItem", item })) {
     setNextItemStatus("Next data endpoint is not configured yet.", true);
+    isSavingNextItem = false;
+    setNextItemFormSavingState(false);
     return;
   }
 
-  upsertNextItemLocally(item);
-  renderNextList();
-  closeNextItemDialog();
+  try {
+    const savedItem = await waitForSavedNextItem(item);
+    upsertNextItemLocally(savedItem);
+    renderNextList();
+    closeNextItemDialog();
+  } catch (error) {
+    recordDiagnostic("Next item save could not be confirmed", error, { id: item.ID });
+    setNextItemStatus("The change was not saved. Please try again.", true);
+  } finally {
+    isSavingNextItem = false;
+    setNextItemFormSavingState(false);
+  }
+}
+
+function setNextItemFormSavingState(isSaving) {
+  const submitButton = nextItemForm?.querySelector("button[type=\"submit\"]");
+
+  if (submitButton) {
+    submitButton.disabled = isSaving;
+    submitButton.textContent = isSaving ? "Saving..." : "Save";
+  }
+}
+
+async function waitForSavedNextItem(expectedItem) {
+  const delays = [400, 900, 1800, 3000];
+
+  for (const delay of delays) {
+    await new Promise((resolve) => window.setTimeout(resolve, delay));
+    let response;
+
+    try {
+      response = await loadNextDataEndpoint("listNextItems");
+    } catch (error) {
+      recordDiagnostic("Next item save verification failed", error, { id: expectedItem.ID });
+      continue;
+    }
+
+    const savedItem = (response.items || []).find((item) => String(item.id || "").trim() === expectedItem.ID);
+
+    if (savedItem && doesNextItemMatchSave(savedItem, expectedItem)) {
+      return {
+        ID: savedItem.id,
+        Thing: savedItem.thing,
+        "Image URL": savedItem.imageUrl,
+        Date: savedItem.date,
+        "End Date": savedItem.endDate,
+        Time: savedItem.time,
+        "Priority Level": savedItem.priorityLevel,
+        Completed: savedItem.completed ? "TRUE" : "FALSE",
+        NonAdmin: savedItem.nonAdmin ? "TRUE" : "FALSE",
+      };
+    }
+  }
+
+  throw new Error("The Next endpoint did not return the saved values.");
+}
+
+function doesNextItemMatchSave(savedItem, expectedItem) {
+  return String(savedItem.thing || "").trim() === expectedItem.Thing &&
+    String(savedItem.imageUrl || "").trim() === expectedItem["Image URL"] &&
+    parseNextDateKey(savedItem.date) === parseNextDateKey(expectedItem.Date) &&
+    parseNextDateKey(savedItem.endDate) === parseNextDateKey(expectedItem["End Date"]) &&
+    formatNextTimeInputValue(savedItem.time) === formatNextTimeInputValue(expectedItem.Time) &&
+    clampNextPriority(savedItem.priorityLevel) === clampNextPriority(expectedItem["Priority Level"]) &&
+    Boolean(savedItem.completed) === isTrueValue(expectedItem.Completed) &&
+    Boolean(savedItem.nonAdmin) === isTrueValue(expectedItem.NonAdmin);
 }
 
 function upsertNextItemLocally(item) {

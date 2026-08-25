@@ -3139,21 +3139,31 @@ function isFootyLeagueMatchWeekCompetition(fixture = {}) {
 function renderFootyCalendarWeekGroups(fixtures = []) {
   const groups = groupFootyFixturesByCalendarWeek(fixtures);
 
-  return groups.map((group) => `
-    <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
-      <header class="footy-calendar-week-header">
-        <h2>${escapeHtml(group.label)}</h2>
-        <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
-      </header>
-      <div class="footy-calendar-week-matches">
-        ${group.fixtures.map(renderFootyFixture).join("")}
-      </div>
-    </section>
-  `).join("");
+  return groups.map((group) => {
+    if (group.fixtures.every(isFootyFixturePast)) {
+      return renderFootyExpandablePastWeek(group);
+    }
+
+    return `
+      <section class="footy-calendar-week" aria-label="${escapeHtml(group.label)}">
+        <header class="footy-calendar-week-header">
+          <h2>${escapeHtml(group.label)}</h2>
+          <span>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</span>
+        </header>
+        <div class="footy-calendar-week-matches">
+          ${group.fixtures.map(renderFootyFixture).join("")}
+        </div>
+      </section>
+    `;
+  }).join("");
 }
 
 function renderFootyPastWeekGroups(fixtures = []) {
-  return groupFootyFixturesByCalendarWeek(fixtures).map((group) => `
+  return groupFootyFixturesByCalendarWeek(fixtures).map(renderFootyExpandablePastWeek).join("");
+}
+
+function renderFootyExpandablePastWeek(group) {
+  return `
     <details class="footy-past-week">
       <summary class="footy-past-week-summary">
         <span>Week of ${escapeHtml(group.label)}</span>
@@ -3163,7 +3173,7 @@ function renderFootyPastWeekGroups(fixtures = []) {
         ${group.fixtures.map(renderFootyFixture).join("")}
       </div>
     </details>
-  `).join("");
+  `;
 }
 
 function groupFootyFixturesByCalendarWeek(fixtures = []) {

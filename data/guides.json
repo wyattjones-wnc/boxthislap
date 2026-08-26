@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-21T04:46:25.073Z",
+  "generatedAt": "2026-08-26T01:36:30.298Z",
   "guides": [
     {
       "id": "1",
@@ -3890,20 +3890,31 @@
       "url": ""
     },
     {
-      "id": "351",
+      "id": "3947",
       "guideId": "1",
       "stepId": "351",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
+      "type": "Save",
+      "step": "Save your game.",
+      "url": ""
+    },
+    {
+      "id": "351",
+      "guideId": "1",
+      "stepId": "352",
+      "parentId": "",
+      "divider": "Year 4",
+      "section": "",
       "type": "Trophy",
-      "step": "Go through all the dialogue with the little blue gremlins and they will come out with the comment about him being large. This will unlock the next dialogue trophy.",
+      "step": "Do not speak to Glottis.  Ensure you are speaking to the little blue gremlins and go through all the dialogue with them and they will come out with the comment about him being large. This will unlock the next dialogue trophy.",
       "url": ""
     },
     {
       "id": "352",
       "guideId": "1",
-      "stepId": "352",
+      "stepId": "353",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3914,7 +3925,7 @@
     {
       "id": "353",
       "guideId": "1",
-      "stepId": "353",
+      "stepId": "354",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3925,7 +3936,7 @@
     {
       "id": "354",
       "guideId": "1",
-      "stepId": "354",
+      "stepId": "355",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3936,7 +3947,7 @@
     {
       "id": "355",
       "guideId": "1",
-      "stepId": "355",
+      "stepId": "356",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3947,7 +3958,7 @@
     {
       "id": "356",
       "guideId": "1",
-      "stepId": "356",
+      "stepId": "357",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3958,7 +3969,7 @@
     {
       "id": "357",
       "guideId": "1",
-      "stepId": "357",
+      "stepId": "358",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3969,7 +3980,7 @@
     {
       "id": "358",
       "guideId": "1",
-      "stepId": "358",
+      "stepId": "359",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3980,7 +3991,7 @@
     {
       "id": "359",
       "guideId": "1",
-      "stepId": "359",
+      "stepId": "360",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -3991,7 +4002,7 @@
     {
       "id": "360",
       "guideId": "1",
-      "stepId": "360",
+      "stepId": "361",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4002,7 +4013,7 @@
     {
       "id": "361",
       "guideId": "1",
-      "stepId": "361",
+      "stepId": "362",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4013,7 +4024,7 @@
     {
       "id": "362",
       "guideId": "1",
-      "stepId": "362",
+      "stepId": "363",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4024,7 +4035,7 @@
     {
       "id": "363",
       "guideId": "1",
-      "stepId": "363",
+      "stepId": "364",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4035,7 +4046,7 @@
     {
       "id": "364",
       "guideId": "1",
-      "stepId": "364",
+      "stepId": "365",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4046,7 +4057,7 @@
     {
       "id": "365",
       "guideId": "1",
-      "stepId": "365",
+      "stepId": "366",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4057,7 +4068,7 @@
     {
       "id": "366",
       "guideId": "1",
-      "stepId": "366",
+      "stepId": "367",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4068,7 +4079,7 @@
     {
       "id": "367",
       "guideId": "1",
-      "stepId": "367",
+      "stepId": "368",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4079,7 +4090,7 @@
     {
       "id": "368",
       "guideId": "1",
-      "stepId": "368",
+      "stepId": "369",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4090,7 +4101,7 @@
     {
       "id": "369",
       "guideId": "1",
-      "stepId": "369",
+      "stepId": "370",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4101,7 +4112,7 @@
     {
       "id": "370",
       "guideId": "1",
-      "stepId": "370",
+      "stepId": "371",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4112,7 +4123,7 @@
     {
       "id": "371",
       "guideId": "1",
-      "stepId": "371",
+      "stepId": "372",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4123,7 +4134,7 @@
     {
       "id": "372",
       "guideId": "1",
-      "stepId": "372",
+      "stepId": "373",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4134,7 +4145,7 @@
     {
       "id": "373",
       "guideId": "1",
-      "stepId": "373",
+      "stepId": "374",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4145,7 +4156,7 @@
     {
       "id": "374",
       "guideId": "1",
-      "stepId": "374",
+      "stepId": "375",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4156,7 +4167,7 @@
     {
       "id": "375",
       "guideId": "1",
-      "stepId": "375",
+      "stepId": "376",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4167,7 +4178,7 @@
     {
       "id": "376",
       "guideId": "1",
-      "stepId": "376",
+      "stepId": "377",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4178,7 +4189,7 @@
     {
       "id": "377",
       "guideId": "1",
-      "stepId": "377",
+      "stepId": "378",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4189,7 +4200,7 @@
     {
       "id": "378",
       "guideId": "1",
-      "stepId": "378",
+      "stepId": "379",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4200,7 +4211,7 @@
     {
       "id": "379",
       "guideId": "1",
-      "stepId": "379",
+      "stepId": "380",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4211,7 +4222,7 @@
     {
       "id": "380",
       "guideId": "1",
-      "stepId": "380",
+      "stepId": "381",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4222,7 +4233,7 @@
     {
       "id": "381",
       "guideId": "1",
-      "stepId": "381",
+      "stepId": "382",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4233,7 +4244,7 @@
     {
       "id": "382",
       "guideId": "1",
-      "stepId": "382",
+      "stepId": "383",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4244,7 +4255,7 @@
     {
       "id": "383",
       "guideId": "1",
-      "stepId": "383",
+      "stepId": "384",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4255,7 +4266,7 @@
     {
       "id": "384",
       "guideId": "1",
-      "stepId": "384",
+      "stepId": "385",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4266,7 +4277,7 @@
     {
       "id": "385",
       "guideId": "1",
-      "stepId": "385",
+      "stepId": "386",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4277,7 +4288,7 @@
     {
       "id": "386",
       "guideId": "1",
-      "stepId": "386",
+      "stepId": "387",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4288,7 +4299,7 @@
     {
       "id": "387",
       "guideId": "1",
-      "stepId": "387",
+      "stepId": "388",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4299,7 +4310,7 @@
     {
       "id": "388",
       "guideId": "1",
-      "stepId": "388",
+      "stepId": "389",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4310,7 +4321,7 @@
     {
       "id": "389",
       "guideId": "1",
-      "stepId": "389",
+      "stepId": "390",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4321,7 +4332,7 @@
     {
       "id": "390",
       "guideId": "1",
-      "stepId": "390",
+      "stepId": "391",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4332,7 +4343,7 @@
     {
       "id": "391",
       "guideId": "1",
-      "stepId": "391",
+      "stepId": "392",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4343,7 +4354,7 @@
     {
       "id": "392",
       "guideId": "1",
-      "stepId": "392",
+      "stepId": "393",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4354,7 +4365,7 @@
     {
       "id": "393",
       "guideId": "1",
-      "stepId": "393",
+      "stepId": "394",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4365,7 +4376,7 @@
     {
       "id": "394",
       "guideId": "1",
-      "stepId": "394",
+      "stepId": "395",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4376,7 +4387,7 @@
     {
       "id": "395",
       "guideId": "1",
-      "stepId": "395",
+      "stepId": "396",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4387,7 +4398,7 @@
     {
       "id": "396",
       "guideId": "1",
-      "stepId": "396",
+      "stepId": "397",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4398,7 +4409,7 @@
     {
       "id": "397",
       "guideId": "1",
-      "stepId": "397",
+      "stepId": "398",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4409,7 +4420,7 @@
     {
       "id": "398",
       "guideId": "1",
-      "stepId": "398",
+      "stepId": "399",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4420,7 +4431,7 @@
     {
       "id": "399",
       "guideId": "1",
-      "stepId": "399",
+      "stepId": "400",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4431,7 +4442,7 @@
     {
       "id": "400",
       "guideId": "1",
-      "stepId": "400",
+      "stepId": "401",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4442,7 +4453,7 @@
     {
       "id": "401",
       "guideId": "1",
-      "stepId": "401",
+      "stepId": "402",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4453,7 +4464,7 @@
     {
       "id": "402",
       "guideId": "1",
-      "stepId": "402",
+      "stepId": "403",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4464,7 +4475,7 @@
     {
       "id": "403",
       "guideId": "1",
-      "stepId": "403",
+      "stepId": "404",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4475,7 +4486,7 @@
     {
       "id": "404",
       "guideId": "1",
-      "stepId": "404",
+      "stepId": "405",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4486,7 +4497,7 @@
     {
       "id": "405",
       "guideId": "1",
-      "stepId": "405",
+      "stepId": "406",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4497,7 +4508,7 @@
     {
       "id": "406",
       "guideId": "1",
-      "stepId": "406",
+      "stepId": "407",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4508,7 +4519,7 @@
     {
       "id": "407",
       "guideId": "1",
-      "stepId": "407",
+      "stepId": "408",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4519,7 +4530,7 @@
     {
       "id": "408",
       "guideId": "1",
-      "stepId": "408",
+      "stepId": "409",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4530,7 +4541,7 @@
     {
       "id": "409",
       "guideId": "1",
-      "stepId": "409",
+      "stepId": "410",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4541,7 +4552,7 @@
     {
       "id": "410",
       "guideId": "1",
-      "stepId": "410",
+      "stepId": "411",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4552,7 +4563,7 @@
     {
       "id": "411",
       "guideId": "1",
-      "stepId": "411",
+      "stepId": "412",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4563,7 +4574,7 @@
     {
       "id": "412",
       "guideId": "1",
-      "stepId": "412",
+      "stepId": "413",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4574,7 +4585,7 @@
     {
       "id": "413",
       "guideId": "1",
-      "stepId": "413",
+      "stepId": "414",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4585,7 +4596,7 @@
     {
       "id": "414",
       "guideId": "1",
-      "stepId": "414",
+      "stepId": "415",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4596,7 +4607,7 @@
     {
       "id": "415",
       "guideId": "1",
-      "stepId": "415",
+      "stepId": "416",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4607,7 +4618,7 @@
     {
       "id": "416",
       "guideId": "1",
-      "stepId": "416",
+      "stepId": "417",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4618,7 +4629,7 @@
     {
       "id": "417",
       "guideId": "1",
-      "stepId": "417",
+      "stepId": "418",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4629,7 +4640,7 @@
     {
       "id": "418",
       "guideId": "1",
-      "stepId": "418",
+      "stepId": "419",
       "parentId": "",
       "divider": "Year 4",
       "section": "",
@@ -4640,7 +4651,7 @@
     {
       "id": "419",
       "guideId": "1",
-      "stepId": "419",
+      "stepId": "420",
       "parentId": "",
       "divider": "Year 4",
       "section": "",

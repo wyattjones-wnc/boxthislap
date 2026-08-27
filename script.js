@@ -8,6 +8,7 @@ import {
   FOOTY_MATCH_NOTES_ENDPOINT,
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
+  NEXT_ITEMS_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
@@ -498,6 +499,7 @@ const WANT_RANKING_CONFIG = {
   type: "want",
 };
 const expandedFootyMatchIds = new Set();
+const expandedFootyPastWeekKeys = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
 let activeAutocompleteInput = null;
@@ -620,6 +622,8 @@ function renderFootySchedule(schedule) {
   if (!shouldRenderPageSection("footy")) {
     return;
   }
+
+  syncExpandedFootyPastWeekKeys();
 
   const fixtures = getFootyScheduleFixtures(schedule);
   const competitionSchedules = getFootyCompetitionSchedules(schedule);
@@ -3169,8 +3173,10 @@ function renderFootyPastWeekGroups(fixtures = []) {
 }
 
 function renderFootyExpandablePastWeek(group) {
+  const isOpen = expandedFootyPastWeekKeys.has(group.key);
+
   return `
-    <details class="footy-past-week">
+    <details class="footy-past-week" data-footy-week-key="${escapeHtml(group.key)}"${isOpen ? " open" : ""}>
       <summary class="footy-past-week-summary">
         <span>Week of ${escapeHtml(group.label)}</span>
         <small>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</small>
@@ -3180,6 +3186,17 @@ function renderFootyExpandablePastWeek(group) {
       </div>
     </details>
   `;
+}
+
+function syncExpandedFootyPastWeekKeys() {
+  expandedFootyPastWeekKeys.clear();
+  footyScheduleList?.querySelectorAll(".footy-past-week[open][data-footy-week-key]").forEach((week) => {
+    const key = String(week.getAttribute("data-footy-week-key") || "").trim();
+
+    if (key) {
+      expandedFootyPastWeekKeys.add(key);
+    }
+  });
 }
 
 function groupFootyFixturesByCalendarWeek(fixtures = []) {
@@ -4819,18 +4836,19 @@ function renderNextList(items = siteData.nextItems || []) {
 }
 
 function normalizeNextItem(row) {
-  const thing = String(row?.Thing || "").trim();
+  const thing = String(row?.Thing || row?.thing || "").trim();
 
   if (!thing) {
     return null;
   }
 
   const id = String(row?.ID || row?.Id || row?.id || "").trim();
-  const dateKey = parseNextDateKey(row.Date);
-  const endDateKey = parseNextDateKey(row["End Date"]);
-  const priority = clampNextPriority(row["Priority Level"]);
-  const completed = isTrueValue(row.Completed);
-  const nonAdmin = isTrueValue(row.NonAdmin);
+  const rawTime = row?.Time ?? row?.time ?? "";
+  const dateKey = parseNextDateKey(row?.Date ?? row?.date);
+  const endDateKey = parseNextDateKey(row?.["End Date"] ?? row?.endDate);
+  const priority = clampNextPriority(row?.["Priority Level"] ?? row?.priorityLevel ?? row?.priority);
+  const completed = typeof row?.completed === "boolean" ? row.completed : isTrueValue(row?.Completed);
+  const nonAdmin = typeof row?.nonAdmin === "boolean" ? row.nonAdmin : isTrueValue(row?.NonAdmin);
 
   return {
     completed,
@@ -4840,16 +4858,18 @@ function normalizeNextItem(row) {
     imageUrl: String(row?.["Image URL"] || row?.imageUrl || row?.Image || row?.image || "").trim(),
     nonAdmin,
     priority,
-    raw: row,
+    raw: { ...row, Time: rawTime },
+    revision: Number(row?.revision || 0),
     searchText: normalizeLookupName([
       thing,
-      row.Date,
-      row["End Date"],
-      row.Time,
-      row["Priority Level"],
+      dateKey,
+      endDateKey,
+      rawTime,
+      priority,
     ].filter(Boolean).join(" ")),
     thing,
-    timeLabel: formatNextTime(row.Time),
+    timeLabel: formatNextTime(rawTime),
+    updatedAt: String(row?.updatedAt || "").trim(),
   };
 }
 
@@ -5352,16 +5372,19 @@ function buildNextItemPayloadFromForm() {
   const time = String(nextTimeInput?.value || "").trim();
   const priority = clampNextPriority(nextPriorityInput?.value ?? 5);
 
+  const existing = existingId ? getNextItemById(existingId) : null;
+
   return {
-    ID: existingId || createNextItemId(),
-    Thing: thing,
-    "Image URL": imageUrl,
-    Date: date,
-    "End Date": endDate,
-    Time: time ? formatNextTimeForSheet(time) : "",
-    "Priority Level": String(priority),
-    Completed: nextItemCompletedInput?.checked ? "TRUE" : "FALSE",
-    NonAdmin: nextItemNonAdminInput?.checked ? "TRUE" : "FALSE",
+    completed: Boolean(nextItemCompletedInput?.checked),
+    date,
+    endDate,
+    id: existingId,
+    imageUrl,
+    nonAdmin: Boolean(nextItemNonAdminInput?.checked),
+    priority,
+    revision: Number(existing?.revision || 0),
+    thing,
+    time: time ? formatNextTimeForSheet(time) : "",
   };
 }
 
@@ -5372,17 +5395,6 @@ function updateNextCompletedControlAvailability() {
 
   nextItemCompletedInput.disabled = false;
   nextItemCompletedInput.closest("label")?.classList.remove("is-disabled");
-}
-
-function createNextItemId() {
-  const nextNumericId = (siteData.nextItems || [])
-    .map((row) => Number(String(row?.ID || row?.Id || row?.id || "").trim()))
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .reduce((maxId, id) => Math.max(maxId, id), 0) + 1;
-
-  // The published sheet can lag behind a recent save or an older open tab.
-  // Use a time-based floor so a stale client cannot reuse an existing row ID.
-  return String(Math.max(nextNumericId, Date.now()));
 }
 
 function populateNextTimeOptions() {
@@ -5440,12 +5452,12 @@ async function saveNextItemFromForm() {
 
   const item = buildNextItemPayloadFromForm();
 
-  if (!item.Thing) {
+  if (!item.thing) {
     setNextItemStatus("Thing is required.", true);
     return;
   }
 
-  if (!item.Date) {
+  if (!item.date) {
     setNextItemStatus("Date is required.", true);
     return;
   }
@@ -5454,21 +5466,19 @@ async function saveNextItemFromForm() {
   setNextItemFormSavingState(true);
   setNextItemStatus("Saving...");
 
-  if (!submitNextItemPayload({ action: "saveNextItem", item })) {
-    setNextItemStatus("Next data endpoint is not configured yet.", true);
-    isSavingNextItem = false;
-    setNextItemFormSavingState(false);
-    return;
-  }
-
   try {
-    const savedItem = await waitForSavedNextItem(item);
-    upsertNextItemLocally(savedItem);
+    const isUpdate = Boolean(item.id);
+    const path = isUpdate ? `/api/items/${encodeURIComponent(item.id)}` : "/api/items";
+    const response = await nextItemsApiRequest(path, {
+      body: JSON.stringify(item),
+      method: isUpdate ? "PATCH" : "POST",
+    });
+    upsertNextItemLocally(response.item);
     renderNextList();
     closeNextItemDialog();
   } catch (error) {
-    recordDiagnostic("Next item save could not be confirmed", error, { id: item.ID });
-    setNextItemStatus("The change was not saved. Please try again.", true);
+    recordDiagnostic("Next item save failed", error, { id: item.id });
+    setNextItemStatus(error.message || "The change was not saved. Please try again.", true);
   } finally {
     isSavingNextItem = false;
     setNextItemFormSavingState(false);
@@ -5484,53 +5494,8 @@ function setNextItemFormSavingState(isSaving) {
   }
 }
 
-async function waitForSavedNextItem(expectedItem) {
-  const delays = [400, 900, 1800, 3000];
-
-  for (const delay of delays) {
-    await new Promise((resolve) => window.setTimeout(resolve, delay));
-    let response;
-
-    try {
-      response = await loadNextDataEndpoint("listNextItems");
-    } catch (error) {
-      recordDiagnostic("Next item save verification failed", error, { id: expectedItem.ID });
-      continue;
-    }
-
-    const savedItem = (response.items || []).find((item) => String(item.id || "").trim() === expectedItem.ID);
-
-    if (savedItem && doesNextItemMatchSave(savedItem, expectedItem)) {
-      return {
-        ID: savedItem.id,
-        Thing: savedItem.thing,
-        "Image URL": savedItem.imageUrl,
-        Date: savedItem.date,
-        "End Date": savedItem.endDate,
-        Time: savedItem.time,
-        "Priority Level": savedItem.priorityLevel,
-        Completed: savedItem.completed ? "TRUE" : "FALSE",
-        NonAdmin: savedItem.nonAdmin ? "TRUE" : "FALSE",
-      };
-    }
-  }
-
-  throw new Error("The Next endpoint did not return the saved values.");
-}
-
-function doesNextItemMatchSave(savedItem, expectedItem) {
-  return String(savedItem.thing || "").trim() === expectedItem.Thing &&
-    String(savedItem.imageUrl || "").trim() === expectedItem["Image URL"] &&
-    parseNextDateKey(savedItem.date) === parseNextDateKey(expectedItem.Date) &&
-    parseNextDateKey(savedItem.endDate) === parseNextDateKey(expectedItem["End Date"]) &&
-    formatNextTimeInputValue(savedItem.time) === formatNextTimeInputValue(expectedItem.Time) &&
-    clampNextPriority(savedItem.priorityLevel) === clampNextPriority(expectedItem["Priority Level"]) &&
-    Boolean(savedItem.completed) === isTrueValue(expectedItem.Completed) &&
-    Boolean(savedItem.nonAdmin) === isTrueValue(expectedItem.NonAdmin);
-}
-
 function upsertNextItemLocally(item) {
-  const id = String(item.ID || "").trim();
+  const id = String(item?.ID || item?.id || "").trim();
 
   if (!id) {
     return;
@@ -7153,6 +7118,37 @@ async function rankingApiRequest(path, options = {}, retried = false) {
     error.status = response.status;
     throw error;
   }
+  return value;
+}
+
+async function nextItemsApiRequest(path, options = {}, retried = false) {
+  if (!NEXT_ITEMS_ENDPOINT) throw new Error("Next items endpoint is not configured.");
+  const requiresAuth = options.auth !== false;
+  const { auth: _auth, ...requestOptions } = options;
+  const headers = { Accept: "application/json", "Content-Type": "application/json", ...(options.headers || {}) };
+
+  if (requiresAuth) {
+    headers.Authorization = `Bearer ${await ensureRankingAuthorization()}`;
+  }
+
+  const response = await fetch(`${NEXT_ITEMS_ENDPOINT.replace(/\/$/, "")}${path}`, {
+    ...requestOptions,
+    headers,
+    signal: AbortSignal.timeout(12000),
+  });
+  const value = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && requiresAuth && !retried) {
+    clearRankingAuthorization();
+    return nextItemsApiRequest(path, options, true);
+  }
+
+  if (!response.ok || !value.ok) {
+    const error = new Error(value.error || "Next data could not be loaded.");
+    error.status = response.status;
+    throw error;
+  }
+
   return value;
 }
 
@@ -16193,7 +16189,8 @@ function ensureFootyData() {
 
 function ensureNextData() {
   return ensureSharedData("next", async () => {
-    const items = await loadSheet("next");
+    const response = await nextItemsApiRequest("/api/items", { auth: false });
+    const items = response.items || [];
     siteData.nextItems = items;
     renderNextList(items);
     console.info("Box This Lap Next data loaded", items);

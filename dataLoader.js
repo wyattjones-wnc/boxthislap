@@ -53,7 +53,6 @@ export const DATA_SOURCES = {
     portalDrafts: buildManagerPortalCsvUrl("1819817720"),
     portalFootballTeams: buildManagerPortalCsvUrl("1614272244"),
     portalLogs: buildManagerPortalCsvUrl("121360226"),
-    next: `${NEXT_SHEET_BASE_URL}?output=csv`,
     rankingGames: buildNextCsvUrl("1009577165"),
     rankingMcu: buildNextCsvUrl("1257157651"),
     rankingMovies: buildNextCsvUrl("449567167"),

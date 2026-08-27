@@ -173,6 +173,7 @@ export function createDraftListsController({ getManagerId, request }) {
       tabs.innerHTML = `<button class="tab is-active" type="button" role="tab" aria-selected="true">Loading sheets...</button>`;
       return;
     }
+    const previousScrollLeft = tabs.scrollLeft;
     tabs.innerHTML = state.sheets.map((sheet) => {
       const active = sheet.id === state.activeSheetId;
       return `
@@ -182,9 +183,24 @@ export function createDraftListsController({ getManagerId, request }) {
         </button>
       `;
     }).join("");
+    tabs.scrollLeft = previousScrollLeft;
     window.requestAnimationFrame(() => {
-      tabs.querySelector("[data-draft-list-tab].is-active")?.scrollIntoView({ behavior: "auto", block: "nearest", inline: "nearest" });
+      keepActiveTabInView();
     });
+  }
+
+  function keepActiveTabInView() {
+    const activeTab = tabs?.querySelector("[data-draft-list-tab].is-active");
+    if (!tabs || !activeTab) return;
+    const padding = 8;
+    const stripBounds = tabs.getBoundingClientRect();
+    const tabBounds = activeTab.getBoundingClientRect();
+
+    if (tabBounds.left < stripBounds.left + padding) {
+      tabs.scrollLeft = Math.max(0, tabs.scrollLeft + tabBounds.left - stripBounds.left - padding);
+    } else if (tabBounds.right > stripBounds.right - padding) {
+      tabs.scrollLeft = Math.min(tabs.scrollWidth - tabs.clientWidth, tabs.scrollLeft + tabBounds.right - stripBounds.right + padding);
+    }
   }
 
   function renderItems() {

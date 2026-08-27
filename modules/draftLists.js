@@ -550,9 +550,9 @@ export function createDraftListsController({ getManagerId, request }) {
 
   function handleImageError(event) {
     if (!event.target.matches?.("[data-draft-list-image]")) return;
-    const sheetId = event.target.closest("[data-draft-list-sheet-id]")?.dataset.draftListSheetId || "";
-    const sheet = state.sheets.find((entry) => entry.id === sheetId);
-    event.target.parentElement.innerHTML = `<span class="draft-list-image-placeholder" aria-hidden="true">${renderSheetIcon(sheet?.icon)}</span>`;
+    const item = event.target.closest("[data-draft-list-item-id]");
+    event.target.parentElement?.remove();
+    item?.classList.remove("has-image");
   }
 
   function getSheetPath(sheetId) {

@@ -8279,7 +8279,21 @@ tr:last-child td {
 }
 
 .draft-list-item.has-image {
-  grid-template-columns: 86px 52px minmax(0, 1fr) auto 30px;
+  background: #111827;
+  border-color: color-mix(in srgb, #ffffff 22%, var(--line));
+}
+
+.draft-list-item.has-image::after {
+  background: linear-gradient(90deg, rgba(5, 9, 17, 0.88) 0%, rgba(5, 9, 17, 0.7) 58%, rgba(5, 9, 17, 0.38) 100%),
+    linear-gradient(0deg, rgba(5, 9, 17, 0.42), transparent 55%);
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.draft-list-item.has-image > :not(.draft-list-item-image) {
+  position: relative;
+  z-index: 1;
 }
 
 .draft-list-item.is-dragging {
@@ -8288,11 +8302,11 @@ tr:last-child td {
 }
 
 .draft-list-item-image {
-  background: var(--image-bg);
-  border-radius: 7px;
-  height: 68px;
+  height: 100%;
+  inset: 0;
   overflow: hidden;
-  width: 86px;
+  position: absolute;
+  width: 100%;
 }
 
 .draft-list-item-image img {
@@ -8310,6 +8324,31 @@ tr:last-child td {
 .draft-list-image-placeholder svg {
   height: 30px;
   width: 30px;
+}
+
+.draft-list-item.has-image .draft-list-rank {
+  background: rgba(5, 9, 17, 0.7);
+  color: #ffffff;
+}
+
+.draft-list-item.has-image .draft-list-item-main h2 {
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.72);
+}
+
+.draft-list-item.has-image .draft-list-item-date {
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 7px rgba(0, 0, 0, 0.8);
+}
+
+.draft-list-item.has-image .draft-list-item-action {
+  background: rgba(5, 9, 17, 0.68);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.draft-list-item.has-image .draft-list-drag-handle::before {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.82) 1.5px, transparent 1.7px);
 }
 
 .draft-list-rank {
@@ -8423,13 +8462,9 @@ tr:last-child td {
     padding: 8px;
   }
 
-  .draft-list-item.has-image {
-    grid-template-columns: 58px 42px minmax(0, 1fr) auto 28px;
-  }
-
   .draft-list-item-image {
-    height: 58px;
-    width: 58px;
+    height: 100%;
+    width: 100%;
   }
 
   .draft-list-rank {

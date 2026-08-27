@@ -232,8 +232,8 @@ export function createDraftListsController({ getManagerId, request }) {
 
   function renderItem(item, sheet) {
     const image = item.imageUrl
-      ? `<img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-draft-list-image>`
-      : `<span class="draft-list-image-placeholder" aria-hidden="true">${renderSheetIcon(sheet.icon)}</span>`;
+      ? `<div class="draft-list-item-image"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-draft-list-image></div>`
+      : "";
     const releaseDate = item.releaseDate ? formatDate(item.releaseDate) : "Date TBD";
     const dataLink = item.dataUrl ? `
       <a class="icon-action-button draft-list-item-action" href="${escapeAttribute(item.dataUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open data page for ${escapeAttribute(item.name)}" title="Open data page">
@@ -242,8 +242,8 @@ export function createDraftListsController({ getManagerId, request }) {
     ` : "";
 
     return `
-      <article class="draft-list-item" draggable="true" data-draft-list-item-id="${escapeAttribute(item.id)}" data-draft-list-sheet-id="${escapeAttribute(sheet.id)}">
-        <div class="draft-list-item-image">${image}</div>
+      <article class="draft-list-item${image ? " has-image" : ""}" draggable="true" data-draft-list-item-id="${escapeAttribute(item.id)}" data-draft-list-sheet-id="${escapeAttribute(sheet.id)}">
+        ${image}
         <span class="draft-list-rank">${escapeHtml(item.rank)}</span>
         <div class="draft-list-item-main">
           <h2>${escapeHtml(item.name)}</h2>

@@ -8271,11 +8271,15 @@ tr:last-child td {
   box-shadow: 0 10px 26px var(--shadow);
   display: grid;
   gap: 12px;
-  grid-template-columns: 86px 52px minmax(0, 1fr) auto 30px;
+  grid-template-columns: 52px minmax(0, 1fr) auto 30px;
   min-height: 88px;
   overflow: hidden;
   padding: 10px 12px 10px 10px;
   position: relative;
+}
+
+.draft-list-item.has-image {
+  grid-template-columns: 86px 52px minmax(0, 1fr) auto 30px;
 }
 
 .draft-list-item.is-dragging {
@@ -8414,9 +8418,13 @@ tr:last-child td {
 
   .draft-list-item {
     gap: 9px;
-    grid-template-columns: 58px 42px minmax(0, 1fr) 28px;
+    grid-template-columns: 42px minmax(0, 1fr) auto 28px;
     min-height: 76px;
     padding: 8px;
+  }
+
+  .draft-list-item.has-image {
+    grid-template-columns: 58px 42px minmax(0, 1fr) auto 28px;
   }
 
   .draft-list-item-image {
@@ -8432,10 +8440,7 @@ tr:last-child td {
   }
 
   .draft-list-item-actions {
-    bottom: 5px;
     gap: 4px;
-    position: absolute;
-    right: 42px;
   }
 
   .draft-list-item-action {
@@ -8454,7 +8459,6 @@ tr:last-child td {
 
   .draft-list-item-date {
     font-size: 0.77rem;
-    padding-right: 62px;
   }
 
   .draft-list-filters {

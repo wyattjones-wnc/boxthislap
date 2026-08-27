@@ -201,7 +201,7 @@ async function readDraftLists(env, managerId) {
   await ensureDefaultDraftSheets(env, managerId);
   const [sheetsResult, itemsResult] = await Promise.all([
     env.DB.prepare("SELECT sheet_id, name, icon, is_system, position, revision, created_at, updated_at FROM draft_sheets WHERE manager_id = ? ORDER BY position, created_at, name").bind(managerId).all(),
-    env.DB.prepare("SELECT sheet_id, item_id, name, release_date, manual_rank, data_url, image_url, entry_date, updated_at FROM draft_items WHERE manager_id = ? ORDER BY sheet_id, manual_rank, entry_date").bind(managerId).all(),
+    env.DB.prepare("SELECT sheet_id, item_id, name, release_date, manual_rank, data_url, image_url, is_archived, is_drafted, is_unavailable, entry_date, updated_at FROM draft_items WHERE manager_id = ? ORDER BY sheet_id, manual_rank, entry_date").bind(managerId).all(),
   ]);
   return {
     sheets: (sheetsResult.results || []).map(camelDraftSheet),
@@ -245,8 +245,8 @@ async function addDraftItem(env, managerId, sheetId, body) {
   });
   const statements = [
     env.DB.prepare("UPDATE draft_items SET manual_rank = manual_rank + 1, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND sheet_id = ? AND manual_rank >= ?").bind(managerId, sheetId, item.rank),
-    env.DB.prepare("INSERT INTO draft_items (manager_id, sheet_id, item_id, name, release_date, manual_rank, data_url, image_url, entry_date, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(managerId, sheetId, item.id, item.name, item.releaseDate, item.rank, item.dataUrl, item.imageUrl, item.entryDate, item.updatedAt),
+    env.DB.prepare("INSERT INTO draft_items (manager_id, sheet_id, item_id, name, release_date, manual_rank, data_url, image_url, is_archived, is_drafted, is_unavailable, entry_date, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(managerId, sheetId, item.id, item.name, item.releaseDate, item.rank, item.dataUrl, item.imageUrl, item.archived ? 1 : 0, item.drafted ? 1 : 0, item.unavailable ? 1 : 0, item.entryDate, item.updatedAt),
   ];
   await runDraftMutationBatch(env, managerId, sheetId, body.revision, statements);
   return { item, revision: Number(body.revision) + 1 };
@@ -261,7 +261,9 @@ async function updateDraftItem(env, managerId, sheetId, itemId, body) {
   const rank = clampRank(body.manualRank === undefined ? existing.manual_rank : body.manualRank, itemIds.length + 1);
   itemIds.splice(rank - 1, 0, itemId);
   const item = cleanDraftItem(body, {
+    archived: Boolean(existing.is_archived),
     dataUrl: existing.data_url,
+    drafted: Boolean(existing.is_drafted),
     entryDate: existing.entry_date,
     id: itemId,
     imageUrl: existing.image_url,
@@ -269,10 +271,11 @@ async function updateDraftItem(env, managerId, sheetId, itemId, body) {
     rank,
     releaseDate: existing.release_date,
     sheetId,
+    unavailable: Boolean(existing.is_unavailable),
   });
   const statements = [
-    env.DB.prepare("UPDATE draft_items SET name = ?, release_date = ?, data_url = ?, image_url = ?, updated_at = ? WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
-      .bind(item.name, item.releaseDate, item.dataUrl, item.imageUrl, item.updatedAt, managerId, sheetId, itemId),
+    env.DB.prepare("UPDATE draft_items SET name = ?, release_date = ?, data_url = ?, image_url = ?, is_archived = ?, is_drafted = ?, is_unavailable = ?, updated_at = ? WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
+      .bind(item.name, item.releaseDate, item.dataUrl, item.imageUrl, item.archived ? 1 : 0, item.drafted ? 1 : 0, item.unavailable ? 1 : 0, item.updatedAt, managerId, sheetId, itemId),
     ...itemIds.map((id, index) => env.DB.prepare("UPDATE draft_items SET manual_rank = ?, updated_at = ? WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
       .bind(index + 1, item.updatedAt, managerId, sheetId, id)),
   ];
@@ -354,22 +357,27 @@ function camelDraftSheet(row) {
 
 function camelDraftItem(row) {
   return {
+    archived: Boolean(row.is_archived),
     sheetId: row.sheet_id,
     id: row.item_id,
     name: row.name,
     releaseDate: row.release_date || "",
     rank: Number(row.manual_rank || 0),
     dataUrl: row.data_url || "",
+    drafted: Boolean(row.is_drafted),
     imageUrl: row.image_url || "",
     entryDate: row.entry_date || "",
     updatedAt: row.updated_at || "",
+    unavailable: Boolean(row.is_unavailable),
   };
 }
 
 function cleanDraftItem(body, defaults) {
   const now = new Date().toISOString();
   return {
+    archived: body.archived === undefined ? Boolean(defaults.archived) : Boolean(body.archived),
     dataUrl: body.dataUrl === undefined ? String(defaults.dataUrl || "") : cleanOptionalUrl(body.dataUrl, "Data URL"),
+    drafted: body.drafted === undefined ? Boolean(defaults.drafted) : Boolean(body.drafted),
     entryDate: String(defaults.entryDate || now),
     id: String(defaults.id),
     imageUrl: body.imageUrl === undefined ? String(defaults.imageUrl || "") : cleanOptionalUrl(body.imageUrl, "Image URL"),
@@ -377,6 +385,7 @@ function cleanDraftItem(body, defaults) {
     rank: Number(defaults.rank || 1),
     releaseDate: body.releaseDate === undefined ? String(defaults.releaseDate || "") : cleanOptionalDate(body.releaseDate),
     sheetId: String(defaults.sheetId),
+    unavailable: body.unavailable === undefined ? Boolean(defaults.unavailable) : Boolean(body.unavailable),
     updatedAt: now,
   };
 }

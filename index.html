@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608270359">
+    <link rel="stylesheet" href="styles.css?v=202608270400">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -572,6 +572,20 @@
             <span>Entered after</span>
             <input id="draft-list-entry-after" type="date">
           </label>
+          <div class="draft-list-filter-toggles" role="group" aria-label="Entry status filters">
+            <label class="next-checkbox-control">
+              <input id="draft-list-show-archived" type="checkbox">
+              <span>Archived</span>
+            </label>
+            <label class="next-checkbox-control">
+              <input id="draft-list-show-drafted" type="checkbox">
+              <span>Drafted</span>
+            </label>
+            <label class="next-checkbox-control">
+              <input id="draft-list-show-unavailable" type="checkbox">
+              <span>Unavailable</span>
+            </label>
+          </div>
           <button class="ranking-inline-action" id="draft-list-clear-filters" type="button">Clear</button>
         </div>
 
@@ -623,6 +637,11 @@
                 <span>Image URL</span>
                 <input id="draft-list-item-image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg">
               </label>
+              <div class="next-dialog-checks draft-list-dialog-checks">
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="draft-list-item-archived" type="checkbox"><span>Archived</span></label>
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="draft-list-item-drafted" type="checkbox"><span>Drafted</span></label>
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="draft-list-item-unavailable" type="checkbox"><span>Unavailable</span></label>
+              </div>
             </div>
             <p class="footy-note-status" id="draft-list-item-status" aria-live="polite"></p>
             <footer>
@@ -2281,6 +2300,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608270359"></script>
+    <script type="module" src="script.js?v=202608270400"></script>
   </body>
 </html>

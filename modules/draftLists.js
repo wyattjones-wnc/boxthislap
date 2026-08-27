@@ -10,6 +10,9 @@ export function createDraftListsController({ getManagerId, request }) {
   const filterToggle = document.querySelector("#draft-list-filter-toggle");
   const filters = document.querySelector("#draft-list-filters");
   const entryAfter = document.querySelector("#draft-list-entry-after");
+  const showArchived = document.querySelector("#draft-list-show-archived");
+  const showDrafted = document.querySelector("#draft-list-show-drafted");
+  const showUnavailable = document.querySelector("#draft-list-show-unavailable");
   const clearFilters = document.querySelector("#draft-list-clear-filters");
   const addButton = document.querySelector("#draft-list-add-button");
   const newSheetButton = document.querySelector("#draft-list-new-sheet-button");
@@ -22,6 +25,9 @@ export function createDraftListsController({ getManagerId, request }) {
   const itemRankInput = document.querySelector("#draft-list-item-rank");
   const itemDataUrlInput = document.querySelector("#draft-list-item-data-url");
   const itemImageUrlInput = document.querySelector("#draft-list-item-image-url");
+  const itemArchivedInput = document.querySelector("#draft-list-item-archived");
+  const itemDraftedInput = document.querySelector("#draft-list-item-drafted");
+  const itemUnavailableInput = document.querySelector("#draft-list-item-unavailable");
   const itemStatus = document.querySelector("#draft-list-item-status");
   const itemClose = document.querySelector("#draft-list-item-close");
   const itemCancel = document.querySelector("#draft-list-item-cancel");
@@ -43,6 +49,9 @@ export function createDraftListsController({ getManagerId, request }) {
     message: "",
     sheets: [],
     showFilters: false,
+    showArchived: false,
+    showDrafted: false,
+    showUnavailable: false,
     items: [],
   };
   let draggedItemId = "";
@@ -137,11 +146,17 @@ export function createDraftListsController({ getManagerId, request }) {
     state.message = "";
     state.sheets = [];
     state.showFilters = false;
+    state.showArchived = false;
+    state.showDrafted = false;
+    state.showUnavailable = false;
     state.items = [];
     draggedItemId = "";
     draggedSheetId = "";
     didMovePointer = false;
     if (entryAfter) entryAfter.value = "";
+    if (showArchived) showArchived.checked = false;
+    if (showDrafted) showDrafted.checked = false;
+    if (showUnavailable) showUnavailable.checked = false;
     closeDialog(itemDialog);
     closeDialog(sheetDialog);
   }
@@ -164,14 +179,18 @@ export function createDraftListsController({ getManagerId, request }) {
 
   function syncControls() {
     const hasSheet = Boolean(getActiveSheet());
+    const hasFilters = hasActiveFilters();
     if (filterToggle) {
-      filterToggle.classList.toggle("is-active", state.showFilters || Boolean(state.entryAfter));
+      filterToggle.classList.toggle("is-active", state.showFilters || hasFilters);
       filterToggle.setAttribute("aria-expanded", String(state.showFilters));
       filterToggle.setAttribute("aria-label", `${state.showFilters ? "Hide" : "Show"} Draft List filters`);
     }
     if (filters) filters.hidden = !state.showFilters;
     if (entryAfter && entryAfter.value !== state.entryAfter) entryAfter.value = state.entryAfter;
-    if (clearFilters) clearFilters.disabled = !state.entryAfter;
+    if (showArchived && showArchived.checked !== state.showArchived) showArchived.checked = state.showArchived;
+    if (showDrafted && showDrafted.checked !== state.showDrafted) showDrafted.checked = state.showDrafted;
+    if (showUnavailable && showUnavailable.checked !== state.showUnavailable) showUnavailable.checked = state.showUnavailable;
+    if (clearFilters) clearFilters.disabled = !hasFilters;
     if (addButton) addButton.disabled = state.loading || !hasSheet;
     if (newSheetButton) newSheetButton.disabled = state.loading;
     setPageStatus(state.error || state.message, Boolean(state.error));
@@ -255,16 +274,28 @@ export function createDraftListsController({ getManagerId, request }) {
     }
 
     const allItems = getSheetItems(sheet.id);
-    const visibleItems = state.entryAfter
-      ? allItems.filter((item) => getEntryDateKey(item.entryDate) > state.entryAfter)
-      : allItems;
+    const visibleItems = allItems.filter((item) => {
+      if (state.entryAfter && getEntryDateKey(item.entryDate) <= state.entryAfter) return false;
+      const isMarked = item.archived || item.drafted || item.unavailable;
+      if (!isMarked) return true;
+      return (item.archived && state.showArchived)
+        || (item.drafted && state.showDrafted)
+        || (item.unavailable && state.showUnavailable);
+    });
     if (!visibleItems.length) {
-      const filtered = Boolean(state.entryAfter && allItems.length);
+      const filtered = Boolean(hasActiveFilters() && allItems.length);
+      const onlyMarkedItems = Boolean(allItems.length && !hasActiveFilters());
       itemsView.innerHTML = `
         <div class="draft-list-empty">
-          <p class="table-message">${filtered ? "No entries were added after that date." : `No items have been added to ${escapeHtml(sheet.name)} yet.`}</p>
+          <p class="table-message">${filtered
+            ? "No entries match the current filters."
+            : onlyMarkedItems
+              ? "No active entries. Use filters to show marked entries."
+              : `No items have been added to ${escapeHtml(sheet.name)} yet.`}</p>
           ${filtered
             ? `<button class="action-button" type="button" data-draft-list-clear-filter>Clear Filter</button>`
+            : onlyMarkedItems
+              ? `<button class="action-button" type="button" data-draft-list-show-filters>Show Filters</button>`
             : `<button class="action-button" type="button" data-draft-list-add-empty>Add Item</button>`}
         </div>
       `;
@@ -279,6 +310,12 @@ export function createDraftListsController({ getManagerId, request }) {
       ? `<div class="draft-list-item-image"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-draft-list-image></div>`
       : "";
     const releaseDate = item.releaseDate ? formatDate(item.releaseDate) : "Date TBD";
+    const flags = [
+      item.archived ? "Archived" : "",
+      item.drafted ? "Drafted" : "",
+      item.unavailable ? "Unavailable" : "",
+    ].filter(Boolean);
+    const flagMarkup = flags.length ? `<div class="draft-list-item-flags">${flags.map((flag) => `<span>${flag}</span>`).join("")}</div>` : "";
     const dataLink = item.dataUrl ? `
       <a class="icon-action-button draft-list-item-action" href="${escapeAttribute(item.dataUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open data page for ${escapeAttribute(item.name)}" title="Open data page">
         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M10 14 21 3M14 3h7v7"></path><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path></svg>
@@ -292,6 +329,7 @@ export function createDraftListsController({ getManagerId, request }) {
         <div class="draft-list-item-main">
           <h2>${escapeHtml(item.name)}</h2>
           <p class="draft-list-item-date">${escapeHtml(releaseDate)}</p>
+          ${flagMarkup}
         </div>
         <div class="draft-list-item-actions">
           ${dataLink}
@@ -322,6 +360,11 @@ export function createDraftListsController({ getManagerId, request }) {
     }
     if (event.target.closest("#draft-list-filter-toggle")) {
       state.showFilters = !state.showFilters;
+      render();
+      return;
+    }
+    if (event.target.closest("[data-draft-list-show-filters]")) {
+      state.showFilters = true;
       render();
       return;
     }
@@ -359,15 +402,25 @@ export function createDraftListsController({ getManagerId, request }) {
   }
 
   function handleChange(event) {
-    if (event.target !== entryAfter) return;
-    state.entryAfter = entryAfter.value || "";
+    if (event.target === entryAfter) state.entryAfter = entryAfter.value || "";
+    else if (event.target === showArchived) state.showArchived = showArchived.checked;
+    else if (event.target === showDrafted) state.showDrafted = showDrafted.checked;
+    else if (event.target === showUnavailable) state.showUnavailable = showUnavailable.checked;
+    else return;
     render();
   }
 
   function clearEntryFilter() {
     state.entryAfter = "";
+    state.showArchived = false;
+    state.showDrafted = false;
+    state.showUnavailable = false;
     if (entryAfter) entryAfter.value = "";
     render();
+  }
+
+  function hasActiveFilters() {
+    return Boolean(state.entryAfter || state.showArchived || state.showDrafted || state.showUnavailable);
   }
 
   function openItemDialog(itemId = "") {
@@ -382,6 +435,9 @@ export function createDraftListsController({ getManagerId, request }) {
     itemRankInput.value = String(item?.rank || getSheetItems(sheet.id).length + 1);
     itemDataUrlInput.value = item?.dataUrl || "";
     itemImageUrlInput.value = item?.imageUrl || "";
+    itemArchivedInput.checked = Boolean(item?.archived);
+    itemDraftedInput.checked = Boolean(item?.drafted);
+    itemUnavailableInput.checked = Boolean(item?.unavailable);
     itemDialogTitle.textContent = `${item ? "Edit" : "Add"} ${sheet.name} Item`;
     itemDelete.hidden = !item;
     setStatus(itemStatus, "");
@@ -403,12 +459,15 @@ export function createDraftListsController({ getManagerId, request }) {
     if (!sheet || !itemForm) return;
     const itemId = itemIdInput.value.trim();
     const body = {
+      archived: itemArchivedInput.checked,
       dataUrl: itemDataUrlInput.value.trim(),
+      drafted: itemDraftedInput.checked,
       imageUrl: itemImageUrlInput.value.trim(),
       manualRank: Number(itemRankInput.value),
       name: itemNameInput.value.trim(),
       releaseDate: itemReleaseDateInput.value,
       revision: Number(sheet.revision || 0),
+      unavailable: itemUnavailableInput.checked,
     };
     setFormBusy(itemForm, true);
     setStatus(itemStatus, "Saving...");
@@ -667,7 +726,9 @@ function normalizeSheet(sheet = {}) {
 
 function normalizeItem(item = {}) {
   return {
+    archived: Boolean(item.archived),
     dataUrl: String(item.dataUrl || ""),
+    drafted: Boolean(item.drafted),
     entryDate: String(item.entryDate || ""),
     id: String(item.id || ""),
     imageUrl: String(item.imageUrl || ""),
@@ -676,6 +737,7 @@ function normalizeItem(item = {}) {
     releaseDate: String(item.releaseDate || ""),
     sheetId: String(item.sheetId || ""),
     updatedAt: String(item.updatedAt || ""),
+    unavailable: Boolean(item.unavailable),
   };
 }
 

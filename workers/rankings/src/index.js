@@ -31,6 +31,38 @@ export default {
         return json(await verifyAuth(request, env), 200, cors);
       }
 
+      const draftListsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/draft-lists$/);
+      if (draftListsMatch && ["GET", "POST"].includes(request.method)) {
+        const managerId = parseId(draftListsMatch[1], "manager ID");
+        await requireOwner(request, env, managerId);
+        const result = request.method === "GET"
+          ? await readDraftLists(env, managerId)
+          : { sheet: await addDraftSheet(env, managerId, await readBody(request)) };
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
+      const draftItemsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/draft-lists\/([^/]+)\/items(?:\/([^/]+))?$/);
+      if (draftItemsMatch && ["POST", "PATCH", "DELETE"].includes(request.method)) {
+        const managerId = parseId(draftItemsMatch[1], "manager ID");
+        const sheetId = parseId(draftItemsMatch[2], "sheet ID");
+        await requireOwner(request, env, managerId);
+        const body = await readBody(request);
+        const result = request.method === "POST"
+          ? await addDraftItem(env, managerId, sheetId, body)
+          : request.method === "PATCH"
+            ? await updateDraftItem(env, managerId, sheetId, parseId(draftItemsMatch[3], "item ID"), body)
+            : await deleteDraftItem(env, managerId, sheetId, parseId(draftItemsMatch[3], "item ID"), body);
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
+      const draftOrderMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/draft-lists\/([^/]+)\/order$/);
+      if (request.method === "PUT" && draftOrderMatch) {
+        const managerId = parseId(draftOrderMatch[1], "manager ID");
+        const sheetId = parseId(draftOrderMatch[2], "sheet ID");
+        await requireOwner(request, env, managerId);
+        return json({ ok: true, ...(await saveDraftOrder(env, managerId, sheetId, await readBody(request))) }, 200, cors);
+      }
+
       const setMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/rankings\/([^/]+)$/);
       if (request.method === "GET" && setMatch) {
         const managerId = parseId(setMatch[1], "manager ID");
@@ -96,7 +128,7 @@ export default {
     } catch (error) {
       const status = Number(error?.status) || 500;
       if (status >= 500) console.error(error);
-      return json({ ok: false, error: status >= 500 ? "Ranking data could not be saved." : error.message }, status, cors);
+      return json({ ok: false, error: status >= 500 ? "Manager data could not be saved." : error.message }, status, cors);
     }
   },
 };
@@ -161,8 +193,218 @@ async function requireOwner(request, env, managerId) {
   const authorization = request.headers.get("Authorization") || "";
   const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   const payload = await verifyToken(env, token, "access");
-  if (String(payload.sub) !== String(managerId)) throw httpError(403, "Managers can only edit their own rankings.");
+  if (String(payload.sub) !== String(managerId)) throw httpError(403, "Managers can only edit their own data.");
   return payload;
+}
+
+async function readDraftLists(env, managerId) {
+  await ensureDefaultDraftSheets(env, managerId);
+  const [sheetsResult, itemsResult] = await Promise.all([
+    env.DB.prepare("SELECT sheet_id, name, icon, is_system, position, revision, created_at, updated_at FROM draft_sheets WHERE manager_id = ? ORDER BY position, created_at, name").bind(managerId).all(),
+    env.DB.prepare("SELECT sheet_id, item_id, name, release_date, manual_rank, data_url, image_url, entry_date, updated_at FROM draft_items WHERE manager_id = ? ORDER BY sheet_id, manual_rank, entry_date").bind(managerId).all(),
+  ]);
+  return {
+    sheets: (sheetsResult.results || []).map(camelDraftSheet),
+    items: (itemsResult.results || []).map(camelDraftItem),
+  };
+}
+
+async function ensureDefaultDraftSheets(env, managerId) {
+  await env.DB.batch([
+    env.DB.prepare("INSERT OR IGNORE INTO draft_sheets (manager_id, sheet_id, name, icon, is_system, position) VALUES (?, 'fantasy-critic', 'Fantasy Critic', 'gamepad', 1, 1)").bind(managerId),
+    env.DB.prepare("INSERT OR IGNORE INTO draft_sheets (manager_id, sheet_id, name, icon, is_system, position) VALUES (?, 'fantasy-office', 'Fantasy Office', 'film', 1, 2)").bind(managerId),
+  ]);
+}
+
+async function addDraftSheet(env, managerId, body) {
+  await ensureDefaultDraftSheets(env, managerId);
+  const name = cleanDraftSheetName(body.name);
+  const existing = await env.DB.prepare("SELECT sheet_id FROM draft_sheets WHERE manager_id = ? AND name = ? COLLATE NOCASE").bind(managerId, name).first();
+  if (existing) throw httpError(409, "A Draft List sheet with that name already exists.");
+  const count = await env.DB.prepare("SELECT COUNT(*) AS count, COALESCE(MAX(position), 0) AS max_position FROM draft_sheets WHERE manager_id = ?").bind(managerId).first();
+  if (Number(count?.count || 0) >= 25) throw httpError(400, "A manager can have up to 25 Draft List sheets.");
+  const sheetId = crypto.randomUUID();
+  const position = Number(count?.max_position || 0) + 1;
+  const createdAt = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO draft_sheets (manager_id, sheet_id, name, icon, is_system, position, created_at, updated_at) VALUES (?, ?, ?, 'notebook', 0, ?, ?, ?)")
+    .bind(managerId, sheetId, name, position, createdAt, createdAt).run();
+  return { id: sheetId, name, icon: "notebook", isSystem: false, position, revision: 0, createdAt, updatedAt: createdAt };
+}
+
+async function addDraftItem(env, managerId, sheetId, body) {
+  await assertDraftRevision(env, managerId, sheetId, body.revision);
+  const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM draft_items WHERE manager_id = ? AND sheet_id = ?").bind(managerId, sheetId).first();
+  const nextCount = Number(count?.count || 0) + 1;
+  if (nextCount > 500) throw httpError(400, "A Draft List sheet can contain up to 500 items.");
+  const item = cleanDraftItem(body, {
+    entryDate: new Date().toISOString(),
+    id: crypto.randomUUID(),
+    name: cleanName(body.name),
+    rank: clampRank(body.manualRank, nextCount),
+    sheetId,
+  });
+  const statements = [
+    env.DB.prepare("UPDATE draft_items SET manual_rank = manual_rank + 1, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND sheet_id = ? AND manual_rank >= ?").bind(managerId, sheetId, item.rank),
+    env.DB.prepare("INSERT INTO draft_items (manager_id, sheet_id, item_id, name, release_date, manual_rank, data_url, image_url, entry_date, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(managerId, sheetId, item.id, item.name, item.releaseDate, item.rank, item.dataUrl, item.imageUrl, item.entryDate, item.updatedAt),
+  ];
+  await runDraftMutationBatch(env, managerId, sheetId, body.revision, statements);
+  return { item, revision: Number(body.revision) + 1 };
+}
+
+async function updateDraftItem(env, managerId, sheetId, itemId, body) {
+  await assertDraftRevision(env, managerId, sheetId, body.revision);
+  const existing = await env.DB.prepare("SELECT * FROM draft_items WHERE manager_id = ? AND sheet_id = ? AND item_id = ?").bind(managerId, sheetId, itemId).first();
+  if (!existing) throw httpError(404, "Draft List item was not found.");
+  const rows = await env.DB.prepare("SELECT item_id FROM draft_items WHERE manager_id = ? AND sheet_id = ? ORDER BY manual_rank, entry_date").bind(managerId, sheetId).all();
+  const itemIds = (rows.results || []).map((row) => String(row.item_id)).filter((id) => id !== itemId);
+  const rank = clampRank(body.manualRank === undefined ? existing.manual_rank : body.manualRank, itemIds.length + 1);
+  itemIds.splice(rank - 1, 0, itemId);
+  const item = cleanDraftItem(body, {
+    dataUrl: existing.data_url,
+    entryDate: existing.entry_date,
+    id: itemId,
+    imageUrl: existing.image_url,
+    name: existing.name,
+    rank,
+    releaseDate: existing.release_date,
+    sheetId,
+  });
+  const statements = [
+    env.DB.prepare("UPDATE draft_items SET name = ?, release_date = ?, data_url = ?, image_url = ?, updated_at = ? WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
+      .bind(item.name, item.releaseDate, item.dataUrl, item.imageUrl, item.updatedAt, managerId, sheetId, itemId),
+    ...itemIds.map((id, index) => env.DB.prepare("UPDATE draft_items SET manual_rank = ?, updated_at = ? WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
+      .bind(index + 1, item.updatedAt, managerId, sheetId, id)),
+  ];
+  await runDraftMutationBatch(env, managerId, sheetId, body.revision, statements);
+  return { item, revision: Number(body.revision) + 1 };
+}
+
+async function deleteDraftItem(env, managerId, sheetId, itemId, body) {
+  await assertDraftRevision(env, managerId, sheetId, body.revision);
+  const existing = await env.DB.prepare("SELECT item_id FROM draft_items WHERE manager_id = ? AND sheet_id = ? AND item_id = ?").bind(managerId, sheetId, itemId).first();
+  if (!existing) throw httpError(404, "Draft List item was not found.");
+  const rows = await env.DB.prepare("SELECT item_id FROM draft_items WHERE manager_id = ? AND sheet_id = ? AND item_id <> ? ORDER BY manual_rank, entry_date").bind(managerId, sheetId, itemId).all();
+  const statements = [
+    env.DB.prepare("DELETE FROM draft_items WHERE manager_id = ? AND sheet_id = ? AND item_id = ?").bind(managerId, sheetId, itemId),
+    ...(rows.results || []).map((row, index) => env.DB.prepare("UPDATE draft_items SET manual_rank = ?, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
+      .bind(index + 1, managerId, sheetId, row.item_id)),
+  ];
+  await runDraftMutationBatch(env, managerId, sheetId, body.revision, statements);
+  return { deletedItemId: itemId, revision: Number(body.revision) + 1 };
+}
+
+async function saveDraftOrder(env, managerId, sheetId, body) {
+  await assertDraftRevision(env, managerId, sheetId, body.revision);
+  const itemIds = uniqueIds(body.itemIds);
+  if (!itemIds.length) throw httpError(400, "At least one Draft List item is required.");
+  await assertDraftItems(env, managerId, sheetId, itemIds);
+  const statements = itemIds.map((itemId, index) => env.DB.prepare("UPDATE draft_items SET manual_rank = ?, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND sheet_id = ? AND item_id = ?")
+    .bind(index + 1, managerId, sheetId, itemId));
+  await runDraftMutationBatch(env, managerId, sheetId, body.revision, statements);
+  return { revision: Number(body.revision) + 1 };
+}
+
+async function assertDraftRevision(env, managerId, sheetId, submitted) {
+  const sheet = await env.DB.prepare("SELECT revision FROM draft_sheets WHERE manager_id = ? AND sheet_id = ?").bind(managerId, sheetId).first();
+  if (!sheet) throw httpError(404, "Draft List sheet was not found.");
+  const current = Number(sheet.revision || 0);
+  if (!Number.isInteger(Number(submitted)) || Number(submitted) !== current) {
+    throw httpError(409, "Draft List changed in another session. Reload and try again.");
+  }
+}
+
+async function assertDraftItems(env, managerId, sheetId, itemIds) {
+  const rows = await env.DB.prepare("SELECT item_id FROM draft_items WHERE manager_id = ? AND sheet_id = ? ORDER BY item_id").bind(managerId, sheetId).all();
+  const existingIds = (rows.results || []).map((row) => String(row.item_id));
+  const existingSet = new Set(existingIds);
+  if (itemIds.length !== existingIds.length || itemIds.some((itemId) => !existingSet.has(itemId))) {
+    throw httpError(400, "Draft List order must include every item exactly once.");
+  }
+}
+
+async function runDraftMutationBatch(env, managerId, sheetId, revision, statements) {
+  const guarded = [
+    env.DB.prepare("INSERT INTO draft_revision_claims (manager_id, sheet_id, revision) VALUES (?, ?, ?)").bind(managerId, sheetId, Number(revision)),
+    ...statements,
+    env.DB.prepare("UPDATE draft_sheets SET revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND sheet_id = ?").bind(managerId, sheetId),
+  ];
+  try {
+    await env.DB.batch(guarded);
+  } catch (error) {
+    if (/draft_revision_claims|UNIQUE constraint failed/i.test(String(error?.message || error))) {
+      throw httpError(409, "Draft List changed in another session. Reload and try again.");
+    }
+    throw error;
+  }
+}
+
+function camelDraftSheet(row) {
+  return {
+    id: row.sheet_id,
+    name: row.name,
+    icon: row.icon,
+    isSystem: Boolean(row.is_system),
+    position: Number(row.position || 0),
+    revision: Number(row.revision || 0),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function camelDraftItem(row) {
+  return {
+    sheetId: row.sheet_id,
+    id: row.item_id,
+    name: row.name,
+    releaseDate: row.release_date || "",
+    rank: Number(row.manual_rank || 0),
+    dataUrl: row.data_url || "",
+    imageUrl: row.image_url || "",
+    entryDate: row.entry_date || "",
+    updatedAt: row.updated_at || "",
+  };
+}
+
+function cleanDraftItem(body, defaults) {
+  const now = new Date().toISOString();
+  return {
+    dataUrl: body.dataUrl === undefined ? String(defaults.dataUrl || "") : cleanOptionalUrl(body.dataUrl, "Data URL"),
+    entryDate: String(defaults.entryDate || now),
+    id: String(defaults.id),
+    imageUrl: body.imageUrl === undefined ? String(defaults.imageUrl || "") : cleanOptionalUrl(body.imageUrl, "Image URL"),
+    name: body.name === undefined ? String(defaults.name || "") : cleanName(body.name),
+    rank: Number(defaults.rank || 1),
+    releaseDate: body.releaseDate === undefined ? String(defaults.releaseDate || "") : cleanOptionalDate(body.releaseDate),
+    sheetId: String(defaults.sheetId),
+    updatedAt: now,
+  };
+}
+
+function cleanDraftSheetName(value) {
+  const name = String(value || "").trim();
+  if (!name || name.length > 80) throw httpError(400, "Sheet name is required and must be 80 characters or fewer.");
+  return name;
+}
+
+function cleanOptionalDate(value) {
+  const date = String(value || "").trim();
+  if (!date) return "";
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+    throw httpError(400, "Release date must be a valid date.");
+  }
+  return date;
+}
+
+function cleanOptionalUrl(value, label) {
+  const url = String(value || "").trim();
+  if (!url) return "";
+  if (url.length > 2048) throw httpError(400, `${label} must be 2,048 characters or fewer.`);
+  let parsed;
+  try { parsed = new URL(url); } catch { throw httpError(400, `${label} must be a valid web URL.`); }
+  if (!["http:", "https:"].includes(parsed.protocol)) throw httpError(400, `${label} must use HTTP or HTTPS.`);
+  return parsed.href;
 }
 
 async function readRankingSet(env, managerId, type) {
@@ -452,6 +694,6 @@ function clampRank(value, max) { const rank = Number(value); return Number.isInt
 function expected(rating, opponent) { return 1 / (1 + 10 ** ((opponent - rating) / 400)); }
 async function readBody(request) { try { return await request.json(); } catch { throw httpError(400, "Request body must be valid JSON."); } }
 function allowedOrigin(origin, env) { return !origin || String(env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).includes(origin); }
-function corsHeaders(origin, env) { const headers = { "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, OPTIONS", "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", Vary: "Origin" }; if (origin && allowedOrigin(origin, env)) headers["Access-Control-Allow-Origin"] = origin; return headers; }
+function corsHeaders(origin, env) { const headers = { "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "DELETE, GET, POST, PATCH, PUT, OPTIONS", "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", Vary: "Origin" }; if (origin && allowedOrigin(origin, env)) headers["Access-Control-Allow-Origin"] = origin; return headers; }
 function json(data, status, headers) { return new Response(JSON.stringify(data), { status, headers }); }
 function httpError(status, message) { const error = new Error(message); error.status = status; return error; }

@@ -309,6 +309,7 @@ import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608230220";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608252243";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608240001";
+import { createDraftListsController } from "./modules/draftLists.js?v=202608260001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -529,7 +530,7 @@ const router = createRouter({
   pageLinks,
   pages,
   shouldBlockPage: (pageName) =>
-    (pageName === "rankings" && !siteData.managerSession) ||
+    (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["todo", "want", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
@@ -555,6 +556,10 @@ const guidesController = createGuidesController({
 });
 const platinumsController = createPlatinumsController({ loadSheet });
 const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
+const draftListsController = createDraftListsController({
+  getManagerId: getCurrentManagerId,
+  request: rankingApiRequest,
+});
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -7086,7 +7091,7 @@ function resetRankingManagerData() {
 
 async function ensureRankingAuthorization() {
   const session = siteData.managerSession;
-  if (!session?.managerId) throw new Error("Sign in to edit rankings.");
+  if (!session?.managerId) throw new Error("Sign in to continue.");
   const auth = session.rankingAuth || {};
   if (auth.accessToken && Date.parse(auth.accessExpiresAt || "") > Date.now() + 30000) return auth.accessToken;
   let response;
@@ -7106,7 +7111,7 @@ async function ensureRankingAuthorization() {
     });
   }
   const value = await response.json().catch(() => ({}));
-  if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize ranking edits.");
+  if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize manager data.");
   siteData.managerSession = { ...session, rankingAuth: value };
   try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
   return value.accessToken;
@@ -7127,7 +7132,7 @@ async function requestRankingAuthorizationForLogin(managerId, passphrase) {
     signal: AbortSignal.timeout(12000),
   });
   const value = await response.json().catch(() => ({}));
-  if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize ranking edits.");
+  if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize manager data.");
   return value;
 }
 
@@ -7144,7 +7149,7 @@ async function rankingApiRequest(path, options = {}, retried = false) {
     return rankingApiRequest(path, options, true);
   }
   if (!response.ok || !value.ok) {
-    const error = new Error(value.error || "Ranking change was not saved.");
+    const error = new Error(value.error || "The change was not saved.");
     error.status = response.status;
     throw error;
   }
@@ -10615,6 +10620,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "draft-list") {
+    draftListsController.renderPage();
+    return;
+  }
+
   if (pageName === "manager-awards") {
     renderLeagueAwards();
     return;
@@ -13457,6 +13467,7 @@ function saveManagerSession(session) {
   siteData.managerSession = session;
   activeRankingManagerId = String(session?.managerId || "");
   resetRankingManagerData();
+  draftListsController.reset();
 
   try {
     localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -13478,6 +13489,7 @@ function signOutManager() {
   siteData.managerSession = null;
   activeRankingManagerId = "";
   resetRankingManagerData();
+  draftListsController.reset();
 
   try {
     localStorage.removeItem(MANAGER_SESSION_STORAGE_KEY);
@@ -13561,6 +13573,7 @@ function renderLoginState() {
 
   if (
     (!managerMeta && activePageName === "rankings") ||
+    (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
     (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac"].includes(activePageName))
   ) {
@@ -15874,6 +15887,10 @@ function getPageDataScope(pageName = "") {
     return "rankings";
   }
 
+  if (page === "draft-list") {
+    return "draft-list";
+  }
+
   if (page === "login") {
     return "login";
   }
@@ -15998,6 +16015,10 @@ function loadPageData(scope) {
       syncRankingManagerOptions();
       return rankings;
     });
+  }
+
+  if (scope === "draft-list") {
+    return draftListsController.load();
   }
 
   if (scope === "login") {

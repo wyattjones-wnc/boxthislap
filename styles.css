@@ -8210,10 +8210,66 @@ tr:last-child td {
   padding: 8px 10px;
 }
 
+.draft-list-tab-nav {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 0 0 18px;
+  max-width: 100%;
+  width: 100%;
+}
+
+.draft-list-tab-scroll {
+  align-items: center;
+  background: var(--panel);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0 8px;
+  width: 36px;
+}
+
+.draft-list-tab-scroll:first-child {
+  border-right: 1px solid var(--line);
+}
+
+.draft-list-tab-scroll:last-child {
+  border-left: 1px solid var(--line);
+}
+
+.draft-list-tab-scroll[hidden] {
+  display: none;
+}
+
+.draft-list-tab-scroll:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.38;
+}
+
+.draft-list-tab-scroll:not(:disabled):hover,
+.draft-list-tab-scroll:not(:disabled):focus-visible {
+  background: var(--soft);
+  color: var(--accent-dark);
+}
+
+.draft-list-tab-scroll svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+  width: 22px;
+}
+
 .draft-list-tabs {
   -webkit-overflow-scrolling: touch;
   flex-wrap: nowrap;
-  margin: 0 0 18px;
+  margin: 0;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;

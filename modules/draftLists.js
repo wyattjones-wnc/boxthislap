@@ -3,6 +3,8 @@ const DEFAULT_SHEET_ID = "fantasy-critic";
 export function createDraftListsController({ getManagerId, request }) {
   const page = document.querySelector("#draft-list");
   const tabs = document.querySelector("#draft-list-tabs");
+  const tabsPrevious = document.querySelector("#draft-list-tabs-previous");
+  const tabsNext = document.querySelector("#draft-list-tabs-next");
   const itemsView = document.querySelector("#draft-list-items");
   const status = document.querySelector("#draft-list-status");
   const filterToggle = document.querySelector("#draft-list-filter-toggle");
@@ -46,12 +48,20 @@ export function createDraftListsController({ getManagerId, request }) {
   let draggedItemId = "";
   let draggedSheetId = "";
   let didMovePointer = false;
+  let tabResizeObserver = null;
 
   function initialize() {
     if (state.initialized || !page) return;
     state.initialized = true;
     page.addEventListener("click", handleClick);
     page.addEventListener("change", handleChange);
+    tabs?.addEventListener("scroll", updateTabPagination, { passive: true });
+    if (tabs && typeof ResizeObserver === "function") {
+      tabResizeObserver = new ResizeObserver(updateTabPagination);
+      tabResizeObserver.observe(tabs);
+    } else {
+      window.addEventListener("resize", updateTabPagination);
+    }
     itemForm?.addEventListener("submit", handleItemSubmit);
     sheetForm?.addEventListener("submit", handleSheetSubmit);
     itemsView?.addEventListener("dragstart", handleDragStart);
@@ -171,6 +181,7 @@ export function createDraftListsController({ getManagerId, request }) {
     if (!tabs) return;
     if (state.loading && !state.sheets.length) {
       tabs.innerHTML = `<button class="tab is-active" type="button" role="tab" aria-selected="true">Loading sheets...</button>`;
+      window.requestAnimationFrame(updateTabPagination);
       return;
     }
     const previousScrollLeft = tabs.scrollLeft;
@@ -186,7 +197,24 @@ export function createDraftListsController({ getManagerId, request }) {
     tabs.scrollLeft = previousScrollLeft;
     window.requestAnimationFrame(() => {
       keepActiveTabInView();
+      updateTabPagination();
     });
+  }
+
+  function updateTabPagination() {
+    if (!tabs || !tabsPrevious || !tabsNext) return;
+    const maxScrollLeft = Math.max(0, tabs.scrollWidth - tabs.clientWidth);
+    const hasOverflow = maxScrollLeft > 1;
+    tabsPrevious.hidden = !hasOverflow;
+    tabsNext.hidden = !hasOverflow;
+    tabsPrevious.disabled = !hasOverflow || tabs.scrollLeft <= 1;
+    tabsNext.disabled = !hasOverflow || tabs.scrollLeft >= maxScrollLeft - 1;
+  }
+
+  function scrollTabs(direction) {
+    if (!tabs) return;
+    const distance = Math.max(120, Math.round(tabs.clientWidth * 0.72));
+    tabs.scrollBy({ left: distance * direction, behavior: "smooth" });
   }
 
   function keepActiveTabInView() {
@@ -277,6 +305,14 @@ export function createDraftListsController({ getManagerId, request }) {
   }
 
   function handleClick(event) {
+    if (event.target.closest("#draft-list-tabs-previous")) {
+      scrollTabs(-1);
+      return;
+    }
+    if (event.target.closest("#draft-list-tabs-next")) {
+      scrollTabs(1);
+      return;
+    }
     const tab = event.target.closest("[data-draft-list-tab]");
     if (tab) {
       state.activeSheetId = tab.dataset.draftListTab || state.activeSheetId;

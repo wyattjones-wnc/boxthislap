@@ -499,6 +499,7 @@ const WANT_RANKING_CONFIG = {
   type: "want",
 };
 const expandedFootyMatchIds = new Set();
+const expandedFootyPastWeekKeys = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
 let activeAutocompleteInput = null;
@@ -621,6 +622,8 @@ function renderFootySchedule(schedule) {
   if (!shouldRenderPageSection("footy")) {
     return;
   }
+
+  syncExpandedFootyPastWeekKeys();
 
   const fixtures = getFootyScheduleFixtures(schedule);
   const competitionSchedules = getFootyCompetitionSchedules(schedule);
@@ -3170,8 +3173,10 @@ function renderFootyPastWeekGroups(fixtures = []) {
 }
 
 function renderFootyExpandablePastWeek(group) {
+  const isOpen = expandedFootyPastWeekKeys.has(group.key);
+
   return `
-    <details class="footy-past-week">
+    <details class="footy-past-week" data-footy-week-key="${escapeHtml(group.key)}"${isOpen ? " open" : ""}>
       <summary class="footy-past-week-summary">
         <span>Week of ${escapeHtml(group.label)}</span>
         <small>${escapeHtml(String(group.fixtures.length))} ${group.fixtures.length === 1 ? "match" : "matches"}</small>
@@ -3181,6 +3186,17 @@ function renderFootyExpandablePastWeek(group) {
       </div>
     </details>
   `;
+}
+
+function syncExpandedFootyPastWeekKeys() {
+  expandedFootyPastWeekKeys.clear();
+  footyScheduleList?.querySelectorAll(".footy-past-week[open][data-footy-week-key]").forEach((week) => {
+    const key = String(week.getAttribute("data-footy-week-key") || "").trim();
+
+    if (key) {
+      expandedFootyPastWeekKeys.add(key);
+    }
+  });
 }
 
 function groupFootyFixturesByCalendarWeek(fixtures = []) {

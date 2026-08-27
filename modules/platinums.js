@@ -150,9 +150,23 @@ function createTrophyListController({
     const tile = event.target.closest("[data-trophy-id]");
     if (!tile) return;
     const itemId = tile.dataset.trophyId || "";
+    const previousExpandedId = expandedId;
     expandedId = expandedId === itemId ? "" : itemId;
-    renderItems();
-    grid.querySelector(`[data-trophy-id="${CSS.escape(itemId)}"]`)?.focus();
+    if (previousExpandedId && previousExpandedId !== itemId) {
+      setTileExpanded(grid.querySelector(`[data-trophy-id="${CSS.escape(previousExpandedId)}"]`), false);
+    }
+    setTileExpanded(tile, expandedId === itemId);
+    tile.focus();
+  }
+
+  function setTileExpanded(tile, expanded) {
+    if (!tile) return;
+    tile.classList.toggle("is-expanded", expanded);
+    tile.setAttribute("aria-expanded", String(expanded));
+    const accessibleLabel = (tile.getAttribute("aria-label") || "").replace(/^(?:Hide|Show) /, "");
+    tile.setAttribute("aria-label", `${expanded ? "Hide" : "Show"} ${accessibleLabel}`);
+    const caption = tile.querySelector(".platinum-caption");
+    if (caption) caption.hidden = !expanded;
   }
 
   function handleShowMoreClick() {

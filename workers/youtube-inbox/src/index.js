@@ -67,7 +67,7 @@ async function getVideos(url, env) {
   const status = url.searchParams.get("status") || "new";
   const channels = [...new Set(url.searchParams.getAll("channel").map((value) => value.trim()).filter(Boolean))];
   const limit = clampNumber(url.searchParams.get("limit"), 1, 100, 50);
-  const offset = clampNumber(url.searchParams.get("offset"), 0, 10000, 0);
+  const offset = clampNumber(url.searchParams.get("offset"), 0, 1000000, 0);
 
   if (status !== "all" && !VALID_STATUSES.has(status)) {
     throw httpError(400, "Invalid video status.");
@@ -91,7 +91,7 @@ async function getVideos(url, env) {
     FROM videos v
     JOIN channels c ON c.id = v.channel_id
     ${where}
-    ORDER BY v.published_at DESC
+    ORDER BY v.published_at DESC, v.id DESC
     LIMIT ? OFFSET ?
   `).bind(...bindings, limit, offset).all();
   const channelResult = await env.DB.prepare(`

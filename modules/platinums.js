@@ -1,6 +1,7 @@
 export function createPlatinumsController({ loadSheet }) {
   const favoriteDetails = document.querySelector("#favorite-trophies-card");
   const platinums = createTrophyListController({
+    countElement: document.querySelector("#admin-platinums-count"),
     emptyMessage: "No platinum icons are available yet.",
     errorLabel: "Platinums",
     grid: document.querySelector("#admin-platinums-grid"),
@@ -36,6 +37,7 @@ export function createPlatinumsController({ loadSheet }) {
 }
 
 function createTrophyListController({
+  countElement = null,
   emptyMessage,
   errorLabel,
   grid,
@@ -86,6 +88,10 @@ function createTrophyListController({
   function renderItems() {
     if (!grid) return;
     grid.setAttribute("aria-busy", "false");
+    if (countElement) {
+      const platinumNumber = items[0]?.number || String(items.length);
+      countElement.textContent = `(${platinumNumber})`;
+    }
 
     if (!items.length) {
       grid.innerHTML = `<p class="table-message">${escapeHtml(emptyMessage)}</p>`;
@@ -144,9 +150,23 @@ function createTrophyListController({
     const tile = event.target.closest("[data-trophy-id]");
     if (!tile) return;
     const itemId = tile.dataset.trophyId || "";
+    const previousExpandedId = expandedId;
     expandedId = expandedId === itemId ? "" : itemId;
-    renderItems();
-    grid.querySelector(`[data-trophy-id="${CSS.escape(itemId)}"]`)?.focus();
+    if (previousExpandedId && previousExpandedId !== itemId) {
+      setTileExpanded(grid.querySelector(`[data-trophy-id="${CSS.escape(previousExpandedId)}"]`), false);
+    }
+    setTileExpanded(tile, expandedId === itemId);
+    tile.focus();
+  }
+
+  function setTileExpanded(tile, expanded) {
+    if (!tile) return;
+    tile.classList.toggle("is-expanded", expanded);
+    tile.setAttribute("aria-expanded", String(expanded));
+    const accessibleLabel = (tile.getAttribute("aria-label") || "").replace(/^(?:Hide|Show) /, "");
+    tile.setAttribute("aria-label", `${expanded ? "Hide" : "Show"} ${accessibleLabel}`);
+    const caption = tile.querySelector(".platinum-caption");
+    if (caption) caption.hidden = !expanded;
   }
 
   function handleShowMoreClick() {

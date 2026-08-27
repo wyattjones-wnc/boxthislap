@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.24.18.55";
+      window.BOX_THIS_LAP_VERSION = "2026.08.27.14.31";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608241855">
+    <link rel="stylesheet" href="styles.css?v=202608271431">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -218,7 +218,7 @@
           </picture>
         </div>
         <div class="header-page-art" data-header-art="the-monster-maniac" aria-hidden="true">
-          <img src="assets/themonstermaniac/themonstermaniac_08132026.png?v=202608140400" alt="" decoding="async">
+          <img src="https://card.psnprofiles.com/1/TheMonsterManiac.png" alt="" decoding="async">
         </div>
         <div class="header-page-art" data-header-art="world-cup" aria-hidden="true">
           <picture>
@@ -460,7 +460,7 @@
         <div class="manager-hub-grid">
           <section class="manager-hub-card" aria-labelledby="admin-platinums-heading">
             <div class="manager-hub-card-heading">
-              <h2 id="admin-platinums-heading">Platinums</h2>
+              <h2 id="admin-platinums-heading">Platinums <span id="admin-platinums-count"></span></h2>
             </div>
             <div class="platinums-grid" id="admin-platinums-grid" aria-live="polite" aria-busy="true">
               <span class="platinum-skeleton"></span>
@@ -481,14 +481,22 @@
             <h1>Manager Hub</h1>
             <p class="manager-hub-subtitle" id="manager-hub-subtitle" hidden></p>
           </div>
-          <a class="icon-action-button manager-awards-button" href="#manager-awards" data-page-link="manager-awards" aria-label="View all league awards" title="View all league awards">
-            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-              <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"></path>
-              <path d="M7 6H4v1a4 4 0 0 0 4 4"></path>
-              <path d="M17 6h3v1a4 4 0 0 1-4 4"></path>
-              <path d="M12 13v7M8 20h8"></path>
-            </svg>
-          </a>
+          <div class="heading-actions manager-hub-actions">
+            <a class="icon-action-button manager-draft-list-button" href="#draft-list" data-page-link="draft-list" data-login-only hidden aria-label="Open Draft List" title="Draft List">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M6 3.5h13v17H6a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3Z"></path>
+                <path d="M7 3.5v17M3 7h4M3 12h4M3 17h4"></path>
+              </svg>
+            </a>
+            <a class="icon-action-button manager-awards-button" href="#manager-awards" data-page-link="manager-awards" aria-label="View all league awards" title="View all league awards">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"></path>
+                <path d="M7 6H4v1a4 4 0 0 0 4 4"></path>
+                <path d="M17 6h3v1a4 4 0 0 1-4 4"></path>
+                <path d="M12 13v7M8 20h8"></path>
+              </svg>
+            </a>
+          </div>
         </div>
 
         <div class="manager-hub-grid">
@@ -535,6 +543,137 @@
             </div>
           </section>
         </div>
+      </section>
+
+      <section class="page draft-list-page" id="draft-list" data-page="draft-list">
+        <div class="section-heading page-heading-with-action footy-heading draft-list-heading">
+          <div>
+            <a class="back-link" href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
+            <h1>Draft List</h1>
+          </div>
+          <div class="heading-actions">
+            <button class="icon-action-button draft-list-filter-toggle" id="draft-list-filter-toggle" type="button" aria-expanded="false" aria-controls="draft-list-filters" aria-label="Show Draft List filters" title="Filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
+            <button class="icon-action-button draft-list-new-sheet-button" id="draft-list-new-sheet-button" type="button" aria-label="Create a new Draft List sheet" title="New sheet">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M5 3.5h12v17H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z"></path>
+                <path d="M7 3.5v17M14 8v6M11 11h6"></path>
+              </svg>
+            </button>
+            <button class="icon-action-button draft-list-add-button" id="draft-list-add-button" type="button" aria-label="Add a Draft List item" title="Add item">+</button>
+          </div>
+        </div>
+
+        <div class="draft-list-filters" id="draft-list-filters" hidden>
+          <label class="ranking-select-control">
+            <span>Entered after</span>
+            <input id="draft-list-entry-after" type="date">
+          </label>
+          <div class="draft-list-filter-toggles" role="group" aria-label="Entry status filters">
+            <label class="next-checkbox-control">
+              <input id="draft-list-show-archived" type="checkbox">
+              <span>Archived</span>
+            </label>
+            <label class="next-checkbox-control">
+              <input id="draft-list-show-drafted" type="checkbox">
+              <span>Drafted</span>
+            </label>
+            <label class="next-checkbox-control">
+              <input id="draft-list-show-unavailable" type="checkbox">
+              <span>Unavailable</span>
+            </label>
+          </div>
+          <button class="ranking-inline-action" id="draft-list-clear-filters" type="button">Clear</button>
+        </div>
+
+        <div class="draft-list-tab-nav" id="draft-list-tab-nav">
+          <button class="draft-list-tab-scroll" id="draft-list-tabs-previous" type="button" aria-label="Scroll sheet tabs left" title="Previous sheets" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m15 18-6-6 6-6"></path></svg>
+          </button>
+          <div class="tabs draft-list-tabs" id="draft-list-tabs" role="tablist" aria-label="Draft List sheets">
+            <button class="tab is-active" type="button" aria-selected="true" role="tab">Fantasy Critic</button>
+            <button class="tab" type="button" aria-selected="false" role="tab">Fantasy Office</button>
+          </div>
+          <button class="draft-list-tab-scroll" id="draft-list-tabs-next" type="button" aria-label="Scroll sheet tabs right" title="Next sheets" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m9 18 6-6-6-6"></path></svg>
+          </button>
+        </div>
+
+        <p class="draft-list-status" id="draft-list-status" aria-live="polite"></p>
+        <div class="content-shell draft-list-items" id="draft-list-items" aria-live="polite" aria-busy="true">
+          <p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>Loading Draft List...</span></p>
+        </div>
+
+        <dialog class="footy-note-dialog next-item-dialog" id="draft-list-item-dialog">
+          <form class="footy-note-form next-item-form" id="draft-list-item-form" method="dialog">
+            <header>
+              <div>
+                <h2 id="draft-list-item-dialog-title">Add Draft List Item</h2>
+              </div>
+              <button class="icon-action-button footy-note-close" id="draft-list-item-close" type="button" aria-label="Close Draft List item dialog">&times;</button>
+            </header>
+            <input id="draft-list-item-id" type="hidden">
+            <div class="next-item-fields">
+              <label class="next-item-wide">
+                <span>Name</span>
+                <input id="draft-list-item-name" type="text" maxlength="180" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Release Date</span>
+                <input id="draft-list-item-release-date" type="date">
+              </label>
+              <label>
+                <span>Rank</span>
+                <input id="draft-list-item-rank" type="number" min="1" step="1" required>
+              </label>
+              <label class="next-item-wide">
+                <span>Data URL</span>
+                <input id="draft-list-item-data-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/details">
+              </label>
+              <label class="next-item-wide">
+                <span>Image URL</span>
+                <input id="draft-list-item-image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg">
+              </label>
+              <div class="next-dialog-checks draft-list-dialog-checks">
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="draft-list-item-archived" type="checkbox"><span>Archived</span></label>
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="draft-list-item-drafted" type="checkbox"><span>Drafted</span></label>
+                <label class="next-checkbox-control next-dialog-checkbox"><input id="draft-list-item-unavailable" type="checkbox"><span>Unavailable</span></label>
+              </div>
+            </div>
+            <p class="footy-note-status" id="draft-list-item-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button draft-list-delete-button" id="draft-list-item-delete" type="button" hidden>Delete</button>
+              <span class="draft-list-dialog-spacer"></span>
+              <button class="action-button" id="draft-list-item-cancel" type="button">Cancel</button>
+              <button class="action-button" type="submit">Save</button>
+            </footer>
+          </form>
+        </dialog>
+
+        <dialog class="footy-note-dialog next-item-dialog" id="draft-list-sheet-dialog">
+          <form class="footy-note-form next-item-form" id="draft-list-sheet-form" method="dialog">
+            <header>
+              <div>
+                <h2>Create Draft List Sheet</h2>
+              </div>
+              <button class="icon-action-button footy-note-close" id="draft-list-sheet-close" type="button" aria-label="Close new sheet dialog">&times;</button>
+            </header>
+            <div class="next-item-fields">
+              <label class="next-item-wide">
+                <span>Sheet Name</span>
+                <input id="draft-list-sheet-name" type="text" maxlength="80" autocomplete="off" placeholder="Grocery List" required>
+              </label>
+            </div>
+            <p class="footy-note-status" id="draft-list-sheet-status" aria-live="polite"></p>
+            <footer>
+              <button class="action-button" id="draft-list-sheet-cancel" type="button">Cancel</button>
+              <button class="action-button" type="submit">Create</button>
+            </footer>
+          </form>
+        </dialog>
       </section>
 
       <section class="page manager-awards-page" id="manager-awards" data-page="manager-awards">
@@ -2161,6 +2300,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608241855"></script>
+    <script type="module" src="script.js?v=202608271431"></script>
   </body>
 </html>

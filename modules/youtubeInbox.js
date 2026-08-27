@@ -5,6 +5,7 @@ const STATUS_OPTIONS = [
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
+const VIDEO_PAGE_SIZE = 100;
 
 export function createYouTubeInboxController({ endpoint, loadSheet }) {
   const view = document.querySelector("#youtube-inbox-view");
@@ -52,7 +53,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
 
     try {
       await loadConfiguration();
-      const query = new URLSearchParams({ limit: "100", status: state.status });
+      const query = new URLSearchParams({ status: state.status });
       const allowedChannels = getAllowedChannels();
       const selectedChannels = state.channel
         ? allowedChannels.filter((channel) => channel.youtubeChannelId === state.channel)
@@ -64,7 +65,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       }
 
       const [videoData, playlistData] = await Promise.all([
-        request(`/api/videos?${query}`),
+        loadAllVideos(query),
         request("/api/youtube/playlists"),
       ]);
       state.videos = filterVideosByPriority(Array.isArray(videoData.videos) ? videoData.videos : [], allowedChannels);
@@ -80,6 +81,28 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       state.loading = false;
       render();
     }
+  }
+
+  async function loadAllVideos(query) {
+    const videos = [];
+    let lastSyncAt = "";
+    let offset = 0;
+
+    while (true) {
+      const pageQuery = new URLSearchParams(query);
+      pageQuery.set("limit", String(VIDEO_PAGE_SIZE));
+      pageQuery.set("offset", String(offset));
+      const pageData = await request(`/api/videos?${pageQuery}`);
+      const pageVideos = Array.isArray(pageData.videos) ? pageData.videos : [];
+
+      videos.push(...pageVideos);
+      lastSyncAt ||= pageData.lastSyncAt || "";
+
+      if (pageVideos.length < VIDEO_PAGE_SIZE) break;
+      offset += pageVideos.length;
+    }
+
+    return { lastSyncAt, videos };
   }
 
   function render() {

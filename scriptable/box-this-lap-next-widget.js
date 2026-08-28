@@ -9,10 +9,10 @@
 // - id:12: show the Next row with ID 12.
 // - Fantasy Critic: show the first incomplete item whose Thing contains that text.
 
-const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
+const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev/api/items";
 const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/#next";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
-const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache.json";
+const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache-v2.json";
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
 
 const COLORS = {
@@ -45,7 +45,7 @@ Script.complete();
 
 async function loadNextItems() {
   try {
-    const request = new Request(`${NEXT_DATA_ENDPOINT}?action=listNextItems&nonce=${Date.now()}`);
+    const request = new Request(`${NEXT_ITEMS_ENDPOINT}?nonce=${Date.now()}`);
     request.timeoutInterval = 20;
     const data = await request.loadJSON();
     const items = getNormalizedNextItems(data);
@@ -149,10 +149,23 @@ function chooseItem(items, parameter, savedFocus) {
   }
 
   if (savedFocus && savedFocus.id) {
-    const savedItem = upcomingItems.find((item) => item.id.toLowerCase() === savedFocus.id.toLowerCase());
+    const savedThing = String(savedFocus.thing || "").trim().toLowerCase();
+    const savedItem = upcomingItems.find((item) =>
+      item.id.toLowerCase() === savedFocus.id.toLowerCase() &&
+      (!savedThing || item.thing.toLowerCase() === savedThing)
+    );
 
     if (savedItem) {
       return savedItem;
+    }
+
+    if (savedThing) {
+      const remappedItem = upcomingItems.find((item) => item.thing.toLowerCase() === savedThing);
+
+      if (remappedItem) {
+        saveFocus(remappedItem);
+        return remappedItem;
+      }
     }
   }
 
@@ -385,7 +398,7 @@ function normalizeItem(item) {
     date: String(item.date || "").trim(),
     endDateText: String(item.endDate || "").trim(),
     time: String(item.time || "").trim(),
-    priorityLevel: Number(item.priorityLevel || 0),
+    priorityLevel: Number(item.priority ?? item.priorityLevel ?? 0),
     completed: item.completed === true || String(item.completed || "").toLowerCase() === "true",
     nonAdmin: item.nonAdmin === true || String(item.nonAdmin || "").toLowerCase() === "true",
     imageUrl: String(item.imageUrl || item["Image URL"] || "").trim(),

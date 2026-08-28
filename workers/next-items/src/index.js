@@ -107,11 +107,17 @@ async function updateItem(env, id, body, managerId) {
     WHERE id = ? AND revision = ?
   `).bind(...itemValues(item), nextRevision, managerId, id, expectedRevision).run();
 
-  if (!result.success || Number(result.meta?.changes || 0) !== 1) {
+  if (!result.success) {
+    throw new Error("D1 did not confirm the Next item write.");
+  }
+
+  const savedItem = await getItem(env, id);
+
+  if (!savedItem || savedItem.revision !== nextRevision) {
     throw httpError(409, "This Next item changed while it was being saved. Reopen it and apply the edit again.");
   }
 
-  return getItem(env, id);
+  return savedItem;
 }
 
 function itemValues(item) {

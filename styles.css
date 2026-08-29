@@ -1030,13 +1030,6 @@ body.has-shell-stale-warning .stale-shell-alert {
   flex-wrap: nowrap;
 }
 
-.footy-perfect-button {
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: -0.04em;
-  text-decoration: none;
-}
-
 .footy-past-toggle-icon {
   display: none;
   fill: none;

@@ -495,6 +495,16 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .admin-home-heading {
   align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.admin-home-heading .icon-action-button {
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .admin-home-heading .eyebrow,
@@ -7712,6 +7722,11 @@ tr:last-child td {
   .page-heading-with-action {
     align-items: stretch;
     display: grid;
+  }
+
+  .admin-home-heading {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .manager-hub-page .page-heading-with-action {

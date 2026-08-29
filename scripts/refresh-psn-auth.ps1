@@ -2,7 +2,9 @@
 param(
   [switch]$SkipBrowser,
   [switch]$UseStoredNpsso,
-  [switch]$ValidateOnly
+  [switch]$ValidateOnly,
+  [ValidateRange(0, 2147483647)]
+  [int]$StartOffset = 0
 )
 
 Set-StrictMode -Version Latest
@@ -58,14 +60,15 @@ function New-SyncSecret {
 function Invoke-PsnSync {
   param(
     [Parameter(Mandatory)]
-    [string]$Secret
+    [string]$Secret,
+    [int]$Offset = 0
   )
 
   for ($attempt = 1; $attempt -le 6; $attempt += 1) {
     try {
       return Invoke-RestMethod `
         -Method Post `
-        -Uri "$workerOrigin/internal/psn/sync" `
+        -Uri "$workerOrigin/internal/psn/sync?offset=$Offset" `
         -Headers @{ Authorization = "Bearer $Secret" } `
         -ContentType 'application/json' `
         -TimeoutSec 300
@@ -76,7 +79,7 @@ function Invoke-PsnSync {
       }
 
       $delaySeconds = $attempt * 2
-      Write-Host "The new secret is still propagating; retrying in $delaySeconds seconds..."
+      Write-Host "The sync request failed; retrying in $delaySeconds seconds..."
       Start-Sleep -Seconds $delaySeconds
     }
   }
@@ -131,10 +134,24 @@ try {
   Invoke-WranglerSecretPut -Name 'SYNC_SECRET' -Value $syncSecret
 
   Write-Host 'Starting the PSN trophy import...'
-  $result = Invoke-PsnSync -Secret $syncSecret
+  $offset = $StartOffset
+  $failedTitles = 0
+  $titlesSynced = 0
+  $trophiesUpdated = 0
+  do {
+    $result = Invoke-PsnSync -Secret $syncSecret -Offset $offset
+    $titlesSynced += $result.titlesSynced
+    $trophiesUpdated += $result.trophiesUpdated
+    $failedTitles += $result.failedTitles.Count
+    Write-Host "Imported batch at offset $offset ($($result.titlesSynced) titles, $($result.trophiesUpdated) trophies)."
+    $offset = $result.nextOffset
+  } while ($null -ne $offset)
 
   Write-Host ''
-  Write-Host "PSN access renewed. Imported $($result.trophiesUpdated) trophies for $($result.gameId)." -ForegroundColor Green
+  Write-Host "PSN access renewed. Synced $titlesSynced titles and $trophiesUpdated trophies." -ForegroundColor Green
+  if ($failedTitles -gt 0) {
+    Write-Warning "$failedTitles title imports failed and will be retried by a later sync."
+  }
   Write-Host "Status: $workerOrigin/api/psn/status"
 }
 finally {

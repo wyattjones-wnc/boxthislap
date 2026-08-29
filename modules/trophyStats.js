@@ -89,7 +89,7 @@ export function createTrophyStatsController({ endpoint }) {
           ${renderHighlight("Latest Earned", value?.latestEarned)}
         </section>
       </div>
-      <p class="trophy-coverage-note">Stats currently reflect ${formatNumber(gameCount)} synced ${gameCount === 1 ? "game" : "games"}. More titles will appear as the backend importer expands.</p>
+      <p class="trophy-coverage-note">Stats reflect ${formatNumber(gameCount)} synced ${gameCount === 1 ? "game" : "games"} from your PSN trophy library.</p>
     `;
     if (updated) updated.textContent = value?.updatedAt
       ? `Updated ${formatDate(value.updatedAt)}`

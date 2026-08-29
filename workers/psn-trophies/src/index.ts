@@ -1,5 +1,5 @@
 import { routePublicApi } from "./api/router";
-import { syncOnePlatinumGame } from "./sync/sync-one-game";
+import { syncScheduledTrophyBatch, syncTrophyBatch } from "./sync/sync-one-game";
 import type { PsnEnvironment } from "./types";
 
 export default {
@@ -19,7 +19,7 @@ export default {
       const url = new URL(request.url);
       if (request.method === "POST" && url.pathname === "/internal/psn/sync") {
         requireSyncSecret(request, env);
-        return json({ ok: true, ...(await syncOnePlatinumGame(env)) }, 200, cors);
+        return json({ ok: true, ...(await syncTrophyBatch(env, parseSyncOffset(url))) }, 200, cors);
       }
       return json({ error: "Not found." }, 404, cors);
     } catch (error) {
@@ -30,7 +30,7 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: PsnEnvironment, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(syncOnePlatinumGame(env));
+    ctx.waitUntil(syncScheduledTrophyBatch(env));
   },
 };
 
@@ -41,6 +41,14 @@ interface ScheduledController {
 
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
+}
+
+function parseSyncOffset(url: URL): number {
+  const value = url.searchParams.get("offset") || "0";
+  if (!/^\d+$/.test(value)) throw Object.assign(new Error("offset must be a non-negative integer."), { status: 400 });
+  const offset = Number(value);
+  if (!Number.isSafeInteger(offset)) throw Object.assign(new Error("offset is too large."), { status: 400 });
+  return offset;
 }
 
 function requireSyncSecret(request: Request, env: PsnEnvironment): void {
@@ -82,4 +90,3 @@ function json(value: unknown, status: number, headers: Headers): Response {
   merged.set("Content-Type", "application/json; charset=utf-8");
   return new Response(JSON.stringify(value), { status, headers: merged });
 }
-

@@ -54,7 +54,6 @@ export interface PsnEnvironment {
   DB: D1Database;
   PSN_ACCOUNT_ID?: string;
   PSN_NPSSO?: string;
-  PSN_PROOF_GAME_ID?: string;
   SYNC_SECRET?: string;
 }
 
@@ -69,4 +68,3 @@ export interface D1PreparedStatement {
   first<T = Record<string, unknown>>(): Promise<T | null>;
   run(): Promise<{ meta?: { changes?: number; last_row_id?: number }; success?: boolean }>;
 }
-

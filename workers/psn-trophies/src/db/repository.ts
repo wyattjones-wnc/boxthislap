@@ -12,7 +12,7 @@ export async function startSyncRun(env: PsnEnvironment, startedAt: string): Prom
 export async function finishSyncRun(
   env: PsnEnvironment,
   id: number,
-  status: "success" | "failed",
+  status: "success" | "partial" | "failed",
   values: { titlesSeen?: number; titlesChanged?: number; titlesAdded?: number; trophiesUpdated?: number; errorMessage?: string },
 ): Promise<void> {
   await env.DB.prepare(`
@@ -24,7 +24,7 @@ export async function finishSyncRun(
   ).run();
 }
 
-export async function saveProofGame(
+export async function saveGame(
   env: PsnEnvironment,
   game: NormalizedGame,
   groups: NormalizedTrophyGroup[],
@@ -110,3 +110,15 @@ export async function saveProofGame(
   return !existing;
 }
 
+export async function getSyncCursor(env: PsnEnvironment): Promise<number> {
+  const row = await env.DB.prepare("SELECT value FROM sync_state WHERE key = 'title_cursor'").first<{ value?: unknown }>();
+  const cursor = Number(row?.value);
+  return Number.isSafeInteger(cursor) && cursor >= 0 ? cursor : 0;
+}
+
+export async function setSyncCursor(env: PsnEnvironment, cursor: number): Promise<void> {
+  await env.DB.prepare(`
+    INSERT INTO sync_state (key, value, updated_at) VALUES ('title_cursor', ?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+  `).bind(String(Math.max(0, Math.trunc(cursor))), new Date().toISOString()).run();
+}

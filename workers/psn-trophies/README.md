@@ -20,6 +20,31 @@ npx wrangler deploy --config workers\psn-trophies\wrangler.toml
 
 `PSN_ACCOUNT_ID` defaults to `me`. To force the proof to use a specific platinumed title, add a non-secret `PSN_PROOF_GAME_ID` Worker variable containing its `npCommunicationId`; otherwise the sync selects the first platinumed title returned by PSN.
 
+## Renew PSN access and run a sync
+
+Run this from the repository:
+
+```powershell
+npm run refresh:psn-auth
+```
+
+On Windows, `scripts\refresh-psn-auth.cmd` can also be double-clicked to open a dedicated terminal. The renewal workflow:
+
+1. Opens the official PlayStation site so the owner can sign in and complete any two-factor check.
+2. Opens Sony's `ssocookie` endpoint in the same browser session.
+3. Accepts only the 64-character NPSSO through a masked terminal prompt.
+4. Stores the NPSSO directly as an encrypted Cloudflare Worker secret.
+5. Generates and rotates a private manual-sync secret without displaying or saving it.
+6. Runs the one-game proof import and prints the non-secret result.
+
+The script never asks for, reads, or stores the PSN password or two-factor code. Sony's unofficial authentication session eventually expires, so the owner must repeat the browser login/token-copy step when PSN rejects it; the rest of the renewal is automated.
+
+If the NPSSO upload succeeds but a later step is interrupted, resume without pasting it again:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\refresh-psn-auth.ps1 -UseStoredNpsso
+```
+
 ## Verify locally
 
 ```powershell

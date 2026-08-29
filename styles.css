@@ -493,6 +493,233 @@ body.has-shell-stale-warning .stale-shell-alert {
   overflow: hidden;
 }
 
+.admin-home-heading {
+  align-items: center;
+}
+
+.admin-home-heading .eyebrow,
+.trophy-stats-page .eyebrow {
+  margin-bottom: 7px;
+}
+
+.trophy-stats-updated {
+  color: var(--muted);
+  font-weight: 800;
+  margin: 10px 0 0;
+}
+
+.trophy-stat-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.trophy-stat-card,
+.trophy-stat-skeleton {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 112px;
+}
+
+.trophy-stat-card {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+}
+
+.trophy-stat-card strong {
+  color: var(--accent-dark);
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.trophy-stat-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.trophy-stat-skeleton {
+  animation: trophy-stat-pulse 1.2s ease-in-out infinite alternate;
+  background: linear-gradient(110deg, var(--panel), var(--soft), var(--panel));
+}
+
+@keyframes trophy-stat-pulse {
+  to { opacity: 0.55; }
+}
+
+.trophy-stats-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.trophy-stats-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px var(--shadow);
+  padding: 18px;
+}
+
+.trophy-stats-card-heading {
+  align-items: start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.trophy-stats-card-heading h2 {
+  margin: 0;
+}
+
+.trophy-stats-card-heading > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.trophy-type-list {
+  display: grid;
+  gap: 13px;
+}
+
+.trophy-type-row {
+  align-items: center;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 16px 76px minmax(0, 1fr) 36px;
+}
+
+.trophy-type-row strong,
+.trophy-type-row b {
+  font-size: 0.84rem;
+}
+
+.trophy-type-row b {
+  text-align: right;
+}
+
+.trophy-type-medal {
+  background: var(--type-color);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.22);
+  height: 13px;
+  width: 13px;
+}
+
+.trophy-type-row--platinum { --type-color: #8ddbe8; }
+.trophy-type-row--gold { --type-color: #d9aa32; }
+.trophy-type-row--silver { --type-color: #9aa6b2; }
+.trophy-type-row--bronze { --type-color: #ae6c3d; }
+
+.trophy-type-track {
+  background: var(--soft);
+  border-radius: 999px;
+  height: 9px;
+  overflow: hidden;
+}
+
+.trophy-type-track span {
+  background: var(--type-color);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.trophy-highlights-card {
+  display: grid;
+  gap: 14px;
+}
+
+.trophy-highlights-card .trophy-stats-card-heading {
+  margin-bottom: 4px;
+}
+
+.trophy-highlight {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  padding: 12px;
+}
+
+.trophy-highlight img,
+.trophy-highlight-placeholder {
+  align-items: center;
+  background: var(--panel);
+  border-radius: 8px;
+  display: flex;
+  height: 64px;
+  justify-content: center;
+  object-fit: cover;
+  width: 64px;
+}
+
+.trophy-highlight > span:not(.trophy-highlight-placeholder),
+.trophy-highlight div > span,
+.trophy-highlight small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.trophy-highlight div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.trophy-highlight p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.trophy-coverage-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin: 16px 0 0;
+}
+
+.trophy-stats-error {
+  align-items: start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 9px;
+  padding: 18px;
+}
+
+.trophy-stats-error span {
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .trophy-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trophy-stats-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .trophy-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .favorite-trophies-summary {
   align-items: center;
   background: transparent;

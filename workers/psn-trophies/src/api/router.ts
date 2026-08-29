@@ -9,12 +9,68 @@ const SORT_COLUMNS = {
 export async function routePublicApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
   const url = new URL(request.url);
   if (request.method === "GET" && url.pathname === "/api/psn/status") return getStatus(env);
+  if (request.method === "GET" && url.pathname === "/api/psn/stats") return getStats(env);
 
   const trophyMatch = url.pathname.match(/^\/api\/psn\/games\/([^/]+)\/trophies$/);
   if (request.method === "GET" && trophyMatch) {
     return getGameTrophies(env, decodeURIComponent(trophyMatch[1]!), url.searchParams);
   }
   return null;
+}
+
+async function getStats(env: PsnEnvironment): Promise<Response> {
+  const [games, trophies, rarestEarned, latestEarned] = await Promise.all([
+    env.DB.prepare(`
+      SELECT COUNT(*) AS games, COALESCE(SUM(platinum_earned), 0) AS platinums,
+        COALESCE(SUM(is_100_percent), 0) AS hundred_percent, MAX(last_synced_at) AS updated_at
+      FROM games
+    `).first<Record<string, unknown>>(),
+    env.DB.prepare(`
+      SELECT COUNT(*) AS total_trophies, COALESCE(SUM(earned), 0) AS earned_trophies,
+        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
+        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
+        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
+        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
+      FROM trophies
+    `).first<Record<string, unknown>>(),
+    env.DB.prepare(`
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+        t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
+      FROM trophies t
+      JOIN games g ON g.id = t.game_id
+      WHERE t.earned = 1 AND t.earned_rate IS NOT NULL
+      ORDER BY t.earned_rate ASC, t.earned_at ASC, t.trophy_id ASC
+      LIMIT 1
+    `).first<Record<string, unknown>>(),
+    env.DB.prepare(`
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+        t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
+      FROM trophies t
+      JOIN games g ON g.id = t.game_id
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
+      ORDER BY t.earned_at DESC, t.trophy_id DESC
+      LIMIT 1
+    `).first<Record<string, unknown>>(),
+  ]);
+
+  return cachedJson({
+    counts: {
+      earnedTrophies: numberValue(trophies?.earned_trophies),
+      games: numberValue(games?.games),
+      hundredPercent: numberValue(games?.hundred_percent),
+      platinums: numberValue(games?.platinums),
+      totalTrophies: numberValue(trophies?.total_trophies),
+    },
+    earnedByType: {
+      bronze: numberValue(trophies?.bronze),
+      silver: numberValue(trophies?.silver),
+      gold: numberValue(trophies?.gold),
+      platinum: numberValue(trophies?.platinum),
+    },
+    latestEarned: mapStatTrophy(latestEarned),
+    rarestEarned: mapStatTrophy(rarestEarned),
+    updatedAt: games?.updated_at || null,
+  }, 300);
 }
 
 async function getStatus(env: PsnEnvironment): Promise<Response> {
@@ -119,6 +175,26 @@ function parsePlatforms(value: unknown): string[] {
   } catch {
     return [];
   }
+}
+
+function mapStatTrophy(row: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!row) return null;
+  return {
+    earnedAt: row.earned_at || null,
+    earnedRate: row.earned_rate === null ? null : Number(row.earned_rate),
+    gameId: row.game_id,
+    gameName: row.title_name,
+    iconUrl: row.icon_url || null,
+    id: Number(row.trophy_id),
+    name: row.trophy_name,
+    rarityClass: row.rarity_class === null ? null : Number(row.rarity_class),
+    type: row.trophy_type,
+  };
+}
+
+function numberValue(value: unknown): number {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function httpError(status: number, message: string): Error & { status: number } {

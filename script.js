@@ -11,6 +11,7 @@ import {
   NEXT_ITEMS_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
+  PSN_TROPHIES_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
@@ -309,6 +310,7 @@ import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608230220";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608252243";
+import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608290600";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608270401";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
 import {
@@ -534,7 +536,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -557,6 +559,7 @@ const guidesController = createGuidesController({
   progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });
 const platinumsController = createPlatinumsController({ loadSheet });
+const trophyStatsController = createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
 const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
@@ -10611,6 +10614,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "trophy-stats") {
+    trophyStatsController.renderPage();
+    return;
+  }
+
   if (pageName === "rankings") {
     renderRankingsPage();
     return;
@@ -15879,6 +15887,10 @@ function getPageDataScope(pageName = "") {
     return "the-monster-maniac";
   }
 
+  if (page === "trophy-stats") {
+    return "trophy-stats";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -16004,6 +16016,10 @@ function loadPageData(scope) {
 
   if (scope === "the-monster-maniac") {
     return platinumsController.renderPage();
+  }
+
+  if (scope === "trophy-stats") {
+    return trophyStatsController.load();
   }
 
   if (scope === "rankings") {

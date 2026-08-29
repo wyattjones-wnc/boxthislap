@@ -86,3 +86,34 @@ test("returns null for routes outside the PSN public API", async () => {
   assert.equal(response, null);
 });
 
+test("returns aggregate trophy statistics without exposing database rows", async () => {
+  const rows = [
+    { games: 1, platinums: 1, hundred_percent: 1, updated_at: "2026-08-29T05:28:15.835Z" },
+    { total_trophies: 48, earned_trophies: 48, bronze: 34, silver: 10, gold: 3, platinum: 1 },
+    { game_id: "NPWR07722_00", title_name: "Grim Fandango Remastered", trophy_id: 12, trophy_name: "Rarest", trophy_type: "silver", icon_url: null, earned_at: "2020-01-01T00:00:00Z", rarity_class: 1, earned_rate: 4.2 },
+    { game_id: "NPWR07722_00", title_name: "Grim Fandango Remastered", trophy_id: 48, trophy_name: "Latest", trophy_type: "platinum", icon_url: null, earned_at: "2020-02-01T00:00:00Z", rarity_class: 2, earned_rate: 12.5 },
+  ];
+  let queryIndex = 0;
+  const env = {
+    DB: {
+      batch: async () => [],
+      prepare: () => ({
+        first: async () => rows[queryIndex++],
+      }),
+    },
+  } as any;
+
+  const response = await routePublicApi(new Request("https://example.com/api/psn/stats"), env);
+  assert.ok(response);
+  const body = await response.json() as any;
+  assert.deepEqual(body.counts, {
+    earnedTrophies: 48,
+    games: 1,
+    hundredPercent: 1,
+    platinums: 1,
+    totalTrophies: 48,
+  });
+  assert.deepEqual(body.earnedByType, { bronze: 34, silver: 10, gold: 3, platinum: 1 });
+  assert.equal(body.rarestEarned.name, "Rarest");
+  assert.equal(body.latestEarned.name, "Latest");
+});

@@ -82,4 +82,4 @@ GET http://localhost:8787/api/psn/status
 
 Supported trophy filters are `earned=true|false`, `group=<id>`, `sort=date|id|rarity`, and `order=asc|desc`.
 
-The daily Cron Trigger runs at 08:00 UTC and advances a persisted title cursor, eventually refreshing every game before starting again. Failed title requests produce a partial sync record while successful titles remain available; authentication or title-list failures are recorded as failed runs.
+The hourly Cron Trigger advances a persisted title cursor, refreshing the complete current library in roughly one week before starting again. Failed title requests produce a partial sync record while successful titles remain available; authentication or title-list failures are recorded as failed runs.

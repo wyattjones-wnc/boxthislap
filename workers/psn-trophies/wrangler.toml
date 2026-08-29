@@ -12,8 +12,7 @@ crons = ["0 8 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "psn-trophies"
-# Replace this local placeholder with the ID returned by `wrangler d1 create psn-trophies`.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "abcb147f-099a-470d-9774-0c5a8a679b27"
 migrations_dir = "migrations"
 
 [observability]

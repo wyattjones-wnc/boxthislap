@@ -1,0 +1,20 @@
+name = "box-this-lap-psn"
+main = "src/index.ts"
+compatibility_date = "2026-08-08"
+
+[vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+PSN_ACCOUNT_ID = "me"
+
+[triggers]
+crons = ["0 8 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "psn-trophies"
+# Replace this local placeholder with the ID returned by `wrangler d1 create psn-trophies`.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[observability]
+enabled = true

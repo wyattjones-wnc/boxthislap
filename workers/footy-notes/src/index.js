@@ -22,6 +22,16 @@ export default {
         return json({ ok: true, notes: await listMatchNotes(env) }, 200, cors);
       }
 
+      if (request.method === "GET" && url.pathname === "/api/ten-out-of-ten") {
+        return json({ ok: true, performances: await listTenOutOfTenPerformances(env) }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/ten-out-of-ten") {
+        const managerId = await requireAdmin(request, env);
+        const savedPerformance = await saveTenOutOfTenPerformance(env, await readBody(request), managerId);
+        return json({ ok: true, savedPerformance, status: "saved" }, 201, cors);
+      }
+
       const noteMatch = url.pathname.match(/^\/api\/match-notes\/([^/]+)$/);
 
       if (request.method === "GET" && noteMatch) {
@@ -45,11 +55,92 @@ export default {
       if (status >= 500) console.error(error);
       return json({
         ok: false,
-        error: status >= 500 ? "Match note data could not be saved." : error.message,
+        error: status >= 500 ? "Footy data could not be saved." : error.message,
       }, status, cors);
     }
   },
 };
+
+async function listTenOutOfTenPerformances(env) {
+  const result = await env.DB.prepare(`
+    SELECT id, match_id, player_name, home, away, match_date, match_time,
+      competition, note, created_at
+    FROM footy_ten_out_of_ten
+    ORDER BY match_date DESC, created_at DESC
+  `).all();
+
+  return (result.results || []).map(mapTenOutOfTenPerformance);
+}
+
+async function saveTenOutOfTenPerformance(env, body, managerId) {
+  const performance = normalizeTenOutOfTenPerformance(body);
+  const id = crypto.randomUUID();
+
+  await env.DB.prepare(`
+    INSERT INTO footy_ten_out_of_ten (
+      id, match_id, player_name, home, away, match_date, match_time,
+      competition, note, updated_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id,
+    performance.matchId,
+    performance.playerName,
+    performance.home,
+    performance.away,
+    performance.matchDate,
+    performance.matchTime,
+    performance.competition,
+    performance.note,
+    managerId,
+  ).run();
+
+  const row = await env.DB.prepare(`
+    SELECT id, match_id, player_name, home, away, match_date, match_time,
+      competition, note, created_at
+    FROM footy_ten_out_of_ten
+    WHERE id = ?
+  `).bind(id).first();
+
+  return mapTenOutOfTenPerformance(row);
+}
+
+function normalizeTenOutOfTenPerformance(value) {
+  const matchDate = cleanText(value?.matchDate, 10, "Match date");
+  const matchTime = cleanText(value?.matchTime, 5, "Match time");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(matchDate) || Number.isNaN(Date.parse(`${matchDate}T00:00:00Z`))) {
+    throw httpError(400, "Match date is required.");
+  }
+  if (matchTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(matchTime)) {
+    throw httpError(400, "Match time is invalid.");
+  }
+
+  return {
+    matchId: cleanText(value?.matchId, 200, "Match ID"),
+    playerName: requireText(value?.playerName, 200, "Player name"),
+    home: requireText(value?.home, 200, "Home team"),
+    away: requireText(value?.away, 200, "Away team"),
+    matchDate,
+    matchTime,
+    competition: cleanText(value?.competition, 200, "Competition"),
+    note: cleanText(value?.note, 2000, "Game info"),
+  };
+}
+
+function mapTenOutOfTenPerformance(row) {
+  return {
+    id: String(row?.id || ""),
+    matchId: String(row?.match_id || ""),
+    playerName: String(row?.player_name || ""),
+    home: String(row?.home || ""),
+    away: String(row?.away || ""),
+    matchDate: String(row?.match_date || ""),
+    matchTime: String(row?.match_time || ""),
+    competition: String(row?.competition || ""),
+    note: String(row?.note || ""),
+    createdAt: String(row?.created_at || ""),
+  };
+}
 
 async function listMatchNotes(env) {
   const result = await env.DB.prepare(`
@@ -215,6 +306,12 @@ function cleanText(value, maxLength, label) {
   return text;
 }
 
+function requireText(value, maxLength, label) {
+  const text = cleanText(value, maxLength, label);
+  if (!text) throw httpError(400, `${label} is required.`);
+  return text;
+}
+
 function parseMatchId(value, { encoded = false } = {}) {
   let matchId = String(value || "");
   if (encoded) {
@@ -271,7 +368,7 @@ function allowedOrigin(origin, env) {
 function corsHeaders(origin, env) {
   const headers = {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     Vary: "Origin",

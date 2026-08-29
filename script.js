@@ -127,6 +127,23 @@ import {
   footyNoteText,
   footyNoteHighlightLink,
   footyNoteStatus,
+  footyPerfectAdd,
+  footyPerfectList,
+  footyPerfectDialog,
+  footyPerfectForm,
+  footyPerfectClose,
+  footyPerfectCancel,
+  footyPerfectSave,
+  footyPerfectMatchLabel,
+  footyPerfectMatchId,
+  footyPerfectPlayer,
+  footyPerfectHome,
+  footyPerfectAway,
+  footyPerfectDate,
+  footyPerfectTime,
+  footyPerfectCompetition,
+  footyPerfectNote,
+  footyPerfectStatus,
   nextFilterToggle,
   nextFilters,
   nextSearchInput,
@@ -304,7 +321,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608180004";
+} from "./modules/domRefs.js?v=202608290620";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -405,6 +422,7 @@ const FOOTY_NOTIFICATION_OFFSETS = [
 let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
 let footyMatchNotesLoadPromise = null;
+let footyPerfectPerformancesLoadPromise = null;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -3421,10 +3439,17 @@ function toggleFootyFixtureExpansion(matchId) {
 
 function renderFootyFixtureDetails(fixture) {
   const matchNoteMarkup = renderFootyMatchNote(fixture);
-  const editMarkup = shouldRenderFootyNoteEditButton(fixture)
+  const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
+  const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
+  const actionsMarkup = canAddPerfectPerformance || canEditMatchNote
     ? `
       <div class="footy-fixture-detail-actions">
-        <button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>
+        ${canAddPerfectPerformance
+          ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
+          : "<span></span>"}
+        ${canEditMatchNote
+          ? `<button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>`
+          : ""}
       </div>
     `
     : "";
@@ -3436,9 +3461,234 @@ function renderFootyFixtureDetails(fixture) {
     <div class="footy-fixture-details">
       ${matchNoteMarkup}
       ${emptyMarkup}
-      ${editMarkup}
+      ${actionsMarkup}
     </div>
   `;
+}
+
+function renderFootyPerfectPage() {
+  if (!footyPerfectList) {
+    return;
+  }
+
+  const performances = Array.isArray(siteData.footyPerfectPerformances)
+    ? siteData.footyPerfectPerformances
+    : null;
+
+  if (!performances) {
+    footyPerfectList.setAttribute("aria-busy", "true");
+    footyPerfectList.innerHTML = renderLoadingMessage("Loading 10/10 performances...");
+    ensureFootyPerfectPerformances().catch((error) => {
+      recordDiagnostic("footy 10/10 performances failed to load", error);
+      if (activePageName === "footy-perfect") {
+        footyPerfectList.setAttribute("aria-busy", "false");
+        footyPerfectList.innerHTML = `<p class="table-message">${escapeHtml(error.message || "Unable to load 10/10 performances.")}</p>`;
+      }
+    });
+    return;
+  }
+
+  footyPerfectList.setAttribute("aria-busy", "false");
+  footyPerfectList.innerHTML = performances.length
+    ? performances.map(renderFootyPerfectPerformance).join("")
+    : `<p class="table-message">No 10/10 performances have been added yet.</p>`;
+}
+
+function renderFootyPerfectPerformance(performance = {}) {
+  const dateLabel = formatFootyPerfectDate(performance.matchDate);
+  const timeLabel = String(performance.matchTime || "").trim();
+  const matchLabel = `${performance.home || "TBD"} v ${performance.away || "TBD"}`;
+
+  return `
+    <article class="footy-perfect-card">
+      <div class="footy-perfect-score" aria-label="Sofascore rating 10 out of 10">10</div>
+      <div class="footy-perfect-copy">
+        <h2>${escapeHtml(performance.playerName || "Unknown player")}</h2>
+        <p class="footy-perfect-match">${escapeHtml(matchLabel)}</p>
+        <p class="footy-fixture-meta">
+          ${performance.competition ? `<span>${escapeHtml(performance.competition)}</span>` : ""}
+          ${dateLabel ? `<span>${escapeHtml(dateLabel)}</span>` : ""}
+          ${timeLabel ? `<span>${escapeHtml(timeLabel)}</span>` : ""}
+        </p>
+        ${performance.note ? `<p class="footy-perfect-note">${escapeHtml(performance.note)}</p>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function formatFootyPerfectDate(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+  }).format(new Date(`${text}T12:00:00`));
+}
+
+function compareFootyPerfectPerformances(first = {}, second = {}) {
+  return String(second.matchDate || "").localeCompare(String(first.matchDate || "")) ||
+    String(second.createdAt || "").localeCompare(String(first.createdAt || ""));
+}
+
+function ensureFootyPerfectPerformances({ force = false } = {}) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
+    siteData.footyPerfectPerformances = [];
+    renderFootyPerfectPage();
+    return Promise.resolve([]);
+  }
+
+  if (!force && Array.isArray(siteData.footyPerfectPerformances)) {
+    return Promise.resolve(siteData.footyPerfectPerformances);
+  }
+
+  if (footyPerfectPerformancesLoadPromise) {
+    return footyPerfectPerformancesLoadPromise;
+  }
+
+  footyPerfectPerformancesLoadPromise = fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/ten-out-of-ten`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  })
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || `10/10 endpoint returned ${response.status}.`);
+      }
+      siteData.footyPerfectPerformances = Array.isArray(data.performances) ? data.performances : [];
+      if (activePageName === "footy-perfect") {
+        renderFootyPerfectPage();
+      }
+      return siteData.footyPerfectPerformances;
+    })
+    .finally(() => {
+      footyPerfectPerformancesLoadPromise = null;
+    });
+
+  return footyPerfectPerformancesLoadPromise;
+}
+
+function getFootyPerfectInputTime(fixture = {}) {
+  const time = String(fixture.time || "").trim();
+  const directMatch = time.match(/^(\d{1,2}):(\d{2})/);
+
+  if (directMatch) {
+    return `${directMatch[1].padStart(2, "0")}:${directMatch[2]}`;
+  }
+
+  const parsed = parseFootyDate(fixture.timestamp || "");
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+}
+
+function openFootyPerfectDialog(matchId = "") {
+  if (!isCurrentManagerAdmin() || !footyPerfectDialog || !footyPerfectForm) {
+    return;
+  }
+
+  const fixture = matchId ? getFootyFixtureByMatchId(matchId) : null;
+  footyPerfectForm.reset();
+  footyPerfectMatchId.value = fixture ? String(fixture.matchId || "") : "";
+  footyPerfectHome.value = fixture ? String(fixture.home || "") : "";
+  footyPerfectAway.value = fixture ? String(fixture.away || "") : "";
+  footyPerfectDate.value = fixture ? getFootyFixtureDateKey(fixture) : "";
+  footyPerfectTime.value = fixture ? getFootyPerfectInputTime(fixture) : "";
+  footyPerfectCompetition.value = fixture ? String(fixture.league || "") : "";
+  footyPerfectMatchLabel.textContent = fixture ? `Fixture ${fixture.matchId}` : "Manual match";
+  footyPerfectStatus.textContent = "";
+  footyPerfectStatus.classList.remove("is-error");
+  footyPerfectSave.disabled = false;
+  footyPerfectDialog.showModal();
+  window.setTimeout(() => footyPerfectPlayer?.focus(), 0);
+}
+
+function closeFootyPerfectDialog() {
+  if (footyPerfectDialog?.open) {
+    footyPerfectDialog.close();
+  }
+}
+
+function setFootyPerfectStatus(message = "", isError = false) {
+  if (!footyPerfectStatus) {
+    return;
+  }
+  footyPerfectStatus.textContent = message;
+  footyPerfectStatus.classList.toggle("is-error", isError);
+}
+
+function buildFootyPerfectPerformanceFromDialog() {
+  const performance = {
+    matchId: footyPerfectMatchId.value,
+    playerName: footyPerfectPlayer.value,
+    home: footyPerfectHome.value,
+    away: footyPerfectAway.value,
+    matchDate: footyPerfectDate.value,
+    matchTime: footyPerfectTime.value,
+    competition: footyPerfectCompetition.value,
+    note: footyPerfectNote.value,
+  };
+
+  if (!performance.playerName.trim()) throw new Error("Player name is required.");
+  if (!performance.home.trim() || !performance.away.trim()) throw new Error("Home and away teams are required.");
+  if (!performance.matchDate) throw new Error("Match date is required.");
+  return performance;
+}
+
+async function saveFootyPerfectPerformanceFromDialog() {
+  let performance;
+  try {
+    performance = buildFootyPerfectPerformanceFromDialog();
+  } catch (error) {
+    setFootyPerfectStatus(error.message, true);
+    return;
+  }
+
+  footyPerfectSave.disabled = true;
+  setFootyPerfectStatus("Saving 10/10 performance...");
+
+  try {
+    const data = await saveFootyPerfectPerformance(performance);
+
+    siteData.footyPerfectPerformances = [
+      data.savedPerformance,
+      ...(siteData.footyPerfectPerformances || []),
+    ].sort(compareFootyPerfectPerformances);
+    renderFootyPerfectPage();
+    closeFootyPerfectDialog();
+  } catch (error) {
+    setFootyPerfectStatus(error.message || "Unable to save 10/10 performance.", true);
+    footyPerfectSave.disabled = false;
+  }
+}
+
+async function saveFootyPerfectPerformance(performance, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/ten-out-of-ten`, {
+    body: JSON.stringify(performance),
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return saveFootyPerfectPerformance(performance, true);
+  }
+
+  if (!response.ok || !data?.ok || !data.savedPerformance) {
+    throw new Error(data?.error || "10/10 performance was not saved.");
+  }
+
+  return data;
 }
 
 function getFootyMatchScore(fixture) {
@@ -10577,6 +10827,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "footy-perfect") {
+    renderFootyPerfectPage();
+    return;
+  }
+
   if (pageName === "next") {
     if (Array.isArray(siteData.nextItems)) {
       renderNextList();
@@ -11969,6 +12224,13 @@ document.addEventListener("click", (event) => {
 });
 
 function handleFootyFixtureListClick(event) {
+  const perfectButton = event.target.closest("[data-footy-perfect-match]");
+
+  if (perfectButton) {
+    openFootyPerfectDialog(perfectButton.getAttribute("data-footy-perfect-match"));
+    return;
+  }
+
   const editButton = event.target.closest("[data-footy-note-edit]");
 
   if (editButton) {
@@ -12143,6 +12405,25 @@ footyGoalAssistsSaved?.addEventListener("click", (event) => {
   }
 
   deleteFootyGoalAssistEntry(Number(deleteButton.getAttribute("data-footy-ga-delete")));
+});
+
+footyPerfectAdd?.addEventListener("click", () => {
+  openFootyPerfectDialog();
+});
+
+footyPerfectForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveFootyPerfectPerformanceFromDialog();
+});
+
+[footyPerfectClose, footyPerfectCancel].forEach((button) => {
+  button?.addEventListener("click", closeFootyPerfectDialog);
+});
+
+footyPerfectDialog?.addEventListener("click", (event) => {
+  if (event.target === footyPerfectDialog) {
+    closeFootyPerfectDialog();
+  }
 });
 
 footyNoteForm?.addEventListener("submit", (event) => {
@@ -15859,7 +16140,7 @@ window.addEventListener("popstate", () => {
 function getPageDataScope(pageName = "") {
   const page = String(pageName || "");
 
-  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists") {
+  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists" || page === "footy-perfect") {
     return "footy";
   }
 

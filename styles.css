@@ -1030,6 +1030,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   flex-wrap: nowrap;
 }
 
+.footy-perfect-button {
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
 .footy-past-toggle-icon {
   display: none;
   fill: none;
@@ -3987,13 +3994,69 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-fixture-detail-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 
-.footy-note-edit-button {
+.footy-note-edit-button,
+.footy-perfect-match-button {
   font-size: 0.82rem;
   min-height: 32px;
   padding: 6px 10px;
+}
+
+.footy-perfect-list {
+  display: grid;
+  gap: 12px;
+}
+
+.footy-perfect-card {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel) 88%, var(--track));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 14px;
+}
+
+.footy-perfect-score {
+  align-items: center;
+  background: var(--track);
+  border-radius: 50%;
+  color: var(--track-ink);
+  display: flex;
+  font-size: 1.05rem;
+  font-weight: 950;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.footy-perfect-copy {
+  min-width: 0;
+}
+
+.footy-perfect-copy h2,
+.footy-perfect-copy p {
+  margin: 0;
+}
+
+.footy-perfect-copy h2 {
+  font-size: 1rem;
+}
+
+.footy-perfect-match {
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-top: 3px !important;
+}
+
+.footy-perfect-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin-top: 8px !important;
+  white-space: pre-wrap;
 }
 
 .footy-updated,

@@ -156,6 +156,26 @@ import {
   footyPerfectCompetition,
   footyPerfectNote,
   footyPerfectStatus,
+  footySeenAdd,
+  footySeenList,
+  footySeenDialog,
+  footySeenForm,
+  footySeenClose,
+  footySeenCancel,
+  footySeenSave,
+  footySeenDialogTitle,
+  footySeenMatchLabel,
+  footySeenEntryId,
+  footySeenMatchId,
+  footySeenManualFields,
+  footySeenHome,
+  footySeenAway,
+  footySeenDate,
+  footySeenTime,
+  footySeenCompetition,
+  footySeenVenue,
+  footySeenSportsBar,
+  footySeenStatus,
   nextFilterToggle,
   nextFilters,
   nextSearchInput,
@@ -333,7 +353,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608300100";
+} from "./modules/domRefs.js?v=202608302031";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -437,6 +457,7 @@ let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
 let footyMatchNotesLoadPromise = null;
 let footyPerfectPerformancesLoadPromise = null;
+let footySeenMatchesLoadPromise = null;
 let shouldShowFootyPerfectFilters = false;
 let shouldShowFootyPerfectEditMode = false;
 const pageDataPromises = new Map();
@@ -570,7 +591,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -3465,16 +3486,28 @@ function toggleFootyFixtureExpansion(matchId) {
 function renderFootyFixtureDetails(fixture) {
   const matchNoteMarkup = renderFootyMatchNote(fixture);
   const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
+  const canManageSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
-  const actionsMarkup = canAddPerfectPerformance || canEditMatchNote
+  const seenMatch = canManageSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
+  const actionsMarkup = canAddPerfectPerformance || canManageSeenMatch || canEditMatchNote
     ? `
       <div class="footy-fixture-detail-actions">
         ${canAddPerfectPerformance
           ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
           : "<span></span>"}
-        ${canEditMatchNote
-          ? `<button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>`
-          : ""}
+        <div class="footy-fixture-detail-actions-right">
+          ${canManageSeenMatch ? `
+            <button class="icon-action-button footy-seen-match-button${seenMatch ? " is-active" : ""}" type="button" data-footy-seen-match="${escapeHtml(fixture.matchId)}" aria-label="${seenMatch ? "Edit" : "Add"} seen match" title="Seen Match">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="2.5"></circle>
+              </svg>
+            </button>
+          ` : ""}
+          ${canEditMatchNote
+            ? `<button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>`
+            : ""}
+        </div>
       </div>
     `
     : "";
@@ -3831,6 +3864,217 @@ async function saveFootyPerfectPerformance(performance, retried = false) {
     throw new Error(data?.error || "10/10 performance was not saved.");
   }
 
+  return data;
+}
+
+function renderFootySeenPage() {
+  if (!footySeenList) return;
+  const seenMatches = Array.isArray(siteData.footySeenMatches) ? siteData.footySeenMatches : null;
+
+  if (!seenMatches) {
+    footySeenList.setAttribute("aria-busy", "true");
+    footySeenList.innerHTML = renderLoadingMessage("Loading seen matches...");
+    ensureFootySeenMatches().catch((error) => {
+      recordDiagnostic("seen matches failed to load", error);
+      if (activePageName === "footy-seen") {
+        footySeenList.setAttribute("aria-busy", "false");
+        footySeenList.innerHTML = `<p class="table-message">${escapeHtml(error.message || "Unable to load seen matches.")}</p>`;
+      }
+    });
+    return;
+  }
+
+  const sortedMatches = [...seenMatches].sort(compareFootySeenMatches);
+  footySeenList.setAttribute("aria-busy", "false");
+  footySeenList.innerHTML = sortedMatches.length
+    ? sortedMatches.map(renderFootySeenMatch).join("")
+    : `<p class="table-message">No seen matches have been added yet.</p>`;
+}
+
+function renderFootySeenMatch(seenMatch = {}) {
+  const dateLabel = formatFootyPerfectDate(seenMatch.matchDate);
+  const timeLabel = String(seenMatch.matchTime || "").trim();
+
+  return `
+    <article class="footy-seen-card">
+      <div class="footy-seen-card-heading">
+        <div>
+          <h2>${escapeHtml(`${seenMatch.home || "TBD"} v ${seenMatch.away || "TBD"}`)}</h2>
+          <p class="footy-fixture-meta">
+            ${dateLabel ? `<span>${escapeHtml(dateLabel)}</span>` : ""}
+            ${timeLabel ? `<span>${escapeHtml(timeLabel)}</span>` : ""}
+            ${seenMatch.competition ? `<span>${escapeHtml(seenMatch.competition)}</span>` : ""}
+          </p>
+        </div>
+        <button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>
+      </div>
+      <div class="footy-seen-card-footer">
+        ${seenMatch.venue ? `<span>${escapeHtml(seenMatch.venue)}</span>` : "<span></span>"}
+        ${seenMatch.sportsBar ? `<strong class="footy-seen-sports-bar-badge">Sports Bar</strong>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function compareFootySeenMatches(first = {}, second = {}) {
+  return String(second.matchDate || "").localeCompare(String(first.matchDate || "")) ||
+    String(second.matchTime || "").localeCompare(String(first.matchTime || "")) ||
+    String(second.createdAt || "").localeCompare(String(first.createdAt || ""));
+}
+
+function getFootySeenMatchByMatchId(matchId) {
+  const normalizedId = normalizeFootyMatchId(matchId);
+  if (!normalizedId) return null;
+  return (siteData.footySeenMatches || []).find((seenMatch) =>
+    normalizeFootyMatchId(seenMatch.matchId) === normalizedId
+  ) || null;
+}
+
+function ensureFootySeenMatches({ force = false } = {}) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
+    siteData.footySeenMatches = [];
+    return Promise.resolve([]);
+  }
+  if (!force && Array.isArray(siteData.footySeenMatches)) return Promise.resolve(siteData.footySeenMatches);
+  if (footySeenMatchesLoadPromise) return footySeenMatchesLoadPromise;
+
+  footySeenMatchesLoadPromise = loadFootySeenMatches()
+    .then((data) => {
+      siteData.footySeenMatches = Array.isArray(data.seenMatches) ? data.seenMatches : [];
+      if (activePageName === "footy-seen") renderFootySeenPage();
+      if (isFootyContextPage(activePageName)) {
+        renderFootySchedule(siteData.footySchedule);
+        renderFootyTeamPage();
+      }
+      return siteData.footySeenMatches;
+    })
+    .finally(() => {
+      footySeenMatchesLoadPromise = null;
+    });
+  return footySeenMatchesLoadPromise;
+}
+
+async function loadFootySeenMatches(retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/seen-matches`, {
+    headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return loadFootySeenMatches(true);
+  }
+  if (!response.ok || !data?.ok) throw new Error(data?.error || `Seen matches endpoint returned ${response.status}.`);
+  return data;
+}
+
+async function openFootySeenDialogForFixture(matchId) {
+  try {
+    await ensureFootySeenMatches();
+    const fixture = getFootyFixtureByMatchId(matchId);
+    if (!fixture) throw new Error("This fixture could not be found.");
+    openFootySeenDialog({ fixture, seenMatch: getFootySeenMatchByMatchId(matchId) });
+  } catch (error) {
+    recordDiagnostic("seen match dialog failed to open", error);
+  }
+}
+
+function openFootySeenDialog({ fixture = null, seenMatch = null, manual = false } = {}) {
+  if (!isCurrentManagerAdmin() || !footySeenDialog || !footySeenForm) return;
+  const isTracked = Boolean(fixture || seenMatch?.matchId) && !manual;
+  footySeenForm.reset();
+  footySeenEntryId.value = String(seenMatch?.id || "");
+  footySeenMatchId.value = String(seenMatch?.matchId || fixture?.matchId || "");
+  footySeenHome.value = String(seenMatch?.home || fixture?.home || "");
+  footySeenAway.value = String(seenMatch?.away || fixture?.away || "");
+  footySeenDate.value = String(seenMatch?.matchDate || (fixture ? getFootyFixtureDateKey(fixture) : ""));
+  footySeenTime.value = String(seenMatch?.matchTime || (fixture ? getFootyPerfectInputTime(fixture) : ""));
+  footySeenCompetition.value = String(seenMatch?.competition || fixture?.league || "");
+  footySeenVenue.value = String(seenMatch?.venue || fixture?.venue || "");
+  footySeenSportsBar.checked = Boolean(seenMatch?.sportsBar);
+  footySeenManualFields.hidden = isTracked;
+  [footySeenHome, footySeenAway, footySeenDate, footySeenTime, footySeenCompetition, footySeenVenue]
+    .forEach((field) => { field.disabled = isTracked; });
+  footySeenDialogTitle.textContent = seenMatch ? "Edit Seen Match" : "Add Seen Match";
+  footySeenMatchLabel.textContent = isTracked ? `${footySeenHome.value} v ${footySeenAway.value}` : "Manual match";
+  footySeenStatus.textContent = "";
+  footySeenStatus.classList.remove("is-error");
+  footySeenSave.disabled = false;
+  footySeenDialog.showModal();
+  window.setTimeout(() => (isTracked ? footySeenSportsBar : footySeenHome)?.focus(), 0);
+}
+
+function closeFootySeenDialog() {
+  if (footySeenDialog?.open) footySeenDialog.close();
+}
+
+function setFootySeenStatus(message = "", isError = false) {
+  if (!footySeenStatus) return;
+  footySeenStatus.textContent = message;
+  footySeenStatus.classList.toggle("is-error", isError);
+}
+
+function buildFootySeenMatchFromDialog() {
+  const seenMatch = {
+    id: footySeenEntryId.value,
+    matchId: footySeenMatchId.value,
+    home: footySeenHome.value,
+    away: footySeenAway.value,
+    matchDate: footySeenDate.value,
+    matchTime: footySeenTime.value,
+    competition: footySeenCompetition.value,
+    venue: footySeenVenue.value,
+    sportsBar: Boolean(footySeenSportsBar.checked),
+  };
+  if (!seenMatch.home.trim() || !seenMatch.away.trim()) throw new Error("Home and away teams are required.");
+  if (!seenMatch.matchDate) throw new Error("Match date is required.");
+  return seenMatch;
+}
+
+async function saveFootySeenMatchFromDialog() {
+  let seenMatch;
+  try {
+    seenMatch = buildFootySeenMatchFromDialog();
+  } catch (error) {
+    setFootySeenStatus(error.message, true);
+    return;
+  }
+
+  footySeenSave.disabled = true;
+  setFootySeenStatus("Saving seen match...");
+  try {
+    const data = await saveFootySeenMatch(seenMatch);
+    const existing = siteData.footySeenMatches || [];
+    siteData.footySeenMatches = seenMatch.id
+      ? existing.map((entry) => entry.id === data.savedSeenMatch.id ? data.savedSeenMatch : entry)
+      : [data.savedSeenMatch, ...existing];
+    siteData.footySeenMatches.sort(compareFootySeenMatches);
+    renderFootySeenPage();
+    renderFootySchedule(siteData.footySchedule);
+    renderFootyTeamPage();
+    closeFootySeenDialog();
+  } catch (error) {
+    setFootySeenStatus(error.message || "Unable to save seen match.", true);
+    footySeenSave.disabled = false;
+  }
+}
+
+async function saveFootySeenMatch(seenMatch, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const resource = seenMatch.id ? `/api/seen-matches/${encodeURIComponent(seenMatch.id)}` : "/api/seen-matches";
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}${resource}`, {
+    body: JSON.stringify(seenMatch),
+    headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    method: seenMatch.id ? "PUT" : "POST",
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return saveFootySeenMatch(seenMatch, true);
+  }
+  if (!response.ok || !data?.ok || !data.savedSeenMatch) throw new Error(data?.error || "Seen match was not saved.");
   return data;
 }
 
@@ -10979,6 +11223,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "footy-seen") {
+    renderFootySeenPage();
+    return;
+  }
+
   if (pageName === "next") {
     if (Array.isArray(siteData.nextItems)) {
       renderNextList();
@@ -12381,6 +12630,13 @@ document.addEventListener("click", (event) => {
 });
 
 function handleFootyFixtureListClick(event) {
+  const seenButton = event.target.closest("[data-footy-seen-match]");
+
+  if (seenButton) {
+    void openFootySeenDialogForFixture(seenButton.getAttribute("data-footy-seen-match"));
+    return;
+  }
+
   const perfectButton = event.target.closest("[data-footy-perfect-match]");
 
   if (perfectButton) {
@@ -12608,6 +12864,31 @@ footyPerfectDialog?.addEventListener("click", (event) => {
 
 [footyPerfectHome, footyPerfectAway].forEach((input) => {
   input?.addEventListener("input", syncFootyPerfectTeamSideOptions);
+});
+
+footySeenAdd?.addEventListener("click", () => {
+  openFootySeenDialog({ manual: true });
+});
+
+footySeenList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-footy-seen-edit]");
+  if (!editButton) return;
+  const entryId = String(editButton.getAttribute("data-footy-seen-edit") || "");
+  const seenMatch = (siteData.footySeenMatches || []).find((entry) => entry.id === entryId);
+  if (seenMatch) openFootySeenDialog({ seenMatch, manual: !seenMatch.matchId });
+});
+
+footySeenForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveFootySeenMatchFromDialog();
+});
+
+[footySeenClose, footySeenCancel].forEach((button) => {
+  button?.addEventListener("click", closeFootySeenDialog);
+});
+
+footySeenDialog?.addEventListener("click", (event) => {
+  if (event.target === footySeenDialog) closeFootySeenDialog();
 });
 
 footyNoteForm?.addEventListener("submit", (event) => {
@@ -14039,12 +14320,15 @@ function renderLoginState() {
     element.hidden = !managerMeta;
   });
   syncFootyGoalAssistsButton();
+  if (managerMeta?.isAdmin && siteData.footySchedule && !Array.isArray(siteData.footySeenMatches)) {
+    ensureFootySeenMatches().catch((error) => recordDiagnostic("seen matches failed to load", error));
+  }
 
   if (
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -16324,7 +16608,7 @@ window.addEventListener("popstate", () => {
 function getPageDataScope(pageName = "") {
   const page = String(pageName || "");
 
-  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists" || page === "footy-perfect") {
+  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists" || page === "footy-perfect" || page === "footy-seen") {
     return "footy";
   }
 

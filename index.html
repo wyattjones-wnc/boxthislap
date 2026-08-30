@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.30.18.10";
+      window.BOX_THIS_LAP_VERSION = "2026.08.30.20.31";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608301810">
+    <link rel="stylesheet" href="styles.css?v=202608302031">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -768,6 +768,12 @@
                 <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L12 3Z"></path>
               </svg>
             </a>
+            <a class="icon-action-button" href="#footy-seen" data-page-link="footy-seen" data-admin-only hidden aria-label="Open Seen Matches" title="Seen Matches">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="2.5"></circle>
+              </svg>
+            </a>
             <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
               <svg class="footy-past-toggle-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="M3 12a9 9 0 1 0 3-6.7"></path>
@@ -1020,6 +1026,21 @@
         </div>
       </section>
 
+      <section class="page" id="footy-seen" data-page="footy-seen" data-admin-only hidden>
+        <div class="section-heading page-heading-with-action footy-heading">
+          <div>
+            <a class="back-link" href="#footy" data-page-link="footy">Footy</a>
+            <h1>Seen Matches</h1>
+          </div>
+          <div class="heading-actions">
+            <button class="icon-action-button" id="footy-seen-add" type="button" aria-label="Add a seen match" title="Add seen match">+</button>
+          </div>
+        </div>
+        <div class="content-shell footy-seen-list" id="footy-seen-list" aria-live="polite" aria-busy="true">
+          <p class="table-message loading-message"><span class="loading-spinner"></span>Loading seen matches...</p>
+        </div>
+      </section>
+
       <section class="page trophy-log-page" id="trophy-log" data-page="trophy-log" data-admin-only hidden>
         <div class="section-heading">
           <a class="back-link" href="#the-monster-maniac" data-page-link="the-monster-maniac">Home</a>
@@ -1119,6 +1140,57 @@
           <footer>
             <button class="action-button" id="footy-perfect-cancel" type="button">Cancel</button>
             <button class="action-button" id="footy-perfect-save" type="submit">Save</button>
+          </footer>
+        </form>
+      </dialog>
+
+      <dialog class="footy-note-dialog" id="footy-seen-dialog">
+        <form class="footy-note-form" id="footy-seen-form" method="dialog">
+          <header>
+            <div>
+              <span id="footy-seen-match-label"></span>
+              <h2 id="footy-seen-dialog-title">Add Seen Match</h2>
+            </div>
+            <button class="icon-action-button" id="footy-seen-close" type="button" aria-label="Close seen match editor">&times;</button>
+          </header>
+          <input id="footy-seen-entry-id" type="hidden">
+          <input id="footy-seen-match-id" type="hidden">
+          <div class="footy-seen-manual-fields" id="footy-seen-manual-fields">
+            <div class="footy-note-grid">
+              <label>
+                <span>Home</span>
+                <input id="footy-seen-home" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Away</span>
+                <input id="footy-seen-away" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Date</span>
+                <input id="footy-seen-date" type="date" required>
+              </label>
+              <label>
+                <span>Time</span>
+                <input id="footy-seen-time" type="time">
+              </label>
+              <label class="footy-note-wide">
+                <span>Competition</span>
+                <input id="footy-seen-competition" type="text" autocomplete="off">
+              </label>
+              <label class="footy-note-wide">
+                <span>Venue</span>
+                <input id="footy-seen-venue" type="text" autocomplete="off">
+              </label>
+            </div>
+          </div>
+          <label class="footy-checkbox-control footy-seen-sports-bar-control">
+            <input id="footy-seen-sports-bar" type="checkbox">
+            <span>Saw it in Sports Bar</span>
+          </label>
+          <p class="footy-note-status" id="footy-seen-status" aria-live="polite"></p>
+          <footer>
+            <button class="action-button" id="footy-seen-cancel" type="button">Cancel</button>
+            <button class="action-button" id="footy-seen-save" type="submit">Save</button>
           </footer>
         </form>
       </dialog>
@@ -2529,6 +2601,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608302030"></script>
+    <script type="module" src="script.js?v=202608302031"></script>
   </body>
 </html>

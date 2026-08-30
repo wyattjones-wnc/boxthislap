@@ -4763,8 +4763,34 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-detail-actions {
+  align-items: center;
   display: flex;
+  gap: 10px;
   justify-content: space-between;
+}
+
+.footy-fixture-detail-actions-right {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.footy-seen-match-button {
+  height: 32px;
+  min-height: 32px;
+  width: 32px;
+}
+
+.footy-seen-match-button svg {
+  height: 17px;
+  width: 17px;
+}
+
+.footy-seen-match-button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--panel);
 }
 
 .footy-note-edit-button,
@@ -4860,6 +4886,90 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-perfect-filter-toggles {
   align-self: end;
+}
+
+.footy-seen-list {
+  display: grid;
+  gap: 12px;
+}
+
+.footy-seen-card {
+  background: color-mix(in srgb, var(--panel) 88%, var(--track));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.footy-seen-card-heading,
+.footy-seen-card-footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.footy-seen-card-heading > div {
+  min-width: 0;
+}
+
+.footy-seen-card h2 {
+  font-size: 1.02rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footy-seen-card .footy-fixture-meta {
+  margin: 5px 0 0;
+}
+
+.footy-seen-edit-button {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.footy-seen-card-footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.84rem;
+  min-height: 30px;
+  padding-top: 10px;
+}
+
+.footy-seen-sports-bar-badge {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.footy-seen-manual-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.footy-seen-sports-bar-control {
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .footy-seen-card-heading {
+    align-items: flex-start;
+  }
+
+  .footy-seen-card .footy-fixture-meta {
+    gap: 4px 10px;
+  }
 }
 
 .footy-updated,

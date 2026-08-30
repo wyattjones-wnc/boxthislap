@@ -9,7 +9,9 @@ export const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gm
 export const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev";
 export const GUIDES_PROGRESS_ENDPOINT = "https://box-this-lap-guides.boxthislap.workers.dev";
 export const RANKINGS_ENDPOINT = "https://box-this-lap-rankings.boxthislap.workers.dev";
+export const PSN_TROPHIES_ENDPOINT = "https://box-this-lap-psn.boxthislap.workers.dev";
 export const YOUTUBE_INBOX_ENDPOINT = "https://box-this-lap-youtube.boxthislap.workers.dev";
+export const COLLECTIBLES_ENDPOINT = "https://box-this-lap-collectibles.boxthislap.workers.dev";
 export const AWARD_DEFINITIONS = [
   {
     abbreviation: "PC",

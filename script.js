@@ -11,7 +11,9 @@ import {
   NEXT_ITEMS_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
+  PSN_TROPHIES_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
+  COLLECTIBLES_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
   BRACKET_STORAGE_KEY,
@@ -126,6 +128,54 @@ import {
   footyNoteText,
   footyNoteHighlightLink,
   footyNoteStatus,
+  footyPerfectAdd,
+  footyPerfectFilterToggle,
+  footyPerfectFilters,
+  footyPerfectSearch,
+  footyPerfectDateFrom,
+  footyPerfectDateTo,
+  footyPerfectTeamFilter,
+  footyPerfectCompetitionFilter,
+  footyPerfectEditToggle,
+  footyPerfectList,
+  footyPerfectDialog,
+  footyPerfectForm,
+  footyPerfectClose,
+  footyPerfectCancel,
+  footyPerfectSave,
+  footyPerfectDialogTitle,
+  footyPerfectMatchLabel,
+  footyPerfectEntryId,
+  footyPerfectMatchId,
+  footyPerfectPlayer,
+  footyPerfectPlayerTeamSide,
+  footyPerfectHome,
+  footyPerfectAway,
+  footyPerfectDate,
+  footyPerfectTime,
+  footyPerfectCompetition,
+  footyPerfectNote,
+  footyPerfectStatus,
+  footySeenAdd,
+  footySeenList,
+  footySeenDialog,
+  footySeenForm,
+  footySeenClose,
+  footySeenCancel,
+  footySeenSave,
+  footySeenDialogTitle,
+  footySeenMatchLabel,
+  footySeenEntryId,
+  footySeenMatchId,
+  footySeenManualFields,
+  footySeenHome,
+  footySeenAway,
+  footySeenDate,
+  footySeenTime,
+  footySeenCompetition,
+  footySeenVenue,
+  footySeenSportsBar,
+  footySeenStatus,
   nextFilterToggle,
   nextFilters,
   nextSearchInput,
@@ -303,14 +353,17 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608180004";
+} from "./modules/domRefs.js?v=202608302031";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
-import { createGuidesController } from "./modules/guides.js?v=202608230220";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608252243";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608270401";
+import { createGuidesController } from "./modules/guides.js?v=202608301830";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608301400";
+import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608301800";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
+import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
+import { createCollectiblesController } from "./modules/collectibles.js?v=202608300001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -403,6 +456,10 @@ const FOOTY_NOTIFICATION_OFFSETS = [
 let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
 let footyMatchNotesLoadPromise = null;
+let footyPerfectPerformancesLoadPromise = null;
+let footySeenMatchesLoadPromise = null;
+let shouldShowFootyPerfectFilters = false;
+let shouldShowFootyPerfectEditMode = false;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -534,7 +591,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -556,11 +613,21 @@ const guidesController = createGuidesController({
   loadData: loadGuideData,
   progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });
-const platinumsController = createPlatinumsController({ loadSheet });
-const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
+const platinumsController = createPlatinumsController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
+const trophyStatsController = createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
+const trophyLogController = createTrophyLogController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
+const youtubeInboxController = createYouTubeInboxController({
+  endpoint: YOUTUBE_INBOX_ENDPOINT,
+  loadSheet,
+  scrollToTop: scrollToPageTop,
+});
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
+});
+const collectiblesController = createCollectiblesController({
+  endpoint: COLLECTIBLES_ENDPOINT,
+  getAccessToken: ensureRankingAuthorization,
 });
 
 function renderLeagueList(year) {
@@ -3418,10 +3485,29 @@ function toggleFootyFixtureExpansion(matchId) {
 
 function renderFootyFixtureDetails(fixture) {
   const matchNoteMarkup = renderFootyMatchNote(fixture);
-  const editMarkup = shouldRenderFootyNoteEditButton(fixture)
+  const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
+  const canManageSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
+  const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
+  const seenMatch = canManageSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
+  const actionsMarkup = canAddPerfectPerformance || canManageSeenMatch || canEditMatchNote
     ? `
       <div class="footy-fixture-detail-actions">
-        <button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>
+        ${canAddPerfectPerformance
+          ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
+          : "<span></span>"}
+        <div class="footy-fixture-detail-actions-right">
+          ${canManageSeenMatch ? `
+            <button class="icon-action-button footy-seen-match-button${seenMatch ? " is-active" : ""}" type="button" data-footy-seen-match="${escapeHtml(fixture.matchId)}" aria-label="${seenMatch ? "Edit" : "Add"} seen match" title="Seen Match">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="2.5"></circle>
+              </svg>
+            </button>
+          ` : ""}
+          ${canEditMatchNote
+            ? `<button class="action-button footy-note-edit-button" type="button" data-footy-note-edit="${escapeHtml(fixture.matchId)}">Edit</button>`
+            : ""}
+        </div>
       </div>
     `
     : "";
@@ -3433,9 +3519,563 @@ function renderFootyFixtureDetails(fixture) {
     <div class="footy-fixture-details">
       ${matchNoteMarkup}
       ${emptyMarkup}
-      ${editMarkup}
+      ${actionsMarkup}
     </div>
   `;
+}
+
+function renderFootyPerfectPage() {
+  if (!footyPerfectList) {
+    return;
+  }
+
+  const performances = Array.isArray(siteData.footyPerfectPerformances)
+    ? siteData.footyPerfectPerformances
+    : null;
+
+  if (!performances) {
+    footyPerfectList.setAttribute("aria-busy", "true");
+    footyPerfectList.innerHTML = renderLoadingMessage("Loading 10/10 performances...");
+    ensureFootyPerfectPerformances().catch((error) => {
+      recordDiagnostic("footy 10/10 performances failed to load", error);
+      if (activePageName === "footy-perfect") {
+        footyPerfectList.setAttribute("aria-busy", "false");
+        footyPerfectList.innerHTML = `<p class="table-message">${escapeHtml(error.message || "Unable to load 10/10 performances.")}</p>`;
+      }
+    });
+    return;
+  }
+
+  syncFootyPerfectFilters(performances);
+  const visiblePerformances = getFilteredFootyPerfectPerformances(performances)
+    .sort(compareFootyPerfectPerformances);
+  footyPerfectList.setAttribute("aria-busy", "false");
+  footyPerfectList.innerHTML = visiblePerformances.length
+    ? visiblePerformances.map(renderFootyPerfectPerformance).join("")
+    : `<p class="table-message">${performances.length ? "No 10/10 performances match these filters." : "No 10/10 performances have been added yet."}</p>`;
+}
+
+function renderFootyPerfectPerformance(performance = {}) {
+  const dateLabel = formatFootyPerfectDate(performance.matchDate);
+  const timeLabel = String(performance.matchTime || "").trim();
+  const matchLabel = `${performance.home || "TBD"} v ${performance.away || "TBD"}`;
+  const playerTeam = getFootyPerfectPlayerTeam(performance);
+  const sideLabel = performance.playerTeamSide === "home" ? "H" : performance.playerTeamSide === "away" ? "A" : "";
+  const editMarkup = shouldShowFootyPerfectEditMode
+    ? `<button class="action-button footy-perfect-edit-button" type="button" data-footy-perfect-edit="${escapeHtml(performance.id)}">Edit</button>`
+    : "";
+
+  return `
+    <article class="footy-perfect-card">
+      <div class="footy-perfect-card-heading">
+        <div class="footy-perfect-copy">
+          <h2>${escapeHtml(performance.playerName || "Unknown player")}</h2>
+          <p class="footy-perfect-player-team">
+            ${sideLabel ? `<span class="footy-side-chip" aria-label="${performance.playerTeamSide === "home" ? "Home" : "Away"} team">${sideLabel}</span>` : ""}
+            <strong>${escapeHtml(playerTeam || "Team not assigned")}</strong>
+          </p>
+        </div>
+        ${editMarkup}
+      </div>
+      <div class="footy-perfect-match-details">
+        <p class="footy-perfect-match">${escapeHtml(matchLabel)}</p>
+        <p class="footy-fixture-meta">
+          ${dateLabel ? `<span>${escapeHtml(dateLabel)}</span>` : ""}
+          ${timeLabel ? `<span>${escapeHtml(timeLabel)}</span>` : ""}
+          ${performance.competition ? `<span>${escapeHtml(performance.competition)}</span>` : ""}
+        </p>
+        ${performance.note ? `<p class="footy-perfect-note">${escapeHtml(performance.note)}</p>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function formatFootyPerfectDate(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+  }).format(new Date(`${text}T12:00:00`));
+}
+
+function compareFootyPerfectPerformances(first = {}, second = {}) {
+  return String(second.matchDate || "").localeCompare(String(first.matchDate || "")) ||
+    String(second.matchTime || "").localeCompare(String(first.matchTime || "")) ||
+    String(second.createdAt || "").localeCompare(String(first.createdAt || ""));
+}
+
+function getFootyPerfectPlayerTeam(performance = {}) {
+  if (performance.playerTeamSide === "home") return String(performance.home || "").trim();
+  if (performance.playerTeamSide === "away") return String(performance.away || "").trim();
+  return "";
+}
+
+function getFilteredFootyPerfectPerformances(performances = []) {
+  const search = normalizeLookupName(footyPerfectSearch?.value);
+  const dateFrom = String(footyPerfectDateFrom?.value || "");
+  const dateTo = String(footyPerfectDateTo?.value || "");
+  const team = normalizeLookupName(footyPerfectTeamFilter?.value);
+  const competition = normalizeLookupName(footyPerfectCompetitionFilter?.value);
+
+  return performances.filter((performance) => {
+    const matchDate = String(performance.matchDate || "");
+    if (dateFrom && matchDate < dateFrom) return false;
+    if (dateTo && matchDate > dateTo) return false;
+    if (team && normalizeLookupName(getFootyPerfectPlayerTeam(performance)) !== team) return false;
+    if (competition && normalizeLookupName(performance.competition) !== competition) return false;
+    if (!search) return true;
+
+    return normalizeLookupName([
+      performance.playerName,
+      performance.home,
+      performance.away,
+      performance.competition,
+      performance.note,
+      getFootyPerfectPlayerTeam(performance),
+    ].join(" ")).includes(search);
+  });
+}
+
+function syncFootyPerfectFilters(performances = []) {
+  if (footyPerfectFilters) footyPerfectFilters.hidden = !shouldShowFootyPerfectFilters;
+  if (footyPerfectFilterToggle) {
+    footyPerfectFilterToggle.setAttribute("aria-expanded", String(shouldShowFootyPerfectFilters));
+    footyPerfectFilterToggle.classList.toggle("is-active", shouldShowFootyPerfectFilters);
+  }
+  if (footyPerfectEditToggle) footyPerfectEditToggle.checked = shouldShowFootyPerfectEditMode;
+
+  syncFootyPerfectSelectOptions(
+    footyPerfectTeamFilter,
+    performances.map(getFootyPerfectPlayerTeam).filter(Boolean),
+    "All teams",
+  );
+  syncFootyPerfectSelectOptions(
+    footyPerfectCompetitionFilter,
+    performances.map((performance) => performance.competition).filter(Boolean),
+    "All competitions",
+  );
+}
+
+function syncFootyPerfectSelectOptions(select, values = [], emptyLabel = "All") {
+  if (!select) return;
+  const selectedValue = select.value;
+  const uniqueValues = [...new Set(values.map((value) => String(value).trim()).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
+  select.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>${uniqueValues
+    .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+    .join("")}`;
+  if (uniqueValues.includes(selectedValue)) select.value = selectedValue;
+}
+
+function ensureFootyPerfectPerformances({ force = false } = {}) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
+    siteData.footyPerfectPerformances = [];
+    renderFootyPerfectPage();
+    return Promise.resolve([]);
+  }
+
+  if (!force && Array.isArray(siteData.footyPerfectPerformances)) {
+    return Promise.resolve(siteData.footyPerfectPerformances);
+  }
+
+  if (footyPerfectPerformancesLoadPromise) {
+    return footyPerfectPerformancesLoadPromise;
+  }
+
+  footyPerfectPerformancesLoadPromise = loadFootyPerfectPerformances()
+    .then((data) => {
+      siteData.footyPerfectPerformances = Array.isArray(data.performances) ? data.performances : [];
+      if (activePageName === "footy-perfect") {
+        renderFootyPerfectPage();
+      }
+      return siteData.footyPerfectPerformances;
+    })
+    .finally(() => {
+      footyPerfectPerformancesLoadPromise = null;
+    });
+
+  return footyPerfectPerformancesLoadPromise;
+}
+
+async function loadFootyPerfectPerformances(retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/ten-out-of-ten`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return loadFootyPerfectPerformances(true);
+  }
+  if (!response.ok || !data?.ok) {
+    throw new Error(data?.error || `10/10 endpoint returned ${response.status}.`);
+  }
+  return data;
+}
+
+function getFootyPerfectInputTime(fixture = {}) {
+  const time = String(fixture.time || "").trim();
+  const directMatch = time.match(/^(\d{1,2}):(\d{2})/);
+
+  if (directMatch) {
+    return `${directMatch[1].padStart(2, "0")}:${directMatch[2]}`;
+  }
+
+  const parsed = parseFootyDate(fixture.timestamp || "");
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+}
+
+function openFootyPerfectDialog(matchId = "", performance = null) {
+  if (!isCurrentManagerAdmin() || !footyPerfectDialog || !footyPerfectForm) {
+    return;
+  }
+
+  const fixture = !performance && matchId ? getFootyFixtureByMatchId(matchId) : null;
+  footyPerfectForm.reset();
+  footyPerfectEntryId.value = performance ? String(performance.id || "") : "";
+  footyPerfectMatchId.value = performance ? String(performance.matchId || "") : fixture ? String(fixture.matchId || "") : "";
+  footyPerfectPlayer.value = performance ? String(performance.playerName || "") : "";
+  footyPerfectHome.value = performance ? String(performance.home || "") : fixture ? String(fixture.home || "") : "";
+  footyPerfectAway.value = performance ? String(performance.away || "") : fixture ? String(fixture.away || "") : "";
+  footyPerfectDate.value = performance ? String(performance.matchDate || "") : fixture ? getFootyFixtureDateKey(fixture) : "";
+  footyPerfectTime.value = performance ? String(performance.matchTime || "") : fixture ? getFootyPerfectInputTime(fixture) : "";
+  footyPerfectCompetition.value = performance ? String(performance.competition || "") : fixture ? String(fixture.league || "") : "";
+  footyPerfectNote.value = performance ? String(performance.note || "") : "";
+  footyPerfectPlayerTeamSide.value = performance ? String(performance.playerTeamSide || "") : "";
+  syncFootyPerfectTeamSideOptions();
+  footyPerfectMatchLabel.textContent = footyPerfectMatchId.value ? `Fixture ${footyPerfectMatchId.value}` : "Manual match";
+  footyPerfectDialogTitle.textContent = performance ? "Edit 10/10 Performance" : "Add 10/10 Performance";
+  footyPerfectStatus.textContent = "";
+  footyPerfectStatus.classList.remove("is-error");
+  footyPerfectSave.disabled = false;
+  footyPerfectDialog.showModal();
+  window.setTimeout(() => footyPerfectPlayer?.focus(), 0);
+}
+
+function syncFootyPerfectTeamSideOptions() {
+  if (!footyPerfectPlayerTeamSide) return;
+  const selectedValue = footyPerfectPlayerTeamSide.value;
+  const home = String(footyPerfectHome?.value || "Home").trim() || "Home";
+  const away = String(footyPerfectAway?.value || "Away").trim() || "Away";
+  footyPerfectPlayerTeamSide.innerHTML = `
+    <option value="">Select home or away</option>
+    <option value="home">Home — ${escapeHtml(home)}</option>
+    <option value="away">Away — ${escapeHtml(away)}</option>
+  `;
+  footyPerfectPlayerTeamSide.value = selectedValue;
+}
+
+function closeFootyPerfectDialog() {
+  if (footyPerfectDialog?.open) {
+    footyPerfectDialog.close();
+  }
+}
+
+function setFootyPerfectStatus(message = "", isError = false) {
+  if (!footyPerfectStatus) {
+    return;
+  }
+  footyPerfectStatus.textContent = message;
+  footyPerfectStatus.classList.toggle("is-error", isError);
+}
+
+function buildFootyPerfectPerformanceFromDialog() {
+  const performance = {
+    id: footyPerfectEntryId.value,
+    matchId: footyPerfectMatchId.value,
+    playerName: footyPerfectPlayer.value,
+    playerTeamSide: footyPerfectPlayerTeamSide.value,
+    home: footyPerfectHome.value,
+    away: footyPerfectAway.value,
+    matchDate: footyPerfectDate.value,
+    matchTime: footyPerfectTime.value,
+    competition: footyPerfectCompetition.value,
+    note: footyPerfectNote.value,
+  };
+
+  if (!performance.playerName.trim()) throw new Error("Player name is required.");
+  if (!performance.home.trim() || !performance.away.trim()) throw new Error("Home and away teams are required.");
+  if (!["home", "away"].includes(performance.playerTeamSide)) throw new Error("Choose the player's home or away team.");
+  if (!performance.matchDate) throw new Error("Match date is required.");
+  return performance;
+}
+
+async function saveFootyPerfectPerformanceFromDialog() {
+  let performance;
+  try {
+    performance = buildFootyPerfectPerformanceFromDialog();
+  } catch (error) {
+    setFootyPerfectStatus(error.message, true);
+    return;
+  }
+
+  footyPerfectSave.disabled = true;
+  setFootyPerfectStatus("Saving 10/10 performance...");
+
+  try {
+    const data = await saveFootyPerfectPerformance(performance);
+
+    const existing = siteData.footyPerfectPerformances || [];
+    siteData.footyPerfectPerformances = performance.id
+      ? existing.map((entry) => entry.id === data.savedPerformance.id ? data.savedPerformance : entry)
+      : [data.savedPerformance, ...existing];
+    siteData.footyPerfectPerformances.sort(compareFootyPerfectPerformances);
+    renderFootyPerfectPage();
+    closeFootyPerfectDialog();
+  } catch (error) {
+    setFootyPerfectStatus(error.message || "Unable to save 10/10 performance.", true);
+    footyPerfectSave.disabled = false;
+  }
+}
+
+async function saveFootyPerfectPerformance(performance, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const resource = performance.id ? `/api/ten-out-of-ten/${encodeURIComponent(performance.id)}` : "/api/ten-out-of-ten";
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}${resource}`, {
+    body: JSON.stringify(performance),
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    method: performance.id ? "PUT" : "POST",
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return saveFootyPerfectPerformance(performance, true);
+  }
+
+  if (!response.ok || !data?.ok || !data.savedPerformance) {
+    throw new Error(data?.error || "10/10 performance was not saved.");
+  }
+
+  return data;
+}
+
+function renderFootySeenPage() {
+  if (!footySeenList) return;
+  const seenMatches = Array.isArray(siteData.footySeenMatches) ? siteData.footySeenMatches : null;
+
+  if (!seenMatches) {
+    footySeenList.setAttribute("aria-busy", "true");
+    footySeenList.innerHTML = renderLoadingMessage("Loading seen matches...");
+    ensureFootySeenMatches().catch((error) => {
+      recordDiagnostic("seen matches failed to load", error);
+      if (activePageName === "footy-seen") {
+        footySeenList.setAttribute("aria-busy", "false");
+        footySeenList.innerHTML = `<p class="table-message">${escapeHtml(error.message || "Unable to load seen matches.")}</p>`;
+      }
+    });
+    return;
+  }
+
+  const sortedMatches = [...seenMatches].sort(compareFootySeenMatches);
+  footySeenList.setAttribute("aria-busy", "false");
+  footySeenList.innerHTML = sortedMatches.length
+    ? sortedMatches.map(renderFootySeenMatch).join("")
+    : `<p class="table-message">No seen matches have been added yet.</p>`;
+}
+
+function renderFootySeenMatch(seenMatch = {}) {
+  const dateLabel = formatFootyPerfectDate(seenMatch.matchDate);
+  const timeLabel = String(seenMatch.matchTime || "").trim();
+
+  return `
+    <article class="footy-seen-card">
+      <div class="footy-seen-card-heading">
+        <div>
+          <h2>${escapeHtml(`${seenMatch.home || "TBD"} v ${seenMatch.away || "TBD"}`)}</h2>
+          <p class="footy-fixture-meta">
+            ${dateLabel ? `<span>${escapeHtml(dateLabel)}</span>` : ""}
+            ${timeLabel ? `<span>${escapeHtml(timeLabel)}</span>` : ""}
+            ${seenMatch.competition ? `<span>${escapeHtml(seenMatch.competition)}</span>` : ""}
+          </p>
+        </div>
+        <button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>
+      </div>
+      <div class="footy-seen-card-footer">
+        ${seenMatch.venue ? `<span>${escapeHtml(seenMatch.venue)}</span>` : "<span></span>"}
+        ${seenMatch.sportsBar ? `<strong class="footy-seen-sports-bar-badge">Sports Bar</strong>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function compareFootySeenMatches(first = {}, second = {}) {
+  return String(second.matchDate || "").localeCompare(String(first.matchDate || "")) ||
+    String(second.matchTime || "").localeCompare(String(first.matchTime || "")) ||
+    String(second.createdAt || "").localeCompare(String(first.createdAt || ""));
+}
+
+function getFootySeenMatchByMatchId(matchId) {
+  const normalizedId = normalizeFootyMatchId(matchId);
+  if (!normalizedId) return null;
+  return (siteData.footySeenMatches || []).find((seenMatch) =>
+    normalizeFootyMatchId(seenMatch.matchId) === normalizedId
+  ) || null;
+}
+
+function ensureFootySeenMatches({ force = false } = {}) {
+  if (!FOOTY_MATCH_NOTES_ENDPOINT) {
+    siteData.footySeenMatches = [];
+    return Promise.resolve([]);
+  }
+  if (!force && Array.isArray(siteData.footySeenMatches)) return Promise.resolve(siteData.footySeenMatches);
+  if (footySeenMatchesLoadPromise) return footySeenMatchesLoadPromise;
+
+  footySeenMatchesLoadPromise = loadFootySeenMatches()
+    .then((data) => {
+      siteData.footySeenMatches = Array.isArray(data.seenMatches) ? data.seenMatches : [];
+      if (activePageName === "footy-seen") renderFootySeenPage();
+      if (isFootyContextPage(activePageName)) {
+        renderFootySchedule(siteData.footySchedule);
+        renderFootyTeamPage();
+      }
+      return siteData.footySeenMatches;
+    })
+    .finally(() => {
+      footySeenMatchesLoadPromise = null;
+    });
+  return footySeenMatchesLoadPromise;
+}
+
+async function loadFootySeenMatches(retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/seen-matches`, {
+    headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return loadFootySeenMatches(true);
+  }
+  if (!response.ok || !data?.ok) throw new Error(data?.error || `Seen matches endpoint returned ${response.status}.`);
+  return data;
+}
+
+async function openFootySeenDialogForFixture(matchId) {
+  try {
+    await ensureFootySeenMatches();
+    const fixture = getFootyFixtureByMatchId(matchId);
+    if (!fixture) throw new Error("This fixture could not be found.");
+    openFootySeenDialog({ fixture, seenMatch: getFootySeenMatchByMatchId(matchId) });
+  } catch (error) {
+    recordDiagnostic("seen match dialog failed to open", error);
+  }
+}
+
+function openFootySeenDialog({ fixture = null, seenMatch = null, manual = false } = {}) {
+  if (!isCurrentManagerAdmin() || !footySeenDialog || !footySeenForm) return;
+  const isTracked = Boolean(fixture || seenMatch?.matchId) && !manual;
+  footySeenForm.reset();
+  footySeenEntryId.value = String(seenMatch?.id || "");
+  footySeenMatchId.value = String(seenMatch?.matchId || fixture?.matchId || "");
+  footySeenHome.value = String(seenMatch?.home || fixture?.home || "");
+  footySeenAway.value = String(seenMatch?.away || fixture?.away || "");
+  footySeenDate.value = String(seenMatch?.matchDate || (fixture ? getFootyFixtureDateKey(fixture) : ""));
+  footySeenTime.value = String(seenMatch?.matchTime || (fixture ? getFootyPerfectInputTime(fixture) : ""));
+  footySeenCompetition.value = String(seenMatch?.competition || fixture?.league || "");
+  footySeenVenue.value = String(seenMatch?.venue || fixture?.venue || "");
+  footySeenSportsBar.checked = Boolean(seenMatch?.sportsBar);
+  footySeenManualFields.hidden = isTracked;
+  [footySeenHome, footySeenAway, footySeenDate, footySeenTime, footySeenCompetition, footySeenVenue]
+    .forEach((field) => { field.disabled = isTracked; });
+  footySeenDialogTitle.textContent = seenMatch ? "Edit Seen Match" : "Add Seen Match";
+  footySeenMatchLabel.textContent = isTracked ? `${footySeenHome.value} v ${footySeenAway.value}` : "Manual match";
+  footySeenStatus.textContent = "";
+  footySeenStatus.classList.remove("is-error");
+  footySeenSave.disabled = false;
+  footySeenDialog.showModal();
+  window.setTimeout(() => (isTracked ? footySeenSportsBar : footySeenHome)?.focus(), 0);
+}
+
+function closeFootySeenDialog() {
+  if (footySeenDialog?.open) footySeenDialog.close();
+}
+
+function setFootySeenStatus(message = "", isError = false) {
+  if (!footySeenStatus) return;
+  footySeenStatus.textContent = message;
+  footySeenStatus.classList.toggle("is-error", isError);
+}
+
+function buildFootySeenMatchFromDialog() {
+  const seenMatch = {
+    id: footySeenEntryId.value,
+    matchId: footySeenMatchId.value,
+    home: footySeenHome.value,
+    away: footySeenAway.value,
+    matchDate: footySeenDate.value,
+    matchTime: footySeenTime.value,
+    competition: footySeenCompetition.value,
+    venue: footySeenVenue.value,
+    sportsBar: Boolean(footySeenSportsBar.checked),
+  };
+  if (!seenMatch.home.trim() || !seenMatch.away.trim()) throw new Error("Home and away teams are required.");
+  if (!seenMatch.matchDate) throw new Error("Match date is required.");
+  return seenMatch;
+}
+
+async function saveFootySeenMatchFromDialog() {
+  let seenMatch;
+  try {
+    seenMatch = buildFootySeenMatchFromDialog();
+  } catch (error) {
+    setFootySeenStatus(error.message, true);
+    return;
+  }
+
+  footySeenSave.disabled = true;
+  setFootySeenStatus("Saving seen match...");
+  try {
+    const data = await saveFootySeenMatch(seenMatch);
+    const existing = siteData.footySeenMatches || [];
+    siteData.footySeenMatches = seenMatch.id
+      ? existing.map((entry) => entry.id === data.savedSeenMatch.id ? data.savedSeenMatch : entry)
+      : [data.savedSeenMatch, ...existing];
+    siteData.footySeenMatches.sort(compareFootySeenMatches);
+    renderFootySeenPage();
+    renderFootySchedule(siteData.footySchedule);
+    renderFootyTeamPage();
+    closeFootySeenDialog();
+  } catch (error) {
+    setFootySeenStatus(error.message || "Unable to save seen match.", true);
+    footySeenSave.disabled = false;
+  }
+}
+
+async function saveFootySeenMatch(seenMatch, retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const resource = seenMatch.id ? `/api/seen-matches/${encodeURIComponent(seenMatch.id)}` : "/api/seen-matches";
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}${resource}`, {
+    body: JSON.stringify(seenMatch),
+    headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    method: seenMatch.id ? "PUT" : "POST",
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return saveFootySeenMatch(seenMatch, true);
+  }
+  if (!response.ok || !data?.ok || !data.savedSeenMatch) throw new Error(data?.error || "Seen match was not saved.");
+  return data;
 }
 
 function getFootyMatchScore(fixture) {
@@ -10555,6 +11195,10 @@ function shouldRenderPageSection(pageName) {
 }
 
 function renderActivePageContent(pageName = "") {
+  if (pageName === "the-monster-maniac") {
+    void platinumsController.renderPage();
+    return;
+  }
   if (pageName === "footy") {
     if (siteData.footySchedule) {
       renderFootySchedule(siteData.footySchedule);
@@ -10571,6 +11215,16 @@ function renderActivePageContent(pageName = "") {
 
   if (pageName === "footy-goal-assists") {
     renderFootyGoalAssistsSaved();
+    return;
+  }
+
+  if (pageName === "footy-perfect") {
+    renderFootyPerfectPage();
+    return;
+  }
+
+  if (pageName === "footy-seen") {
+    renderFootySeenPage();
     return;
   }
 
@@ -10608,6 +11262,21 @@ function renderActivePageContent(pageName = "") {
 
   if (pageName === "youtube") {
     youtubeInboxController.renderPage();
+    return;
+  }
+
+  if (pageName === "trophy-stats") {
+    trophyStatsController.renderPage();
+    return;
+  }
+
+  if (pageName === "trophy-log") {
+    void trophyLogController.renderPage();
+    return;
+  }
+
+  if (pageName === "collectibles") {
+    void collectiblesController.renderPage();
     return;
   }
 
@@ -11961,6 +12630,20 @@ document.addEventListener("click", (event) => {
 });
 
 function handleFootyFixtureListClick(event) {
+  const seenButton = event.target.closest("[data-footy-seen-match]");
+
+  if (seenButton) {
+    void openFootySeenDialogForFixture(seenButton.getAttribute("data-footy-seen-match"));
+    return;
+  }
+
+  const perfectButton = event.target.closest("[data-footy-perfect-match]");
+
+  if (perfectButton) {
+    openFootyPerfectDialog(perfectButton.getAttribute("data-footy-perfect-match"));
+    return;
+  }
+
   const editButton = event.target.closest("[data-footy-note-edit]");
 
   if (editButton) {
@@ -12135,6 +12818,77 @@ footyGoalAssistsSaved?.addEventListener("click", (event) => {
   }
 
   deleteFootyGoalAssistEntry(Number(deleteButton.getAttribute("data-footy-ga-delete")));
+});
+
+footyPerfectAdd?.addEventListener("click", () => {
+  openFootyPerfectDialog();
+});
+
+footyPerfectFilterToggle?.addEventListener("click", () => {
+  shouldShowFootyPerfectFilters = !shouldShowFootyPerfectFilters;
+  renderFootyPerfectPage();
+});
+
+[footyPerfectSearch, footyPerfectDateFrom, footyPerfectDateTo, footyPerfectTeamFilter, footyPerfectCompetitionFilter]
+  .forEach((control) => {
+    control?.addEventListener(control === footyPerfectSearch ? "input" : "change", renderFootyPerfectPage);
+  });
+
+footyPerfectEditToggle?.addEventListener("change", () => {
+  shouldShowFootyPerfectEditMode = Boolean(footyPerfectEditToggle.checked);
+  renderFootyPerfectPage();
+});
+
+footyPerfectList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-footy-perfect-edit]");
+  if (!editButton || !shouldShowFootyPerfectEditMode) return;
+  const entryId = String(editButton.getAttribute("data-footy-perfect-edit") || "");
+  const performance = (siteData.footyPerfectPerformances || []).find((entry) => entry.id === entryId);
+  if (performance) openFootyPerfectDialog(performance.matchId, performance);
+});
+
+footyPerfectForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveFootyPerfectPerformanceFromDialog();
+});
+
+[footyPerfectClose, footyPerfectCancel].forEach((button) => {
+  button?.addEventListener("click", closeFootyPerfectDialog);
+});
+
+footyPerfectDialog?.addEventListener("click", (event) => {
+  if (event.target === footyPerfectDialog) {
+    closeFootyPerfectDialog();
+  }
+});
+
+[footyPerfectHome, footyPerfectAway].forEach((input) => {
+  input?.addEventListener("input", syncFootyPerfectTeamSideOptions);
+});
+
+footySeenAdd?.addEventListener("click", () => {
+  openFootySeenDialog({ manual: true });
+});
+
+footySeenList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-footy-seen-edit]");
+  if (!editButton) return;
+  const entryId = String(editButton.getAttribute("data-footy-seen-edit") || "");
+  const seenMatch = (siteData.footySeenMatches || []).find((entry) => entry.id === entryId);
+  if (seenMatch) openFootySeenDialog({ seenMatch, manual: !seenMatch.matchId });
+});
+
+footySeenForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveFootySeenMatchFromDialog();
+});
+
+[footySeenClose, footySeenCancel].forEach((button) => {
+  button?.addEventListener("click", closeFootySeenDialog);
+});
+
+footySeenDialog?.addEventListener("click", (event) => {
+  if (event.target === footySeenDialog) closeFootySeenDialog();
 });
 
 footyNoteForm?.addEventListener("submit", (event) => {
@@ -13566,12 +14320,15 @@ function renderLoginState() {
     element.hidden = !managerMeta;
   });
   syncFootyGoalAssistsButton();
+  if (managerMeta?.isAdmin && siteData.footySchedule && !Array.isArray(siteData.footySeenMatches)) {
+    ensureFootySeenMatches().catch((error) => recordDiagnostic("seen matches failed to load", error));
+  }
 
   if (
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -15851,7 +16608,7 @@ window.addEventListener("popstate", () => {
 function getPageDataScope(pageName = "") {
   const page = String(pageName || "");
 
-  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists") {
+  if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists" || page === "footy-perfect" || page === "footy-seen") {
     return "footy";
   }
 
@@ -15877,6 +16634,14 @@ function getPageDataScope(pageName = "") {
 
   if (page === "the-monster-maniac") {
     return "the-monster-maniac";
+  }
+
+  if (page === "trophy-stats") {
+    return "trophy-stats";
+  }
+
+  if (page === "trophy-log") {
+    return "trophy-log";
   }
 
   if (page === "rankings") {
@@ -16004,6 +16769,14 @@ function loadPageData(scope) {
 
   if (scope === "the-monster-maniac") {
     return platinumsController.renderPage();
+  }
+
+  if (scope === "trophy-stats") {
+    return trophyStatsController.load();
+  }
+
+  if (scope === "trophy-log") {
+    return trophyLogController.renderPage();
   }
 
   if (scope === "rankings") {

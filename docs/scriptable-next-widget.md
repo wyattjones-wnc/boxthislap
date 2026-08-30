@@ -2,28 +2,12 @@
 
 This setup lets an iPhone Home Screen widget count down to an item from the Box This Lap `Next` list.
 
-## 1. Redeploy the Next Apps Script
+## 1. Verify the Next Worker
 
-The widget uses the existing Next data web app:
-
-```text
-https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec
-```
-
-The script file is:
+The widget reads the same Cloudflare Worker and D1 data as the website:
 
 ```text
-scripts/next-data-webapp.gs
-```
-
-Redeploy it after this change so the new `listNextItems` action is available.
-
-The Footy Scriptable widget defaults to the production site. Set its Scriptable widget parameter to `dev` when you intentionally want the development schedule and assets.
-
-Quick endpoint check:
-
-```text
-https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec?action=listNextItems
+https://box-this-lap-next.boxthislap.workers.dev/api/items
 ```
 
 The response should include:
@@ -53,6 +37,8 @@ scriptable/box-this-lap-next-widget.js
 
 That choice is saved locally on the phone. The widget will keep focusing on that item until it passes, you run the script again and choose a different one, or you set a widget parameter.
 
+The installed Scriptable copy does not update automatically when the repository changes. Replace its contents with the current file whenever the widget script is updated.
+
 ## 3. Add the widget
 
 1. Add a Scriptable widget to the Home Screen.
@@ -81,4 +67,5 @@ Shows the first incomplete item whose `Thing` contains `Fantasy Critic`.
 - Scriptable controls widget refresh timing. The script asks for hourly refreshes normally, and once-per-minute refreshes during the final hour before a timed item. iOS may still choose a slower cadence.
 - Timed items stop showing once their time passes. All-day items show as `Today` during the current day, then fall off after that day ends.
 - Tapping the widget opens the site to the `Next` page.
-- The widget reads data directly from the Apps Script endpoint. It does not depend on the website being open.
+- The widget reads data directly from the Cloudflare Worker. It does not depend on the website being open.
+- If a saved focus used an ID from before the Cloudflare migration, the widget recovers it by its saved item name and stores the new ID.

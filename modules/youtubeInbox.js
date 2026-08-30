@@ -7,7 +7,7 @@ const STATUS_OPTIONS = [
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
 const VIDEO_PAGE_SIZE = 100;
 
-export function createYouTubeInboxController({ endpoint, loadSheet }) {
+export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop }) {
   const view = document.querySelector("#youtube-inbox-view");
   const state = {
     channel: "",
@@ -446,6 +446,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet }) {
       }
       state.syncMessage = "";
       render();
+      scrollToTop?.();
     } catch (error) {
       state.syncMessage = error.message || "Unable to mark the videos as seen.";
       render();

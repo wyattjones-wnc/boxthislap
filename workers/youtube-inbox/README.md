@@ -33,6 +33,8 @@ Private API for the TheMonsterManiac YouTube inbox. It stores inbox state in D1,
 6. Deploy with `npx wrangler deploy`.
 7. Open the YouTube page and enter the private inbox passphrase. The browser keeps only a signed 30-day token in local storage; it never stores the passphrase.
 
+Each channel refresh scans its uploads from the last seven days so high-volume channels cannot skip videos between refreshes. Adjust `SYNC_LOOKBACK_DAYS` in `wrangler.toml` if that recovery window needs to change.
+
 The public site is configured for `https://box-this-lap-youtube.boxthislap.workers.dev`. If the Worker is given another hostname, update `YOUTUBE_INBOX_ENDPOINT` in `modules/siteConfig.js`.
 
 ## API

@@ -10,6 +10,7 @@ database_id = "4c868739-3589-46d0-9063-0045a7bf35a3"
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
 SYNC_CHANNEL_BATCH_SIZE = "20"
+SYNC_LOOKBACK_DAYS = "7"
 
 [env.preview]
 name = "box-this-lap-youtube-preview"

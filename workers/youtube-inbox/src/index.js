@@ -297,40 +297,59 @@ async function refreshSubscriptions(env, accessToken, configuredChannelIds = new
 
 async function syncChannel(channel, env, accessToken) {
   const stored = await env.DB.prepare(`
-    SELECT id, latest_known_video_id FROM channels WHERE youtube_channel_id = ?
+    SELECT id FROM channels WHERE youtube_channel_id = ?
   `).bind(channel.youtubeChannelId).first();
-  const params = new URLSearchParams({ maxResults: "25", part: "snippet,contentDetails", playlistId: channel.uploadsPlaylistId });
-  const data = await youtubeRequest(`/playlistItems?${params}`, accessToken);
-  const newestId = data.items?.[0]?.contentDetails?.videoId || null;
+  const lookbackDays = clampNumber(env.SYNC_LOOKBACK_DAYS, 1, 30, 7);
+  const cutoff = Date.now() - (lookbackDays * 24 * 60 * 60 * 1000);
   const newItems = [];
+  let newestId = null;
+  let pageToken = "";
+  let reachedCutoff = false;
 
-  for (const item of data.items || []) {
-    const videoId = item.contentDetails?.videoId;
-    if (!videoId || videoId === stored?.latest_known_video_id) break;
-    const snippet = item.snippet || {};
-    if (snippet.title === "Deleted video" || snippet.title === "Private video") continue;
-    newItems.push({
-      channelId: stored.id,
-      publishedAt: snippet.videoPublishedAt || snippet.publishedAt,
-      thumbnailUrl: pickThumbnail(snippet.thumbnails),
-      title: snippet.title || "Untitled video",
-      videoId,
-    });
-  }
+  do {
+    const params = new URLSearchParams({ maxResults: "50", part: "snippet,contentDetails", playlistId: channel.uploadsPlaylistId });
+    if (pageToken) params.set("pageToken", pageToken);
+    const data = await youtubeRequest(`/playlistItems?${params}`, accessToken);
+    newestId ||= data.items?.[0]?.contentDetails?.videoId || null;
 
-  if (newItems.length) {
-    await env.DB.batch(newItems.map((video) => env.DB.prepare(`
+    for (const item of data.items || []) {
+      const videoId = item.contentDetails?.videoId;
+      const snippet = item.snippet || {};
+      const publishedAt = snippet.videoPublishedAt || snippet.publishedAt;
+      const publishedTime = Date.parse(publishedAt || "");
+
+      if (Number.isFinite(publishedTime) && publishedTime < cutoff) {
+        reachedCutoff = true;
+        break;
+      }
+      if (!videoId || !publishedAt || snippet.title === "Deleted video" || snippet.title === "Private video") continue;
+      newItems.push({
+        channelId: stored.id,
+        publishedAt,
+        thumbnailUrl: pickThumbnail(snippet.thumbnails),
+        title: snippet.title || "Untitled video",
+        videoId,
+      });
+    }
+
+    pageToken = reachedCutoff ? "" : data.nextPageToken || "";
+  } while (pageToken);
+
+  let insertedItems = [];
+  for (const group of chunk(newItems, 100)) {
+    const insertResults = await env.DB.batch(group.map((video) => env.DB.prepare(`
       INSERT OR IGNORE INTO videos
         (youtube_video_id, channel_id, title, published_at, thumbnail_url)
       VALUES (?, ?, ?, ?, ?)
     `).bind(video.videoId, video.channelId, video.title, video.publishedAt, video.thumbnailUrl)));
+    insertedItems.push(...group.filter((_, index) => Number(insertResults[index]?.meta?.changes) > 0));
   }
 
   await env.DB.prepare(`
     UPDATE channels SET latest_known_video_id = COALESCE(?, latest_known_video_id),
       last_checked_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
   `).bind(newestId, new Date().toISOString(), stored.id).run();
-  return newItems;
+  return insertedItems;
 }
 
 async function fillVideoDurations(videos, env, accessToken) {

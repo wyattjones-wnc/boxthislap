@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.27.22.41";
+      window.BOX_THIS_LAP_VERSION = "2026.08.30.20.31";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608272241">
+    <link rel="stylesheet" href="styles.css?v=202608302031">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -364,6 +364,7 @@
                 <a href="#guides" data-page-link="guides" data-non-admin-only hidden>Guides</a>
                 <a href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
                 <a href="#account-settings" data-page-link="account-settings">Account Settings</a>
+                <a href="#collectibles" data-page-link="collectibles" data-admin-only hidden>Collectibles</a>
                 <button id="logout-button" type="button">Sign Out</button>
               </div>
             </div>
@@ -446,6 +447,20 @@
       </section>
 
       <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
+        <div class="section-heading page-heading-with-action admin-home-heading">
+          <div>
+            <p class="eyebrow">TheMonsterManiac</p>
+            <h1>Home</h1>
+          </div>
+          <div class="admin-home-actions">
+            <a class="icon-action-button" href="#trophy-log" data-page-link="trophy-log" aria-label="Open Trophy Log" title="Trophy Log">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M8 6h12M8 12h12M8 18h12M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+            </a>
+            <a class="icon-action-button" href="#trophy-stats" data-page-link="trophy-stats" aria-label="Open Trophy Stats" title="Trophy Stats">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>
+            </a>
+          </div>
+        </div>
         <details class="favorite-trophies-card" id="favorite-trophies-card">
           <summary class="favorite-trophies-summary">
             <span>Favorite Trophies</span>
@@ -473,6 +488,61 @@
             <button class="action-button platinums-show-more" id="admin-platinums-show-more" type="button" aria-controls="admin-platinums-grid" aria-expanded="false" hidden>Show More</button>
           </section>
         </div>
+      </section>
+
+      <section class="page trophy-stats-page" id="trophy-stats" data-page="trophy-stats" data-admin-only hidden>
+        <a class="back-link" href="#the-monster-maniac" data-page-link="the-monster-maniac">Home</a>
+        <div class="section-heading">
+          <p class="eyebrow">PlayStation Network</p>
+          <h1>Trophy Stats</h1>
+          <p class="trophy-stats-updated" id="trophy-stats-updated">Live data from PlayStation Network</p>
+        </div>
+        <div id="trophy-stats-content" aria-live="polite" aria-busy="true">
+          <span class="loading-message"><span class="loading-spinner"></span>Loading PSN trophy stats...</span>
+        </div>
+      </section>
+
+      <section class="page collectibles-page" id="collectibles" data-page="collectibles" data-admin-only hidden>
+        <div class="section-heading page-heading-with-action collectibles-heading">
+          <div>
+            <a class="back-link" href="#the-monster-maniac" data-page-link="the-monster-maniac">TheMonsterManiac</a>
+            <p class="eyebrow">Monster Trucks</p>
+            <h1>Collectibles</h1>
+            <p>Track releases, fill collection gaps, and keep the full reference catalog close at hand.</p>
+          </div>
+        </div>
+
+        <div class="collection-view-tabs" data-collection-views role="group" aria-label="Collection view">
+          <button type="button" data-collection-view="collection">My Collection</button>
+          <button type="button" data-collection-view="owned">Owned</button>
+          <button type="button" data-collection-view="missing">Missing</button>
+          <button type="button" data-collection-view="wishlist">Wishlist</button>
+          <button type="button" data-collection-view="catalog">Full Catalog</button>
+        </div>
+
+        <div class="collectibles-stats" id="collectibles-stats" aria-live="polite"></div>
+
+        <form class="collectibles-filters" id="collectibles-filters">
+          <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, variant, or series"></label>
+          <label><span>Ownership</span><select name="status"><option value="">All</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Wanted</option></select></label>
+          <label><span>Manufacturer</span><select name="manufacturer"><option value="">All manufacturers</option></select></label>
+          <label><span>Year</span><select name="year"><option value="">All years</option></select></label>
+          <label><span>Scale</span><select name="scale"><option value="">All scales</option></select></label>
+          <label><span>Catalog category</span><select name="category"><option value="">All catalog categories</option></select></label>
+          <label><span>Series</span><select name="series"><option value="">All series</option></select></label>
+          <label><span>Sort</span><select name="sort"><option value="source">Catalog order</option><option value="year_desc">Year newest</option><option value="year_asc">Year oldest</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="item_number">Item number</option><option value="manufacturer">Manufacturer</option><option value="recently_acquired">Recently acquired</option><option value="recently_updated">Recently updated</option><option value="owned_first">Owned first</option><option value="missing_first">Missing first</option></select></label>
+          <label class="collectibles-checkbox"><input type="checkbox" name="includeExcluded"><span>Include excluded collections</span></label>
+          <div class="collectibles-filter-actions"><button class="action-button" type="submit">Apply</button><button class="footer-copy-link" type="button" data-collectibles-clear>Clear filters</button></div>
+        </form>
+
+        <div class="collectibles-results-heading"><h2>Checklist</h2><span id="collectibles-result-count"></span></div>
+        <div class="collectibles-grid" id="collectibles-grid" aria-live="polite" aria-busy="false"><p class="table-message"><span class="loading-spinner"></span>Loading collectibles...</p></div>
+        <div class="collectibles-pagination" id="collectibles-pagination"></div>
+
+        <dialog class="collectible-detail-dialog" id="collectible-detail-dialog">
+          <button class="dialog-close" type="button" data-collectible-close aria-label="Close collectible details">×</button>
+          <div id="collectible-detail-content"></div>
+        </dialog>
       </section>
 
       <section class="page manager-hub-page" id="manager-hub" data-page="manager-hub">
@@ -693,6 +763,17 @@
         <div class="section-heading page-heading-with-action footy-heading">
           <h1>Footy</h1>
           <div class="heading-actions">
+            <a class="icon-action-button footy-perfect-button" href="#footy-perfect" data-page-link="footy-perfect" data-admin-only hidden aria-label="Open 10 out of 10 performances" title="10/10 performances">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L12 3Z"></path>
+              </svg>
+            </a>
+            <a class="icon-action-button" href="#footy-seen" data-page-link="footy-seen" data-admin-only hidden aria-label="Open Seen Matches" title="Seen Matches">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="2.5"></circle>
+              </svg>
+            </a>
             <button class="action-button footy-past-toggle" id="footy-past-toggle" type="button" aria-pressed="false">
               <svg class="footy-past-toggle-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="M3 12a9 9 0 1 0 3-6.7"></path>
@@ -893,6 +974,226 @@
           </form>
         </dialog>
       </section>
+
+      <section class="page" id="footy-perfect" data-page="footy-perfect" data-admin-only hidden>
+        <div class="section-heading page-heading-with-action footy-heading">
+          <div>
+            <a class="back-link" href="#footy" data-page-link="footy">Footy</a>
+            <h1>10/10 Performances</h1>
+          </div>
+          <div class="heading-actions">
+            <button class="icon-action-button" id="footy-perfect-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-perfect-filters" aria-label="Show 10 out of 10 filters" title="Filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
+            <button class="icon-action-button" id="footy-perfect-add" type="button" data-admin-only hidden aria-label="Add a 10 out of 10 performance" title="Add performance">+</button>
+          </div>
+        </div>
+        <div class="footy-filters footy-perfect-filters" id="footy-perfect-filters" hidden>
+          <label>
+            <span>Search</span>
+            <input id="footy-perfect-search" type="search" placeholder="Player, team, competition" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <div class="footy-date-range">
+              <input id="footy-perfect-date-from" type="date" aria-label="10 out of 10 date from">
+              <input id="footy-perfect-date-to" type="date" aria-label="10 out of 10 date to">
+            </div>
+          </label>
+          <label>
+            <span>Player Team</span>
+            <select id="footy-perfect-team-filter" aria-label="Filter by player team">
+              <option value="">All teams</option>
+            </select>
+          </label>
+          <label>
+            <span>Competition</span>
+            <select id="footy-perfect-competition-filter" aria-label="Filter by competition">
+              <option value="">All competitions</option>
+            </select>
+          </label>
+          <div class="footy-filter-toggles footy-perfect-filter-toggles">
+            <label class="footy-checkbox-control">
+              <input id="footy-perfect-edit-toggle" type="checkbox">
+              <span>Edit entries</span>
+            </label>
+          </div>
+        </div>
+        <div class="content-shell footy-perfect-list" id="footy-perfect-list" aria-live="polite" aria-busy="true">
+          <p class="table-message loading-message"><span class="loading-spinner"></span>Loading 10/10 performances...</p>
+        </div>
+      </section>
+
+      <section class="page" id="footy-seen" data-page="footy-seen" data-admin-only hidden>
+        <div class="section-heading page-heading-with-action footy-heading">
+          <div>
+            <a class="back-link" href="#footy" data-page-link="footy">Footy</a>
+            <h1>Seen Matches</h1>
+          </div>
+          <div class="heading-actions">
+            <button class="icon-action-button" id="footy-seen-add" type="button" aria-label="Add a seen match" title="Add seen match">+</button>
+          </div>
+        </div>
+        <div class="content-shell footy-seen-list" id="footy-seen-list" aria-live="polite" aria-busy="true">
+          <p class="table-message loading-message"><span class="loading-spinner"></span>Loading seen matches...</p>
+        </div>
+      </section>
+
+      <section class="page trophy-log-page" id="trophy-log" data-page="trophy-log" data-admin-only hidden>
+        <div class="section-heading">
+          <a class="back-link" href="#the-monster-maniac" data-page-link="the-monster-maniac">Home</a>
+          <p class="eyebrow">PlayStation Network</p>
+          <h1>Trophy Log</h1>
+        </div>
+        <div class="trophy-log-toolbar">
+          <button class="icon-action-button trophy-log-filter-toggle" id="trophy-log-filter-toggle" type="button" aria-expanded="false" aria-controls="trophy-log-filter-panel" aria-label="Show trophy filters and sorting" title="Filters and sorting">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path></svg>
+          </button>
+          <button class="action-button" id="trophy-log-refresh" type="button">Refresh</button>
+          <span class="trophy-log-sync-status" id="trophy-log-sync-status" role="status"></span>
+        </div>
+        <div class="trophy-log-filter-panel" id="trophy-log-filter-panel" hidden>
+          <div class="trophy-log-filters" id="trophy-log-filters" role="group" aria-label="Trophy log view">
+            <button type="button" data-trophy-log-view="unsorted">Unsorted</button>
+            <button type="button" data-trophy-log-view="favorites">Favorites</button>
+            <button type="button" data-trophy-log-view="seen">Not Favorites</button>
+            <button type="button" data-trophy-log-view="all">All Earned</button>
+            <button type="button" data-trophy-log-view="platinums">Platinums</button>
+          </div>
+          <label class="trophy-log-sort"><span>Sort</span><select id="trophy-log-sort">
+            <option value="" selected disabled>Choose a sort</option>
+            <option value="newest">Newest earned</option>
+            <option value="oldest">Oldest earned</option>
+            <option value="name">Trophy name</option>
+            <option value="rarity">Rarest first</option>
+            <option value="platinum-duration-desc">Platinum: longest to earn</option>
+            <option value="platinum-duration-asc">Platinum: shortest to earn</option>
+          </select></label>
+        </div>
+        <div class="trophy-log-results-heading"><h2>Trophies</h2><span id="trophy-log-result"></span></div>
+        <div class="trophy-log-grid" id="trophy-log-grid" aria-live="polite" aria-busy="true"><p class="table-message"><span class="loading-spinner"></span>Loading trophy log...</p></div>
+        <div class="trophy-log-pagination" id="trophy-log-pagination"></div>
+
+        <details class="psn-auth-card">
+          <summary>Renew PlayStation Sign-In</summary>
+          <div class="psn-auth-content">
+            <p>Sony requires the NPSSO to be copied from its own signed-in page. Your password and two-factor code stay with PlayStation.</p>
+            <ol><li><a class="back-link" href="https://www.playstation.com/" target="_blank" rel="noopener">Open PlayStation Sign-In</a> and finish signing in.</li><li><a class="back-link" href="https://ca.account.sony.com/api/v1/ssocookie" target="_blank" rel="noopener">Open Sony's NPSSO page</a> in the same browser.</li><li>Copy only the 64-character value inside <code>"npsso"</code>, then paste it below.</li></ol>
+            <form class="psn-auth-form" id="psn-auth-form"><label><span>NPSSO token</span><input type="password" name="npsso" minlength="64" maxlength="64" autocomplete="off" spellcheck="false" required></label><button class="action-button" type="submit">Validate &amp; Save</button></form>
+            <p class="psn-auth-status" id="psn-auth-status" role="status">Checking PSN access...</p>
+          </div>
+        </details>
+      </section>
+
+      <dialog class="footy-note-dialog" id="footy-perfect-dialog">
+        <form class="footy-note-form" id="footy-perfect-form" method="dialog">
+          <header>
+            <div>
+              <span id="footy-perfect-match-label"></span>
+              <h2 id="footy-perfect-dialog-title">Add 10/10 Performance</h2>
+            </div>
+            <button class="icon-action-button" id="footy-perfect-close" type="button" aria-label="Close 10 out of 10 performance editor">&times;</button>
+          </header>
+          <input id="footy-perfect-entry-id" type="hidden">
+          <input id="footy-perfect-match-id" type="hidden">
+          <div class="footy-note-grid">
+            <label class="footy-note-wide">
+              <span>Player</span>
+              <input id="footy-perfect-player" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>Home</span>
+              <input id="footy-perfect-home" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>Away</span>
+              <input id="footy-perfect-away" type="text" autocomplete="off" required>
+            </label>
+            <label class="footy-note-wide">
+              <span>Player Team</span>
+              <select id="footy-perfect-player-team-side" required>
+                <option value="">Select home or away</option>
+                <option value="home">Home</option>
+                <option value="away">Away</option>
+              </select>
+            </label>
+            <label>
+              <span>Date</span>
+              <input id="footy-perfect-date" type="date" required>
+            </label>
+            <label>
+              <span>Time</span>
+              <input id="footy-perfect-time" type="time">
+            </label>
+            <label class="footy-note-wide">
+              <span>Competition</span>
+              <input id="footy-perfect-competition" type="text" autocomplete="off">
+            </label>
+            <label class="footy-note-wide">
+              <span>Game Info</span>
+              <textarea id="footy-perfect-note" rows="3" placeholder="Optional context about the performance"></textarea>
+            </label>
+          </div>
+          <p class="footy-note-status" id="footy-perfect-status" aria-live="polite"></p>
+          <footer>
+            <button class="action-button" id="footy-perfect-cancel" type="button">Cancel</button>
+            <button class="action-button" id="footy-perfect-save" type="submit">Save</button>
+          </footer>
+        </form>
+      </dialog>
+
+      <dialog class="footy-note-dialog" id="footy-seen-dialog">
+        <form class="footy-note-form" id="footy-seen-form" method="dialog">
+          <header>
+            <div>
+              <span id="footy-seen-match-label"></span>
+              <h2 id="footy-seen-dialog-title">Add Seen Match</h2>
+            </div>
+            <button class="icon-action-button" id="footy-seen-close" type="button" aria-label="Close seen match editor">&times;</button>
+          </header>
+          <input id="footy-seen-entry-id" type="hidden">
+          <input id="footy-seen-match-id" type="hidden">
+          <div class="footy-seen-manual-fields" id="footy-seen-manual-fields">
+            <div class="footy-note-grid">
+              <label>
+                <span>Home</span>
+                <input id="footy-seen-home" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Away</span>
+                <input id="footy-seen-away" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Date</span>
+                <input id="footy-seen-date" type="date" required>
+              </label>
+              <label>
+                <span>Time</span>
+                <input id="footy-seen-time" type="time">
+              </label>
+              <label class="footy-note-wide">
+                <span>Competition</span>
+                <input id="footy-seen-competition" type="text" autocomplete="off">
+              </label>
+              <label class="footy-note-wide">
+                <span>Venue</span>
+                <input id="footy-seen-venue" type="text" autocomplete="off">
+              </label>
+            </div>
+          </div>
+          <label class="footy-checkbox-control footy-seen-sports-bar-control">
+            <input id="footy-seen-sports-bar" type="checkbox">
+            <span>Saw it in Sports Bar</span>
+          </label>
+          <p class="footy-note-status" id="footy-seen-status" aria-live="polite"></p>
+          <footer>
+            <button class="action-button" id="footy-seen-cancel" type="button">Cancel</button>
+            <button class="action-button" id="footy-seen-save" type="submit">Save</button>
+          </footer>
+        </form>
+      </dialog>
 
       <section class="page" id="next" data-page="next">
         <div class="section-heading page-heading-with-action footy-heading">
@@ -2300,6 +2601,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608272241"></script>
+    <script type="module" src="script.js?v=202608302031"></script>
   </body>
 </html>

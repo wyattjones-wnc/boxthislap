@@ -27,6 +27,409 @@
   --updated: rgba(166, 176, 192, 0.76);
 }
 
+/* Monster-truck collectibles */
+.collectibles-page {
+  max-width: 1260px;
+}
+
+.collectibles-heading p:last-child {
+  color: var(--muted);
+  margin: 0.35rem 0 0;
+  max-width: 650px;
+}
+
+.collection-view-tabs {
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.collection-view-tabs button,
+.collectibles-pagination button {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.62rem 1rem;
+  white-space: nowrap;
+}
+
+.collection-view-tabs button.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.collectibles-stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.collectibles-stats article {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px var(--shadow);
+  display: grid;
+  gap: 0.15rem;
+  padding: 1rem;
+}
+
+.collectibles-stats strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.collectibles-stats span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collectibles-progress-stat div {
+  background: var(--soft-strong);
+  border-radius: 999px;
+  height: 5px;
+  margin-top: 0.45rem;
+  overflow: hidden;
+}
+
+.collectibles-progress-stat i {
+  background: var(--time);
+  display: block;
+  height: 100%;
+}
+
+.collectibles-filters {
+  align-items: end;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  margin-bottom: 1.3rem;
+  padding: 1rem;
+}
+
+.collectibles-filters label,
+.collectible-detail-form label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.collectibles-filters label > span,
+.collectible-detail-form label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.collectibles-filters input,
+.collectibles-filters select,
+.collectible-detail-form input,
+.collectible-detail-form select,
+.collectible-detail-form textarea {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  width: 100%;
+}
+
+.collectibles-search {
+  grid-column: span 2;
+}
+
+.collectibles-checkbox,
+.collectible-detail-form .collectible-check {
+  align-items: center;
+  display: flex;
+  min-height: 42px;
+}
+
+.collectibles-checkbox input,
+.collectible-detail-form .collectible-check input {
+  min-height: 0;
+  width: auto;
+}
+
+.collectibles-filter-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.7rem;
+}
+
+.collectibles-results-heading {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.collectibles-results-heading h2 {
+  margin: 0;
+}
+
+.collectibles-results-heading span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.collectibles-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+.collectible-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px var(--shadow);
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.collectible-card:hover,
+.collectible-card:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.collectible-card.is-owned {
+  border-color: color-mix(in srgb, var(--time) 55%, var(--line));
+}
+
+.collectible-card-image {
+  align-items: center;
+  aspect-ratio: 4 / 3;
+  background: var(--image-bg);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.collectible-card-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.collectible-card-image > span {
+  font-size: 3rem;
+}
+
+.collectible-card-image b {
+  background: var(--highlight);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+}
+
+.collectible-card-body {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem;
+}
+
+.collectible-card-body p,
+.collectible-card-body h2,
+.collectible-card-body span {
+  margin: 0;
+}
+
+.collectible-card-body p,
+.collectible-card-body span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.collectible-card-body h2 {
+  font-size: 1rem;
+  line-height: 1.25;
+  min-height: 2.5em;
+}
+
+.collectible-have-button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  margin-top: 0.25rem;
+  padding: 0.55rem;
+  text-transform: uppercase;
+}
+
+.collectible-have-button.is-owned {
+  background: color-mix(in srgb, var(--time) 16%, transparent);
+  border-color: var(--time);
+  color: var(--time-strong);
+}
+
+.collectibles-pagination {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.collectibles-pagination button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.collectible-detail-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--ink);
+  max-height: 90vh;
+  max-width: 1000px;
+  padding: 1.2rem;
+  width: min(94vw, 1000px);
+}
+
+.collectible-detail-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.collectible-detail-dialog .dialog-close {
+  background: var(--soft-strong);
+  border: 0;
+  border-radius: 50%;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1.5rem;
+  height: 38px;
+  position: sticky;
+  top: 0;
+  width: 38px;
+  z-index: 2;
+}
+
+.collectible-detail-layout {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+}
+
+.collectible-detail-gallery {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collectible-detail-gallery img {
+  background: var(--image-bg);
+  border-radius: 12px;
+  max-height: 330px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.collectible-detail-copy h2 {
+  margin: 0.15rem 0 0.4rem;
+}
+
+.collectible-metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collectible-metadata div {
+  border-bottom: 1px solid var(--line);
+  padding: 0.55rem 0;
+}
+
+.collectible-metadata dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collectible-metadata dd {
+  margin: 0.1rem 0 0;
+}
+
+.collectible-detail-form {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.collectible-detail-form .collectible-notes,
+.collectible-detail-form .collectible-save-status,
+.collectible-detail-form button {
+  grid-column: 1 / -1;
+}
+
+.collectible-save-status {
+  color: var(--muted);
+  margin: 0;
+  min-height: 1.5em;
+}
+
+@media (max-width: 780px) {
+  .collectibles-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collectibles-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collectible-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .collectibles-filters,
+  .collectible-detail-form {
+    grid-template-columns: 1fr;
+  }
+
+  .collectibles-search {
+    grid-column: auto;
+  }
+
+  .collectibles-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collectible-detail-form .collectible-notes,
+  .collectible-detail-form .collectible-save-status,
+  .collectible-detail-form button {
+    grid-column: auto;
+  }
+}
+
 html[data-theme="light"] {
   color-scheme: light;
   --bg: #f7f8fb;
@@ -491,6 +894,617 @@ body.has-shell-stale-warning .stale-shell-alert {
   box-shadow: 0 6px 14px var(--shadow);
   margin-bottom: 12px;
   overflow: hidden;
+}
+
+.admin-home-heading {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.admin-home-actions {
+  align-items: center;
+  align-self: start;
+  display: flex;
+  gap: 9px;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.admin-home-heading .eyebrow,
+.trophy-stats-page .eyebrow {
+  margin-bottom: 7px;
+}
+
+.trophy-stats-updated {
+  color: var(--muted);
+  font-weight: 800;
+  margin: 10px 0 0;
+}
+
+.trophy-stat-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.trophy-stat-card,
+.trophy-stat-skeleton {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 112px;
+}
+
+.trophy-stat-card {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+}
+
+.trophy-stat-card strong {
+  color: var(--accent-dark);
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.trophy-stat-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.trophy-stat-skeleton {
+  animation: trophy-stat-pulse 1.2s ease-in-out infinite alternate;
+  background: linear-gradient(110deg, var(--panel), var(--soft), var(--panel));
+}
+
+@keyframes trophy-stat-pulse {
+  to { opacity: 0.55; }
+}
+
+.trophy-stats-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.trophy-stats-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px var(--shadow);
+  padding: 18px;
+}
+
+.trophy-stats-card-heading {
+  align-items: start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.trophy-stats-card-heading h2 {
+  margin: 0;
+}
+
+.trophy-stats-card-heading > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.trophy-type-list {
+  display: grid;
+  gap: 13px;
+}
+
+.trophy-type-row {
+  align-items: center;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 16px 76px minmax(0, 1fr) 36px;
+}
+
+.trophy-type-row strong,
+.trophy-type-row b {
+  font-size: 0.84rem;
+}
+
+.trophy-type-row b {
+  text-align: right;
+}
+
+.trophy-type-medal {
+  background: var(--type-color);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.22);
+  height: 13px;
+  width: 13px;
+}
+
+.trophy-type-row--platinum { --type-color: #8ddbe8; }
+.trophy-type-row--gold { --type-color: #d9aa32; }
+.trophy-type-row--silver { --type-color: #9aa6b2; }
+.trophy-type-row--bronze { --type-color: #ae6c3d; }
+
+.trophy-type-track {
+  background: var(--soft);
+  border-radius: 999px;
+  height: 9px;
+  overflow: hidden;
+}
+
+.trophy-type-track span {
+  background: var(--type-color);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.trophy-highlights-card {
+  display: grid;
+  gap: 14px;
+}
+
+.trophy-highlights-card .trophy-stats-card-heading {
+  margin-bottom: 4px;
+}
+
+.trophy-rarest-types-card {
+  grid-column: 1 / -1;
+}
+
+.trophy-rarest-type-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.trophy-highlight {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  padding: 12px;
+}
+
+.trophy-highlight img,
+.trophy-highlight-placeholder {
+  align-items: center;
+  background: var(--panel);
+  border-radius: 8px;
+  display: flex;
+  height: 64px;
+  justify-content: center;
+  object-fit: cover;
+  width: 64px;
+}
+
+.trophy-highlight > span:not(.trophy-highlight-placeholder),
+.trophy-highlight div > span,
+.trophy-highlight small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.trophy-highlight div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.trophy-highlight p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.trophy-coverage-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin: 16px 0 0;
+}
+
+.trophy-stats-error {
+  align-items: start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 9px;
+  padding: 18px;
+}
+
+.trophy-stats-error span {
+  color: var(--muted);
+}
+
+.trophy-log-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.trophy-log-sync-status {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.trophy-log-filter-toggle.is-active {
+  background: var(--track);
+  border-color: var(--accent);
+  color: var(--track-ink);
+}
+
+.trophy-log-filter-panel {
+  align-items: end;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
+  margin-bottom: 22px;
+  padding: 13px;
+}
+
+.trophy-log-filter-panel[hidden] {
+  display: none;
+}
+
+.trophy-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trophy-log-sort {
+  display: grid;
+  gap: 5px;
+}
+
+.trophy-log-sort span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.trophy-log-sort select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+
+.trophy-log-filters button,
+.trophy-log-pagination button,
+.trophy-log-actions button {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 8px 12px;
+}
+
+.trophy-log-filters button:hover,
+.trophy-log-filters button.is-active,
+.trophy-log-pagination button:hover:not(:disabled),
+.trophy-log-actions button:hover:not(:disabled) {
+  background: var(--track);
+  border-color: var(--accent);
+  color: var(--track-ink);
+}
+
+.trophy-log-filters button.is-active {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.trophy-log-results-heading {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.trophy-log-results-heading h2 {
+  margin: 0;
+}
+
+.trophy-log-results-heading span,
+.trophy-log-state {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.trophy-log-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.trophy-log-card {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: 82px minmax(0, 1fr);
+  padding: 12px;
+}
+
+.trophy-log-image {
+  align-items: center;
+  aspect-ratio: 1;
+  background: var(--soft);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.trophy-log-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.trophy-log-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.trophy-log-copy p,
+.trophy-log-copy h2,
+.trophy-log-copy span,
+.trophy-log-copy small {
+  margin: 0;
+}
+
+.trophy-log-copy p,
+.trophy-log-copy small,
+.trophy-log-copy span {
+  color: var(--muted);
+}
+
+.trophy-log-copy p,
+.trophy-log-copy small {
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.trophy-log-copy h2 {
+  font-size: 1rem;
+}
+
+.trophy-log-numbering {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.trophy-log-copy span {
+  display: -webkit-box;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.trophy-log-actions,
+.trophy-log-state {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  grid-column: 1 / -1;
+}
+
+.trophy-log-actions button {
+  padding: 6px 10px;
+}
+
+.trophy-log-actions .trophy-seen-through-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 0;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 30px;
+  overflow: hidden;
+  padding: 5px 7px;
+  transition: border-color 0.15s ease, color 0.15s ease, gap 0.2s ease, padding 0.2s ease;
+}
+
+.trophy-seen-through-button svg {
+  fill: none;
+  flex: 0 0 auto;
+  height: 15px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  width: 15px;
+}
+
+.trophy-seen-through-button > span {
+  color: inherit;
+  display: inline;
+  font-size: inherit;
+  line-height: inherit;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.15s ease;
+}
+
+.trophy-log-actions .trophy-seen-through-button.is-confirming {
+  border-color: var(--accent-border);
+  color: var(--accent-dark);
+  gap: 6px;
+  padding: 6px 10px;
+}
+
+.trophy-seen-through-button.is-confirming > span {
+  max-width: 130px;
+  opacity: 1;
+}
+
+.trophy-log-actions button:disabled,
+.trophy-log-pagination button:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+.trophy-log-empty {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  grid-column: 1 / -1;
+  justify-items: center;
+  padding: 38px 18px;
+  text-align: center;
+}
+
+.trophy-log-empty span {
+  color: var(--muted);
+}
+
+.trophy-log-pagination {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.trophy-log-pagination span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.psn-auth-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 28px;
+  overflow: hidden;
+}
+
+.psn-auth-card summary {
+  cursor: pointer;
+  font-weight: 900;
+  padding: 15px 18px;
+}
+
+.psn-auth-card[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.psn-auth-content {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.psn-auth-content p,
+.psn-auth-content ol {
+  color: var(--muted);
+  margin: 0;
+}
+
+.psn-auth-content li + li {
+  margin-top: 8px;
+}
+
+.psn-auth-form {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.psn-auth-form label {
+  display: grid;
+  font-weight: 900;
+  gap: 6px;
+}
+
+.psn-auth-form input {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  font: inherit;
+  min-width: 0;
+  padding: 10px;
+  width: 100%;
+}
+
+.psn-auth-status {
+  min-height: 1.4em;
+}
+
+@media (max-width: 720px) {
+  .trophy-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trophy-stats-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .trophy-rarest-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trophy-log-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trophy-log-filter-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .trophy-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .psn-auth-form {
+    grid-template-columns: 1fr;
+  }
 }
 
 .favorite-trophies-summary {
@@ -3749,14 +4763,213 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-fixture-detail-actions {
+  align-items: center;
   display: flex;
-  justify-content: flex-end;
+  gap: 10px;
+  justify-content: space-between;
 }
 
-.footy-note-edit-button {
+.footy-fixture-detail-actions-right {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.footy-seen-match-button {
+  height: 32px;
+  min-height: 32px;
+  width: 32px;
+}
+
+.footy-seen-match-button svg {
+  height: 17px;
+  width: 17px;
+}
+
+.footy-seen-match-button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--panel);
+}
+
+.footy-note-edit-button,
+.footy-perfect-match-button {
   font-size: 0.82rem;
   min-height: 32px;
   padding: 6px 10px;
+}
+
+.footy-perfect-list {
+  display: grid;
+  gap: 12px;
+}
+
+.footy-perfect-card {
+  background: color-mix(in srgb, var(--panel) 88%, var(--track));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.footy-perfect-card-heading,
+.footy-perfect-player-team {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.footy-perfect-card-heading {
+  justify-content: space-between;
+}
+
+.footy-perfect-copy {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.footy-perfect-copy h2,
+.footy-perfect-copy p {
+  margin: 0;
+}
+
+.footy-perfect-copy h2 {
+  font-size: 1.08rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footy-perfect-player-team {
+  color: var(--muted);
+  flex: 0 1 auto;
+  font-size: 0.84rem;
+  margin: 0 !important;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.footy-perfect-player-team strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footy-perfect-match-details {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.footy-perfect-match {
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-top: 3px !important;
+}
+
+.footy-perfect-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin-top: 8px !important;
+  white-space: pre-wrap;
+}
+
+.footy-perfect-edit-button {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.footy-perfect-filter-toggles {
+  align-self: end;
+}
+
+.footy-seen-list {
+  display: grid;
+  gap: 12px;
+}
+
+.footy-seen-card {
+  background: color-mix(in srgb, var(--panel) 88%, var(--track));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.footy-seen-card-heading,
+.footy-seen-card-footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.footy-seen-card-heading > div {
+  min-width: 0;
+}
+
+.footy-seen-card h2 {
+  font-size: 1.02rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footy-seen-card .footy-fixture-meta {
+  margin: 5px 0 0;
+}
+
+.footy-seen-edit-button {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.footy-seen-card-footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.84rem;
+  min-height: 30px;
+  padding-top: 10px;
+}
+
+.footy-seen-sports-bar-badge {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.footy-seen-manual-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.footy-seen-sports-bar-control {
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .footy-seen-card-heading {
+    align-items: flex-start;
+  }
+
+  .footy-seen-card .footy-fixture-meta {
+    gap: 4px 10px;
+  }
 }
 
 .footy-updated,
@@ -7485,6 +8698,11 @@ tr:last-child td {
   .page-heading-with-action {
     align-items: stretch;
     display: grid;
+  }
+
+  .admin-home-heading {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .manager-hub-page .page-heading-with-action {

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

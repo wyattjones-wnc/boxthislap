@@ -61,6 +61,29 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     return childrenByParent;
   }
 
+  function getChecklistChildren(item) {
+    if (!item || !checklist) return [];
+    return checklist.filter((entry) => entry.guideId === item.guideId && entry.parentId === item.id);
+  }
+
+  function getChecklistDescendants(item) {
+    const descendants = [];
+    const queuedParentIds = [item?.id];
+    const seenIds = new Set(queuedParentIds.filter(Boolean));
+
+    while (queuedParentIds.length) {
+      const parentId = queuedParentIds.shift();
+      getChecklistChildren({ ...item, id: parentId }).forEach((child) => {
+        if (seenIds.has(child.id)) return;
+        seenIds.add(child.id);
+        descendants.push(child);
+        queuedParentIds.push(child.id);
+      });
+    }
+
+    return descendants;
+  }
+
   async function ensureDataLoaded() {
     if (guides && checklist) return { guides, steps: checklist };
     if (!dataPromise) {
@@ -277,7 +300,6 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     const parentKey = getParentKey(item);
     const expanded = expandedParentKeys.has(parentKey);
     const completedChildren = children.filter(isItemDone).length;
-    const hasActiveChildren = completedChildren < children.length;
     const visibleChildren = children.filter((child) => matchesFilters(child) && (
       !hideDone || !isItemDone(child) || confirmedStepKeys.has(getStepKey(child.guideId, child.stepId))
     ));
@@ -287,9 +309,8 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
         ${renderChecklistItem(item, {
           childCount: children.length,
           completedChildren,
-          disableCompletion: !isItemDone(item) && hasActiveChildren,
           expanded,
-          isMixed: !isItemDone(item) && completedChildren > 0 && hasActiveChildren,
+          isMixed: completedChildren > 0 && completedChildren < children.length,
           parentKey,
         })}
         <div class="guide-step-children"${expanded ? "" : " hidden"}>
@@ -310,14 +331,13 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     const parentAttributes = options.parentKey
       ? ` data-guide-parent-toggle="${escapeAttribute(options.parentKey)}" role="button" tabindex="0" aria-expanded="${options.expanded}"`
       : "";
-    const checkboxTitle = options.disableCompletion ? "Complete all child steps before completing this parent" : "";
     return `
       <article class="guide-step${done ? " is-done" : ""}${isPending ? " is-saving" : ""}${isConfirmed ? " is-confirmed" : ""}${saveError ? " has-save-error" : ""}${options.isChild ? " guide-step--child" : ""}${options.parentKey ? " guide-step--parent" : ""}" data-guide-step-row="${escapeAttribute(stepKey)}"${parentAttributes}>
         ${isPending ? `<p class="guide-step-save-status" role="status">Saving…</p>` : ""}
         ${isConfirmed ? `<p class="guide-step-save-status" role="status">Saved</p>` : ""}
         ${saveError ? `<p class="guide-step-save-status is-error" role="alert">Not saved. <button type="button" data-guide-retry-step="${escapeAttribute(stepKey)}">Try again</button></p>` : ""}
-        <label class="guide-step-check" for="${inputId}"${checkboxTitle ? ` title="${escapeAttribute(checkboxTitle)}"` : ""}>
-          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(stepKey)}"${done ? " checked" : ""}${options.disableCompletion || isPending || isConfirmed ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
+        <label class="guide-step-check" for="${inputId}">
+          <input id="${inputId}" type="checkbox" data-guide-step="${escapeAttribute(stepKey)}"${done ? " checked" : ""}${isPending || isConfirmed ? " disabled" : ""}${options.isMixed ? ` data-guide-mixed="true" aria-checked="mixed"` : ""}>
           <span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="${options.isMixed ? "M6 12h12" : "m6 12.5 4 4L18 8"}"></path></svg></span>
           <span class="sr-only">Mark step ${escapeHtml(item.stepId)} ${done ? "not done" : "done"}</span>
         </label>
@@ -440,23 +460,28 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     renderPage();
   }
 
-  async function completeParentWhenChildrenAreDone(item) {
+  async function syncParentFromChildren(item) {
     if (!item?.parentId) return;
 
     const parent = checklist?.find((entry) => entry.guideId === item.guideId && entry.id === item.parentId);
-    if (!parent || isItemDone(parent)) return;
+    if (!parent) return;
 
-    const siblings = checklist.filter((entry) => entry.guideId === item.guideId && entry.parentId === parent.id);
-    if (!siblings.length || !siblings.every(isItemDone)) return;
+    const siblings = getChecklistChildren(parent);
+    const shouldBeDone = siblings.length > 0 && siblings.every(isItemDone);
+    if (isItemDone(parent) !== shouldBeDone) {
+      const saved = await saveChecklistItem(parent, shouldBeDone, { syncParent: false });
+      if (!saved) return;
+    }
 
-    await saveChecklistItem(parent, true);
+    await syncParentFromChildren(parent);
   }
 
-  async function saveChecklistItem(item, done) {
-    if (!item) return;
+  async function saveChecklistItem(item, done, { syncParent = true } = {}) {
+    if (!item) return false;
     const managerId = String(getManagerId?.() || "").trim();
     const stepKey = getStepKey(item.guideId, item.stepId);
     const previousDone = completedStepKeys.has(stepKey);
+    let saved = false;
     pendingStepKeys.add(stepKey);
     saveErrors.delete(stepKey);
     renderPage();
@@ -465,6 +490,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       await saveGuideProgress(progressEndpoint, managerId, item, done);
       if (done) completedStepKeys.add(stepKey);
       else completedStepKeys.delete(stepKey);
+      saved = true;
       saveErrors.delete(stepKey);
       pendingStepKeys.delete(stepKey);
       if (done) confirmedStepKeys.add(stepKey);
@@ -483,9 +509,14 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       renderPage();
     }
 
-    if (done && completedStepKeys.has(stepKey)) {
-      await completeParentWhenChildrenAreDone(item);
-    }
+    if (saved && syncParent) await syncParentFromChildren(item);
+    return saved;
+  }
+
+  async function saveChecklistGroup(item, done) {
+    const group = [item, ...getChecklistDescendants(item)];
+    await Promise.all(group.map((entry) => saveChecklistItem(entry, done, { syncParent: false })));
+    await syncParentFromChildren(item);
   }
 
   function handleChange(event) {
@@ -494,7 +525,8 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
       const item = checklist?.find((entry) => getStepKey(entry.guideId, entry.stepId) === stepInput.dataset.guideStep);
       const requestedDone = stepInput.checked;
       stepInput.checked = isItemDone(item);
-      void saveChecklistItem(item, requestedDone);
+      if (getChecklistChildren(item).length) void saveChecklistGroup(item, requestedDone);
+      else void saveChecklistItem(item, requestedDone);
       return;
     }
 

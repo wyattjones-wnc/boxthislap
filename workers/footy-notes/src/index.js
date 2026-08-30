@@ -22,6 +22,46 @@ export default {
         return json({ ok: true, notes: await listMatchNotes(env) }, 200, cors);
       }
 
+      if (request.method === "GET" && url.pathname === "/api/ten-out-of-ten") {
+        await requireAdmin(request, env);
+        return json({ ok: true, performances: await listTenOutOfTenPerformances(env) }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/ten-out-of-ten") {
+        const managerId = await requireAdmin(request, env);
+        const savedPerformance = await saveTenOutOfTenPerformance(env, await readBody(request), managerId);
+        return json({ ok: true, savedPerformance, status: "saved" }, 201, cors);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/seen-matches") {
+        await requireAdmin(request, env);
+        return json({ ok: true, seenMatches: await listSeenMatches(env) }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/seen-matches") {
+        const managerId = await requireAdmin(request, env);
+        const savedSeenMatch = await saveSeenMatch(env, await readBody(request), managerId);
+        return json({ ok: true, savedSeenMatch, status: "saved" }, 201, cors);
+      }
+
+      const seenMatchRoute = url.pathname.match(/^\/api\/seen-matches\/([^/]+)$/);
+
+      if (request.method === "PUT" && seenMatchRoute) {
+        const id = parseSeenMatchId(seenMatchRoute[1]);
+        const managerId = await requireAdmin(request, env);
+        const savedSeenMatch = await updateSeenMatch(env, id, await readBody(request), managerId);
+        return json({ ok: true, savedSeenMatch, status: "saved" }, 200, cors);
+      }
+
+      const performanceMatch = url.pathname.match(/^\/api\/ten-out-of-ten\/([^/]+)$/);
+
+      if (request.method === "PUT" && performanceMatch) {
+        const id = parsePerformanceId(performanceMatch[1]);
+        const managerId = await requireAdmin(request, env);
+        const savedPerformance = await updateTenOutOfTenPerformance(env, id, await readBody(request), managerId);
+        return json({ ok: true, savedPerformance, status: "saved" }, 200, cors);
+      }
+
       const noteMatch = url.pathname.match(/^\/api\/match-notes\/([^/]+)$/);
 
       if (request.method === "GET" && noteMatch) {
@@ -45,11 +85,267 @@ export default {
       if (status >= 500) console.error(error);
       return json({
         ok: false,
-        error: status >= 500 ? "Match note data could not be saved." : error.message,
+        error: status >= 500 ? "Footy data could not be saved." : error.message,
       }, status, cors);
     }
   },
 };
+
+async function listSeenMatches(env) {
+  const result = await env.DB.prepare(`
+    SELECT id, match_id, home, away, match_date, match_time, competition,
+      venue, sports_bar, created_at
+    FROM footy_seen_matches
+    ORDER BY match_date DESC, match_time DESC, created_at DESC
+  `).all();
+  return (result.results || []).map(mapSeenMatch);
+}
+
+async function saveSeenMatch(env, body, managerId) {
+  const seenMatch = normalizeSeenMatch(body);
+  const id = crypto.randomUUID();
+  try {
+    await env.DB.prepare(`
+      INSERT INTO footy_seen_matches (
+        id, match_id, home, away, match_date, match_time, competition,
+        venue, sports_bar, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      id,
+      seenMatch.matchId,
+      seenMatch.home,
+      seenMatch.away,
+      seenMatch.matchDate,
+      seenMatch.matchTime,
+      seenMatch.competition,
+      seenMatch.venue,
+      seenMatch.sportsBar ? 1 : 0,
+      managerId,
+    ).run();
+  } catch (error) {
+    if (/unique|constraint/i.test(String(error?.message || "")) && seenMatch.matchId) {
+      throw httpError(409, "This fixture is already in Seen Matches.");
+    }
+    throw error;
+  }
+  return getSeenMatch(env, id);
+}
+
+async function updateSeenMatch(env, id, body, managerId) {
+  const seenMatch = normalizeSeenMatch(body);
+  const existing = await getSeenMatch(env, id);
+  if (!existing) throw httpError(404, "Seen match was not found.");
+
+  await env.DB.prepare(`
+    UPDATE footy_seen_matches SET
+      match_id = ?, home = ?, away = ?, match_date = ?, match_time = ?,
+      competition = ?, venue = ?, sports_bar = ?, updated_by = ?
+    WHERE id = ?
+  `).bind(
+    seenMatch.matchId,
+    seenMatch.home,
+    seenMatch.away,
+    seenMatch.matchDate,
+    seenMatch.matchTime,
+    seenMatch.competition,
+    seenMatch.venue,
+    seenMatch.sportsBar ? 1 : 0,
+    managerId,
+    id,
+  ).run();
+  return getSeenMatch(env, id);
+}
+
+async function getSeenMatch(env, id) {
+  const row = await env.DB.prepare(`
+    SELECT id, match_id, home, away, match_date, match_time, competition,
+      venue, sports_bar, created_at
+    FROM footy_seen_matches
+    WHERE id = ?
+  `).bind(id).first();
+  return row ? mapSeenMatch(row) : null;
+}
+
+function normalizeSeenMatch(value) {
+  const matchDate = cleanText(value?.matchDate, 10, "Match date");
+  const matchTime = cleanText(value?.matchTime, 5, "Match time");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(matchDate) || Number.isNaN(Date.parse(`${matchDate}T00:00:00Z`))) {
+    throw httpError(400, "Match date is required.");
+  }
+  if (matchTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(matchTime)) {
+    throw httpError(400, "Match time is invalid.");
+  }
+  return {
+    matchId: cleanText(value?.matchId, 200, "Match ID"),
+    home: requireText(value?.home, 200, "Home team"),
+    away: requireText(value?.away, 200, "Away team"),
+    matchDate,
+    matchTime,
+    competition: cleanText(value?.competition, 200, "Competition"),
+    venue: cleanText(value?.venue, 300, "Venue"),
+    sportsBar: Boolean(value?.sportsBar),
+  };
+}
+
+function mapSeenMatch(row) {
+  return {
+    id: String(row?.id || ""),
+    matchId: String(row?.match_id || ""),
+    home: String(row?.home || ""),
+    away: String(row?.away || ""),
+    matchDate: String(row?.match_date || ""),
+    matchTime: String(row?.match_time || ""),
+    competition: String(row?.competition || ""),
+    venue: String(row?.venue || ""),
+    sportsBar: Number(row?.sports_bar || 0) === 1,
+    createdAt: String(row?.created_at || ""),
+  };
+}
+
+function parseSeenMatchId(value) {
+  let id;
+  try {
+    id = decodeURIComponent(String(value || "")).trim();
+  } catch {
+    throw httpError(400, "Seen match ID is invalid.");
+  }
+  if (!id || id.length > 100) throw httpError(400, "Seen match ID is invalid.");
+  return id;
+}
+
+async function listTenOutOfTenPerformances(env) {
+  const result = await env.DB.prepare(`
+    SELECT id, match_id, player_name, player_team_side, home, away, match_date, match_time,
+      competition, note, created_at
+    FROM footy_ten_out_of_ten
+    ORDER BY match_date DESC, match_time DESC, created_at DESC
+  `).all();
+
+  return (result.results || []).map(mapTenOutOfTenPerformance);
+}
+
+async function saveTenOutOfTenPerformance(env, body, managerId) {
+  const performance = normalizeTenOutOfTenPerformance(body);
+  const id = crypto.randomUUID();
+
+  await env.DB.prepare(`
+    INSERT INTO footy_ten_out_of_ten (
+      id, match_id, player_name, player_team_side, home, away, match_date,
+      match_time, competition, note, updated_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id,
+    performance.matchId,
+    performance.playerName,
+    performance.playerTeamSide,
+    performance.home,
+    performance.away,
+    performance.matchDate,
+    performance.matchTime,
+    performance.competition,
+    performance.note,
+    managerId,
+  ).run();
+
+  const row = await env.DB.prepare(`
+    SELECT id, match_id, player_name, player_team_side, home, away, match_date, match_time,
+      competition, note, created_at
+    FROM footy_ten_out_of_ten
+    WHERE id = ?
+  `).bind(id).first();
+
+  return mapTenOutOfTenPerformance(row);
+}
+
+async function updateTenOutOfTenPerformance(env, id, body, managerId) {
+  const performance = normalizeTenOutOfTenPerformance(body);
+  const existing = await env.DB.prepare(`SELECT id FROM footy_ten_out_of_ten WHERE id = ?`).bind(id).first();
+  if (!existing) throw httpError(404, "10/10 performance was not found.");
+
+  await env.DB.prepare(`
+    UPDATE footy_ten_out_of_ten SET
+      match_id = ?, player_name = ?, player_team_side = ?, home = ?, away = ?,
+      match_date = ?, match_time = ?, competition = ?, note = ?, updated_by = ?
+    WHERE id = ?
+  `).bind(
+    performance.matchId,
+    performance.playerName,
+    performance.playerTeamSide,
+    performance.home,
+    performance.away,
+    performance.matchDate,
+    performance.matchTime,
+    performance.competition,
+    performance.note,
+    managerId,
+    id,
+  ).run();
+
+  const row = await env.DB.prepare(`
+    SELECT id, match_id, player_name, player_team_side, home, away, match_date,
+      match_time, competition, note, created_at
+    FROM footy_ten_out_of_ten
+    WHERE id = ?
+  `).bind(id).first();
+  return mapTenOutOfTenPerformance(row);
+}
+
+function normalizeTenOutOfTenPerformance(value) {
+  const matchDate = cleanText(value?.matchDate, 10, "Match date");
+  const matchTime = cleanText(value?.matchTime, 5, "Match time");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(matchDate) || Number.isNaN(Date.parse(`${matchDate}T00:00:00Z`))) {
+    throw httpError(400, "Match date is required.");
+  }
+  if (matchTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(matchTime)) {
+    throw httpError(400, "Match time is invalid.");
+  }
+
+  return {
+    matchId: cleanText(value?.matchId, 200, "Match ID"),
+    playerName: requireText(value?.playerName, 200, "Player name"),
+    playerTeamSide: parsePlayerTeamSide(value?.playerTeamSide),
+    home: requireText(value?.home, 200, "Home team"),
+    away: requireText(value?.away, 200, "Away team"),
+    matchDate,
+    matchTime,
+    competition: cleanText(value?.competition, 200, "Competition"),
+    note: cleanText(value?.note, 2000, "Game info"),
+  };
+}
+
+function mapTenOutOfTenPerformance(row) {
+  return {
+    id: String(row?.id || ""),
+    matchId: String(row?.match_id || ""),
+    playerName: String(row?.player_name || ""),
+    playerTeamSide: String(row?.player_team_side || ""),
+    home: String(row?.home || ""),
+    away: String(row?.away || ""),
+    matchDate: String(row?.match_date || ""),
+    matchTime: String(row?.match_time || ""),
+    competition: String(row?.competition || ""),
+    note: String(row?.note || ""),
+    createdAt: String(row?.created_at || ""),
+  };
+}
+
+function parsePlayerTeamSide(value) {
+  const side = String(value || "").trim().toLowerCase();
+  if (!["home", "away"].includes(side)) throw httpError(400, "Choose the player's home or away team.");
+  return side;
+}
+
+function parsePerformanceId(value) {
+  let id;
+  try {
+    id = decodeURIComponent(String(value || "")).trim();
+  } catch {
+    throw httpError(400, "Performance ID is invalid.");
+  }
+  if (!id || id.length > 100) throw httpError(400, "Performance ID is invalid.");
+  return id;
+}
 
 async function listMatchNotes(env) {
   const result = await env.DB.prepare(`
@@ -215,6 +511,12 @@ function cleanText(value, maxLength, label) {
   return text;
 }
 
+function requireText(value, maxLength, label) {
+  const text = cleanText(value, maxLength, label);
+  if (!text) throw httpError(400, `${label} is required.`);
+  return text;
+}
+
 function parseMatchId(value, { encoded = false } = {}) {
   let matchId = String(value || "");
   if (encoded) {
@@ -271,7 +573,7 @@ function allowedOrigin(origin, env) {
 function corsHeaders(origin, env) {
   const headers = {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     Vary: "Origin",

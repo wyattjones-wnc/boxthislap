@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.30.05.31";
+      window.BOX_THIS_LAP_VERSION = "2026.08.30.05.46";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608300531">
+    <link rel="stylesheet" href="styles.css?v=202608300546">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -760,7 +760,7 @@
         <div class="section-heading page-heading-with-action footy-heading">
           <h1>Footy</h1>
           <div class="heading-actions">
-            <a class="icon-action-button footy-perfect-button" href="#footy-perfect" data-page-link="footy-perfect" aria-label="Open 10 out of 10 performances" title="10/10 performances">
+            <a class="icon-action-button footy-perfect-button" href="#footy-perfect" data-page-link="footy-perfect" data-admin-only hidden aria-label="Open 10 out of 10 performances" title="10/10 performances">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L12 3Z"></path>
               </svg>
@@ -966,67 +966,113 @@
         </dialog>
       </section>
 
-      <section class="page" id="footy-perfect" data-page="footy-perfect">
+      <section class="page" id="footy-perfect" data-page="footy-perfect" data-admin-only hidden>
         <div class="section-heading page-heading-with-action footy-heading">
           <div>
             <a class="back-link" href="#footy" data-page-link="footy">Footy</a>
             <h1>10/10 Performances</h1>
           </div>
           <div class="heading-actions">
+            <button class="icon-action-button" id="footy-perfect-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-perfect-filters" aria-label="Show 10 out of 10 filters" title="Filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
             <button class="icon-action-button" id="footy-perfect-add" type="button" data-admin-only hidden aria-label="Add a 10 out of 10 performance" title="Add performance">+</button>
+          </div>
+        </div>
+        <div class="footy-filters footy-perfect-filters" id="footy-perfect-filters" hidden>
+          <label>
+            <span>Search</span>
+            <input id="footy-perfect-search" type="search" placeholder="Player, team, competition" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <div class="footy-date-range">
+              <input id="footy-perfect-date-from" type="date" aria-label="10 out of 10 date from">
+              <input id="footy-perfect-date-to" type="date" aria-label="10 out of 10 date to">
+            </div>
+          </label>
+          <label>
+            <span>Player Team</span>
+            <select id="footy-perfect-team-filter" aria-label="Filter by player team">
+              <option value="">All teams</option>
+            </select>
+          </label>
+          <label>
+            <span>Competition</span>
+            <select id="footy-perfect-competition-filter" aria-label="Filter by competition">
+              <option value="">All competitions</option>
+            </select>
+          </label>
+          <div class="footy-filter-toggles footy-perfect-filter-toggles">
+            <label class="footy-checkbox-control">
+              <input id="footy-perfect-edit-toggle" type="checkbox">
+              <span>Edit entries</span>
+            </label>
           </div>
         </div>
         <div class="content-shell footy-perfect-list" id="footy-perfect-list" aria-live="polite" aria-busy="true">
           <p class="table-message loading-message"><span class="loading-spinner"></span>Loading 10/10 performances...</p>
         </div>
-        <dialog class="footy-note-dialog" id="footy-perfect-dialog">
-          <form class="footy-note-form" id="footy-perfect-form" method="dialog">
-            <header>
-              <div>
-                <span id="footy-perfect-match-label"></span>
-                <h2>Add 10/10 Performance</h2>
-              </div>
-              <button class="icon-action-button" id="footy-perfect-close" type="button" aria-label="Close 10 out of 10 performance editor">&times;</button>
-            </header>
-            <input id="footy-perfect-match-id" type="hidden">
-            <div class="footy-note-grid">
-              <label class="footy-note-wide">
-                <span>Player</span>
-                <input id="footy-perfect-player" type="text" autocomplete="off" required>
-              </label>
-              <label>
-                <span>Home</span>
-                <input id="footy-perfect-home" type="text" autocomplete="off" required>
-              </label>
-              <label>
-                <span>Away</span>
-                <input id="footy-perfect-away" type="text" autocomplete="off" required>
-              </label>
-              <label>
-                <span>Date</span>
-                <input id="footy-perfect-date" type="date" required>
-              </label>
-              <label>
-                <span>Time</span>
-                <input id="footy-perfect-time" type="time">
-              </label>
-              <label class="footy-note-wide">
-                <span>Competition</span>
-                <input id="footy-perfect-competition" type="text" autocomplete="off">
-              </label>
-              <label class="footy-note-wide">
-                <span>Game Info</span>
-                <textarea id="footy-perfect-note" rows="3" placeholder="Optional context about the performance"></textarea>
-              </label>
-            </div>
-            <p class="footy-note-status" id="footy-perfect-status" aria-live="polite"></p>
-            <footer>
-              <button class="action-button" id="footy-perfect-cancel" type="button">Cancel</button>
-              <button class="action-button" id="footy-perfect-save" type="submit">Save</button>
-            </footer>
-          </form>
-        </dialog>
       </section>
+
+      <dialog class="footy-note-dialog" id="footy-perfect-dialog">
+        <form class="footy-note-form" id="footy-perfect-form" method="dialog">
+          <header>
+            <div>
+              <span id="footy-perfect-match-label"></span>
+              <h2 id="footy-perfect-dialog-title">Add 10/10 Performance</h2>
+            </div>
+            <button class="icon-action-button" id="footy-perfect-close" type="button" aria-label="Close 10 out of 10 performance editor">&times;</button>
+          </header>
+          <input id="footy-perfect-entry-id" type="hidden">
+          <input id="footy-perfect-match-id" type="hidden">
+          <div class="footy-note-grid">
+            <label class="footy-note-wide">
+              <span>Player</span>
+              <input id="footy-perfect-player" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>Home</span>
+              <input id="footy-perfect-home" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>Away</span>
+              <input id="footy-perfect-away" type="text" autocomplete="off" required>
+            </label>
+            <label class="footy-note-wide">
+              <span>Player Team</span>
+              <select id="footy-perfect-player-team-side" required>
+                <option value="">Select home or away</option>
+                <option value="home">Home</option>
+                <option value="away">Away</option>
+              </select>
+            </label>
+            <label>
+              <span>Date</span>
+              <input id="footy-perfect-date" type="date" required>
+            </label>
+            <label>
+              <span>Time</span>
+              <input id="footy-perfect-time" type="time">
+            </label>
+            <label class="footy-note-wide">
+              <span>Competition</span>
+              <input id="footy-perfect-competition" type="text" autocomplete="off">
+            </label>
+            <label class="footy-note-wide">
+              <span>Game Info</span>
+              <textarea id="footy-perfect-note" rows="3" placeholder="Optional context about the performance"></textarea>
+            </label>
+          </div>
+          <p class="footy-note-status" id="footy-perfect-status" aria-live="polite"></p>
+          <footer>
+            <button class="action-button" id="footy-perfect-cancel" type="button">Cancel</button>
+            <button class="action-button" id="footy-perfect-save" type="submit">Save</button>
+          </footer>
+        </form>
+      </dialog>
 
       <section class="page" id="next" data-page="next">
         <div class="section-heading page-heading-with-action footy-heading">
@@ -2434,6 +2480,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608300531"></script>
+    <script type="module" src="script.js?v=202608300546"></script>
   </body>
 </html>

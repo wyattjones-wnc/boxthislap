@@ -129,15 +129,26 @@ import {
   footyNoteHighlightLink,
   footyNoteStatus,
   footyPerfectAdd,
+  footyPerfectFilterToggle,
+  footyPerfectFilters,
+  footyPerfectSearch,
+  footyPerfectDateFrom,
+  footyPerfectDateTo,
+  footyPerfectTeamFilter,
+  footyPerfectCompetitionFilter,
+  footyPerfectEditToggle,
   footyPerfectList,
   footyPerfectDialog,
   footyPerfectForm,
   footyPerfectClose,
   footyPerfectCancel,
   footyPerfectSave,
+  footyPerfectDialogTitle,
   footyPerfectMatchLabel,
+  footyPerfectEntryId,
   footyPerfectMatchId,
   footyPerfectPlayer,
+  footyPerfectPlayerTeamSide,
   footyPerfectHome,
   footyPerfectAway,
   footyPerfectDate,
@@ -322,7 +333,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608290620";
+} from "./modules/domRefs.js?v=202608300100";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -425,6 +436,8 @@ let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
 let footyMatchNotesLoadPromise = null;
 let footyPerfectPerformancesLoadPromise = null;
+let shouldShowFootyPerfectFilters = false;
+let shouldShowFootyPerfectEditMode = false;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -556,7 +569,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles", "footy-perfect"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -3494,27 +3507,43 @@ function renderFootyPerfectPage() {
     return;
   }
 
+  syncFootyPerfectFilters(performances);
+  const visiblePerformances = getFilteredFootyPerfectPerformances(performances)
+    .sort(compareFootyPerfectPerformances);
   footyPerfectList.setAttribute("aria-busy", "false");
-  footyPerfectList.innerHTML = performances.length
-    ? performances.map(renderFootyPerfectPerformance).join("")
-    : `<p class="table-message">No 10/10 performances have been added yet.</p>`;
+  footyPerfectList.innerHTML = visiblePerformances.length
+    ? visiblePerformances.map(renderFootyPerfectPerformance).join("")
+    : `<p class="table-message">${performances.length ? "No 10/10 performances match these filters." : "No 10/10 performances have been added yet."}</p>`;
 }
 
 function renderFootyPerfectPerformance(performance = {}) {
   const dateLabel = formatFootyPerfectDate(performance.matchDate);
   const timeLabel = String(performance.matchTime || "").trim();
   const matchLabel = `${performance.home || "TBD"} v ${performance.away || "TBD"}`;
+  const playerTeam = getFootyPerfectPlayerTeam(performance);
+  const sideLabel = performance.playerTeamSide === "home" ? "H" : performance.playerTeamSide === "away" ? "A" : "";
+  const editMarkup = shouldShowFootyPerfectEditMode
+    ? `<button class="action-button footy-perfect-edit-button" type="button" data-footy-perfect-edit="${escapeHtml(performance.id)}">Edit</button>`
+    : "";
 
   return `
     <article class="footy-perfect-card">
-      <div class="footy-perfect-score" aria-label="Sofascore rating 10 out of 10">10</div>
-      <div class="footy-perfect-copy">
-        <h2>${escapeHtml(performance.playerName || "Unknown player")}</h2>
+      <div class="footy-perfect-card-heading">
+        <div class="footy-perfect-copy">
+          <h2>${escapeHtml(performance.playerName || "Unknown player")}</h2>
+          <p class="footy-perfect-player-team">
+            ${sideLabel ? `<span class="footy-side-chip" aria-label="${performance.playerTeamSide === "home" ? "Home" : "Away"} team">${sideLabel}</span>` : ""}
+            <strong>${escapeHtml(playerTeam || "Team not assigned")}</strong>
+          </p>
+        </div>
+        ${editMarkup}
+      </div>
+      <div class="footy-perfect-match-details">
         <p class="footy-perfect-match">${escapeHtml(matchLabel)}</p>
         <p class="footy-fixture-meta">
-          ${performance.competition ? `<span>${escapeHtml(performance.competition)}</span>` : ""}
           ${dateLabel ? `<span>${escapeHtml(dateLabel)}</span>` : ""}
           ${timeLabel ? `<span>${escapeHtml(timeLabel)}</span>` : ""}
+          ${performance.competition ? `<span>${escapeHtml(performance.competition)}</span>` : ""}
         </p>
         ${performance.note ? `<p class="footy-perfect-note">${escapeHtml(performance.note)}</p>` : ""}
       </div>
@@ -3535,7 +3564,71 @@ function formatFootyPerfectDate(value) {
 
 function compareFootyPerfectPerformances(first = {}, second = {}) {
   return String(second.matchDate || "").localeCompare(String(first.matchDate || "")) ||
+    String(second.matchTime || "").localeCompare(String(first.matchTime || "")) ||
     String(second.createdAt || "").localeCompare(String(first.createdAt || ""));
+}
+
+function getFootyPerfectPlayerTeam(performance = {}) {
+  if (performance.playerTeamSide === "home") return String(performance.home || "").trim();
+  if (performance.playerTeamSide === "away") return String(performance.away || "").trim();
+  return "";
+}
+
+function getFilteredFootyPerfectPerformances(performances = []) {
+  const search = normalizeLookupName(footyPerfectSearch?.value);
+  const dateFrom = String(footyPerfectDateFrom?.value || "");
+  const dateTo = String(footyPerfectDateTo?.value || "");
+  const team = normalizeLookupName(footyPerfectTeamFilter?.value);
+  const competition = normalizeLookupName(footyPerfectCompetitionFilter?.value);
+
+  return performances.filter((performance) => {
+    const matchDate = String(performance.matchDate || "");
+    if (dateFrom && matchDate < dateFrom) return false;
+    if (dateTo && matchDate > dateTo) return false;
+    if (team && normalizeLookupName(getFootyPerfectPlayerTeam(performance)) !== team) return false;
+    if (competition && normalizeLookupName(performance.competition) !== competition) return false;
+    if (!search) return true;
+
+    return normalizeLookupName([
+      performance.playerName,
+      performance.home,
+      performance.away,
+      performance.competition,
+      performance.note,
+      getFootyPerfectPlayerTeam(performance),
+    ].join(" ")).includes(search);
+  });
+}
+
+function syncFootyPerfectFilters(performances = []) {
+  if (footyPerfectFilters) footyPerfectFilters.hidden = !shouldShowFootyPerfectFilters;
+  if (footyPerfectFilterToggle) {
+    footyPerfectFilterToggle.setAttribute("aria-expanded", String(shouldShowFootyPerfectFilters));
+    footyPerfectFilterToggle.classList.toggle("is-active", shouldShowFootyPerfectFilters);
+  }
+  if (footyPerfectEditToggle) footyPerfectEditToggle.checked = shouldShowFootyPerfectEditMode;
+
+  syncFootyPerfectSelectOptions(
+    footyPerfectTeamFilter,
+    performances.map(getFootyPerfectPlayerTeam).filter(Boolean),
+    "All teams",
+  );
+  syncFootyPerfectSelectOptions(
+    footyPerfectCompetitionFilter,
+    performances.map((performance) => performance.competition).filter(Boolean),
+    "All competitions",
+  );
+}
+
+function syncFootyPerfectSelectOptions(select, values = [], emptyLabel = "All") {
+  if (!select) return;
+  const selectedValue = select.value;
+  const uniqueValues = [...new Set(values.map((value) => String(value).trim()).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
+  select.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>${uniqueValues
+    .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+    .join("")}`;
+  if (uniqueValues.includes(selectedValue)) select.value = selectedValue;
 }
 
 function ensureFootyPerfectPerformances({ force = false } = {}) {
@@ -3553,15 +3646,8 @@ function ensureFootyPerfectPerformances({ force = false } = {}) {
     return footyPerfectPerformancesLoadPromise;
   }
 
-  footyPerfectPerformancesLoadPromise = fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/ten-out-of-ten`, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(12000),
-  })
-    .then(async (response) => {
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.ok) {
-        throw new Error(data?.error || `10/10 endpoint returned ${response.status}.`);
-      }
+  footyPerfectPerformancesLoadPromise = loadFootyPerfectPerformances()
+    .then((data) => {
       siteData.footyPerfectPerformances = Array.isArray(data.performances) ? data.performances : [];
       if (activePageName === "footy-perfect") {
         renderFootyPerfectPage();
@@ -3573,6 +3659,27 @@ function ensureFootyPerfectPerformances({ force = false } = {}) {
     });
 
   return footyPerfectPerformancesLoadPromise;
+}
+
+async function loadFootyPerfectPerformances(retried = false) {
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/ten-out-of-ten`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    signal: AbortSignal.timeout(12000),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && !retried) {
+    clearRankingAuthorization();
+    return loadFootyPerfectPerformances(true);
+  }
+  if (!response.ok || !data?.ok) {
+    throw new Error(data?.error || `10/10 endpoint returned ${response.status}.`);
+  }
+  return data;
 }
 
 function getFootyPerfectInputTime(fixture = {}) {
@@ -3591,25 +3698,44 @@ function getFootyPerfectInputTime(fixture = {}) {
   return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
 }
 
-function openFootyPerfectDialog(matchId = "") {
+function openFootyPerfectDialog(matchId = "", performance = null) {
   if (!isCurrentManagerAdmin() || !footyPerfectDialog || !footyPerfectForm) {
     return;
   }
 
-  const fixture = matchId ? getFootyFixtureByMatchId(matchId) : null;
+  const fixture = !performance && matchId ? getFootyFixtureByMatchId(matchId) : null;
   footyPerfectForm.reset();
-  footyPerfectMatchId.value = fixture ? String(fixture.matchId || "") : "";
-  footyPerfectHome.value = fixture ? String(fixture.home || "") : "";
-  footyPerfectAway.value = fixture ? String(fixture.away || "") : "";
-  footyPerfectDate.value = fixture ? getFootyFixtureDateKey(fixture) : "";
-  footyPerfectTime.value = fixture ? getFootyPerfectInputTime(fixture) : "";
-  footyPerfectCompetition.value = fixture ? String(fixture.league || "") : "";
-  footyPerfectMatchLabel.textContent = fixture ? `Fixture ${fixture.matchId}` : "Manual match";
+  footyPerfectEntryId.value = performance ? String(performance.id || "") : "";
+  footyPerfectMatchId.value = performance ? String(performance.matchId || "") : fixture ? String(fixture.matchId || "") : "";
+  footyPerfectPlayer.value = performance ? String(performance.playerName || "") : "";
+  footyPerfectHome.value = performance ? String(performance.home || "") : fixture ? String(fixture.home || "") : "";
+  footyPerfectAway.value = performance ? String(performance.away || "") : fixture ? String(fixture.away || "") : "";
+  footyPerfectDate.value = performance ? String(performance.matchDate || "") : fixture ? getFootyFixtureDateKey(fixture) : "";
+  footyPerfectTime.value = performance ? String(performance.matchTime || "") : fixture ? getFootyPerfectInputTime(fixture) : "";
+  footyPerfectCompetition.value = performance ? String(performance.competition || "") : fixture ? String(fixture.league || "") : "";
+  footyPerfectNote.value = performance ? String(performance.note || "") : "";
+  footyPerfectPlayerTeamSide.value = performance ? String(performance.playerTeamSide || "") : "";
+  syncFootyPerfectTeamSideOptions();
+  footyPerfectMatchLabel.textContent = footyPerfectMatchId.value ? `Fixture ${footyPerfectMatchId.value}` : "Manual match";
+  footyPerfectDialogTitle.textContent = performance ? "Edit 10/10 Performance" : "Add 10/10 Performance";
   footyPerfectStatus.textContent = "";
   footyPerfectStatus.classList.remove("is-error");
   footyPerfectSave.disabled = false;
   footyPerfectDialog.showModal();
   window.setTimeout(() => footyPerfectPlayer?.focus(), 0);
+}
+
+function syncFootyPerfectTeamSideOptions() {
+  if (!footyPerfectPlayerTeamSide) return;
+  const selectedValue = footyPerfectPlayerTeamSide.value;
+  const home = String(footyPerfectHome?.value || "Home").trim() || "Home";
+  const away = String(footyPerfectAway?.value || "Away").trim() || "Away";
+  footyPerfectPlayerTeamSide.innerHTML = `
+    <option value="">Select home or away</option>
+    <option value="home">Home — ${escapeHtml(home)}</option>
+    <option value="away">Away — ${escapeHtml(away)}</option>
+  `;
+  footyPerfectPlayerTeamSide.value = selectedValue;
 }
 
 function closeFootyPerfectDialog() {
@@ -3628,8 +3754,10 @@ function setFootyPerfectStatus(message = "", isError = false) {
 
 function buildFootyPerfectPerformanceFromDialog() {
   const performance = {
+    id: footyPerfectEntryId.value,
     matchId: footyPerfectMatchId.value,
     playerName: footyPerfectPlayer.value,
+    playerTeamSide: footyPerfectPlayerTeamSide.value,
     home: footyPerfectHome.value,
     away: footyPerfectAway.value,
     matchDate: footyPerfectDate.value,
@@ -3640,6 +3768,7 @@ function buildFootyPerfectPerformanceFromDialog() {
 
   if (!performance.playerName.trim()) throw new Error("Player name is required.");
   if (!performance.home.trim() || !performance.away.trim()) throw new Error("Home and away teams are required.");
+  if (!["home", "away"].includes(performance.playerTeamSide)) throw new Error("Choose the player's home or away team.");
   if (!performance.matchDate) throw new Error("Match date is required.");
   return performance;
 }
@@ -3659,10 +3788,11 @@ async function saveFootyPerfectPerformanceFromDialog() {
   try {
     const data = await saveFootyPerfectPerformance(performance);
 
-    siteData.footyPerfectPerformances = [
-      data.savedPerformance,
-      ...(siteData.footyPerfectPerformances || []),
-    ].sort(compareFootyPerfectPerformances);
+    const existing = siteData.footyPerfectPerformances || [];
+    siteData.footyPerfectPerformances = performance.id
+      ? existing.map((entry) => entry.id === data.savedPerformance.id ? data.savedPerformance : entry)
+      : [data.savedPerformance, ...existing];
+    siteData.footyPerfectPerformances.sort(compareFootyPerfectPerformances);
     renderFootyPerfectPage();
     closeFootyPerfectDialog();
   } catch (error) {
@@ -3673,14 +3803,15 @@ async function saveFootyPerfectPerformanceFromDialog() {
 
 async function saveFootyPerfectPerformance(performance, retried = false) {
   const accessToken = await ensureRankingAuthorization();
-  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}/api/ten-out-of-ten`, {
+  const resource = performance.id ? `/api/ten-out-of-ten/${encodeURIComponent(performance.id)}` : "/api/ten-out-of-ten";
+  const response = await fetch(`${FOOTY_MATCH_NOTES_ENDPOINT.replace(/\/$/, "")}${resource}`, {
     body: JSON.stringify(performance),
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    method: "POST",
+    method: performance.id ? "PUT" : "POST",
     signal: AbortSignal.timeout(12000),
   });
   const data = await response.json().catch(() => ({}));
@@ -12422,6 +12553,29 @@ footyPerfectAdd?.addEventListener("click", () => {
   openFootyPerfectDialog();
 });
 
+footyPerfectFilterToggle?.addEventListener("click", () => {
+  shouldShowFootyPerfectFilters = !shouldShowFootyPerfectFilters;
+  renderFootyPerfectPage();
+});
+
+[footyPerfectSearch, footyPerfectDateFrom, footyPerfectDateTo, footyPerfectTeamFilter, footyPerfectCompetitionFilter]
+  .forEach((control) => {
+    control?.addEventListener(control === footyPerfectSearch ? "input" : "change", renderFootyPerfectPage);
+  });
+
+footyPerfectEditToggle?.addEventListener("change", () => {
+  shouldShowFootyPerfectEditMode = Boolean(footyPerfectEditToggle.checked);
+  renderFootyPerfectPage();
+});
+
+footyPerfectList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-footy-perfect-edit]");
+  if (!editButton || !shouldShowFootyPerfectEditMode) return;
+  const entryId = String(editButton.getAttribute("data-footy-perfect-edit") || "");
+  const performance = (siteData.footyPerfectPerformances || []).find((entry) => entry.id === entryId);
+  if (performance) openFootyPerfectDialog(performance.matchId, performance);
+});
+
 footyPerfectForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveFootyPerfectPerformanceFromDialog();
@@ -12435,6 +12589,10 @@ footyPerfectDialog?.addEventListener("click", (event) => {
   if (event.target === footyPerfectDialog) {
     closeFootyPerfectDialog();
   }
+});
+
+[footyPerfectHome, footyPerfectAway].forEach((input) => {
+  input?.addEventListener("input", syncFootyPerfectTeamSideOptions);
 });
 
 footyNoteForm?.addEventListener("submit", (event) => {
@@ -13871,7 +14029,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles", "footy-perfect"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }

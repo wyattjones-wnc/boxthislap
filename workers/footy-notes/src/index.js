@@ -23,6 +23,7 @@ export default {
       }
 
       if (request.method === "GET" && url.pathname === "/api/ten-out-of-ten") {
+        await requireAdmin(request, env);
         return json({ ok: true, performances: await listTenOutOfTenPerformances(env) }, 200, cors);
       }
 
@@ -30,6 +31,15 @@ export default {
         const managerId = await requireAdmin(request, env);
         const savedPerformance = await saveTenOutOfTenPerformance(env, await readBody(request), managerId);
         return json({ ok: true, savedPerformance, status: "saved" }, 201, cors);
+      }
+
+      const performanceMatch = url.pathname.match(/^\/api\/ten-out-of-ten\/([^/]+)$/);
+
+      if (request.method === "PUT" && performanceMatch) {
+        const id = parsePerformanceId(performanceMatch[1]);
+        const managerId = await requireAdmin(request, env);
+        const savedPerformance = await updateTenOutOfTenPerformance(env, id, await readBody(request), managerId);
+        return json({ ok: true, savedPerformance, status: "saved" }, 200, cors);
       }
 
       const noteMatch = url.pathname.match(/^\/api\/match-notes\/([^/]+)$/);
@@ -63,10 +73,10 @@ export default {
 
 async function listTenOutOfTenPerformances(env) {
   const result = await env.DB.prepare(`
-    SELECT id, match_id, player_name, home, away, match_date, match_time,
+    SELECT id, match_id, player_name, player_team_side, home, away, match_date, match_time,
       competition, note, created_at
     FROM footy_ten_out_of_ten
-    ORDER BY match_date DESC, created_at DESC
+    ORDER BY match_date DESC, match_time DESC, created_at DESC
   `).all();
 
   return (result.results || []).map(mapTenOutOfTenPerformance);
@@ -78,13 +88,14 @@ async function saveTenOutOfTenPerformance(env, body, managerId) {
 
   await env.DB.prepare(`
     INSERT INTO footy_ten_out_of_ten (
-      id, match_id, player_name, home, away, match_date, match_time,
-      competition, note, updated_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, match_id, player_name, player_team_side, home, away, match_date,
+      match_time, competition, note, updated_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     id,
     performance.matchId,
     performance.playerName,
+    performance.playerTeamSide,
     performance.home,
     performance.away,
     performance.matchDate,
@@ -95,12 +106,45 @@ async function saveTenOutOfTenPerformance(env, body, managerId) {
   ).run();
 
   const row = await env.DB.prepare(`
-    SELECT id, match_id, player_name, home, away, match_date, match_time,
+    SELECT id, match_id, player_name, player_team_side, home, away, match_date, match_time,
       competition, note, created_at
     FROM footy_ten_out_of_ten
     WHERE id = ?
   `).bind(id).first();
 
+  return mapTenOutOfTenPerformance(row);
+}
+
+async function updateTenOutOfTenPerformance(env, id, body, managerId) {
+  const performance = normalizeTenOutOfTenPerformance(body);
+  const existing = await env.DB.prepare(`SELECT id FROM footy_ten_out_of_ten WHERE id = ?`).bind(id).first();
+  if (!existing) throw httpError(404, "10/10 performance was not found.");
+
+  await env.DB.prepare(`
+    UPDATE footy_ten_out_of_ten SET
+      match_id = ?, player_name = ?, player_team_side = ?, home = ?, away = ?,
+      match_date = ?, match_time = ?, competition = ?, note = ?, updated_by = ?
+    WHERE id = ?
+  `).bind(
+    performance.matchId,
+    performance.playerName,
+    performance.playerTeamSide,
+    performance.home,
+    performance.away,
+    performance.matchDate,
+    performance.matchTime,
+    performance.competition,
+    performance.note,
+    managerId,
+    id,
+  ).run();
+
+  const row = await env.DB.prepare(`
+    SELECT id, match_id, player_name, player_team_side, home, away, match_date,
+      match_time, competition, note, created_at
+    FROM footy_ten_out_of_ten
+    WHERE id = ?
+  `).bind(id).first();
   return mapTenOutOfTenPerformance(row);
 }
 
@@ -118,6 +162,7 @@ function normalizeTenOutOfTenPerformance(value) {
   return {
     matchId: cleanText(value?.matchId, 200, "Match ID"),
     playerName: requireText(value?.playerName, 200, "Player name"),
+    playerTeamSide: parsePlayerTeamSide(value?.playerTeamSide),
     home: requireText(value?.home, 200, "Home team"),
     away: requireText(value?.away, 200, "Away team"),
     matchDate,
@@ -132,6 +177,7 @@ function mapTenOutOfTenPerformance(row) {
     id: String(row?.id || ""),
     matchId: String(row?.match_id || ""),
     playerName: String(row?.player_name || ""),
+    playerTeamSide: String(row?.player_team_side || ""),
     home: String(row?.home || ""),
     away: String(row?.away || ""),
     matchDate: String(row?.match_date || ""),
@@ -140,6 +186,23 @@ function mapTenOutOfTenPerformance(row) {
     note: String(row?.note || ""),
     createdAt: String(row?.created_at || ""),
   };
+}
+
+function parsePlayerTeamSide(value) {
+  const side = String(value || "").trim().toLowerCase();
+  if (!["home", "away"].includes(side)) throw httpError(400, "Choose the player's home or away team.");
+  return side;
+}
+
+function parsePerformanceId(value) {
+  let id;
+  try {
+    id = decodeURIComponent(String(value || "")).trim();
+  } catch {
+    throw httpError(400, "Performance ID is invalid.");
+  }
+  if (!id || id.length > 100) throw httpError(400, "Performance ID is invalid.");
+  return id;
 }
 
 async function listMatchNotes(env) {

@@ -4406,27 +4406,23 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-perfect-card {
-  align-items: center;
   background: color-mix(in srgb, var(--panel) 88%, var(--track));
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  gap: 14px;
-  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
   padding: 14px;
 }
 
-.footy-perfect-score {
+.footy-perfect-card-heading,
+.footy-perfect-player-team {
   align-items: center;
-  background: var(--track);
-  border-radius: 50%;
-  color: var(--track-ink);
   display: flex;
-  font-size: 1.05rem;
-  font-weight: 950;
-  height: 48px;
-  justify-content: center;
-  width: 48px;
+  gap: 8px;
+}
+
+.footy-perfect-card-heading {
+  justify-content: space-between;
 }
 
 .footy-perfect-copy {
@@ -4439,7 +4435,18 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-perfect-copy h2 {
-  font-size: 1rem;
+  font-size: 1.08rem;
+}
+
+.footy-perfect-player-team {
+  color: var(--muted);
+  font-size: 0.84rem;
+  margin-top: 5px !important;
+}
+
+.footy-perfect-match-details {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
 }
 
 .footy-perfect-match {
@@ -4453,6 +4460,17 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 0.86rem;
   margin-top: 8px !important;
   white-space: pre-wrap;
+}
+
+.footy-perfect-edit-button {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.footy-perfect-filter-toggles {
+  align-self: end;
 }
 
 .footy-updated,

@@ -219,12 +219,18 @@ function normalizeTrophy(row) {
 
 function formatElapsed(seconds) {
   const value = Math.max(0, Number(seconds) || 0);
-  const days = Math.floor(value / 86400);
-  const hours = Math.floor((value % 86400) / 3600);
-  const minutes = Math.floor((value % 3600) / 60);
-  if (days) return `${days}d ${hours}h`;
-  if (hours) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
+  const totalDays = Math.floor(value / 86400);
+  const years = Math.floor(totalDays / 365);
+  const months = Math.floor((totalDays % 365) / 30);
+  const days = (totalDays % 365) % 30;
+  const parts = [[years, "year"], [months, "month"], [days, "day"]]
+    .filter(([amount]) => amount)
+    .map(([amount, unit]) => `${amount} ${unit}${amount === 1 ? "" : "s"}`);
+  if (parts.length) return parts.join(", ");
+  const hours = Math.floor(value / 3600);
+  if (hours) return `${hours} hour${hours === 1 ? "" : "s"}`;
+  const minutes = Math.floor(value / 60);
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
 }
 
 function comparePlatinums(first, second) {

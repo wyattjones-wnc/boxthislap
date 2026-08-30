@@ -338,10 +338,10 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260819000
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608301830";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608301300";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608301400";
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608290600";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
-import { createTrophyLogController } from "./modules/trophyLog.js?v=202608301300";
+import { createTrophyLogController } from "./modules/trophyLog.js?v=202608301400";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300001";
 import {

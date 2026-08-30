@@ -54,6 +54,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         });
         seenThroughButton.classList.add("is-confirming");
         seenThroughButton.setAttribute("aria-expanded", "true");
+        syncStatus.textContent = "Click Seen through here again to confirm.";
         return;
       }
       void saveSeenThrough(seenThroughButton);
@@ -111,11 +112,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       return `<article class="trophy-log-card" data-game-id="${escapeHtml(item.gameId)}" data-trophy-id="${escapeHtml(item.id)}" data-preference-state="${escapeHtml(current)}">
         <div class="trophy-log-image">${item.iconUrl ? `<img src="${escapeHtml(item.iconUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span aria-hidden="true">★</span>`}</div>
         <div class="trophy-log-copy"><p>${escapeHtml(item.gameName || "Unknown game")}</p><h2>${escapeHtml(item.name || "Unknown trophy")}</h2>${item.description ? `<span>${escapeHtml(item.description)}</span>` : ""}<small>${escapeHtml(details)}</small>${numbering.length ? `<div class="trophy-log-numbering">${numbering.map((value) => `<span class="trophy-metadata-chip">${escapeHtml(value)}</span>`).join("")}</div>` : ""}</div>
-        <div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">
-          <button type="button" data-trophy-preference="favorite" ${current === "favorite" ? "disabled" : ""}>★ Favorite</button>
-          ${current === "unsorted" ? `<button class="action-button trophy-seen-through-button" type="button" data-trophy-seen-through aria-expanded="false" aria-label="Seen through here"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg><span>Seen through here</span></button>` : ""}
-          ${current !== "unsorted" ? `<button type="button" data-trophy-preference="">Return to Unsorted</button>` : ""}
-        </div>
+        <div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">${renderActions(current)}</div>
       </article>`;
     }).join("");
   }
@@ -131,13 +128,14 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     if (!card || state.busy) return;
     button.disabled = true;
     try {
+      const nextState = button.dataset.trophyPreference || null;
       await request(`/api/psn/trophies/${encodeURIComponent(card.dataset.gameId)}/${encodeURIComponent(card.dataset.trophyId)}/preference`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: button.dataset.trophyPreference || null }),
+        body: JSON.stringify({ state: nextState }),
       });
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
-      await load();
+      updatePreferenceInPlace(card, nextState);
     } catch (error) {
       button.disabled = false;
       window.alert(error.message);
@@ -163,12 +161,35 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         body: JSON.stringify({ items }),
       });
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
+      syncStatus.textContent = `${items.length} ${items.length === 1 ? "trophy" : "trophies"} marked Seen.`;
     } catch (error) {
       window.alert(error.message);
     } finally {
       state.busy = false;
       await load();
+      root.scrollIntoView({ block: "start", behavior: "smooth" });
     }
+  }
+
+  function updatePreferenceInPlace(card, nextState) {
+    const gameId = card.dataset.gameId;
+    const trophyId = Number(card.dataset.trophyId);
+    const item = state.items.find((entry) => entry.gameId === gameId && Number(entry.id) === trophyId);
+    if (item) item.state = nextState;
+    const leavesCurrentView = (state.view === "unsorted" && nextState !== null)
+      || (state.view === "favorites" && nextState !== "favorite")
+      || (state.view === "seen" && nextState !== "seen");
+    if (leavesCurrentView) {
+      state.items = state.items.filter((entry) => !(entry.gameId === gameId && Number(entry.id) === trophyId));
+      card.remove();
+      if (resultLabel) resultLabel.textContent = `${state.items.length} shown`;
+      if (!state.items.length) renderItems([]);
+      return;
+    }
+    const current = nextState || "unsorted";
+    card.dataset.preferenceState = current;
+    const actions = card.querySelector(".trophy-log-actions");
+    if (actions) actions.innerHTML = renderActions(current);
   }
 
   async function refreshTrophies() {
@@ -250,5 +271,6 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
 function loading(label) { return `<p class="table-message"><span class="loading-spinner"></span>${escapeHtml(label)}</p>`; }
 function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }
 function capitalize(value) { const text = String(value || ""); return text ? `${text[0].toUpperCase()}${text.slice(1)}` : ""; }
-function formatElapsed(seconds) { const value = Math.max(0, Number(seconds) || 0); const days = Math.floor(value / 86400); const hours = Math.floor((value % 86400) / 3600); const minutes = Math.floor((value % 3600) / 60); return days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes}m` : `${minutes}m`; }
+function renderActions(current) { return `<button type="button" data-trophy-preference="favorite" ${current === "favorite" ? "disabled" : ""}>★ Favorite</button>${current === "unsorted" ? `<button class="action-button trophy-seen-through-button" type="button" data-trophy-seen-through aria-expanded="false" aria-label="Seen through here"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg><span>Seen through here</span></button>` : ""}${current !== "unsorted" ? `<button type="button" data-trophy-preference="">Return to Unsorted</button>` : ""}`; }
+function formatElapsed(seconds) { const value = Math.max(0, Number(seconds) || 0); const totalDays = Math.floor(value / 86400); const years = Math.floor(totalDays / 365); const months = Math.floor((totalDays % 365) / 30); const days = (totalDays % 365) % 30; const parts = [[years, "year"], [months, "month"], [days, "day"]].filter(([amount]) => amount).map(([amount, unit]) => `${amount} ${unit}${amount === 1 ? "" : "s"}`); if (parts.length) return parts.join(", "); const hours = Math.floor(value / 3600); if (hours) return `${hours} hour${hours === 1 ? "" : "s"}`; const minutes = Math.floor(value / 60); return `${minutes} minute${minutes === 1 ? "" : "s"}`; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }

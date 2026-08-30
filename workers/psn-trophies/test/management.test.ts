@@ -65,6 +65,29 @@ test("stores a bounded seen-through batch", async () => {
   assert.equal(batchSize, 2);
 });
 
+test("platinum duration sorting always uses the evergreen platinum view", async () => {
+  let sql = "";
+  const env = {
+    ADMIN_MANAGER_IDS: "6",
+    MANAGER_AUTH: managerAuth(),
+    DB: {
+      batch: async () => [],
+      prepare: (query: string) => {
+        sql = query;
+        return { bind: () => ({ all: async () => ({ results: [] }) }) };
+      },
+    },
+  } as any;
+  const response = await routeTrophyManagementApi(new Request("https://example.com/api/psn/trophy-log?view=unsorted&sort=platinum-duration-desc", {
+    headers: { Authorization: "Bearer token" },
+  }), env);
+  assert.ok(response);
+  const body = await response.json() as any;
+  assert.equal(body.view, "platinums");
+  assert.match(sql, /t\.trophy_type = 'platinum'/);
+  assert.doesNotMatch(sql, /t\.state IS NULL/);
+});
+
 test("stores a favorite preference for an earned platinum trophy", async () => {
   const queries: string[] = [];
   const env = {

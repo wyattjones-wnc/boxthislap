@@ -26,6 +26,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     const button = event.target.closest("[data-trophy-log-view]");
     if (!button || state.busy) return;
     state.view = button.dataset.trophyLogView || "unsorted";
+    if (state.view !== "platinums" && state.sort.startsWith("platinum-duration-")) {
+      state.sort = "newest";
+      sortSelect.value = state.sort;
+    }
     state.page = 1;
     syncFilters();
     void load();
@@ -40,6 +44,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   sortSelect?.addEventListener("change", () => {
     if (state.busy) return;
     state.sort = sortSelect.value || "newest";
+    if (state.sort.startsWith("platinum-duration-")) {
+      state.view = "platinums";
+      syncFilters();
+    }
     state.page = 1;
     void load();
   });
@@ -87,6 +95,8 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     grid.innerHTML = loading("Loading trophy log...");
     try {
       const value = await request(`/api/psn/trophy-log?view=${encodeURIComponent(state.view)}&sort=${encodeURIComponent(state.sort)}&page=${state.page}&limit=48`);
+      state.view = value.view || state.view;
+      syncFilters();
       state.items = value.items || [];
       renderItems(state.items);
       renderPagination(value.pagination || {});

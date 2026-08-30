@@ -67,11 +67,12 @@ async function listPlatinums(env: PsnEnvironment, params: URLSearchParams): Prom
 }
 
 async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Promise<Response> {
-  const view = String(params.get("view") || "unsorted").toLowerCase();
-  if (!LOG_VIEWS.has(view)) throw httpError(400, "view must be unsorted, favorites, seen, all, or platinums.");
+  const requestedView = String(params.get("view") || "unsorted").toLowerCase();
+  if (!LOG_VIEWS.has(requestedView)) throw httpError(400, "view must be unsorted, favorites, seen, all, or platinums.");
   const sort = String(params.get("sort") || "newest").toLowerCase();
   const orderBy = LOG_SORTS[sort];
   if (!orderBy) throw httpError(400, `sort must be ${Object.keys(LOG_SORTS).join(", ")}.`);
+  const view = sort.startsWith("platinum-duration-") ? "platinums" : requestedView;
   const { limit, offset, page } = parsePagination(params, 48);
   const filters = ["1 = 1"];
   if (view === "unsorted") filters.push("t.state IS NULL");

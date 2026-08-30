@@ -173,6 +173,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
       const seen = Number(value.seen) || 0;
       state.page = 1;
+      state.busy = false;
       await load();
       syncStatus.textContent = `${seen} ${seen === 1 ? "trophy" : "trophies"} across all applicable pages marked Not Favorite.`;
     } catch (error) {

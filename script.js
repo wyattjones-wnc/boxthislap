@@ -341,7 +341,7 @@ import { createGuidesController } from "./modules/guides.js?v=202608301830";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608300900";
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608290600";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608301100";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608270401";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300001";
 import {
@@ -595,7 +595,11 @@ const guidesController = createGuidesController({
 const platinumsController = createPlatinumsController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
 const trophyStatsController = createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
 const trophyLogController = createTrophyLogController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
-const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
+const youtubeInboxController = createYouTubeInboxController({
+  endpoint: YOUTUBE_INBOX_ENDPOINT,
+  loadSheet,
+  scrollToTop: scrollToPageTop,
+});
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,

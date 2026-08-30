@@ -71,16 +71,16 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       return;
     }
     grid.innerHTML = items.map((item) => {
-      const current = item.state || (item.type === "platinum" ? "platinum" : "unsorted");
+      const current = item.state || "unsorted";
       const details = [capitalize(item.type), item.earnedRate === null ? "" : `${Number(item.earnedRate).toFixed(1)}% earned`, formatDate(item.earnedAt)].filter(Boolean).join(" · ");
       return `<article class="trophy-log-card" data-game-id="${escapeHtml(item.gameId)}" data-trophy-id="${escapeHtml(item.id)}">
         <div class="trophy-log-image">${item.iconUrl ? `<img src="${escapeHtml(item.iconUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span aria-hidden="true">★</span>`}</div>
         <div class="trophy-log-copy"><p>${escapeHtml(item.gameName || "Unknown game")}</p><h2>${escapeHtml(item.name || "Unknown trophy")}</h2>${item.description ? `<span>${escapeHtml(item.description)}</span>` : ""}<small>${escapeHtml(details)}</small></div>
-        ${item.type === "platinum" ? `<div class="trophy-log-state">Organized automatically</div>` : `<div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">
+        <div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">
           <button type="button" data-trophy-preference="favorite" ${current === "favorite" ? "disabled" : ""}>★ Favorite</button>
           <button type="button" data-trophy-preference="seen" ${current === "seen" ? "disabled" : ""}>✓ Seen</button>
           ${current !== "unsorted" ? `<button type="button" data-trophy-preference="">Return to Unsorted</button>` : ""}
-        </div>`}
+        </div>
       </article>`;
     }).join("");
   }

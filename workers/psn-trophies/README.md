@@ -27,12 +27,12 @@ The `MANAGER_AUTH` service binding points at `box-this-lap-rankings`. `ADMIN_MAN
 
 The Home page now reads Platinum and Favorite Trophy cards from the synced PSN data. The top-right Trophy Log button opens the private sorting view:
 
-- **Unsorted** is the default and shows earned, non-platinum trophies with no saved preference.
+- **Unsorted** is the default and shows every earned trophy with no saved preference, including platinums.
 - **Favorite** adds the trophy to the Home page's Favorite Trophies card.
-- **Seen** hides an ordinary trophy from the next Unsorted visit.
+- **Seen** hides a trophy from the next Unsorted visit.
 - **Return to Unsorted** removes either preference.
 
-Only sparse preference rows are stored; trophy metadata and images remain in the existing `trophies` table. Legacy favorites are migrated by their chronological earned-trophy number.
+Only sparse preference rows are stored; trophy metadata and images remain in the existing `trophies` table. Legacy favorites, including platinum favorites, are migrated by their chronological earned-trophy number. Platinums remain available in their dedicated view and can also be Favorite, Seen, or Unsorted.
 
 The Trophy Log's **Renew PSN sign-in** panel replaces the terminal step for routine renewals. It opens the official PlayStation sign-in and Sony `ssocookie` pages, accepts the 64-character NPSSO in a masked field, validates it with Sony, and stores only an AES-GCM-encrypted value in D1. Browser security prevents the site from reading Sony's page automatically, so copying the NPSSO is the only manual step. The PlayStation password and two-factor code remain on Sony's site.
 

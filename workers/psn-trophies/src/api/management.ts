@@ -49,10 +49,9 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
   if (!LOG_VIEWS.has(view)) throw httpError(400, "view must be unsorted, favorites, seen, all, or platinums.");
   const { limit, offset, page } = parsePagination(params, 48);
   const filters = ["t.earned = 1"];
-  if (view === "unsorted") filters.push("t.trophy_type <> 'platinum'", "p.state IS NULL");
+  if (view === "unsorted") filters.push("p.state IS NULL");
   if (view === "favorites") filters.push("p.state = 'favorite'");
   if (view === "seen") filters.push("p.state = 'seen'");
-  if (view === "all") filters.push("t.trophy_type <> 'platinum'");
   if (view === "platinums") filters.push("t.trophy_type = 'platinum'");
   const result = await env.DB.prepare(`
     SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
@@ -89,8 +88,6 @@ async function updatePreference(
   `).bind(gameId, trophyId).first<Record<string, unknown>>();
   if (!trophy) throw httpError(404, "Trophy was not found.");
   if (!Boolean(trophy.earned)) throw httpError(409, "Only earned trophies can be reviewed.");
-  if (trophy.trophy_type === "platinum") throw httpError(409, "Platinums are organized automatically.");
-
   if (state === null) {
     await env.DB.prepare("DELETE FROM trophy_preferences WHERE game_id = ? AND trophy_id = ?")
       .bind(gameId, trophyId).run();

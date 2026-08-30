@@ -38,10 +38,11 @@ test("returns an authenticated unsorted trophy page", async () => {
   const body = await response.json() as any;
   assert.equal(body.items[0].name, "Fresh");
   assert.match(sql, /p\.state IS NULL/);
+  assert.doesNotMatch(sql, /t\.trophy_type <> 'platinum'/);
   assert.deepEqual(bindings, [49, 0]);
 });
 
-test("stores a favorite preference for an earned non-platinum trophy", async () => {
+test("stores a favorite preference for an earned platinum trophy", async () => {
   const queries: string[] = [];
   const env = {
     ADMIN_MANAGER_IDS: "6",
@@ -51,7 +52,7 @@ test("stores a favorite preference for an earned non-platinum trophy", async () 
       prepare: (query: string) => {
         queries.push(query);
         return {
-          bind: () => ({ first: async () => ({ earned: 1, trophy_type: "gold" }), run: async () => ({ success: true }) }),
+          bind: () => ({ first: async () => ({ earned: 1, trophy_type: "platinum" }), run: async () => ({ success: true }) }),
         };
       },
     },

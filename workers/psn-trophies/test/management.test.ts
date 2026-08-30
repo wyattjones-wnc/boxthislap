@@ -45,7 +45,7 @@ test("returns an authenticated unsorted trophy page", async () => {
   assert.deepEqual(bindings, [49, 0]);
 });
 
-test("stores a bounded seen-through batch", async () => {
+test("stores every unsorted trophy through an anchor in the global sort", async () => {
   let batchSize = 0;
   const queries: string[] = [];
   const env = {
@@ -53,18 +53,25 @@ test("stores a bounded seen-through batch", async () => {
     MANAGER_AUTH: managerAuth(),
     DB: {
       batch: async (statements: unknown[]) => { batchSize = statements.length; return []; },
-      prepare: (query: string) => { queries.push(query); return { bind: () => ({}) }; },
+      prepare: (query: string) => {
+        queries.push(query);
+        return { bind: () => query.includes("WITH numbered")
+          ? { all: async () => ({ results: [{ game_id: "NPWR1_00", trophy_id: 2 }, { game_id: "NPWR2_00", trophy_id: 3 }] }) }
+          : {} };
+      },
     },
   } as any;
   const response = await routeTrophyManagementApi(new Request("https://example.com/api/psn/trophies/seen-through", {
     method: "PUT",
     headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
-    body: JSON.stringify({ items: [{ gameId: "NPWR1_00", trophyId: 2 }, { gameId: "NPWR2_00", trophyId: 3 }] }),
+    body: JSON.stringify({ anchor: { gameId: "NPWR2_00", trophyId: 3 }, view: "unsorted", sort: "newest", evergreen: false }),
   }), env);
   assert.ok(response);
   assert.equal((await response.json() as any).seen, 2);
   assert.equal(batchSize, 2);
-  assert.match(queries[0], /VALUES \(\?, \?, 'seen', \?, \?\)/);
+  assert.match(queries[0], /ROW_NUMBER\(\) OVER \(ORDER BY t\.earned_at DESC/);
+  assert.match(queries[0], /state IS NULL AND display_rank <=/);
+  assert.match(queries[1], /VALUES \(\?, \?, 'seen', \?, \?\)/);
 });
 
 test("platinum duration sorting always uses the evergreen platinum view", async () => {

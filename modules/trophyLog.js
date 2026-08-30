@@ -59,11 +59,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
           button.classList.remove("is-confirming");
           button.setAttribute("aria-expanded", "false");
         });
-        const count = getSeenThroughItems(seenThroughButton).length;
         seenThroughButton.classList.add("is-confirming");
         seenThroughButton.setAttribute("aria-expanded", "true");
-        seenThroughButton.querySelector("span").textContent = `Confirm ${count} through here`;
-        syncStatus.textContent = `Click again to mark ${count} ${count === 1 ? "trophy" : "trophies"} Not Favorite.`;
+        seenThroughButton.querySelector("span").textContent = "Confirm through here";
+        syncStatus.textContent = "Click again to mark this trophy and every earlier unsorted trophy across all pages Not Favorite.";
         return;
       }
       void saveSeenThrough(seenThroughButton);
@@ -155,58 +154,33 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
 
   async function saveSeenThrough(button) {
     if (state.busy) return;
-    const items = getSeenThroughItems(button);
-    if (!items.length) return;
+    const card = button.closest("[data-game-id][data-trophy-id]");
+    if (!card) return;
     state.busy = true;
     button.disabled = true;
     button.querySelector("span").textContent = "Working...";
     try {
-      await request("/api/psn/trophies/seen-through", {
+      const value = await request("/api/psn/trophies/seen-through", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          anchor: { gameId: card.dataset.gameId, trophyId: Number(card.dataset.trophyId) },
+          view: state.view,
+          sort: state.sort,
+          evergreen: state.evergreenSort,
+        }),
       });
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
-      applySeenThroughInPlace(items);
-      syncStatus.textContent = `${items.length} ${items.length === 1 ? "trophy" : "trophies"} marked Not Favorite.`;
+      const seen = Number(value.seen) || 0;
+      state.page = 1;
+      await load();
+      syncStatus.textContent = `${seen} ${seen === 1 ? "trophy" : "trophies"} across all applicable pages marked Not Favorite.`;
     } catch (error) {
       button.disabled = false;
       button.querySelector("span").textContent = "Try Seen through again";
       syncStatus.textContent = error.message;
     } finally {
       state.busy = false;
-    }
-  }
-
-  function getSeenThroughItems(button) {
-    const card = button.closest("[data-game-id][data-trophy-id]");
-    const cards = [...grid.querySelectorAll("[data-game-id][data-trophy-id]")];
-    const selectedIndex = cards.indexOf(card);
-    if (selectedIndex < 0) return [];
-    return cards.slice(0, selectedIndex + 1)
-      .filter((entry) => entry.dataset.preferenceState === "unsorted")
-      .map((entry) => ({ gameId: entry.dataset.gameId, trophyId: Number(entry.dataset.trophyId) }));
-  }
-
-  function applySeenThroughInPlace(items) {
-    const keys = new Set(items.map((item) => `${item.gameId}:${item.trophyId}`));
-    state.items.forEach((item) => {
-      if (keys.has(`${item.gameId}:${item.id}`)) item.state = "seen";
-    });
-    grid.querySelectorAll("[data-game-id][data-trophy-id]").forEach((card) => {
-      if (!keys.has(`${card.dataset.gameId}:${card.dataset.trophyId}`)) return;
-      if (state.view === "unsorted") {
-        card.remove();
-        return;
-      }
-      card.dataset.preferenceState = "seen";
-      const actions = card.querySelector(".trophy-log-actions");
-      if (actions) actions.innerHTML = renderActions("seen");
-    });
-    if (state.view === "unsorted") {
-      state.items = state.items.filter((item) => !keys.has(`${item.gameId}:${item.id}`));
-      if (resultLabel) resultLabel.textContent = `${state.items.length} shown`;
-      if (!state.items.length) renderItems([]);
     }
   }
 

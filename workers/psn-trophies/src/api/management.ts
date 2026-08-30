@@ -111,25 +111,53 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
 
 async function updateSeenThrough(request: Request, env: PsnEnvironment, managerId: string): Promise<Response> {
   const body = await readBody(request);
-  if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 250) {
-    throw httpError(400, "items must contain from 1 through 250 trophies.");
-  }
+  const anchor = body.anchor;
+  if (!anchor || typeof anchor !== "object" || Array.isArray(anchor)) throw httpError(400, "A trophy anchor is required.");
+  const anchorValue = anchor as Record<string, unknown>;
+  const gameId = decodeGameId(encodeURIComponent(String(anchorValue.gameId || "")));
+  const trophyId = Number(anchorValue.trophyId);
+  if (!Number.isSafeInteger(trophyId) || trophyId < 0) throw httpError(400, "Trophy ID is invalid.");
+  const requestedView = String(body.view || "unsorted").toLowerCase();
+  if (!LOG_VIEWS.has(requestedView)) throw httpError(400, "view must be unsorted, favorites, seen, all, or platinums.");
+  const sort = String(body.sort || "newest").toLowerCase();
+  const orderBy = LOG_SORTS[sort];
+  if (!orderBy) throw httpError(400, `sort must be ${Object.keys(LOG_SORTS).join(", ")}.`);
+  const evergreen = body.evergreen === true;
+  const view = sort.startsWith("platinum-duration-") ? "platinums" : evergreen ? "all" : requestedView;
+  const datasetFilter = view === "platinums" ? "WHERE t.trophy_type = 'platinum'" : "";
+  const targets = await env.DB.prepare(`
+    WITH numbered AS (
+      SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_type, t.earned_at, t.earned_rate,
+        p.state,
+        CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
+          THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
+      FROM trophies t
+      JOIN games g ON g.id = t.game_id
+      LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
+    ), ordered AS (
+      SELECT t.game_id, t.trophy_id, t.state,
+        ROW_NUMBER() OVER (ORDER BY ${orderBy}) AS display_rank
+      FROM numbered t ${datasetFilter}
+    ), anchor AS (
+      SELECT display_rank FROM ordered WHERE game_id = ? AND trophy_id = ?
+    )
+    SELECT game_id, trophy_id FROM ordered
+    WHERE state IS NULL AND display_rank <= (SELECT display_rank FROM anchor)
+    ORDER BY display_rank
+  `).bind(gameId, trophyId).all<Record<string, unknown>>();
+  const rows = targets.results || [];
   const updatedAt = new Date().toISOString();
-  const statements = body.items.map((value) => {
-    if (!value || typeof value !== "object" || Array.isArray(value)) throw httpError(400, "Each trophy is invalid.");
-    const item = value as Record<string, unknown>;
-    const gameId = decodeGameId(encodeURIComponent(String(item.gameId || "")));
-    const trophyId = Number(item.trophyId);
-    if (!Number.isSafeInteger(trophyId) || trophyId < 0) throw httpError(400, "Trophy ID is invalid.");
-    return env.DB.prepare(`
+  for (let offset = 0; offset < rows.length; offset += 100) {
+    const statements = rows.slice(offset, offset + 100).map((row) => env.DB.prepare(`
       INSERT INTO trophy_preferences (game_id, trophy_id, state, updated_at, updated_by)
       VALUES (?, ?, 'seen', ?, ?)
       ON CONFLICT(game_id, trophy_id) DO UPDATE SET state = 'seen',
         updated_at = excluded.updated_at, updated_by = excluded.updated_by
-    `).bind(gameId, trophyId, updatedAt, managerId);
-  });
-  await env.DB.batch(statements);
-  return noStoreJson({ ok: true, seen: statements.length });
+    `).bind(String(row.game_id), Number(row.trophy_id), updatedAt, managerId));
+    await env.DB.batch(statements);
+  }
+  return noStoreJson({ ok: true, seen: rows.length });
 }
 
 async function updatePreference(

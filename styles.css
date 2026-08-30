@@ -4800,6 +4800,9 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .footy-perfect-copy {
+  align-items: center;
+  display: flex;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -4810,12 +4813,24 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-perfect-copy h2 {
   font-size: 1.08rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .footy-perfect-player-team {
   color: var(--muted);
+  flex: 0 1 auto;
   font-size: 0.84rem;
-  margin-top: 5px !important;
+  margin: 0 !important;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.footy-perfect-player-team strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .footy-perfect-match-details {

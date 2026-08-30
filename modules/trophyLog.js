@@ -59,9 +59,11 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
           button.classList.remove("is-confirming");
           button.setAttribute("aria-expanded", "false");
         });
+        const count = getSeenThroughItems(seenThroughButton).length;
         seenThroughButton.classList.add("is-confirming");
         seenThroughButton.setAttribute("aria-expanded", "true");
-        syncStatus.textContent = "Click Seen through here again to confirm.";
+        seenThroughButton.querySelector("span").textContent = `Confirm ${count} through here`;
+        syncStatus.textContent = `Click again to mark ${count} ${count === 1 ? "trophy" : "trophies"} Not Favorite.`;
         return;
       }
       void saveSeenThrough(seenThroughButton);
@@ -152,13 +154,8 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   }
 
   async function saveSeenThrough(button) {
-    const card = button.closest("[data-game-id][data-trophy-id]");
-    const cards = [...grid.querySelectorAll("[data-game-id][data-trophy-id]")];
-    const selectedIndex = cards.indexOf(card);
-    if (selectedIndex < 0 || state.busy) return;
-    const items = cards.slice(0, selectedIndex + 1)
-      .filter((entry) => entry.dataset.preferenceState === "unsorted")
-      .map((entry) => ({ gameId: entry.dataset.gameId, trophyId: Number(entry.dataset.trophyId) }));
+    if (state.busy) return;
+    const items = getSeenThroughItems(button);
     if (!items.length) return;
     state.busy = true;
     button.disabled = true;
@@ -170,13 +167,46 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         body: JSON.stringify({ items }),
       });
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
+      applySeenThroughInPlace(items);
       syncStatus.textContent = `${items.length} ${items.length === 1 ? "trophy" : "trophies"} marked Not Favorite.`;
     } catch (error) {
-      window.alert(error.message);
+      button.disabled = false;
+      button.querySelector("span").textContent = "Try Seen through again";
+      syncStatus.textContent = error.message;
     } finally {
       state.busy = false;
-      await load();
-      root.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+  }
+
+  function getSeenThroughItems(button) {
+    const card = button.closest("[data-game-id][data-trophy-id]");
+    const cards = [...grid.querySelectorAll("[data-game-id][data-trophy-id]")];
+    const selectedIndex = cards.indexOf(card);
+    if (selectedIndex < 0) return [];
+    return cards.slice(0, selectedIndex + 1)
+      .filter((entry) => entry.dataset.preferenceState === "unsorted")
+      .map((entry) => ({ gameId: entry.dataset.gameId, trophyId: Number(entry.dataset.trophyId) }));
+  }
+
+  function applySeenThroughInPlace(items) {
+    const keys = new Set(items.map((item) => `${item.gameId}:${item.trophyId}`));
+    state.items.forEach((item) => {
+      if (keys.has(`${item.gameId}:${item.id}`)) item.state = "seen";
+    });
+    grid.querySelectorAll("[data-game-id][data-trophy-id]").forEach((card) => {
+      if (!keys.has(`${card.dataset.gameId}:${card.dataset.trophyId}`)) return;
+      if (state.view === "unsorted") {
+        card.remove();
+        return;
+      }
+      card.dataset.preferenceState = "seen";
+      const actions = card.querySelector(".trophy-log-actions");
+      if (actions) actions.innerHTML = renderActions("seen");
+    });
+    if (state.view === "unsorted") {
+      state.items = state.items.filter((item) => !keys.has(`${item.gameId}:${item.id}`));
+      if (resultLabel) resultLabel.textContent = `${state.items.length} shown`;
+      if (!state.items.length) renderItems([]);
     }
   }
 
@@ -280,6 +310,6 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
 function loading(label) { return `<p class="table-message"><span class="loading-spinner"></span>${escapeHtml(label)}</p>`; }
 function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }
 function capitalize(value) { const text = String(value || ""); return text ? `${text[0].toUpperCase()}${text.slice(1)}` : ""; }
-function renderActions(current) { return `<button type="button" data-trophy-preference="favorite" ${current === "favorite" ? "disabled" : ""}>★ Favorite</button><button type="button" data-trophy-preference="seen" ${current === "seen" ? "disabled" : ""}>Not Favorite</button>${current === "unsorted" ? `<button class="action-button trophy-seen-through-button" type="button" data-trophy-seen-through aria-expanded="false" aria-label="Seen through here"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg><span>Seen through here</span></button>` : ""}`; }
+function renderActions(current) { const favorite = current === "favorite"; return `<button type="button" data-trophy-preference="${favorite ? "seen" : "favorite"}">${favorite ? "★ Unfavorite" : "☆ Favorite"}</button>${current === "unsorted" ? `<button class="action-button trophy-seen-through-button" type="button" data-trophy-seen-through aria-expanded="false" aria-label="Seen through here"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg><span>Seen through here</span></button>` : ""}`; }
 function formatElapsed(seconds) { const value = Math.max(0, Number(seconds) || 0); const totalDays = Math.floor(value / 86400); const years = Math.floor(totalDays / 365); const months = Math.floor((totalDays % 365) / 30); const days = (totalDays % 365) % 30; const parts = [[years, "year"], [months, "month"], [days, "day"]].filter(([amount]) => amount).map(([amount, unit]) => `${amount} ${unit}${amount === 1 ? "" : "s"}`); if (parts.length) return parts.join(", "); const hours = Math.floor(value / 3600); if (hours) return `${hours} hour${hours === 1 ? "" : "s"}`; const minutes = Math.floor(value / 60); return `${minutes} minute${minutes === 1 ? "" : "s"}`; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }

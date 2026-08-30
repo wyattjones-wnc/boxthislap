@@ -341,7 +341,7 @@ import { createGuidesController } from "./modules/guides.js?v=202608301830";
 import { createPlatinumsController } from "./modules/platinums.js?v=202608301400";
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608301800";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
-import { createTrophyLogController } from "./modules/trophyLog.js?v=202608301700";
+import { createTrophyLogController } from "./modules/trophyLog.js?v=202608301900";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300001";
 import {

@@ -123,11 +123,10 @@ async function updateSeenThrough(request: Request, env: PsnEnvironment, managerI
     if (!Number.isSafeInteger(trophyId) || trophyId < 0) throw httpError(400, "Trophy ID is invalid.");
     return env.DB.prepare(`
       INSERT INTO trophy_preferences (game_id, trophy_id, state, updated_at, updated_by)
-      SELECT game_id, trophy_id, 'seen', ?, ? FROM trophies
-      WHERE game_id = ? AND trophy_id = ? AND earned = 1
+      VALUES (?, ?, 'seen', ?, ?)
       ON CONFLICT(game_id, trophy_id) DO UPDATE SET state = 'seen',
         updated_at = excluded.updated_at, updated_by = excluded.updated_by
-    `).bind(updatedAt, managerId, gameId, trophyId);
+    `).bind(gameId, trophyId, updatedAt, managerId);
   });
   await env.DB.batch(statements);
   return noStoreJson({ ok: true, seen: statements.length });

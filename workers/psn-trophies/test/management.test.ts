@@ -47,12 +47,13 @@ test("returns an authenticated unsorted trophy page", async () => {
 
 test("stores a bounded seen-through batch", async () => {
   let batchSize = 0;
+  const queries: string[] = [];
   const env = {
     ADMIN_MANAGER_IDS: "6",
     MANAGER_AUTH: managerAuth(),
     DB: {
       batch: async (statements: unknown[]) => { batchSize = statements.length; return []; },
-      prepare: () => ({ bind: () => ({}) }),
+      prepare: (query: string) => { queries.push(query); return { bind: () => ({}) }; },
     },
   } as any;
   const response = await routeTrophyManagementApi(new Request("https://example.com/api/psn/trophies/seen-through", {
@@ -63,6 +64,7 @@ test("stores a bounded seen-through batch", async () => {
   assert.ok(response);
   assert.equal((await response.json() as any).seen, 2);
   assert.equal(batchSize, 2);
+  assert.match(queries[0], /VALUES \(\?, \?, 'seen', \?, \?\)/);
 });
 
 test("platinum duration sorting always uses the evergreen platinum view", async () => {

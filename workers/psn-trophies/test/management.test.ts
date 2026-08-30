@@ -27,7 +27,7 @@ test("returns an authenticated unsorted trophy page", async () => {
         return { bind: (...values: unknown[]) => ({
           all: async () => {
             bindings = values;
-            return { results: [{ game_id: "NPWR1_00", trophy_id: 2, trophy_name: "Fresh", trophy_type: "gold", title_name: "Game", earned: 1, earned_at: "2026-08-30T00:00:00Z", earned_rate: 5.5, rarity_class: 1 }] };
+            return { results: [{ game_id: "NPWR1_00", trophy_id: 2, trophy_name: "Fresh", trophy_type: "platinum", title_name: "Game", earned_at: "2026-08-30T00:00:00Z", earned_rate: 5.5, rarity_class: 1, trophy_number: 11630, platinum_number: 161, completion_seconds: 172800 }] };
           },
         }) };
       },
@@ -37,9 +37,32 @@ test("returns an authenticated unsorted trophy page", async () => {
   assert.ok(response);
   const body = await response.json() as any;
   assert.equal(body.items[0].name, "Fresh");
-  assert.match(sql, /p\.state IS NULL/);
+  assert.equal(body.items[0].trophyNumber, 11630);
+  assert.equal(body.items[0].platinumNumber, 161);
+  assert.equal(body.items[0].completionSeconds, 172800);
+  assert.match(sql, /t\.state IS NULL/);
   assert.doesNotMatch(sql, /t\.trophy_type <> 'platinum'/);
   assert.deepEqual(bindings, [49, 0]);
+});
+
+test("stores a bounded seen-through batch", async () => {
+  let batchSize = 0;
+  const env = {
+    ADMIN_MANAGER_IDS: "6",
+    MANAGER_AUTH: managerAuth(),
+    DB: {
+      batch: async (statements: unknown[]) => { batchSize = statements.length; return []; },
+      prepare: () => ({ bind: () => ({}) }),
+    },
+  } as any;
+  const response = await routeTrophyManagementApi(new Request("https://example.com/api/psn/trophies/seen-through", {
+    method: "PUT",
+    headers: { Authorization: "Bearer token", "Content-Type": "application/json" },
+    body: JSON.stringify({ items: [{ gameId: "NPWR1_00", trophyId: 2 }, { gameId: "NPWR2_00", trophyId: 3 }] }),
+  }), env);
+  assert.ok(response);
+  assert.equal((await response.json() as any).seen, 2);
+  assert.equal(batchSize, 2);
 });
 
 test("stores a favorite preference for an earned platinum trophy", async () => {

@@ -30,11 +30,15 @@ The Home page now reads Platinum and Favorite Trophy cards from the synced PSN d
 - **Unsorted** is the default and shows every earned trophy with no saved preference, including platinums.
 - **Favorite** adds the trophy to the Home page's Favorite Trophies card.
 - **Seen** hides a trophy from the next Unsorted visit.
+- **Seen through here** uses the same two-click confirmation as the YouTube inbox and marks every currently unsorted trophy above the selected trophy as Seen.
 - **Return to Unsorted** removes either preference.
+- The filter icon reveals trophy-state filters and sorting, including longest or shortest time to earn a platinum.
 
 Only sparse preference rows are stored; trophy metadata and images remain in the existing `trophies` table. Legacy favorites, including platinum favorites, are migrated by their chronological earned-trophy number. Platinums remain available in their dedicated view and can also be Favorite, Seen, or Unsorted.
 
 The Trophy Log's **Renew PSN sign-in** panel replaces the terminal step for routine renewals. It opens the official PlayStation sign-in and Sony `ssocookie` pages, accepts the 64-character NPSSO in a masked field, validates it with Sony, and stores only an AES-GCM-encrypted value in D1. Browser security prevents the site from reading Sony's page automatically, so copying the NPSSO is the only manual step. The PlayStation password and two-factor code remain on Sony's site.
+
+The hourly synchronization compares PSN's per-title `lastUpdatedDateTime` values with D1. Up to four changed or new titles are prioritized immediately, while the normal four-title cursor continues refreshing the complete archive. The Trophy Log's **Refresh** button runs the same priority check on demand.
 
 ## Terminal recovery and full sync
 
@@ -98,4 +102,4 @@ GET http://localhost:8787/api/psn/status
 
 Supported trophy filters are `earned=true|false`, `group=<id>`, `sort=date|id|rarity`, and `order=asc|desc`.
 
-The hourly Cron Trigger advances a persisted title cursor, refreshing the complete current library in roughly one week before starting again. Failed title requests produce a partial sync record while successful titles remain available; authentication or title-list failures are recorded as failed runs.
+The hourly Cron Trigger also advances a persisted title cursor, refreshing the complete current library in roughly one week before starting again. Failed title requests produce a partial sync record while successful titles remain available; authentication or title-list failures are recorded as failed runs.

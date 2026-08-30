@@ -3,6 +3,16 @@ import { getPsnAuthStatus, savePsnNpsso } from "../psn/stored-auth.ts";
 import type { PsnEnvironment } from "../types";
 
 const LOG_VIEWS = new Set(["unsorted", "favorites", "seen", "all", "platinums"]);
+const LOG_SORTS: Record<string, string> = {
+  newest: "t.earned_at DESC, t.game_id ASC, t.trophy_id ASC",
+  oldest: "t.earned_at ASC, t.game_id ASC, t.trophy_id ASC",
+  "trophy-number-desc": "t.trophy_number DESC",
+  "trophy-number-asc": "t.trophy_number ASC",
+  name: "t.trophy_name COLLATE NOCASE ASC, t.game_id ASC, t.trophy_id ASC",
+  rarity: "t.earned_rate ASC, t.earned_at DESC",
+  "platinum-duration-desc": "t.completion_seconds DESC, t.earned_at DESC",
+  "platinum-duration-asc": "(t.completion_seconds IS NULL) ASC, t.completion_seconds ASC, t.earned_at DESC",
+};
 
 export async function routeTrophyManagementApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
   const url = new URL(request.url);
@@ -10,15 +20,22 @@ export async function routeTrophyManagementApi(request: Request, env: PsnEnviron
   const isPlatinums = request.method === "GET" && url.pathname === "/api/psn/platinums";
   const isAuthStatus = request.method === "GET" && url.pathname === "/api/psn/auth";
   const isAuthUpdate = request.method === "PUT" && url.pathname === "/api/psn/auth";
+  const isSync = request.method === "POST" && url.pathname === "/api/psn/sync";
+  const isSeenThrough = request.method === "PUT" && url.pathname === "/api/psn/trophies/seen-through";
   const preferenceMatch = url.pathname.match(/^\/api\/psn\/trophies\/([^/]+)\/(\d+)\/preference$/);
   const isPreferenceUpdate = request.method === "PUT" && Boolean(preferenceMatch);
-  if (!isLog && !isPlatinums && !isAuthStatus && !isAuthUpdate && !isPreferenceUpdate) return null;
+  if (!isLog && !isPlatinums && !isAuthStatus && !isAuthUpdate && !isSync && !isSeenThrough && !isPreferenceUpdate) return null;
 
   const managerId = await requireAdmin(request, env);
   if (isLog) return listTrophyLog(env, url.searchParams);
   if (isPlatinums) return listPlatinums(env, url.searchParams);
   if (isAuthStatus) return noStoreJson({ ok: true, ...(await getPsnAuthStatus(env)) });
   if (isAuthUpdate) return updatePsnAuth(request, env, managerId);
+  if (isSync) {
+    const { syncTrophyBatch } = await import("../sync/sync-one-game.ts");
+    return noStoreJson({ ok: true, ...(await syncTrophyBatch(env, 0, { prioritizeChanges: true })) });
+  }
+  if (isSeenThrough) return updateSeenThrough(request, env, managerId);
   return updatePreference(request, env, decodeGameId(preferenceMatch![1]!), Number(preferenceMatch![2]), managerId);
 }
 
@@ -28,12 +45,17 @@ async function listPlatinums(env: PsnEnvironment, params: URLSearchParams): Prom
     WITH numbered AS (
       SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name,
-        ROW_NUMBER() OVER (ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC) AS platinum_number,
-        COUNT(*) OVER () AS total_count
+        ROW_NUMBER() OVER (ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC) AS trophy_number,
+        SUM(CASE WHEN t.trophy_type = 'platinum' THEN 1 ELSE 0 END) OVER (
+          ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC ROWS UNBOUNDED PRECEDING
+        ) AS platinum_number,
+        CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
+          THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
       FROM trophies t JOIN games g ON g.id = t.game_id
-      WHERE t.earned = 1 AND t.trophy_type = 'platinum'
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
     )
-    SELECT * FROM numbered ORDER BY platinum_number DESC LIMIT ? OFFSET ?
+    SELECT *, COUNT(*) OVER () AS total_count FROM numbered
+    WHERE trophy_type = 'platinum' ORDER BY platinum_number DESC LIMIT ? OFFSET ?
   `).bind(limit + 1, offset).all<Record<string, unknown>>();
   const rows = result.results || [];
   const total = numberValue(rows[0]?.total_count);
@@ -47,20 +69,33 @@ async function listPlatinums(env: PsnEnvironment, params: URLSearchParams): Prom
 async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Promise<Response> {
   const view = String(params.get("view") || "unsorted").toLowerCase();
   if (!LOG_VIEWS.has(view)) throw httpError(400, "view must be unsorted, favorites, seen, all, or platinums.");
+  const sort = String(params.get("sort") || "newest").toLowerCase();
+  const orderBy = LOG_SORTS[sort];
+  if (!orderBy) throw httpError(400, `sort must be ${Object.keys(LOG_SORTS).join(", ")}.`);
   const { limit, offset, page } = parsePagination(params, 48);
-  const filters = ["t.earned = 1"];
-  if (view === "unsorted") filters.push("p.state IS NULL");
-  if (view === "favorites") filters.push("p.state = 'favorite'");
-  if (view === "seen") filters.push("p.state = 'seen'");
+  const filters = ["1 = 1"];
+  if (view === "unsorted") filters.push("t.state IS NULL");
+  if (view === "favorites") filters.push("t.state = 'favorite'");
+  if (view === "seen") filters.push("t.state = 'seen'");
   if (view === "platinums") filters.push("t.trophy_type = 'platinum'");
   const result = await env.DB.prepare(`
-    SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
-      t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name, p.state
-    FROM trophies t
-    JOIN games g ON g.id = t.game_id
-    LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+    WITH numbered AS (
+      SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
+        t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name, p.state,
+        ROW_NUMBER() OVER (ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC) AS trophy_number,
+        SUM(CASE WHEN t.trophy_type = 'platinum' THEN 1 ELSE 0 END) OVER (
+          ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC ROWS UNBOUNDED PRECEDING
+        ) AS platinum_number,
+        CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
+          THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
+      FROM trophies t
+      JOIN games g ON g.id = t.game_id
+      LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
+    )
+    SELECT * FROM numbered t
     WHERE ${filters.join(" AND ")}
-    ORDER BY t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).bind(limit + 1, offset).all<Record<string, unknown>>();
   const rows = result.results || [];
@@ -69,7 +104,32 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
     items: rows.slice(0, limit).map(mapTrophy),
     pagination: { hasMore: rows.length > limit, limit, page },
     view,
+    sort,
   });
+}
+
+async function updateSeenThrough(request: Request, env: PsnEnvironment, managerId: string): Promise<Response> {
+  const body = await readBody(request);
+  if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 250) {
+    throw httpError(400, "items must contain from 1 through 250 trophies.");
+  }
+  const updatedAt = new Date().toISOString();
+  const statements = body.items.map((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw httpError(400, "Each trophy is invalid.");
+    const item = value as Record<string, unknown>;
+    const gameId = decodeGameId(encodeURIComponent(String(item.gameId || "")));
+    const trophyId = Number(item.trophyId);
+    if (!Number.isSafeInteger(trophyId) || trophyId < 0) throw httpError(400, "Trophy ID is invalid.");
+    return env.DB.prepare(`
+      INSERT INTO trophy_preferences (game_id, trophy_id, state, updated_at, updated_by)
+      SELECT game_id, trophy_id, 'seen', ?, ? FROM trophies
+      WHERE game_id = ? AND trophy_id = ? AND earned = 1
+      ON CONFLICT(game_id, trophy_id) DO UPDATE SET state = 'seen',
+        updated_at = excluded.updated_at, updated_by = excluded.updated_by
+    `).bind(updatedAt, managerId, gameId, trophyId);
+  });
+  await env.DB.batch(statements);
+  return noStoreJson({ ok: true, seen: statements.length });
 }
 
 async function updatePreference(
@@ -159,6 +219,10 @@ function mapTrophy(row: Record<string, unknown>): Record<string, unknown> {
     name: row.trophy_name,
     rarityClass: row.rarity_class === null ? null : Number(row.rarity_class),
     state: row.state || null,
+    trophyNumber: numberValue(row.trophy_number),
+    platinumNumber: row.trophy_type === "platinum" ? numberValue(row.platinum_number) : null,
+    completionSeconds: row.completion_seconds === null || row.completion_seconds === undefined
+      ? null : numberValue(row.completion_seconds),
     type: row.trophy_type,
   };
 }

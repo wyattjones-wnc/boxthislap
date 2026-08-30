@@ -1127,11 +1127,67 @@ body.has-shell-stale-warning .stale-shell-alert {
   max-width: 720px;
 }
 
+.trophy-log-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.trophy-log-sync-status {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.trophy-log-filter-toggle.is-active {
+  background: var(--track);
+  border-color: var(--accent);
+  color: var(--track-ink);
+}
+
+.trophy-log-filter-panel {
+  align-items: end;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
+  margin-bottom: 22px;
+  padding: 13px;
+}
+
+.trophy-log-filter-panel[hidden] {
+  display: none;
+}
+
 .trophy-log-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 22px;
+}
+
+.trophy-log-sort {
+  display: grid;
+  gap: 5px;
+}
+
+.trophy-log-sort span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.trophy-log-sort select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 10px;
 }
 
 .trophy-log-filters button,
@@ -1241,6 +1297,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   font-size: 1rem;
 }
 
+.trophy-log-numbering {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+
 .trophy-log-copy span {
   display: -webkit-box;
   font-size: 0.8rem;
@@ -1261,6 +1324,53 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trophy-log-actions button {
   padding: 6px 10px;
+}
+
+.trophy-log-actions .trophy-seen-through-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 0;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 30px;
+  overflow: hidden;
+  padding: 5px 7px;
+  transition: border-color 0.15s ease, color 0.15s ease, gap 0.2s ease, padding 0.2s ease;
+}
+
+.trophy-seen-through-button svg {
+  fill: none;
+  flex: 0 0 auto;
+  height: 15px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  width: 15px;
+}
+
+.trophy-seen-through-button > span {
+  color: inherit;
+  display: inline;
+  font-size: inherit;
+  line-height: inherit;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.15s ease;
+}
+
+.trophy-log-actions .trophy-seen-through-button.is-confirming {
+  border-color: var(--accent-border);
+  color: var(--accent-dark);
+  gap: 6px;
+  padding: 6px 10px;
+}
+
+.trophy-seen-through-button.is-confirming > span {
+  max-width: 130px;
+  opacity: 1;
 }
 
 .trophy-log-actions button:disabled,
@@ -1372,6 +1482,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   }
 
   .trophy-log-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trophy-log-filter-panel {
     grid-template-columns: 1fr;
   }
 }

@@ -115,6 +115,7 @@ function createTrophyListController({
       const metadata = [
         item.number ? `Platinum Number: ${item.number}` : "",
         item.trophyNumber ? `Trophy Number: ${item.trophyNumber}` : "",
+        item.completionSeconds !== null ? `Time to Platinum: ${formatElapsed(item.completionSeconds)}` : "",
       ].filter(Boolean);
       const accessibleLabel = [label, ...metadata].join(", ");
       const description = showDescription && item.description
@@ -211,8 +212,19 @@ function normalizeTrophy(row) {
     imageUrl: getSafeImageUrl(row.iconUrl),
     number: String(row.platinumNumber || "").trim(),
     platinumName: String(row.name || "").trim(),
-    trophyNumber: "",
+    trophyNumber: String(row.trophyNumber || "").trim(),
+    completionSeconds: row.completionSeconds === null || row.completionSeconds === undefined ? null : Number(row.completionSeconds),
   };
+}
+
+function formatElapsed(seconds) {
+  const value = Math.max(0, Number(seconds) || 0);
+  const days = Math.floor(value / 86400);
+  const hours = Math.floor((value % 86400) / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  if (days) return `${days}d ${hours}h`;
+  if (hours) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 function comparePlatinums(first, second) {

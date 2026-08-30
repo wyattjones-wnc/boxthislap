@@ -122,3 +122,8 @@ export async function setSyncCursor(env: PsnEnvironment, cursor: number): Promis
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
   `).bind(String(Math.max(0, Math.trunc(cursor))), new Date().toISOString()).run();
 }
+
+export async function getStoredGameUpdates(env: PsnEnvironment): Promise<Map<string, string>> {
+  const result = await env.DB.prepare("SELECT id, source_updated_at FROM games").all<Record<string, unknown>>();
+  return new Map((result.results || []).map((row) => [String(row.id), String(row.source_updated_at || "")]));
+}

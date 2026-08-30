@@ -7,7 +7,7 @@ import {
   getUserTrophiesEarnedForTitle,
   type TrophyTitle,
 } from "psn-api";
-import { finishSyncRun, getSyncCursor, saveGame, setSyncCursor, startSyncRun } from "../db/repository";
+import { finishSyncRun, getStoredGameUpdates, getSyncCursor, saveGame, setSyncCursor, startSyncRun } from "../db/repository";
 import { normalizeProofGame } from "../psn/normalize";
 import { getPsnNpsso } from "../psn/stored-auth";
 import type { PsnEnvironment } from "../types";
@@ -15,6 +15,7 @@ import { getTitleBatch } from "./title-batch";
 
 const PAGE_LIMIT = 100;
 export const TITLE_BATCH_LIMIT = 4;
+const PRIORITY_BATCH_LIMIT = 4;
 
 export interface TrophySyncBatchResult {
   failedTitles: Array<{ gameId: string; error: string }>;
@@ -24,9 +25,14 @@ export interface TrophySyncBatchResult {
   titlesSeen: number;
   titlesSynced: number;
   trophiesUpdated: number;
+  priorityTitles: number;
 }
 
-export async function syncTrophyBatch(env: PsnEnvironment, requestedOffset = 0): Promise<TrophySyncBatchResult> {
+export async function syncTrophyBatch(
+  env: PsnEnvironment,
+  requestedOffset = 0,
+  options: { prioritizeChanges?: boolean } = {},
+): Promise<TrophySyncBatchResult> {
   const startedAt = new Date().toISOString();
   const runId = await startSyncRun(env, startedAt);
 
@@ -37,12 +43,14 @@ export async function syncTrophyBatch(env: PsnEnvironment, requestedOffset = 0):
     const accountId = env.PSN_ACCOUNT_ID?.trim() || "me";
     const titles = await getAllTitlePages(auth, accountId);
     const batch = getTitleBatch(titles, requestedOffset, TITLE_BATCH_LIMIT);
+    const priorityTitles = options.prioritizeChanges ? await getChangedTitles(env, titles) : [];
+    const selectedTitles = uniqueTitles([...priorityTitles.slice(0, PRIORITY_BATCH_LIMIT), ...batch.titles]);
     const failures: TrophySyncBatchResult["failedTitles"] = [];
     let titlesAdded = 0;
     let titlesSynced = 0;
     let trophiesUpdated = 0;
 
-    for (const summary of batch.titles) {
+    for (const summary of selectedTitles) {
       try {
         const options = { npServiceName: summary.npServiceName };
         const [metadata, earnings, groups] = await Promise.all([
@@ -76,6 +84,7 @@ export async function syncTrophyBatch(env: PsnEnvironment, requestedOffset = 0):
       titlesSeen: titles.length,
       titlesSynced,
       trophiesUpdated,
+      priorityTitles: Math.min(priorityTitles.length, PRIORITY_BATCH_LIMIT),
     };
     console.log(JSON.stringify({
       event: "psn_trophy_batch_sync_complete",
@@ -92,9 +101,28 @@ export async function syncTrophyBatch(env: PsnEnvironment, requestedOffset = 0):
 
 export async function syncScheduledTrophyBatch(env: PsnEnvironment): Promise<TrophySyncBatchResult> {
   const cursor = await getSyncCursor(env);
-  const result = await syncTrophyBatch(env, cursor);
+  const result = await syncTrophyBatch(env, cursor, { prioritizeChanges: true });
   await setSyncCursor(env, result.nextOffset ?? 0);
   return result;
+}
+
+async function getChangedTitles(env: PsnEnvironment, titles: TrophyTitle[]): Promise<TrophyTitle[]> {
+  const stored = await getStoredGameUpdates(env);
+  return titles.filter((title) => stored.get(title.npCommunicationId) !== normalizeTimestamp(title.lastUpdatedDateTime));
+}
+
+function uniqueTitles(titles: TrophyTitle[]): TrophyTitle[] {
+  const seen = new Set<string>();
+  return titles.filter((title) => {
+    if (seen.has(title.npCommunicationId)) return false;
+    seen.add(title.npCommunicationId);
+    return true;
+  });
+}
+
+function normalizeTimestamp(value: string): string {
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime()) ? value : timestamp.toISOString();
 }
 
 async function getAllTitlePages(

@@ -32,7 +32,7 @@ The Home page now reads Platinum and Favorite Trophy cards from the synced PSN d
 - **Seen** hides a trophy from the next Unsorted visit.
 - **Seen through here** uses the same two-click confirmation as the YouTube inbox and marks every currently unsorted trophy above the selected trophy as Seen.
 - **Return to Unsorted** removes either preference.
-- The filter icon reveals trophy-state filters and sorting, including longest or shortest time to earn a platinum.
+- The filter icon reveals trophy-state filters and evergreen sorting. Choosing a general sort uses all earned trophies; longest or shortest time to earn uses all platinums. Sorting happens before pagination across the complete matching list.
 
 Only sparse preference rows are stored; trophy metadata and images remain in the existing `trophies` table. Legacy favorites, including platinum favorites, are migrated by their chronological earned-trophy number. Platinums remain available in their dedicated view and can also be Favorite, Seen, or Unsorted.
 

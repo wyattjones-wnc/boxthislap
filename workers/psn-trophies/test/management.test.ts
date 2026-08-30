@@ -88,6 +88,28 @@ test("platinum duration sorting always uses the evergreen platinum view", async 
   assert.doesNotMatch(sql, /t\.state IS NULL/);
 });
 
+test("ordinary evergreen sorting always uses all earned trophies", async () => {
+  let sql = "";
+  const env = {
+    ADMIN_MANAGER_IDS: "6",
+    MANAGER_AUTH: managerAuth(),
+    DB: {
+      batch: async () => [],
+      prepare: (query: string) => {
+        sql = query;
+        return { bind: () => ({ all: async () => ({ results: [] }) }) };
+      },
+    },
+  } as any;
+  const response = await routeTrophyManagementApi(new Request("https://example.com/api/psn/trophy-log?view=seen&sort=rarity&evergreen=true", {
+    headers: { Authorization: "Bearer token" },
+  }), env);
+  assert.ok(response);
+  const body = await response.json() as any;
+  assert.equal(body.view, "all");
+  assert.doesNotMatch(sql, /t\.state = 'seen'/);
+});
+
 test("stores a favorite preference for an earned platinum trophy", async () => {
   const queries: string[] = [];
   const env = {

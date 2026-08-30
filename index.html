@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.30.16.54";
+      window.BOX_THIS_LAP_VERSION = "2026.08.30.17.01";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608301654">
+    <link rel="stylesheet" href="styles.css?v=202608301701">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1042,10 +1042,9 @@
             <button type="button" data-trophy-log-view="platinums">Platinums</button>
           </div>
           <label class="trophy-log-sort"><span>Sort</span><select id="trophy-log-sort">
+            <option value="" selected disabled>Choose a sort</option>
             <option value="newest">Newest earned</option>
             <option value="oldest">Oldest earned</option>
-            <option value="trophy-number-desc">Trophy number: newest</option>
-            <option value="trophy-number-asc">Trophy number: oldest</option>
             <option value="name">Trophy name</option>
             <option value="rarity">Rarest first</option>
             <option value="platinum-duration-desc">Platinum: longest to earn</option>
@@ -2530,6 +2529,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608301654"></script>
+    <script type="module" src="script.js?v=202608301701"></script>
   </body>
 </html>

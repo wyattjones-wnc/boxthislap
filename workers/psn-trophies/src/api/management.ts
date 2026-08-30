@@ -6,8 +6,6 @@ const LOG_VIEWS = new Set(["unsorted", "favorites", "seen", "all", "platinums"])
 const LOG_SORTS: Record<string, string> = {
   newest: "t.earned_at DESC, t.game_id ASC, t.trophy_id ASC",
   oldest: "t.earned_at ASC, t.game_id ASC, t.trophy_id ASC",
-  "trophy-number-desc": "t.trophy_number DESC",
-  "trophy-number-asc": "t.trophy_number ASC",
   name: "t.trophy_name COLLATE NOCASE ASC, t.game_id ASC, t.trophy_id ASC",
   rarity: "t.earned_rate ASC, t.earned_at DESC",
   "platinum-duration-desc": "t.completion_seconds DESC, t.earned_at DESC",
@@ -72,7 +70,8 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
   const sort = String(params.get("sort") || "newest").toLowerCase();
   const orderBy = LOG_SORTS[sort];
   if (!orderBy) throw httpError(400, `sort must be ${Object.keys(LOG_SORTS).join(", ")}.`);
-  const view = sort.startsWith("platinum-duration-") ? "platinums" : requestedView;
+  const evergreen = params.get("evergreen") === "true";
+  const view = sort.startsWith("platinum-duration-") ? "platinums" : evergreen ? "all" : requestedView;
   const { limit, offset, page } = parsePagination(params, 48);
   const filters = ["1 = 1"];
   if (view === "unsorted") filters.push("t.state IS NULL");
@@ -106,6 +105,7 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
     pagination: { hasMore: rows.length > limit, limit, page },
     view,
     sort,
+    evergreen,
   });
 }
 

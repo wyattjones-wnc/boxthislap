@@ -19,17 +19,16 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   const resultLabel = document.querySelector("#trophy-log-result");
   const authForm = document.querySelector("#psn-auth-form");
   const authStatus = document.querySelector("#psn-auth-status");
-  const state = { view: "unsorted", sort: "newest", page: 1, busy: false, syncing: false, items: [] };
+  const state = { view: "unsorted", sort: "newest", evergreenSort: false, page: 1, busy: false, syncing: false, items: [] };
   if (!root) return { renderPage: () => Promise.resolve() };
 
   filters?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-trophy-log-view]");
     if (!button || state.busy) return;
     state.view = button.dataset.trophyLogView || "unsorted";
-    if (state.view !== "platinums" && state.sort.startsWith("platinum-duration-")) {
-      state.sort = "newest";
-      sortSelect.value = state.sort;
-    }
+    state.sort = "newest";
+    state.evergreenSort = false;
+    sortSelect.value = "";
     state.page = 1;
     syncFilters();
     void load();
@@ -43,11 +42,11 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   });
   sortSelect?.addEventListener("change", () => {
     if (state.busy) return;
-    state.sort = sortSelect.value || "newest";
-    if (state.sort.startsWith("platinum-duration-")) {
-      state.view = "platinums";
-      syncFilters();
-    }
+    if (!sortSelect.value) return;
+    state.sort = sortSelect.value;
+    state.evergreenSort = true;
+    state.view = state.sort.startsWith("platinum-duration-") ? "platinums" : "all";
+    syncFilters();
     state.page = 1;
     void load();
   });
@@ -94,7 +93,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     grid.setAttribute("aria-busy", "true");
     grid.innerHTML = loading("Loading trophy log...");
     try {
-      const value = await request(`/api/psn/trophy-log?view=${encodeURIComponent(state.view)}&sort=${encodeURIComponent(state.sort)}&page=${state.page}&limit=48`);
+      const value = await request(`/api/psn/trophy-log?view=${encodeURIComponent(state.view)}&sort=${encodeURIComponent(state.sort)}&evergreen=${state.evergreenSort}&page=${state.page}&limit=48`);
       state.view = value.view || state.view;
       syncFilters();
       state.items = value.items || [];

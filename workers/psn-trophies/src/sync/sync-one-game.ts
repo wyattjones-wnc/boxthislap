@@ -9,6 +9,7 @@ import {
 } from "psn-api";
 import { finishSyncRun, getSyncCursor, saveGame, setSyncCursor, startSyncRun } from "../db/repository";
 import { normalizeProofGame } from "../psn/normalize";
+import { getPsnNpsso } from "../psn/stored-auth";
 import type { PsnEnvironment } from "../types";
 import { getTitleBatch } from "./title-batch";
 
@@ -30,8 +31,7 @@ export async function syncTrophyBatch(env: PsnEnvironment, requestedOffset = 0):
   const runId = await startSyncRun(env, startedAt);
 
   try {
-    if (!env.PSN_NPSSO) throw new Error("PSN_NPSSO is not configured.");
-    const accessCode = await exchangeNpssoForAccessCode(env.PSN_NPSSO);
+    const accessCode = await exchangeNpssoForAccessCode(await getPsnNpsso(env));
     const authorization = await exchangeAccessCodeForAuthTokens(accessCode);
     const auth = { accessToken: authorization.accessToken };
     const accountId = env.PSN_ACCOUNT_ID?.trim() || "me";

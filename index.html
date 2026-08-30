@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.30.05.46";
+      window.BOX_THIS_LAP_VERSION = "2026.08.30.06.20";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608300546">
+    <link rel="stylesheet" href="styles.css?v=202608300620">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -452,11 +452,14 @@
             <p class="eyebrow">TheMonsterManiac</p>
             <h1>Home</h1>
           </div>
-          <a class="icon-action-button" href="#trophy-stats" data-page-link="trophy-stats" aria-label="Open Trophy Stats" title="Trophy Stats">
-            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-              <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path>
-            </svg>
-          </a>
+          <div class="admin-home-actions">
+            <a class="icon-action-button" href="#trophy-log" data-page-link="trophy-log" aria-label="Open Trophy Log" title="Trophy Log">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M8 6h12M8 12h12M8 18h12M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+            </a>
+            <a class="icon-action-button" href="#trophy-stats" data-page-link="trophy-stats" aria-label="Open Trophy Stats" title="Trophy Stats">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>
+            </a>
+          </div>
         </div>
         <details class="favorite-trophies-card" id="favorite-trophies-card">
           <summary class="favorite-trophies-summary">
@@ -1015,6 +1018,35 @@
         <div class="content-shell footy-perfect-list" id="footy-perfect-list" aria-live="polite" aria-busy="true">
           <p class="table-message loading-message"><span class="loading-spinner"></span>Loading 10/10 performances...</p>
         </div>
+      </section>
+
+      <section class="page trophy-log-page" id="trophy-log" data-page="trophy-log" data-admin-only hidden>
+        <div class="section-heading">
+          <a class="back-link" href="#the-monster-maniac" data-page-link="the-monster-maniac">Home</a>
+          <p class="eyebrow">PlayStation Network</p>
+          <h1>Trophy Log</h1>
+          <p>Review newly earned trophies, keep your favorites, and clear everything else from the unsorted queue.</p>
+        </div>
+        <div class="trophy-log-filters" id="trophy-log-filters" role="group" aria-label="Trophy log view">
+          <button type="button" data-trophy-log-view="unsorted">Unsorted</button>
+          <button type="button" data-trophy-log-view="favorites">Favorites</button>
+          <button type="button" data-trophy-log-view="seen">Seen</button>
+          <button type="button" data-trophy-log-view="all">All Earned</button>
+          <button type="button" data-trophy-log-view="platinums">Platinums</button>
+        </div>
+        <div class="trophy-log-results-heading"><h2>Trophies</h2><span id="trophy-log-result"></span></div>
+        <div class="trophy-log-grid" id="trophy-log-grid" aria-live="polite" aria-busy="true"><p class="table-message"><span class="loading-spinner"></span>Loading trophy log...</p></div>
+        <div class="trophy-log-pagination" id="trophy-log-pagination"></div>
+
+        <details class="psn-auth-card">
+          <summary>Renew PlayStation Sign-In</summary>
+          <div class="psn-auth-content">
+            <p>Sony requires the NPSSO to be copied from its own signed-in page. Your password and two-factor code stay with PlayStation.</p>
+            <ol><li><a class="back-link" href="https://www.playstation.com/" target="_blank" rel="noopener">Open PlayStation Sign-In</a> and finish signing in.</li><li><a class="back-link" href="https://ca.account.sony.com/api/v1/ssocookie" target="_blank" rel="noopener">Open Sony's NPSSO page</a> in the same browser.</li><li>Copy only the 64-character value inside <code>"npsso"</code>, then paste it below.</li></ol>
+            <form class="psn-auth-form" id="psn-auth-form"><label><span>NPSSO token</span><input type="password" name="npsso" minlength="64" maxlength="64" autocomplete="off" spellcheck="false" required></label><button class="action-button" type="submit">Validate &amp; Save</button></form>
+            <p class="psn-auth-status" id="psn-auth-status" role="status">Checking PSN access...</p>
+          </div>
+        </details>
       </section>
 
       <dialog class="footy-note-dialog" id="footy-perfect-dialog">
@@ -2480,6 +2512,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608300546"></script>
+    <script type="module" src="script.js?v=202608300620"></script>
   </body>
 </html>

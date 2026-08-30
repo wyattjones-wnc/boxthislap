@@ -50,11 +50,18 @@ export interface NormalizedTrophy {
 }
 
 export interface PsnEnvironment {
+  ADMIN_MANAGER_IDS?: string;
   ALLOWED_ORIGINS?: string;
   DB: D1Database;
+  MANAGER_AUTH?: ServiceFetcher;
   PSN_ACCOUNT_ID?: string;
+  PSN_AUTH_ENCRYPTION_KEY?: string;
   PSN_NPSSO?: string;
   SYNC_SECRET?: string;
+}
+
+export interface ServiceFetcher {
+  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
 
 export interface D1Database {

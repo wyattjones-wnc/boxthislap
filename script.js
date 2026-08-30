@@ -338,8 +338,9 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260819000
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608301830";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608252243";
+import { createPlatinumsController } from "./modules/platinums.js?v=202608300900";
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608290600";
+import { createTrophyLogController } from "./modules/trophyLog.js?v=202608300900";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608270401";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300001";
@@ -569,7 +570,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles", "footy-perfect"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -591,8 +592,9 @@ const guidesController = createGuidesController({
   loadData: loadGuideData,
   progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });
-const platinumsController = createPlatinumsController({ loadSheet });
+const platinumsController = createPlatinumsController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
 const trophyStatsController = createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
+const trophyLogController = createTrophyLogController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
 const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_INBOX_ENDPOINT, loadSheet });
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
@@ -10945,6 +10947,10 @@ function shouldRenderPageSection(pageName) {
 }
 
 function renderActivePageContent(pageName = "") {
+  if (pageName === "the-monster-maniac") {
+    void platinumsController.renderPage();
+    return;
+  }
   if (pageName === "footy") {
     if (siteData.footySchedule) {
       renderFootySchedule(siteData.footySchedule);
@@ -11008,6 +11014,11 @@ function renderActivePageContent(pageName = "") {
 
   if (pageName === "trophy-stats") {
     trophyStatsController.renderPage();
+    return;
+  }
+
+  if (pageName === "trophy-log") {
+    void trophyLogController.renderPage();
     return;
   }
 
@@ -14029,7 +14040,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles", "footy-perfect"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -16341,6 +16352,10 @@ function getPageDataScope(pageName = "") {
     return "trophy-stats";
   }
 
+  if (page === "trophy-log") {
+    return "trophy-log";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -16470,6 +16485,10 @@ function loadPageData(scope) {
 
   if (scope === "trophy-stats") {
     return trophyStatsController.load();
+  }
+
+  if (scope === "trophy-log") {
+    return trophyLogController.renderPage();
   }
 
   if (scope === "rankings") {

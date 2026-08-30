@@ -1,24 +1,35 @@
-export function createPlatinumsController({ loadSheet }) {
+export function createPlatinumsController({ endpoint, getAccessToken }) {
   const favoriteDetails = document.querySelector("#favorite-trophies-card");
+  const request = async (path) => {
+    const token = await getAccessToken();
+    const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    });
+    const value = await response.json().catch(() => null);
+    if (!response.ok || !value?.ok) throw new Error(value?.error || `Trophy request failed (${response.status}).`);
+    return value;
+  };
   const platinums = createTrophyListController({
     countElement: document.querySelector("#admin-platinums-count"),
     emptyMessage: "No platinum icons are available yet.",
     errorLabel: "Platinums",
     grid: document.querySelector("#admin-platinums-grid"),
     initialItemLimit: 6,
-    loadSheet,
+    loadItems: () => request("/api/psn/platinums?limit=250").then((value) => value.items || []),
     showMoreButton: document.querySelector("#admin-platinums-show-more"),
-    source: "platinums",
     sortItems: comparePlatinums,
   });
   const favorites = createTrophyListController({
     emptyMessage: "No favorite trophies are available yet.",
     errorLabel: "Favorite Trophies",
     grid: document.querySelector("#favorite-trophies-grid"),
-    loadSheet,
+    loadItems: () => request("/api/psn/trophy-log?view=favorites&limit=250").then((value) => value.items || []),
     showDescription: true,
-    source: "favoriteTrophies",
-    sortItems: compareTrophyNumbers,
+    sortItems: compareEarnedDates,
+  });
+
+  window.addEventListener("boxthislap:trophy-preferences-changed", () => {
+    favorites.invalidate();
   });
 
   favoriteDetails?.addEventListener("toggle", () => {
@@ -42,11 +53,10 @@ function createTrophyListController({
   errorLabel,
   grid,
   initialItemLimit = 0,
-  loadSheet,
+  loadItems,
   showMoreButton = null,
   showDescription = false,
   sortItems,
-  source,
 }) {
   let items = null;
   let loadPromise = null;
@@ -66,7 +76,7 @@ function createTrophyListController({
 
     renderLoading();
     if (!loadPromise) {
-      loadPromise = loadSheet(source)
+      loadPromise = loadItems()
         .then((rows) => {
           items = rows
             .map(normalizeTrophy)
@@ -183,18 +193,25 @@ function createTrophyListController({
     showMoreButton.setAttribute("aria-expanded", String(showAll));
   }
 
-  return { renderPage };
+  function invalidate() {
+    items = null;
+    loadPromise = null;
+    expandedId = "";
+  }
+
+  return { invalidate, renderPage };
 }
 
 function normalizeTrophy(row) {
   return {
-    description: String(row.Description || row.description || "").trim(),
-    gameName: String(row["Game Name"] || row.gameName || "").trim(),
-    id: String(row.ID || row.Id || row.id || "").trim(),
-    imageUrl: getSafeImageUrl(row["Image Url"] || row["Image URL"] || row.imageUrl),
-    number: String(row["Platinum Number"] || row.number || "").trim(),
-    platinumName: String(row["Platinum Name"] || row.platinumName || "").trim(),
-    trophyNumber: String(row["Trophy Number"] || row.trophyNumber || "").trim(),
+    description: String(row.description || "").trim(),
+    earnedAt: String(row.earnedAt || "").trim(),
+    gameName: String(row.gameName || "").trim(),
+    id: `${String(row.gameId || "").trim()}:${String(row.id ?? "").trim()}`,
+    imageUrl: getSafeImageUrl(row.iconUrl),
+    number: String(row.platinumNumber || "").trim(),
+    platinumName: String(row.name || "").trim(),
+    trophyNumber: "",
   };
 }
 
@@ -202,8 +219,8 @@ function comparePlatinums(first, second) {
   return compareNumericDescending(first.number, second.number) || compareIdsDescending(first, second);
 }
 
-function compareTrophyNumbers(first, second) {
-  return compareNumericDescending(first.trophyNumber, second.trophyNumber) || compareIdsDescending(first, second);
+function compareEarnedDates(first, second) {
+  return String(second.earnedAt || "").localeCompare(String(first.earnedAt || "")) || compareIdsDescending(first, second);
 }
 
 function compareNumericDescending(first, second) {

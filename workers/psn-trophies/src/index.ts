@@ -1,4 +1,5 @@
 import { routePublicApi } from "./api/router";
+import { routeTrophyManagementApi } from "./api/management";
 import { syncScheduledTrophyBatch, syncTrophyBatch } from "./sync/sync-one-game";
 import type { PsnEnvironment } from "./types";
 
@@ -13,6 +14,8 @@ export default {
     if (origin && !allowedOrigin(origin, env)) return json({ error: "Origin is not allowed." }, 403, cors);
 
     try {
+      const managedResponse = await routeTrophyManagementApi(request, env);
+      if (managedResponse) return withHeaders(managedResponse, cors);
       const response = await routePublicApi(request, env);
       if (response) return withHeaders(response, cors);
 
@@ -71,7 +74,7 @@ function allowedOrigin(origin: string, env: PsnEnvironment): boolean {
 function corsHeaders(origin: string, env: PsnEnvironment): Headers {
   const headers = new Headers({
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
     Vary: "Origin",
   });
   if (origin && allowedOrigin(origin, env)) headers.set("Access-Control-Allow-Origin", origin);

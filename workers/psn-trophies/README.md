@@ -1,8 +1,8 @@
 # PSN Trophy Worker
 
-This Worker imports the account's complete PSN trophy library into D1 and serves aggregate stats plus per-game trophies through a read-only public API. Imports use bounded four-title batches so large libraries do not exceed Worker request limits.
+This Worker imports the account's complete PSN trophy library into D1 and serves aggregate stats plus per-game trophies through a read-only public API. Imports use bounded four-title batches so large libraries do not exceed Worker request limits. Manager-authenticated endpoints provide the site's dynamic Platinum and Favorite Trophy cards, Trophy Log triage, and PSN token renewal.
 
-The public site remains static. PSN credentials stay in Worker secrets, and the public API is read-only.
+The public site remains static. PSN credentials stay encrypted behind the Worker, and the public API is read-only.
 
 ## One-time Cloudflare setup
 
@@ -12,17 +12,33 @@ Create the database and replace the placeholder `database_id` in `wrangler.toml`
 npx wrangler d1 create psn-trophies
 npx wrangler d1 migrations apply psn-trophies --remote --config workers\psn-trophies\wrangler.toml
 npx wrangler secret put PSN_NPSSO --config workers\psn-trophies\wrangler.toml
+npx wrangler secret put PSN_AUTH_ENCRYPTION_KEY --config workers\psn-trophies\wrangler.toml
 npx wrangler secret put SYNC_SECRET --config workers\psn-trophies\wrangler.toml
 npx wrangler deploy --config workers\psn-trophies\wrangler.toml
 ```
 
-`PSN_NPSSO` is equivalent to a password. Never put it in a file, command argument, log, frontend bundle, or Git commit. The current `psn-api` documentation says an NPSSO normally needs to be retrieved again after about two months.
+`PSN_NPSSO` is equivalent to a password. Never put it in a file, command argument, log, frontend bundle, or Git commit. `PSN_AUTH_ENCRYPTION_KEY` must be a base64-encoded 32-byte key and remain stable so the Worker can decrypt NPSSO values submitted through the site. The current `psn-api` documentation says an NPSSO normally needs to be retrieved again after about two months.
 
 `PSN_ACCOUNT_ID` defaults to `me`.
 
-## Renew PSN access and run a sync
+The `MANAGER_AUTH` service binding points at `box-this-lap-rankings`. `ADMIN_MANAGER_IDS` controls which authenticated managers may read and change the private Trophy Log or renew PSN access.
 
-Run this from the repository:
+## Trophy Log and browser renewal
+
+The Home page now reads Platinum and Favorite Trophy cards from the synced PSN data. The top-right Trophy Log button opens the private sorting view:
+
+- **Unsorted** is the default and shows earned, non-platinum trophies with no saved preference.
+- **Favorite** adds the trophy to the Home page's Favorite Trophies card.
+- **Seen** hides an ordinary trophy from the next Unsorted visit.
+- **Return to Unsorted** removes either preference.
+
+Only sparse preference rows are stored; trophy metadata and images remain in the existing `trophies` table. Legacy favorites are migrated by their chronological earned-trophy number.
+
+The Trophy Log's **Renew PSN sign-in** panel replaces the terminal step for routine renewals. It opens the official PlayStation sign-in and Sony `ssocookie` pages, accepts the 64-character NPSSO in a masked field, validates it with Sony, and stores only an AES-GCM-encrypted value in D1. Browser security prevents the site from reading Sony's page automatically, so copying the NPSSO is the only manual step. The PlayStation password and two-factor code remain on Sony's site.
+
+## Terminal recovery and full sync
+
+The webpage is the normal token-renewal path. For recovery or an immediate full-library sync, run this from the repository:
 
 ```powershell
 npm run refresh:psn-auth

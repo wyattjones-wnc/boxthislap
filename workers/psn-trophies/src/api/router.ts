@@ -19,7 +19,7 @@ export async function routePublicApi(request: Request, env: PsnEnvironment): Pro
 }
 
 async function getStats(env: PsnEnvironment): Promise<Response> {
-  const [games, trophies, rarestEarned, latestEarned] = await Promise.all([
+  const [games, trophies, rarestEarned, latestEarned, rarestByTypeRows] = await Promise.all([
     env.DB.prepare(`
       SELECT COUNT(*) AS games, COALESCE(SUM(platinum_earned), 0) AS platinums,
         COALESCE(SUM(is_100_percent), 0) AS hundred_percent, MAX(last_synced_at) AS updated_at
@@ -51,7 +51,26 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
       ORDER BY t.earned_at DESC, t.trophy_id DESC
       LIMIT 1
     `).first<Record<string, unknown>>(),
+    env.DB.prepare(`
+      WITH ranked AS (
+        SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+          t.icon_url, t.earned_at, t.rarity_class, t.earned_rate,
+          ROW_NUMBER() OVER (
+            PARTITION BY t.trophy_type
+            ORDER BY t.earned_rate ASC, t.earned_at ASC, t.game_id ASC, t.trophy_id ASC
+          ) AS rarity_rank
+        FROM trophies t
+        JOIN games g ON g.id = t.game_id
+        WHERE t.earned = 1 AND t.earned_rate IS NOT NULL
+      )
+      SELECT * FROM ranked WHERE rarity_rank = 1
+    `).all<Record<string, unknown>>(),
   ]);
+
+  const rarestByType = Object.fromEntries(["bronze", "silver", "gold", "platinum"].map((type) => {
+    const row = (rarestByTypeRows.results || []).find((entry) => entry.trophy_type === type) || null;
+    return [type, mapStatTrophy(row)];
+  }));
 
   return cachedJson({
     counts: {
@@ -68,6 +87,7 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
       platinum: numberValue(trophies?.platinum),
     },
     latestEarned: mapStatTrophy(latestEarned),
+    rarestByType,
     rarestEarned: mapStatTrophy(rarestEarned),
     updatedAt: games?.updated_at || null,
   }, 300);

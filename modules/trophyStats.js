@@ -88,6 +88,17 @@ export function createTrophyStatsController({ endpoint }) {
           ${renderHighlight("Rarest Earned", value?.rarestEarned)}
           ${renderHighlight("Latest Earned", value?.latestEarned)}
         </section>
+        <section class="trophy-stats-card trophy-rarest-types-card" aria-labelledby="trophy-rarest-types-heading">
+          <div class="trophy-stats-card-heading">
+            <div>
+              <p class="eyebrow">By Type</p>
+              <h2 id="trophy-rarest-types-heading">Rarest Earned Trophies</h2>
+            </div>
+          </div>
+          <div class="trophy-rarest-type-grid">
+            ${["platinum", "gold", "silver", "bronze"].map((type) => renderHighlight(`Rarest ${capitalize(type)}`, value?.rarestByType?.[type])).join("")}
+          </div>
+        </section>
       </div>
       <p class="trophy-coverage-note">Stats reflect ${formatNumber(gameCount)} synced ${gameCount === 1 ? "game" : "games"} from your PSN trophy library.</p>
     `;

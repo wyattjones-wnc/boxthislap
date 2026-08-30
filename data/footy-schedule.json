@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-08-29T15:06:29.262Z",
+  "generatedAt": "2026-08-30T14:53:24.945Z",
   "schemaVersion": 3,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-08-29T15:06:29.262Z",
-    "attemptedAt": "2026-08-29T15:06:29.262Z",
-    "updatedAt": "2026-08-29T15:06:29.262Z",
-    "oldestTeamUpdatedAt": "2026-08-29T15:06:29.262Z",
+    "generatedAt": "2026-08-30T14:53:24.945Z",
+    "attemptedAt": "2026-08-30T14:53:24.945Z",
+    "updatedAt": "2026-08-30T14:53:24.945Z",
+    "oldestTeamUpdatedAt": "2026-08-30T14:53:24.945Z",
     "competitionCount": 11,
     "competitionFixtureCount": 1971,
     "teamCount": 7,
-    "fixtureCount": 215,
+    "fixtureCount": 216,
     "statuses": {
       "updated": 5,
       "no-fixtures": 2
@@ -41,18 +41,18 @@
     }
   ],
   "footyMatchRegistry": {
-    "matchCount": 247,
+    "matchCount": 248,
     "sync": {
       "status": "synced",
-      "rows": 247,
-      "syncedAt": "2026-08-29T15:06:29.262Z",
-      "appended": 20,
-      "updated": 227
+      "rows": 248,
+      "syncedAt": "2026-08-30T14:53:24.945Z",
+      "appended": 1,
+      "updated": 247
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-08-29T15:11:48.162Z",
+      "attemptedAt": "2026-08-30T14:58:43.679Z",
       "competition": {
         "code": "FACS",
         "followedTeamNames": [],
@@ -80,9 +80,7 @@
           "season": "2026",
           "source": "TheSportsDB",
           "sourceIds": {
-            "TheSportsDB": "2520319",
-            "iCalendar": "6a3b9c87d10bc9000262cdfe",
-            "Arsenal.com": "1sbjlm7uaxg4bkag084ow0178"
+            "TheSportsDB": "2520319"
           },
           "sources": [
             "TheSportsDB"
@@ -93,7 +91,7 @@
           "timestamp": "2026-08-16T14:00:00Z",
           "venue": "Principality Stadium",
           "isCompetitionFixture": true,
-          "matchId": "footy_336955d7bc6e",
+          "matchId": "footy_comp_thesportsdb_2520319",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -108,15 +106,15 @@
       "notes": [
         "Loaded all 1 currently published FA Community Shield matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:16.223Z",
+      "attemptedAt": "2026-08-30T14:58:11.938Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -477,7 +475,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-08-28T19:00:00Z",
           "venue": "",
@@ -509,7 +507,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -541,7 +539,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -573,7 +571,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -605,7 +603,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "PAUSED",
           "time": "16:30:00",
           "timestamp": "2026-08-29T16:30:00Z",
           "venue": "",
@@ -637,7 +635,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "13:00:00",
           "timestamp": "2026-08-30T13:00:00Z",
           "venue": "",
@@ -669,7 +667,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "time": "13:00:00",
           "timestamp": "2026-08-30T13:00:00Z",
           "venue": "",
@@ -701,7 +699,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "time": "13:00:00",
           "timestamp": "2026-08-30T13:00:00Z",
           "venue": "",
@@ -12451,15 +12449,211 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:22.330Z",
+      "attemptedAt": "2026-08-30T14:58:43.681Z",
+      "competition": {
+        "code": "ELC",
+        "followedTeamNames": [
+          "Arsenal"
+        ],
+        "id": "4570",
+        "key": "efl cup",
+        "name": "EFL Cup",
+        "priority": 1,
+        "season": "2026",
+        "source": "TheSportsDB",
+        "type": "CUP"
+      },
+      "errors": [],
+      "fixtureCount": 5,
+      "fixtures": [
+        {
+          "away": "Rochdale",
+          "awayBadge": "",
+          "date": "2026-08-01",
+          "home": "Tranmere Rovers",
+          "homeBadge": "",
+          "id": "TheSportsDB:2491635",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "0",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2491635"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "PEN",
+          "time": "14:00:00",
+          "timestamp": "2026-08-01T14:00:00Z",
+          "venue": "Prenton Park",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2491635",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Crawley Town",
+          "awayBadge": "",
+          "date": "2026-08-03",
+          "home": "York City",
+          "homeBadge": "",
+          "id": "TheSportsDB:2491636",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "0",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2491636"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:30:00",
+          "timestamp": "2026-08-03T18:30:00Z",
+          "venue": "LNER Community Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2491636",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Walsall",
+          "awayBadge": "",
+          "date": "2026-08-06",
+          "home": "Bristol City",
+          "homeBadge": "",
+          "id": "TheSportsDB:2503736",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503736"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-08-06T18:45:00Z",
+          "venue": "Ashton Gate",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503736",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Port Vale",
+          "awayBadge": "",
+          "date": "2026-08-07",
+          "home": "Wolverhampton Wanderers",
+          "homeBadge": "",
+          "id": "TheSportsDB:2503731",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503731"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-08-07T18:45:00Z",
+          "venue": "Molineux Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503731",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Wrexham",
+          "awayBadge": "",
+          "date": "2026-08-07",
+          "home": "Middlesbrough",
+          "homeBadge": "",
+          "id": "TheSportsDB:2503739",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503739"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "19:00:00",
+          "timestamp": "2026-08-07T19:00:00Z",
+          "venue": "Riverside Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503739",
+          "followedTeamNames": [
+            "Wrexham"
+          ],
+          "isHome": false,
+          "opponent": "Middlesbrough",
+          "priority": "3",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
+          "teamId": "3",
+          "teamName": "Wrexham"
+        }
+      ],
+      "notes": [
+        "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
+      ],
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "sources": [
+        "TheSportsDB"
+      ],
+      "status": "updated",
+      "updatedAt": "2026-08-30T14:53:24.945Z"
+    },
+    {
+      "attemptedAt": "2026-08-30T14:58:24.722Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -12480,13 +12674,13 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (0 matches)."
       ],
-      "previousUpdatedAt": "",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [],
       "status": "no-fixtures",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:29.462Z",
+      "attemptedAt": "2026-08-30T14:58:31.318Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -13238,7 +13432,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "15:00:00",
           "timestamp": "2026-08-29T15:00:00Z",
           "venue": "",
@@ -24854,15 +25048,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:36.194Z",
+      "attemptedAt": "2026-08-30T14:58:38.029Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -25710,7 +25904,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -25742,7 +25936,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -25774,7 +25968,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -25806,7 +26000,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -25838,7 +26032,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -25870,7 +26064,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -25902,7 +26096,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "PAUSED",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -25934,7 +26128,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -25966,7 +26160,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -25998,7 +26192,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26030,7 +26224,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "TIMED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26947,70 +27141,6 @@
           "teamName": ""
         },
         {
-          "away": "Millwall FC",
-          "awayBadge": "https://crests.football-data.org/384.png",
-          "date": "2026-09-08",
-          "home": "Middlesbrough FC",
-          "homeBadge": "https://crests.football-data.org/343.png",
-          "id": "561825",
-          "isCompetitionFixture": true,
-          "leagueId": "2016",
-          "league": "Championship",
-          "round": "6",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "561825"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "18:45:00",
-          "timestamp": "2026-09-08T18:45:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_561825",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": ""
-        },
-        {
-          "away": "Lincoln City FC",
-          "awayBadge": "https://crests.football-data.org/1126.png",
-          "date": "2026-09-08",
-          "home": "Bristol City FC",
-          "homeBadge": "https://crests.football-data.org/387.png",
-          "id": "561828",
-          "isCompetitionFixture": true,
-          "leagueId": "2016",
-          "league": "Championship",
-          "round": "6",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "561828"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "18:45:00",
-          "timestamp": "2026-09-08T18:45:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_561828",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": ""
-        },
-        {
           "away": "Burnley FC",
           "awayBadge": "https://crests.football-data.org/328.png",
           "date": "2026-09-08",
@@ -27096,7 +27226,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-09 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-09T18:45:00Z",
           "venue": "",
@@ -27593,6 +27723,70 @@
           "teamName": ""
         },
         {
+          "away": "Millwall FC",
+          "awayBadge": "https://crests.football-data.org/384.png",
+          "date": "2026-09-15",
+          "home": "Middlesbrough FC",
+          "homeBadge": "https://crests.football-data.org/343.png",
+          "id": "561825",
+          "isCompetitionFixture": true,
+          "leagueId": "2016",
+          "league": "Championship",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "561825"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "2026-09-08 17:45:00Z",
+          "time": "18:45:00",
+          "timestamp": "2026-09-15T18:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_561825",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Lincoln City FC",
+          "awayBadge": "https://crests.football-data.org/1126.png",
+          "date": "2026-09-15",
+          "home": "Bristol City FC",
+          "homeBadge": "https://crests.football-data.org/387.png",
+          "id": "561828",
+          "isCompetitionFixture": true,
+          "leagueId": "2016",
+          "league": "Championship",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "561828"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "2026-09-08 17:45:00Z",
+          "time": "18:45:00",
+          "timestamp": "2026-09-15T18:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_561828",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
           "away": "Watford FC",
           "awayBadge": "https://crests.football-data.org/346.png",
           "date": "2026-09-18",
@@ -27966,7 +28160,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "12:30:00",
           "timestamp": "2026-09-20T12:30:00Z",
           "venue": "",
@@ -42689,211 +42883,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:48.163Z",
-      "competition": {
-        "code": "ELC",
-        "followedTeamNames": [
-          "Arsenal"
-        ],
-        "id": "4570",
-        "key": "efl cup",
-        "name": "EFL Cup",
-        "priority": 1,
-        "season": "2026",
-        "source": "TheSportsDB",
-        "type": "CUP"
-      },
-      "errors": [],
-      "fixtureCount": 5,
-      "fixtures": [
-        {
-          "away": "Rochdale",
-          "awayBadge": "",
-          "date": "2026-08-01",
-          "home": "Tranmere Rovers",
-          "homeBadge": "",
-          "id": "TheSportsDB:2491635",
-          "leagueId": "4570",
-          "league": "EFL Cup",
-          "round": "0",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2491635"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "",
-          "status": "PEN",
-          "time": "14:00:00",
-          "timestamp": "2026-08-01T14:00:00Z",
-          "venue": "Prenton Park",
-          "isCompetitionFixture": true,
-          "matchId": "footy_comp_thesportsdb_2491635",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": ""
-        },
-        {
-          "away": "Crawley Town",
-          "awayBadge": "",
-          "date": "2026-08-03",
-          "home": "York City",
-          "homeBadge": "",
-          "id": "TheSportsDB:2491636",
-          "leagueId": "4570",
-          "league": "EFL Cup",
-          "round": "0",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2491636"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "",
-          "status": "FT",
-          "time": "18:30:00",
-          "timestamp": "2026-08-03T18:30:00Z",
-          "venue": "LNER Community Stadium",
-          "isCompetitionFixture": true,
-          "matchId": "footy_comp_thesportsdb_2491636",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": ""
-        },
-        {
-          "away": "Walsall",
-          "awayBadge": "",
-          "date": "2026-08-06",
-          "home": "Bristol City",
-          "homeBadge": "",
-          "id": "TheSportsDB:2503736",
-          "leagueId": "4570",
-          "league": "EFL Cup",
-          "round": "128",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2503736"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "",
-          "status": "FT",
-          "time": "18:45:00",
-          "timestamp": "2026-08-06T18:45:00Z",
-          "venue": "Ashton Gate",
-          "isCompetitionFixture": true,
-          "matchId": "footy_comp_thesportsdb_2503736",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": ""
-        },
-        {
-          "away": "Port Vale",
-          "awayBadge": "",
-          "date": "2026-08-07",
-          "home": "Wolverhampton Wanderers",
-          "homeBadge": "",
-          "id": "TheSportsDB:2503731",
-          "leagueId": "4570",
-          "league": "EFL Cup",
-          "round": "128",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2503731"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "",
-          "status": "FT",
-          "time": "18:45:00",
-          "timestamp": "2026-08-07T18:45:00Z",
-          "venue": "Molineux Stadium",
-          "isCompetitionFixture": true,
-          "matchId": "footy_comp_thesportsdb_2503731",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": ""
-        },
-        {
-          "away": "Wrexham",
-          "awayBadge": "",
-          "date": "2026-08-07",
-          "home": "Middlesbrough",
-          "homeBadge": "",
-          "id": "TheSportsDB:2503739",
-          "leagueId": "4570",
-          "league": "EFL Cup",
-          "round": "128",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2503739"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "",
-          "status": "FT",
-          "time": "19:00:00",
-          "timestamp": "2026-08-07T19:00:00Z",
-          "venue": "Riverside Stadium",
-          "isCompetitionFixture": true,
-          "matchId": "footy_comp_thesportsdb_2503739",
-          "followedTeamNames": [
-            "Wrexham"
-          ],
-          "isHome": false,
-          "opponent": "Middlesbrough",
-          "priority": "3",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
-          "teamId": "3",
-          "teamName": "Wrexham"
-        }
-      ],
-      "notes": [
-        "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
-      ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
-      "sources": [
-        "TheSportsDB"
-      ],
-      "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
-    },
-    {
-      "attemptedAt": "2026-08-29T15:11:48.163Z",
+      "attemptedAt": "2026-08-30T14:58:43.682Z",
       "competition": {
         "code": "SDE",
         "followedTeamNames": [
@@ -42983,15 +42981,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:54.747Z",
+      "attemptedAt": "2026-08-30T14:58:50.404Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -59977,15 +59975,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:54.754Z",
+      "attemptedAt": "2026-08-30T14:58:50.411Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -62621,15 +62619,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (79 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:54.759Z",
+      "attemptedAt": "2026-08-30T14:58:50.416Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -64677,15 +64675,15 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (61 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     },
     {
-      "attemptedAt": "2026-08-29T15:11:54.759Z",
+      "attemptedAt": "2026-08-30T14:58:50.416Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -64741,19 +64739,19 @@
       "notes": [
         "Loaded the full available Campeones Cup schedule (1 matches)."
       ],
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-29T15:06:29.262Z"
+      "updatedAt": "2026-08-30T14:53:24.945Z"
     }
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -64772,7 +64770,7 @@
         "football-data.org",
         "iCalendar"
       ],
-      "fixtureCount": 54,
+      "fixtureCount": 55,
       "fixtures": [
         {
           "away": "Arsenal",
@@ -65098,14 +65096,16 @@
           "priority": "1",
           "round": "1",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "Arsenal.com": "5b9qzpngqafnmsz619l3t73f8",
-            "football-data.org": "575333"
+            "football-data.org": "575333",
+            "iCalendar": "6a92eae554aa8848aa16f117"
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "TIMED",
@@ -65170,12 +65170,14 @@
           "priority": "1",
           "round": "",
           "season": "",
-          "source": "Arsenal.com",
+          "source": "Arsenal.com + iCalendar",
           "sourceIds": {
-            "Arsenal.com": "9odsxlb8879otvd3d0p8hadxw"
+            "Arsenal.com": "9odsxlb8879otvd3d0p8hadxw",
+            "iCalendar": "6a8f640654aa88a21311db45"
           },
           "sources": [
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
@@ -65185,8 +65187,9 @@
           "time": "19:00:00",
           "timestamp": "2026-09-15T19:00:00Z",
           "venue": "Portman Road",
-          "isFriendly": false,
-          "matchId": "footy_comp_arsenal_com_9odsxlb8879otvd3d0p8hadxw"
+          "lastSeen": "",
+          "matchId": "footy_comp_arsenal_com_9odsxlb8879otvd3d0p8hadxw",
+          "isFriendly": false
         },
         {
           "away": "Arsenal FC",
@@ -65307,12 +65310,14 @@
           "priority": "1",
           "round": "",
           "season": "",
-          "source": "Arsenal.com",
+          "source": "Arsenal.com + iCalendar",
           "sourceIds": {
-            "Arsenal.com": "5ewdf058290urqnuvbyl8oglw"
+            "Arsenal.com": "5ewdf058290urqnuvbyl8oglw",
+            "iCalendar": "6a92eae554aa8848aa16f118"
           },
           "sources": [
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
@@ -65322,8 +65327,9 @@
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "Emirates Stadium",
-          "isFriendly": false,
-          "matchId": "footy_comp_arsenal_com_5ewdf058290urqnuvbyl8oglw"
+          "lastSeen": "",
+          "matchId": "footy_comp_arsenal_com_5ewdf058290urqnuvbyl8oglw",
+          "isFriendly": false
         },
         {
           "away": "Arsenal FC",
@@ -65376,14 +65382,16 @@
           "priority": "1",
           "round": "3",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "Arsenal.com": "5owjsz5b64ovyehzhvmxyctg4",
-            "football-data.org": "575372"
+            "football-data.org": "575372",
+            "iCalendar": "6a92eae554aa8848aa16f119"
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "TIMED",
@@ -65507,6 +65515,38 @@
           "isFriendly": false
         },
         {
+          "away": "Arsenal",
+          "awayBadge": "",
+          "date": "2026-11-04",
+          "home": "Slavia Prague",
+          "homeBadge": "",
+          "id": "iCalendar:6a92eae554aa88426515d98f",
+          "leagueId": "",
+          "isHome": false,
+          "league": "UEFA Champions League",
+          "opponent": "Slavia Prague",
+          "priority": "1",
+          "round": "",
+          "season": "",
+          "source": "iCalendar",
+          "sourceIds": {
+            "iCalendar": "6a92eae554aa88426515d98f"
+          },
+          "sources": [
+            "iCalendar"
+          ],
+          "sourceDetail": "calendar-feed",
+          "status": "Scheduled",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "Fortuna Arena, Prague",
+          "isFriendly": false,
+          "matchId": "footy_comp_icalendar_6a92eae554aa88426515d98f"
+        },
+        {
           "away": "Hull City AFC",
           "awayBadge": "",
           "date": "2026-11-07",
@@ -65594,14 +65634,16 @@
           "priority": "1",
           "round": "5",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "Arsenal.com": "5xcojyufqldi6ttzupcu18bo4",
-            "football-data.org": "575399"
+            "football-data.org": "575399",
+            "iCalendar": "6a92eae554aa884cc92ec6a1"
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "TIMED",
@@ -65740,14 +65782,16 @@
           "priority": "1",
           "round": "6",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "Arsenal.com": "65i87i68uf273xpm2n1et6oes",
-            "football-data.org": "575280"
+            "football-data.org": "575280",
+            "iCalendar": "6a92eae554aa884cc92ec6a2"
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "TIMED",
@@ -66034,14 +66078,16 @@
           "priority": "1",
           "round": "7",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "Arsenal.com": "6a6y4rxs3t4suxsmo5d52k0lw",
-            "football-data.org": "575297"
+            "football-data.org": "575297",
+            "iCalendar": "6a92eae554aa88426515d990"
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "TIMED",
@@ -66137,12 +66183,14 @@
           "priority": "1",
           "round": "",
           "season": "",
-          "source": "Arsenal.com",
+          "source": "Arsenal.com + iCalendar",
           "sourceIds": {
-            "Arsenal.com": "6hdvch2mpo6qe8djvgnakir6c"
+            "Arsenal.com": "6hdvch2mpo6qe8djvgnakir6c",
+            "iCalendar": "6a92eae554aa884cc92ec6a3"
           },
           "sources": [
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
           "sourceDetail": "monthly-graphql",
           "status": "Fixture",
@@ -66152,8 +66200,9 @@
           "time": "20:00:00",
           "timestamp": "2027-01-27T20:00:00Z",
           "venue": "Emirates Stadium",
-          "isFriendly": false,
-          "matchId": "footy_comp_arsenal_com_6hdvch2mpo6qe8djvgnakir6c"
+          "lastSeen": "",
+          "matchId": "footy_comp_arsenal_com_6hdvch2mpo6qe8djvgnakir6c",
+          "isFriendly": false
         },
         {
           "away": "Arsenal FC",
@@ -66749,19 +66798,19 @@
         }
       ],
       "notes": [
-        "Loaded 45 SCHEDULED matches from 2026-08-29 through 2027-08-29.",
-        "Running competitions: FA Community Shield (COM), Premier League (PL), UEFA Champions League (CL).",
+        "Loaded 45 SCHEDULED matches from 2026-08-30 through 2027-08-30.",
+        "Running competitions: FA Community Shield (COM), Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 46 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-08-29.",
-        "Preserved 3 registered fixtures that were not returned by providers this run."
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-08-30.",
+        "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -68724,18 +68773,18 @@
         }
       ],
       "notes": [
-        "Loaded 44 SCHEDULED matches from 2026-08-29 through 2027-08-29.",
+        "Loaded 44 SCHEDULED matches from 2026-08-30 through 2027-08-30.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 49 iCalendar fixtures from 2026-07-01 through 2027-08-29.",
+        "Loaded 49 iCalendar fixtures from 2026-07-01 through 2027-08-30.",
         "Preserved 3 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -70518,18 +70567,18 @@
         }
       ],
       "notes": [
-        "Loaded 43 SCHEDULED matches from 2026-08-29 through 2027-08-29.",
+        "Loaded 43 SCHEDULED matches from 2026-08-30 through 2027-08-30.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-08-29.",
+        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-08-30.",
         "Preserved 4 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -70549,9 +70598,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -70571,9 +70620,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -71191,7 +71240,8 @@
           "timestamp": "2026-08-29T23:30:00Z",
           "venue": "Mercedes-Benz Stadium, Atlanta, GA",
           "isFriendly": false,
-          "matchId": "footy_357b5741dbd5"
+          "matchId": "footy_357b5741dbd5",
+          "lastSeen": ""
         },
         {
           "away": "Houston Dynamo FC",
@@ -71549,15 +71599,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 23 iCalendar fixtures from 2026-01-01 through 2027-08-29.",
+        "Loaded 23 iCalendar fixtures from 2026-01-01 through 2027-08-30.",
         "Preserved 7 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-29T15:06:29.262Z",
-      "updatedAt": "2026-08-29T15:06:29.262Z",
-      "previousUpdatedAt": "2026-08-27T20:34:31.623Z",
+      "attemptedAt": "2026-08-30T14:53:24.945Z",
+      "updatedAt": "2026-08-30T14:53:24.945Z",
+      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -72010,7 +72060,8 @@
           "timestamp": "2026-08-29T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
           "isFriendly": false,
-          "matchId": "footy_7b035a08e65e"
+          "matchId": "footy_7b035a08e65e",
+          "lastSeen": ""
         },
         {
           "away": "Atlanta United",
@@ -72433,7 +72484,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 21 iCalendar fixtures from 2026-01-01 through 2027-08-29.",
+        "Loaded 21 iCalendar fixtures from 2026-01-01 through 2027-08-30.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

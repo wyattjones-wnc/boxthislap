@@ -9,7 +9,7 @@ const PAGE_ALIASES = {
 };
 
 const HOME_PAGES = ["footy", "footy-team", "next", "rankings", "guides", "footy-goal-assists", "leagues", "login", "manager-hub", "manager-awards", "draft-list"];
-const THE_MONSTER_MANIAC_PAGES = ["the-monster-maniac", "trophy-stats", "todo", "want", "youtube"];
+const THE_MONSTER_MANIAC_PAGES = ["the-monster-maniac", "trophy-stats", "todo", "want", "youtube", "collectibles"];
 const STANDINGS_TABS = ["players-championship", "nations-league", "manager-results"];
 const WORLD_CUP_PAGES = ["today", "tomorrow", "results", "draft", "standings", "rules", "matches", "bracket", "testing"];
 

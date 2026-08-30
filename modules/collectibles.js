@@ -1,0 +1,157 @@
+const DEFAULT_FILTERS = { status: "", search: "", manufacturer: "", year: "", scale: "", category: "", series: "", sort: "source", includeExcluded: false, page: 1 };
+
+export function createCollectiblesController({ endpoint, getAccessToken }) {
+  const root = document.querySelector("#collectibles");
+  const form = document.querySelector("#collectibles-filters");
+  const grid = document.querySelector("#collectibles-grid");
+  const stats = document.querySelector("#collectibles-stats");
+  const resultCount = document.querySelector("#collectibles-result-count");
+  const pagination = document.querySelector("#collectibles-pagination");
+  const dialog = document.querySelector("#collectible-detail-dialog");
+  const detail = document.querySelector("#collectible-detail-content");
+  const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null };
+  if (!root) return { renderPage: () => Promise.resolve() };
+
+  form?.addEventListener("submit", (event) => { event.preventDefault(); state.filters.page = 1; readForm(); syncUrl(); void load(); });
+  form?.addEventListener("change", () => { state.filters.page = 1; readForm(); syncUrl(); void load(); });
+  root.querySelector("[data-collectibles-clear]")?.addEventListener("click", () => { state.filters = { ...DEFAULT_FILTERS }; writeForm(); syncUrl(); void load(); });
+  root.querySelector("[data-collection-views]")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-collection-view]");
+    if (!button) return;
+    const view = button.dataset.collectionView;
+    state.filters.status = view === "owned" ? "owned" : view === "missing" ? "not_owned" : view === "wishlist" ? "wanted" : "";
+    state.filters.includeExcluded = view === "catalog";
+    state.filters.page = 1;
+    writeForm(); syncUrl(); void load();
+  });
+  grid?.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-collectible-toggle]");
+    if (toggle) { void quickToggle(toggle.dataset.collectibleToggle, toggle.dataset.owned !== "true", toggle); return; }
+    const card = event.target.closest("[data-collectible-id]");
+    if (card) void openDetail(card.dataset.collectibleId);
+  });
+  pagination?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-collectibles-page]");
+    if (!button) return;
+    state.filters.page = Number(button.dataset.collectiblesPage) || 1;
+    syncUrl(); void load(); root.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  dialog?.querySelector("[data-collectible-close]")?.addEventListener("click", () => dialog.close());
+  dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+  detail?.addEventListener("submit", (event) => { if (event.target.matches("[data-collectible-form]")) { event.preventDefault(); void saveDetail(event.target); } });
+
+  async function renderPage() {
+    state.filters = { ...DEFAULT_FILTERS, ...filtersFromUrl() };
+    writeForm();
+    if (!state.options) await loadOptions();
+    return load();
+  }
+
+  async function loadOptions() {
+    const value = await request("/api/collectibles/filters");
+    state.options = value;
+    fillSelect("manufacturer", value.manufacturers, "All manufacturers");
+    fillSelect("year", value.years, "All years");
+    fillSelect("scale", value.scales, "All scales");
+    fillSelect("category", value.categories, "All catalog categories");
+    fillSelect("series", value.series, "All series");
+    writeForm();
+  }
+
+  async function load() {
+    grid.innerHTML = loading("Loading collectibles...");
+    stats.innerHTML = loading("Loading collection progress...");
+    updateViewButtons();
+    const query = buildQuery();
+    try {
+      const [catalog, progress] = await Promise.all([request(`/api/collectibles?${query}`), request(`/api/collectibles/stats?${query}`)]);
+      renderStats(progress);
+      renderCards(catalog.items || []);
+      renderPagination(catalog.pagination || {});
+    } catch (error) {
+      grid.innerHTML = `<p class="table-message">${escapeHtml(error.message)}</p>`;
+      stats.innerHTML = "";
+      resultCount.textContent = "Unable to load catalog";
+    }
+  }
+
+  function renderStats(value) {
+    stats.innerHTML = `
+      <article><strong>${formatNumber(value.owned)}</strong><span>Have</span></article>
+      <article><strong>${formatNumber(value.missing)}</strong><span>Missing</span></article>
+      <article><strong>${formatNumber(value.wanted)}</strong><span>Wanted</span></article>
+      <article class="collectibles-progress-stat"><strong>${escapeHtml(value.completionPercent)}%</strong><span>${formatNumber(value.owned)} of ${formatNumber(value.total)}</span><div><i style="width:${Math.max(0, Math.min(100, Number(value.completionPercent) || 0))}%"></i></div></article>`;
+  }
+
+  function renderCards(items) {
+    resultCount.textContent = `${formatNumber(items.length)} shown`;
+    if (!items.length) { grid.innerHTML = `<p class="table-message">No collectibles match these filters.</p>`; return; }
+    grid.innerHTML = items.map((item) => {
+      const owned = item.collection?.status === "owned";
+      return `<article class="collectible-card${owned ? " is-owned" : ""}" data-collectible-id="${escapeHtml(item.id)}" tabindex="0">
+        <div class="collectible-card-image">${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : `<span aria-hidden="true">🏁</span>`}${item.collection?.wanted ? `<b>Wanted</b>` : ""}</div>
+        <div class="collectible-card-body"><p>${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<span>#${escapeHtml(item.itemNumber)}</span>` : ""}
+          <button class="collectible-have-button${owned ? " is-owned" : ""}" type="button" data-collectible-toggle="${escapeHtml(item.id)}" data-owned="${owned}">${owned ? "✓ Have" : "○ Don't Have"}</button>
+        </div></article>`;
+    }).join("");
+  }
+
+  function renderPagination(value) {
+    const page = Number(value.page || 1); const pages = Number(value.pages || 1);
+    resultCount.textContent = `${formatNumber(value.total || 0)} collectible${Number(value.total) === 1 ? "" : "s"}`;
+    pagination.innerHTML = pages <= 1 ? "" : `<button type="button" data-collectibles-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>Previous</button><span>Page ${page} of ${pages}</span><button type="button" data-collectibles-page="${page + 1}" ${page >= pages ? "disabled" : ""}>Next</button>`;
+  }
+
+  async function quickToggle(id, owned, button) {
+    button.disabled = true;
+    try { await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: owned ? "owned" : "not_owned" }); await load(); }
+    catch (error) { button.disabled = false; window.alert(error.message); }
+  }
+
+  async function openDetail(id) {
+    dialog.showModal(); detail.innerHTML = loading("Loading collectible details...");
+    try {
+      const { collectible: item } = await request(`/api/collectibles/${encodeURIComponent(id)}`);
+      const owned = item.collection?.status === "owned";
+      detail.innerHTML = `<div class="collectible-detail-layout">
+        <div class="collectible-detail-gallery">${(item.images?.length ? item.images : item.image ? [{ sourceUrl: item.image }] : []).map((image) => `<img src="${escapeHtml(image.localUrl || image.sourceUrl)}" alt="${escapeHtml(item.name)}" loading="lazy">`).join("") || `<span class="table-message">No image available.</span>`}</div>
+        <div class="collectible-detail-copy"><p class="eyebrow">${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<p>Item #${escapeHtml(item.itemNumber)}</p>` : ""}
+          ${metadata(item)}
+          ${item.variants?.length ? `<details><summary>Known variants (${item.variants.length})</summary><ul>${item.variants.map((variant) => `<li>${escapeHtml(variant.sourceName)}</li>`).join("")}</ul></details>` : ""}
+          <form class="collectible-detail-form" data-collectible-form data-id="${escapeHtml(item.id)}">
+            <label><span>Status</span><select name="status"><option value="not_owned" ${owned ? "" : "selected"}>Don't Have</option><option value="owned" ${owned ? "selected" : ""}>Have</option></select></label>
+            <label><span>Quantity</span><input name="quantity" type="number" min="0" max="999" value="${escapeHtml(item.collection?.quantity || 0)}"></label>
+            <label class="collectible-check"><input name="wanted" type="checkbox" ${item.collection?.wanted ? "checked" : ""}><span>Wanted</span></label>
+            <label><span>Acquired</span><input name="acquiredAt" type="date" value="${escapeHtml(item.collection?.acquiredAt || "")}"></label>
+            <label class="collectible-notes"><span>Notes</span><textarea name="notes" rows="4">${escapeHtml(item.collection?.notes || "")}</textarea></label>
+            <p class="collectible-save-status" role="status"></p><button class="action-button" type="submit">Save collection details</button>
+          </form>
+          ${item.sourceUrl ? `<a class="back-link" href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noopener">View source at Brian Z. Patton</a>` : ""}
+        </div></div>`;
+    } catch (error) { detail.innerHTML = `<p class="table-message">${escapeHtml(error.message)}</p>`; }
+  }
+
+  async function saveDetail(formElement) {
+    const status = formElement.querySelector("[role=status]"); const submit = formElement.querySelector("button[type=submit]"); submit.disabled = true; status.textContent = "Saving...";
+    const data = new FormData(formElement);
+    try { await mutate(`/api/collection/${encodeURIComponent(formElement.dataset.id)}`, { status: data.get("status"), quantity: Number(data.get("quantity") || 0), wanted: data.get("wanted") === "on", acquiredAt: data.get("acquiredAt") || null, notes: data.get("notes") || null }); status.textContent = "Saved."; await load(); }
+    catch (error) { status.textContent = error.message; }
+    finally { submit.disabled = false; }
+  }
+
+  function metadata(item) { return `<dl class="collectible-metadata">${[["Product line", item.productLine?.name], ["Category", item.releaseCategory], ["Series", item.releaseSeries], ["Mix", item.mix]].filter(([, value]) => value).map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`; }
+  function fillSelect(name, values, label) { const select = form?.elements.namedItem(name); if (!select) return; select.innerHTML = `<option value="">${label}</option>${(values || []).map((entry) => { const value = typeof entry === "object" ? entry.slug : entry; const text = typeof entry === "object" ? entry.name : entry; return `<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`; }).join("")}`; }
+  function readForm() { const data = new FormData(form); for (const key of ["status", "search", "manufacturer", "year", "scale", "category", "series", "sort"]) state.filters[key] = String(data.get(key) || ""); state.filters.includeExcluded = data.get("includeExcluded") === "on"; }
+  function writeForm() { if (!form) return; for (const [key, value] of Object.entries(state.filters)) { const input = form.elements.namedItem(key); if (!input) continue; if (input.type === "checkbox") input.checked = Boolean(value); else input.value = String(value ?? ""); } updateViewButtons(); }
+  function updateViewButtons() { root.querySelectorAll("[data-collection-view]").forEach((button) => { const view = button.dataset.collectionView; const active = view === "catalog" ? state.filters.includeExcluded : !state.filters.includeExcluded && ((view === "collection" && !state.filters.status) || (view === "owned" && state.filters.status === "owned") || (view === "missing" && state.filters.status === "not_owned") || (view === "wishlist" && state.filters.status === "wanted")); button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); }); }
+  function buildQuery() { const params = new URLSearchParams(); for (const [key, value] of Object.entries(state.filters)) { if (value && key !== "page") params.set(key, String(value)); } params.set("page", String(state.filters.page)); params.set("limit", "48"); return params.toString(); }
+  function filtersFromUrl() { const params = new URLSearchParams(window.location.search); const value = {}; for (const key of Object.keys(DEFAULT_FILTERS)) { if (!params.has(key)) continue; value[key] = key === "page" ? Number(params.get(key)) || 1 : key === "includeExcluded" ? params.get(key) === "true" : params.get(key); } return value; }
+  function syncUrl() { const url = new URL(window.location.href); for (const key of Object.keys(DEFAULT_FILTERS)) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history.replaceState(null, "", `${url.pathname}${url.search}#collectibles`); }
+  async function mutate(path, body) { const token = await getAccessToken(); return request(path, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); }
+  async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
+  return { renderPage };
+}
+
+function loading(label) { return `<p class="table-message"><span class="loading-spinner"></span>${escapeHtml(label)}</p>`; }
+function formatNumber(value) { return Number(value || 0).toLocaleString("en-US"); }
+function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }

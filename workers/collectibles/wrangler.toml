@@ -1,0 +1,16 @@
+name = "box-this-lap-collectibles"
+main = "src/index.js"
+compatibility_date = "2026-08-30"
+
+[vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+ADMIN_MANAGER_IDS = "6"
+
+[[services]]
+binding = "MANAGER_AUTH"
+service = "box-this-lap-rankings"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rankings"
+database_id = "45c405ab-a0cd-442a-b135-b7ffe4b7d933"

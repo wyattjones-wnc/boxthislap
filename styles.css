@@ -27,6 +27,409 @@
   --updated: rgba(166, 176, 192, 0.76);
 }
 
+/* Monster-truck collectibles */
+.collectibles-page {
+  max-width: 1260px;
+}
+
+.collectibles-heading p:last-child {
+  color: var(--muted);
+  margin: 0.35rem 0 0;
+  max-width: 650px;
+}
+
+.collection-view-tabs {
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.collection-view-tabs button,
+.collectibles-pagination button {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.62rem 1rem;
+  white-space: nowrap;
+}
+
+.collection-view-tabs button.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.collectibles-stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.collectibles-stats article {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px var(--shadow);
+  display: grid;
+  gap: 0.15rem;
+  padding: 1rem;
+}
+
+.collectibles-stats strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.collectibles-stats span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collectibles-progress-stat div {
+  background: var(--soft-strong);
+  border-radius: 999px;
+  height: 5px;
+  margin-top: 0.45rem;
+  overflow: hidden;
+}
+
+.collectibles-progress-stat i {
+  background: var(--time);
+  display: block;
+  height: 100%;
+}
+
+.collectibles-filters {
+  align-items: end;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  margin-bottom: 1.3rem;
+  padding: 1rem;
+}
+
+.collectibles-filters label,
+.collectible-detail-form label {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.collectibles-filters label > span,
+.collectible-detail-form label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.collectibles-filters input,
+.collectibles-filters select,
+.collectible-detail-form input,
+.collectible-detail-form select,
+.collectible-detail-form textarea {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  width: 100%;
+}
+
+.collectibles-search {
+  grid-column: span 2;
+}
+
+.collectibles-checkbox,
+.collectible-detail-form .collectible-check {
+  align-items: center;
+  display: flex;
+  min-height: 42px;
+}
+
+.collectibles-checkbox input,
+.collectible-detail-form .collectible-check input {
+  min-height: 0;
+  width: auto;
+}
+
+.collectibles-filter-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.7rem;
+}
+
+.collectibles-results-heading {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.collectibles-results-heading h2 {
+  margin: 0;
+}
+
+.collectibles-results-heading span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.collectibles-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+.collectible-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px var(--shadow);
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.collectible-card:hover,
+.collectible-card:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.collectible-card.is-owned {
+  border-color: color-mix(in srgb, var(--time) 55%, var(--line));
+}
+
+.collectible-card-image {
+  align-items: center;
+  aspect-ratio: 4 / 3;
+  background: var(--image-bg);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.collectible-card-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.collectible-card-image > span {
+  font-size: 3rem;
+}
+
+.collectible-card-image b {
+  background: var(--highlight);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+}
+
+.collectible-card-body {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem;
+}
+
+.collectible-card-body p,
+.collectible-card-body h2,
+.collectible-card-body span {
+  margin: 0;
+}
+
+.collectible-card-body p,
+.collectible-card-body span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.collectible-card-body h2 {
+  font-size: 1rem;
+  line-height: 1.25;
+  min-height: 2.5em;
+}
+
+.collectible-have-button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  margin-top: 0.25rem;
+  padding: 0.55rem;
+  text-transform: uppercase;
+}
+
+.collectible-have-button.is-owned {
+  background: color-mix(in srgb, var(--time) 16%, transparent);
+  border-color: var(--time);
+  color: var(--time-strong);
+}
+
+.collectibles-pagination {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.collectibles-pagination button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.collectible-detail-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--ink);
+  max-height: 90vh;
+  max-width: 1000px;
+  padding: 1.2rem;
+  width: min(94vw, 1000px);
+}
+
+.collectible-detail-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.collectible-detail-dialog .dialog-close {
+  background: var(--soft-strong);
+  border: 0;
+  border-radius: 50%;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1.5rem;
+  height: 38px;
+  position: sticky;
+  top: 0;
+  width: 38px;
+  z-index: 2;
+}
+
+.collectible-detail-layout {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+}
+
+.collectible-detail-gallery {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collectible-detail-gallery img {
+  background: var(--image-bg);
+  border-radius: 12px;
+  max-height: 330px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.collectible-detail-copy h2 {
+  margin: 0.15rem 0 0.4rem;
+}
+
+.collectible-metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collectible-metadata div {
+  border-bottom: 1px solid var(--line);
+  padding: 0.55rem 0;
+}
+
+.collectible-metadata dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collectible-metadata dd {
+  margin: 0.1rem 0 0;
+}
+
+.collectible-detail-form {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.collectible-detail-form .collectible-notes,
+.collectible-detail-form .collectible-save-status,
+.collectible-detail-form button {
+  grid-column: 1 / -1;
+}
+
+.collectible-save-status {
+  color: var(--muted);
+  margin: 0;
+  min-height: 1.5em;
+}
+
+@media (max-width: 780px) {
+  .collectibles-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collectibles-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collectible-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .collectibles-filters,
+  .collectible-detail-form {
+    grid-template-columns: 1fr;
+  }
+
+  .collectibles-search {
+    grid-column: auto;
+  }
+
+  .collectibles-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collectible-detail-form .collectible-notes,
+  .collectible-detail-form .collectible-save-status,
+  .collectible-detail-form button {
+    grid-column: auto;
+  }
+}
+
 html[data-theme="light"] {
   color-scheme: light;
   --bg: #f7f8fb;

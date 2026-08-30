@@ -1,7 +1,9 @@
 {
   "scripts": {
     "check:psn": "tsc --project workers/psn-trophies/tsconfig.json && wrangler deploy --dry-run --config workers/psn-trophies/wrangler.toml --outdir .tmp/psn-trophies-dry-run",
+    "collectibles:sync": "node scripts/collectibles/sync.mjs",
     "refresh:psn-auth": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-psn-auth.ps1",
+    "test:collectibles": "node --test scripts/collectibles/*.test.mjs",
     "test:psn": "node --experimental-strip-types --test workers/psn-trophies/test/*.test.ts"
   },
   "devDependencies": {

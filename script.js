@@ -13,6 +13,7 @@ import {
   RANKINGS_ENDPOINT,
   PSN_TROPHIES_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
+  COLLECTIBLES_ENDPOINT,
   AWARD_DEFINITIONS,
   BEST_STANDING_PERFORMANCE_VALUE,
   BRACKET_STORAGE_KEY,
@@ -330,6 +331,7 @@ import { createPlatinumsController } from "./modules/platinums.js?v=202608252243
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608290600";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608270401";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
+import { createCollectiblesController } from "./modules/collectibles.js?v=202608300001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -554,7 +556,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -582,6 +584,10 @@ const youtubeInboxController = createYouTubeInboxController({ endpoint: YOUTUBE_
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
+});
+const collectiblesController = createCollectiblesController({
+  endpoint: COLLECTIBLES_ENDPOINT,
+  getAccessToken: ensureRankingAuthorization,
 });
 
 function renderLeagueList(year) {
@@ -10874,6 +10880,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "collectibles") {
+    void collectiblesController.renderPage();
+    return;
+  }
+
   if (pageName === "rankings") {
     renderRankingsPage();
     return;
@@ -13860,7 +13871,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "collectibles"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }

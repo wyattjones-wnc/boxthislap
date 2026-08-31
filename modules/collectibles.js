@@ -1,4 +1,13 @@
 const DEFAULT_FILTERS = { status: "", search: "", manufacturer: "", year: "", scale: "", category: "", sort: "source", scope: "active", page: 1 };
+const CATEGORY_ART_SOURCE = "https://www.brianzpatton.com/New%20Site%201-2026.jpg";
+const CATEGORY_ART = {
+  bigfoot: [1204, 1663, 205, 55], brekina: [1193, 1962, 231, 82], majorette: [887, 886, 262, 47], monstertruck2pack: [670, 1636, 164, 97],
+  spinmaster: [157, 72, 174, 174], hotwheels: [74, 310, 344, 111], greenlight: [142, 542, 184, 121], matchbox: [367, 730, 201, 50],
+  galoob: [661, 720, 171, 60], johnnylightning: [931, 698, 153, 95], racingchampions: [100, 872, 159, 74], tonka: [1186, 726, 229, 65],
+  monstermashers: [1090, 563, 289, 83], monstermachines: [1146, 82, 212, 105], musclemachines: [59, 689, 245, 120], adventureforce: [649, 1024, 198, 85],
+  maisto: [107, 1190, 162, 70], funrise: [680, 1485, 136, 99], ertl: [929, 1047, 185, 43], hotwheelsmonstertrucks: [74, 310, 344, 111],
+  tradingcards: [690, 2722, 113, 119], pufftrucks: [1223, 2577, 147, 103], prototypes: [95, 2901, 178, 102], errors: [368, 2902, 209, 85],
+};
 
 export function createCollectiblesController({ endpoint, getAccessToken }) {
   const root = document.querySelector("#collectibles");
@@ -32,7 +41,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     state.filters.year = "";
     state.directEntries = false;
     state.filters.page = 1;
-    writeForm(); syncUrl(); void load();
+    writeForm(); syncUrl(true); void load();
   });
   grid?.addEventListener("click", (event) => {
     const groupExclusion = event.target.closest("[data-group-exclusion-type]");
@@ -41,7 +50,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     if (itemExclusion) { void toggleCardExclusion(itemExclusion); return; }
     const group = event.target.closest("[data-collectible-group]");
     if (group) { openGroup(group.dataset.groupType, group.dataset.collectibleGroup); return; }
-    if (event.target.closest("[data-collectibles-all-entries]")) { state.directEntries = true; state.filters.page = 1; void load(); return; }
+    if (event.target.closest("[data-collectibles-all-entries]")) { state.directEntries = true; state.filters.page = 1; syncUrl(true); void load(); return; }
     const toggle = event.target.closest("[data-collectible-toggle]");
     if (toggle) { void quickToggle(toggle.dataset.collectibleToggle, toggle.dataset.owned !== "true", toggle); return; }
     const card = event.target.closest("[data-collectible-id]");
@@ -54,13 +63,19 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     if (button.dataset.collectiblesLevel === "years") state.filters.year = "";
     state.directEntries = false;
     state.filters.page = 1;
-    writeForm(); syncUrl(); void load();
+    writeForm(); syncUrl(true); void load();
   });
   pagination?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-collectibles-page]");
     if (!button) return;
     state.filters.page = Number(button.dataset.collectiblesPage) || 1;
     syncUrl(); void load(); root.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  window.addEventListener("popstate", () => {
+    if (window.location.hash !== "#collectibles") return;
+    state.filters = { ...DEFAULT_FILTERS, ...filtersFromUrl() };
+    state.directEntries = false;
+    writeForm(); void load();
   });
   dialog?.querySelector("[data-collectible-close]")?.addEventListener("click", () => dialog.close());
   dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
@@ -129,7 +144,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       const exclusionValue = groupBy === "category" ? group.key : `${state.filters.category}:${group.key}`;
       return `<article class="collectible-group-card${group.excluded === group.total && group.total ? " is-excluded" : ""}">
         <button class="collectible-group-open" type="button" data-collectible-group="${escapeHtml(group.key)}" data-group-type="${escapeHtml(groupBy)}">
-          <span class="collectible-group-image">${group.image ? `<img src="${escapeHtml(group.image)}" alt="" loading="lazy" decoding="async">` : "🏁"}</span>
+          ${groupArtwork(group, groupBy)}
           <span class="collectible-group-copy"><h2>${escapeHtml(displayLabel)}</h2><p><strong>${formatNumber(group.owned)}</strong> have · ${formatNumber(group.total)} total</p><span class="collectible-group-progress" aria-label="${progress}% complete"><i style="width:${progress}%"></i></span></span>
         </button>
         <button class="collectible-group-exclusion" type="button" data-group-exclusion-type="${exclusionType}" data-group-exclusion-value="${escapeHtml(exclusionValue)}" data-group-label="${escapeHtml(displayLabel)}"${group.exclusionId ? ` data-exclusion-id="${group.exclusionId}"` : ""}${referenceOnly ? " disabled" : ""} aria-label="${escapeHtml(exclusionLabel)}: ${escapeHtml(displayLabel)}" title="${escapeHtml(exclusionLabel)}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.2A10.7 10.7 0 0 1 12 4c5.5 0 9 5.5 9 5.5a16 16 0 0 1-2.1 2.7M6.2 6.2C4.2 7.5 3 9.5 3 9.5S6.5 15 12 15c1 0 2-.2 2.8-.5"></path></svg></button>
@@ -150,7 +165,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     if (type === "category") { state.filters.category = key; state.filters.year = ""; state.directEntries = false; }
     if (type === "year") { state.filters.year = key; state.directEntries = false; }
     state.filters.page = 1;
-    writeForm(); syncUrl(); void load(); root.scrollIntoView({ behavior: "smooth", block: "start" });
+    writeForm(); syncUrl(true); void load(); root.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function renderStats(value) {
@@ -244,9 +259,9 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     try {
       if (exclusionId) await authenticatedRequest(`/api/collection/exclusions/${exclusionId}`, { method: "DELETE" });
       else await authenticatedRequest("/api/collection/exclusions", { method: "POST", body: { type: "collectible", value: id, note: "Excluded from collectible detail." } });
-      await load();
       dialog.close();
-      await openDetail(id);
+      if ((!exclusionId && state.filters.scope === "active") || (exclusionId && state.filters.scope === "excluded")) grid.querySelector(`[data-collectible-id="${CSS.escape(id)}"]`)?.remove();
+      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
     } catch (error) {
       button.disabled = false;
       window.alert(error.message);
@@ -272,6 +287,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       button.setAttribute("aria-label", `${action}: ${label}`);
       button.setAttribute("title", action);
       button.disabled = false;
+      if ((nextExclusionId && state.filters.scope === "active") || (!nextExclusionId && state.filters.scope === "excluded")) button.closest(".collectible-group-card")?.remove();
       request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
     } catch (error) {
       button.disabled = false;
@@ -295,6 +311,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       if (nextExclusionId) button.dataset.exclusionId = String(nextExclusionId); else delete button.dataset.exclusionId;
       button.textContent = nextExclusionId ? "Restore item" : "Exclude item";
       button.disabled = false;
+      if ((nextExclusionId && state.filters.scope === "active") || (!nextExclusionId && state.filters.scope === "excluded")) card?.remove();
       request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
     } catch (error) {
       button.disabled = false;
@@ -306,15 +323,15 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   function fillSelect(name, values, label) { const select = form?.elements.namedItem(name); if (!select) return; select.innerHTML = `<option value="">${label}</option>${(values || []).map((entry) => { const value = typeof entry === "object" ? entry.slug : entry; const text = typeof entry === "object" ? entry.name : entry; return `<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`; }).join("")}`; }
   function exclusionAction(item) {
     const exclusionId = item.exclusion?.itemExclusionId;
-    if (item.exclusion?.excluded && !exclusionId) return `<div class="collectible-exclusion-action"><strong>Excluded by a catalog rule</strong><p>Use the visibility filter to find this item. Its broader category rule must be changed to include it.</p></div>`;
-    return `<div class="collectible-exclusion-action"><strong>${exclusionId ? "Excluded from checklist" : "Checklist visibility"}</strong><p>${exclusionId ? "This item is hidden from the normal checklist but remains available under Excluded only." : "Hide this individual item from the normal checklist."}</p><button class="footer-copy-link" type="button" data-collectible-exclusion="${escapeHtml(item.id)}"${exclusionId ? ` data-exclusion-id="${exclusionId}"` : ""}>${exclusionId ? "Include in checklist" : "Exclude from checklist"}</button></div>`;
+    if (item.exclusion?.excluded && !exclusionId) return `<div class="collectible-exclusion-action"><button class="footer-copy-link" type="button" disabled>Excluded at a higher level</button></div>`;
+    return `<div class="collectible-exclusion-action"><button class="footer-copy-link" type="button" data-collectible-exclusion="${escapeHtml(item.id)}"${exclusionId ? ` data-exclusion-id="${exclusionId}"` : ""}>${exclusionId ? "Include in checklist" : "Exclude from checklist"}</button></div>`;
   }
   function readForm() { const data = new FormData(form); for (const key of ["status", "search", "manufacturer", "year", "scale", "category", "sort", "scope"]) state.filters[key] = String(data.get(key) || ""); }
   function writeForm() { if (!form) return; for (const [key, value] of Object.entries(state.filters)) { const input = form.elements.namedItem(key); if (!input) continue; if (input.type === "checkbox") input.checked = Boolean(value); else input.value = String(value ?? ""); } updateViewButtons(); }
   function updateViewButtons() { if (!viewSelect) return; viewSelect.value = state.filters.scope === "all" ? "catalog" : state.filters.status === "owned" ? "owned" : state.filters.status === "not_owned" ? "missing" : state.filters.status === "wanted" ? "wishlist" : "collection"; }
   function buildQuery() { const params = new URLSearchParams(); for (const [key, value] of Object.entries(state.filters)) { if (value && key !== "page") params.set(key, String(value)); } params.set("page", String(state.filters.page)); params.set("limit", "48"); return params.toString(); }
   function filtersFromUrl() { const params = new URLSearchParams(window.location.search); const value = {}; for (const key of Object.keys(DEFAULT_FILTERS)) { if (!params.has(key)) continue; value[key] = key === "page" ? Number(params.get(key)) || 1 : params.get(key); } if (params.get("includeExcluded") === "true" && !params.has("scope")) value.scope = "all"; return value; }
-  function syncUrl() { const url = new URL(window.location.href); for (const key of [...Object.keys(DEFAULT_FILTERS), "series"]) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history.replaceState(null, "", `${url.pathname}${url.search}#collectibles`); }
+  function syncUrl(push = false) { const url = new URL(window.location.href); for (const key of [...Object.keys(DEFAULT_FILTERS), "series"]) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history[push ? "pushState" : "replaceState"](null, "", `${url.pathname}${url.search}#collectibles`); }
   async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
   async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
   async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
@@ -327,5 +344,16 @@ function prettyCategoryName(value) {
   const text = String(value || "");
   const known = { GreenLight: "GreenLight", Bigfoot: "Bigfoot", ADC: "ADC" };
   return known[text] || text.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2");
+}
+function groupArtwork(group, groupBy) {
+  const art = groupBy === "category" ? CATEGORY_ART[String(group.key || "").replace(/[^a-z0-9]/gi, "").toLowerCase()] : null;
+  if (art) {
+    const [x, y, width, height] = art;
+    const scale = Math.max(48 / width, 48 / height);
+    const left = -x * scale + (48 - width * scale) / 2;
+    const top = -y * scale + (48 - height * scale) / 2;
+    return `<span class="collectible-group-image collectible-group-logo"><img src="${CATEGORY_ART_SOURCE}" alt="" loading="lazy" decoding="async" style="width:${1471 * scale}px;height:${4200 * scale}px;left:${left}px;top:${top}px"></span>`;
+  }
+  return `<span class="collectible-group-image">${group.image ? `<img src="${escapeHtml(group.image)}" alt="" loading="lazy" decoding="async">` : "🏁"}</span>`;
 }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }

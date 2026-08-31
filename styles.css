@@ -476,6 +476,16 @@
   width: 100%;
 }
 
+.collectible-group-logo {
+  position: relative;
+}
+
+.collectible-group-logo img {
+  max-width: none;
+  object-fit: initial;
+  position: absolute;
+}
+
 .collectible-group-copy {
   align-self: center;
   display: block;
@@ -502,11 +512,8 @@
 
 .collectible-exclusion-action {
   align-items: flex-start;
-  border-top: 1px solid var(--line);
   display: grid;
-  gap: 0.35rem;
   grid-column: 1 / -1;
-  padding-top: 0.8rem;
 }
 
 .collectible-exclusion-action p {

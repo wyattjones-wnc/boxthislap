@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeLeagues, normalizeSelectableLeague } from "./followedTeams.js";
+import { normalizeLeagues, normalizeSelectableLeague, partitionPickerTeams, personalTeamIds } from "./followedTeams.js";
 
 test("team picker shows unique canonical domestic leagues", () => {
   const response = {
@@ -26,4 +26,17 @@ test("team picker excludes friendlies and cup competitions", () => {
   for (const name of ["Club Friendlies", "MLS Preseason Friendlies", "EFL Cup", "Community Shield", "UEFA Champions League", "Supercopa de España", "International"]) {
     assert.equal(normalizeSelectableLeague(name), null, name);
   }
+});
+
+test("inherited defaults are effective but not checked as personal choices", () => {
+  assert.deepEqual(personalTeamIds(["1", "2"], true), []);
+  assert.deepEqual(personalTeamIds(["1", "2"], false), ["1", "2"]);
+});
+
+test("default teams are listed before all other picker teams", () => {
+  const teams = [{ id: "3" }, { id: "2" }, { id: "1" }];
+  assert.deepEqual(partitionPickerTeams(teams, ["1", "2"]), {
+    defaults: [{ id: "1" }, { id: "2" }],
+    others: [{ id: "3" }],
+  });
 });

@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.31.17.55";
+      window.BOX_THIS_LAP_VERSION = "2026.08.31.18.11";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608311755">
+    <link rel="stylesheet" href="styles.css?v=202608311811">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -466,7 +466,7 @@
         <div class="followed-teams-dialog-heading">
           <div>
             <h2 id="followed-teams-dialog-title">Add teams</h2>
-            <p>Choose teams from any supported competition. New teams are added at the bottom of your priority list.</p>
+            <p>Choose teams from any supported league. Admin defaults are listed first, and new choices are added at the bottom of your priority list.</p>
           </div>
           <button class="dialog-close" id="followed-teams-dialog-close" type="button" aria-label="Close team picker">×</button>
         </div>
@@ -475,7 +475,10 @@
           <label><span>Competition</span><select id="followed-teams-league"><option value="">All competitions</option></select></label>
         </div>
         <div class="followed-teams-picker" id="followed-teams-picker"></div>
-        <div class="followed-teams-dialog-actions"><button class="action-button" id="followed-teams-dialog-done" type="button">Done</button></div>
+        <div class="followed-teams-dialog-actions">
+          <p class="followed-teams-dialog-status" id="followed-teams-dialog-status" role="status" aria-live="polite"></p>
+          <button class="action-button" id="followed-teams-dialog-done" type="button">Done</button>
+        </div>
       </dialog>
 
       <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
@@ -2682,6 +2685,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608311755"></script>
+    <script type="module" src="script.js?v=202608311811"></script>
   </body>
 </html>

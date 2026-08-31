@@ -8553,11 +8553,18 @@ tr:last-child td {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
+  box-sizing: border-box;
   color: var(--ink);
-  max-height: min(760px, 90vh);
+  max-height: min(680px, calc(100dvh - 24px));
   max-width: 680px;
+  overflow: hidden;
   padding: 20px;
   width: calc(100% - 28px);
+}
+
+.followed-teams-dialog[open] {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
 .followed-teams-dialog::backdrop {
@@ -8601,8 +8608,36 @@ tr:last-child td {
 }
 
 .followed-teams-picker {
-  max-height: 52vh;
+  min-height: 0;
+  overscroll-behavior: contain;
   overflow-y: auto;
+}
+
+.followed-team-picker-group-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 2px 0 8px;
+  text-transform: uppercase;
+}
+
+.followed-team-picker-divider {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 900;
+  gap: 10px;
+  margin: 14px 0 8px;
+  text-transform: uppercase;
+}
+
+.followed-team-picker-divider::after {
+  background: var(--line);
+  content: "";
+  flex: 1;
+  height: 1px;
 }
 
 .followed-team-picker-row {
@@ -8628,8 +8663,19 @@ tr:last-child td {
 }
 
 .followed-teams-dialog-actions {
+  background: var(--panel);
   justify-content: flex-end;
-  margin-top: 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.followed-teams-dialog-status {
+  flex: 1;
+  margin: 0;
+}
+
+.followed-teams-dialog-status.is-error {
+  color: var(--accent);
 }
 
 @media (max-width: 620px) {

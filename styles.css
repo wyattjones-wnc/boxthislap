@@ -1861,7 +1861,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 0 0 12px;
+  margin: 12px 0;
+}
+
+.footy-team-choice-actions.is-default {
+  justify-content: center;
 }
 
 .footy-past-toggle-icon {

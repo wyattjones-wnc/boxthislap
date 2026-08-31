@@ -371,7 +371,7 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310002";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310003";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300002";
 import {
   formatUpdatedTime,

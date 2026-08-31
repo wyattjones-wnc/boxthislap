@@ -115,13 +115,16 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function render() {
     const managerId = String(getManagerId() || "").trim();
     const canReset = Boolean(managerId) && (!state.usingDefault || hasChanges());
-    if (choiceActions) choiceActions.hidden = !managerId;
+    if (choiceActions) {
+      choiceActions.hidden = !managerId;
+      choiceActions.classList.toggle("is-default", state.usingDefault);
+    }
     if (chooseButton) {
       chooseButton.hidden = !managerId;
       chooseButton.disabled = state.loading || state.saving || !state.catalog.length;
     }
     if (topResetButton) {
-      topResetButton.hidden = !canReset;
+      topResetButton.hidden = !managerId || state.usingDefault;
       topResetButton.disabled = state.loading || state.saving;
     }
     if (!root) return;
@@ -158,7 +161,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function renderSelectedTeam(id, index) {
     const team = state.catalog.find((entry) => entry.id === id);
     const name = team?.name || `Unavailable team (${id})`;
-    const league = team?.leagues?.map((entry) => entry.name).join(", ") || "Unavailable";
+    const league = selectableLeagueNames(team?.leagues).join(", ") || "Other competitions";
     return `
       <article class="followed-team-row${team ? "" : " is-unavailable"}" draggable="true" data-followed-team-id="${escapeAttribute(id)}">
         <button class="followed-team-drag" type="button" aria-label="Drag ${escapeAttribute(name)} to reorder" title="Drag to reorder">⋮⋮</button>
@@ -194,13 +197,13 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     const leagueId = leagueFilter?.value || "";
     const visible = state.catalog.filter((team) => {
       const matchesText = !query || normalize(`${team.name} ${team.prettyName}`).includes(query);
-      const matchesLeague = !leagueId || team.leagues.some((league) => league.id === leagueId);
+      const matchesLeague = !leagueId || team.leagues.some((league) => normalizeSelectableLeague(league.name)?.id === leagueId);
       return team.active && matchesText && matchesLeague;
     });
     leagueFilter.innerHTML = [`<option value="">All competitions</option>`, ...state.leagues.map((league) => `<option value="${escapeAttribute(league.id)}"${league.id === leagueId ? " selected" : ""}>${escapeHtml(league.name)}</option>`)].join("");
     picker.innerHTML = visible.length ? visible.map((team) => {
       const selected = state.pendingIds.includes(team.id);
-      const league = team.leagues.map((entry) => entry.name).join(", ");
+      const league = selectableLeagueNames(team.leagues).join(", ") || "Other competitions";
       return `
         <label class="followed-team-picker-row${selected ? " is-selected" : ""}">
           <input type="checkbox" value="${escapeAttribute(team.id)}"${selected ? " checked" : ""}>
@@ -361,10 +364,37 @@ function normalizeCatalog(response = {}) {
   return [...teams.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
-function normalizeLeagues(response, catalog) {
-  const leagues = new Map((response.leagues || []).map((league) => [String(league.id), { id: String(league.id), name: String(league.name || "Competition") }]));
-  for (const team of catalog) for (const league of team.leagues) leagues.set(league.id, league);
+export function normalizeLeagues(response = {}, catalog = []) {
+  const leagues = new Map();
+  const sources = [
+    ...(response.leagues || []),
+    ...catalog.flatMap((team) => team.leagues || []),
+  ];
+  for (const source of sources) {
+    const league = normalizeSelectableLeague(source.name);
+    if (league) leagues.set(league.id, league);
+  }
   return [...leagues.values()].sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export function normalizeSelectableLeague(value) {
+  const name = String(value || "").trim();
+  const key = normalize(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  if (!key || /\b(cup|copa|supercopa|coppa|coupe|pokal|trophy|shield|friendlies|friendly|preseason|summer series|international|champions league|europa league|conference league|nations league|playoffs?)\b/.test(key)) return null;
+  if (key === "premier league" || key === "english premier league") return { id: "premier-league", name: "Premier League" };
+  if (key === "la liga" || key === "primera division" || key.startsWith("laliga season ")) return { id: "la-liga", name: "La Liga" };
+  if (key === "mls" || key === "major league soccer" || key.startsWith("mls regular season")) return { id: "mls", name: "MLS" };
+  const displayName = name.replace(/\s+season\s+\d{4}(?:\s*[-–]\s*\d{4})?$/i, "").trim();
+  return { id: normalize(displayName).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), name: displayName };
+}
+
+function selectableLeagueNames(leagues = []) {
+  const names = new Map();
+  for (const source of leagues) {
+    const league = normalizeSelectableLeague(source.name);
+    if (league) names.set(league.id, league.name);
+  }
+  return [...names.values()].sort((left, right) => left.localeCompare(right));
 }
 
 function normalize(value) { return String(value || "").trim().toLowerCase(); }

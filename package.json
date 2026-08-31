@@ -4,7 +4,7 @@
     "collectibles:sync": "node scripts/collectibles/sync.mjs",
     "refresh:psn-auth": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-psn-auth.ps1",
     "test:collectibles": "node --test scripts/collectibles/*.test.mjs",
-    "test:footy-following": "node --test scripts/footy-team-catalog.test.mjs workers/rankings/test/followed-teams.test.mjs workers/footy-push/test/followed-teams.test.mjs",
+    "test:footy-following": "node --test modules/followedTeams.test.mjs scripts/footy-team-catalog.test.mjs workers/rankings/test/followed-teams.test.mjs workers/footy-push/test/followed-teams.test.mjs",
     "test:psn": "node --experimental-strip-types --test workers/psn-trophies/test/*.test.ts"
   },
   "devDependencies": {

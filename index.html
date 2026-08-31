@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.31.18.21";
+      window.BOX_THIS_LAP_VERSION = "2026.08.31.18.36";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608311821">
+    <link rel="stylesheet" href="styles.css?v=202608311836">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -464,10 +464,7 @@
 
       <dialog class="followed-teams-dialog" id="followed-teams-dialog" aria-labelledby="followed-teams-dialog-title">
         <div class="followed-teams-dialog-heading">
-          <div>
-            <h2 id="followed-teams-dialog-title">Add teams</h2>
-            <p>Choose teams from any supported league. Admin defaults are listed first, and new choices are added at the bottom of your priority list.</p>
-          </div>
+          <h2 id="followed-teams-dialog-title">Add teams</h2>
           <button class="dialog-close" id="followed-teams-dialog-close" type="button" aria-label="Close team picker">×</button>
         </div>
         <div class="followed-teams-picker-filters">
@@ -890,10 +887,10 @@
               <span>Friendlies</span>
             </label>
           </div>
-        </div>
-        <div class="footy-team-choice-actions" id="footy-team-choice-actions" aria-label="Team selection" hidden>
-          <button class="action-button" id="footy-choose-teams" type="button" hidden>Choose teams</button>
-          <button class="footer-copy-link" id="footy-reset-teams" type="button" hidden>Reset to default</button>
+          <div class="footy-team-choice-actions" id="footy-team-choice-actions" aria-label="Team selection" hidden>
+            <button class="action-button" id="footy-choose-teams" type="button" hidden>Choose teams</button>
+            <button class="footer-copy-link" id="footy-reset-teams" type="button" hidden>Reset to default</button>
+          </div>
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
@@ -2685,6 +2682,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608311821"></script>
+    <script type="module" src="script.js?v=202608311836"></script>
   </body>
 </html>

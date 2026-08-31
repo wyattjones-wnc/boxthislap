@@ -1998,7 +1998,8 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 12px 0;
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .footy-team-choice-actions.is-default {
@@ -8566,6 +8567,14 @@ html.has-followed-teams-dialog,
 html.has-followed-teams-dialog body {
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+html.has-followed-teams-dialog body {
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: var(--followed-teams-scroll-offset, 0);
+  width: 100%;
 }
 
 .followed-teams-dialog[open] {

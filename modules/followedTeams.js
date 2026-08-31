@@ -32,6 +32,8 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     usingDefault: true,
   };
   let draggedId = "";
+  let lockedScrollY = 0;
+  let touchY = 0;
 
   root?.addEventListener("click", handleRootClick);
   chooseButton?.addEventListener("click", openPicker);
@@ -47,6 +49,9 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   dialogDone?.addEventListener("click", () => { void save({ closeDialog: true }); });
   dialog?.addEventListener("click", (event) => { if (event.target === dialog) closePicker(); });
   dialog?.addEventListener("close", unlockPageScroll);
+  dialog?.addEventListener("wheel", containDialogScroll, { passive: false });
+  dialog?.addEventListener("touchstart", (event) => { touchY = event.touches[0]?.clientY || 0; }, { passive: true });
+  dialog?.addEventListener("touchmove", containDialogTouchScroll, { passive: false });
 
   function reset() {
     if (dialog?.open) dialog.close();
@@ -201,6 +206,8 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     setDialogStatus("");
     renderPicker();
     dialog.showModal();
+    lockedScrollY = window.scrollY;
+    document.documentElement.style.setProperty("--followed-teams-scroll-offset", `${-lockedScrollY}px`);
     document.documentElement.classList.add("has-followed-teams-dialog");
     window.setTimeout(() => search.focus(), 0);
   }
@@ -212,7 +219,28 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   }
 
   function unlockPageScroll() {
+    const wasLocked = document.documentElement.classList.contains("has-followed-teams-dialog");
     document.documentElement.classList.remove("has-followed-teams-dialog");
+    document.documentElement.style.removeProperty("--followed-teams-scroll-offset");
+    if (wasLocked) window.scrollTo(0, lockedScrollY);
+  }
+
+  function containDialogScroll(event) {
+    if (!picker?.contains(event.target) || !canScrollPicker(event.deltaY)) event.preventDefault();
+  }
+
+  function containDialogTouchScroll(event) {
+    const currentY = event.touches[0]?.clientY ?? touchY;
+    const deltaY = touchY - currentY;
+    touchY = currentY;
+    if (!picker?.contains(event.target) || !canScrollPicker(deltaY)) event.preventDefault();
+  }
+
+  function canScrollPicker(deltaY) {
+    if (!picker || picker.scrollHeight <= picker.clientHeight) return false;
+    if (deltaY < 0) return picker.scrollTop > 0;
+    if (deltaY > 0) return picker.scrollTop + picker.clientHeight < picker.scrollHeight - 1;
+    return true;
   }
 
   function renderPicker() {

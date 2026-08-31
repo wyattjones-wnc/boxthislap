@@ -535,20 +535,22 @@
       </section>
 
       <section class="page collectibles-page" id="collectibles" data-page="collectibles" data-admin-only hidden>
-        <div class="section-heading collectibles-heading">
+        <div class="section-heading page-heading-with-action collectibles-heading">
           <div>
             <a class="back-link" href="#the-monster-maniac" data-page-link="the-monster-maniac">TheMonsterManiac</a>
             <p class="eyebrow">Monster Trucks</p>
             <h1>Collectibles</h1>
           </div>
-        </div>
-
-        <div class="collection-view-tabs" data-collection-views role="group" aria-label="Collection view">
-          <button type="button" data-collection-view="collection">Checklist</button>
-          <button type="button" data-collection-view="owned">My Collection</button>
-          <button type="button" data-collection-view="missing">Missing</button>
-          <button type="button" data-collection-view="wishlist">Wishlist</button>
-          <button type="button" data-collection-view="catalog">Full Catalog</button>
+          <label class="collectibles-view-control">
+            <span>View</span>
+            <select id="collectibles-view-select" aria-label="Collection view">
+              <option value="collection">Checklist</option>
+              <option value="owned">My Collection</option>
+              <option value="missing">Missing</option>
+              <option value="wishlist">Wishlist</option>
+              <option value="catalog">Full Catalog</option>
+            </select>
+          </label>
         </div>
 
         <div class="collectibles-stats" id="collectibles-stats" aria-live="polite"></div>
@@ -562,13 +564,12 @@
         <nav class="collectibles-breadcrumbs" id="collectibles-breadcrumbs" aria-label="Catalog location"></nav>
 
         <form class="collectibles-filters" id="collectibles-filters" hidden>
-          <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, variant, or series"></label>
+          <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, or variant"></label>
           <label><span>Ownership</span><select name="status"><option value="">All</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Wanted</option></select></label>
           <label><span>Manufacturer</span><select name="manufacturer"><option value="">All manufacturers</option></select></label>
           <label><span>Year</span><select name="year"><option value="">All years</option></select></label>
           <label><span>Scale</span><select name="scale"><option value="">All scales</option></select></label>
           <label><span>Catalog category</span><select name="category"><option value="">All catalog categories</option></select></label>
-          <label><span>Series</span><select name="series"><option value="">All series</option></select></label>
           <label><span>Sort</span><select name="sort"><option value="source">Catalog order</option><option value="year_desc">Year newest</option><option value="year_asc">Year oldest</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="item_number">Item number</option><option value="manufacturer">Manufacturer</option><option value="recently_acquired">Recently acquired</option><option value="recently_updated">Recently updated</option><option value="owned_first">Owned first</option><option value="missing_first">Missing first</option></select></label>
           <label><span>Checklist visibility</span><select name="scope"><option value="active">Checklist items</option><option value="excluded">Excluded only</option><option value="all">Include excluded</option></select></label>
           <div class="collectibles-filter-actions"><button class="action-button" type="submit">Apply</button><button class="footer-copy-link" type="button" data-collectibles-clear>Clear filters</button></div>

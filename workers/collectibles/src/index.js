@@ -188,7 +188,8 @@ async function listGroups(env, searchParams) {
   const countColumns = `COUNT(DISTINCT c.id) AS total,
     COUNT(DISTINCT CASE WHEN ci.status = 'owned' THEN c.id END) AS owned,
     COUNT(DISTINCT CASE WHEN COALESCE(ci.status, 'not_owned') = 'not_owned' THEN c.id END) AS missing,
-    COUNT(DISTINCT CASE WHEN ci.wanted = 1 THEN c.id END) AS wanted`;
+    COUNT(DISTINCT CASE WHEN ci.wanted = 1 THEN c.id END) AS wanted,
+    MAX(NULLIF(c.primary_image_url, '')) AS image_url`;
   let sql;
   if (groupBy === "category") {
     sql = `SELECT cat.slug AS group_key, cat.name AS label, cat.category_type AS group_type,
@@ -218,6 +219,7 @@ async function listGroups(env, searchParams) {
       label: row.label,
       type: row.group_type || groupBy,
       checklistMode: row.checklist_mode || "normal",
+      image: row.image_url || "",
       total: Number(row.total || 0),
       owned: Number(row.owned || 0),
       missing: Number(row.missing || 0),

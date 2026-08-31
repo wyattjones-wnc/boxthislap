@@ -189,7 +189,7 @@ async function listGroups(env, searchParams) {
     COUNT(DISTINCT CASE WHEN ci.status = 'owned' THEN c.id END) AS owned,
     COUNT(DISTINCT CASE WHEN COALESCE(ci.status, 'not_owned') = 'not_owned' THEN c.id END) AS missing,
     COUNT(DISTINCT CASE WHEN ci.wanted = 1 THEN c.id END) AS wanted,
-    MAX(NULLIF(c.primary_image_url, '')) AS image_url`;
+    COALESCE(MAX(CASE WHEN c.primary_image_url NOT LIKE '%TruckNeeded%' THEN NULLIF(c.primary_image_url, '') END), MAX(NULLIF(c.primary_image_url, ''))) AS image_url`;
   let sql;
   if (groupBy === "category") {
     sql = `SELECT cat.slug AS group_key, cat.name AS label, cat.category_type AS group_type,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeLeagues, normalizeSelectableLeague, partitionPickerTeams, personalTeamIds } from "./followedTeams.js";
+import { followedTeamBadge, normalizeLeagues, normalizeSelectableLeague, partitionPickerTeams, personalTeamIds } from "./followedTeams.js";
 
 test("team picker shows unique canonical domestic leagues", () => {
   const response = {
@@ -39,4 +39,12 @@ test("default teams are listed before all other picker teams", () => {
     defaults: [{ id: "1" }, { id: "2" }],
     others: [{ id: "3" }],
   });
+});
+
+test("known followed teams use their canonical local badges", () => {
+  assert.equal(followedTeamBadge({ badge: "assets/teams/usmnt.svg", id: "4" }), "assets/teams/4/badge.svg");
+  assert.equal(followedTeamBadge({ badge: "assets/teams/uswnt.svg", id: "5" }), "assets/teams/5/badge.svg");
+  assert.equal(followedTeamBadge({ badge: "assets/teams/charlotte-fc.svg", id: "6" }), "assets/teams/6/badge.svg");
+  assert.equal(followedTeamBadge({ badge: "assets/teams/inter-miami-cf.webp", id: "7" }), "assets/teams/7/badge.svg");
+  assert.equal(followedTeamBadge({ badge: "https://example.com/team.png", id: "team:other" }), "https://example.com/team.png");
 });

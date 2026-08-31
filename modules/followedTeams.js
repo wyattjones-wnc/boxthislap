@@ -46,8 +46,11 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   dialogClose?.addEventListener("click", closePicker);
   dialogDone?.addEventListener("click", () => { void save({ closeDialog: true }); });
   dialog?.addEventListener("click", (event) => { if (event.target === dialog) closePicker(); });
+  dialog?.addEventListener("close", unlockPageScroll);
 
   function reset() {
+    if (dialog?.open) dialog.close();
+    unlockPageScroll();
     state.catalog = [];
     state.defaultIds = [];
     state.error = "";
@@ -198,12 +201,18 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     setDialogStatus("");
     renderPicker();
     dialog.showModal();
+    document.documentElement.classList.add("has-followed-teams-dialog");
     window.setTimeout(() => search.focus(), 0);
   }
 
   function closePicker() {
     if (dialog?.open) dialog.close();
+    unlockPageScroll();
     render();
+  }
+
+  function unlockPageScroll() {
+    document.documentElement.classList.remove("has-followed-teams-dialog");
   }
 
   function renderPicker() {
@@ -391,11 +400,20 @@ function normalizeCatalog(response = {}) {
   for (const source of [...fromTopLevel, ...fromLeagues]) {
     const id = String(source.id || "").trim();
     if (!id) continue;
-    const existing = teams.get(id) || { active: source.active !== false, badge: source.crestUrl || source.badge || "", id, leagues: [], name: source.name || id, prettyName: source.prettyName || source.name || id };
+    const existing = teams.get(id) || { active: source.active !== false, badge: followedTeamBadge(source), id, leagues: [], name: source.name || id, prettyName: source.prettyName || source.name || id };
     for (const league of source.leagues || []) if (!existing.leagues.some((entry) => entry.id === String(league.id))) existing.leagues.push({ id: String(league.id), name: String(league.name || "Competition") });
     teams.set(id, existing);
   }
   return [...teams.values()].sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export function followedTeamBadge(team = {}) {
+  const id = String(team.id || "").trim();
+  const localTeamIds = new Set(["1", "2", "3", "4", "5", "6", "7"]);
+  if (localTeamIds.has(id)) {
+    return `assets/teams/${id}/badge.${["1", "2"].includes(id) ? "png" : "svg"}`;
+  }
+  return String(team.crestUrl || team.badge || "").trim();
 }
 
 export function normalizeLeagues(response = {}, catalog = []) {

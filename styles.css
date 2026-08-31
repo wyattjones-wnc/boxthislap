@@ -8562,6 +8562,12 @@ tr:last-child td {
   width: calc(100% - 28px);
 }
 
+html.has-followed-teams-dialog,
+html.has-followed-teams-dialog body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .followed-teams-dialog[open] {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -8608,9 +8614,11 @@ tr:last-child td {
 }
 
 .followed-teams-picker {
+  -webkit-overflow-scrolling: touch;
   min-height: 0;
   overscroll-behavior: contain;
   overflow-y: auto;
+  touch-action: pan-y;
 }
 
 .followed-team-picker-group-label {

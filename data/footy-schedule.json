@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-08-30T14:53:24.945Z",
+  "generatedAt": "2026-08-31T17:38:22.613Z",
   "schemaVersion": 3,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-08-30T14:53:24.945Z",
-    "attemptedAt": "2026-08-30T14:53:24.945Z",
-    "updatedAt": "2026-08-30T14:53:24.945Z",
-    "oldestTeamUpdatedAt": "2026-08-30T14:53:24.945Z",
-    "competitionCount": 11,
-    "competitionFixtureCount": 1971,
+    "generatedAt": "2026-08-31T17:38:22.613Z",
+    "attemptedAt": "2026-08-31T17:38:22.613Z",
+    "updatedAt": "2026-08-31T17:38:22.613Z",
+    "oldestTeamUpdatedAt": "2026-08-31T17:38:22.613Z",
+    "competitionCount": 10,
+    "competitionFixtureCount": 2114,
     "teamCount": 7,
     "fixtureCount": 216,
     "statuses": {
@@ -45,76 +45,14 @@
     "sync": {
       "status": "synced",
       "rows": 248,
-      "syncedAt": "2026-08-30T14:53:24.945Z",
-      "appended": 1,
-      "updated": 247
+      "syncedAt": "2026-08-31T17:38:22.613Z",
+      "appended": 0,
+      "updated": 248
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-08-30T14:58:43.679Z",
-      "competition": {
-        "code": "FACS",
-        "followedTeamNames": [],
-        "id": "4571",
-        "key": "community shield",
-        "name": "FA Community Shield",
-        "priority": 1,
-        "season": "2026",
-        "source": "TheSportsDB",
-        "type": "SUPER_CUP"
-      },
-      "errors": [],
-      "fixtureCount": 1,
-      "fixtures": [
-        {
-          "away": "Manchester City",
-          "awayBadge": "",
-          "date": "2026-08-16",
-          "home": "Arsenal",
-          "homeBadge": "",
-          "id": "TheSportsDB:2520319",
-          "leagueId": "4571",
-          "league": "FA Community Shield",
-          "round": "0",
-          "season": "2026",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2520319"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "",
-          "status": "FT",
-          "time": "14:00:00",
-          "timestamp": "2026-08-16T14:00:00Z",
-          "venue": "Principality Stadium",
-          "isCompetitionFixture": true,
-          "matchId": "footy_comp_thesportsdb_2520319",
-          "followedTeamNames": [
-            "Arsenal"
-          ],
-          "isHome": true,
-          "opponent": "Manchester City",
-          "priority": "1",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
-          "teamId": "1",
-          "teamName": "Arsenal"
-        }
-      ],
-      "notes": [
-        "Loaded all 1 currently published FA Community Shield matches from TheSportsDB."
-      ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
-      "sources": [
-        "TheSportsDB"
-      ],
-      "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
-    },
-    {
-      "attemptedAt": "2026-08-30T14:58:11.938Z",
+      "attemptedAt": "2026-08-31T17:43:03.085Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -475,7 +413,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "19:00:00",
           "timestamp": "2026-08-28T19:00:00Z",
           "venue": "",
@@ -507,7 +445,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -539,7 +477,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -571,7 +509,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -603,7 +541,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "PAUSED",
+          "status": "FINISHED",
           "time": "16:30:00",
           "timestamp": "2026-08-29T16:30:00Z",
           "venue": "",
@@ -667,7 +605,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "13:00:00",
           "timestamp": "2026-08-30T13:00:00Z",
           "venue": "",
@@ -699,7 +637,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "13:00:00",
           "timestamp": "2026-08-30T13:00:00Z",
           "venue": "",
@@ -731,7 +669,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "15:30:00",
           "timestamp": "2026-08-30T15:30:00Z",
           "venue": "",
@@ -12449,15 +12387,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:43.681Z",
+      "attemptedAt": "2026-08-31T17:43:29.417Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -12645,15 +12583,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:24.722Z",
+      "attemptedAt": "2026-08-31T17:43:15.678Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -12669,18 +12607,4678 @@
         "type": "CUP"
       },
       "errors": [],
-      "fixtureCount": 0,
-      "fixtures": [],
-      "notes": [
-        "Loaded the full UEFA Champions League 2026 schedule (0 matches)."
+      "fixtureCount": 144,
+      "fixtures": [
+        {
+          "away": "Aston Villa FC",
+          "awayBadge": "https://crests.football-data.org/58.png",
+          "date": "2026-09-08",
+          "home": "Club Brugge KV",
+          "homeBadge": "https://crests.football-data.org/851.png",
+          "id": "575323",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575323"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-09-08T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575323",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "LASK Linz",
+          "awayBadge": "https://crests.football-data.org/2016.png",
+          "date": "2026-09-08",
+          "home": "PAE AEK",
+          "homeBadge": "https://crests.football-data.org/1899.png",
+          "id": "575324",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575324"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-09-08T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575324",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Internazionale Milano",
+          "awayBadge": "https://crests.football-data.org/108.png",
+          "date": "2026-09-08",
+          "home": "Real Madrid CF",
+          "homeBadge": "https://crests.football-data.org/86.png",
+          "id": "575325",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575325"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-08T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575325",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Manchester City FC",
+          "awayBadge": "https://crests.football-data.org/65.png",
+          "date": "2026-09-08",
+          "home": "FC Porto",
+          "homeBadge": "https://crests.football-data.org/503.png",
+          "id": "575326",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575326"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-08T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575326",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Villarreal CF",
+          "awayBadge": "https://crests.football-data.org/94.png",
+          "date": "2026-09-08",
+          "home": "Borussia Dortmund",
+          "homeBadge": "https://crests.football-data.org/4.png",
+          "id": "575327",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575327"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-08T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575327",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Betis Balompié",
+          "awayBadge": "https://crests.football-data.org/90.png",
+          "date": "2026-09-08",
+          "home": "Lille OSC",
+          "homeBadge": "https://crests.football-data.org/521.png",
+          "id": "575328",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575328"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-08T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575328",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Feyenoord Rotterdam",
+          "awayBadge": "https://crests.football-data.org/675.png",
+          "date": "2026-09-09",
+          "home": "FC Barcelona",
+          "homeBadge": "https://crests.football-data.org/81.png",
+          "id": "575329",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575329",
+            "iCalendar": "6a92f2c554aa8848ac4d6f60"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-09-09T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575329",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": true,
+          "opponent": "Feyenoord Rotterdam",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Viking FK",
+          "awayBadge": "https://crests.football-data.org/5720.png",
+          "date": "2026-09-09",
+          "home": "VfB Stuttgart",
+          "homeBadge": "https://crests.football-data.org/10.png",
+          "id": "575330",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575330"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-09-09T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575330",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Atlético de Madrid",
+          "awayBadge": "https://crests.football-data.org/78.png",
+          "date": "2026-09-09",
+          "home": "Liverpool FC",
+          "homeBadge": "https://crests.football-data.org/64.png",
+          "id": "575331",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575331"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-09T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575331",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "ŠK Slovan Bratislava",
+          "awayBadge": "https://crests.football-data.org/7509.png",
+          "date": "2026-09-09",
+          "home": "Paris Saint-Germain FC",
+          "homeBadge": "https://crests.football-data.org/524.png",
+          "id": "575332",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575332"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-09T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575332",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Arsenal FC",
+          "awayBadge": "https://crests.football-data.org/57.png",
+          "date": "2026-09-09",
+          "home": "SSC Napoli",
+          "homeBadge": "https://crests.football-data.org/113.png",
+          "id": "575333",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575333",
+            "Arsenal.com": "5b9qzpngqafnmsz619l3t73f8",
+            "iCalendar": "6a92eae554aa8848aa16f117"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-09T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_arsenal_com_5b9qzpngqafnmsz619l3t73f8",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": false,
+          "opponent": "SSC Napoli",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "Galatasaray SK",
+          "awayBadge": "https://crests.football-data.org/610.png",
+          "date": "2026-09-09",
+          "home": "Sporting Clube de Portugal",
+          "homeBadge": "https://crests.football-data.org/498.png",
+          "id": "575334",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575334"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-09T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575334",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "AS Roma",
+          "awayBadge": "https://crests.football-data.org/100.png",
+          "date": "2026-09-10",
+          "home": "Fenerbahçe SK",
+          "homeBadge": "https://crests.football-data.org/613.png",
+          "id": "575335",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575335"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-09-10T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575335",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Shakhtar Donetsk",
+          "awayBadge": "https://crests.football-data.org/1887.png",
+          "date": "2026-09-10",
+          "home": "PSV",
+          "homeBadge": "https://crests.football-data.org/674.png",
+          "id": "575336",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575336"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-09-10T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575336",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Bodø/Glimt",
+          "awayBadge": "https://crests.football-data.org/5721.png",
+          "date": "2026-09-10",
+          "home": "FC Bayern München",
+          "homeBadge": "https://crests.football-data.org/5.png",
+          "id": "575337",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575337"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-10T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575337",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sabah FK",
+          "awayBadge": "https://crests.football-data.org/10233.png",
+          "date": "2026-09-10",
+          "home": "Manchester United FC",
+          "homeBadge": "https://crests.football-data.org/66.png",
+          "id": "575338",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575338"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-10T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575338",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "RB Leipzig",
+          "awayBadge": "https://crests.football-data.org/721.png",
+          "date": "2026-09-10",
+          "home": "Como 1907",
+          "homeBadge": "https://crests.football-data.org/7397.png",
+          "id": "575339",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575339"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-10T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575339",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Racing Club de Lens",
+          "awayBadge": "https://crests.football-data.org/546.png",
+          "date": "2026-09-10",
+          "home": "SK Slavia Praha",
+          "homeBadge": "https://crests.football-data.org/930.png",
+          "id": "575340",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "1",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575340"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-09-10T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575340",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sporting Clube de Portugal",
+          "awayBadge": "https://crests.football-data.org/498.png",
+          "date": "2026-10-13",
+          "home": "Racing Club de Lens",
+          "homeBadge": "https://crests.football-data.org/546.png",
+          "id": "575341",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575341"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-13T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575341",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SK Slavia Praha",
+          "awayBadge": "https://crests.football-data.org/930.png",
+          "date": "2026-10-13",
+          "home": "Sabah FK",
+          "homeBadge": "https://crests.football-data.org/10233.png",
+          "id": "575342",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575342"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-13T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575342",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Brugge KV",
+          "awayBadge": "https://crests.football-data.org/851.png",
+          "date": "2026-10-13",
+          "home": "FC Internazionale Milano",
+          "homeBadge": "https://crests.football-data.org/108.png",
+          "id": "575343",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575343"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575343",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Barcelona",
+          "awayBadge": "https://crests.football-data.org/81.png",
+          "date": "2026-10-13",
+          "home": "Galatasaray SK",
+          "homeBadge": "https://crests.football-data.org/610.png",
+          "id": "575344",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575344",
+            "iCalendar": "6a92f2c554aa8848ac4d6f61"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575344",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": false,
+          "opponent": "Galatasaray SK",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Manchester United FC",
+          "awayBadge": "https://crests.football-data.org/66.png",
+          "date": "2026-10-13",
+          "home": "Club Atlético de Madrid",
+          "homeBadge": "https://crests.football-data.org/78.png",
+          "id": "575345",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575345"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575345",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Lille OSC",
+          "awayBadge": "https://crests.football-data.org/521.png",
+          "date": "2026-10-13",
+          "home": "Arsenal FC",
+          "homeBadge": "https://crests.football-data.org/57.png",
+          "id": "575346",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575346"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575346",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": true,
+          "opponent": "Lille OSC",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "FC Bayern München",
+          "awayBadge": "https://crests.football-data.org/5.png",
+          "date": "2026-10-13",
+          "home": "Viking FK",
+          "homeBadge": "https://crests.football-data.org/5720.png",
+          "id": "575347",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575347"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575347",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PSV",
+          "awayBadge": "https://crests.football-data.org/674.png",
+          "date": "2026-10-13",
+          "home": "RB Leipzig",
+          "homeBadge": "https://crests.football-data.org/721.png",
+          "id": "575348",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575348"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575348",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SSC Napoli",
+          "awayBadge": "https://crests.football-data.org/113.png",
+          "date": "2026-10-13",
+          "home": "Villarreal CF",
+          "homeBadge": "https://crests.football-data.org/94.png",
+          "id": "575349",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575349"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575349",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Liverpool FC",
+          "awayBadge": "https://crests.football-data.org/64.png",
+          "date": "2026-10-14",
+          "home": "LASK Linz",
+          "homeBadge": "https://crests.football-data.org/2016.png",
+          "id": "575350",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575350"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-14T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575350",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Como 1907",
+          "awayBadge": "https://crests.football-data.org/7397.png",
+          "date": "2026-10-14",
+          "home": "Feyenoord Rotterdam",
+          "homeBadge": "https://crests.football-data.org/675.png",
+          "id": "575351",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575351"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-14T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575351",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Madrid CF",
+          "awayBadge": "https://crests.football-data.org/86.png",
+          "date": "2026-10-14",
+          "home": "AS Roma",
+          "homeBadge": "https://crests.football-data.org/100.png",
+          "id": "575352",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575352"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575352",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Paris Saint-Germain FC",
+          "awayBadge": "https://crests.football-data.org/524.png",
+          "date": "2026-10-14",
+          "home": "Manchester City FC",
+          "homeBadge": "https://crests.football-data.org/65.png",
+          "id": "575353",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575353"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575353",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Borussia Dortmund",
+          "awayBadge": "https://crests.football-data.org/4.png",
+          "date": "2026-10-14",
+          "home": "FK Bodø/Glimt",
+          "homeBadge": "https://crests.football-data.org/5721.png",
+          "id": "575354",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575354"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575354",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Fenerbahçe SK",
+          "awayBadge": "https://crests.football-data.org/613.png",
+          "date": "2026-10-14",
+          "home": "Aston Villa FC",
+          "homeBadge": "https://crests.football-data.org/58.png",
+          "id": "575355",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575355"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575355",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Porto",
+          "awayBadge": "https://crests.football-data.org/503.png",
+          "date": "2026-10-14",
+          "home": "Real Betis Balompié",
+          "homeBadge": "https://crests.football-data.org/90.png",
+          "id": "575356",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575356"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575356",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PAE AEK",
+          "awayBadge": "https://crests.football-data.org/1899.png",
+          "date": "2026-10-14",
+          "home": "FK Shakhtar Donetsk",
+          "homeBadge": "https://crests.football-data.org/1887.png",
+          "id": "575357",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575357"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575357",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "VfB Stuttgart",
+          "awayBadge": "https://crests.football-data.org/10.png",
+          "date": "2026-10-14",
+          "home": "ŠK Slovan Bratislava",
+          "homeBadge": "https://crests.football-data.org/7509.png",
+          "id": "575358",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "2",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575358"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-14T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575358",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Borussia Dortmund",
+          "awayBadge": "https://crests.football-data.org/4.png",
+          "date": "2026-10-20",
+          "home": "Sabah FK",
+          "homeBadge": "https://crests.football-data.org/10233.png",
+          "id": "575359",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575359"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-20T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575359",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SK Slavia Praha",
+          "awayBadge": "https://crests.football-data.org/930.png",
+          "date": "2026-10-20",
+          "home": "Fenerbahçe SK",
+          "homeBadge": "https://crests.football-data.org/613.png",
+          "id": "575360",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575360"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-20T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575360",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PAE AEK",
+          "awayBadge": "https://crests.football-data.org/1899.png",
+          "date": "2026-10-20",
+          "home": "Manchester City FC",
+          "homeBadge": "https://crests.football-data.org/65.png",
+          "id": "575361",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575361"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575361",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Atlético de Madrid",
+          "awayBadge": "https://crests.football-data.org/78.png",
+          "date": "2026-10-20",
+          "home": "VfB Stuttgart",
+          "homeBadge": "https://crests.football-data.org/10.png",
+          "id": "575362",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575362"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575362",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Villarreal CF",
+          "awayBadge": "https://crests.football-data.org/94.png",
+          "date": "2026-10-20",
+          "home": "Liverpool FC",
+          "homeBadge": "https://crests.football-data.org/64.png",
+          "id": "575363",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575363"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575363",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "ŠK Slovan Bratislava",
+          "awayBadge": "https://crests.football-data.org/7509.png",
+          "date": "2026-10-20",
+          "home": "AS Roma",
+          "homeBadge": "https://crests.football-data.org/100.png",
+          "id": "575364",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575364"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575364",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PSV",
+          "awayBadge": "https://crests.football-data.org/674.png",
+          "date": "2026-10-20",
+          "home": "FC Porto",
+          "homeBadge": "https://crests.football-data.org/503.png",
+          "id": "575365",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575365"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575365",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Bodø/Glimt",
+          "awayBadge": "https://crests.football-data.org/5721.png",
+          "date": "2026-10-20",
+          "home": "SSC Napoli",
+          "homeBadge": "https://crests.football-data.org/113.png",
+          "id": "575366",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575366"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575366",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Barcelona",
+          "awayBadge": "https://crests.football-data.org/81.png",
+          "date": "2026-10-20",
+          "home": "Paris Saint-Germain FC",
+          "homeBadge": "https://crests.football-data.org/524.png",
+          "id": "575367",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575367",
+            "iCalendar": "6a92f2c554aa8848ac4d6f62"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-20T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575367",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": false,
+          "opponent": "Paris Saint-Germain FC",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Manchester United FC",
+          "awayBadge": "https://crests.football-data.org/66.png",
+          "date": "2026-10-21",
+          "home": "Como 1907",
+          "homeBadge": "https://crests.football-data.org/7397.png",
+          "id": "575368",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575368"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-21T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575368",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Galatasaray SK",
+          "awayBadge": "https://crests.football-data.org/610.png",
+          "date": "2026-10-21",
+          "home": "Lille OSC",
+          "homeBadge": "https://crests.football-data.org/521.png",
+          "id": "575369",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575369"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:45:00",
+          "timestamp": "2026-10-21T16:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575369",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "RB Leipzig",
+          "awayBadge": "https://crests.football-data.org/721.png",
+          "date": "2026-10-21",
+          "home": "Real Madrid CF",
+          "homeBadge": "https://crests.football-data.org/86.png",
+          "id": "575370",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575370"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575370",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Shakhtar Donetsk",
+          "awayBadge": "https://crests.football-data.org/1887.png",
+          "date": "2026-10-21",
+          "home": "FC Internazionale Milano",
+          "homeBadge": "https://crests.football-data.org/108.png",
+          "id": "575371",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575371"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575371",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Arsenal FC",
+          "awayBadge": "https://crests.football-data.org/57.png",
+          "date": "2026-10-21",
+          "home": "FC Bayern München",
+          "homeBadge": "https://crests.football-data.org/5.png",
+          "id": "575372",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575372",
+            "Arsenal.com": "5owjsz5b64ovyehzhvmxyctg4",
+            "iCalendar": "6a92eae554aa8848aa16f119"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_arsenal_com_5owjsz5b64ovyehzhvmxyctg4",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": false,
+          "opponent": "FC Bayern München",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "Racing Club de Lens",
+          "awayBadge": "https://crests.football-data.org/546.png",
+          "date": "2026-10-21",
+          "home": "Club Brugge KV",
+          "homeBadge": "https://crests.football-data.org/851.png",
+          "id": "575373",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575373"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575373",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Viking FK",
+          "awayBadge": "https://crests.football-data.org/5720.png",
+          "date": "2026-10-21",
+          "home": "Aston Villa FC",
+          "homeBadge": "https://crests.football-data.org/58.png",
+          "id": "575374",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575374"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575374",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "LASK Linz",
+          "awayBadge": "https://crests.football-data.org/2016.png",
+          "date": "2026-10-21",
+          "home": "Sporting Clube de Portugal",
+          "homeBadge": "https://crests.football-data.org/498.png",
+          "id": "575375",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575375"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575375",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Feyenoord Rotterdam",
+          "awayBadge": "https://crests.football-data.org/675.png",
+          "date": "2026-10-21",
+          "home": "Real Betis Balompié",
+          "homeBadge": "https://crests.football-data.org/90.png",
+          "id": "575376",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "3",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575376"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-10-21T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575376",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sporting Clube de Portugal",
+          "awayBadge": "https://crests.football-data.org/498.png",
+          "date": "2026-11-03",
+          "home": "FK Shakhtar Donetsk",
+          "homeBadge": "https://crests.football-data.org/1887.png",
+          "id": "575377",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575377"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-03T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575377",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "VfB Stuttgart",
+          "awayBadge": "https://crests.football-data.org/10.png",
+          "date": "2026-11-03",
+          "home": "Galatasaray SK",
+          "homeBadge": "https://crests.football-data.org/610.png",
+          "id": "575378",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575378"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-03T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575378",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Internazionale Milano",
+          "awayBadge": "https://crests.football-data.org/108.png",
+          "date": "2026-11-03",
+          "home": "Feyenoord Rotterdam",
+          "homeBadge": "https://crests.football-data.org/675.png",
+          "id": "575379",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575379"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575379",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Aston Villa FC",
+          "awayBadge": "https://crests.football-data.org/58.png",
+          "date": "2026-11-03",
+          "home": "FC Barcelona",
+          "homeBadge": "https://crests.football-data.org/81.png",
+          "id": "575380",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575380",
+            "iCalendar": "6a92f2c554aa88426515def5"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575380",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": true,
+          "opponent": "Aston Villa FC",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "FC Bayern München",
+          "awayBadge": "https://crests.football-data.org/5.png",
+          "date": "2026-11-03",
+          "home": "Club Atlético de Madrid",
+          "homeBadge": "https://crests.football-data.org/78.png",
+          "id": "575381",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575381"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575381",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Paris Saint-Germain FC",
+          "awayBadge": "https://crests.football-data.org/524.png",
+          "date": "2026-11-03",
+          "home": "Villarreal CF",
+          "homeBadge": "https://crests.football-data.org/94.png",
+          "id": "575382",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575382"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575382",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "AS Roma",
+          "awayBadge": "https://crests.football-data.org/100.png",
+          "date": "2026-11-03",
+          "home": "Manchester United FC",
+          "homeBadge": "https://crests.football-data.org/66.png",
+          "id": "575383",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575383"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575383",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Lille OSC",
+          "awayBadge": "https://crests.football-data.org/521.png",
+          "date": "2026-11-03",
+          "home": "FK Bodø/Glimt",
+          "homeBadge": "https://crests.football-data.org/5721.png",
+          "id": "575384",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575384"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575384",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "ŠK Slovan Bratislava",
+          "awayBadge": "https://crests.football-data.org/7509.png",
+          "date": "2026-11-03",
+          "home": "LASK Linz",
+          "homeBadge": "https://crests.football-data.org/2016.png",
+          "id": "575385",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575385"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575385",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Madrid CF",
+          "awayBadge": "https://crests.football-data.org/86.png",
+          "date": "2026-11-04",
+          "home": "PAE AEK",
+          "homeBadge": "https://crests.football-data.org/1899.png",
+          "id": "575386",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575386"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-04T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575386",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Liverpool FC",
+          "awayBadge": "https://crests.football-data.org/64.png",
+          "date": "2026-11-04",
+          "home": "Fenerbahçe SK",
+          "homeBadge": "https://crests.football-data.org/613.png",
+          "id": "575387",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575387"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-04T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575387",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Manchester City FC",
+          "awayBadge": "https://crests.football-data.org/65.png",
+          "date": "2026-11-04",
+          "home": "RB Leipzig",
+          "homeBadge": "https://crests.football-data.org/721.png",
+          "id": "575388",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575388"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575388",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Arsenal FC",
+          "awayBadge": "https://crests.football-data.org/57.png",
+          "date": "2026-11-04",
+          "home": "SK Slavia Praha",
+          "homeBadge": "https://crests.football-data.org/930.png",
+          "id": "575389",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575389",
+            "Arsenal.com": "5txb3hezipnihbbofmxictono"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_arsenal_com_5txb3hezipnihbbofmxictono",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": false,
+          "opponent": "SK Slavia Praha",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "Club Brugge KV",
+          "awayBadge": "https://crests.football-data.org/851.png",
+          "date": "2026-11-04",
+          "home": "PSV",
+          "homeBadge": "https://crests.football-data.org/674.png",
+          "id": "575390",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575390"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575390",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Betis Balompié",
+          "awayBadge": "https://crests.football-data.org/90.png",
+          "date": "2026-11-04",
+          "home": "Borussia Dortmund",
+          "homeBadge": "https://crests.football-data.org/4.png",
+          "id": "575391",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575391"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575391",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SSC Napoli",
+          "awayBadge": "https://crests.football-data.org/113.png",
+          "date": "2026-11-04",
+          "home": "FC Porto",
+          "homeBadge": "https://crests.football-data.org/503.png",
+          "id": "575392",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575392"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575392",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Como 1907",
+          "awayBadge": "https://crests.football-data.org/7397.png",
+          "date": "2026-11-04",
+          "home": "Racing Club de Lens",
+          "homeBadge": "https://crests.football-data.org/546.png",
+          "id": "575393",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575393"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575393",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sabah FK",
+          "awayBadge": "https://crests.football-data.org/10233.png",
+          "date": "2026-11-04",
+          "home": "Viking FK",
+          "homeBadge": "https://crests.football-data.org/5720.png",
+          "id": "575394",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "4",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575394"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-04T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575394",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Aston Villa FC",
+          "awayBadge": "https://crests.football-data.org/58.png",
+          "date": "2026-11-24",
+          "home": "Galatasaray SK",
+          "homeBadge": "https://crests.football-data.org/610.png",
+          "id": "575395",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575395"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-24T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575395",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "LASK Linz",
+          "awayBadge": "https://crests.football-data.org/2016.png",
+          "date": "2026-11-24",
+          "home": "FK Bodø/Glimt",
+          "homeBadge": "https://crests.football-data.org/5721.png",
+          "id": "575396",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575396"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-24T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575396",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PSV",
+          "awayBadge": "https://crests.football-data.org/674.png",
+          "date": "2026-11-24",
+          "home": "Real Madrid CF",
+          "homeBadge": "https://crests.football-data.org/86.png",
+          "id": "575397",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575397"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575397",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SSC Napoli",
+          "awayBadge": "https://crests.football-data.org/113.png",
+          "date": "2026-11-24",
+          "home": "Manchester City FC",
+          "homeBadge": "https://crests.football-data.org/65.png",
+          "id": "575398",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575398"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575398",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Borussia Dortmund",
+          "awayBadge": "https://crests.football-data.org/4.png",
+          "date": "2026-11-24",
+          "home": "Arsenal FC",
+          "homeBadge": "https://crests.football-data.org/57.png",
+          "id": "575399",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575399",
+            "Arsenal.com": "5xcojyufqldi6ttzupcu18bo4",
+            "iCalendar": "6a92eae554aa884cc92ec6a1"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_arsenal_com_5xcojyufqldi6ttzupcu18bo4",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": true,
+          "opponent": "Borussia Dortmund",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "FC Porto",
+          "awayBadge": "https://crests.football-data.org/503.png",
+          "date": "2026-11-24",
+          "home": "Feyenoord Rotterdam",
+          "homeBadge": "https://crests.football-data.org/675.png",
+          "id": "575400",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575400"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575400",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Betis Balompié",
+          "awayBadge": "https://crests.football-data.org/90.png",
+          "date": "2026-11-24",
+          "home": "ŠK Slovan Bratislava",
+          "homeBadge": "https://crests.football-data.org/7509.png",
+          "id": "575401",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575401"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575401",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Racing Club de Lens",
+          "awayBadge": "https://crests.football-data.org/546.png",
+          "date": "2026-11-24",
+          "home": "RB Leipzig",
+          "homeBadge": "https://crests.football-data.org/721.png",
+          "id": "575402",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575402"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575402",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PAE AEK",
+          "awayBadge": "https://crests.football-data.org/1899.png",
+          "date": "2026-11-24",
+          "home": "Como 1907",
+          "homeBadge": "https://crests.football-data.org/7397.png",
+          "id": "575403",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575403"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-24T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575403",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Barcelona",
+          "awayBadge": "https://crests.football-data.org/81.png",
+          "date": "2026-11-25",
+          "home": "Sabah FK",
+          "homeBadge": "https://crests.football-data.org/10233.png",
+          "id": "575404",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575404"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-25T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575404",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": false,
+          "opponent": "Sabah FK",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Villarreal CF",
+          "awayBadge": "https://crests.football-data.org/94.png",
+          "date": "2026-11-25",
+          "home": "SK Slavia Praha",
+          "homeBadge": "https://crests.football-data.org/930.png",
+          "id": "575405",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575405"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-11-25T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575405",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "VfB Stuttgart",
+          "awayBadge": "https://crests.football-data.org/10.png",
+          "date": "2026-11-25",
+          "home": "FC Internazionale Milano",
+          "homeBadge": "https://crests.football-data.org/108.png",
+          "id": "575406",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575406"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575406",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Viking FK",
+          "awayBadge": "https://crests.football-data.org/5720.png",
+          "date": "2026-11-25",
+          "home": "Club Atlético de Madrid",
+          "homeBadge": "https://crests.football-data.org/78.png",
+          "id": "575407",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575407"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575407",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "AS Roma",
+          "awayBadge": "https://crests.football-data.org/100.png",
+          "date": "2026-11-25",
+          "home": "Paris Saint-Germain FC",
+          "homeBadge": "https://crests.football-data.org/524.png",
+          "id": "575408",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575408"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575408",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Liverpool FC",
+          "awayBadge": "https://crests.football-data.org/64.png",
+          "date": "2026-11-25",
+          "home": "Club Brugge KV",
+          "homeBadge": "https://crests.football-data.org/851.png",
+          "id": "575409",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575409"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575409",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Bayern München",
+          "awayBadge": "https://crests.football-data.org/5.png",
+          "date": "2026-11-25",
+          "home": "Lille OSC",
+          "homeBadge": "https://crests.football-data.org/521.png",
+          "id": "575410",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575410"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575410",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Manchester United FC",
+          "awayBadge": "https://crests.football-data.org/66.png",
+          "date": "2026-11-25",
+          "home": "Sporting Clube de Portugal",
+          "homeBadge": "https://crests.football-data.org/498.png",
+          "id": "575411",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575411"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575411",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Fenerbahçe SK",
+          "awayBadge": "https://crests.football-data.org/613.png",
+          "date": "2026-11-25",
+          "home": "FK Shakhtar Donetsk",
+          "homeBadge": "https://crests.football-data.org/1887.png",
+          "id": "575412",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "5",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575412"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-25T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575412",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sabah FK",
+          "awayBadge": "https://crests.football-data.org/10233.png",
+          "date": "2026-12-08",
+          "home": "Villarreal CF",
+          "homeBadge": "https://crests.football-data.org/94.png",
+          "id": "575413",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575413"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-12-08T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575413",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Feyenoord Rotterdam",
+          "awayBadge": "https://crests.football-data.org/675.png",
+          "date": "2026-12-08",
+          "home": "Viking FK",
+          "homeBadge": "https://crests.football-data.org/5720.png",
+          "id": "575414",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575414"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-12-08T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575414",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Manchester City FC",
+          "awayBadge": "https://crests.football-data.org/65.png",
+          "date": "2026-12-08",
+          "home": "FC Barcelona",
+          "homeBadge": "https://crests.football-data.org/81.png",
+          "id": "575415",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575415",
+            "iCalendar": "6a92f2c554aa8848ac4d6f63"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575415",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": true,
+          "opponent": "Manchester City FC",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Paris Saint-Germain FC",
+          "awayBadge": "https://crests.football-data.org/524.png",
+          "date": "2026-12-08",
+          "home": "Aston Villa FC",
+          "homeBadge": "https://crests.football-data.org/58.png",
+          "id": "575416",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575416"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575416",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SK Slavia Praha",
+          "awayBadge": "https://crests.football-data.org/930.png",
+          "date": "2026-12-08",
+          "home": "FC Bayern München",
+          "homeBadge": "https://crests.football-data.org/5.png",
+          "id": "575417",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575417"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575417",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Brugge KV",
+          "awayBadge": "https://crests.football-data.org/851.png",
+          "date": "2026-12-08",
+          "home": "SSC Napoli",
+          "homeBadge": "https://crests.football-data.org/113.png",
+          "id": "575418",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575418"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575418",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sporting Clube de Portugal",
+          "awayBadge": "https://crests.football-data.org/498.png",
+          "date": "2026-12-08",
+          "home": "AS Roma",
+          "homeBadge": "https://crests.football-data.org/100.png",
+          "id": "575419",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575419"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575419",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "RB Leipzig",
+          "awayBadge": "https://crests.football-data.org/721.png",
+          "date": "2026-12-08",
+          "home": "Manchester United FC",
+          "homeBadge": "https://crests.football-data.org/66.png",
+          "id": "575420",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575420"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575420",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Galatasaray SK",
+          "awayBadge": "https://crests.football-data.org/610.png",
+          "date": "2026-12-08",
+          "home": "PAE AEK",
+          "homeBadge": "https://crests.football-data.org/1899.png",
+          "id": "575421",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575421"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-08T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575421",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Como 1907",
+          "awayBadge": "https://crests.football-data.org/7397.png",
+          "date": "2026-12-09",
+          "home": "Real Betis Balompié",
+          "homeBadge": "https://crests.football-data.org/90.png",
+          "id": "575422",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575422"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-12-09T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575422",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Shakhtar Donetsk",
+          "awayBadge": "https://crests.football-data.org/1887.png",
+          "date": "2026-12-09",
+          "home": "ŠK Slovan Bratislava",
+          "homeBadge": "https://crests.football-data.org/7509.png",
+          "id": "575423",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575423"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2026-12-09T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575423",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Madrid CF",
+          "awayBadge": "https://crests.football-data.org/86.png",
+          "date": "2026-12-09",
+          "home": "Arsenal FC",
+          "homeBadge": "https://crests.football-data.org/57.png",
+          "id": "575280",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575280",
+            "Arsenal.com": "65i87i68uf273xpm2n1et6oes",
+            "iCalendar": "6a92eae554aa884cc92ec6a2"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_arsenal_com_65i87i68uf273xpm2n1et6oes",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": true,
+          "opponent": "Real Madrid CF",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "FC Internazionale Milano",
+          "awayBadge": "https://crests.football-data.org/108.png",
+          "date": "2026-12-09",
+          "home": "Borussia Dortmund",
+          "homeBadge": "https://crests.football-data.org/4.png",
+          "id": "575286",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575286"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575286",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Atlético de Madrid",
+          "awayBadge": "https://crests.football-data.org/78.png",
+          "date": "2026-12-09",
+          "home": "PSV",
+          "homeBadge": "https://crests.football-data.org/674.png",
+          "id": "575290",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575290"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575290",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Porto",
+          "awayBadge": "https://crests.football-data.org/503.png",
+          "date": "2026-12-09",
+          "home": "Liverpool FC",
+          "homeBadge": "https://crests.football-data.org/64.png",
+          "id": "575295",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575295"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575295",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Bodø/Glimt",
+          "awayBadge": "https://crests.football-data.org/5721.png",
+          "date": "2026-12-09",
+          "home": "Racing Club de Lens",
+          "homeBadge": "https://crests.football-data.org/546.png",
+          "id": "575315",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575315"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575315",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Fenerbahçe SK",
+          "awayBadge": "https://crests.football-data.org/613.png",
+          "date": "2026-12-09",
+          "home": "LASK Linz",
+          "homeBadge": "https://crests.football-data.org/2016.png",
+          "id": "575317",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575317"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575317",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Lille OSC",
+          "awayBadge": "https://crests.football-data.org/521.png",
+          "date": "2026-12-09",
+          "home": "VfB Stuttgart",
+          "homeBadge": "https://crests.football-data.org/10.png",
+          "id": "575322",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "6",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575322"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-09T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575322",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Atlético de Madrid",
+          "awayBadge": "https://crests.football-data.org/78.png",
+          "date": "2027-01-19",
+          "home": "FK Bodø/Glimt",
+          "homeBadge": "https://crests.football-data.org/5721.png",
+          "id": "575292",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575292"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2027-01-19T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575292",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Feyenoord Rotterdam",
+          "awayBadge": "https://crests.football-data.org/675.png",
+          "date": "2027-01-19",
+          "home": "Galatasaray SK",
+          "homeBadge": "https://crests.football-data.org/610.png",
+          "id": "575318",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575318"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2027-01-19T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575318",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "LASK Linz",
+          "awayBadge": "https://crests.football-data.org/2016.png",
+          "date": "2027-01-19",
+          "home": "Real Madrid CF",
+          "homeBadge": "https://crests.football-data.org/86.png",
+          "id": "575282",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575282"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575282",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Liverpool FC",
+          "awayBadge": "https://crests.football-data.org/64.png",
+          "date": "2027-01-19",
+          "home": "FC Internazionale Milano",
+          "homeBadge": "https://crests.football-data.org/108.png",
+          "id": "575285",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575285"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575285",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Club Brugge KV",
+          "awayBadge": "https://crests.football-data.org/851.png",
+          "date": "2027-01-19",
+          "home": "VfB Stuttgart",
+          "homeBadge": "https://crests.football-data.org/10.png",
+          "id": "575302",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575302"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575302",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Borussia Dortmund",
+          "awayBadge": "https://crests.football-data.org/4.png",
+          "date": "2027-01-19",
+          "home": "Aston Villa FC",
+          "homeBadge": "https://crests.football-data.org/58.png",
+          "id": "575303",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575303"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575303",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "AS Roma",
+          "awayBadge": "https://crests.football-data.org/100.png",
+          "date": "2027-01-19",
+          "home": "PAE AEK",
+          "homeBadge": "https://crests.football-data.org/1899.png",
+          "id": "575307",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575307"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575307",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SK Slavia Praha",
+          "awayBadge": "https://crests.football-data.org/930.png",
+          "date": "2027-01-19",
+          "home": "FC Porto",
+          "homeBadge": "https://crests.football-data.org/503.png",
+          "id": "575308",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575308"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575308",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "ŠK Slovan Bratislava",
+          "awayBadge": "https://crests.football-data.org/7509.png",
+          "date": "2027-01-19",
+          "home": "Lille OSC",
+          "homeBadge": "https://crests.football-data.org/521.png",
+          "id": "575321",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575321"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-19T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575321",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Villarreal CF",
+          "awayBadge": "https://crests.football-data.org/94.png",
+          "date": "2027-01-20",
+          "home": "Fenerbahçe SK",
+          "homeBadge": "https://crests.football-data.org/613.png",
+          "id": "575314",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575314"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2027-01-20T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575314",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "SSC Napoli",
+          "awayBadge": "https://crests.football-data.org/113.png",
+          "date": "2027-01-20",
+          "home": "Sabah FK",
+          "homeBadge": "https://crests.football-data.org/10233.png",
+          "id": "575320",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575320"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:45:00",
+          "timestamp": "2027-01-20T17:45:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575320",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Manchester City FC",
+          "awayBadge": "https://crests.football-data.org/65.png",
+          "date": "2027-01-20",
+          "home": "Racing Club de Lens",
+          "homeBadge": "https://crests.football-data.org/546.png",
+          "id": "575284",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575284"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575284",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Barcelona",
+          "awayBadge": "https://crests.football-data.org/81.png",
+          "date": "2027-01-20",
+          "home": "Sporting Clube de Portugal",
+          "homeBadge": "https://crests.football-data.org/498.png",
+          "id": "575288",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575288"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575288",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": false,
+          "opponent": "Sporting Clube de Portugal",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Paris Saint-Germain FC",
+          "awayBadge": "https://crests.football-data.org/524.png",
+          "date": "2027-01-20",
+          "home": "Como 1907",
+          "homeBadge": "https://crests.football-data.org/7397.png",
+          "id": "575294",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575294"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575294",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Arsenal FC",
+          "awayBadge": "https://crests.football-data.org/57.png",
+          "date": "2027-01-20",
+          "home": "Real Betis Balompié",
+          "homeBadge": "https://crests.football-data.org/90.png",
+          "id": "575297",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575297",
+            "Arsenal.com": "6a6y4rxs3t4suxsmo5d52k0lw",
+            "iCalendar": "6a92eae554aa88426515d990"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_arsenal_com_6a6y4rxs3t4suxsmo5d52k0lw",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": false,
+          "opponent": "Real Betis Balompié",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "FC Bayern München",
+          "awayBadge": "https://crests.football-data.org/5.png",
+          "date": "2027-01-20",
+          "home": "Manchester United FC",
+          "homeBadge": "https://crests.football-data.org/66.png",
+          "id": "575300",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575300"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575300",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PSV",
+          "awayBadge": "https://crests.football-data.org/674.png",
+          "date": "2027-01-20",
+          "home": "Viking FK",
+          "homeBadge": "https://crests.football-data.org/5720.png",
+          "id": "575312",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575312"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575312",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Shakhtar Donetsk",
+          "awayBadge": "https://crests.football-data.org/1887.png",
+          "date": "2027-01-20",
+          "home": "RB Leipzig",
+          "homeBadge": "https://crests.football-data.org/721.png",
+          "id": "575313",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "7",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575313"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-20T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575313",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Real Madrid CF",
+          "awayBadge": "https://crests.football-data.org/86.png",
+          "date": "2027-01-27",
+          "home": "FK Shakhtar Donetsk",
+          "homeBadge": "https://crests.football-data.org/1887.png",
+          "id": "575281",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575281"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575281",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sporting Clube de Portugal",
+          "awayBadge": "https://crests.football-data.org/498.png",
+          "date": "2027-01-27",
+          "home": "Manchester City FC",
+          "homeBadge": "https://crests.football-data.org/65.png",
+          "id": "575283",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575283"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575283",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Internazionale Milano",
+          "awayBadge": "https://crests.football-data.org/108.png",
+          "date": "2027-01-27",
+          "home": "ŠK Slovan Bratislava",
+          "homeBadge": "https://crests.football-data.org/7509.png",
+          "id": "575287",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575287"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575287",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Como 1907",
+          "awayBadge": "https://crests.football-data.org/7397.png",
+          "date": "2027-01-27",
+          "home": "FC Barcelona",
+          "homeBadge": "https://crests.football-data.org/81.png",
+          "id": "575289",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575289",
+            "iCalendar": "6a92f2c554aa8848ac4d6f64"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575289",
+          "followedTeamNames": [
+            "Barcelona"
+          ],
+          "isHome": true,
+          "opponent": "Como 1907",
+          "priority": "2",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
+          "teamId": "2",
+          "teamName": "Barcelona"
+        },
+        {
+          "away": "Fenerbahçe SK",
+          "awayBadge": "https://crests.football-data.org/613.png",
+          "date": "2027-01-27",
+          "home": "Club Atlético de Madrid",
+          "homeBadge": "https://crests.football-data.org/78.png",
+          "id": "575291",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575291"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575291",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Galatasaray SK",
+          "awayBadge": "https://crests.football-data.org/610.png",
+          "date": "2027-01-27",
+          "home": "Paris Saint-Germain FC",
+          "homeBadge": "https://crests.football-data.org/524.png",
+          "id": "575293",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575293"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575293",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Racing Club de Lens",
+          "awayBadge": "https://crests.football-data.org/546.png",
+          "date": "2027-01-27",
+          "home": "Liverpool FC",
+          "homeBadge": "https://crests.football-data.org/64.png",
+          "id": "575296",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575296"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575296",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Sabah FK",
+          "awayBadge": "https://crests.football-data.org/10233.png",
+          "date": "2027-01-27",
+          "home": "Arsenal FC",
+          "homeBadge": "https://crests.football-data.org/57.png",
+          "id": "575298",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575298"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575298",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": true,
+          "opponent": "Sabah FK",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal"
+        },
+        {
+          "away": "Real Betis Balompié",
+          "awayBadge": "https://crests.football-data.org/90.png",
+          "date": "2027-01-27",
+          "home": "FC Bayern München",
+          "homeBadge": "https://crests.football-data.org/5.png",
+          "id": "575299",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575299"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575299",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FK Bodø/Glimt",
+          "awayBadge": "https://crests.football-data.org/5721.png",
+          "date": "2027-01-27",
+          "home": "Club Brugge KV",
+          "homeBadge": "https://crests.football-data.org/851.png",
+          "id": "575301",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575301"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575301",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "PAE AEK",
+          "awayBadge": "https://crests.football-data.org/1899.png",
+          "date": "2027-01-27",
+          "home": "Borussia Dortmund",
+          "homeBadge": "https://crests.football-data.org/4.png",
+          "id": "575304",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575304"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575304",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Aston Villa FC",
+          "awayBadge": "https://crests.football-data.org/58.png",
+          "date": "2027-01-27",
+          "home": "SK Slavia Praha",
+          "homeBadge": "https://crests.football-data.org/930.png",
+          "id": "575305",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575305"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575305",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Lille OSC",
+          "awayBadge": "https://crests.football-data.org/521.png",
+          "date": "2027-01-27",
+          "home": "AS Roma",
+          "homeBadge": "https://crests.football-data.org/100.png",
+          "id": "575306",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575306"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575306",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "FC Porto",
+          "awayBadge": "https://crests.football-data.org/503.png",
+          "date": "2027-01-27",
+          "home": "LASK Linz",
+          "homeBadge": "https://crests.football-data.org/2016.png",
+          "id": "575309",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575309"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575309",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Manchester United FC",
+          "awayBadge": "https://crests.football-data.org/66.png",
+          "date": "2027-01-27",
+          "home": "Villarreal CF",
+          "homeBadge": "https://crests.football-data.org/94.png",
+          "id": "575310",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575310"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575310",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "VfB Stuttgart",
+          "awayBadge": "https://crests.football-data.org/10.png",
+          "date": "2027-01-27",
+          "home": "PSV",
+          "homeBadge": "https://crests.football-data.org/674.png",
+          "id": "575311",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575311"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575311",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "RB Leipzig",
+          "awayBadge": "https://crests.football-data.org/721.png",
+          "date": "2027-01-27",
+          "home": "Feyenoord Rotterdam",
+          "homeBadge": "https://crests.football-data.org/675.png",
+          "id": "575316",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575316"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575316",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        },
+        {
+          "away": "Viking FK",
+          "awayBadge": "https://crests.football-data.org/5720.png",
+          "date": "2027-01-27",
+          "home": "SSC Napoli",
+          "homeBadge": "https://crests.football-data.org/113.png",
+          "id": "575319",
+          "isCompetitionFixture": true,
+          "leagueId": "2001",
+          "league": "UEFA Champions League",
+          "round": "8",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "575319"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2027-01-27T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_575319",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": ""
+        }
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
-      "sources": [],
-      "status": "no-fixtures",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "notes": [
+        "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
+      ],
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
+      "sources": [
+        "football-data.org"
+      ],
+      "status": "updated",
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:31.318Z",
+      "attemptedAt": "2026-08-31T17:43:22.315Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -13432,7 +18030,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-08-29T15:00:00Z",
           "venue": "",
@@ -13464,7 +18062,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "17:00:00",
           "timestamp": "2026-08-29T17:00:00Z",
           "venue": "",
@@ -13498,7 +18096,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "19:30:00",
           "timestamp": "2026-08-29T19:30:00Z",
           "venue": "",
@@ -13530,7 +18128,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-08-30T15:00:00Z",
           "venue": "",
@@ -13562,7 +18160,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "time": "17:30:00",
           "timestamp": "2026-08-30T17:30:00Z",
           "venue": "",
@@ -13626,7 +18224,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "time": "17:30:00",
           "timestamp": "2026-08-31T17:30:00Z",
           "venue": "",
@@ -25048,15 +29646,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:38.029Z",
+      "attemptedAt": "2026-08-31T17:43:29.413Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -25904,7 +30502,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -25936,7 +30534,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -25968,7 +30566,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -26000,7 +30598,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26032,7 +30630,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26064,7 +30662,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26096,7 +30694,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26128,7 +30726,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26160,7 +30758,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26192,7 +30790,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -26224,7 +30822,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -27226,7 +31824,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "2026-09-09 17:45:00Z",
+          "status": "TIMED",
           "time": "18:45:00",
           "timestamp": "2026-09-09T18:45:00Z",
           "venue": "",
@@ -27741,7 +32339,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "2026-09-08 17:45:00Z",
+          "status": "TIMED",
           "time": "18:45:00",
           "timestamp": "2026-09-15T18:45:00Z",
           "venue": "",
@@ -27773,7 +32371,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "2026-09-08 17:45:00Z",
+          "status": "TIMED",
           "time": "18:45:00",
           "timestamp": "2026-09-15T18:45:00Z",
           "venue": "",
@@ -28160,7 +32758,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "2026-09-19 13:00:00Z",
+          "status": "TIMED",
           "time": "12:30:00",
           "timestamp": "2026-09-20T12:30:00Z",
           "venue": "",
@@ -42883,15 +47481,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:43.682Z",
+      "attemptedAt": "2026-08-31T17:43:29.418Z",
       "competition": {
         "code": "SDE",
         "followedTeamNames": [
@@ -42981,15 +47579,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:50.404Z",
+      "attemptedAt": "2026-08-31T17:43:35.326Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -53509,7 +58107,7 @@
           "time": "23:30:00",
           "timestamp": "2026-08-29T23:30:00Z",
           "venue": "Mercedes-Benz Stadium, Atlanta, GA",
-          "matchId": "footy_357b5741dbd5",
+          "matchId": "footy_comp_icalendar_mls_mat_0009jv",
           "followedTeamNames": [
             "Charlotte FC"
           ],
@@ -53577,7 +58175,7 @@
           "time": "23:30:00",
           "timestamp": "2026-08-29T23:30:00Z",
           "venue": "Nu Stadium, Miami, FL",
-          "matchId": "footy_7b035a08e65e",
+          "matchId": "footy_comp_icalendar_mls_mat_0009k1",
           "followedTeamNames": [
             "Inter Miami CF"
           ],
@@ -59975,15 +64573,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:50.411Z",
+      "attemptedAt": "2026-08-31T17:43:35.333Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -62619,15 +67217,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (79 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:50.416Z",
+      "attemptedAt": "2026-08-31T17:43:35.338Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -64675,15 +69273,15 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (61 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     },
     {
-      "attemptedAt": "2026-08-30T14:58:50.416Z",
+      "attemptedAt": "2026-08-31T17:43:35.338Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -64739,19 +69337,19 @@
       "notes": [
         "Loaded the full available Campeones Cup schedule (1 matches)."
       ],
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-08-30T14:53:24.945Z"
+      "updatedAt": "2026-08-31T17:38:22.613Z"
     }
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -66798,19 +71396,19 @@
         }
       ],
       "notes": [
-        "Loaded 45 SCHEDULED matches from 2026-08-30 through 2027-08-30.",
-        "Running competitions: FA Community Shield (COM), Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
+        "Loaded 45 SCHEDULED matches from 2026-08-31 through 2027-08-31.",
+        "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 46 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-08-30.",
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-08-31.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -67213,12 +71811,12 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
-          "time": "00:00:00",
-          "timestamp": "2026-09-13T00:00:00Z",
+          "time": "14:15:00",
+          "timestamp": "2026-09-13T14:15:00Z",
           "venue": "Valencia, Valencia",
           "lastSeen": "",
           "matchId": "footy_a7ac6d0d7d69",
@@ -67248,12 +71846,12 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
-          "time": "00:00:00",
-          "timestamp": "2026-09-16T00:00:00Z",
+          "time": "19:30:00",
+          "timestamp": "2026-09-16T19:30:00Z",
           "venue": "Barcelona, Barcelona",
           "lastSeen": "",
           "matchId": "footy_76fb319e0bc6",
@@ -67262,7 +71860,7 @@
         {
           "away": "FC Barcelona",
           "awayBadge": "",
-          "date": "2026-09-20",
+          "date": "2026-09-19",
           "home": "Sevilla FC",
           "homeBadge": "",
           "id": "564690",
@@ -67283,16 +71881,16 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
-          "time": "00:00:00",
-          "timestamp": "2026-09-20T00:00:00Z",
+          "time": "19:00:00",
+          "timestamp": "2026-09-19T19:00:00Z",
           "venue": "Sevilla, Sevilla",
-          "lastSeen": "",
+          "isFriendly": false,
           "matchId": "footy_1548b5fb0796",
-          "isFriendly": false
+          "lastSeen": ""
         },
         {
           "away": "Getafe CF",
@@ -68773,18 +73371,18 @@
         }
       ],
       "notes": [
-        "Loaded 44 SCHEDULED matches from 2026-08-30 through 2027-08-30.",
+        "Loaded 44 SCHEDULED matches from 2026-08-31 through 2027-08-31.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 49 iCalendar fixtures from 2026-07-01 through 2027-08-30.",
+        "Loaded 49 iCalendar fixtures from 2026-07-01 through 2027-08-31.",
         "Preserved 3 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -70567,18 +75165,18 @@
         }
       ],
       "notes": [
-        "Loaded 43 SCHEDULED matches from 2026-08-30 through 2027-08-30.",
+        "Loaded 43 SCHEDULED matches from 2026-08-31 through 2027-08-31.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-08-30.",
+        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-08-31.",
         "Preserved 4 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -70598,9 +75196,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -70620,9 +75218,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -71599,15 +76197,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 23 iCalendar fixtures from 2026-01-01 through 2027-08-30.",
-        "Preserved 7 registered fixtures that were not returned by providers this run."
+        "Loaded 22 iCalendar fixtures from 2026-01-01 through 2027-08-31.",
+        "Preserved 8 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-08-30T14:53:24.945Z",
-      "updatedAt": "2026-08-30T14:53:24.945Z",
-      "previousUpdatedAt": "2026-08-29T15:06:29.262Z",
+      "attemptedAt": "2026-08-31T17:38:22.613Z",
+      "updatedAt": "2026-08-31T17:38:22.613Z",
+      "previousUpdatedAt": "2026-08-30T14:53:24.945Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -72484,8 +77082,8 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 21 iCalendar fixtures from 2026-01-01 through 2027-08-30.",
-        "Preserved 5 registered fixtures that were not returned by providers this run."
+        "Loaded 20 iCalendar fixtures from 2026-01-01 through 2027-08-31.",
+        "Preserved 6 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     }

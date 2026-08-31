@@ -160,7 +160,7 @@ async function runStatements(statements) { for (let index = 0; index < statement
 async function queryBatch(statements) {
   if (!statements.length) return [];
   const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`, {
-    method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(statements),
+    method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ batch: statements }),
   });
   const value = await response.json().catch(() => null);
   if (!response.ok || !value?.success || value.result?.some((result) => !result.success)) throw new Error(value?.errors?.[0]?.message || value?.result?.find((result) => !result.success)?.error || "Cloudflare D1 batch query failed.");

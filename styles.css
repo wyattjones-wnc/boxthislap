@@ -97,6 +97,12 @@
   text-transform: uppercase;
 }
 
+.collectibles-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -0.2rem 0 0.75rem;
+}
+
 .collectibles-progress-stat div {
   background: var(--soft-strong);
   border-radius: 999px;
@@ -434,6 +440,24 @@
   font-size: 1rem;
   line-height: 1.25;
   min-height: 2.5em;
+}
+
+.collectible-card-exclusion {
+  align-self: start;
+  background: transparent;
+  border: 0;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.25rem 0 0;
+  text-align: left;
+}
+
+.collectible-card-exclusion:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 
 .collectible-exclusion-action {

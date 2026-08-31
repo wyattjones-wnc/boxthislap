@@ -1,6 +1,6 @@
 const EXCLUSION_TYPES = new Set([
   "manufacturer", "product_line", "scale", "release_category",
-  "release_series", "year", "catalog_category", "collectible",
+  "release_series", "year", "catalog_category", "catalog_category_year", "collectible",
 ]);
 const EXCLUDED_SQL = `EXISTS (SELECT 1 FROM collection_exclusions ex WHERE
   (ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id) OR
@@ -10,6 +10,11 @@ const EXCLUDED_SQL = `EXISTS (SELECT 1 FROM collection_exclusions ex WHERE
   (ex.exclusion_type = 'release_category' AND ex.exclusion_value = c.release_category) OR
   (ex.exclusion_type = 'release_series' AND ex.exclusion_value = c.release_series) OR
   (ex.exclusion_type = 'year' AND ex.exclusion_value = CAST(c.year AS TEXT)) OR
+  (ex.exclusion_type = 'catalog_category_year' AND EXISTS (
+    SELECT 1 FROM collectible_categories eycc
+    JOIN catalog_categories eycat ON eycat.id = eycc.category_id
+    WHERE eycc.collectible_id = c.id AND ex.exclusion_value = eycat.slug || ':' || CAST(c.year AS TEXT)
+  )) OR
   (ex.exclusion_type = 'catalog_category' AND EXISTS (
     SELECT 1 FROM collectible_categories ecc
     JOIN catalog_categories ecat ON ecat.id = ecc.category_id
@@ -199,7 +204,9 @@ async function listGroups(env, searchParams) {
   } else {
     sql = `SELECT CAST(c.year AS TEXT) AS group_key,
       CAST(c.year AS TEXT) AS label, ${countColumns},
-      COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded
+      COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded,
+      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND EXISTS (SELECT 1 FROM collectible_categories ycc JOIN catalog_categories ycat ON ycat.id = ycc.category_id WHERE ycc.collectible_id = c.id AND ex.exclusion_value = ycat.slug || ':' || CAST(c.year AS TEXT)) LIMIT 1) AS exclusion_id,
+      (SELECT ex.exclusion_type FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND EXISTS (SELECT 1 FROM collectible_categories ycc JOIN catalog_categories ycat ON ycat.id = ycc.category_id WHERE ycc.collectible_id = c.id AND ex.exclusion_value = ycat.slug || ':' || CAST(c.year AS TEXT)) LIMIT 1) AS exclusion_type
       ${base} WHERE ${where.join(" AND ")} AND c.year IS NOT NULL
       GROUP BY c.year ORDER BY c.year DESC`;
   }

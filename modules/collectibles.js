@@ -36,8 +36,10 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     writeForm(); syncUrl(); void load();
   });
   grid?.addEventListener("click", (event) => {
-    const exclusion = event.target.closest("[data-category-exclusion]");
-    if (exclusion) { void toggleCategoryExclusion(exclusion); return; }
+    const groupExclusion = event.target.closest("[data-group-exclusion-type]");
+    if (groupExclusion) { void toggleGroupExclusion(groupExclusion); return; }
+    const itemExclusion = event.target.closest("[data-card-exclusion]");
+    if (itemExclusion) { void toggleCardExclusion(itemExclusion); return; }
     const group = event.target.closest("[data-collectible-group]");
     if (group) { openGroup(group.dataset.groupType, group.dataset.collectibleGroup); return; }
     if (event.target.closest("[data-collectibles-all-entries]")) { state.directEntries = true; state.filters.page = 1; void load(); return; }
@@ -71,10 +73,9 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
 
   async function renderPage() {
     state.filters = { ...DEFAULT_FILTERS, ...filtersFromUrl() };
-    if (hasActiveFilters()) {
-      form?.removeAttribute("hidden");
-      filterToggle?.setAttribute("aria-expanded", "true");
-    }
+    form?.setAttribute("hidden", "");
+    filterToggle?.setAttribute("aria-expanded", "false");
+    filterToggle?.setAttribute("aria-label", "Show collectible filters");
     writeForm();
     if (!state.options) await loadOptions();
     return load();
@@ -124,7 +125,9 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       const progress = group.total ? Math.round((group.owned / group.total) * 100) : 0;
       const explicitlyExcluded = Boolean(group.exclusionId);
       const referenceOnly = group.checklistMode !== "normal" && !explicitlyExcluded;
-      const exclusionLabel = explicitlyExcluded ? "Restore vertical" : referenceOnly ? (group.checklistMode === "optional" ? "Optional reference" : "Reference only") : "Exclude vertical";
+      const exclusionLabel = explicitlyExcluded ? (groupBy === "category" ? "Restore vertical" : "Restore year") : referenceOnly ? (group.checklistMode === "optional" ? "Optional reference" : "Reference only") : (groupBy === "category" ? "Exclude vertical" : "Exclude year");
+      const exclusionType = groupBy === "category" ? "catalog_category" : "catalog_category_year";
+      const exclusionValue = groupBy === "category" ? group.key : `${state.filters.category}:${group.key}`;
       return `<article class="collectible-group-card${group.excluded === group.total && group.total ? " is-excluded" : ""}">
         <button class="collectible-group-open" type="button" data-collectible-group="${escapeHtml(group.key)}" data-group-type="${escapeHtml(groupBy)}">
           <span class="eyebrow">${groupBy === "category" ? escapeHtml(group.type === "reference" ? "Reference" : "Category") : "Year"}</span>
@@ -132,7 +135,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
           <p><strong>${formatNumber(group.owned)}</strong> have · ${formatNumber(group.total)} total</p>
           <div class="collectible-group-progress" aria-label="${progress}% complete"><i style="width:${progress}%"></i></div>
         </button>
-        ${groupBy === "category" ? `<button class="collectible-group-exclusion" type="button" data-category-exclusion="${escapeHtml(group.key)}"${group.exclusionId ? ` data-exclusion-id="${group.exclusionId}"` : ""}${referenceOnly ? " disabled" : ""} aria-label="${escapeHtml(exclusionLabel)}: ${escapeHtml(group.label)}" title="${escapeHtml(exclusionLabel)}">${escapeHtml(exclusionLabel)}</button>` : ""}
+        <button class="collectible-group-exclusion" type="button" data-group-exclusion-type="${exclusionType}" data-group-exclusion-value="${escapeHtml(exclusionValue)}"${group.exclusionId ? ` data-exclusion-id="${group.exclusionId}"` : ""}${referenceOnly ? " disabled" : ""} aria-label="${escapeHtml(exclusionLabel)}: ${escapeHtml(group.label)}" title="${escapeHtml(exclusionLabel)}">${escapeHtml(exclusionLabel)}</button>
       </article>`;
     }).join("");
   }
@@ -168,11 +171,14 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     grid.innerHTML = items.map((item) => {
       const owned = item.collection?.status === "owned";
       const excluded = item.exclusion?.excluded;
+      const itemExclusionId = item.exclusion?.itemExclusionId;
       const toggleLabel = owned ? `Mark ${item.name} as don't have` : `Mark ${item.name} as have`;
+      const exclusionLabel = itemExclusionId ? "Restore item" : excluded ? "Excluded at higher level" : "Exclude item";
       return `<article class="collectible-card${owned ? " is-owned" : ""}${excluded ? " is-excluded" : ""}" data-collectible-id="${escapeHtml(item.id)}" tabindex="0">
         <div class="collectible-card-image">${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : `<span aria-hidden="true">🏁</span>`}<button class="collectible-check-button${owned ? " is-owned" : ""}" type="button" data-collectible-toggle="${escapeHtml(item.id)}" data-owned="${owned}" aria-pressed="${owned}" aria-label="${escapeHtml(toggleLabel)}" title="${escapeHtml(toggleLabel)}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"></path></svg></button>${item.collection?.wanted ? `<b>Wanted</b>` : ""}</div>
         <div class="collectible-card-body"><p>${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<span>#${escapeHtml(item.itemNumber)}</span>` : ""}
           ${excluded ? `<span>Excluded from checklist</span>` : ""}
+          <button class="collectible-card-exclusion" type="button" data-card-exclusion="${escapeHtml(item.id)}"${itemExclusionId ? ` data-exclusion-id="${itemExclusionId}"` : ""}${excluded && !itemExclusionId ? " disabled" : ""}>${escapeHtml(exclusionLabel)}</button>
         </div></article>`;
     }).join("");
   }
@@ -237,13 +243,28 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     }
   }
 
-  async function toggleCategoryExclusion(button) {
-    const category = button.dataset.categoryExclusion;
+  async function toggleGroupExclusion(button) {
+    const type = button.dataset.groupExclusionType;
+    const value = button.dataset.groupExclusionValue;
     const exclusionId = Number(button.dataset.exclusionId || 0);
     button.disabled = true;
     try {
       if (exclusionId) await authenticatedRequest(`/api/collection/exclusions/${exclusionId}`, { method: "DELETE" });
-      else await authenticatedRequest("/api/collection/exclusions", { method: "POST", body: { type: "catalog_category", value: category, note: "Excluded from category browser." } });
+      else await authenticatedRequest("/api/collection/exclusions", { method: "POST", body: { type, value, note: `Excluded from ${type === "catalog_category_year" ? "category year" : "category"} browser.` } });
+      await load();
+    } catch (error) {
+      button.disabled = false;
+      window.alert(error.message);
+    }
+  }
+
+  async function toggleCardExclusion(button) {
+    const id = button.dataset.cardExclusion;
+    const exclusionId = Number(button.dataset.exclusionId || 0);
+    button.disabled = true;
+    try {
+      if (exclusionId) await authenticatedRequest(`/api/collection/exclusions/${exclusionId}`, { method: "DELETE" });
+      else await authenticatedRequest("/api/collection/exclusions", { method: "POST", body: { type: "collectible", value: id, note: "Excluded from collectible card." } });
       await load();
     } catch (error) {
       button.disabled = false;
@@ -264,7 +285,6 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   function buildQuery() { const params = new URLSearchParams(); for (const [key, value] of Object.entries(state.filters)) { if (value && key !== "page") params.set(key, String(value)); } params.set("page", String(state.filters.page)); params.set("limit", "48"); return params.toString(); }
   function filtersFromUrl() { const params = new URLSearchParams(window.location.search); const value = {}; for (const key of Object.keys(DEFAULT_FILTERS)) { if (!params.has(key)) continue; value[key] = key === "page" ? Number(params.get(key)) || 1 : params.get(key); } if (params.get("includeExcluded") === "true" && !params.has("scope")) value.scope = "all"; return value; }
   function syncUrl() { const url = new URL(window.location.href); for (const key of Object.keys(DEFAULT_FILTERS)) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history.replaceState(null, "", `${url.pathname}${url.search}#collectibles`); }
-  function hasActiveFilters() { return Object.entries(state.filters).some(([key, value]) => !["page", "sort", "scope"].includes(key) && Boolean(value)) || state.filters.scope !== "active" || state.filters.sort !== "source"; }
   async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
   async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
   async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }

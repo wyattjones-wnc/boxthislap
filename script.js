@@ -14363,9 +14363,9 @@ function saveManagerSession(session) {
   renderManagerHub();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
 
+  pageDataPromises.delete("manager-hub");
+  sharedDataPromises.delete("manager-hub");
   if (activePageName === "manager-hub") {
-    pageDataPromises.delete("manager-hub");
-    sharedDataPromises.delete("manager-hub");
     void ensurePageData("manager-hub");
   }
 }

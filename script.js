@@ -11252,13 +11252,16 @@ function renderActivePageContent(pageName = "") {
     followedTeamsController.render();
     return;
   }
-  if (!getCurrentManagerId()) {
-    setFootyNotificationStatus("Sign in and choose followed teams before turning on match alerts.", "error");
-    return;
-  }
-  if (!followedTeamsController.getFollowedTeamIds().length) {
-    setFootyNotificationStatus("Add at least one followed team in Account Settings first.", "error");
-    return;
+  const followedTeamsRequired = pageName === "footy" || pageName.startsWith("footy-team-") || ["footy-goal-assists", "footy-perfect", "footy-seen"].includes(pageName);
+  if (followedTeamsRequired) {
+    if (!getCurrentManagerId()) {
+      setFootyNotificationStatus("Sign in and choose followed teams before turning on match alerts.", "error");
+      return;
+    }
+    if (!followedTeamsController.getFollowedTeamIds().length) {
+      setFootyNotificationStatus("Add at least one followed team in Account Settings first.", "error");
+      return;
+    }
   }
 
   if (pageName === "the-monster-maniac") {

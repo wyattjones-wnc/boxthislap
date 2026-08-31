@@ -112,6 +112,14 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     }));
   }
 
+  function getSelectionState() {
+    const managerId = String(getManagerId() || "").trim();
+    return {
+      hasPersonalSelection: Boolean(managerId) && state.loadedManagerId === managerId && !state.usingDefault && state.savedIds.length > 0,
+      loaded: Boolean(managerId) && state.loadedManagerId === managerId,
+    };
+  }
+
   function render() {
     const managerId = String(getManagerId() || "").trim();
     const canReset = Boolean(managerId) && (!state.usingDefault || hasChanges());
@@ -341,7 +349,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function announce(message) { setStatus(message); }
   function setStatus(message, error = false) { status.textContent = message || ""; status.classList.toggle("is-error", error); }
 
-  return { getFollowedTeamIds, getFollowedTeams, load, openPicker, render, reset, resetToDefault };
+  return { getFollowedTeamIds, getFollowedTeams, getSelectionState, load, openPicker, render, reset, resetToDefault };
 }
 
 function preferenceTeamIds(preferences = {}) {

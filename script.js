@@ -641,6 +641,9 @@ const followedTeamsController = createFollowedTeamsController({
   request: rankingApiRequest,
   onChanged: (teams) => {
     siteData.followedTeams = teams;
+    if (siteData.managerSession) {
+      renderManagerWorkflow(siteData.managerSession.managerId);
+    }
     if (siteData.footySchedule) {
       renderFollowedTeamShortcuts(siteData.footySchedule);
       renderFootySchedule(siteData.footySchedule);
@@ -15142,10 +15145,31 @@ function renderManagerWorkflow(managerId) {
 
 function buildManagerWorkflowItems(managerId) {
   return [
+    ...buildFootyTeamSelectionWorkflowItems(),
     ...buildDraftWorkflowItems(managerId),
     ...buildFantasyCriticWorkflowItems(managerId),
     ...buildFormulaOneWeeklyWorkflowItems(managerId),
   ];
+}
+
+function buildFootyTeamSelectionWorkflowItems() {
+  const selection = followedTeamsController.getSelectionState();
+
+  if (!selection.loaded || selection.hasPersonalSelection) {
+    return [];
+  }
+
+  return [{
+    actionLabel: "Choose teams",
+    description: "Select the clubs you follow to personalize Footy and receive their match notifications.",
+    dueDate: "",
+    id: "footy-team-selection",
+    priority: "1",
+    status: "No Footy teams selected",
+    target: "footy",
+    title: "Choose your Footy teams",
+    url: "",
+  }];
 }
 
 function buildDraftWorkflowItems(managerId) {
@@ -17496,7 +17520,7 @@ function ensureFormulaOneData(year, view = "questions") {
     ));
   }
 
-  if (view === "weekly" && yearKey === "2026") {
+  if ((view === "weekly" || view === "weekly-results") && yearKey === "2026") {
     sourceTasks.push(ensureFormulaOneSource(
       "formulaOne2026RoundForms",
       () => loadSheet("formulaOne2026RoundForms"),

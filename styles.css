@@ -38,6 +38,10 @@
   max-width: 650px;
 }
 
+.collectibles-heading .heading-actions {
+  align-self: start;
+}
+
 .collection-view-tabs {
   display: flex;
   gap: 0.55rem;
@@ -215,6 +219,10 @@
   border-color: color-mix(in srgb, var(--time) 55%, var(--line));
 }
 
+.collectible-card.is-excluded {
+  opacity: 0.72;
+}
+
 .collectible-card-image {
   align-items: center;
   aspect-ratio: 4 / 3;
@@ -246,6 +254,51 @@
   top: 0.55rem;
 }
 
+.collectible-check-button {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  color: transparent;
+  cursor: pointer;
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  left: 0.55rem;
+  padding: 0;
+  position: absolute;
+  top: 0.55rem;
+  width: 38px;
+}
+
+.collectible-check-button svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  width: 22px;
+}
+
+.collectible-check-button:hover,
+.collectible-check-button:focus-visible {
+  border-color: var(--time);
+  color: var(--time);
+  outline: 3px solid color-mix(in srgb, var(--time) 28%, transparent);
+}
+
+.collectible-check-button.is-owned {
+  background: var(--time);
+  border-color: var(--time);
+  color: var(--track-ink);
+}
+
+.collectible-check-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .collectible-card-body {
   display: grid;
   gap: 0.45rem;
@@ -270,23 +323,19 @@
   min-height: 2.5em;
 }
 
-.collectible-have-button {
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 900;
-  margin-top: 0.25rem;
-  padding: 0.55rem;
-  text-transform: uppercase;
+.collectible-exclusion-action {
+  align-items: flex-start;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.35rem;
+  grid-column: 1 / -1;
+  padding-top: 0.8rem;
 }
 
-.collectible-have-button.is-owned {
-  background: color-mix(in srgb, var(--time) 16%, transparent);
-  border-color: var(--time);
-  color: var(--time-strong);
+.collectible-exclusion-action p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0;
 }
 
 .collectibles-pagination {

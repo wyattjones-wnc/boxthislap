@@ -1,7 +1,25 @@
 const EXCLUSION_TYPES = new Set([
   "manufacturer", "product_line", "scale", "release_category",
-  "release_series", "year", "catalog_category",
+  "release_series", "year", "catalog_category", "collectible",
 ]);
+const EXCLUDED_SQL = `EXISTS (SELECT 1 FROM collection_exclusions ex WHERE
+  (ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id) OR
+  (ex.exclusion_type = 'manufacturer' AND ex.exclusion_value = m.slug) OR
+  (ex.exclusion_type = 'product_line' AND ex.exclusion_value = pl.slug) OR
+  (ex.exclusion_type = 'scale' AND ex.exclusion_value = c.scale) OR
+  (ex.exclusion_type = 'release_category' AND ex.exclusion_value = c.release_category) OR
+  (ex.exclusion_type = 'release_series' AND ex.exclusion_value = c.release_series) OR
+  (ex.exclusion_type = 'year' AND ex.exclusion_value = CAST(c.year AS TEXT)) OR
+  (ex.exclusion_type = 'catalog_category' AND EXISTS (
+    SELECT 1 FROM collectible_categories ecc
+    JOIN catalog_categories ecat ON ecat.id = ecc.category_id
+    WHERE ecc.collectible_id = c.id AND ecat.slug = ex.exclusion_value
+  )))`;
+const NORMAL_CHECKLIST_SQL = `EXISTS (
+  SELECT 1 FROM collectible_categories ncc
+  JOIN catalog_categories ncat ON ncat.id = ncc.category_id
+  WHERE ncc.collectible_id = c.id AND ncat.checklist_mode = 'normal'
+)`;
 const SORTS = {
   source: "c.source_sort_order ASC, c.name COLLATE NOCASE ASC",
   year_asc: "c.year ASC, c.name COLLATE NOCASE ASC",
@@ -94,7 +112,9 @@ async function listCollectibles(env, searchParams) {
       pl.slug AS product_line_slug, pl.name AS product_line,
       COALESCE(ci.status, 'not_owned') AS collection_status,
       COALESCE(ci.quantity, 0) AS quantity, COALESCE(ci.wanted, 0) AS wanted,
-      ci.acquired_at, ci.notes, ci.updated_at
+      ci.acquired_at, ci.notes, ci.updated_at,
+      CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN 1 ELSE 0 END AS is_excluded,
+      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id LIMIT 1) AS item_exclusion_id
     ${base}
     ORDER BY ${sort}
     LIMIT ? OFFSET ?
@@ -138,10 +158,10 @@ function buildScope(searchParams) {
     where.push(`(LOWER(c.name) LIKE ? OR LOWER(COALESCE(c.normalized_name, '')) LIKE ? OR LOWER(COALESCE(c.item_number, '')) LIKE ? OR LOWER(COALESCE(c.release_series, '')) LIKE ? OR EXISTS (SELECT 1 FROM collectible_variants cv WHERE cv.collectible_id = c.id AND LOWER(cv.source_name) LIKE ?))`);
     params.push(like, like, like, like, like);
   }
-  if (!booleanQuery(searchParams.get("includeExcluded"))) {
-    where.push("NOT EXISTS (SELECT 1 FROM collection_exclusions ex WHERE (ex.exclusion_type = 'manufacturer' AND ex.exclusion_value = m.slug) OR (ex.exclusion_type = 'product_line' AND ex.exclusion_value = pl.slug) OR (ex.exclusion_type = 'scale' AND ex.exclusion_value = c.scale) OR (ex.exclusion_type = 'release_category' AND ex.exclusion_value = c.release_category) OR (ex.exclusion_type = 'release_series' AND ex.exclusion_value = c.release_series) OR (ex.exclusion_type = 'year' AND ex.exclusion_value = CAST(c.year AS TEXT)) OR (ex.exclusion_type = 'catalog_category' AND EXISTS (SELECT 1 FROM collectible_categories ecc JOIN catalog_categories ecat ON ecat.id = ecc.category_id WHERE ecc.collectible_id = c.id AND ecat.slug = ex.exclusion_value)))");
-    where.push("EXISTS (SELECT 1 FROM collectible_categories ncc JOIN catalog_categories ncat ON ncat.id = ncc.category_id WHERE ncc.collectible_id = c.id AND ncat.checklist_mode = 'normal')");
-  }
+  const requestedScope = cleanQuery(searchParams.get("scope"));
+  const scope = requestedScope || (booleanQuery(searchParams.get("includeExcluded")) ? "all" : "active");
+  if (scope === "excluded") where.push(`(${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL})`);
+  else if (scope !== "all") where.push(`NOT (${EXCLUDED_SQL}) AND ${NORMAL_CHECKLIST_SQL}`);
   return { joins, where, params };
 }
 
@@ -182,7 +202,9 @@ async function readCollectible(env, id) {
       pl.slug AS product_line_slug, pl.name AS product_line,
       COALESCE(ci.status, 'not_owned') AS collection_status,
       COALESCE(ci.quantity, 0) AS quantity, COALESCE(ci.wanted, 0) AS wanted,
-      ci.acquired_at, ci.notes AS collection_notes, ci.updated_at
+      ci.acquired_at, ci.notes AS collection_notes, ci.updated_at,
+      CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN 1 ELSE 0 END AS is_excluded,
+      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id LIMIT 1) AS item_exclusion_id
     FROM collectibles c JOIN manufacturers m ON m.id = c.manufacturer_id
     LEFT JOIN product_lines pl ON pl.id = c.product_line_id
     LEFT JOIN collection_items ci ON ci.collectible_id = c.id WHERE c.id = ?
@@ -254,6 +276,7 @@ function mapCard(row) {
     releaseCategory: row.release_category || "", releaseSeries: row.release_series || "", mix: row.mix_name || "",
     image: row.primary_image_url || "", sourceUrl: row.source_url || "",
     special: Boolean(row.is_special_release), storeExclusive: Boolean(row.is_store_exclusive), eventExclusive: Boolean(row.is_event_exclusive),
+    exclusion: { excluded: Boolean(row.is_excluded), itemExclusionId: row.item_exclusion_id ? Number(row.item_exclusion_id) : null },
     collection: { status: row.collection_status || "not_owned", quantity: Number(row.quantity || 0), wanted: Boolean(row.wanted), acquiredAt: row.acquired_at || null, notes: row.collection_notes ?? row.notes ?? null, updatedAt: row.updated_at || null },
   };
 }

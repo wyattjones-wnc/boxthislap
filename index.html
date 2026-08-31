@@ -510,6 +510,11 @@
             <h1>Collectibles</h1>
             <p>Track releases, fill collection gaps, and keep the full reference catalog close at hand.</p>
           </div>
+          <div class="heading-actions">
+            <button class="icon-action-button" id="collectibles-filter-toggle" type="button" aria-label="Show collectible filters" title="Filters" aria-expanded="false" aria-controls="collectibles-filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+            </button>
+          </div>
         </div>
 
         <div class="collection-view-tabs" data-collection-views role="group" aria-label="Collection view">
@@ -522,7 +527,7 @@
 
         <div class="collectibles-stats" id="collectibles-stats" aria-live="polite"></div>
 
-        <form class="collectibles-filters" id="collectibles-filters">
+        <form class="collectibles-filters" id="collectibles-filters" hidden>
           <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, variant, or series"></label>
           <label><span>Ownership</span><select name="status"><option value="">All</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Wanted</option></select></label>
           <label><span>Manufacturer</span><select name="manufacturer"><option value="">All manufacturers</option></select></label>
@@ -531,7 +536,7 @@
           <label><span>Catalog category</span><select name="category"><option value="">All catalog categories</option></select></label>
           <label><span>Series</span><select name="series"><option value="">All series</option></select></label>
           <label><span>Sort</span><select name="sort"><option value="source">Catalog order</option><option value="year_desc">Year newest</option><option value="year_asc">Year oldest</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="item_number">Item number</option><option value="manufacturer">Manufacturer</option><option value="recently_acquired">Recently acquired</option><option value="recently_updated">Recently updated</option><option value="owned_first">Owned first</option><option value="missing_first">Missing first</option></select></label>
-          <label class="collectibles-checkbox"><input type="checkbox" name="includeExcluded"><span>Include excluded collections</span></label>
+          <label><span>Checklist visibility</span><select name="scope"><option value="active">Checklist items</option><option value="excluded">Excluded only</option><option value="all">Include excluded</option></select></label>
           <div class="collectibles-filter-actions"><button class="action-button" type="submit">Apply</button><button class="footer-copy-link" type="button" data-collectibles-clear>Clear filters</button></div>
         </form>
 

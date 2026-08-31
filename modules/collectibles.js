@@ -189,9 +189,22 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     pagination.innerHTML = pages <= 1 ? "" : `<button type="button" data-collectibles-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>Previous</button><span>Page ${page} of ${pages}</span><button type="button" data-collectibles-page="${page + 1}" ${page >= pages ? "disabled" : ""}>Next</button>`;
   }
 
-  async function quickToggle(id, owned, button) {
+  async function quickToggle(id, desiredOwned, button) {
     button.disabled = true;
-    try { await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: owned ? "owned" : "not_owned" }); await load(); }
+    try {
+      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: desiredOwned ? "owned" : "not_owned" });
+      const card = button.closest("[data-collectible-id]");
+      const name = card?.querySelector("h2")?.textContent?.trim() || "collectible";
+      const toggleLabel = desiredOwned ? `Mark ${name} as don't have` : `Mark ${name} as have`;
+      card?.classList.toggle("is-owned", desiredOwned);
+      button.classList.toggle("is-owned", desiredOwned);
+      button.dataset.owned = String(desiredOwned);
+      button.setAttribute("aria-pressed", String(desiredOwned));
+      button.setAttribute("aria-label", toggleLabel);
+      button.setAttribute("title", toggleLabel);
+      button.disabled = false;
+      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+    }
     catch (error) { button.disabled = false; window.alert(error.message); }
   }
 

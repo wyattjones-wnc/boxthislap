@@ -3,6 +3,7 @@ const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 const BASE_RATING = 1500;
 let catalogCache = null;
+const footyCatalogCache = new Map();
 
 export default {
   async fetch(request, env) {
@@ -18,6 +19,12 @@ export default {
       if (request.method === "GET" && url.pathname === "/health") {
         return json({ ok: true, service: "box-this-lap-rankings" }, 200, cors);
       }
+      if (request.method === "GET" && url.pathname === "/api/teams") {
+        return json({ ok: true, ...(await readFootyTeamCatalog(env, getCatalogChannel(request))) }, 200, {
+          ...cors,
+          "Cache-Control": "public, max-age=300",
+        });
+      }
       if (request.method === "POST" && url.pathname === "/api/auth/bootstrap") {
         return json(await bootstrapAuth(request, env), 200, cors);
       }
@@ -29,6 +36,14 @@ export default {
       }
       if (request.method === "POST" && url.pathname === "/api/auth/verify") {
         return json(await verifyAuth(request, env), 200, cors);
+      }
+
+      if (url.pathname === "/api/me/followed-teams" && ["GET", "PUT"].includes(request.method)) {
+        const manager = await requireManager(request, env);
+        const result = request.method === "GET"
+          ? await readFollowedTeams(env, manager.sub)
+          : await replaceFollowedTeams(env, manager.sub, await readBody(request), getCatalogChannel(request));
+        return json({ ok: true, ...result }, 200, cors);
       }
 
       const draftListsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/draft-lists$/);
@@ -190,11 +205,130 @@ async function issueTokens(env, managerId) {
 }
 
 async function requireOwner(request, env, managerId) {
+  const payload = await requireManager(request, env);
+  if (String(payload.sub) !== String(managerId)) throw httpError(403, "Managers can only edit their own data.");
+  return payload;
+}
+
+async function requireManager(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   const payload = await verifyToken(env, token, "access");
-  if (String(payload.sub) !== String(managerId)) throw httpError(403, "Managers can only edit their own data.");
   return payload;
+}
+
+async function readFollowedTeams(env, managerId) {
+  const [rows, revision] = await Promise.all([
+    env.DB.prepare("SELECT team_id, priority, notifications_enabled, created_at, updated_at FROM manager_followed_teams WHERE manager_id = ? ORDER BY priority").bind(managerId).all(),
+    env.DB.prepare("SELECT revision, updated_at FROM manager_followed_team_revisions WHERE manager_id = ?").bind(managerId).first(),
+  ]);
+  return {
+    revision: Number(revision?.revision || 0),
+    teams: (rows.results || []).map((row) => ({
+      createdAt: row.created_at || "",
+      notificationsEnabled: Boolean(row.notifications_enabled),
+      priority: Number(row.priority),
+      teamId: String(row.team_id),
+      updatedAt: row.updated_at || "",
+    })),
+    updatedAt: revision?.updated_at || "",
+  };
+}
+
+async function replaceFollowedTeams(env, managerId, body, channel = "main") {
+  const teamIds = normalizeSubmittedTeamIds(body.teamIds);
+  const submittedRevision = Number(body.revision);
+  const current = await env.DB.prepare("SELECT revision FROM manager_followed_team_revisions WHERE manager_id = ?").bind(managerId).first();
+  const currentRevision = Number(current?.revision || 0);
+  if (!Number.isInteger(submittedRevision) || submittedRevision !== currentRevision) {
+    throw httpError(409, "Followed teams changed in another session. Reload and try again.");
+  }
+  const catalog = await readFootyTeamCatalogMap(env, channel);
+  const invalidIds = teamIds.filter((teamId) => !catalog.get(teamId)?.active);
+  if (invalidIds.length) throw httpError(422, `Unknown or unavailable team ID: ${invalidIds[0]}`);
+
+  const now = new Date().toISOString();
+  const existingRows = await env.DB.prepare("SELECT team_id, created_at FROM manager_followed_teams WHERE manager_id = ?").bind(managerId).all();
+  const createdAtByTeamId = new Map((existingRows.results || []).map((row) => [String(row.team_id), row.created_at || now]));
+  const statements = [
+    env.DB.prepare("INSERT INTO manager_followed_team_revision_claims (manager_id, revision) VALUES (?, ?)").bind(managerId, currentRevision),
+    env.DB.prepare("DELETE FROM manager_followed_teams WHERE manager_id = ?").bind(managerId),
+    ...teamIds.map((teamId, index) => env.DB.prepare("INSERT INTO manager_followed_teams (manager_id, team_id, priority, notifications_enabled, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)")
+      .bind(managerId, teamId, index + 1, createdAtByTeamId.get(teamId) || now, now)),
+    env.DB.prepare("INSERT INTO manager_followed_team_revisions (manager_id, revision, updated_at) VALUES (?, 1, ?) ON CONFLICT (manager_id) DO UPDATE SET revision = manager_followed_team_revisions.revision + 1, updated_at = excluded.updated_at")
+      .bind(managerId, now),
+  ];
+  try {
+    await env.DB.batch(statements);
+  } catch (error) {
+    if (/manager_followed_team_revision_claims|UNIQUE constraint failed/i.test(String(error?.message || error))) {
+      throw httpError(409, "Followed teams changed in another session. Reload and try again.");
+    }
+    throw error;
+  }
+  return readFollowedTeams(env, managerId);
+}
+
+export function normalizeSubmittedTeamIds(values) {
+  if (!Array.isArray(values)) throw httpError(400, "teamIds must be an array.");
+  if (values.length > 100) throw httpError(400, "A manager can follow up to 100 teams.");
+  const ids = values.map((value) => parseId(value, "team ID"));
+  if (new Set(ids).size !== ids.length) throw httpError(400, "A team can only be followed once.");
+  return ids;
+}
+
+async function readFootyTeamCatalog(env, channel = "main") {
+  const teams = [...(await readFootyTeamCatalogMap(env, channel)).values()];
+  const leagues = new Map();
+  for (const team of teams) {
+    for (const league of team.leagues) {
+      const record = leagues.get(league.id) || { id: league.id, name: league.name, teams: [] };
+      record.teams.push({ id: team.id, name: team.name, prettyName: team.prettyName, crestUrl: team.crestUrl });
+      leagues.set(league.id, record);
+    }
+  }
+  return {
+    leagues: [...leagues.values()]
+      .map((league) => ({ ...league, teams: league.teams.sort((left, right) => left.name.localeCompare(right.name)) }))
+      .sort((left, right) => left.name.localeCompare(right.name)),
+    teams: teams.sort((left, right) => left.name.localeCompare(right.name)),
+  };
+}
+
+async function readFootyTeamCatalogMap(env, channel = "main") {
+  const scheduleUrl = channel === "dev" ? (env.FOOTY_DEV_SCHEDULE_URL || env.FOOTY_SCHEDULE_URL) : env.FOOTY_SCHEDULE_URL;
+  const cached = footyCatalogCache.get(scheduleUrl);
+  if (cached?.expiresAt > Date.now()) return cached.teams;
+  if (!scheduleUrl) throw new Error("Footy team catalog is not configured.");
+  const response = await fetch(scheduleUrl, { cf: { cacheEverything: true, cacheTtl: 300 } });
+  if (!response.ok) throw new Error("The Footy team catalog could not be loaded.");
+  const schedule = await response.json();
+  const sourceTeams = Array.isArray(schedule?.teamCatalog) ? schedule.teamCatalog : [];
+  if (!sourceTeams.length) throw new Error("The Footy team catalog is empty.");
+  const teams = new Map();
+  for (const source of sourceTeams) {
+    const id = parseId(source.id, "team ID");
+    if (teams.has(id)) throw new Error(`Duplicate canonical Footy team ID: ${id}`);
+    const name = String(source.name || "").trim();
+    if (!name) throw new Error(`Footy team ${id} has no display name.`);
+    teams.set(id, {
+      active: source.active !== false,
+      crestUrl: String(source.badge || source.crestUrl || ""),
+      id,
+      leagues: (Array.isArray(source.leagues) ? source.leagues : []).map((league) => ({
+        id: parseId(league.id, "league ID"),
+        name: String(league.name || "Competition").trim(),
+      })),
+      name,
+      prettyName: String(source.prettyName || name),
+    });
+  }
+  footyCatalogCache.set(scheduleUrl, { expiresAt: Date.now() + 5 * 60 * 1000, teams });
+  return teams;
+}
+
+function getCatalogChannel(request) {
+  return request.headers.get("X-Box-This-Lap-Channel") === "dev" ? "dev" : "main";
 }
 
 async function readDraftLists(env, managerId) {
@@ -703,6 +837,6 @@ function clampRank(value, max) { const rank = Number(value); return Number.isInt
 function expected(rating, opponent) { return 1 / (1 + 10 ** ((opponent - rating) / 400)); }
 async function readBody(request) { try { return await request.json(); } catch { throw httpError(400, "Request body must be valid JSON."); } }
 function allowedOrigin(origin, env) { return !origin || String(env.ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()).includes(origin); }
-function corsHeaders(origin, env) { const headers = { "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "DELETE, GET, POST, PATCH, PUT, OPTIONS", "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", Vary: "Origin" }; if (origin && allowedOrigin(origin, env)) headers["Access-Control-Allow-Origin"] = origin; return headers; }
+function corsHeaders(origin, env) { const headers = { "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Box-This-Lap-Channel", "Access-Control-Allow-Methods": "DELETE, GET, POST, PATCH, PUT, OPTIONS", "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", Vary: "Origin, X-Box-This-Lap-Channel" }; if (origin && allowedOrigin(origin, env)) headers["Access-Control-Allow-Origin"] = origin; return headers; }
 function json(data, status, headers) { return new Response(JSON.stringify(data), { status, headers }); }
 function httpError(status, message) { const error = new Error(message); error.status = status; return error; }

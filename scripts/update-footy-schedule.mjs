@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { attachCanonicalFootyTeams } from "./footy-team-catalog.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -291,10 +292,11 @@ async function main() {
     previousSchedules: previousPayload?.teamSchedules,
     teams,
   }));
+  const teamCatalog = attachCanonicalFootyTeams({ competitionSchedules, teamSchedules });
   const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
   const payload = {
     generatedAt,
-    schemaVersion: 3,
+    schemaVersion: 4,
     source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
     updateTracker: buildFileUpdateTracker({ competitionSchedules, generatedAt, teamSchedules }),
     prioritySets,
@@ -303,6 +305,7 @@ async function main() {
       sync: footyMatchSync,
     },
     competitionSchedules,
+    teamCatalog,
     teamSchedules,
   };
 
@@ -477,9 +480,11 @@ function normalizeFootballDataMatch(match, team) {
   return {
     away: awayTeam,
     awayBadge: "",
+    awayProviderTeamId: String(match.awayTeam?.id || ""),
     date: timestamp.slice(0, 10),
     home: homeTeam,
     homeBadge: "",
+    homeProviderTeamId: String(match.homeTeam?.id || ""),
     id: String(match.id || ""),
     leagueId: String(match.competition?.id || ""),
     isHome,
@@ -686,9 +691,11 @@ function normalizeFootballDataCompetitionMatch(match) {
   return {
     away: match.awayTeam?.name || "",
     awayBadge: match.awayTeam?.crest || "",
+    awayProviderTeamId: String(match.awayTeam?.id || ""),
     date: timestamp.slice(0, 10),
     home: match.homeTeam?.name || "",
     homeBadge: match.homeTeam?.crest || "",
+    homeProviderTeamId: String(match.homeTeam?.id || ""),
     id: String(match.id || ""),
     isCompetitionFixture: true,
     leagueId: String(match.competition?.id || ""),
@@ -997,9 +1004,11 @@ function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
   return {
     away: awayTeam,
     awayBadge: "",
+    awayProviderTeamId: String(event.idAwayTeam || ""),
     date,
     home: homeTeam,
     homeBadge: "",
+    homeProviderTeamId: String(event.idHomeTeam || ""),
     id: event.idEvent ? `${SPORTDB_PROVIDER_NAME}:${event.idEvent}` : "",
     leagueId: String(event.idLeague || ""),
     isHome,
@@ -1036,9 +1045,11 @@ function normalizeArsenalMatch(match, team, arsenalTeamId) {
   return {
     away: awayTeam,
     awayBadge: "",
+    awayProviderTeamId: String(contestants[1]?.id || ""),
     date: timestamp.slice(0, 10) || String(matchInfo.localDate || matchInfo.date || "").slice(0, 10),
     home: homeTeam,
     homeBadge: "",
+    homeProviderTeamId: String(contestants[0]?.id || ""),
     id: matchInfo.id ? `${ARSENAL_PROVIDER_NAME}:${matchInfo.id}` : "",
     leagueId: String(matchInfo.competition?.id || ""),
     isHome,

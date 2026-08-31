@@ -49,7 +49,8 @@ export default {
 
       return withCors(new Response("Not found", { status: 404 }), env);
     } catch (error) {
-      return json({ error: error.message || String(error), ok: false }, env, 500);
+      const status = Number(error?.status || 500);
+      return json({ error: status >= 500 ? "Footy notification service failed." : error.message, ok: false }, env, status);
     }
   },
 
@@ -59,7 +60,8 @@ export default {
 };
 
 async function subscribe(request, env) {
-  assertEnv(env, ["FOOTY_PUSH_KV", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"]);
+  assertEnv(env, ["FOOTY_PUSH_KV", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT", "AUTH_SECRET"]);
+  const manager = await requireManager(request, env);
   const body = await request.json();
   const subscription = normalizeSubscription(body.subscription || body);
   const subscriptionHash = await hashText(subscription.endpoint);
@@ -68,7 +70,7 @@ async function subscribe(request, env) {
     createdAt: new Date().toISOString(),
     endpoint: subscription.endpoint,
     keys: subscription.keys,
-    managerId: String(body.managerId || "").trim(),
+    managerId: String(manager.sub),
     pageUrl: String(body.pageUrl || "").trim(),
     updatedAt: new Date().toISOString(),
     userAgent: String(body.userAgent || "").trim(),
@@ -136,6 +138,7 @@ async function getFootyPushDebug(env) {
 
 async function sendDueFootyAlerts(env) {
   assertEnv(env, [
+    "DB",
     "FOOTY_PUSH_KV",
     "FOOTY_SCHEDULE_URL",
     "VAPID_PUBLIC_KEY",
@@ -164,15 +167,29 @@ async function sendDueFootyAlerts(env) {
   let skipped = 0;
   let failed = 0;
   let removed = 0;
+  const followedTeamIdsByManager = new Map();
 
   for (const subscription of subscriptions) {
+    const managerId = String(subscription.record.managerId || "").trim();
+    if (!managerId) {
+      skipped += 1;
+      continue;
+    }
+    if (!followedTeamIdsByManager.has(managerId)) {
+      followedTeamIdsByManager.set(managerId, await readManagerFollowedTeamIds(env, managerId));
+    }
+    const followedTeamIds = followedTeamIdsByManager.get(managerId);
     const channel = getFootySubscriptionChannel(subscription.record);
     const dueAlerts = dueAlertsByChannel[channel];
     const pendingNotifications = [];
     const pendingSentKeys = [];
 
     for (const alert of dueAlerts) {
-      const sentKey = `${SENT_PREFIX}${alert.key}:${subscription.hash}`;
+      if (!alert.teamIds.some((teamId) => followedTeamIds.has(teamId))) {
+        skipped += 1;
+        continue;
+      }
+      const sentKey = `${SENT_PREFIX}${alert.key}:${managerId}`;
       const wasSent = await env.FOOTY_PUSH_KV.get(sentKey);
 
       if (wasSent) {
@@ -292,12 +309,26 @@ function getDueFootyAlerts(schedule, env) {
       alerts.push({
         body: [teams, formatFixtureTime(fixtureTime)].filter(Boolean).join(" • "),
         key: `${getFixtureKey(fixture)}:${offset.key}`,
+        teamIds: getFixtureTeamIds(fixture),
         title,
       });
     });
   });
 
   return alerts;
+}
+
+export function getFixtureTeamIds(fixture = {}) {
+  return [...new Set([
+    String(fixture.homeTeamId || "").trim(),
+    String(fixture.awayTeamId || "").trim(),
+  ].filter(Boolean))];
+}
+
+async function readManagerFollowedTeamIds(env, managerId) {
+  const result = await env.DB.prepare("SELECT team_id FROM manager_followed_teams WHERE manager_id = ? AND notifications_enabled = 1")
+    .bind(managerId).all();
+  return new Set((result.results || []).map((row) => String(row.team_id)));
 }
 
 function getNextFootyAlertWindows(fixtures, env) {
@@ -560,6 +591,51 @@ function assertAdminRequest(request, env) {
   if (token !== env.ADMIN_RUN_TOKEN) {
     throw new Error("Unauthorized.");
   }
+}
+
+async function requireManager(request, env) {
+  const authorization = request.headers.get("Authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const payload = await verifyToken(env, token, "access");
+  return payload;
+}
+
+async function verifyToken(env, token, type) {
+  const [encoded, provided] = String(token || "").split(".");
+  if (!encoded || !provided || provided !== await signature(env.AUTH_SECRET, encoded)) {
+    throw httpError(401, "Manager authorization is invalid.");
+  }
+  let payload;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(decodeBase64Url(encoded)));
+  } catch {
+    throw httpError(401, "Manager authorization is invalid.");
+  }
+  if (payload.typ !== type || !payload.sub || Number(payload.exp || 0) <= Math.floor(Date.now() / 1000)) {
+    throw httpError(401, "Manager authorization has expired.");
+  }
+  return payload;
+}
+
+async function signature(secret, value) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  return bytesToBase64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))));
+}
+
+function decodeBase64Url(value) {
+  return base64UrlToBytes(value);
+}
+
+function httpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
 }
 
 function json(data, env, status = 200) {

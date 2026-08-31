@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.30.20.31";
+      window.BOX_THIS_LAP_VERSION = "2026.08.31.05.36";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608302031">
+    <link rel="stylesheet" href="styles.css?v=202608310536">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -415,7 +415,7 @@
       <section class="page account-settings-page" id="account-settings" data-page="account-settings">
         <div class="section-heading">
           <h1>Account Settings</h1>
-          <p>Manage how Box This Lap looks and stores images on this device.</p>
+          <p>Manage your followed teams, notifications, appearance, and offline images.</p>
         </div>
         <div class="account-settings-grid">
           <section class="account-settings-card" aria-labelledby="appearance-settings-heading">
@@ -436,6 +436,21 @@
               <span class="image-cache-status" id="image-cache-status" role="status" aria-live="polite"></span>
             </div>
           </section>
+          <section class="account-settings-card account-settings-card--stacked followed-teams-settings" id="followed-teams-settings" aria-labelledby="followed-teams-heading" hidden>
+            <div class="followed-teams-heading-row">
+              <div>
+                <h2 id="followed-teams-heading">Followed Teams</h2>
+                <p>Following a team enables match notifications about that team on devices where alerts are turned on.</p>
+              </div>
+              <span id="followed-teams-count">0 teams</span>
+            </div>
+            <div class="followed-teams-list" id="followed-teams-list" aria-live="polite"></div>
+            <div class="followed-teams-actions">
+              <button class="footer-copy-link" type="button" id="followed-teams-add">Add teams</button>
+              <button class="action-button" type="button" id="followed-teams-save" disabled>Save teams</button>
+            </div>
+            <p class="followed-teams-status" id="followed-teams-status" role="status" aria-live="polite"></p>
+          </section>
           <section class="account-settings-card" aria-labelledby="version-settings-heading">
             <div>
               <h2 id="version-settings-heading">About</h2>
@@ -445,6 +460,22 @@
           </section>
         </div>
       </section>
+
+      <dialog class="followed-teams-dialog" id="followed-teams-dialog" aria-labelledby="followed-teams-dialog-title">
+        <div class="followed-teams-dialog-heading">
+          <div>
+            <h2 id="followed-teams-dialog-title">Add teams</h2>
+            <p>Choose teams from any supported competition. New teams are added at the bottom of your priority list.</p>
+          </div>
+          <button class="dialog-close" id="followed-teams-dialog-close" type="button" aria-label="Close team picker">×</button>
+        </div>
+        <div class="followed-teams-picker-filters">
+          <label><span>Search teams</span><input id="followed-teams-search" type="search" autocomplete="off" placeholder="Search by team name"></label>
+          <label><span>Competition</span><select id="followed-teams-league"><option value="">All competitions</option></select></label>
+        </div>
+        <div class="followed-teams-picker" id="followed-teams-picker"></div>
+        <div class="followed-teams-dialog-actions"><button class="action-button" id="followed-teams-dialog-done" type="button">Done</button></div>
+      </dialog>
 
       <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
         <div class="section-heading page-heading-with-action admin-home-heading">
@@ -2606,6 +2637,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608302031"></script>
+    <script type="module" src="script.js?v=202608310536"></script>
   </body>
 </html>

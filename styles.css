@@ -4942,6 +4942,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
 }
 
+.footy-seen-filter-toggles {
+  align-self: end;
+}
+
 .footy-seen-card {
   background: color-mix(in srgb, var(--panel) 88%, var(--track));
   border: 1px solid var(--line);

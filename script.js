@@ -157,6 +157,14 @@ import {
   footyPerfectNote,
   footyPerfectStatus,
   footySeenAdd,
+  footySeenFilterToggle,
+  footySeenFilters,
+  footySeenSearch,
+  footySeenDateFrom,
+  footySeenDateTo,
+  footySeenCompetitionFilter,
+  footySeenSportsBarFilter,
+  footySeenEditToggle,
   footySeenList,
   footySeenDialog,
   footySeenForm,
@@ -353,7 +361,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608302031";
+} from "./modules/domRefs.js?v=202608310537";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -461,6 +469,8 @@ let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
 let shouldShowFootyPerfectFilters = false;
 let shouldShowFootyPerfectEditMode = false;
+let shouldShowFootySeenFilters = false;
+let shouldShowFootySeenEditMode = false;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -3937,16 +3947,20 @@ function renderFootySeenPage() {
     return;
   }
 
-  const sortedMatches = [...seenMatches].sort(compareFootySeenMatches);
+  syncFootySeenFilters(seenMatches);
+  const sortedMatches = getFilteredFootySeenMatches(seenMatches).sort(compareFootySeenMatches);
   footySeenList.setAttribute("aria-busy", "false");
   footySeenList.innerHTML = sortedMatches.length
     ? sortedMatches.map(renderFootySeenMatch).join("")
-    : `<p class="table-message">No seen matches have been added yet.</p>`;
+    : `<p class="table-message">${seenMatches.length ? "No seen matches match these filters." : "No seen matches have been added yet."}</p>`;
 }
 
 function renderFootySeenMatch(seenMatch = {}) {
   const dateLabel = formatFootyPerfectDate(seenMatch.matchDate);
   const timeLabel = String(seenMatch.matchTime || "").trim();
+  const editMarkup = shouldShowFootySeenEditMode
+    ? `<button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>`
+    : "";
 
   return `
     <article class="footy-seen-card">
@@ -3959,7 +3973,7 @@ function renderFootySeenMatch(seenMatch = {}) {
             ${seenMatch.competition ? `<span>${escapeHtml(seenMatch.competition)}</span>` : ""}
           </p>
         </div>
-        <button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>
+        ${editMarkup}
       </div>
       <div class="footy-seen-card-footer">
         ${seenMatch.venue ? `<span>${escapeHtml(seenMatch.venue)}</span>` : "<span></span>"}
@@ -3967,6 +3981,45 @@ function renderFootySeenMatch(seenMatch = {}) {
       </div>
     </article>
   `;
+}
+
+function getFilteredFootySeenMatches(seenMatches = []) {
+  const search = normalizeLookupName(footySeenSearch?.value);
+  const dateFrom = String(footySeenDateFrom?.value || "");
+  const dateTo = String(footySeenDateTo?.value || "");
+  const competition = normalizeLookupName(footySeenCompetitionFilter?.value);
+  const sportsBar = String(footySeenSportsBarFilter?.value || "");
+
+  return seenMatches.filter((seenMatch) => {
+    const matchDate = String(seenMatch.matchDate || "");
+    if (dateFrom && matchDate < dateFrom) return false;
+    if (dateTo && matchDate > dateTo) return false;
+    if (competition && normalizeLookupName(seenMatch.competition) !== competition) return false;
+    if (sportsBar === "yes" && !seenMatch.sportsBar) return false;
+    if (sportsBar === "no" && seenMatch.sportsBar) return false;
+    if (!search) return true;
+
+    return normalizeLookupName([
+      seenMatch.home,
+      seenMatch.away,
+      seenMatch.competition,
+      seenMatch.venue,
+    ].join(" ")).includes(search);
+  });
+}
+
+function syncFootySeenFilters(seenMatches = []) {
+  if (footySeenFilters) footySeenFilters.hidden = !shouldShowFootySeenFilters;
+  if (footySeenFilterToggle) {
+    footySeenFilterToggle.setAttribute("aria-expanded", String(shouldShowFootySeenFilters));
+    footySeenFilterToggle.classList.toggle("is-active", shouldShowFootySeenFilters);
+  }
+  if (footySeenEditToggle) footySeenEditToggle.checked = shouldShowFootySeenEditMode;
+  syncFootyPerfectSelectOptions(
+    footySeenCompetitionFilter,
+    seenMatches.map((seenMatch) => seenMatch.competition).filter(Boolean),
+    "All competitions",
+  );
 }
 
 function compareFootySeenMatches(first = {}, second = {}) {
@@ -12939,9 +12992,24 @@ footySeenAdd?.addEventListener("click", () => {
   openFootySeenDialog({ manual: true });
 });
 
+footySeenFilterToggle?.addEventListener("click", () => {
+  shouldShowFootySeenFilters = !shouldShowFootySeenFilters;
+  renderFootySeenPage();
+});
+
+[footySeenSearch, footySeenDateFrom, footySeenDateTo, footySeenCompetitionFilter, footySeenSportsBarFilter]
+  .forEach((control) => {
+    control?.addEventListener(control === footySeenSearch ? "input" : "change", renderFootySeenPage);
+  });
+
+footySeenEditToggle?.addEventListener("change", () => {
+  shouldShowFootySeenEditMode = Boolean(footySeenEditToggle.checked);
+  renderFootySeenPage();
+});
+
 footySeenList?.addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-footy-seen-edit]");
-  if (!editButton) return;
+  if (!editButton || !shouldShowFootySeenEditMode) return;
   const entryId = String(editButton.getAttribute("data-footy-seen-edit") || "");
   const seenMatch = (siteData.footySeenMatches || []).find((entry) => entry.id === entryId);
   if (seenMatch) openFootySeenDialog({ seenMatch, manual: !seenMatch.matchId });

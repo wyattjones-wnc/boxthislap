@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.31.05.36";
+      window.BOX_THIS_LAP_VERSION = "2026.08.31.05.37";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608310536">
+    <link rel="stylesheet" href="styles.css?v=202608310537">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1068,7 +1068,45 @@
             <h1>Seen Matches</h1>
           </div>
           <div class="heading-actions">
+            <button class="icon-action-button" id="footy-seen-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-seen-filters" aria-label="Show seen match filters" title="Filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
             <button class="icon-action-button" id="footy-seen-add" type="button" aria-label="Add a seen match" title="Add seen match">+</button>
+          </div>
+        </div>
+        <div class="footy-filters footy-seen-filters" id="footy-seen-filters" hidden>
+          <label>
+            <span>Search</span>
+            <input id="footy-seen-search" type="search" placeholder="Team, competition, venue" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <div class="footy-date-range">
+              <input id="footy-seen-date-from" type="date" aria-label="Seen match date from">
+              <input id="footy-seen-date-to" type="date" aria-label="Seen match date to">
+            </div>
+          </label>
+          <label>
+            <span>Competition</span>
+            <select id="footy-seen-competition-filter" aria-label="Filter seen matches by competition">
+              <option value="">All competitions</option>
+            </select>
+          </label>
+          <label>
+            <span>Sports Bar</span>
+            <select id="footy-seen-sports-bar-filter" aria-label="Filter seen matches by Sports Bar">
+              <option value="">All matches</option>
+              <option value="yes">Sports Bar</option>
+              <option value="no">Not Sports Bar</option>
+            </select>
+          </label>
+          <div class="footy-filter-toggles footy-seen-filter-toggles">
+            <label class="footy-checkbox-control">
+              <input id="footy-seen-edit-toggle" type="checkbox">
+              <span>Edit entries</span>
+            </label>
           </div>
         </div>
         <div class="content-shell footy-seen-list" id="footy-seen-list" aria-live="polite" aria-busy="true">
@@ -2636,6 +2674,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608310536"></script>
+    <script type="module" src="script.js?v=202608310537"></script>
   </body>
 </html>

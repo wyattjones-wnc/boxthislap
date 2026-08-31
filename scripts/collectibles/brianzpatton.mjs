@@ -96,13 +96,65 @@ export function parseDetailImages(html, detailUrl) {
   return values;
 }
 
+export function parseCatalogIndex(html, sourceUrl, categorySlug) {
+  const source = new URL(sourceUrl);
+  const rootSegment = source.pathname.split("/").filter(Boolean)[0] || "";
+  const indexUrls = [];
+  const linkPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi;
+  let linkMatch;
+  while ((linkMatch = linkPattern.exec(html))) {
+    let url;
+    try { url = new URL(decodeHtml(linkMatch[1]), sourceUrl); } catch { continue; }
+    if (url.hostname.replace(/^www\./i, "").toLowerCase() !== "brianzpatton.com") continue;
+    if (url.pathname.split("/").filter(Boolean)[0]?.toLowerCase() !== rootSegment.toLowerCase()) continue;
+    if (!/\/index\.html?$/i.test(url.pathname)) continue;
+    url.hash = "";
+    if (!indexUrls.includes(url.href)) indexUrls.push(url.href);
+  }
+  const cards = parseCards(html, sourceUrl).map((card, index) => catalogItemFromCard(card, categorySlug, index));
+  return { indexUrls, cards };
+}
+
+export function catalogItemFromCard(card, categorySlug, sourceSortOrder = 0) {
+  const detailUrl = new URL(card.detailUrl);
+  const sourceText = decodeURIComponent(detailUrl.pathname);
+  const yearMatch = sourceText.match(/(?:^|\/)((?:19|20)\d{2})(?:\/|\s|%20|$)/i) || sourceText.match(/\b((?:19|20)\d{2})\b/);
+  const scaleMatch = sourceText.match(/(?:^|\/)(1)[-_](\d+)(?:\/|$)/i);
+  const mixMatch = sourceText.match(/\bMix[\s_-]+([A-Z0-9]+)\b/i);
+  const seriesMatch = String(card.name).match(/\bSeries\s+([A-Z0-9-]+)\b/i);
+  const sourceKey = detailUrl.href.replace(/#.*$/, "").toLowerCase();
+  const name = String(card.name).replace(/\s+/g, " ").trim();
+  return {
+    id: stableId("clt", sourceKey),
+    itemNumber: "",
+    name,
+    normalizedName: normalize(name),
+    year: yearMatch ? Number(yearMatch[1]) : null,
+    scale: scaleMatch ? `${scaleMatch[1]}:${scaleMatch[2]}` : ["hot-wheels", "spin-master", "greenlight"].includes(categorySlug) ? "1:64" : "",
+    releaseSeries: seriesMatch ? `Series ${seriesMatch[1]}` : "",
+    mix: mixMatch ? `Mix ${mixMatch[1].toUpperCase()}` : "",
+    categorySlug,
+    manufacturerSlug: ["hot-wheels", "spin-master", "greenlight"].includes(categorySlug) ? categorySlug : "other",
+    sourceSortOrder,
+    sourceUrl: detailUrl.href,
+    primaryImageUrl: card.imageUrl,
+    variants: [{
+      id: stableId("var", sourceKey),
+      sourceName: name,
+      variantName: null,
+      sourceUrl: detailUrl.href,
+      sourceItemNumber: null,
+    }],
+  };
+}
+
 function parseCards(html, sourceUrl) {
   const cards = [];
   const cells = html.match(/<td\b[\s\S]*?<\/td>/gi) || [];
   for (const cell of cells) {
     const href = cell.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1];
     const image = cell.match(/<img\b[^>]*src=["']([^"']+)["']/i)?.[1];
-    if (!href || !image || !/\.htm(?:l)?$/i.test(href)) continue;
+    if (!href || !image || !/\.htm(?:l)?$/i.test(href) || /(?:^|\/)index\.html?$/i.test(href)) continue;
     const name = stripHtml(cell.replace(/^[\s\S]*?<\/a>/i, "")).replace(/^\s+|\s+$/g, "");
     if (!name) continue;
     cards.push({ name, detailUrl: new URL(decodeHtml(href), sourceUrl).href, imageUrl: new URL(decodeHtml(image), sourceUrl).href });
@@ -121,7 +173,7 @@ function commonCanonicalName(names) {
   return common.length ? common.join(" ") : names[0];
 }
 function variantSuffix(canonical, sourceName) { const suffix = sourceName.slice(canonical.length).trim(); return suffix || null; }
-function stableId(prefix, value) { return `${prefix}_${createHash("sha256").update(value).digest("hex").slice(0, 24)}`; }
+export function stableId(prefix, value) { return `${prefix}_${createHash("sha256").update(value).digest("hex").slice(0, 24)}`; }
 function normalize(value) { return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
 function slugify(value) { return normalize(value).replace(/\s+/g, "-"); }
 function wordsFromSlug(value) { return decodeURIComponent(value).replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }

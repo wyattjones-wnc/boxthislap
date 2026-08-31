@@ -1,4 +1,4 @@
-const DEFAULT_FILTERS = { status: "", search: "", manufacturer: "", year: "", scale: "", category: "", series: "", sort: "source", includeExcluded: false, page: 1 };
+const DEFAULT_FILTERS = { status: "", search: "", manufacturer: "", year: "", scale: "", category: "", series: "", sort: "source", scope: "active", page: 1 };
 
 export function createCollectiblesController({ endpoint, getAccessToken }) {
   const root = document.querySelector("#collectibles");
@@ -9,18 +9,25 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   const pagination = document.querySelector("#collectibles-pagination");
   const dialog = document.querySelector("#collectible-detail-dialog");
   const detail = document.querySelector("#collectible-detail-content");
+  const filterToggle = document.querySelector("#collectibles-filter-toggle");
   const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null };
   if (!root) return { renderPage: () => Promise.resolve() };
 
   form?.addEventListener("submit", (event) => { event.preventDefault(); state.filters.page = 1; readForm(); syncUrl(); void load(); });
   form?.addEventListener("change", () => { state.filters.page = 1; readForm(); syncUrl(); void load(); });
   root.querySelector("[data-collectibles-clear]")?.addEventListener("click", () => { state.filters = { ...DEFAULT_FILTERS }; writeForm(); syncUrl(); void load(); });
+  filterToggle?.addEventListener("click", () => {
+    const open = form.hasAttribute("hidden");
+    form.toggleAttribute("hidden", !open);
+    filterToggle.setAttribute("aria-expanded", String(open));
+    filterToggle.setAttribute("aria-label", `${open ? "Hide" : "Show"} collectible filters`);
+  });
   root.querySelector("[data-collection-views]")?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-collection-view]");
     if (!button) return;
     const view = button.dataset.collectionView;
     state.filters.status = view === "owned" ? "owned" : view === "missing" ? "not_owned" : view === "wishlist" ? "wanted" : "";
-    state.filters.includeExcluded = view === "catalog";
+    state.filters.scope = view === "catalog" ? "all" : "active";
     state.filters.page = 1;
     writeForm(); syncUrl(); void load();
   });
@@ -39,9 +46,17 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   dialog?.querySelector("[data-collectible-close]")?.addEventListener("click", () => dialog.close());
   dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
   detail?.addEventListener("submit", (event) => { if (event.target.matches("[data-collectible-form]")) { event.preventDefault(); void saveDetail(event.target); } });
+  detail?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-collectible-exclusion]");
+    if (button) void toggleExclusion(button);
+  });
 
   async function renderPage() {
     state.filters = { ...DEFAULT_FILTERS, ...filtersFromUrl() };
+    if (hasActiveFilters()) {
+      form?.removeAttribute("hidden");
+      filterToggle?.setAttribute("aria-expanded", "true");
+    }
     writeForm();
     if (!state.options) await loadOptions();
     return load();
@@ -88,10 +103,12 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     if (!items.length) { grid.innerHTML = `<p class="table-message">No collectibles match these filters.</p>`; return; }
     grid.innerHTML = items.map((item) => {
       const owned = item.collection?.status === "owned";
-      return `<article class="collectible-card${owned ? " is-owned" : ""}" data-collectible-id="${escapeHtml(item.id)}" tabindex="0">
-        <div class="collectible-card-image">${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : `<span aria-hidden="true">🏁</span>`}${item.collection?.wanted ? `<b>Wanted</b>` : ""}</div>
+      const excluded = item.exclusion?.excluded;
+      const toggleLabel = owned ? `Mark ${item.name} as don't have` : `Mark ${item.name} as have`;
+      return `<article class="collectible-card${owned ? " is-owned" : ""}${excluded ? " is-excluded" : ""}" data-collectible-id="${escapeHtml(item.id)}" tabindex="0">
+        <div class="collectible-card-image">${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : `<span aria-hidden="true">🏁</span>`}<button class="collectible-check-button${owned ? " is-owned" : ""}" type="button" data-collectible-toggle="${escapeHtml(item.id)}" data-owned="${owned}" aria-pressed="${owned}" aria-label="${escapeHtml(toggleLabel)}" title="${escapeHtml(toggleLabel)}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"></path></svg></button>${item.collection?.wanted ? `<b>Wanted</b>` : ""}</div>
         <div class="collectible-card-body"><p>${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<span>#${escapeHtml(item.itemNumber)}</span>` : ""}
-          <button class="collectible-have-button${owned ? " is-owned" : ""}" type="button" data-collectible-toggle="${escapeHtml(item.id)}" data-owned="${owned}">${owned ? "✓ Have" : "○ Don't Have"}</button>
+          ${excluded ? `<span>Excluded from checklist</span>` : ""}
         </div></article>`;
     }).join("");
   }
@@ -124,6 +141,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
             <label class="collectible-check"><input name="wanted" type="checkbox" ${item.collection?.wanted ? "checked" : ""}><span>Wanted</span></label>
             <label><span>Acquired</span><input name="acquiredAt" type="date" value="${escapeHtml(item.collection?.acquiredAt || "")}"></label>
             <label class="collectible-notes"><span>Notes</span><textarea name="notes" rows="4">${escapeHtml(item.collection?.notes || "")}</textarea></label>
+            ${exclusionAction(item)}
             <p class="collectible-save-status" role="status"></p><button class="action-button" type="submit">Save collection details</button>
           </form>
           ${item.sourceUrl ? `<a class="back-link" href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noopener">View source at Brian Z. Patton</a>` : ""}
@@ -139,15 +157,38 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     finally { submit.disabled = false; }
   }
 
+  async function toggleExclusion(button) {
+    const id = button.dataset.collectibleExclusion;
+    const exclusionId = Number(button.dataset.exclusionId || 0);
+    button.disabled = true;
+    try {
+      if (exclusionId) await authenticatedRequest(`/api/collection/exclusions/${exclusionId}`, { method: "DELETE" });
+      else await authenticatedRequest("/api/collection/exclusions", { method: "POST", body: { type: "collectible", value: id, note: "Excluded from collectible detail." } });
+      await load();
+      dialog.close();
+      await openDetail(id);
+    } catch (error) {
+      button.disabled = false;
+      window.alert(error.message);
+    }
+  }
+
   function metadata(item) { return `<dl class="collectible-metadata">${[["Product line", item.productLine?.name], ["Category", item.releaseCategory], ["Series", item.releaseSeries], ["Mix", item.mix]].filter(([, value]) => value).map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`; }
   function fillSelect(name, values, label) { const select = form?.elements.namedItem(name); if (!select) return; select.innerHTML = `<option value="">${label}</option>${(values || []).map((entry) => { const value = typeof entry === "object" ? entry.slug : entry; const text = typeof entry === "object" ? entry.name : entry; return `<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`; }).join("")}`; }
-  function readForm() { const data = new FormData(form); for (const key of ["status", "search", "manufacturer", "year", "scale", "category", "series", "sort"]) state.filters[key] = String(data.get(key) || ""); state.filters.includeExcluded = data.get("includeExcluded") === "on"; }
+  function exclusionAction(item) {
+    const exclusionId = item.exclusion?.itemExclusionId;
+    if (item.exclusion?.excluded && !exclusionId) return `<div class="collectible-exclusion-action"><strong>Excluded by a catalog rule</strong><p>Use the visibility filter to find this item. Its broader category rule must be changed to include it.</p></div>`;
+    return `<div class="collectible-exclusion-action"><strong>${exclusionId ? "Excluded from checklist" : "Checklist visibility"}</strong><p>${exclusionId ? "This item is hidden from the normal checklist but remains available under Excluded only." : "Hide this individual item from the normal checklist."}</p><button class="footer-copy-link" type="button" data-collectible-exclusion="${escapeHtml(item.id)}"${exclusionId ? ` data-exclusion-id="${exclusionId}"` : ""}>${exclusionId ? "Include in checklist" : "Exclude from checklist"}</button></div>`;
+  }
+  function readForm() { const data = new FormData(form); for (const key of ["status", "search", "manufacturer", "year", "scale", "category", "series", "sort", "scope"]) state.filters[key] = String(data.get(key) || ""); }
   function writeForm() { if (!form) return; for (const [key, value] of Object.entries(state.filters)) { const input = form.elements.namedItem(key); if (!input) continue; if (input.type === "checkbox") input.checked = Boolean(value); else input.value = String(value ?? ""); } updateViewButtons(); }
-  function updateViewButtons() { root.querySelectorAll("[data-collection-view]").forEach((button) => { const view = button.dataset.collectionView; const active = view === "catalog" ? state.filters.includeExcluded : !state.filters.includeExcluded && ((view === "collection" && !state.filters.status) || (view === "owned" && state.filters.status === "owned") || (view === "missing" && state.filters.status === "not_owned") || (view === "wishlist" && state.filters.status === "wanted")); button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); }); }
+  function updateViewButtons() { root.querySelectorAll("[data-collection-view]").forEach((button) => { const view = button.dataset.collectionView; const active = view === "catalog" ? state.filters.scope === "all" : state.filters.scope === "active" && ((view === "collection" && !state.filters.status) || (view === "owned" && state.filters.status === "owned") || (view === "missing" && state.filters.status === "not_owned") || (view === "wishlist" && state.filters.status === "wanted")); button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); }); }
   function buildQuery() { const params = new URLSearchParams(); for (const [key, value] of Object.entries(state.filters)) { if (value && key !== "page") params.set(key, String(value)); } params.set("page", String(state.filters.page)); params.set("limit", "48"); return params.toString(); }
-  function filtersFromUrl() { const params = new URLSearchParams(window.location.search); const value = {}; for (const key of Object.keys(DEFAULT_FILTERS)) { if (!params.has(key)) continue; value[key] = key === "page" ? Number(params.get(key)) || 1 : key === "includeExcluded" ? params.get(key) === "true" : params.get(key); } return value; }
+  function filtersFromUrl() { const params = new URLSearchParams(window.location.search); const value = {}; for (const key of Object.keys(DEFAULT_FILTERS)) { if (!params.has(key)) continue; value[key] = key === "page" ? Number(params.get(key)) || 1 : params.get(key); } if (params.get("includeExcluded") === "true" && !params.has("scope")) value.scope = "all"; return value; }
   function syncUrl() { const url = new URL(window.location.href); for (const key of Object.keys(DEFAULT_FILTERS)) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history.replaceState(null, "", `${url.pathname}${url.search}#collectibles`); }
-  async function mutate(path, body) { const token = await getAccessToken(); return request(path, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); }
+  function hasActiveFilters() { return Object.entries(state.filters).some(([key, value]) => !["page", "sort", "scope"].includes(key) && Boolean(value)) || state.filters.scope !== "active" || state.filters.sort !== "source"; }
+  async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
+  async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
   async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
   return { renderPage };
 }

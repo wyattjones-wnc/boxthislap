@@ -1,6 +1,13 @@
 name: Update Collectibles Catalog
 
 on:
+  push:
+    branches:
+      - dev
+    paths:
+      - ".github/workflows/update-collectibles-catalog.yml"
+      - "scripts/collectibles/**"
+      - "workers/collectibles/migrations/**"
   schedule:
     - cron: "0 10 * * 1"
   workflow_dispatch:

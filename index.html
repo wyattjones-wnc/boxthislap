@@ -549,14 +549,16 @@
         </div>
 
         <div class="collection-view-tabs" data-collection-views role="group" aria-label="Collection view">
-          <button type="button" data-collection-view="collection">My Collection</button>
-          <button type="button" data-collection-view="owned">Owned</button>
+          <button type="button" data-collection-view="collection">Checklist</button>
+          <button type="button" data-collection-view="owned">My Collection</button>
           <button type="button" data-collection-view="missing">Missing</button>
           <button type="button" data-collection-view="wishlist">Wishlist</button>
           <button type="button" data-collection-view="catalog">Full Catalog</button>
         </div>
 
         <div class="collectibles-stats" id="collectibles-stats" aria-live="polite"></div>
+
+        <nav class="collectibles-breadcrumbs" id="collectibles-breadcrumbs" aria-label="Catalog location"></nav>
 
         <form class="collectibles-filters" id="collectibles-filters" hidden>
           <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, variant, or series"></label>

@@ -191,10 +191,123 @@
   font-weight: 800;
 }
 
+.collectibles-breadcrumbs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: -0.1rem 0 1rem;
+}
+
+.collectibles-breadcrumbs button {
+  background: none;
+  border: 0;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+}
+
+.collectibles-breadcrumbs span,
+.collectibles-breadcrumbs strong {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .collectibles-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+.collectibles-grid.is-grouped {
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
+}
+
+.collectible-group-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px var(--shadow);
+  display: grid;
+  overflow: hidden;
+}
+
+.collectible-group-card.is-excluded {
+  opacity: 0.72;
+}
+
+.collectible-group-open {
+  background: none;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.1rem;
+  text-align: left;
+}
+
+.collectible-group-open:hover h2,
+.collectible-group-open:focus-visible h2 {
+  color: var(--accent-dark);
+}
+
+.collectible-group-open:focus-visible {
+  outline: 3px solid var(--accent-border);
+  outline-offset: -3px;
+}
+
+.collectible-group-open h2,
+.collectible-group-open p {
+  margin: 0;
+}
+
+.collectible-group-open h2 {
+  font-size: 1.12rem;
+}
+
+.collectible-group-open p {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.collectible-group-progress {
+  background: var(--soft-strong);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.collectible-group-progress i {
+  background: var(--time);
+  display: block;
+  height: 100%;
+}
+
+.collectible-group-exclusion {
+  background: var(--soft);
+  border: 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.65rem 1.1rem;
+  text-align: left;
+}
+
+.collectible-group-exclusion:hover,
+.collectible-group-exclusion:focus-visible {
+  color: var(--accent-dark);
+}
+
+.collectible-group-exclusion:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.72;
 }
 
 .collectible-card {

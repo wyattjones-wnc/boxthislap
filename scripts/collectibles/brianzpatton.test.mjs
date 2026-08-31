@@ -3,12 +3,14 @@ import test from "node:test";
 import { parseCatalogIndex, parseHomepageCategories, parseHotWheels2001 } from "./brianzpatton.mjs";
 
 test("discovers image-map homepage categories", () => {
-  const categories = parseHomepageCategories(`<map><area href="https://brianzpatton.com/HotWheels/index.html"><area href="/Prototypes/index.html"><area href="/Errors/index.html"></map>`);
+  const categories = parseHomepageCategories(`<map><area href="https://brianzpatton.com/HotWheels/index.html"><area href="/Prototypes/index.html"><area href="/Errors/index.html"><area href="/MonsterTruck2Pack/index.html"></map>`);
   assert.deepEqual(categories.map((category) => [category.slug, category.checklistMode]), [
     ["hot-wheels", "normal"],
     ["prototypes", "optional"],
     ["errors", "reference_only"],
+    ["monstertruck2pack", "normal"],
   ]);
+  assert.equal(categories[3].name, "Monster Truck 2 Pack");
 });
 
 test("groups the two 50584 Grave Digger Grain variants", () => {

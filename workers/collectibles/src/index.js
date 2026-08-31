@@ -197,11 +197,11 @@ async function listGroups(env, searchParams) {
       WHERE ${where.join(" AND ")}
       GROUP BY cat.id ORDER BY cat.source_sort_order, cat.name COLLATE NOCASE`;
   } else {
-    sql = `SELECT COALESCE(CAST(c.year AS TEXT), 'unknown') AS group_key,
-      COALESCE(CAST(c.year AS TEXT), 'Unknown year') AS label, ${countColumns},
+    sql = `SELECT CAST(c.year AS TEXT) AS group_key,
+      CAST(c.year AS TEXT) AS label, ${countColumns},
       COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded
-      ${base} WHERE ${where.join(" AND ")}
-      GROUP BY c.year ORDER BY c.year IS NULL, c.year DESC`;
+      ${base} WHERE ${where.join(" AND ")} AND c.year IS NOT NULL
+      GROUP BY c.year ORDER BY c.year DESC`;
   }
   const result = await env.DB.prepare(sql).bind(...params).all();
   return {

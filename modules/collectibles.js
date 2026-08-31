@@ -11,12 +11,12 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   const dialog = document.querySelector("#collectible-detail-dialog");
   const detail = document.querySelector("#collectible-detail-content");
   const filterToggle = document.querySelector("#collectibles-filter-toggle");
-  const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null };
+  const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null, directEntries: false };
   if (!root) return { renderPage: () => Promise.resolve() };
 
-  form?.addEventListener("submit", (event) => { event.preventDefault(); state.filters.page = 1; readForm(); syncUrl(); void load(); });
-  form?.addEventListener("change", () => { state.filters.page = 1; readForm(); syncUrl(); void load(); });
-  root.querySelector("[data-collectibles-clear]")?.addEventListener("click", () => { state.filters = { ...DEFAULT_FILTERS }; writeForm(); syncUrl(); void load(); });
+  form?.addEventListener("submit", (event) => { event.preventDefault(); state.directEntries = false; state.filters.page = 1; readForm(); syncUrl(); void load(); });
+  form?.addEventListener("change", () => { state.directEntries = false; state.filters.page = 1; readForm(); syncUrl(); void load(); });
+  root.querySelector("[data-collectibles-clear]")?.addEventListener("click", () => { state.filters = { ...DEFAULT_FILTERS }; state.directEntries = false; writeForm(); syncUrl(); void load(); });
   filterToggle?.addEventListener("click", () => {
     const open = form.hasAttribute("hidden");
     form.toggleAttribute("hidden", !open);
@@ -31,6 +31,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     state.filters.scope = view === "catalog" ? "all" : "active";
     state.filters.category = "";
     state.filters.year = "";
+    state.directEntries = false;
     state.filters.page = 1;
     writeForm(); syncUrl(); void load();
   });
@@ -39,6 +40,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     if (exclusion) { void toggleCategoryExclusion(exclusion); return; }
     const group = event.target.closest("[data-collectible-group]");
     if (group) { openGroup(group.dataset.groupType, group.dataset.collectibleGroup); return; }
+    if (event.target.closest("[data-collectibles-all-entries]")) { state.directEntries = true; state.filters.page = 1; void load(); return; }
     const toggle = event.target.closest("[data-collectible-toggle]");
     if (toggle) { void quickToggle(toggle.dataset.collectibleToggle, toggle.dataset.owned !== "true", toggle); return; }
     const card = event.target.closest("[data-collectible-id]");
@@ -49,6 +51,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     if (!button) return;
     if (button.dataset.collectiblesLevel === "categories") { state.filters.category = ""; state.filters.year = ""; }
     if (button.dataset.collectiblesLevel === "years") state.filters.year = "";
+    state.directEntries = false;
     state.filters.page = 1;
     writeForm(); syncUrl(); void load();
   });
@@ -81,7 +84,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     const value = await request("/api/collectibles/filters");
     state.options = value;
     fillSelect("manufacturer", value.manufacturers, "All manufacturers");
-    fillSelect("year", [...(value.years || []).map((year) => ({ slug: String(year), name: String(year) })), { slug: "unknown", name: "Unknown year" }], "All years");
+    fillSelect("year", (value.years || []).map((year) => ({ slug: String(year), name: String(year) })), "All years");
     fillSelect("scale", value.scales, "All scales");
     fillSelect("category", value.categories, "All catalog categories");
     fillSelect("series", value.series, "All series");
@@ -94,8 +97,13 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     updateViewButtons();
     const query = buildQuery();
     try {
-      const groupBy = !state.filters.category ? "category" : !state.filters.year ? "year" : "";
-      const [catalog, progress] = await Promise.all([request(groupBy ? `/api/collectibles/groups?groupBy=${groupBy}&${query}` : `/api/collectibles?${query}`), request(`/api/collectibles/stats?${query}`)]);
+      let groupBy = !state.filters.category ? "category" : !state.filters.year && !state.directEntries ? "year" : "";
+      let [catalog, progress] = await Promise.all([request(groupBy ? `/api/collectibles/groups?groupBy=${groupBy}&${query}` : `/api/collectibles?${query}`), request(`/api/collectibles/stats?${query}`)]);
+      if (groupBy === "year" && !(catalog.groups || []).length) {
+        state.directEntries = true;
+        groupBy = "";
+        catalog = await request(`/api/collectibles?${query}`);
+      }
       renderStats(progress);
       renderBreadcrumbs();
       if (groupBy) { renderGroups(catalog.groups || [], groupBy); pagination.innerHTML = ""; }
@@ -111,7 +119,8 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     grid.classList.add("is-grouped");
     resultCount.textContent = `${formatNumber(groups.length)} ${groupBy === "category" ? "categories" : "years"}`;
     if (!groups.length) { grid.innerHTML = `<p class="table-message">No ${groupBy === "category" ? "categories" : "years"} match these filters.</p>`; return; }
-    grid.innerHTML = groups.map((group) => {
+    const allEntries = groupBy === "year" ? `<article class="collectible-group-card collectible-group-card-all"><button class="collectible-group-open" type="button" data-collectibles-all-entries><span class="eyebrow">Category</span><h2>View all entries</h2><p>Include entries without year data</p></button></article>` : "";
+    grid.innerHTML = allEntries + groups.map((group) => {
       const progress = group.total ? Math.round((group.owned / group.total) * 100) : 0;
       const explicitlyExcluded = Boolean(group.exclusionId);
       const referenceOnly = group.checklistMode !== "normal" && !explicitlyExcluded;
@@ -132,13 +141,14 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     const category = state.options?.categories?.find((entry) => entry.slug === state.filters.category);
     const parts = [`<button type="button" data-collectibles-level="categories">Categories</button>`];
     if (category) parts.push(`<span aria-hidden="true">›</span><button type="button" data-collectibles-level="years">${escapeHtml(category.name)}</button>`);
-    if (state.filters.year) parts.push(`<span aria-hidden="true">›</span><strong>${escapeHtml(state.filters.year === "unknown" ? "Unknown year" : state.filters.year)}</strong>`);
+    if (state.filters.year) parts.push(`<span aria-hidden="true">›</span><strong>${escapeHtml(state.filters.year)}</strong>`);
+    else if (category && state.directEntries) parts.push(`<span aria-hidden="true">›</span><strong>All entries</strong>`);
     breadcrumbs.innerHTML = parts.join("");
   }
 
   function openGroup(type, key) {
-    if (type === "category") { state.filters.category = key; state.filters.year = ""; }
-    if (type === "year") state.filters.year = key;
+    if (type === "category") { state.filters.category = key; state.filters.year = ""; state.directEntries = false; }
+    if (type === "year") { state.filters.year = key; state.directEntries = false; }
     state.filters.page = 1;
     writeForm(); syncUrl(); void load(); root.scrollIntoView({ behavior: "smooth", block: "start" });
   }

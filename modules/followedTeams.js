@@ -4,7 +4,11 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   const list = document.querySelector("#followed-teams-list");
   const status = document.querySelector("#followed-teams-status");
   const addButton = document.querySelector("#followed-teams-add");
+  const resetButton = document.querySelector("#followed-teams-reset");
   const saveButton = document.querySelector("#followed-teams-save");
+  const chooseButton = document.querySelector("#footy-choose-teams");
+  const topResetButton = document.querySelector("#footy-reset-teams");
+  const choiceActions = document.querySelector("#footy-team-choice-actions");
   const dialog = document.querySelector("#followed-teams-dialog");
   const dialogClose = document.querySelector("#followed-teams-dialog-close");
   const dialogDone = document.querySelector("#followed-teams-dialog-done");
@@ -13,6 +17,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   const picker = document.querySelector("#followed-teams-picker");
   const state = {
     catalog: [],
+    defaultIds: [],
     error: "",
     leagues: [],
     loadPromise: null,
@@ -22,10 +27,13 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     revision: 0,
     savedIds: [],
     saving: false,
+    usingDefault: true,
   };
   let draggedId = "";
 
   root?.addEventListener("click", handleRootClick);
+  chooseButton?.addEventListener("click", openPicker);
+  topResetButton?.addEventListener("click", () => { void resetToDefault(); });
   list?.addEventListener("dragstart", handleDragStart);
   list?.addEventListener("dragover", (event) => draggedId && event.preventDefault());
   list?.addEventListener("drop", handleDrop);
@@ -39,6 +47,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
 
   function reset() {
     state.catalog = [];
+    state.defaultIds = [];
     state.error = "";
     state.leagues = [];
     state.loadPromise = null;
@@ -48,17 +57,16 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.revision = 0;
     state.savedIds = [];
     state.saving = false;
+    state.usingDefault = true;
     render();
     onChanged([]);
   }
 
   async function load(options = {}) {
     const managerId = String(getManagerId() || "").trim();
-    if (!root || !managerId) {
-      reset();
-      return;
-    }
-    if (!options.force && state.loadedManagerId === managerId && state.catalog.length) {
+    const loadKey = managerId || "anonymous";
+    if (!root) return;
+    if (!options.force && state.loadedManagerId === loadKey && state.catalog.length) {
       render();
       return;
     }
@@ -67,15 +75,19 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.error = "";
     render();
     state.loadPromise = Promise.all([
-      request("/api/teams?includeLeagues=true&active=true"),
-      request("/api/me/followed-teams"),
+      request("/api/teams?includeLeagues=true&active=true", { auth: false }),
+      managerId ? request("/api/me/followed-teams") : Promise.resolve(null),
     ]).then(([catalog, preferences]) => {
       state.catalog = normalizeCatalog(catalog);
       state.leagues = normalizeLeagues(catalog, state.catalog);
-      state.savedIds = (preferences.teams || []).sort((left, right) => left.priority - right.priority).map((team) => String(team.teamId));
+      state.defaultIds = (catalog.defaultTeamIds || []).map(String);
+      state.savedIds = preferences
+        ? preferenceTeamIds(preferences)
+        : [...state.defaultIds];
       state.pendingIds = [...state.savedIds];
-      state.revision = Number(preferences.revision || 0);
-      state.loadedManagerId = managerId;
+      state.revision = Number(preferences?.revision || 0);
+      state.usingDefault = !managerId || Boolean(preferences?.usingDefault);
+      state.loadedManagerId = loadKey;
       onChanged(getFollowedTeams());
     }).catch((error) => {
       state.error = error.message || "Followed teams could not be loaded.";
@@ -101,12 +113,26 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   }
 
   function render() {
-    if (!root) return;
     const managerId = String(getManagerId() || "").trim();
+    const canReset = Boolean(managerId) && (!state.usingDefault || hasChanges());
+    if (choiceActions) choiceActions.hidden = !managerId;
+    if (chooseButton) {
+      chooseButton.hidden = !managerId;
+      chooseButton.disabled = state.loading || state.saving || !state.catalog.length;
+    }
+    if (topResetButton) {
+      topResetButton.hidden = !canReset;
+      topResetButton.disabled = state.loading || state.saving;
+    }
+    if (!root) return;
     root.hidden = !managerId;
     if (!managerId) return;
     count.textContent = `${state.pendingIds.length} team${state.pendingIds.length === 1 ? "" : "s"}`;
     addButton.disabled = state.loading || state.saving;
+    if (resetButton) {
+      resetButton.hidden = !canReset;
+      resetButton.disabled = state.loading || state.saving;
+    }
     saveButton.disabled = state.loading || state.saving || !hasChanges();
     saveButton.textContent = state.saving ? "Saving…" : "Save teams";
     if (state.loading && !state.loadedManagerId) {
@@ -124,7 +150,9 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     } else {
       list.innerHTML = state.pendingIds.map(renderSelectedTeam).join("");
     }
-    if (!state.saving && !state.error) setStatus(hasChanges() ? "You have unsaved changes." : "");
+    if (!state.saving && !state.error) {
+      setStatus(hasChanges() ? "You have unsaved changes." : state.usingDefault ? "Using the admin’s default teams." : "");
+    }
   }
 
   function renderSelectedTeam(id, index) {
@@ -147,7 +175,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   }
 
   function openPicker() {
-    if (!dialog || state.loading || !state.catalog.length) return;
+    if (!getManagerId() || !dialog || state.loading || !state.catalog.length) return;
     search.value = "";
     leagueFilter.value = "";
     renderPicker();
@@ -205,11 +233,11 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
         body: JSON.stringify({ revision: state.revision, teamIds: state.pendingIds }),
         method: "PUT",
       });
-      state.savedIds = (response.teams || []).sort((left, right) => left.priority - right.priority).map((team) => String(team.teamId));
-      state.pendingIds = [...state.savedIds];
-      state.revision = Number(response.revision || state.revision + 1);
+      applyPreference(response);
       onChanged(getFollowedTeams());
-      successMessage = "Followed teams saved. Team notifications now use this list.";
+      successMessage = state.usingDefault
+        ? "Reset to the admin’s default teams."
+        : "Followed teams saved. Team notifications now use this list.";
     } catch (error) {
       state.error = error.message || "Followed teams could not be saved.";
       setStatus(`${state.error} Your unsaved selection is still here for retry.`, true);
@@ -222,6 +250,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
 
   function handleRootClick(event) {
     if (event.target.closest("#followed-teams-add")) return openPicker();
+    if (event.target.closest("#followed-teams-reset")) return void resetToDefault();
     if (event.target.closest("#followed-teams-save")) return void save();
     if (event.target.closest("[data-followed-teams-retry]")) return void load({ force: true }).catch(() => undefined);
     const remove = event.target.closest("[data-followed-team-remove]");
@@ -235,6 +264,42 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     if (up) return move(up.dataset.followedTeamUp, -1);
     const down = event.target.closest("[data-followed-team-down]");
     if (down) return move(down.dataset.followedTeamDown, 1);
+  }
+
+  async function resetToDefault() {
+    if (state.saving || !getManagerId()) return;
+    if (state.usingDefault) {
+      state.pendingIds = [...state.savedIds];
+      render();
+      return;
+    }
+    state.saving = true;
+    state.error = "";
+    setStatus("Resetting to the admin’s default teams…");
+    render();
+    try {
+      const response = await request("/api/me/followed-teams", {
+        body: JSON.stringify({ revision: state.revision, teamIds: [] }),
+        method: "PUT",
+      });
+      applyPreference(response);
+      onChanged(getFollowedTeams());
+      render();
+      setStatus("Reset to the admin’s default teams.");
+    } catch (error) {
+      state.error = error.message || "Followed teams could not be reset.";
+      setStatus(state.error, true);
+    } finally {
+      state.saving = false;
+      render();
+    }
+  }
+
+  function applyPreference(response = {}) {
+    state.savedIds = preferenceTeamIds(response);
+    state.pendingIds = [...state.savedIds];
+    state.revision = Number(response.revision ?? state.revision + 1);
+    state.usingDefault = Boolean(response.usingDefault);
   }
 
   function move(id, offset) {
@@ -273,7 +338,13 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function announce(message) { setStatus(message); }
   function setStatus(message, error = false) { status.textContent = message || ""; status.classList.toggle("is-error", error); }
 
-  return { getFollowedTeamIds, getFollowedTeams, load, render, reset };
+  return { getFollowedTeamIds, getFollowedTeams, load, openPicker, render, reset, resetToDefault };
+}
+
+function preferenceTeamIds(preferences = {}) {
+  return [...(preferences.teams || [])]
+    .sort((left, right) => left.priority - right.priority)
+    .map((team) => String(team.teamId));
 }
 
 function normalizeCatalog(response = {}) {

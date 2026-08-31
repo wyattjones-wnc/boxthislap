@@ -218,21 +218,40 @@ async function requireManager(request, env) {
 }
 
 async function readFollowedTeams(env, managerId) {
-  const [rows, revision] = await Promise.all([
+  const defaultManagerId = getDefaultFootyManagerId(env);
+  const [rows, revision, defaultRows] = await Promise.all([
     env.DB.prepare("SELECT team_id, priority, notifications_enabled, created_at, updated_at FROM manager_followed_teams WHERE manager_id = ? ORDER BY priority").bind(managerId).all(),
     env.DB.prepare("SELECT revision, updated_at FROM manager_followed_team_revisions WHERE manager_id = ?").bind(managerId).first(),
+    String(managerId) === defaultManagerId
+      ? Promise.resolve({ results: [] })
+      : env.DB.prepare("SELECT team_id, priority, notifications_enabled, created_at, updated_at FROM manager_followed_teams WHERE manager_id = ? ORDER BY priority").bind(defaultManagerId).all(),
   ]);
+  const resolved = resolveFollowedTeamRows(rows.results, defaultRows.results, managerId, defaultManagerId);
   return {
     revision: Number(revision?.revision || 0),
-    teams: (rows.results || []).map((row) => ({
+    teams: resolved.rows.map((row) => ({
       createdAt: row.created_at || "",
       notificationsEnabled: Boolean(row.notifications_enabled),
       priority: Number(row.priority),
       teamId: String(row.team_id),
       updatedAt: row.updated_at || "",
     })),
+    usingDefault: resolved.usingDefault,
     updatedAt: revision?.updated_at || "",
   };
+}
+
+export function resolveFollowedTeamRows(managerRows = [], defaultRows = [], managerId = "", defaultManagerId = "6") {
+  const ownRows = Array.isArray(managerRows) ? managerRows : [];
+  const shouldUseDefault = String(managerId) !== String(defaultManagerId) && ownRows.length === 0;
+  return {
+    rows: shouldUseDefault && Array.isArray(defaultRows) ? defaultRows : ownRows,
+    usingDefault: shouldUseDefault,
+  };
+}
+
+function getDefaultFootyManagerId(env) {
+  return String(env.DEFAULT_FOOTY_MANAGER_ID || "6").trim() || "6";
 }
 
 async function replaceFollowedTeams(env, managerId, body, channel = "main") {
@@ -278,7 +297,11 @@ export function normalizeSubmittedTeamIds(values) {
 }
 
 async function readFootyTeamCatalog(env, channel = "main") {
-  const teams = [...(await readFootyTeamCatalogMap(env, channel)).values()];
+  const [catalog, defaultRows] = await Promise.all([
+    readFootyTeamCatalogMap(env, channel),
+    env.DB.prepare("SELECT team_id FROM manager_followed_teams WHERE manager_id = ? ORDER BY priority").bind(getDefaultFootyManagerId(env)).all(),
+  ]);
+  const teams = [...catalog.values()];
   const leagues = new Map();
   for (const team of teams) {
     for (const league of team.leagues) {
@@ -288,6 +311,7 @@ async function readFootyTeamCatalog(env, channel = "main") {
     }
   }
   return {
+    defaultTeamIds: (defaultRows.results || []).map((row) => String(row.team_id)),
     leagues: [...leagues.values()]
       .map((league) => ({ ...league, teams: league.teams.sort((left, right) => left.name.localeCompare(right.name)) }))
       .sort((left, right) => left.name.localeCompare(right.name)),

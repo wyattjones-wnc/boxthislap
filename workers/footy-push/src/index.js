@@ -326,9 +326,19 @@ export function getFixtureTeamIds(fixture = {}) {
 }
 
 async function readManagerFollowedTeamIds(env, managerId) {
-  const result = await env.DB.prepare("SELECT team_id FROM manager_followed_teams WHERE manager_id = ? AND notifications_enabled = 1")
+  const result = await env.DB.prepare("SELECT team_id, notifications_enabled FROM manager_followed_teams WHERE manager_id = ? ORDER BY priority")
     .bind(managerId).all();
-  return new Set((result.results || []).map((row) => String(row.team_id)));
+  const defaultManagerId = String(env.DEFAULT_FOOTY_MANAGER_ID || "6").trim() || "6";
+  const ownRows = result.results || [];
+  const ownIds = ownRows.filter((row) => Boolean(row.notifications_enabled)).map((row) => String(row.team_id));
+  if (ownRows.length || String(managerId) === defaultManagerId) return new Set(ownIds);
+  const defaultResult = await env.DB.prepare("SELECT team_id FROM manager_followed_teams WHERE manager_id = ? AND notifications_enabled = 1 ORDER BY priority")
+    .bind(defaultManagerId).all();
+  return new Set(resolveFollowedTeamIds(ownIds, (defaultResult.results || []).map((row) => String(row.team_id)), managerId, defaultManagerId));
+}
+
+export function resolveFollowedTeamIds(managerIds = [], defaultIds = [], managerId = "", defaultManagerId = "6") {
+  return String(managerId) !== String(defaultManagerId) && managerIds.length === 0 ? [...defaultIds] : [...managerIds];
 }
 
 function getNextFootyAlertWindows(fixtures, env) {

@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.31.05.37";
+      window.BOX_THIS_LAP_VERSION = "2026.08.31.12.35";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608310537">
+    <link rel="stylesheet" href="styles.css?v=202608311235">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -447,6 +447,7 @@
             <div class="followed-teams-list" id="followed-teams-list" aria-live="polite"></div>
             <div class="followed-teams-actions">
               <button class="footer-copy-link" type="button" id="followed-teams-add">Add teams</button>
+              <button class="footer-copy-link" type="button" id="followed-teams-reset" hidden>Reset to default</button>
               <button class="action-button" type="button" id="followed-teams-save" disabled>Save teams</button>
             </div>
             <p class="followed-teams-status" id="followed-teams-status" role="status" aria-live="polite"></p>
@@ -838,6 +839,10 @@
               </svg>
             </button>
           </div>
+        </div>
+        <div class="footy-team-choice-actions" id="footy-team-choice-actions" aria-label="Team selection" hidden>
+          <button class="action-button" id="footy-choose-teams" type="button" hidden>Choose teams</button>
+          <button class="footer-copy-link" id="footy-reset-teams" type="button" hidden>Reset to default</button>
         </div>
         <p class="footy-notification-status" id="footy-notification-status" role="status" aria-live="polite"></p>
         <div class="footy-competition-controls" id="footy-competition-controls" hidden>
@@ -2674,6 +2679,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608310537"></script>
+    <script type="module" src="script.js?v=202608311235"></script>
   </body>
 </html>

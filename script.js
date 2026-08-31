@@ -371,7 +371,7 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310001";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310002";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300002";
 import {
   formatUpdatedTime,
@@ -7848,14 +7848,18 @@ async function requestRankingAuthorizationForLogin(managerId, passphrase) {
 }
 
 async function rankingApiRequest(path, options = {}, retried = false) {
-  const accessToken = await ensureRankingAuthorization();
+  const requiresAuth = options.auth !== false;
+  const { auth: _auth, ...requestOptions } = options;
+  const accessToken = requiresAuth ? await ensureRankingAuthorization() : "";
+  const headers = { Accept: "application/json", "Content-Type": "application/json", "X-Box-This-Lap-Channel": window.location.pathname.includes("/dev/") ? "dev" : "main", ...(options.headers || {}) };
+  if (requiresAuth) headers.Authorization = `Bearer ${accessToken}`;
   const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}${path}`, {
-    ...options,
-    headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${accessToken}`, "X-Box-This-Lap-Channel": window.location.pathname.includes("/dev/") ? "dev" : "main", ...(options.headers || {}) },
+    ...requestOptions,
+    headers,
     signal: AbortSignal.timeout(12000),
   });
   const value = await response.json().catch(() => ({}));
-  if (response.status === 401 && !retried) {
+  if (response.status === 401 && requiresAuth && !retried) {
     clearRankingAuthorization();
     return rankingApiRequest(path, options, true);
   }
@@ -11305,18 +11309,6 @@ function renderActivePageContent(pageName = "") {
     followedTeamsController.render();
     return;
   }
-  const followedTeamsRequired = pageName === "footy" || pageName.startsWith("footy-team-") || ["footy-goal-assists", "footy-perfect", "footy-seen"].includes(pageName);
-  if (followedTeamsRequired) {
-    if (!getCurrentManagerId()) {
-      setFootyNotificationStatus("Sign in and choose followed teams before turning on match alerts.", "error");
-      return;
-    }
-    if (!followedTeamsController.getFollowedTeamIds().length) {
-      setFootyNotificationStatus("Add at least one followed team in Account Settings first.", "error");
-      return;
-    }
-  }
-
   if (pageName === "the-monster-maniac") {
     void platinumsController.renderPage();
     return;
@@ -14339,9 +14331,7 @@ function hydrateManagerSession() {
   hydrateStoredManagerSession();
   renderLoginState();
   renderManagerHub();
-  if (siteData.managerSession?.managerId) {
-    void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
-  }
+  void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
 }
 
 function hydrateStoredManagerSession() {
@@ -14393,6 +14383,7 @@ function signOutManager() {
   closeProfileDropdown();
   renderLoginState();
   renderManagerHub();
+  void followedTeamsController.load().catch((error) => recordDiagnostic("default followed teams failed to load", error));
   showPage("footy", { scrollToTop: true });
   window.location.hash = "footy";
 }

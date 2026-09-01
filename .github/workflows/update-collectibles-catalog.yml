@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/update-collectibles-catalog.yml"
       - "scripts/collectibles/**"
+      - "!scripts/collectibles/**/*.test.mjs"
       - "workers/collectibles/migrations/**"
   schedule:
     - cron: "0 10 * * 1"

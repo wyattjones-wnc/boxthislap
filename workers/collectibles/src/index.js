@@ -1,6 +1,6 @@
 const EXCLUSION_TYPES = new Set([
   "manufacturer", "product_line", "scale", "release_category",
-  "release_series", "year", "catalog_category", "collectible",
+  "release_series", "year", "catalog_category", "catalog_category_year", "collectible",
 ]);
 const EXCLUDED_SQL = `EXISTS (SELECT 1 FROM collection_exclusions ex WHERE
   (ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id) OR
@@ -10,6 +10,11 @@ const EXCLUDED_SQL = `EXISTS (SELECT 1 FROM collection_exclusions ex WHERE
   (ex.exclusion_type = 'release_category' AND ex.exclusion_value = c.release_category) OR
   (ex.exclusion_type = 'release_series' AND ex.exclusion_value = c.release_series) OR
   (ex.exclusion_type = 'year' AND ex.exclusion_value = CAST(c.year AS TEXT)) OR
+  (ex.exclusion_type = 'catalog_category_year' AND EXISTS (
+    SELECT 1 FROM collectible_categories eycc
+    JOIN catalog_categories eycat ON eycat.id = eycc.category_id
+    WHERE eycc.collectible_id = c.id AND ex.exclusion_value = eycat.slug || ':' || CAST(c.year AS TEXT)
+  )) OR
   (ex.exclusion_type = 'catalog_category' AND EXISTS (
     SELECT 1 FROM collectible_categories ecc
     JOIN catalog_categories ecat ON ecat.id = ecc.category_id
@@ -55,6 +60,9 @@ export default {
       }
       if (request.method === "GET" && url.pathname === "/api/collectibles/filters") {
         return json({ ok: true, ...(await listFilters(env)) }, 200, cors, "public, max-age=900");
+      }
+      if (request.method === "GET" && url.pathname === "/api/collectibles/groups") {
+        return json({ ok: true, ...(await listGroups(env, url.searchParams)) }, 200, cors);
       }
       if (request.method === "GET" && url.pathname === "/api/collectibles/stats") {
         return json({ ok: true, ...(await readStats(env, url.searchParams)) }, 200, cors);
@@ -131,7 +139,7 @@ function buildScope(searchParams) {
   const where = ["m.active = 1"];
   const params = [];
   const filters = [
-    ["manufacturer", "m.slug"], ["productLine", "pl.slug"], ["year", "c.year"],
+    ["manufacturer", "m.slug"], ["productLine", "pl.slug"],
     ["scale", "c.scale"], ["releaseCategory", "c.release_category"],
     ["series", "c.release_series"], ["mix", "c.mix_name"], ["itemNumber", "c.item_number"],
   ];
@@ -139,6 +147,9 @@ function buildScope(searchParams) {
     const value = cleanQuery(searchParams.get(key));
     if (value) { where.push(`${column} = ?`); params.push(value); }
   }
+  const year = cleanQuery(searchParams.get("year"));
+  if (year === "unknown") where.push("c.year IS NULL");
+  else if (year) { where.push("c.year = ?"); params.push(year); }
   const category = cleanQuery(searchParams.get("category"));
   if (category) {
     joins.push("JOIN collectible_categories selected_cc ON selected_cc.collectible_id = c.id JOIN catalog_categories selected_cat ON selected_cat.id = selected_cc.category_id");
@@ -147,6 +158,7 @@ function buildScope(searchParams) {
   }
   const status = cleanQuery(searchParams.get("status"));
   if (status === "owned") where.push("ci.status = 'owned'");
+  if (status === "unreviewed") where.push("ci.collectible_id IS NULL");
   if (["not_owned", "missing"].includes(status)) where.push("COALESCE(ci.status, 'not_owned') = 'not_owned'");
   if (status === "wanted" || booleanQuery(searchParams.get("wanted"))) where.push("COALESCE(ci.wanted, 0) = 1");
   for (const [key, column] of [["special", "c.is_special_release"], ["storeExclusive", "c.is_store_exclusive"], ["eventExclusive", "c.is_event_exclusive"]]) {
@@ -163,6 +175,61 @@ function buildScope(searchParams) {
   if (scope === "excluded") where.push(`(${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL})`);
   else if (scope !== "all") where.push(`NOT (${EXCLUDED_SQL}) AND ${NORMAL_CHECKLIST_SQL}`);
   return { joins, where, params };
+}
+
+async function listGroups(env, searchParams) {
+  const groupBy = cleanQuery(searchParams.get("groupBy"));
+  if (!new Set(["category", "year"]).has(groupBy)) throw httpError(400, "Group must be category or year.");
+  const { joins, where, params } = buildScope(searchParams);
+  const base = `FROM collectibles c
+    JOIN manufacturers m ON m.id = c.manufacturer_id
+    LEFT JOIN product_lines pl ON pl.id = c.product_line_id
+    LEFT JOIN collection_items ci ON ci.collectible_id = c.id
+    ${joins.join("\n")}`;
+  const countColumns = `COUNT(DISTINCT c.id) AS total,
+    COUNT(DISTINCT CASE WHEN ci.status = 'owned' THEN c.id END) AS owned,
+    COUNT(DISTINCT CASE WHEN COALESCE(ci.status, 'not_owned') = 'not_owned' THEN c.id END) AS missing,
+    COUNT(DISTINCT CASE WHEN ci.wanted = 1 THEN c.id END) AS wanted,
+    COALESCE(MAX(CASE WHEN c.primary_image_url NOT LIKE '%TruckNeeded%' THEN NULLIF(c.primary_image_url, '') END), MAX(NULLIF(c.primary_image_url, ''))) AS image_url`;
+  let sql;
+  if (groupBy === "category") {
+    sql = `SELECT cat.slug AS group_key, cat.name AS label, cat.category_type AS group_type,
+      cat.checklist_mode, ${countColumns},
+      COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded,
+      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_value = cat.slug AND ex.exclusion_type IN ('catalog_category', 'manufacturer') ORDER BY ex.exclusion_type = 'catalog_category' DESC LIMIT 1) AS exclusion_id,
+      (SELECT ex.exclusion_type FROM collection_exclusions ex WHERE ex.exclusion_value = cat.slug AND ex.exclusion_type IN ('catalog_category', 'manufacturer') ORDER BY ex.exclusion_type = 'catalog_category' DESC LIMIT 1) AS exclusion_type
+      ${base}
+      JOIN collectible_categories gcc ON gcc.collectible_id = c.id
+      JOIN catalog_categories cat ON cat.id = gcc.category_id
+      WHERE ${where.join(" AND ")}
+      GROUP BY cat.id ORDER BY cat.source_sort_order, cat.name COLLATE NOCASE`;
+  } else {
+    sql = `SELECT CAST(c.year AS TEXT) AS group_key,
+      CAST(c.year AS TEXT) AS label, ${countColumns},
+      COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded,
+      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND EXISTS (SELECT 1 FROM collectible_categories ycc JOIN catalog_categories ycat ON ycat.id = ycc.category_id WHERE ycc.collectible_id = c.id AND ex.exclusion_value = ycat.slug || ':' || CAST(c.year AS TEXT)) LIMIT 1) AS exclusion_id,
+      (SELECT ex.exclusion_type FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND EXISTS (SELECT 1 FROM collectible_categories ycc JOIN catalog_categories ycat ON ycat.id = ycc.category_id WHERE ycc.collectible_id = c.id AND ex.exclusion_value = ycat.slug || ':' || CAST(c.year AS TEXT)) LIMIT 1) AS exclusion_type
+      ${base} WHERE ${where.join(" AND ")} AND c.year IS NOT NULL
+      GROUP BY c.year ORDER BY c.year DESC`;
+  }
+  const result = await env.DB.prepare(sql).bind(...params).all();
+  return {
+    groupBy,
+    groups: (result.results || []).map((row) => ({
+      key: row.group_key,
+      label: row.label,
+      type: row.group_type || groupBy,
+      checklistMode: row.checklist_mode || "normal",
+      image: row.image_url || "",
+      total: Number(row.total || 0),
+      owned: Number(row.owned || 0),
+      missing: Number(row.missing || 0),
+      wanted: Number(row.wanted || 0),
+      excluded: Number(row.excluded || 0),
+      exclusionId: row.exclusion_id ? Number(row.exclusion_id) : null,
+      exclusionType: row.exclusion_type || null,
+    })),
+  };
 }
 
 async function readStats(env, searchParams) {

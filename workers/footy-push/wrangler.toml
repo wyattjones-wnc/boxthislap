@@ -10,10 +10,16 @@ binding = "FOOTY_PUSH_KV"
 id = "18bc15da284647deb5eda7baf59a0cd9"
 preview_id = "a79f07809e6149a4901e75bddbd3310b"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "rankings"
+database_id = "45c405ab-a0cd-442a-b135-b7ffe4b7d933"
+
 [vars]
 ALLOWED_ORIGIN = "https://wyattjones-wnc.github.io"
 FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/data/footy-schedule.json"
 FOOTY_DEV_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json"
+DEFAULT_FOOTY_MANAGER_ID = "6"
 NOTIFICATION_LOOKBACK_MINUTES = "16"
 NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/#footy"
 DEV_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy"

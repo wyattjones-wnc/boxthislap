@@ -176,7 +176,7 @@ function variantSuffix(canonical, sourceName) { const suffix = sourceName.slice(
 export function stableId(prefix, value) { return `${prefix}_${createHash("sha256").update(value).digest("hex").slice(0, 24)}`; }
 function normalize(value) { return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
 function slugify(value) { return normalize(value).replace(/\s+/g, "-"); }
-function wordsFromSlug(value) { return decodeURIComponent(value).replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+function wordsFromSlug(value) { return decodeURIComponent(value).replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function canonicalCategory(value) {
   const key = slugify(value).replace(/-/g, "");
   if (key === "hotwheels") return { slug: "hot-wheels", name: "Hot Wheels" };

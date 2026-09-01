@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.08.30.20.31";
+      window.BOX_THIS_LAP_VERSION = "2026.08.31.18.36";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202608302031">
+    <link rel="stylesheet" href="styles.css?v=202608311836">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -363,8 +363,8 @@
                 <a href="#the-monster-maniac" data-page-link="the-monster-maniac" data-admin-only hidden>TheMonsterManiac</a>
                 <a href="#guides" data-page-link="guides" data-non-admin-only hidden>Guides</a>
                 <a href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
-                <a href="#account-settings" data-page-link="account-settings">Account Settings</a>
                 <a href="#collectibles" data-page-link="collectibles" data-admin-only hidden>Collectibles</a>
+                <a href="#account-settings" data-page-link="account-settings">Account Settings</a>
                 <button id="logout-button" type="button">Sign Out</button>
               </div>
             </div>
@@ -415,7 +415,7 @@
       <section class="page account-settings-page" id="account-settings" data-page="account-settings">
         <div class="section-heading">
           <h1>Account Settings</h1>
-          <p>Manage how Box This Lap looks and stores images on this device.</p>
+          <p>Manage your followed teams, notifications, appearance, and offline images.</p>
         </div>
         <div class="account-settings-grid">
           <section class="account-settings-card" aria-labelledby="appearance-settings-heading">
@@ -436,6 +436,22 @@
               <span class="image-cache-status" id="image-cache-status" role="status" aria-live="polite"></span>
             </div>
           </section>
+          <section class="account-settings-card account-settings-card--stacked followed-teams-settings" id="followed-teams-settings" aria-labelledby="followed-teams-heading" hidden>
+            <div class="followed-teams-heading-row">
+              <div>
+                <h2 id="followed-teams-heading">Followed Teams</h2>
+                <p>Following a team enables match notifications about that team on devices where alerts are turned on.</p>
+              </div>
+              <span id="followed-teams-count">0 teams</span>
+            </div>
+            <div class="followed-teams-list" id="followed-teams-list" aria-live="polite"></div>
+            <div class="followed-teams-actions">
+              <button class="footer-copy-link" type="button" id="followed-teams-add">Add teams</button>
+              <button class="footer-copy-link" type="button" id="followed-teams-reset" hidden>Reset to default</button>
+              <button class="action-button" type="button" id="followed-teams-save" disabled>Save teams</button>
+            </div>
+            <p class="followed-teams-status" id="followed-teams-status" role="status" aria-live="polite"></p>
+          </section>
           <section class="account-settings-card" aria-labelledby="version-settings-heading">
             <div>
               <h2 id="version-settings-heading">About</h2>
@@ -445,6 +461,22 @@
           </section>
         </div>
       </section>
+
+      <dialog class="followed-teams-dialog" id="followed-teams-dialog" aria-labelledby="followed-teams-dialog-title">
+        <div class="followed-teams-dialog-heading">
+          <h2 id="followed-teams-dialog-title">Add teams</h2>
+          <button class="dialog-close" id="followed-teams-dialog-close" type="button" aria-label="Close team picker">×</button>
+        </div>
+        <div class="followed-teams-picker-filters">
+          <label><span>Search teams</span><input id="followed-teams-search" type="search" autocomplete="off" placeholder="Search by team name"></label>
+          <label><span>Competition</span><select id="followed-teams-league"><option value="">All competitions</option></select></label>
+        </div>
+        <div class="followed-teams-picker" id="followed-teams-picker"></div>
+        <div class="followed-teams-dialog-actions">
+          <p class="followed-teams-dialog-status" id="followed-teams-dialog-status" role="status" aria-live="polite"></p>
+          <button class="action-button" id="followed-teams-dialog-done" type="button">Done</button>
+        </div>
+      </dialog>
 
       <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
         <div class="section-heading page-heading-with-action admin-home-heading">
@@ -509,33 +541,38 @@
             <p class="eyebrow">Monster Trucks</p>
             <h1>Collectibles</h1>
           </div>
-          <div class="heading-actions">
-            <button class="icon-action-button" id="collectibles-filter-toggle" type="button" aria-label="Show collectible filters" title="Filters" aria-expanded="false" aria-controls="collectibles-filters">
-              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="collection-view-tabs" data-collection-views role="group" aria-label="Collection view">
-          <button type="button" data-collection-view="collection">My Collection</button>
-          <button type="button" data-collection-view="owned">Owned</button>
-          <button type="button" data-collection-view="missing">Missing</button>
-          <button type="button" data-collection-view="wishlist">Wishlist</button>
-          <button type="button" data-collection-view="catalog">Full Catalog</button>
+          <label class="collectibles-view-control">
+            <span>View</span>
+            <select id="collectibles-view-select" aria-label="Collection view">
+              <option value="collection">Checklist</option>
+              <option value="owned">My Collection</option>
+              <option value="missing">Missing</option>
+              <option value="wishlist">Wishlist</option>
+              <option value="catalog">Full Catalog</option>
+            </select>
+          </label>
         </div>
 
         <div class="collectibles-stats" id="collectibles-stats" aria-live="polite"></div>
 
+        <div class="collectibles-toolbar">
+          <button class="icon-action-button" id="collectibles-filter-toggle" type="button" aria-label="Show collectible filters" title="Filters" aria-expanded="false" aria-controls="collectibles-filters">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+          </button>
+        </div>
+
+        <nav class="collectibles-breadcrumbs" id="collectibles-breadcrumbs" aria-label="Catalog location"></nav>
+
         <form class="collectibles-filters" id="collectibles-filters" hidden>
-          <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, variant, or series"></label>
-          <label><span>Ownership</span><select name="status"><option value="">All</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Wanted</option></select></label>
+          <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, or variant"></label>
+          <label><span>Ownership</span><select name="status"><option value="">All</option><option value="unreviewed">Unreviewed</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Want</option></select></label>
           <label><span>Manufacturer</span><select name="manufacturer"><option value="">All manufacturers</option></select></label>
           <label><span>Year</span><select name="year"><option value="">All years</option></select></label>
           <label><span>Scale</span><select name="scale"><option value="">All scales</option></select></label>
           <label><span>Catalog category</span><select name="category"><option value="">All catalog categories</option></select></label>
-          <label><span>Series</span><select name="series"><option value="">All series</option></select></label>
           <label><span>Sort</span><select name="sort"><option value="source">Catalog order</option><option value="year_desc">Year newest</option><option value="year_asc">Year oldest</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="item_number">Item number</option><option value="manufacturer">Manufacturer</option><option value="recently_acquired">Recently acquired</option><option value="recently_updated">Recently updated</option><option value="owned_first">Owned first</option><option value="missing_first">Missing first</option></select></label>
           <label><span>Checklist visibility</span><select name="scope"><option value="active">Checklist items</option><option value="excluded">Excluded only</option><option value="all">Include excluded</option></select></label>
+          <label><span>Page</span><select name="page" disabled><option value="1">Page 1</option></select></label>
           <div class="collectibles-filter-actions"><button class="action-button" type="submit">Apply</button><button class="footer-copy-link" type="button" data-collectibles-clear>Clear filters</button></div>
         </form>
 
@@ -852,6 +889,10 @@
               <span>Friendlies</span>
             </label>
           </div>
+          <div class="footy-team-choice-actions" id="footy-team-choice-actions" aria-label="Team selection" hidden>
+            <button class="action-button" id="footy-choose-teams" type="button" hidden>Choose teams</button>
+            <button class="footer-copy-link" id="footy-reset-teams" type="button" hidden>Reset to default</button>
+          </div>
         </div>
         <div class="content-shell" id="footy-schedule-list">
           <p class="table-message">Upcoming football fixtures will load here once a source is connected.</p>
@@ -1037,7 +1078,45 @@
             <h1>Seen Matches</h1>
           </div>
           <div class="heading-actions">
+            <button class="icon-action-button" id="footy-seen-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-seen-filters" aria-label="Show seen match filters" title="Filters">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+              </svg>
+            </button>
             <button class="icon-action-button" id="footy-seen-add" type="button" aria-label="Add a seen match" title="Add seen match">+</button>
+          </div>
+        </div>
+        <div class="footy-filters footy-seen-filters" id="footy-seen-filters" hidden>
+          <label>
+            <span>Search</span>
+            <input id="footy-seen-search" type="search" placeholder="Team, competition, venue" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <div class="footy-date-range">
+              <input id="footy-seen-date-from" type="date" aria-label="Seen match date from">
+              <input id="footy-seen-date-to" type="date" aria-label="Seen match date to">
+            </div>
+          </label>
+          <label>
+            <span>Competition</span>
+            <select id="footy-seen-competition-filter" aria-label="Filter seen matches by competition">
+              <option value="">All competitions</option>
+            </select>
+          </label>
+          <label>
+            <span>Sports Bar</span>
+            <select id="footy-seen-sports-bar-filter" aria-label="Filter seen matches by Sports Bar">
+              <option value="">All matches</option>
+              <option value="yes">Sports Bar</option>
+              <option value="no">Not Sports Bar</option>
+            </select>
+          </label>
+          <div class="footy-filter-toggles footy-seen-filter-toggles">
+            <label class="footy-checkbox-control">
+              <input id="footy-seen-edit-toggle" type="checkbox">
+              <span>Edit entries</span>
+            </label>
           </div>
         </div>
         <div class="content-shell footy-seen-list" id="footy-seen-list" aria-live="polite" aria-busy="true">
@@ -2605,6 +2684,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202608302031"></script>
+    <script type="module" src="script.js?v=202608311836"></script>
   </body>
 </html>

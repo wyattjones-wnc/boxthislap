@@ -157,6 +157,14 @@ import {
   footyPerfectNote,
   footyPerfectStatus,
   footySeenAdd,
+  footySeenFilterToggle,
+  footySeenFilters,
+  footySeenSearch,
+  footySeenDateFrom,
+  footySeenDateTo,
+  footySeenCompetitionFilter,
+  footySeenSportsBarFilter,
+  footySeenEditToggle,
   footySeenList,
   footySeenDialog,
   footySeenForm,
@@ -353,7 +361,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608302031";
+} from "./modules/domRefs.js?v=202608310537";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -363,6 +371,7 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310006";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202608300002";
 import {
   formatUpdatedTime,
@@ -460,6 +469,8 @@ let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
 let shouldShowFootyPerfectFilters = false;
 let shouldShowFootyPerfectEditMode = false;
+let shouldShowFootySeenFilters = false;
+let shouldShowFootySeenEditMode = false;
 const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
@@ -589,7 +600,7 @@ const router = createRouter({
   pageLinks,
   pages,
   shouldBlockPage: (pageName) =>
-    (["rankings", "draft-list"].includes(pageName) && !siteData.managerSession) ||
+    (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
@@ -624,6 +635,21 @@ const youtubeInboxController = createYouTubeInboxController({
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
+});
+const followedTeamsController = createFollowedTeamsController({
+  getManagerId: getCurrentManagerId,
+  request: rankingApiRequest,
+  onChanged: (teams) => {
+    siteData.followedTeams = teams;
+    if (siteData.managerSession) {
+      renderManagerWorkflow(siteData.managerSession.managerId);
+    }
+    if (siteData.footySchedule) {
+      renderFollowedTeamShortcuts(siteData.footySchedule);
+      renderFootySchedule(siteData.footySchedule);
+      renderFootyTeamPage();
+    }
+  },
 });
 const collectiblesController = createCollectiblesController({
   endpoint: COLLECTIBLES_ENDPOINT,
@@ -812,7 +838,7 @@ function syncFollowedTeamShortcutsVisibility(pageName = activePageName) {
 }
 
 function getFootyShortcutTeams(schedule) {
-  return getAllFootyScheduleTeams(schedule);
+  return followedTeamsController.getFollowedTeams();
 }
 
 function normalizeFootyScheduleTeam(teamSchedule = {}) {
@@ -884,11 +910,21 @@ function getActiveFootyTeam() {
 }
 
 function getAllFootyScheduleTeams(schedule) {
-  if (!Array.isArray(schedule?.teamSchedules)) {
-    return [];
-  }
-
-  return uniqueFootyTeams(schedule.teamSchedules.map((teamSchedule) => normalizeFootyScheduleTeam(teamSchedule)))
+  const scheduled = Array.isArray(schedule?.teamSchedules)
+    ? schedule.teamSchedules.map((teamSchedule) => normalizeFootyScheduleTeam(teamSchedule))
+    : [];
+  const catalog = (Array.isArray(schedule?.teamCatalog) ? schedule.teamCatalog : []).map((team) => ({
+    badge: getFootyTeamBadge(team.name, team.badge, team.id),
+    fixtureCount: 0,
+    id: String(team.id || ""),
+    leagueGames: 0,
+    leagues: team.leagues || [],
+    name: getFootyDisplayTeamName(team.name),
+    prettyName: team.prettyName || team.name,
+    priority: Number.MAX_SAFE_INTEGER,
+    projectedPoints: null,
+  }));
+  return uniqueFootyTeams([...scheduled, ...catalog])
     .sort(compareFootyTeamsByPriorityThenName);
 }
 
@@ -1815,11 +1851,12 @@ function renderFootyTeamFixtureSection(title, fixtures = [], { hiddenCount = 0, 
 }
 
 function getFootyScheduleFixtures(schedule) {
-  if (!Array.isArray(schedule?.teamSchedules)) {
-    return [];
-  }
-
-  const fixtures = schedule.teamSchedules
+  const followedIds = new Set(followedTeamsController.getFollowedTeamIds());
+  if (!followedIds.size) return [];
+  const priorities = new Map(followedTeamsController.getFollowedTeamIds().map((id, index) => [id, index + 1]));
+  const teams = new Map(getAllFootyScheduleTeams(schedule).map((team) => [String(team.id), team]));
+  const trackedFixtures = (schedule.teamSchedules || [])
+    .filter((teamSchedule) => followedIds.has(String(teamSchedule?.team?.id || "")))
     .flatMap((teamSchedule) => {
       const team = teamSchedule?.team || {};
       const teamFixtures = Array.isArray(teamSchedule?.fixtures) ? teamSchedule.fixtures : [];
@@ -1829,9 +1866,37 @@ function getFootyScheduleFixtures(schedule) {
         teamBadge: getFootyTeamBadge(fixture.teamName || team.name, fixture.teamBadge || team.badge, fixture.teamId || team.id),
         teamLeague: team.league || "",
         teamName: getFootyDisplayTeamName(fixture.teamName || team.name),
-        teamPriority: team.priority || fixture.priority || "",
+        teamPriority: priorities.get(String(fixture.teamId || team.id)) || "",
       }));
     });
+  const competitionFixtures = (schedule.competitionSchedules || []).flatMap((competitionSchedule) =>
+    (competitionSchedule.fixtures || []).flatMap((fixture) => {
+      const matches = [
+        { id: String(fixture.homeTeamId || ""), isHome: true },
+        { id: String(fixture.awayTeamId || ""), isHome: false },
+      ].filter((entry) => followedIds.has(entry.id));
+      return matches.map(({ id, isHome }) => {
+        const team = teams.get(id) || {};
+        return {
+          ...fixture,
+          isHome,
+          opponent: isHome ? fixture.away : fixture.home,
+          priority: priorities.get(id),
+          teamBadge: team.badge || (isHome ? fixture.homeBadge : fixture.awayBadge) || "",
+          teamId: id,
+          teamLeague: competitionSchedule?.competition?.name || fixture.league || "",
+          teamName: team.name || (isHome ? fixture.home : fixture.away),
+          teamPriority: priorities.get(id),
+        };
+      });
+    })
+  );
+  const fixtureMap = new Map();
+  [...trackedFixtures, ...competitionFixtures].forEach((fixture) => {
+    const key = `${fixture.matchId || fixture.id}|${fixture.teamId}`;
+    if (!fixtureMap.has(key)) fixtureMap.set(key, fixture);
+  });
+  const fixtures = [...fixtureMap.values()];
   const teamBadges = getFootyTeamBadgeMap(fixtures);
 
   return fixtures
@@ -2662,9 +2727,10 @@ function syncFootyNotificationToggle() {
 
   const supported = isFootyPushNotificationSupported() || isFootyNotificationSupported();
   const enabled = isFootyNotificationEnabled();
+  const managerReady = Boolean(getCurrentManagerId());
 
   footyNotificationToggle.hidden = !supported;
-  footyNotificationToggle.disabled = !supported || isFootyNotificationBusy;
+  footyNotificationToggle.disabled = !supported || !managerReady || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
   footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
   footyNotificationToggle.setAttribute("aria-pressed", String(enabled));
@@ -2947,14 +3013,14 @@ async function subscribeFootyPushNotifications() {
     applicationServerKey: base64UrlToUint8Array(publicKey),
     userVisibleOnly: true,
   });
+  const accessToken = await ensureRankingAuthorization();
   const saveResponse = await fetch(`${endpoint}/subscribe`, {
     body: JSON.stringify({
-      managerId: getCurrentManagerId(),
       pageUrl: window.location.href,
       subscription: subscription.toJSON(),
       userAgent: navigator.userAgent,
     }),
-    headers: { "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     method: "POST",
   });
 
@@ -3884,16 +3950,20 @@ function renderFootySeenPage() {
     return;
   }
 
-  const sortedMatches = [...seenMatches].sort(compareFootySeenMatches);
+  syncFootySeenFilters(seenMatches);
+  const sortedMatches = getFilteredFootySeenMatches(seenMatches).sort(compareFootySeenMatches);
   footySeenList.setAttribute("aria-busy", "false");
   footySeenList.innerHTML = sortedMatches.length
     ? sortedMatches.map(renderFootySeenMatch).join("")
-    : `<p class="table-message">No seen matches have been added yet.</p>`;
+    : `<p class="table-message">${seenMatches.length ? "No seen matches match these filters." : "No seen matches have been added yet."}</p>`;
 }
 
 function renderFootySeenMatch(seenMatch = {}) {
   const dateLabel = formatFootyPerfectDate(seenMatch.matchDate);
   const timeLabel = String(seenMatch.matchTime || "").trim();
+  const editMarkup = shouldShowFootySeenEditMode
+    ? `<button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>`
+    : "";
 
   return `
     <article class="footy-seen-card">
@@ -3906,7 +3976,7 @@ function renderFootySeenMatch(seenMatch = {}) {
             ${seenMatch.competition ? `<span>${escapeHtml(seenMatch.competition)}</span>` : ""}
           </p>
         </div>
-        <button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>
+        ${editMarkup}
       </div>
       <div class="footy-seen-card-footer">
         ${seenMatch.venue ? `<span>${escapeHtml(seenMatch.venue)}</span>` : "<span></span>"}
@@ -3914,6 +3984,45 @@ function renderFootySeenMatch(seenMatch = {}) {
       </div>
     </article>
   `;
+}
+
+function getFilteredFootySeenMatches(seenMatches = []) {
+  const search = normalizeLookupName(footySeenSearch?.value);
+  const dateFrom = String(footySeenDateFrom?.value || "");
+  const dateTo = String(footySeenDateTo?.value || "");
+  const competition = normalizeLookupName(footySeenCompetitionFilter?.value);
+  const sportsBar = String(footySeenSportsBarFilter?.value || "");
+
+  return seenMatches.filter((seenMatch) => {
+    const matchDate = String(seenMatch.matchDate || "");
+    if (dateFrom && matchDate < dateFrom) return false;
+    if (dateTo && matchDate > dateTo) return false;
+    if (competition && normalizeLookupName(seenMatch.competition) !== competition) return false;
+    if (sportsBar === "yes" && !seenMatch.sportsBar) return false;
+    if (sportsBar === "no" && seenMatch.sportsBar) return false;
+    if (!search) return true;
+
+    return normalizeLookupName([
+      seenMatch.home,
+      seenMatch.away,
+      seenMatch.competition,
+      seenMatch.venue,
+    ].join(" ")).includes(search);
+  });
+}
+
+function syncFootySeenFilters(seenMatches = []) {
+  if (footySeenFilters) footySeenFilters.hidden = !shouldShowFootySeenFilters;
+  if (footySeenFilterToggle) {
+    footySeenFilterToggle.setAttribute("aria-expanded", String(shouldShowFootySeenFilters));
+    footySeenFilterToggle.classList.toggle("is-active", shouldShowFootySeenFilters);
+  }
+  if (footySeenEditToggle) footySeenEditToggle.checked = shouldShowFootySeenEditMode;
+  syncFootyPerfectSelectOptions(
+    footySeenCompetitionFilter,
+    seenMatches.map((seenMatch) => seenMatch.competition).filter(Boolean),
+    "All competitions",
+  );
 }
 
 function compareFootySeenMatches(first = {}, second = {}) {
@@ -7742,14 +7851,18 @@ async function requestRankingAuthorizationForLogin(managerId, passphrase) {
 }
 
 async function rankingApiRequest(path, options = {}, retried = false) {
-  const accessToken = await ensureRankingAuthorization();
+  const requiresAuth = options.auth !== false;
+  const { auth: _auth, ...requestOptions } = options;
+  const accessToken = requiresAuth ? await ensureRankingAuthorization() : "";
+  const headers = { Accept: "application/json", "Content-Type": "application/json", "X-Box-This-Lap-Channel": window.location.pathname.includes("/dev/") ? "dev" : "main", ...(options.headers || {}) };
+  if (requiresAuth) headers.Authorization = `Bearer ${accessToken}`;
   const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}${path}`, {
-    ...options,
-    headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${accessToken}`, ...(options.headers || {}) },
+    ...requestOptions,
+    headers,
     signal: AbortSignal.timeout(12000),
   });
   const value = await response.json().catch(() => ({}));
-  if (response.status === 401 && !retried) {
+  if (response.status === 401 && requiresAuth && !retried) {
     clearRankingAuthorization();
     return rankingApiRequest(path, options, true);
   }
@@ -11195,6 +11308,10 @@ function shouldRenderPageSection(pageName) {
 }
 
 function renderActivePageContent(pageName = "") {
+  if (pageName === "account-settings") {
+    followedTeamsController.render();
+    return;
+  }
   if (pageName === "the-monster-maniac") {
     void platinumsController.renderPage();
     return;
@@ -12870,9 +12987,24 @@ footySeenAdd?.addEventListener("click", () => {
   openFootySeenDialog({ manual: true });
 });
 
+footySeenFilterToggle?.addEventListener("click", () => {
+  shouldShowFootySeenFilters = !shouldShowFootySeenFilters;
+  renderFootySeenPage();
+});
+
+[footySeenSearch, footySeenDateFrom, footySeenDateTo, footySeenCompetitionFilter, footySeenSportsBarFilter]
+  .forEach((control) => {
+    control?.addEventListener(control === footySeenSearch ? "input" : "change", renderFootySeenPage);
+  });
+
+footySeenEditToggle?.addEventListener("change", () => {
+  shouldShowFootySeenEditMode = Boolean(footySeenEditToggle.checked);
+  renderFootySeenPage();
+});
+
 footySeenList?.addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-footy-seen-edit]");
-  if (!editButton) return;
+  if (!editButton || !shouldShowFootySeenEditMode) return;
   const entryId = String(editButton.getAttribute("data-footy-seen-edit") || "");
   const seenMatch = (siteData.footySeenMatches || []).find((entry) => entry.id === entryId);
   if (seenMatch) openFootySeenDialog({ seenMatch, manual: !seenMatch.matchId });
@@ -14202,6 +14334,7 @@ function hydrateManagerSession() {
   hydrateStoredManagerSession();
   renderLoginState();
   renderManagerHub();
+  void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
 }
 
 function hydrateStoredManagerSession() {
@@ -14218,6 +14351,7 @@ function saveManagerSession(session) {
   activeRankingManagerId = String(session?.managerId || "");
   resetRankingManagerData();
   draftListsController.reset();
+  followedTeamsController.reset();
 
   try {
     localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -14227,10 +14361,11 @@ function saveManagerSession(session) {
 
   renderLoginState();
   renderManagerHub();
+  void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
 
+  pageDataPromises.delete("manager-hub");
+  sharedDataPromises.delete("manager-hub");
   if (activePageName === "manager-hub") {
-    pageDataPromises.delete("manager-hub");
-    sharedDataPromises.delete("manager-hub");
     void ensurePageData("manager-hub");
   }
 }
@@ -14240,6 +14375,7 @@ function signOutManager() {
   activeRankingManagerId = "";
   resetRankingManagerData();
   draftListsController.reset();
+  followedTeamsController.reset();
 
   try {
     localStorage.removeItem(MANAGER_SESSION_STORAGE_KEY);
@@ -14250,6 +14386,7 @@ function signOutManager() {
   closeProfileDropdown();
   renderLoginState();
   renderManagerHub();
+  void followedTeamsController.load().catch((error) => recordDiagnostic("default followed teams failed to load", error));
   showPage("footy", { scrollToTop: true });
   window.location.hash = "footy";
 }
@@ -15008,10 +15145,31 @@ function renderManagerWorkflow(managerId) {
 
 function buildManagerWorkflowItems(managerId) {
   return [
+    ...buildFootyTeamSelectionWorkflowItems(),
     ...buildDraftWorkflowItems(managerId),
     ...buildFantasyCriticWorkflowItems(managerId),
     ...buildFormulaOneWeeklyWorkflowItems(managerId),
   ];
+}
+
+function buildFootyTeamSelectionWorkflowItems() {
+  const selection = followedTeamsController.getSelectionState();
+
+  if (!selection.loaded || selection.hasPersonalSelection) {
+    return [];
+  }
+
+  return [{
+    actionLabel: "Choose teams",
+    description: "Select the clubs you follow to personalize Footy and receive their match notifications.",
+    dueDate: "",
+    id: "footy-team-selection",
+    priority: "1",
+    status: "No Footy teams selected",
+    target: "footy",
+    title: "Choose your Footy teams",
+    url: "",
+  }];
 }
 
 function buildDraftWorkflowItems(managerId) {
@@ -16608,6 +16766,10 @@ window.addEventListener("popstate", () => {
 function getPageDataScope(pageName = "") {
   const page = String(pageName || "");
 
+  if (page === "account-settings") {
+    return "account-settings";
+  }
+
   if (page === "footy" || page.startsWith("footy-team-") || page === "footy-goal-assists" || page === "footy-perfect" || page === "footy-seen") {
     return "footy";
   }
@@ -16742,6 +16904,10 @@ function ensureSharedData(key, loader) {
 }
 
 function loadPageData(scope) {
+  if (scope === "account-settings") {
+    return followedTeamsController.load();
+  }
+
   if (scope === "footy") {
     return ensureFootyData();
   }
@@ -17354,7 +17520,7 @@ function ensureFormulaOneData(year, view = "questions") {
     ));
   }
 
-  if (view === "weekly" && yearKey === "2026") {
+  if ((view === "weekly" || view === "weekly-results") && yearKey === "2026") {
     sourceTasks.push(ensureFormulaOneSource(
       "formulaOne2026RoundForms",
       () => loadSheet("formulaOne2026RoundForms"),

@@ -1,11 +1,11 @@
 # Footy Push Notifications
 
-This setup uses a Cloudflare Worker with KV so Footy match notifications can be delivered even when the site is not open.
+This setup uses a Cloudflare Worker with KV and the shared Rankings D1 database so manager-specific Footy match notifications can be delivered even when the site is not open.
 
 ## Pieces
 
 - `service-worker.js`: receives push events and displays pending notifications.
-- `workers/footy-push`: Cloudflare Worker that stores push subscriptions, checks the Footy schedule, and sends Web Push wakeups.
+- `workers/footy-push`: Cloudflare Worker that stores authenticated manager push subscriptions, checks the Footy schedule, resolves current followed-team recipients from D1, and sends Web Push wakeups.
 - `FOOTY_PUSH_ENDPOINT` in `modules/siteConfig.js`: the deployed Worker URL used by the site.
 - `FOOTY_PUSH_ENDPOINT` in `service-worker.js`: the same deployed Worker URL used by the background service worker.
 - `FOOTY_SCHEDULE_URL` / `NOTIFICATION_URL`: production schedule and destination.
@@ -29,13 +29,20 @@ This setup uses a Cloudflare Worker with KV so Footy match notifications can be 
    ```
 
 5. Update `VAPID_SUBJECT` in `wrangler.toml` to a real `mailto:` or website URL.
-6. Deploy from `workers/footy-push`:
+6. Set `AUTH_SECRET` to the same secret used by the Rankings Worker:
+
+   ```bash
+   wrangler secret put AUTH_SECRET
+   ```
+
+7. Apply `workers/rankings/migrations/0005_manager_followed_teams.sql` to the shared `rankings` D1 database.
+8. Deploy from `workers/footy-push`:
 
    ```bash
    wrangler deploy
    ```
 
-7. Copy the deployed Worker URL into both:
+9. Copy the deployed Worker URL into both:
 
    - `modules/siteConfig.js` as `FOOTY_PUSH_ENDPOINT`
    - `service-worker.js` as `FOOTY_PUSH_ENDPOINT`
@@ -69,10 +76,10 @@ For the 15 minute schedule, the current lookback is 16 minutes so a run that sta
 Each sent alert writes a KV key using:
 
 ```text
-sent:{matchKey}:{offset}:{subscriptionHash}
+sent:{matchKey}:{offset}:{managerId}
 ```
 
-That means the same match can notify many devices, but each device only gets each offset once.
+The event's canonical home and away team IDs are intersected with each manager's current followed teams immediately before delivery. A manager following both teams still receives one alert for the event and offset.
 
 Offsets:
 

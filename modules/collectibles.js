@@ -175,7 +175,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     stats.innerHTML = `
       <article><strong>${formatNumber(value.owned)}</strong><span>Have</span></article>
       <article><strong>${formatNumber(value.missing)}</strong><span>Missing</span></article>
-      <article><strong>${formatNumber(value.wanted)}</strong><span>Wanted</span></article>
+      <article><strong>${formatNumber(value.wanted)}</strong><span>Want</span></article>
       <article class="collectibles-progress-stat"><strong>${escapeHtml(value.completionPercent)}%</strong><span>${formatNumber(value.owned)} of ${formatNumber(value.total)}</span><div><i style="width:${Math.max(0, Math.min(100, Number(value.completionPercent) || 0))}%"></i></div></article>`;
   }
 
@@ -190,7 +190,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       const toggleLabel = owned ? `Mark ${item.name} as don't have` : `Mark ${item.name} as have`;
       const exclusionLabel = itemExclusionId ? "Restore item" : excluded ? "Excluded at higher level" : "Exclude item";
       return `<article class="collectible-card${owned ? " is-owned" : ""}${excluded ? " is-excluded" : ""}" data-collectible-id="${escapeHtml(item.id)}" tabindex="0">
-        <div class="collectible-card-image">${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : `<span aria-hidden="true">🏁</span>`}<button class="collectible-check-button${owned ? " is-owned" : ""}" type="button" data-collectible-toggle="${escapeHtml(item.id)}" data-owned="${owned}" aria-pressed="${owned}" aria-label="${escapeHtml(toggleLabel)}" title="${escapeHtml(toggleLabel)}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"></path></svg></button>${item.collection?.wanted ? `<b>Wanted</b>` : ""}</div>
+        <div class="collectible-card-image">${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : `<span aria-hidden="true">🏁</span>`}<button class="collectible-check-button${owned ? " is-owned" : ""}" type="button" data-collectible-toggle="${escapeHtml(item.id)}" data-owned="${owned}" aria-pressed="${owned}" aria-label="${escapeHtml(toggleLabel)}" title="${escapeHtml(toggleLabel)}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"></path></svg></button>${item.collection?.wanted ? `<b>Want</b>` : ""}</div>
         <div class="collectible-card-body"><p>${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<span>#${escapeHtml(item.itemNumber)}</span>` : ""}
           ${excluded ? `<span>Excluded from checklist</span>` : ""}
           <button class="collectible-card-exclusion" type="button" data-card-exclusion="${escapeHtml(item.id)}"${itemExclusionId ? ` data-exclusion-id="${itemExclusionId}"` : ""}${excluded && !itemExclusionId ? " disabled" : ""}>${escapeHtml(exclusionLabel)}</button>
@@ -229,15 +229,16 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     try {
       const { collectible: item } = await request(`/api/collectibles/${encodeURIComponent(id)}`);
       const owned = item.collection?.status === "owned";
+      const dialogImages = (item.images?.length ? [...item.images].sort((a, b) => Number(isThumbnailImage(a)) - Number(isThumbnailImage(b))) : item.image ? [{ sourceUrl: item.image }] : []);
       detail.innerHTML = `<div class="collectible-detail-layout">
-        <div class="collectible-detail-gallery">${(item.images?.length ? item.images : item.image ? [{ sourceUrl: item.image }] : []).map((image) => `<img src="${escapeHtml(image.localUrl || image.sourceUrl)}" alt="${escapeHtml(item.name)}" loading="lazy">`).join("") || `<span class="table-message">No image available.</span>`}</div>
+        <div class="collectible-detail-gallery">${dialogImages.map((image) => `<img src="${escapeHtml(image.localUrl || image.sourceUrl)}" alt="${escapeHtml(item.name)}" loading="lazy">`).join("") || `<span class="table-message">No image available.</span>`}</div>
         <div class="collectible-detail-copy"><p class="eyebrow">${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<p>Item #${escapeHtml(item.itemNumber)}</p>` : ""}
           ${metadata(item)}
           ${item.variants?.length ? `<details><summary>Known variants (${item.variants.length})</summary><ul>${item.variants.map((variant) => `<li>${escapeHtml(variant.sourceName)}</li>`).join("")}</ul></details>` : ""}
           <form class="collectible-detail-form" data-collectible-form data-id="${escapeHtml(item.id)}">
             <label><span>Status</span><select name="status"><option value="not_owned" ${owned ? "" : "selected"}>Don't Have</option><option value="owned" ${owned ? "selected" : ""}>Have</option></select></label>
             <label><span>Quantity</span><input name="quantity" type="number" min="0" max="999" value="${escapeHtml(item.collection?.quantity || 0)}"></label>
-            <label class="collectible-check"><input name="wanted" type="checkbox" ${item.collection?.wanted ? "checked" : ""}><span>Wanted</span></label>
+            <label class="collectible-check"><input name="wanted" type="checkbox" ${item.collection?.wanted ? "checked" : ""}><span>Want</span></label>
             <label><span>Acquired</span><input name="acquiredAt" type="date" value="${escapeHtml(item.collection?.acquiredAt || "")}"></label>
             <label class="collectible-notes"><span>Notes</span><textarea name="notes" rows="4">${escapeHtml(item.collection?.notes || "")}</textarea></label>
             ${exclusionAction(item)}
@@ -254,12 +255,17 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     try {
       const id = formElement.dataset.id;
       const owned = data.get("status") === "owned";
-      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: data.get("status"), quantity: Number(data.get("quantity") || 0), wanted: data.get("wanted") === "on", acquiredAt: data.get("acquiredAt") || null, notes: data.get("notes") || null });
+      const wanted = data.get("wanted") === "on";
+      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: data.get("status"), quantity: Number(data.get("quantity") || 0), wanted, acquiredAt: data.get("acquiredAt") || null, notes: data.get("notes") || null });
       const card = grid.querySelector(`[data-collectible-id="${CSS.escape(id)}"]`);
       const toggle = card?.querySelector("[data-collectible-toggle]");
       card?.classList.toggle("is-owned", owned);
       toggle?.classList.toggle("is-owned", owned);
       if (toggle) { toggle.dataset.owned = String(owned); toggle.setAttribute("aria-pressed", String(owned)); }
+      const image = card?.querySelector(".collectible-card-image");
+      let wantBadge = image?.querySelector("b");
+      if (wanted && image && !wantBadge) { wantBadge = document.createElement("b"); wantBadge.textContent = "Want"; image.append(wantBadge); }
+      if (!wanted) wantBadge?.remove();
       dialog.close();
       request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
     }
@@ -362,6 +368,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
 
 function loading(label) { return `<p class="table-message"><span class="loading-spinner"></span>${escapeHtml(label)}</p>`; }
 function formatNumber(value) { return Number(value || 0).toLocaleString("en-US"); }
+function isThumbnailImage(image) { return /(?:^|\/)SM-/i.test(String(image?.localUrl || image?.sourceUrl || "")); }
 function prettyCategoryName(value) {
   const text = String(value || "");
   const known = { GreenLight: "GreenLight", Bigfoot: "Bigfoot", ADC: "ADC" };

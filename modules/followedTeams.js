@@ -16,6 +16,10 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   const search = document.querySelector("#followed-teams-search");
   const leagueFilter = document.querySelector("#followed-teams-league");
   const picker = document.querySelector("#followed-teams-picker");
+  const pagination = document.querySelector("#followed-teams-pagination");
+  const pagePrevious = document.querySelector("#followed-teams-page-previous");
+  const pageNext = document.querySelector("#followed-teams-page-next");
+  const pageStatus = document.querySelector("#followed-teams-page-status");
   const state = {
     catalog: [],
     defaultIds: [],
@@ -25,6 +29,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     loadedManagerId: "",
     loading: false,
     pendingIds: [],
+    pickerPage: 1,
     revision: 0,
     savedIds: [],
     savedPersonalIds: [],
@@ -43,8 +48,10 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   list?.addEventListener("drop", handleDrop);
   list?.addEventListener("dragend", () => { draggedId = ""; });
   picker?.addEventListener("change", handlePickerChange);
-  search?.addEventListener("input", renderPicker);
-  leagueFilter?.addEventListener("change", renderPicker);
+  search?.addEventListener("input", resetPickerPage);
+  leagueFilter?.addEventListener("change", resetPickerPage);
+  pagePrevious?.addEventListener("click", () => changePickerPage(-1));
+  pageNext?.addEventListener("click", () => changePickerPage(1));
   dialogClose?.addEventListener("click", closePicker);
   dialogDone?.addEventListener("click", () => { void save({ closeDialog: true }); });
   dialog?.addEventListener("click", (event) => { if (event.target === dialog) closePicker(); });
@@ -64,6 +71,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.loadedManagerId = "";
     state.loading = false;
     state.pendingIds = [];
+    state.pickerPage = 1;
     state.revision = 0;
     state.savedIds = [];
     state.savedPersonalIds = [];
@@ -92,11 +100,9 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       state.catalog = normalizeCatalog(catalog);
       state.leagues = normalizeLeagues(catalog, state.catalog);
       state.defaultIds = (catalog.defaultTeamIds || []).map(String);
-      state.savedIds = preferences
-        ? preferenceTeamIds(preferences)
-        : [...state.defaultIds];
       state.revision = Number(preferences?.revision || 0);
       state.usingDefault = !managerId || Boolean(preferences?.usingDefault);
+      state.savedIds = effectiveTeamIds(state.defaultIds, preferences);
       state.savedPersonalIds = personalTeamIds(state.savedIds, state.usingDefault);
       state.pendingIds = [...state.savedPersonalIds];
       state.loadedManagerId = loadKey;
@@ -203,6 +209,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     if (!getManagerId() || !dialog || state.loading || !state.catalog.length) return;
     search.value = "";
     leagueFilter.value = "";
+    state.pickerPage = 1;
     setDialogStatus("");
     renderPicker();
     dialog.showModal();
@@ -253,7 +260,8 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       return team.active && matchesText && matchesLeague;
     });
     leagueFilter.innerHTML = [`<option value="">All competitions</option>`, ...state.leagues.map((league) => `<option value="${escapeAttribute(league.id)}"${league.id === leagueId ? " selected" : ""}>${escapeHtml(league.name)}</option>`)].join("");
-    const groups = partitionPickerTeams(visible, state.defaultIds);
+    const page = paginatePickerTeams(visible, state.defaultIds, state.pickerPage);
+    state.pickerPage = page.page;
     const renderTeam = (team) => {
       const selected = state.pendingIds.includes(team.id);
       const league = selectableLeagueNames(team.leagues).join(", ") || "Other competitions";
@@ -266,11 +274,27 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       `;
     };
     picker.innerHTML = visible.length ? [
-      groups.defaults.length ? `<div class="followed-team-picker-group-label">Default teams</div>${groups.defaults.map(renderTeam).join("")}` : "",
-      groups.defaults.length && groups.others.length ? `<div class="followed-team-picker-divider" role="separator"><span>Other teams</span></div>` : "",
-      groups.others.map(renderTeam).join(""),
+      page.defaults.length ? `<div class="followed-team-picker-group-label">Default teams</div>${page.defaults.map(renderTeam).join("")}` : "",
+      page.defaults.length && page.others.length ? `<div class="followed-team-picker-divider" role="separator"><span>Other teams</span></div>` : "",
+      !page.defaults.length && page.others.length ? `<div class="followed-team-picker-group-label">Other teams</div>` : "",
+      page.others.map(renderTeam).join(""),
     ].join("") : `<p class="table-message">No teams match those filters.</p>`;
+    if (pagination) pagination.hidden = page.pageCount <= 1;
+    if (pagePrevious) pagePrevious.disabled = page.page <= 1;
+    if (pageNext) pageNext.disabled = page.page >= page.pageCount;
+    if (pageStatus) pageStatus.textContent = `Page ${page.page} of ${page.pageCount}`;
     syncDialogAction();
+  }
+
+  function resetPickerPage() {
+    state.pickerPage = 1;
+    renderPicker();
+  }
+
+  function changePickerPage(offset) {
+    state.pickerPage += offset;
+    renderPicker();
+    picker?.scrollTo({ top: 0 });
   }
 
   function handlePickerChange(event) {
@@ -435,6 +459,11 @@ function normalizeCatalog(response = {}) {
   return [...teams.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
+export function effectiveTeamIds(defaultIds = [], preferences = null) {
+  if (!preferences || preferences.usingDefault) return [...defaultIds].map(String);
+  return preferenceTeamIds(preferences);
+}
+
 export function followedTeamBadge(team = {}) {
   const id = String(team.id || "").trim();
   const localTeamIds = new Set(["1", "2", "3", "4", "5", "6", "7"]);
@@ -467,6 +496,21 @@ export function partitionPickerTeams(teams = [], defaultIds = []) {
   return {
     defaults: teams.filter((team) => defaults.has(String(team.id))).sort((left, right) => defaultOrder.get(String(left.id)) - defaultOrder.get(String(right.id))),
     others: teams.filter((team) => !defaults.has(String(team.id))),
+  };
+}
+
+export function paginatePickerTeams(teams = [], defaultIds = [], requestedPage = 1, pageSize = 5) {
+  const groups = partitionPickerTeams(teams, defaultIds);
+  const defaults = new Set(groups.defaults.map((team) => String(team.id)));
+  const ordered = [...groups.defaults, ...groups.others];
+  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
+  const page = Math.min(pageCount, Math.max(1, Number(requestedPage) || 1));
+  const items = ordered.slice((page - 1) * pageSize, page * pageSize);
+  return {
+    defaults: items.filter((team) => defaults.has(String(team.id))),
+    others: items.filter((team) => !defaults.has(String(team.id))),
+    page,
+    pageCount,
   };
 }
 

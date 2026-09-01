@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { followedTeamBadge, normalizeLeagues, normalizeSelectableLeague, partitionPickerTeams, personalTeamIds } from "./followedTeams.js";
+import { effectiveTeamIds, followedTeamBadge, normalizeLeagues, normalizeSelectableLeague, paginatePickerTeams, partitionPickerTeams, personalTeamIds } from "./followedTeams.js";
 
 test("team picker shows unique canonical domestic leagues", () => {
   const response = {
@@ -47,4 +47,25 @@ test("known followed teams use their canonical local badges", () => {
   assert.equal(followedTeamBadge({ badge: "assets/teams/charlotte-fc.svg", id: "6" }), "assets/teams/6/badge.svg");
   assert.equal(followedTeamBadge({ badge: "assets/teams/inter-miami-cf.webp", id: "7" }), "assets/teams/7/badge.svg");
   assert.equal(followedTeamBadge({ badge: "https://example.com/team.png", id: "team:other" }), "https://example.com/team.png");
+});
+
+test("inherited preferences always resolve to the public site defaults", () => {
+  assert.deepEqual(effectiveTeamIds(["1", "2"], { teams: [], usingDefault: true }), ["1", "2"]);
+  assert.deepEqual(effectiveTeamIds(["1", "2"], { teams: [{ priority: 1, teamId: "7" }], usingDefault: false }), ["7"]);
+});
+
+test("team picker paginates the ordered default-first catalog", () => {
+  const teams = Array.from({ length: 12 }, (_, index) => ({ id: String(index + 1) }));
+  assert.deepEqual(paginatePickerTeams(teams, ["7", "2"], 1), {
+    defaults: [{ id: "7" }, { id: "2" }],
+    others: [{ id: "1" }, { id: "3" }, { id: "4" }],
+    page: 1,
+    pageCount: 3,
+  });
+  assert.deepEqual(paginatePickerTeams(teams, ["7", "2"], 99), {
+    defaults: [],
+    others: [{ id: "11" }, { id: "12" }],
+    page: 3,
+    pageCount: 3,
+  });
 });

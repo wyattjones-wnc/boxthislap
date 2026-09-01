@@ -20,5 +20,9 @@ database_name = "psn-trophies"
 database_id = "abcb147f-099a-470d-9774-0c5a8a679b27"
 migrations_dir = "migrations"
 
+[[kv_namespaces]]
+binding = "SNAPSHOTS"
+id = "1fbb206fede446fea81e6c1aa070a3e0"
+
 [observability]
 enabled = true

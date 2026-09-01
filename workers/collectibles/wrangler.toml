@@ -14,3 +14,7 @@ service = "box-this-lap-rankings"
 binding = "DB"
 database_name = "rankings"
 database_id = "45c405ab-a0cd-442a-b135-b7ffe4b7d933"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "fad5dcb28dc34959a9bfeebbbe0a3b0d"

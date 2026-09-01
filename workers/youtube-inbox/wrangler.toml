@@ -7,6 +7,10 @@ binding = "DB"
 database_name = "youtube-inbox"
 database_id = "4c868739-3589-46d0-9063-0045a7bf35a3"
 
+[[kv_namespaces]]
+binding = "SNAPSHOTS"
+id = "97416fcbf3c64320b5f75fadb93418e4"
+
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
 SYNC_CHANNEL_BATCH_SIZE = "20"

@@ -82,24 +82,30 @@ export default {
         return json({ ok: true, service: "box-this-lap-collectibles" }, 200, cors, "public, max-age=60");
       }
       if (request.method === "GET" && url.pathname === "/api/collectibles") {
-        return json({ ok: true, ...(await listCollectibles(env, url.searchParams)) }, 200, cors);
+        return json({ ok: true, ...(await cachedCatalogResponse(env, url, () => listCollectibles(env, url.searchParams))) }, 200, cors);
       }
       if (request.method === "GET" && url.pathname === "/api/collectibles/filters") {
-        return json({ ok: true, ...(await listFilters(env)) }, 200, cors, "public, max-age=900");
+        return json({ ok: true, ...(await cachedCatalogResponse(env, url, () => listFilters(env))) }, 200, cors, "public, max-age=900");
       }
       if (request.method === "GET" && url.pathname === "/api/collectibles/groups") {
-        return json({ ok: true, ...(await listGroups(env, url.searchParams)) }, 200, cors);
+        return json({ ok: true, ...(await cachedCatalogResponse(env, url, () => listGroups(env, url.searchParams))) }, 200, cors);
       }
       if (request.method === "GET" && url.pathname === "/api/collectibles/stats") {
-        return json({ ok: true, ...(await readStats(env, url.searchParams)) }, 200, cors);
+        return json({ ok: true, ...(await cachedCatalogResponse(env, url, () => readStats(env, url.searchParams))) }, 200, cors);
       }
       if (request.method === "GET" && url.pathname === "/api/collection/exclusions") {
         await requireAdmin(request, env);
         return json({ ok: true, exclusions: await listExclusions(env) }, 200, cors);
       }
+      if (request.method === "GET" && url.pathname === "/api/collection/state") {
+        await requireAdmin(request, env);
+        return json({ ok: true, ...(await readCollectionState(env)) }, 200, cors);
+      }
       if (request.method === "POST" && url.pathname === "/api/collection/exclusions") {
         await requireAdmin(request, env);
-        return json({ ok: true, exclusion: await addExclusion(env, await readBody(request)) }, 201, cors);
+        const exclusion = await addExclusion(env, await readBody(request));
+        await patchCollectionStateCache(env, (state) => { state.exclusions = [...state.exclusions.filter((entry) => entry.id !== exclusion.id), exclusion]; });
+        return json({ ok: true, exclusion }, 201, cors);
       }
 
       const detailMatch = url.pathname.match(/^\/api\/collectibles\/([^/]+)$/);
@@ -109,12 +115,17 @@ export default {
       const collectionMatch = url.pathname.match(/^\/api\/collection\/([^/]+)$/);
       if (request.method === "PATCH" && collectionMatch) {
         await requireAdmin(request, env);
-        return json({ ok: true, collection: await saveCollection(env, decodeURIComponent(collectionMatch[1]), await readBody(request)) }, 200, cors);
+        const collectibleId = decodeURIComponent(collectionMatch[1]);
+        const collection = await saveCollection(env, collectibleId, await readBody(request));
+        await patchCollectionStateCache(env, (state) => { state.items = [...state.items.filter((entry) => entry.collectibleId !== collectibleId), { collectibleId, ...collection }]; });
+        return json({ ok: true, collection }, 200, cors);
       }
       const exclusionMatch = url.pathname.match(/^\/api\/collection\/exclusions\/(\d+)$/);
       if (request.method === "DELETE" && exclusionMatch) {
         await requireAdmin(request, env);
-        await deleteExclusion(env, Number(exclusionMatch[1]));
+        const exclusionId = Number(exclusionMatch[1]);
+        await deleteExclusion(env, exclusionId);
+        await patchCollectionStateCache(env, (state) => { state.exclusions = state.exclusions.filter((entry) => Number(entry.id) !== exclusionId); });
         return json({ ok: true }, 200, cors);
       }
       return json({ ok: false, error: "Not found." }, 404, cors);
@@ -125,6 +136,32 @@ export default {
     }
   },
 };
+
+async function cachedCatalogResponse(env, url, load) {
+  if (!env.CACHE) return load();
+  const digest = await sha256(`${url.pathname}?${url.searchParams.toString()}`);
+  const key = `catalog:${digest}`;
+  let cached = null;
+  try {
+    cached = await env.CACHE.get(key, "json");
+    if (cached?.value && Date.now() - Date.parse(cached.savedAt) < 300000) return cached.value;
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "collectibles_catalog_cache_read_failed", error: String(error) }));
+  }
+  try {
+    const value = await load();
+    await env.CACHE.put(key, JSON.stringify({ savedAt: new Date().toISOString(), value }));
+    return value;
+  } catch (error) {
+    if (cached?.value) return { ...cached.value, stale: true };
+    throw error;
+  }
+}
+
+async function sha256(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 async function listCollectibles(env, searchParams) {
   const page = positiveInteger(searchParams.get("page"), 1);
@@ -418,6 +455,55 @@ async function saveCollection(env, collectibleId, body) {
 
 async function listExclusions(env) {
   return rows(env, "SELECT id, exclusion_type AS type, exclusion_value AS value, note, created_at AS createdAt FROM collection_exclusions ORDER BY exclusion_type, exclusion_value");
+}
+async function readCollectionState(env, force = false) {
+  if (!force && env.CACHE) {
+    try {
+      const cached = await env.CACHE.get("collection-state:v1", "json");
+      if (cached?.items && cached?.exclusions) return cached;
+    } catch (error) {
+      console.warn(JSON.stringify({ event: "collectibles_state_cache_read_failed", error: String(error) }));
+    }
+  }
+  const [itemsResult, exclusionsResult] = await Promise.all([
+    env.DB.prepare(`SELECT collectible_id, status, quantity, wanted, acquired_at, notes, updated_at
+      FROM collection_items ORDER BY collectible_id`).all(),
+    env.DB.prepare(`SELECT id, exclusion_type AS type, exclusion_value AS value, note, created_at AS createdAt
+      FROM collection_exclusions ORDER BY exclusion_type, exclusion_value`).all(),
+  ]);
+  console.log(JSON.stringify({
+    event: "collectibles_d1_state_read",
+    rowsRead: Number(itemsResult.meta?.rows_read || 0) + Number(exclusionsResult.meta?.rows_read || 0),
+    rowsReturned: (itemsResult.results?.length || 0) + (exclusionsResult.results?.length || 0),
+  }));
+  const value = {
+    items: (itemsResult.results || []).map((row) => ({
+      collectibleId: row.collectible_id,
+      status: row.status,
+      quantity: Number(row.quantity || 0),
+      wanted: Boolean(row.wanted),
+      acquiredAt: row.acquired_at || null,
+      notes: row.notes || null,
+      updatedAt: row.updated_at || null,
+    })),
+    exclusions: exclusionsResult.results || [],
+  };
+  if (env.CACHE) {
+    try { await env.CACHE.put("collection-state:v1", JSON.stringify(value)); }
+    catch (error) { console.warn(JSON.stringify({ event: "collectibles_state_cache_write_failed", error: String(error) })); }
+  }
+  return value;
+}
+async function patchCollectionStateCache(env, update) {
+  if (!env.CACHE) return;
+  try {
+    const state = await env.CACHE.get("collection-state:v1", "json");
+    if (!state?.items || !state?.exclusions) return;
+    update(state);
+    await env.CACHE.put("collection-state:v1", JSON.stringify(state));
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "collectibles_state_cache_patch_failed", error: String(error) }));
+  }
 }
 async function addExclusion(env, body) {
   const type = cleanText(body.type, 40);

@@ -249,10 +249,21 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   }
 
   async function saveDetail(formElement) {
-    const status = formElement.querySelector("[role=status]"); const submit = formElement.querySelector("button[type=submit]"); submit.disabled = true; status.textContent = "Saving...";
+    const statusMessage = formElement.querySelector("[role=status]"); const submit = formElement.querySelector("button[type=submit]"); submit.disabled = true; statusMessage.textContent = "Saving...";
     const data = new FormData(formElement);
-    try { await mutate(`/api/collection/${encodeURIComponent(formElement.dataset.id)}`, { status: data.get("status"), quantity: Number(data.get("quantity") || 0), wanted: data.get("wanted") === "on", acquiredAt: data.get("acquiredAt") || null, notes: data.get("notes") || null }); status.textContent = "Saved."; await load(); }
-    catch (error) { status.textContent = error.message; }
+    try {
+      const id = formElement.dataset.id;
+      const owned = data.get("status") === "owned";
+      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: data.get("status"), quantity: Number(data.get("quantity") || 0), wanted: data.get("wanted") === "on", acquiredAt: data.get("acquiredAt") || null, notes: data.get("notes") || null });
+      const card = grid.querySelector(`[data-collectible-id="${CSS.escape(id)}"]`);
+      const toggle = card?.querySelector("[data-collectible-toggle]");
+      card?.classList.toggle("is-owned", owned);
+      toggle?.classList.toggle("is-owned", owned);
+      if (toggle) { toggle.dataset.owned = String(owned); toggle.setAttribute("aria-pressed", String(owned)); }
+      dialog.close();
+      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+    }
+    catch (error) { statusMessage.textContent = error.message; }
     finally { submit.disabled = false; }
   }
 

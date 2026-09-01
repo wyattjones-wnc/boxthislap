@@ -2,42 +2,68 @@ const EXCLUSION_TYPES = new Set([
   "manufacturer", "product_line", "scale", "release_category",
   "release_series", "year", "catalog_category", "catalog_category_year", "collectible",
 ]);
-const EXCLUDED_SQL = `EXISTS (SELECT 1 FROM collection_exclusions ex WHERE
-  (ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id) OR
-  (ex.exclusion_type = 'manufacturer' AND ex.exclusion_value = m.slug) OR
-  (ex.exclusion_type = 'product_line' AND ex.exclusion_value = pl.slug) OR
-  (ex.exclusion_type = 'scale' AND ex.exclusion_value = c.scale) OR
-  (ex.exclusion_type = 'release_category' AND ex.exclusion_value = c.release_category) OR
-  (ex.exclusion_type = 'release_series' AND ex.exclusion_value = c.release_series) OR
-  (ex.exclusion_type = 'year' AND ex.exclusion_value = CAST(c.year AS TEXT)) OR
-  (ex.exclusion_type = 'catalog_category_year' AND EXISTS (
+// Keep each exclusion lookup separate so SQLite can use the unique
+// (exclusion_type, exclusion_value) index. A single EXISTS containing ORs made
+// D1 repeatedly scan the exclusions table while building catalog views.
+const EXCLUDED_SQL = `(
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id) OR
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'manufacturer' AND ex.exclusion_value = m.slug) OR
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'product_line' AND ex.exclusion_value = pl.slug) OR
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'scale' AND ex.exclusion_value = c.scale) OR
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'release_category' AND ex.exclusion_value = c.release_category) OR
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'release_series' AND ex.exclusion_value = c.release_series) OR
+  EXISTS (SELECT 1 FROM collection_exclusions ex WHERE ex.exclusion_type = 'year' AND ex.exclusion_value = CAST(c.year AS TEXT)) OR
+  EXISTS (
     SELECT 1 FROM collectible_categories eycc
     JOIN catalog_categories eycat ON eycat.id = eycc.category_id
-    WHERE eycc.collectible_id = c.id AND ex.exclusion_value = eycat.slug || ':' || CAST(c.year AS TEXT)
-  )) OR
-  (ex.exclusion_type = 'catalog_category' AND EXISTS (
+    JOIN collection_exclusions ex ON ex.exclusion_type = 'catalog_category_year'
+      AND ex.exclusion_value = eycat.slug || ':' || CAST(c.year AS TEXT)
+    WHERE eycc.collectible_id = c.id
+  ) OR
+  EXISTS (
     SELECT 1 FROM collectible_categories ecc
     JOIN catalog_categories ecat ON ecat.id = ecc.category_id
-    WHERE ecc.collectible_id = c.id AND ecat.slug = ex.exclusion_value
-  )))`;
+    JOIN collection_exclusions ex ON ex.exclusion_type = 'catalog_category'
+      AND ex.exclusion_value = ecat.slug
+    WHERE ecc.collectible_id = c.id
+  )
+)`;
 const NORMAL_CHECKLIST_SQL = `EXISTS (
   SELECT 1 FROM collectible_categories ncc
   JOIN catalog_categories ncat ON ncat.id = ncc.category_id
   WHERE ncc.collectible_id = c.id AND ncat.checklist_mode = 'normal'
 )`;
-const SORTS = {
-  source: "c.source_sort_order ASC, c.name COLLATE NOCASE ASC",
-  year_asc: "c.year ASC, c.name COLLATE NOCASE ASC",
-  year_desc: "c.year DESC, c.name COLLATE NOCASE ASC",
-  name_asc: "c.name COLLATE NOCASE ASC",
-  name_desc: "c.name COLLATE NOCASE DESC",
-  item_number: "c.item_number COLLATE NOCASE ASC, c.name COLLATE NOCASE ASC",
-  manufacturer: "m.name COLLATE NOCASE ASC, c.year DESC, c.name COLLATE NOCASE ASC",
-  recently_acquired: "ci.acquired_at DESC, c.name COLLATE NOCASE ASC",
-  recently_updated: "ci.updated_at DESC, c.name COLLATE NOCASE ASC",
-  owned_first: "CASE WHEN ci.status = 'owned' THEN 0 ELSE 1 END, c.name COLLATE NOCASE ASC",
-  missing_first: "CASE WHEN COALESCE(ci.status, 'not_owned') = 'not_owned' THEN 0 ELSE 1 END, c.name COLLATE NOCASE ASC",
+const SCOPED_SORTS = {
+  source: "source_sort_order ASC, name COLLATE NOCASE ASC",
+  year_asc: "year ASC, name COLLATE NOCASE ASC",
+  year_desc: "year DESC, name COLLATE NOCASE ASC",
+  name_asc: "name COLLATE NOCASE ASC",
+  name_desc: "name COLLATE NOCASE DESC",
+  item_number: "item_number COLLATE NOCASE ASC, name COLLATE NOCASE ASC",
+  manufacturer: "manufacturer COLLATE NOCASE ASC, year DESC, name COLLATE NOCASE ASC",
+  recently_acquired: "acquired_at DESC, name COLLATE NOCASE ASC",
+  recently_updated: "updated_at DESC, name COLLATE NOCASE ASC",
+  owned_first: "CASE WHEN collection_status = 'owned' THEN 0 ELSE 1 END, name COLLATE NOCASE ASC",
+  missing_first: "CASE WHEN collection_status = 'not_owned' THEN 0 ELSE 1 END, name COLLATE NOCASE ASC",
 };
+
+function scopedExclusionValue(scope) {
+  if (scope === "excluded") return "1";
+  if (scope === "all") return `CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN 1 ELSE 0 END`;
+  return "0";
+}
+
+function mapStats(row) {
+  const total = Number(row?.stats_total || 0);
+  const owned = Number(row?.stats_owned || 0);
+  return {
+    total,
+    owned,
+    missing: Number(row?.stats_missing || 0),
+    wanted: Number(row?.stats_wanted || 0),
+    completionPercent: total ? Math.round((owned / total) * 10000) / 100 : 0,
+  };
+}
 
 export default {
   async fetch(request, env) {
@@ -103,34 +129,44 @@ export default {
 async function listCollectibles(env, searchParams) {
   const page = positiveInteger(searchParams.get("page"), 1);
   const limit = Math.min(100, positiveInteger(searchParams.get("limit"), 50));
-  const { joins, where, params } = buildScope(searchParams);
+  const { joins, where, params, scope } = buildScope(searchParams);
   const base = `FROM collectibles c
     JOIN manufacturers m ON m.id = c.manufacturer_id
     LEFT JOIN product_lines pl ON pl.id = c.product_line_id
     LEFT JOIN collection_items ci ON ci.collectible_id = c.id
     ${joins.join("\n")}
     WHERE ${where.join(" AND ")}`;
-  const countRow = await env.DB.prepare(`SELECT COUNT(DISTINCT c.id) AS total ${base}`).bind(...params).first();
-  const sort = SORTS[searchParams.get("sort")] || SORTS.source;
+  const exclusionValue = scopedExclusionValue(scope);
+  const sort = SCOPED_SORTS[searchParams.get("sort")] || SCOPED_SORTS.source;
   const result = await env.DB.prepare(`
-    SELECT DISTINCT c.id, c.name, c.item_number, c.year, c.scale, c.release_category,
-      c.release_series, c.mix_name, c.primary_image_url, c.source_url,
-      c.is_special_release, c.is_store_exclusive, c.is_event_exclusive,
-      m.slug AS manufacturer_slug, m.name AS manufacturer,
-      pl.slug AS product_line_slug, pl.name AS product_line,
-      COALESCE(ci.status, 'not_owned') AS collection_status,
-      COALESCE(ci.quantity, 0) AS quantity, COALESCE(ci.wanted, 0) AS wanted,
-      ci.acquired_at, ci.notes, ci.updated_at,
-      CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN 1 ELSE 0 END AS is_excluded,
-      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id LIMIT 1) AS item_exclusion_id
-    ${base}
+    WITH scoped AS (
+      SELECT DISTINCT c.id, c.name, c.item_number, c.year, c.scale, c.release_category,
+        c.release_series, c.mix_name, c.primary_image_url, c.source_url, c.source_sort_order,
+        c.is_special_release, c.is_store_exclusive, c.is_event_exclusive,
+        m.slug AS manufacturer_slug, m.name AS manufacturer,
+        pl.slug AS product_line_slug, pl.name AS product_line,
+        COALESCE(ci.status, 'not_owned') AS collection_status,
+        COALESCE(ci.quantity, 0) AS quantity, COALESCE(ci.wanted, 0) AS wanted,
+        ci.acquired_at, ci.notes, ci.updated_at,
+        ${exclusionValue} AS is_excluded,
+        (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'collectible' AND ex.exclusion_value = c.id LIMIT 1) AS item_exclusion_id
+      ${base}
+    )
+    SELECT scoped.*,
+      (SELECT COUNT(*) FROM scoped) AS stats_total,
+      (SELECT COUNT(*) FROM scoped WHERE collection_status = 'owned') AS stats_owned,
+      (SELECT COUNT(*) FROM scoped WHERE collection_status = 'not_owned') AS stats_missing,
+      (SELECT COUNT(*) FROM scoped WHERE wanted = 1) AS stats_wanted
+    FROM scoped
     ORDER BY ${sort}
     LIMIT ? OFFSET ?
   `).bind(...params, limit, (page - 1) * limit).all();
-  const total = Number(countRow?.total || 0);
+  const rows = result.results || [];
+  const total = Number(rows[0]?.stats_total || 0);
   return {
-    items: (result.results || []).map(mapCard),
+    items: rows.map(mapCard),
     pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
+    stats: mapStats(rows[0]),
   };
 }
 
@@ -174,48 +210,79 @@ function buildScope(searchParams) {
   const scope = requestedScope || (booleanQuery(searchParams.get("includeExcluded")) ? "all" : "active");
   if (scope === "excluded") where.push(`(${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL})`);
   else if (scope !== "all") where.push(`NOT (${EXCLUDED_SQL}) AND ${NORMAL_CHECKLIST_SQL}`);
-  return { joins, where, params };
+  return { joins, where, params, scope };
 }
 
 async function listGroups(env, searchParams) {
   const groupBy = cleanQuery(searchParams.get("groupBy"));
   if (!new Set(["category", "year"]).has(groupBy)) throw httpError(400, "Group must be category or year.");
-  const { joins, where, params } = buildScope(searchParams);
+  const { joins, where, params, scope } = buildScope(searchParams);
   const base = `FROM collectibles c
     JOIN manufacturers m ON m.id = c.manufacturer_id
     LEFT JOIN product_lines pl ON pl.id = c.product_line_id
     LEFT JOIN collection_items ci ON ci.collectible_id = c.id
-    ${joins.join("\n")}`;
-  const countColumns = `COUNT(DISTINCT c.id) AS total,
-    COUNT(DISTINCT CASE WHEN ci.status = 'owned' THEN c.id END) AS owned,
-    COUNT(DISTINCT CASE WHEN COALESCE(ci.status, 'not_owned') = 'not_owned' THEN c.id END) AS missing,
-    COUNT(DISTINCT CASE WHEN ci.wanted = 1 THEN c.id END) AS wanted,
-    COALESCE(MAX(CASE WHEN c.primary_image_url NOT LIKE '%TruckNeeded%' THEN NULLIF(c.primary_image_url, '') END), MAX(NULLIF(c.primary_image_url, ''))) AS image_url`;
-  let sql;
-  if (groupBy === "category") {
-    sql = `SELECT cat.slug AS group_key, cat.name AS label, cat.category_type AS group_type,
-      cat.checklist_mode, ${countColumns},
-      COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded,
-      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_value = cat.slug AND ex.exclusion_type IN ('catalog_category', 'manufacturer') ORDER BY ex.exclusion_type = 'catalog_category' DESC LIMIT 1) AS exclusion_id,
-      (SELECT ex.exclusion_type FROM collection_exclusions ex WHERE ex.exclusion_value = cat.slug AND ex.exclusion_type IN ('catalog_category', 'manufacturer') ORDER BY ex.exclusion_type = 'catalog_category' DESC LIMIT 1) AS exclusion_type
+    ${joins.join("\n")}
+    WHERE ${where.join(" AND ")}`;
+  const exclusionValue = scopedExclusionValue(scope);
+  const countColumns = `COUNT(DISTINCT s.id) AS total,
+    COUNT(DISTINCT CASE WHEN s.collection_status = 'owned' THEN s.id END) AS owned,
+    COUNT(DISTINCT CASE WHEN s.collection_status = 'not_owned' THEN s.id END) AS missing,
+    COUNT(DISTINCT CASE WHEN s.wanted = 1 THEN s.id END) AS wanted,
+    COALESCE(MAX(CASE WHEN s.primary_image_url NOT LIKE '%TruckNeeded%' THEN NULLIF(s.primary_image_url, '') END), MAX(NULLIF(s.primary_image_url, ''))) AS image_url`;
+  const common = `WITH scoped AS (
+      SELECT DISTINCT c.id, c.year, c.primary_image_url,
+        COALESCE(ci.status, 'not_owned') AS collection_status,
+        COALESCE(ci.wanted, 0) AS wanted,
+        ${exclusionValue} AS is_excluded
       ${base}
-      JOIN collectible_categories gcc ON gcc.collectible_id = c.id
+    ), summary AS (
+      SELECT COUNT(*) AS stats_total,
+        COUNT(CASE WHEN collection_status = 'owned' THEN 1 END) AS stats_owned,
+        COUNT(CASE WHEN collection_status = 'not_owned' THEN 1 END) AS stats_missing,
+        COUNT(CASE WHEN wanted = 1 THEN 1 END) AS stats_wanted
+      FROM scoped
+    )`;
+  let sql;
+  const bindings = [...params];
+  if (groupBy === "category") {
+    sql = `${common}, grouped AS (
+      SELECT cat.slug AS group_key, cat.name AS label, cat.category_type AS group_type,
+        cat.checklist_mode, ${countColumns},
+        COUNT(DISTINCT CASE WHEN s.is_excluded = 1 THEN s.id END) AS excluded,
+        (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_value = cat.slug AND ex.exclusion_type IN ('catalog_category', 'manufacturer') ORDER BY ex.exclusion_type = 'catalog_category' DESC LIMIT 1) AS exclusion_id,
+        (SELECT ex.exclusion_type FROM collection_exclusions ex WHERE ex.exclusion_value = cat.slug AND ex.exclusion_type IN ('catalog_category', 'manufacturer') ORDER BY ex.exclusion_type = 'catalog_category' DESC LIMIT 1) AS exclusion_type,
+        cat.source_sort_order
+      FROM scoped s
+      JOIN collectible_categories gcc ON gcc.collectible_id = s.id
       JOIN catalog_categories cat ON cat.id = gcc.category_id
-      WHERE ${where.join(" AND ")}
-      GROUP BY cat.id ORDER BY cat.source_sort_order, cat.name COLLATE NOCASE`;
+      GROUP BY cat.id
+    )
+    SELECT grouped.*, summary.* FROM grouped CROSS JOIN summary
+    ORDER BY grouped.source_sort_order, grouped.label COLLATE NOCASE`;
   } else {
-    sql = `SELECT CAST(c.year AS TEXT) AS group_key,
-      CAST(c.year AS TEXT) AS label, ${countColumns},
-      COUNT(DISTINCT CASE WHEN ${EXCLUDED_SQL} OR NOT ${NORMAL_CHECKLIST_SQL} THEN c.id END) AS excluded,
-      (SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND EXISTS (SELECT 1 FROM collectible_categories ycc JOIN catalog_categories ycat ON ycat.id = ycc.category_id WHERE ycc.collectible_id = c.id AND ex.exclusion_value = ycat.slug || ':' || CAST(c.year AS TEXT)) LIMIT 1) AS exclusion_id,
-      (SELECT ex.exclusion_type FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND EXISTS (SELECT 1 FROM collectible_categories ycc JOIN catalog_categories ycat ON ycat.id = ycc.category_id WHERE ycc.collectible_id = c.id AND ex.exclusion_value = ycat.slug || ':' || CAST(c.year AS TEXT)) LIMIT 1) AS exclusion_type
-      ${base} WHERE ${where.join(" AND ")} AND c.year IS NOT NULL
-      GROUP BY c.year ORDER BY c.year DESC`;
+    const category = cleanQuery(searchParams.get("category"));
+    const exclusionId = category
+      ? "(SELECT ex.id FROM collection_exclusions ex WHERE ex.exclusion_type = 'catalog_category_year' AND ex.exclusion_value = ? || ':' || CAST(s.year AS TEXT) LIMIT 1)"
+      : "NULL";
+    if (category) bindings.push(category);
+    sql = `${common}, grouped AS (
+      SELECT CAST(s.year AS TEXT) AS group_key,
+        CAST(s.year AS TEXT) AS label, ${countColumns},
+        COUNT(DISTINCT CASE WHEN s.is_excluded = 1 THEN s.id END) AS excluded,
+        ${exclusionId} AS exclusion_id,
+        CASE WHEN ${exclusionId} IS NOT NULL THEN 'catalog_category_year' ELSE NULL END AS exclusion_type
+      FROM scoped s WHERE s.year IS NOT NULL
+      GROUP BY s.year
+    )
+    SELECT grouped.*, summary.* FROM grouped CROSS JOIN summary
+    ORDER BY CAST(grouped.group_key AS INTEGER) DESC`;
+    if (category) bindings.push(category);
   }
-  const result = await env.DB.prepare(sql).bind(...params).all();
+  const result = await env.DB.prepare(sql).bind(...bindings).all();
+  const rows = result.results || [];
   return {
     groupBy,
-    groups: (result.results || []).map((row) => ({
+    groups: rows.map((row) => ({
       key: row.group_key,
       label: row.label,
       type: row.group_type || groupBy,
@@ -229,6 +296,7 @@ async function listGroups(env, searchParams) {
       exclusionId: row.exclusion_id ? Number(row.exclusion_id) : null,
       exclusionType: row.exclusion_type || null,
     })),
+    stats: mapStats(rows[0]),
   };
 }
 

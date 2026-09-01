@@ -113,13 +113,14 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     const query = buildQuery();
     try {
       let groupBy = !state.filters.category ? "category" : !state.filters.year && !state.directEntries ? "year" : "";
-      let [catalog, progress] = await Promise.all([request(groupBy ? `/api/collectibles/groups?groupBy=${groupBy}&${query}` : `/api/collectibles?${query}`), request(`/api/collectibles/stats?${query}`)]);
+      let catalog = await request(groupBy ? `/api/collectibles/groups?groupBy=${groupBy}&${query}` : `/api/collectibles?${query}`);
       if (requestId !== state.requestId) return;
       if (groupBy === "year" && !(catalog.groups || []).length) {
         state.directEntries = true;
         groupBy = "";
         catalog = await request(`/api/collectibles?${query}`);
       }
+      const progress = catalog.stats || await request(`/api/collectibles/stats?${query}`);
       renderStats(progress);
       renderBreadcrumbs();
       if (groupBy) { renderGroups(catalog.groups || [], groupBy); pagination.innerHTML = ""; renderPageSelect(1, 1, false); }

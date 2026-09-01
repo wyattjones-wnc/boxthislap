@@ -277,24 +277,26 @@ async function readCollectible(env, id) {
     LEFT JOIN collection_items ci ON ci.collectible_id = c.id WHERE c.id = ?
   `).bind(id).first();
   if (!row) throw httpError(404, "Collectible was not found.");
-  const [variants, storedImages, categories, sourceImages] = await Promise.all([
+  const [variants, storedImages, categories, sourceDiscovery] = await Promise.all([
     rowsPrepared(env, "SELECT id, source_name AS sourceName, variant_name AS variantName, source_url AS sourceUrl, source_item_number AS sourceItemNumber, notes FROM collectible_variants WHERE collectible_id = ? ORDER BY source_name", id),
     rowsPrepared(env, "SELECT id, source_url AS sourceUrl, local_url AS localUrl, image_type AS imageType, sort_order AS sortOrder, is_primary AS isPrimary FROM collectible_images WHERE collectible_id = ? ORDER BY sort_order", id),
     rowsPrepared(env, "SELECT cat.slug, cat.name, cat.category_type AS type, cat.checklist_mode AS checklistMode FROM collectible_categories cc JOIN catalog_categories cat ON cat.id = cc.category_id WHERE cc.collectible_id = ? ORDER BY cat.source_sort_order", id),
     discoverSourceImages(row.source_url),
   ]);
-  const sourceUrls = new Set(sourceImages.map((image) => image.sourceUrl));
-  const images = [...sourceImages, ...storedImages.filter((image) => !sourceUrls.has(image.sourceUrl))];
-  return { ...mapCard(row), normalizedName: row.normalized_name || "", releaseCategory: row.release_category || "", releaseSeries: row.release_series || "", mix: row.mix_name || "", sourceSite: row.source_site, categories, variants, images };
+  const validStoredImages = sourceDiscovery.images.length ? storedImages : (await Promise.all(storedImages.map(async (image) => await remoteImageExists(image.sourceUrl) ? image : null))).filter(Boolean);
+  const sourceUrls = new Set(sourceDiscovery.images.map((image) => image.sourceUrl));
+  const images = [...sourceDiscovery.images, ...validStoredImages.filter((image) => !sourceUrls.has(image.sourceUrl))];
+  const mapped = mapCard(row);
+  return { ...mapped, image: images[0]?.localUrl || images[0]?.sourceUrl || "", sourceUrl: sourceDiscovery.available ? mapped.sourceUrl : sourceIndexUrl(mapped.sourceUrl), normalizedName: row.normalized_name || "", releaseCategory: row.release_category || "", releaseSeries: row.release_series || "", mix: row.mix_name || "", sourceSite: row.source_site, categories, variants, images };
 }
 
 async function discoverSourceImages(sourceUrl) {
   let pageUrl;
-  try { pageUrl = new URL(sourceUrl); } catch { return []; }
-  if (pageUrl.protocol !== "https:" || !/(^|\.)brianzpatton\.com$/i.test(pageUrl.hostname)) return [];
+  try { pageUrl = new URL(sourceUrl); } catch { return { available: false, images: [] }; }
+  if (pageUrl.protocol !== "https:" || !/(^|\.)brianzpatton\.com$/i.test(pageUrl.hostname)) return { available: false, images: [] };
   try {
     const response = await fetch(pageUrl.href, { headers: { Accept: "text/html" }, cf: { cacheEverything: true, cacheTtl: 86400 } });
-    if (!response.ok) return [];
+    if (!response.ok) return { available: false, images: [] };
     const html = await response.text();
     const images = [];
     const seen = new Set();
@@ -307,8 +309,22 @@ async function discoverSourceImages(sourceUrl) {
       seen.add(imageUrl);
       images.push({ id: `source-${images.length + 1}`, sourceUrl: imageUrl, localUrl: "", imageType: "detail", sortOrder: images.length, isPrimary: images.length === 0 });
     }
-    return images;
-  } catch { return []; }
+    return { available: true, images };
+  } catch { return { available: false, images: [] }; }
+}
+
+async function remoteImageExists(sourceUrl) {
+  let url;
+  try { url = new URL(sourceUrl); } catch { return false; }
+  if (url.protocol !== "https:" || !/(^|\.)brianzpatton\.com$/i.test(url.hostname)) return false;
+  try {
+    const response = await fetch(url.href, { method: "HEAD", cf: { cacheEverything: true, cacheTtl: 86400 } });
+    return response.ok && /^image\//i.test(response.headers.get("Content-Type") || "");
+  } catch { return false; }
+}
+
+function sourceIndexUrl(sourceUrl) {
+  try { return new URL("./index.html", sourceUrl).href; } catch { return sourceUrl || ""; }
 }
 
 async function saveCollection(env, collectibleId, body) {

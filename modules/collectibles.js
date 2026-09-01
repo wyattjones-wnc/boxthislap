@@ -336,6 +336,13 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   function buildQuery() { const params = new URLSearchParams(); for (const [key, value] of Object.entries(state.filters)) { if (value && key !== "page") params.set(key, String(value)); } params.set("page", String(state.filters.page)); params.set("limit", "48"); return params.toString(); }
   function filtersFromUrl() { const params = new URLSearchParams(window.location.search); const value = {}; for (const key of Object.keys(DEFAULT_FILTERS)) { if (!params.has(key)) continue; value[key] = key === "page" ? Number(params.get(key)) || 1 : params.get(key); } if (params.get("includeExcluded") === "true" && !params.has("scope")) value.scope = "all"; return value; }
   function syncUrl(push = false) { const url = new URL(window.location.href); for (const key of [...Object.keys(DEFAULT_FILTERS), "series"]) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history[push ? "pushState" : "replaceState"](null, "", `${url.pathname}${url.search}#collectibles`); }
+  function renderPageSelect(page, pages, enabled) {
+    const select = form?.elements.namedItem("page");
+    if (!select) return;
+    select.disabled = !enabled || pages <= 1;
+    select.innerHTML = Array.from({ length: pages }, (_, index) => `<option value="${index + 1}">Page ${index + 1}</option>`).join("");
+    select.value = String(Math.min(Math.max(1, page), pages));
+  }
   async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
   async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
   async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { signal: options.signal || AbortSignal.timeout(15000), headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
@@ -359,13 +366,6 @@ function groupArtwork(group, groupBy) {
     return `<span class="collectible-group-image collectible-group-logo"><img src="${CATEGORY_ART_SOURCE}" alt="" loading="lazy" decoding="async" style="width:${1471 * scale}px;height:${4200 * scale}px;left:${left}px;top:${top}px"></span>`;
   }
 
-  function renderPageSelect(page, pages, enabled) {
-    const select = form?.elements.namedItem("page");
-    if (!select) return;
-    select.disabled = !enabled || pages <= 1;
-    select.innerHTML = Array.from({ length: pages }, (_, index) => `<option value="${index + 1}">Page ${index + 1}</option>`).join("");
-    select.value = String(Math.min(Math.max(1, page), pages));
-  }
   return `<span class="collectible-group-image">${group.image ? `<img src="${escapeHtml(group.image)}" alt="" loading="lazy" decoding="async">` : "🏁"}</span>`;
 }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }

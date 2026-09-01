@@ -277,12 +277,38 @@ async function readCollectible(env, id) {
     LEFT JOIN collection_items ci ON ci.collectible_id = c.id WHERE c.id = ?
   `).bind(id).first();
   if (!row) throw httpError(404, "Collectible was not found.");
-  const [variants, images, categories] = await Promise.all([
+  const [variants, storedImages, categories, sourceImages] = await Promise.all([
     rowsPrepared(env, "SELECT id, source_name AS sourceName, variant_name AS variantName, source_url AS sourceUrl, source_item_number AS sourceItemNumber, notes FROM collectible_variants WHERE collectible_id = ? ORDER BY source_name", id),
     rowsPrepared(env, "SELECT id, source_url AS sourceUrl, local_url AS localUrl, image_type AS imageType, sort_order AS sortOrder, is_primary AS isPrimary FROM collectible_images WHERE collectible_id = ? ORDER BY sort_order", id),
     rowsPrepared(env, "SELECT cat.slug, cat.name, cat.category_type AS type, cat.checklist_mode AS checklistMode FROM collectible_categories cc JOIN catalog_categories cat ON cat.id = cc.category_id WHERE cc.collectible_id = ? ORDER BY cat.source_sort_order", id),
+    discoverSourceImages(row.source_url),
   ]);
+  const sourceUrls = new Set(sourceImages.map((image) => image.sourceUrl));
+  const images = [...sourceImages, ...storedImages.filter((image) => !sourceUrls.has(image.sourceUrl))];
   return { ...mapCard(row), normalizedName: row.normalized_name || "", releaseCategory: row.release_category || "", releaseSeries: row.release_series || "", mix: row.mix_name || "", sourceSite: row.source_site, categories, variants, images };
+}
+
+async function discoverSourceImages(sourceUrl) {
+  let pageUrl;
+  try { pageUrl = new URL(sourceUrl); } catch { return []; }
+  if (pageUrl.protocol !== "https:" || !/(^|\.)brianzpatton\.com$/i.test(pageUrl.hostname)) return [];
+  try {
+    const response = await fetch(pageUrl.href, { headers: { Accept: "text/html" }, cf: { cacheEverything: true, cacheTtl: 86400 } });
+    if (!response.ok) return [];
+    const html = await response.text();
+    const images = [];
+    const seen = new Set();
+    const pattern = /<img\b[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = pattern.exec(html))) {
+      let imageUrl;
+      try { imageUrl = new URL(match[1].replace(/&amp;/gi, "&"), pageUrl).href; } catch { continue; }
+      if (!/\.(?:jpe?g|png|webp)(?:$|\?)/i.test(imageUrl) || /(?:bar|logo|tread|\/SM-)/i.test(imageUrl) || seen.has(imageUrl)) continue;
+      seen.add(imageUrl);
+      images.push({ id: `source-${images.length + 1}`, sourceUrl: imageUrl, localUrl: "", imageType: "detail", sortOrder: images.length, isPrimary: images.length === 0 });
+    }
+    return images;
+  } catch { return []; }
 }
 
 async function saveCollection(env, collectibleId, body) {

@@ -229,7 +229,9 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     try {
       const { collectible: item } = await request(`/api/collectibles/${encodeURIComponent(id)}`);
       const owned = item.collection?.status === "owned";
-      const dialogImages = (item.images?.length ? [...item.images].sort((a, b) => Number(isThumbnailImage(a)) - Number(isThumbnailImage(b))) : item.image ? [{ sourceUrl: item.image }] : []);
+      const availableImages = item.images?.length ? item.images : item.image ? [{ sourceUrl: item.image }] : [];
+      const fullSizeImages = availableImages.filter((image) => !isThumbnailImage(image));
+      const dialogImages = fullSizeImages.length ? fullSizeImages : availableImages;
       detail.innerHTML = `<div class="collectible-detail-layout">
         <div class="collectible-detail-gallery">${dialogImages.map((image) => `<img src="${escapeHtml(image.localUrl || image.sourceUrl)}" alt="${escapeHtml(item.name)}" loading="lazy">`).join("") || `<span class="table-message">No image available.</span>`}</div>
         <div class="collectible-detail-copy"><p class="eyebrow">${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<p>Item #${escapeHtml(item.itemNumber)}</p>` : ""}

@@ -21,11 +21,11 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   const detail = document.querySelector("#collectible-detail-content");
   const filterToggle = document.querySelector("#collectibles-filter-toggle");
   const viewSelect = document.querySelector("#collectibles-view-select");
-  const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null, directEntries: false };
+  const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null, directEntries: false, requestId: 0 };
   if (!root) return { renderPage: () => Promise.resolve() };
 
   form?.addEventListener("submit", (event) => { event.preventDefault(); state.directEntries = false; state.filters.page = 1; readForm(); syncUrl(); void load(); });
-  form?.addEventListener("change", () => { state.directEntries = false; state.filters.page = 1; readForm(); syncUrl(); void load(); });
+  form?.addEventListener("change", (event) => { state.directEntries = false; state.filters.page = event.target.name === "page" ? Number(event.target.value) || 1 : 1; readForm(); syncUrl(); void load(); });
   root.querySelector("[data-collectibles-clear]")?.addEventListener("click", () => { state.filters = { ...DEFAULT_FILTERS }; state.directEntries = false; writeForm(); syncUrl(); void load(); });
   filterToggle?.addEventListener("click", () => {
     const open = form.hasAttribute("hidden");
@@ -106,6 +106,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   }
 
   async function load() {
+    const requestId = ++state.requestId;
     grid.innerHTML = loading("Loading collectibles...");
     stats.innerHTML = loading("Loading collection progress...");
     updateViewButtons();
@@ -113,6 +114,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     try {
       let groupBy = !state.filters.category ? "category" : !state.filters.year && !state.directEntries ? "year" : "";
       let [catalog, progress] = await Promise.all([request(groupBy ? `/api/collectibles/groups?groupBy=${groupBy}&${query}` : `/api/collectibles?${query}`), request(`/api/collectibles/stats?${query}`)]);
+      if (requestId !== state.requestId) return;
       if (groupBy === "year" && !(catalog.groups || []).length) {
         state.directEntries = true;
         groupBy = "";
@@ -120,9 +122,10 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       }
       renderStats(progress);
       renderBreadcrumbs();
-      if (groupBy) { renderGroups(catalog.groups || [], groupBy); pagination.innerHTML = ""; }
+      if (groupBy) { renderGroups(catalog.groups || [], groupBy); pagination.innerHTML = ""; renderPageSelect(1, 1, false); }
       else { renderCards(catalog.items || []); renderPagination(catalog.pagination || {}); }
     } catch (error) {
+      if (requestId !== state.requestId) return;
       grid.innerHTML = `<p class="table-message">${escapeHtml(error.message)}</p>`;
       stats.innerHTML = "";
       resultCount.textContent = "Unable to load catalog";
@@ -197,6 +200,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
 
   function renderPagination(value) {
     const page = Number(value.page || 1); const pages = Number(value.pages || 1);
+    renderPageSelect(page, pages, true);
     resultCount.textContent = `${formatNumber(value.total || 0)} collectible${Number(value.total) === 1 ? "" : "s"}`;
     pagination.innerHTML = pages <= 1 ? "" : `<button type="button" data-collectibles-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>Previous</button><span>Page ${page} of ${pages}</span><button type="button" data-collectibles-page="${page + 1}" ${page >= pages ? "disabled" : ""}>Next</button>`;
   }
@@ -334,7 +338,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   function syncUrl(push = false) { const url = new URL(window.location.href); for (const key of [...Object.keys(DEFAULT_FILTERS), "series"]) url.searchParams.delete(key); for (const [key, value] of Object.entries(state.filters)) if (value && !(key === "page" && value === 1)) url.searchParams.set(key, String(value)); window.history[push ? "pushState" : "replaceState"](null, "", `${url.pathname}${url.search}#collectibles`); }
   async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
   async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
-  async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
+  async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { signal: options.signal || AbortSignal.timeout(15000), headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
   return { renderPage };
 }
 
@@ -353,6 +357,14 @@ function groupArtwork(group, groupBy) {
     const left = -x * scale + (48 - width * scale) / 2;
     const top = -y * scale + (48 - height * scale) / 2;
     return `<span class="collectible-group-image collectible-group-logo"><img src="${CATEGORY_ART_SOURCE}" alt="" loading="lazy" decoding="async" style="width:${1471 * scale}px;height:${4200 * scale}px;left:${left}px;top:${top}px"></span>`;
+  }
+
+  function renderPageSelect(page, pages, enabled) {
+    const select = form?.elements.namedItem("page");
+    if (!select) return;
+    select.disabled = !enabled || pages <= 1;
+    select.innerHTML = Array.from({ length: pages }, (_, index) => `<option value="${index + 1}">Page ${index + 1}</option>`).join("");
+    select.value = String(Math.min(Math.max(1, page), pages));
   }
   return `<span class="collectible-group-image">${group.image ? `<img src="${escapeHtml(group.image)}" alt="" loading="lazy" decoding="async">` : "🏁"}</span>`;
 }

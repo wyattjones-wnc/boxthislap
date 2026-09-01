@@ -565,13 +565,14 @@
 
         <form class="collectibles-filters" id="collectibles-filters" hidden>
           <label class="collectibles-search"><span>Search</span><input type="search" name="search" placeholder="Name, item number, or variant"></label>
-          <label><span>Ownership</span><select name="status"><option value="">All</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Wanted</option></select></label>
+          <label><span>Ownership</span><select name="status"><option value="">All</option><option value="unreviewed">Unreviewed</option><option value="owned">Have</option><option value="not_owned">Don't Have</option><option value="wanted">Wanted</option></select></label>
           <label><span>Manufacturer</span><select name="manufacturer"><option value="">All manufacturers</option></select></label>
           <label><span>Year</span><select name="year"><option value="">All years</option></select></label>
           <label><span>Scale</span><select name="scale"><option value="">All scales</option></select></label>
           <label><span>Catalog category</span><select name="category"><option value="">All catalog categories</option></select></label>
           <label><span>Sort</span><select name="sort"><option value="source">Catalog order</option><option value="year_desc">Year newest</option><option value="year_asc">Year oldest</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="item_number">Item number</option><option value="manufacturer">Manufacturer</option><option value="recently_acquired">Recently acquired</option><option value="recently_updated">Recently updated</option><option value="owned_first">Owned first</option><option value="missing_first">Missing first</option></select></label>
           <label><span>Checklist visibility</span><select name="scope"><option value="active">Checklist items</option><option value="excluded">Excluded only</option><option value="all">Include excluded</option></select></label>
+          <label><span>Page</span><select name="page" disabled><option value="1">Page 1</option></select></label>
           <div class="collectibles-filter-actions"><button class="action-button" type="submit">Apply</button><button class="footer-copy-link" type="button" data-collectibles-clear>Clear filters</button></div>
         </form>
 

@@ -158,6 +158,7 @@ function buildScope(searchParams) {
   }
   const status = cleanQuery(searchParams.get("status"));
   if (status === "owned") where.push("ci.status = 'owned'");
+  if (status === "unreviewed") where.push("ci.collectible_id IS NULL");
   if (["not_owned", "missing"].includes(status)) where.push("COALESCE(ci.status, 'not_owned') = 'not_owned'");
   if (status === "wanted" || booleanQuery(searchParams.get("wanted"))) where.push("COALESCE(ci.wanted, 0) = 1");
   for (const [key, column] of [["special", "c.is_special_release"], ["storeExclusive", "c.is_store_exclusive"], ["eventExclusive", "c.is_event_exclusive"]]) {

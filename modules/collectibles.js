@@ -1,4 +1,7 @@
+import { buildCollectibleOptions, queryCollectibles } from "./collectiblesCatalog.js?v=202609011540";
+
 const DEFAULT_FILTERS = { status: "", search: "", manufacturer: "", year: "", scale: "", category: "", sort: "source", scope: "active", page: 1 };
+const COLLECTION_STATE_CACHE_KEY = "boxThisLapCollectionStateV1";
 const CATEGORY_ART_SOURCE = "https://www.brianzpatton.com/New%20Site%201-2026.jpg";
 const CATEGORY_ART = {
   bigfoot: [1204, 1663, 205, 55], brekina: [1193, 1962, 231, 82], majorette: [887, 886, 262, 47], monstertruck2pack: [670, 1636, 164, 97],
@@ -9,7 +12,7 @@ const CATEGORY_ART = {
   tradingcards: [690, 2722, 113, 119], pufftrucks: [1223, 2577, 147, 103], prototypes: [95, 2901, 178, 102], errors: [368, 2902, 209, 85],
 };
 
-export function createCollectiblesController({ endpoint, getAccessToken }) {
+export function createCollectiblesController({ endpoint, getAccessToken, catalogPath = "data/collectibles-catalog.json" }) {
   const root = document.querySelector("#collectibles");
   const form = document.querySelector("#collectibles-filters");
   const grid = document.querySelector("#collectibles-grid");
@@ -21,7 +24,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
   const detail = document.querySelector("#collectible-detail-content");
   const filterToggle = document.querySelector("#collectibles-filter-toggle");
   const viewSelect = document.querySelector("#collectibles-view-select");
-  const state = { filters: { ...DEFAULT_FILTERS }, options: null, loadPromise: null, directEntries: false, requestId: 0 };
+  const state = { filters: { ...DEFAULT_FILTERS }, options: null, catalog: null, overlay: null, overlayStale: false, loadPromise: null, directEntries: false, requestId: 0 };
   if (!root) return { renderPage: () => Promise.resolve() };
 
   form?.addEventListener("submit", (event) => { event.preventDefault(); state.directEntries = false; state.filters.page = 1; readForm(); syncUrl(); void load(); });
@@ -91,12 +94,13 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     filterToggle?.setAttribute("aria-expanded", "false");
     filterToggle?.setAttribute("aria-label", "Show collectible filters");
     writeForm();
-    if (!state.options) await loadOptions();
+    if (!state.catalog) await Promise.all([loadCatalog(), loadOverlay()]);
+    if (!state.options) loadOptions();
     return load();
   }
 
-  async function loadOptions() {
-    const value = await request("/api/collectibles/filters");
+  function loadOptions() {
+    const value = buildCollectibleOptions(state.catalog);
     state.options = value;
     fillSelect("manufacturer", value.manufacturers, "All manufacturers");
     fillSelect("year", (value.years || []).map((year) => ({ slug: String(year), name: String(year) })), "All years");
@@ -105,22 +109,55 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     writeForm();
   }
 
+  async function loadCatalog() {
+    const response = await fetch(catalogPath, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(20000) });
+    const value = await response.json().catch(() => null);
+    if (!response.ok || !Array.isArray(value?.items)) throw new Error("The static collectibles catalog is unavailable.");
+    state.catalog = value;
+  }
+
+  async function loadOverlay() {
+    try {
+      const value = await authenticatedRequest("/api/collection/state");
+      state.overlay = { items: value.items || [], exclusions: value.exclusions || [] };
+      state.overlayStale = false;
+      try { localStorage.setItem(COLLECTION_STATE_CACHE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), value: state.overlay })); } catch {}
+    } catch (error) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(COLLECTION_STATE_CACHE_KEY) || "null");
+        if (cached?.value) {
+          state.overlay = cached.value;
+          state.overlayStale = true;
+          return;
+        }
+      } catch {}
+      state.overlay = { items: [], exclusions: [] };
+      state.overlayStale = true;
+    }
+  }
+
+  async function refreshOverlay() {
+    await loadOverlay();
+    return load();
+  }
+
   async function load() {
     const requestId = ++state.requestId;
     grid.innerHTML = loading("Loading collectibles...");
     stats.innerHTML = loading("Loading collection progress...");
     updateViewButtons();
-    const query = buildQuery();
     try {
       let groupBy = !state.filters.category ? "category" : !state.filters.year && !state.directEntries ? "year" : "";
-      let [catalog, progress] = await Promise.all([request(groupBy ? `/api/collectibles/groups?groupBy=${groupBy}&${query}` : `/api/collectibles?${query}`), request(`/api/collectibles/stats?${query}`)]);
+      let catalog = queryCollectibles(state.catalog, state.overlay, state.filters, { groupBy, limit: 48 });
       if (requestId !== state.requestId) return;
       if (groupBy === "year" && !(catalog.groups || []).length) {
         state.directEntries = true;
         groupBy = "";
-        catalog = await request(`/api/collectibles?${query}`);
+        catalog = queryCollectibles(state.catalog, state.overlay, state.filters, { limit: 48 });
       }
+      const progress = catalog.stats;
       renderStats(progress);
+      if (state.overlayStale) stats.insertAdjacentHTML("beforeend", `<p class="table-message">Showing the last saved collection state; changes are temporarily unavailable.</p>`);
       renderBreadcrumbs();
       if (groupBy) { renderGroups(catalog.groups || [], groupBy); pagination.innerHTML = ""; renderPageSelect(1, 1, false); }
       else { renderCards(catalog.items || []); renderPagination(catalog.pagination || {}); }
@@ -219,17 +256,21 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       button.setAttribute("aria-label", toggleLabel);
       button.setAttribute("title", toggleLabel);
       button.disabled = false;
-      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+      await refreshOverlay();
     }
     catch (error) { button.disabled = false; window.alert(error.message); }
   }
 
   async function openDetail(id) {
     dialog.showModal(); detail.innerHTML = loading("Loading collectible details...");
+    const fallback = state.catalog?.items?.find((entry) => entry.id === id);
+    const item = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
     try {
-      const { collectible: item } = await request(`/api/collectibles/${encodeURIComponent(id)}`);
+      if (!item) throw new Error("Collectible details are temporarily unavailable.");
       const owned = item.collection?.status === "owned";
-      const dialogImages = (item.images?.length ? [...item.images].sort((a, b) => Number(isThumbnailImage(a)) - Number(isThumbnailImage(b))) : item.image ? [{ sourceUrl: item.image }] : []);
+      const availableImages = item.images?.length ? item.images : item.image ? [{ sourceUrl: item.image }] : [];
+      const fullSizeImages = availableImages.filter((image) => !isThumbnailImage(image));
+      const dialogImages = fullSizeImages.length ? fullSizeImages : availableImages;
       detail.innerHTML = `<div class="collectible-detail-layout">
         <div class="collectible-detail-gallery">${dialogImages.map((image) => `<img src="${escapeHtml(image.localUrl || image.sourceUrl)}" alt="${escapeHtml(item.name)}" loading="lazy">`).join("") || `<span class="table-message">No image available.</span>`}</div>
         <div class="collectible-detail-copy"><p class="eyebrow">${escapeHtml([item.manufacturer?.name, item.year, item.scale].filter(Boolean).join(" • "))}</p><h2>${escapeHtml(item.name)}</h2>${item.itemNumber ? `<p>Item #${escapeHtml(item.itemNumber)}</p>` : ""}
@@ -267,7 +308,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       if (wanted && image && !wantBadge) { wantBadge = document.createElement("b"); wantBadge.textContent = "Want"; image.append(wantBadge); }
       if (!wanted) wantBadge?.remove();
       dialog.close();
-      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+      await refreshOverlay();
     }
     catch (error) { statusMessage.textContent = error.message; }
     finally { submit.disabled = false; }
@@ -282,7 +323,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       else await authenticatedRequest("/api/collection/exclusions", { method: "POST", body: { type: "collectible", value: id, note: "Excluded from collectible detail." } });
       dialog.close();
       if ((!exclusionId && state.filters.scope === "active") || (exclusionId && state.filters.scope === "excluded")) grid.querySelector(`[data-collectible-id="${CSS.escape(id)}"]`)?.remove();
-      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+      await refreshOverlay();
     } catch (error) {
       button.disabled = false;
       window.alert(error.message);
@@ -309,7 +350,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       button.setAttribute("title", action);
       button.disabled = false;
       if ((nextExclusionId && state.filters.scope === "active") || (!nextExclusionId && state.filters.scope === "excluded")) button.closest(".collectible-group-card")?.remove();
-      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+      await refreshOverlay();
     } catch (error) {
       button.disabled = false;
       window.alert(error.message);
@@ -333,7 +374,7 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
       button.textContent = nextExclusionId ? "Restore item" : "Exclude item";
       button.disabled = false;
       if ((nextExclusionId && state.filters.scope === "active") || (!nextExclusionId && state.filters.scope === "excluded")) card?.remove();
-      request(`/api/collectibles/stats?${buildQuery()}`).then(renderStats).catch(() => {});
+      await refreshOverlay();
     } catch (error) {
       button.disabled = false;
       window.alert(error.message);
@@ -360,7 +401,17 @@ export function createCollectiblesController({ endpoint, getAccessToken }) {
     select.innerHTML = Array.from({ length: pages }, (_, index) => `<option value="${index + 1}">Page ${index + 1}</option>`).join("");
     select.value = String(Math.min(Math.max(1, page), pages));
   }
-  async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
+  async function mutate(path, body) {
+    const match = path.match(/^\/api\/collection\/([^/]+)$/);
+    const item = match ? state.catalog?.items?.find((entry) => entry.id === decodeURIComponent(match[1])) : null;
+    const catalog = item ? {
+      name: item.name, normalizedName: item.normalizedName, year: item.year, scale: item.scale,
+      itemNumber: item.itemNumber, releaseSeries: item.releaseSeries, mix: item.mix,
+      sourceUrl: item.sourceUrl, image: item.image, sourceSortOrder: item.sourceSortOrder,
+      manufacturerSlug: item.manufacturer?.slug,
+    } : undefined;
+    return authenticatedRequest(path, { method: "PATCH", body: { ...body, ...(catalog ? { catalog } : {}) } });
+  }
   async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
   async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { signal: options.signal || AbortSignal.timeout(15000), headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
   return { renderPage };

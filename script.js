@@ -361,7 +361,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202608310537";
+} from "./modules/domRefs.js?v=202609010322";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -371,8 +371,8 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310006";
-import { createCollectiblesController } from "./modules/collectibles.js?v=202608300002";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310007";
+import { createCollectiblesController } from "./modules/collectibles.js?v=202609011540";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -654,6 +654,7 @@ const followedTeamsController = createFollowedTeamsController({
 const collectiblesController = createCollectiblesController({
   endpoint: COLLECTIBLES_ENDPOINT,
   getAccessToken: ensureRankingAuthorization,
+  catalogPath: `data/collectibles-catalog.json?v=${encodeURIComponent(SITE_VERSION)}`,
 });
 
 function renderLeagueList(year) {
@@ -3552,18 +3553,19 @@ function toggleFootyFixtureExpansion(matchId) {
 function renderFootyFixtureDetails(fixture) {
   const matchNoteMarkup = renderFootyMatchNote(fixture);
   const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
-  const canManageSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
+  const canShowSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
-  const seenMatch = canManageSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
-  const actionsMarkup = canAddPerfectPerformance || canManageSeenMatch || canEditMatchNote
+  const seenMatch = canShowSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
+  const canManageSeenMatch = Boolean(seenMatch) || isFootyFixtureStarted(fixture);
+  const actionsMarkup = canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote
     ? `
       <div class="footy-fixture-detail-actions">
         ${canAddPerfectPerformance
           ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
           : "<span></span>"}
         <div class="footy-fixture-detail-actions-right">
-          ${canManageSeenMatch ? `
-            <button class="icon-action-button footy-seen-match-button${seenMatch ? " is-active" : ""}" type="button" data-footy-seen-match="${escapeHtml(fixture.matchId)}" aria-label="${seenMatch ? "Edit" : "Add"} seen match" title="Seen Match">
+          ${canShowSeenMatch ? `
+            <button class="icon-action-button footy-seen-match-button${seenMatch ? " is-active" : ""}" type="button" data-footy-seen-match="${escapeHtml(fixture.matchId)}" aria-label="${seenMatch ? "Edit seen match" : canManageSeenMatch ? "Add seen match" : "Seen match available after kickoff"}" title="${canManageSeenMatch ? "Seen Match" : "Available after kickoff"}"${canManageSeenMatch ? "" : " disabled"}>
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
                 <circle cx="12" cy="12" r="2.5"></circle>
@@ -3960,7 +3962,7 @@ function renderFootySeenPage() {
 
 function renderFootySeenMatch(seenMatch = {}) {
   const dateLabel = formatFootyPerfectDate(seenMatch.matchDate);
-  const timeLabel = String(seenMatch.matchTime || "").trim();
+  const timeLabel = formatFootySeenTime(seenMatch.matchTime);
   const editMarkup = shouldShowFootySeenEditMode
     ? `<button class="action-button footy-seen-edit-button" type="button" data-footy-seen-edit="${escapeHtml(seenMatch.id)}">Edit</button>`
     : "";
@@ -3984,6 +3986,18 @@ function renderFootySeenMatch(seenMatch = {}) {
       </div>
     </article>
   `;
+}
+
+function formatFootySeenTime(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (!match) return text;
+  const date = new Date(2000, 0, 1, Number(match[1]), Number(match[2]));
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
 }
 
 function getFilteredFootySeenMatches(seenMatches = []) {
@@ -4083,7 +4097,11 @@ async function openFootySeenDialogForFixture(matchId) {
     await ensureFootySeenMatches();
     const fixture = getFootyFixtureByMatchId(matchId);
     if (!fixture) throw new Error("This fixture could not be found.");
-    openFootySeenDialog({ fixture, seenMatch: getFootySeenMatchByMatchId(matchId) });
+    const seenMatch = getFootySeenMatchByMatchId(matchId);
+    if (!seenMatch && !isFootyFixtureStarted(fixture)) {
+      throw new Error("A match can be marked seen after kickoff.");
+    }
+    openFootySeenDialog({ fixture, seenMatch });
   } catch (error) {
     recordDiagnostic("seen match dialog failed to open", error);
   }

@@ -5,6 +5,7 @@ const STATUS_OPTIONS = [
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
+const SNAPSHOT_STORAGE_PREFIX = "boxThisLapYouTubeSnapshotV1:";
 const VIDEO_PAGE_SIZE = 100;
 
 export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop }) {
@@ -51,6 +52,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop 
     state.loading = true;
     render();
 
+    let snapshotKey = "";
     try {
       await loadConfiguration();
       const query = new URLSearchParams({ status: state.status });
@@ -63,6 +65,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop 
       } else {
         query.append("channel", "__none__");
       }
+      snapshotKey = `${SNAPSHOT_STORAGE_PREFIX}${state.status}:${state.priority}:${state.channel || "all"}`;
 
       const [videoData, playlistData] = await Promise.all([
         loadAllVideos(query),
@@ -74,9 +77,32 @@ export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop 
       state.lastSyncAt = videoData.lastSyncAt || "";
       state.error = "";
       state.needsAuth = false;
+      try {
+        localStorage.setItem(snapshotKey, JSON.stringify({
+          channels: state.channels,
+          lastSyncAt: state.lastSyncAt,
+          playlists: state.playlists,
+          savedAt: new Date().toISOString(),
+          videos: state.videos,
+        }));
+      } catch {}
     } catch (error) {
       state.needsAuth = error.status === 401;
-      state.error = state.needsAuth ? "" : error.message || "Unable to load the YouTube inbox.";
+      let restored = false;
+      if (!state.needsAuth && snapshotKey) {
+        try {
+          const cached = JSON.parse(localStorage.getItem(snapshotKey) || "null");
+          if (Array.isArray(cached?.videos)) {
+            state.videos = cached.videos;
+            state.channels = cached.channels || [];
+            state.playlists = cached.playlists || [];
+            state.lastSyncAt = cached.lastSyncAt || "";
+            state.syncMessage = `Showing saved inbox data from ${formatRelativeDate(cached.savedAt)}.`;
+            restored = true;
+          }
+        } catch {}
+      }
+      state.error = state.needsAuth || restored ? "" : error.message || "Unable to load the YouTube inbox.";
     } finally {
       state.loading = false;
       render();

@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { HOT_WHEELS_2001, SOURCE_HOME, parseCatalogIndex, parseHomepageCategories, parseHotWheels2001 } from "./brianzpatton.mjs";
 
 const dryRun = process.argv.includes("--dry-run");
+const snapshotOnly = process.argv.includes("--snapshot-only");
 const token = process.env.CLOUDFLARE_API_TOKEN;
 const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
 const databaseId = process.env.D1_DATABASE_ID || "45c405ab-a0cd-442a-b135-b7ffe4b7d933";
-if (!dryRun && (!token || !accountId || !databaseId)) throw new Error("CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and D1_DATABASE_ID are required.");
+if (!dryRun && !snapshotOnly && (!token || !accountId || !databaseId)) throw new Error("CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and D1_DATABASE_ID are required.");
 
 const overrides = JSON.parse(await readFile(new URL("./grouping-overrides.json", import.meta.url), "utf8"));
 const startedAt = new Date().toISOString();
@@ -14,18 +15,67 @@ let runId;
 let pagesProcessed = 0;
 
 try {
-  if (!dryRun) runId = await insertRun();
+  if (!dryRun && !snapshotOnly) runId = await insertRun();
   const catalog = await discoverCatalog();
+  await writeCatalogSnapshot(catalog);
   if (dryRun) {
     console.log(JSON.stringify({ categories: catalog.categories.length, indexPages: catalog.pages.length, collectibles: catalog.collectibles.length, variants: catalog.collectibles.reduce((sum, item) => sum + item.variants.length, 0), sample: catalog.collectibles.slice(0, 5).map(({ name, year, scale, categorySlug, sourceUrl }) => ({ name, year, scale, categorySlug, sourceUrl })) }, null, 2));
-  } else {
+  } else if (!snapshotOnly) {
     await importCatalog(catalog);
     await finishRun("success", catalog.collectibles);
     console.log(`Synced ${catalog.collectibles.length} collectibles across ${catalog.categories.length} catalog categories and ${pagesProcessed} source pages.`);
+  } else {
+    console.log(`Generated static catalog with ${catalog.collectibles.length} collectibles.`);
   }
 } catch (error) {
   if (runId) await finishRun("failed", [], error).catch(() => {});
   throw error;
+}
+
+async function writeCatalogSnapshot(catalog) {
+  const categoryBySlug = new Map(catalog.categories.map((category) => [category.slug, category]));
+  const manufacturerNames = new Map([
+    ["hot-wheels", "Hot Wheels"], ["spin-master", "Spin Master"],
+    ["greenlight", "GreenLight"], ["other", "Other"],
+  ]);
+  const snapshot = {
+    version: 1,
+    updatedAt: startedAt,
+    categories: catalog.categories.map((category) => ({
+      slug: category.slug,
+      name: category.name,
+      type: category.type,
+      checklistMode: category.checklistMode || "normal",
+      sourceSortOrder: category.sourceSortOrder,
+    })),
+    items: catalog.collectibles.map((item) => ({
+      id: item.id,
+      itemNumber: item.itemNumber || "",
+      name: item.name,
+      normalizedName: item.normalizedName || "",
+      year: item.year ?? null,
+      scale: item.scale || "",
+      releaseCategory: item.releaseCategory || "",
+      releaseSeries: item.releaseSeries || "",
+      mix: item.mix || "",
+      manufacturer: { slug: item.manufacturerSlug || "other", name: manufacturerNames.get(item.manufacturerSlug) || "Other" },
+      productLine: item.productLineSlug ? { slug: item.productLineSlug, name: item.productLineSlug === "monster-jam" ? "Monster Jam" : item.productLineSlug } : null,
+      categories: [item.categorySlug].filter(Boolean),
+      checklistMode: categoryBySlug.get(item.categorySlug)?.checklistMode || "normal",
+      image: item.primaryImageUrl || "",
+      sourceUrl: item.sourceUrl || "",
+      sourceSortOrder: item.sourceSortOrder,
+      variants: (item.variants || []).map((variant) => ({
+        id: variant.id,
+        sourceName: variant.sourceName,
+        variantName: variant.variantName || "",
+        sourceUrl: variant.sourceUrl || "",
+        sourceItemNumber: variant.sourceItemNumber || "",
+      })),
+    })),
+  };
+  const target = new URL("../../data/collectibles-catalog.json", import.meta.url);
+  await writeFile(target, `${JSON.stringify(snapshot)}\n`, "utf8");
 }
 
 async function discoverCatalog() {

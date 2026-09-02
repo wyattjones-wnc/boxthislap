@@ -1,4 +1,5 @@
 export function createTrophyStatsController({ endpoint }) {
+  const cacheKey = "boxThisLapPsnStatsSnapshotV1";
   const content = document.querySelector("#trophy-stats-content");
   const updated = document.querySelector("#trophy-stats-updated");
   let stats = null;
@@ -28,10 +29,20 @@ export function createTrophyStatsController({ endpoint }) {
         const value = await response.json().catch(() => null);
         if (!response.ok) throw new Error(value?.error || `Trophy stats returned ${response.status}.`);
         stats = value;
+        try { localStorage.setItem(cacheKey, JSON.stringify({ savedAt: new Date().toISOString(), value })); } catch {}
         renderStats(value);
         return value;
       })
       .catch((error) => {
+        try {
+          const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+          if (cached?.value) {
+            stats = cached.value;
+            renderStats(cached.value);
+            if (updated) updated.textContent = `Showing saved data from ${formatDate(cached.savedAt)}`;
+            return cached.value;
+          }
+        } catch {}
         renderError(error);
         loadPromise = null;
         throw error;

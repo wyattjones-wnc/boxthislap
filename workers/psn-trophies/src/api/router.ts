@@ -5,6 +5,8 @@ const SORT_COLUMNS = {
   id: "trophy_id",
   rarity: "earned_rate",
 } as const;
+const STATS_SNAPSHOT_KEY = "public:stats:v1";
+const STATUS_SNAPSHOT_KEY = "public:status:v1";
 
 export async function routePublicApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
   const url = new URL(request.url);
@@ -19,12 +21,20 @@ export async function routePublicApi(request: Request, env: PsnEnvironment): Pro
 }
 
 async function getStats(env: PsnEnvironment): Promise<Response> {
-  const [games, trophies, rarestEarned, latestEarned, rarestByTypeRows] = await Promise.all([
+  const snapshot = await readSnapshot(env, STATS_SNAPSHOT_KEY);
+  if (snapshot) return cachedJson(snapshot, 300);
+  const value = await buildStats(env);
+  await writeSnapshot(env, STATS_SNAPSHOT_KEY, value);
+  return cachedJson(value, 300);
+}
+
+export async function buildStats(env: PsnEnvironment): Promise<Record<string, unknown>> {
+  const [gamesResult, trophiesResult, rarestEarnedResult, latestEarnedResult, rarestByTypeRows] = await Promise.all([
     env.DB.prepare(`
       SELECT COUNT(*) AS games, COALESCE(SUM(platinum_earned), 0) AS platinums,
         COALESCE(SUM(is_100_percent), 0) AS hundred_percent, MAX(last_synced_at) AS updated_at
       FROM games
-    `).first<Record<string, unknown>>(),
+    `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       SELECT COUNT(*) AS total_trophies, COALESCE(SUM(earned), 0) AS earned_trophies,
         COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
@@ -32,7 +42,7 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
         COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
         COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
       FROM trophies
-    `).first<Record<string, unknown>>(),
+    `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
@@ -41,7 +51,7 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
       WHERE t.earned = 1 AND t.earned_rate IS NOT NULL
       ORDER BY t.earned_rate ASC, t.earned_at ASC, t.trophy_id ASC
       LIMIT 1
-    `).first<Record<string, unknown>>(),
+    `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
@@ -50,7 +60,7 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
       WHERE t.earned = 1 AND t.earned_at IS NOT NULL
       ORDER BY t.earned_at DESC, t.trophy_id DESC
       LIMIT 1
-    `).first<Record<string, unknown>>(),
+    `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       WITH ranked AS (
         SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
@@ -67,12 +77,17 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
     `).all<Record<string, unknown>>(),
   ]);
 
+  const games = gamesResult.results?.[0] || null;
+  const trophies = trophiesResult.results?.[0] || null;
+  const rarestEarned = rarestEarnedResult.results?.[0] || null;
+  const latestEarned = latestEarnedResult.results?.[0] || null;
+
   const rarestByType = Object.fromEntries(["bronze", "silver", "gold", "platinum"].map((type) => {
     const row = (rarestByTypeRows.results || []).find((entry) => entry.trophy_type === type) || null;
     return [type, mapStatTrophy(row)];
   }));
 
-  return cachedJson({
+  const value = {
     counts: {
       earnedTrophies: numberValue(trophies?.earned_trophies),
       games: numberValue(games?.games),
@@ -90,14 +105,59 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
     rarestByType,
     rarestEarned: mapStatTrophy(rarestEarned),
     updatedAt: games?.updated_at || null,
-  }, 300);
+  };
+  console.log(JSON.stringify({
+    event: "psn_d1_snapshot_rebuilt",
+    snapshot: "stats",
+    queries: 5,
+    rowsRead: [gamesResult, trophiesResult, rarestEarnedResult, latestEarnedResult, rarestByTypeRows]
+      .reduce((total, result) => total + Number(result.meta?.rows_read || 0), 0),
+  }));
+  return value;
 }
 
 async function getStatus(env: PsnEnvironment): Promise<Response> {
+  const snapshot = await readSnapshot(env, STATUS_SNAPSHOT_KEY);
+  if (snapshot) return cachedJson(snapshot, 60);
+  const value = await buildStatus(env);
+  await writeSnapshot(env, STATUS_SNAPSHOT_KEY, value);
+  return cachedJson(value, 60);
+}
+
+export async function buildStatus(env: PsnEnvironment): Promise<Record<string, unknown>> {
   const row = await env.DB.prepare(`
     SELECT completed_at FROM sync_runs WHERE status = 'success' ORDER BY id DESC LIMIT 1
   `).first<{ completed_at: string }>();
-  return cachedJson({ lastSuccessfulSync: row?.completed_at || null, status: row ? "ok" : "pending" }, 60);
+  console.log(JSON.stringify({ event: "psn_d1_snapshot_rebuilt", snapshot: "status", queries: 1 }));
+  return { lastSuccessfulSync: row?.completed_at || null, status: row ? "ok" : "pending" };
+}
+
+export async function refreshPublicSnapshots(env: PsnEnvironment): Promise<void> {
+  if (!env.SNAPSHOTS) return;
+  const [stats, status] = await Promise.all([buildStats(env), buildStatus(env)]);
+  await Promise.all([
+    writeSnapshot(env, STATS_SNAPSHOT_KEY, stats),
+    writeSnapshot(env, STATUS_SNAPSHOT_KEY, status),
+  ]);
+}
+
+async function readSnapshot(env: PsnEnvironment, key: string): Promise<Record<string, unknown> | null> {
+  if (!env.SNAPSHOTS) return null;
+  try {
+    return await env.SNAPSHOTS.get<Record<string, unknown>>(key, "json");
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "psn_snapshot_read_failed", key, error: String(error) }));
+    return null;
+  }
+}
+
+async function writeSnapshot(env: PsnEnvironment, key: string, value: unknown): Promise<void> {
+  if (!env.SNAPSHOTS) return;
+  try {
+    await env.SNAPSHOTS.put(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(JSON.stringify({ event: "psn_snapshot_write_failed", key, error: String(error) }));
+  }
 }
 
 async function getGameTrophies(env: PsnEnvironment, gameId: string, params: URLSearchParams): Promise<Response> {

@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { attachCanonicalFootyTeams } from "./footy-team-catalog.mjs";
+import { isSameFootballClubName, normalizeFootballClubName } from "./footy-club-names.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -46,9 +47,6 @@ const FOOTBALL_LEAGUE_POINTS = Object.freeze({
   draw: 1,
   loss: 0,
   win: 3,
-});
-const FOOTBALL_CLUB_NAME_ALIASES = Object.freeze({
-  "athletic bilbao": "athletic club",
 });
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
@@ -2068,36 +2066,6 @@ function previousFootyMatchRows(previousSchedules = []) {
   });
 }
 
-function isSameFootballClubName(firstName, secondName) {
-  const first = normalizeFootballClubName(firstName);
-  const second = normalizeFootballClubName(secondName);
-
-  if (!first || !second) {
-    return false;
-  }
-
-  if (first === second) {
-    return true;
-  }
-
-  const firstTokens = getFootballClubIdentityTokens(first);
-  const secondTokens = getFootballClubIdentityTokens(second);
-  const shorterTokens = firstTokens.length <= secondTokens.length ? firstTokens : secondTokens;
-  const longerTokens = new Set(firstTokens.length <= secondTokens.length ? secondTokens : firstTokens);
-
-  return shorterTokens.length > 0 &&
-    shorterTokens.reduce((length, token) => length + token.length, 0) >= 6 &&
-    shorterTokens.every((token) => longerTokens.has(token));
-}
-
-function getFootballClubIdentityTokens(value) {
-  return normalizeText(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token && !["de", "del", "la", "the"].includes(token));
-}
-
 function registerFootyMatchRow(row, { entriesByFingerprint, entriesBySourceId, registryRowsById, usedMatchIds }) {
   if (!row.matchId) {
     return;
@@ -3208,15 +3176,6 @@ function normalizeText(value) {
 
 function normalizeFootyMatchId(value) {
   return normalizeText(value);
-}
-
-function normalizeFootballClubName(value) {
-  const normalizedName = normalizeText(value)
-    .replace(/\b(afc|cf|fc|sc)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return FOOTBALL_CLUB_NAME_ALIASES[normalizedName] || normalizedName;
 }
 
 function isFalseValue(value) {

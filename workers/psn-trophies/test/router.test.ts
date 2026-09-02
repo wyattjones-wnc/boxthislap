@@ -107,7 +107,7 @@ test("returns aggregate trophy statistics without exposing database rows", async
         const index = queryIndex++;
         return {
           first: async () => rows[index],
-          all: async () => ({ results: rows[index] }),
+          all: async () => ({ results: Array.isArray(rows[index]) ? rows[index] : [rows[index]] }),
         };
       },
     },

@@ -1,5 +1,6 @@
 import { exchangeAccessCodeForAuthTokens, exchangeNpssoForAccessCode } from "psn-api";
 import { getPsnAuthStatus, savePsnNpsso } from "../psn/stored-auth.ts";
+import { refreshPublicSnapshots } from "./router.ts";
 import type { PsnEnvironment } from "../types";
 
 const LOG_VIEWS = new Set(["unsorted", "favorites", "seen", "all", "platinums"]);
@@ -31,7 +32,9 @@ export async function routeTrophyManagementApi(request: Request, env: PsnEnviron
   if (isAuthUpdate) return updatePsnAuth(request, env, managerId);
   if (isSync) {
     const { syncTrophyBatch } = await import("../sync/sync-one-game.ts");
-    return noStoreJson({ ok: true, ...(await syncTrophyBatch(env, 0, { prioritizeChanges: true })) });
+    const result = await syncTrophyBatch(env, 0, { prioritizeChanges: true });
+    await refreshPublicSnapshots(env);
+    return noStoreJson({ ok: true, ...result });
   }
   if (isSeenThrough) return updateSeenThrough(request, env, managerId);
   return updatePreference(request, env, decodeGameId(preferenceMatch![1]!), Number(preferenceMatch![2]), managerId);

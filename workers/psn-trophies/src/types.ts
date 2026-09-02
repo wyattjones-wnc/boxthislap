@@ -57,7 +57,13 @@ export interface PsnEnvironment {
   PSN_ACCOUNT_ID?: string;
   PSN_AUTH_ENCRYPTION_KEY?: string;
   PSN_NPSSO?: string;
+  SNAPSHOTS?: KVNamespace;
   SYNC_SECRET?: string;
+}
+
+export interface KVNamespace {
+  get<T = unknown>(key: string, type: "json"): Promise<T | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
 }
 
 export interface ServiceFetcher {
@@ -70,7 +76,7 @@ export interface D1Database {
 }
 
 export interface D1PreparedStatement {
-  all<T = Record<string, unknown>>(): Promise<{ results?: T[] }>;
+  all<T = Record<string, unknown>>(): Promise<{ results?: T[]; meta?: { rows_read?: number; rows_written?: number } }>;
   bind(...values: unknown[]): D1PreparedStatement;
   first<T = Record<string, unknown>>(): Promise<T | null>;
   run(): Promise<{ meta?: { changes?: number; last_row_id?: number }; success?: boolean }>;

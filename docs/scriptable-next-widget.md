@@ -29,7 +29,7 @@ docs/scriptable-widgets.md
 
 The loader installs the script as `Box This Lap Next`. Run that installed script and choose any upcoming incomplete item from the `Next` list.
 
-That choice is saved locally on the phone. The widget will keep focusing on that item until it passes, you run the script again and choose a different one, or you set a widget parameter.
+That choice is saved locally on the phone. The widget will keep focusing on that item through its current-event window, until you run the script again and choose a different one, or until you set a widget parameter.
 
 Run `Box This Lap Widget Loader` again whenever you want to update the installed copy.
 
@@ -61,7 +61,7 @@ Shows the first incomplete item whose `Thing` contains `Fantasy Critic`.
 ## Notes
 
 - Scriptable controls widget refresh timing. The script asks for hourly refreshes normally, and once-per-minute refreshes during the final hour before a timed item. iOS may still choose a slower cadence.
-- Timed items stop showing once their time passes. All-day items show as `Today` during the current day, then fall off after that day ends.
+- Timed items use a text countdown so they do not begin counting upward after their start time. They show `Now` for one hour, then fall off. All-day items show as `Today` during the current day, then fall off after that day ends.
 - Tapping the widget runs the script and shows the current Next item picker.
 - The widget reads data directly from the Cloudflare Worker. It does not depend on the website being open.
 - If a saved focus used an ID from before the Cloudflare migration, the widget recovers it by its saved item name and stores the new ID.

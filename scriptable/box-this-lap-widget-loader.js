@@ -9,8 +9,9 @@
 // Updating replaces the installed copy of a selected widget. The loader asks
 // for confirmation first if it finds an existing copy.
 
+const DEFAULT_SOURCE_BRANCH = "main";
 const QUERY_PARAMETERS = args.queryParameters || {};
-const SOURCE_BRANCH = String(QUERY_PARAMETERS.channel || "main").trim().toLowerCase() === "dev"
+const SOURCE_BRANCH = String(QUERY_PARAMETERS.channel || DEFAULT_SOURCE_BRANCH).trim().toLowerCase() === "dev"
   ? "dev"
   : "main";
 const REPOSITORY_RAW_ROOT = `https://raw.githubusercontent.com/wyattjones-wnc/boxthislap/${SOURCE_BRANCH}/scriptable`;
@@ -46,6 +47,7 @@ async function chooseWidgets() {
   AVAILABLE_WIDGETS.forEach((widget) => {
     alert.addAction(widget.name.replace("Box This Lap ", ""));
   });
+  alert.addAction("Share this installer");
   alert.addCancelAction("Cancel");
 
   const choice = await alert.presentSheet();
@@ -58,7 +60,27 @@ async function chooseWidgets() {
     return [AVAILABLE_WIDGETS[choice - 1]];
   }
 
+  if (choice === AVAILABLE_WIDGETS.length + 1) {
+    await shareInstaller();
+  }
+
   return [];
+}
+
+async function shareInstaller() {
+  const storage = getScriptStorage();
+  const source = storage.manager.readString(module.filename);
+  const sharedSource = source.replace(
+    /const DEFAULT_SOURCE_BRANCH = "(?:main|dev)";/,
+    `const DEFAULT_SOURCE_BRANCH = "${SOURCE_BRANCH}";`
+  );
+  const localManager = FileManager.local();
+  const sharedPath = localManager.joinPath(
+    localManager.temporaryDirectory(),
+    "Box This Lap Widget Loader.js"
+  );
+  localManager.writeString(sharedPath, sharedSource);
+  await ShareSheet.present([sharedPath]);
 }
 
 async function installWidgets(widgets) {
@@ -156,7 +178,7 @@ async function showSuccess(widgets) {
   const alert = new Alert();
   const installed = widgets.map((widget) => `• ${widget.name}: ${widget.description}`).join("\n");
   alert.title = widgets.length === 1 ? "Widget ready" : "Widgets ready";
-  alert.message = `${installed}\n\nNext: add a Scriptable widget to the Home Screen, edit it, and choose the Box This Lap script you want.`;
+  alert.message = `${installed}\n\nNext: add a Scriptable widget to the Home Screen, edit it, and choose the Box This Lap script you want.\n\nUpdating an existing widget? Remove it from the Home Screen and add it again once so iOS drops its old tap action.`;
   alert.addAction("Done");
   await alert.presentAlert();
 }

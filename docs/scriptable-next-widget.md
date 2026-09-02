@@ -33,6 +33,8 @@ That choice is saved locally on the phone. The widget will keep focusing on that
 
 Run `Box This Lap Widget Loader` again whenever you want to update the installed copy.
 
+After updating an existing Home Screen widget, remove it and add it again once so iOS replaces the previously rendered widget and its old tap action.
+
 ## 3. Add the widget
 
 1. Add a Scriptable widget to the Home Screen.

@@ -16,11 +16,25 @@ On the iPhone:
 
 Run the loader again at any time to update the installed widget scripts. It confirms before replacing an existing copy.
 
+If you update a widget that is already on the Home Screen, remove that Home Screen widget and add it again once. iOS can otherwise retain the tap action from the previously rendered widget until a later automatic refresh.
+
 The stable loader downloads from `main`. For a development test, open this URL after installing the loader:
 
 ```text
 scriptable:///run/Box%20This%20Lap%20Widget%20Loader?channel=dev
 ```
+
+## Share with someone else
+
+1. Run `Box This Lap Widget Loader` in Scriptable.
+2. Tap **Share this installer**.
+3. Send the file using Messages, AirDrop, Mail, or another iOS sharing option.
+4. The recipient opens the shared script in Scriptable and runs it.
+5. They tap **Install or update both**, then add the two Scriptable widgets to their Home Screen.
+
+This leaves only the iOS-required Home Screen widget addition as a manual setup step. The recipient does not need to visit GitHub or copy either widget script.
+
+The shared installer keeps the source channel of the running loader. Launch the loader with the development URL above before sharing if the recipient should test `dev`; run it normally to share stable `main` versions.
 
 ## Interaction
 

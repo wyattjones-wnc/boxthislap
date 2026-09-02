@@ -9,6 +9,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   const chooseButton = document.querySelector("#footy-choose-teams");
   const topResetButton = document.querySelector("#footy-reset-teams");
   const choiceActions = document.querySelector("#footy-team-choice-actions");
+  const footyFilters = document.querySelector("#footy-filters");
   const dialog = document.querySelector("#followed-teams-dialog");
   const dialogClose = document.querySelector("#followed-teams-dialog-close");
   const dialogDone = document.querySelector("#followed-teams-dialog-done");
@@ -142,12 +143,18 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     const managerId = String(getManagerId() || "").trim();
     const canReset = Boolean(managerId) && (!state.usingDefault || hasChanges());
     if (choiceActions) {
+      if (state.usingDefault) {
+        footyFilters?.insertAdjacentElement("afterend", choiceActions);
+      } else {
+        footyFilters?.append(choiceActions);
+      }
       choiceActions.hidden = !managerId;
       choiceActions.classList.toggle("is-default", state.usingDefault);
     }
     if (chooseButton) {
       chooseButton.hidden = !managerId;
       chooseButton.disabled = state.loading || state.saving || !state.catalog.length;
+      chooseButton.textContent = state.usingDefault ? "Add Teams" : "Choose teams";
     }
     if (topResetButton) {
       topResetButton.hidden = !managerId || state.usingDefault;

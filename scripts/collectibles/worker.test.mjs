@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
+import { ensureStaticCatalogItem } from "../../workers/collectibles/src/index.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../../workers/collectibles/src/index.js", import.meta.url));
@@ -60,6 +61,17 @@ test("collectibles list and group responses include progress without a second qu
   const fullCatalog = await getJson(worker, "/api/collectibles?scope=all&limit=48");
   assert.equal(fullCatalog.stats.total, 3);
   assert.equal(fullCatalog.items.find((item) => item.id === "reference")?.exclusion.excluded, true);
+
+  await ensureStaticCatalogItem({ DB: db }, "static-only-item", {
+    name: "Static only truck",
+    normalizedName: "static only truck",
+    manufacturerSlug: "other",
+    sourceSortOrder: 99,
+    sourceUrl: "https://example.com/static-only",
+  });
+  const staticOnly = await db.prepare("SELECT name, source_site FROM collectibles WHERE id = 'static-only-item'").first();
+  assert.deepEqual(staticOnly, { name: "Static only truck", source_site: "static-catalog" });
+
 });
 
 async function getJson(worker, path) {

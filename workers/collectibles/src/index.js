@@ -433,8 +433,7 @@ function sourceIndexUrl(sourceUrl) {
 }
 
 async function saveCollection(env, collectibleId, body) {
-  const exists = await env.DB.prepare("SELECT id FROM collectibles WHERE id = ?").bind(collectibleId).first();
-  if (!exists) throw httpError(404, "Collectible was not found.");
+  await ensureStaticCatalogItem(env, collectibleId, body.catalog);
   const current = await env.DB.prepare("SELECT * FROM collection_items WHERE collectible_id = ?").bind(collectibleId).first();
   const status = body.status === undefined ? current?.status || "not_owned" : cleanStatus(body.status);
   let quantity = body.quantity === undefined ? Number(current?.quantity || 0) : Number(body.quantity);
@@ -451,6 +450,29 @@ async function saveCollection(env, collectibleId, body) {
     .bind(collectibleId, status, quantity, Number(wanted), acquiredAt, notes).run();
   const saved = await env.DB.prepare("SELECT status, quantity, wanted, acquired_at, notes, updated_at FROM collection_items WHERE collectible_id = ?").bind(collectibleId).first();
   return { status: saved.status, quantity: Number(saved.quantity), wanted: Boolean(saved.wanted), acquiredAt: saved.acquired_at, notes: saved.notes, updatedAt: saved.updated_at };
+}
+
+export async function ensureStaticCatalogItem(env, collectibleId, catalog) {
+  if (!catalog || typeof catalog !== "object" || Array.isArray(catalog)) {
+    const exists = await env.DB.prepare("SELECT id FROM collectibles WHERE id = ?").bind(collectibleId).first();
+    if (!exists) throw httpError(404, "Collectible was not found in the static catalog.");
+    return;
+  }
+  const name = cleanText(catalog.name, 500);
+  if (!name) throw httpError(400, "A catalog name is required.");
+  const manufacturerSlug = ["hot-wheels", "spin-master", "greenlight", "other"].includes(catalog.manufacturerSlug) ? catalog.manufacturerSlug : "other";
+  const year = catalog.year === null || catalog.year === undefined || catalog.year === "" ? null : Number(catalog.year);
+  if (year !== null && (!Number.isInteger(year) || year < 1800 || year > 2200)) throw httpError(400, "Catalog year is invalid.");
+  const now = new Date().toISOString();
+  await env.DB.prepare(`INSERT OR IGNORE INTO collectibles
+    (id, manufacturer_id, year, scale, item_number, name, normalized_name, release_series, mix_name,
+      source_url, source_site, primary_image_url, source_sort_order, first_seen_at, last_seen_at, last_imported_at)
+    SELECT ?, id, ?, ?, ?, ?, ?, ?, ?, ?, 'static-catalog', ?, ?, ?, ?, ?
+    FROM manufacturers WHERE slug = ? LIMIT 1`)
+    .bind(collectibleId, year, cleanText(catalog.scale, 50) || null, cleanText(catalog.itemNumber, 100) || null,
+      name, cleanText(catalog.normalizedName, 500) || name.toLowerCase(), cleanText(catalog.releaseSeries, 200) || null,
+      cleanText(catalog.mix, 200) || null, cleanText(catalog.sourceUrl, 1000) || null, cleanText(catalog.image, 1000) || null,
+      Number.isSafeInteger(Number(catalog.sourceSortOrder)) ? Number(catalog.sourceSortOrder) : 0, now, now, now, manufacturerSlug).run();
 }
 
 async function listExclusions(env) {

@@ -263,13 +263,8 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
 
   async function openDetail(id) {
     dialog.showModal(); detail.innerHTML = loading("Loading collectible details...");
-    let item;
-    try {
-      ({ collectible: item } = await request(`/api/collectibles/${encodeURIComponent(id)}`));
-    } catch {
-      const fallback = state.catalog?.items?.find((entry) => entry.id === id);
-      if (fallback) item = queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0];
-    }
+    const fallback = state.catalog?.items?.find((entry) => entry.id === id);
+    const item = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
     try {
       if (!item) throw new Error("Collectible details are temporarily unavailable.");
       const owned = item.collection?.status === "owned";
@@ -406,7 +401,17 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
     select.innerHTML = Array.from({ length: pages }, (_, index) => `<option value="${index + 1}">Page ${index + 1}</option>`).join("");
     select.value = String(Math.min(Math.max(1, page), pages));
   }
-  async function mutate(path, body) { return authenticatedRequest(path, { method: "PATCH", body }); }
+  async function mutate(path, body) {
+    const match = path.match(/^\/api\/collection\/([^/]+)$/);
+    const item = match ? state.catalog?.items?.find((entry) => entry.id === decodeURIComponent(match[1])) : null;
+    const catalog = item ? {
+      name: item.name, normalizedName: item.normalizedName, year: item.year, scale: item.scale,
+      itemNumber: item.itemNumber, releaseSeries: item.releaseSeries, mix: item.mix,
+      sourceUrl: item.sourceUrl, image: item.image, sourceSortOrder: item.sourceSortOrder,
+      manufacturerSlug: item.manufacturer?.slug,
+    } : undefined;
+    return authenticatedRequest(path, { method: "PATCH", body: { ...body, ...(catalog ? { catalog } : {}) } });
+  }
   async function authenticatedRequest(path, options = {}) { const token = await getAccessToken(); const body = options.body === undefined ? undefined : JSON.stringify(options.body); return request(path, { ...options, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, body }); }
   async function request(path, options = {}) { const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, { signal: options.signal || AbortSignal.timeout(15000), headers: { Accept: "application/json", ...(options.headers || {}) }, ...options }); const value = await response.json().catch(() => null); if (!response.ok || !value?.ok) throw new Error(value?.error || `Collectibles request failed (${response.status}).`); return value; }
   return { renderPage };

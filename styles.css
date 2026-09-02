@@ -2060,6 +2060,19 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-team-choice-actions.is-default {
   justify-content: center;
+  margin: -6px 0 22px;
+  width: 100%;
+}
+
+.footy-team-choice-actions.is-default .action-button {
+  font-size: 1rem;
+  min-height: 46px;
+  min-width: min(240px, 100%);
+  padding: 11px 24px;
+}
+
+.footy-team-choice-actions[hidden] {
+  display: none;
 }
 
 .footy-past-toggle-icon {

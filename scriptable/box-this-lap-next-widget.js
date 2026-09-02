@@ -10,7 +10,6 @@
 // - Fantasy Critic: show the first incomplete item whose Thing contains that text.
 
 const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev/api/items";
-const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/#next";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
 const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache-v2.json";
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
@@ -224,7 +223,8 @@ function sortItemsForPicker(items) {
 async function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  widget.url = SITE_URL;
+  // Relaunching the script lets a widget tap open the Next item picker.
+  widget.url = URLScheme.forRunningScript();
   widget.setPadding(14, 14, 14, 14);
 
   const hasBackgroundImage = item ? await applyItemBackground(widget, item) : false;

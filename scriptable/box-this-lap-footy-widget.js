@@ -10,7 +10,6 @@ const SITE_ROOT = SITE_CHANNEL === "dev"
   ? "https://wyattjones-wnc.github.io/boxthislap/dev/"
   : "https://wyattjones-wnc.github.io/boxthislap/";
 const SCHEDULE_URL = `${SITE_ROOT}data/footy-schedule.json`;
-const SITE_URL = `${SITE_ROOT}#footy`;
 const SITE_ASSET_BASE_URL = SITE_ROOT;
 const MATCH_LIMIT = 3;
 const SCHEDULE_CACHE_FILE = `box-this-lap-footy-schedule-${SITE_CHANNEL}.json`;
@@ -161,7 +160,8 @@ function getUniqueFixtures(fixtures) {
 async function createWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  widget.url = SITE_URL;
+  // Relaunching the script fetches fresh match data and shows the new preview.
+  widget.url = URLScheme.forRunningScript();
   widget.setPadding(2, 14, 6, 14);
   addHeader(widget);
 

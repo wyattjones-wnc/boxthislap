@@ -16,6 +16,10 @@ On the iPhone:
 
 Run the loader again at any time to update the installed widget scripts. It confirms before replacing an existing copy.
 
+The loader checks for its own updates whenever it starts. When it installs a newer copy of itself, tap **Continue** and it reopens automatically with the new version.
+
+Loader copies installed before self-updating was added must be replaced manually this one last time. Every loader shared or installed afterward can update itself.
+
 If you update a widget that is already on the Home Screen, remove that Home Screen widget and add it again once. iOS can otherwise retain the tap action from the previously rendered widget until a later automatic refresh.
 
 The stable loader downloads from `main`. For a development test, open this URL after installing the loader:

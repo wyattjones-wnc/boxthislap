@@ -6,8 +6,8 @@
 // ?channel=dev, for example:
 // scriptable:///run/Box%20This%20Lap%20Widget%20Loader?channel=dev
 
-// Updating replaces the installed copy of a selected widget. The loader asks
-// for confirmation first if it finds an existing copy.
+// The loader updates itself when it starts. Updating a widget replaces its
+// installed copy after confirmation.
 
 const DEFAULT_SOURCE_BRANCH = "main";
 const QUERY_PARAMETERS = args.queryParameters || {};
@@ -29,13 +29,65 @@ const AVAILABLE_WIDGETS = [
   },
 ];
 
-const selectedWidgets = await chooseWidgets();
+await runLoader();
+Script.complete();
 
-if (selectedWidgets.length) {
-  await installWidgets(selectedWidgets);
+async function runLoader() {
+  const installerUpdated = await updateInstallerIfNeeded();
+
+  if (installerUpdated) {
+    await showInstallerUpdated();
+    Safari.open(URLScheme.forRunningScript());
+    return;
+  }
+
+  const selectedWidgets = await chooseWidgets();
+
+  if (selectedWidgets.length) {
+    await installWidgets(selectedWidgets);
+  }
 }
 
-Script.complete();
+async function updateInstallerIfNeeded() {
+  try {
+    const request = new Request(`${REPOSITORY_RAW_ROOT}/box-this-lap-widget-loader.js?nonce=${Date.now()}`);
+    request.timeoutInterval = 8;
+    const downloadedSource = await request.loadString();
+
+    if (!downloadedSource.includes("Box This Lap - Widget Loader") || !downloadedSource.includes("updateInstallerIfNeeded")) {
+      throw new Error("The widget installer did not download correctly.");
+    }
+
+    const nextSource = setDefaultSourceBranch(downloadedSource, SOURCE_BRANCH);
+    const storage = getScriptStorage();
+    const currentSource = storage.manager.readString(module.filename);
+
+    if (currentSource === nextSource) {
+      return false;
+    }
+
+    storage.manager.writeString(module.filename, nextSource);
+    return true;
+  } catch (error) {
+    console.warn(`Unable to update the widget installer; continuing with the installed copy: ${error}`);
+    return false;
+  }
+}
+
+function setDefaultSourceBranch(source, branch) {
+  return source.replace(
+    /const DEFAULT_SOURCE_BRANCH = "(?:main|dev)";/,
+    `const DEFAULT_SOURCE_BRANCH = "${branch}";`
+  );
+}
+
+async function showInstallerUpdated() {
+  const alert = new Alert();
+  alert.title = "Installer updated";
+  alert.message = "The latest Box This Lap widget installer is ready. Tap Continue to reopen it.";
+  alert.addAction("Continue");
+  await alert.presentAlert();
+}
 
 async function chooseWidgets() {
   const alert = new Alert();
@@ -70,10 +122,7 @@ async function chooseWidgets() {
 async function shareInstaller() {
   const storage = getScriptStorage();
   const source = storage.manager.readString(module.filename);
-  const sharedSource = source.replace(
-    /const DEFAULT_SOURCE_BRANCH = "(?:main|dev)";/,
-    `const DEFAULT_SOURCE_BRANCH = "${SOURCE_BRANCH}";`
-  );
+  const sharedSource = setDefaultSourceBranch(source, SOURCE_BRANCH);
   const localManager = FileManager.local();
   const sharedPath = localManager.joinPath(
     localManager.temporaryDirectory(),

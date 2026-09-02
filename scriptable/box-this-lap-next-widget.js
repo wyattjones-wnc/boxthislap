@@ -224,8 +224,6 @@ function sortItemsForPicker(items) {
 async function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  // Relaunching the script lets a widget tap open the Next item picker.
-  widget.url = URLScheme.forRunningScript();
   widget.setPadding(14, 14, 14, 14);
 
   const hasBackgroundImage = item ? await applyItemBackground(widget, item) : false;

@@ -40,7 +40,8 @@ After updating an existing Home Screen widget, remove it and add it again once s
 1. Add a Scriptable widget to the Home Screen.
 2. Edit the widget.
 3. Choose the `Box This Lap Next` script.
-4. Leave the widget parameter blank if you want to use the saved focus item.
+4. Set **When Interacting** to **Run Script**.
+5. Leave the widget parameter blank if you want to use the saved focus item.
 
 If no saved focus item exists, or the saved focus item has passed, blank means the widget shows the next upcoming incomplete item.
 

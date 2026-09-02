@@ -13,6 +13,7 @@ On the iPhone:
 5. Tap **Install or update both** (or choose one widget).
 6. Add a medium Scriptable widget to the Home Screen.
 7. Edit the Home Screen widget and select `Box This Lap Footy` or `Box This Lap Next`.
+8. Set **When Interacting** to **Run Script**.
 
 Run the loader again at any time to update the installed widget scripts. It confirms before replacing an existing copy.
 
@@ -42,6 +43,7 @@ The shared installer keeps the source channel of the running loader. Launch the 
 
 ## Interaction
 
+- Scriptable's **When Interacting** setting must be **Run Script**. The widget scripts intentionally leave their tap URL unset so this native interaction setting is not overridden.
 - Tap the Footy widget to run it again, fetch the latest schedule, and show a refreshed preview.
 - Tap the Next widget to run it again and choose from the current upcoming incomplete items in the Next list.
 

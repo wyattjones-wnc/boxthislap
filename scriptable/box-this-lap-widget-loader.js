@@ -227,7 +227,7 @@ async function showSuccess(widgets) {
   const alert = new Alert();
   const installed = widgets.map((widget) => `• ${widget.name}: ${widget.description}`).join("\n");
   alert.title = widgets.length === 1 ? "Widget ready" : "Widgets ready";
-  alert.message = `${installed}\n\nNext: add a Scriptable widget to the Home Screen, edit it, and choose the Box This Lap script you want.\n\nUpdating an existing widget? Remove it from the Home Screen and add it again once so iOS drops its old tap action.`;
+  alert.message = `${installed}\n\nNext: add a Scriptable widget to the Home Screen, edit it, choose the Box This Lap script you want, and set When Interacting to Run Script.\n\nUpdating an existing widget? Remove it from the Home Screen and add it again once so iOS drops its old tap action.`;
   alert.addAction("Done");
   await alert.presentAlert();
 }

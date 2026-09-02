@@ -160,8 +160,6 @@ function getUniqueFixtures(fixtures) {
 async function createWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  // Relaunching the script fetches fresh match data and shows the new preview.
-  widget.url = URLScheme.forRunningScript();
   widget.setPadding(2, 14, 6, 14);
   addHeader(widget);
 

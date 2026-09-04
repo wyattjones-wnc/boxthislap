@@ -519,6 +519,7 @@ const FOOTY_DISPLAY_TEAM_NAMES = {
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
 const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
+const MANAGER_AUTH_REFRESH_LEEWAY_MS = 2 * 60 * 1000;
 const BRACKET_SUBMISSIONS_ARCHIVED = true;
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
@@ -579,6 +580,8 @@ const footyNoteGoalAssistEntries = {
 const AUTOCOMPLETE_OPTION_LIMIT = 8;
 const siteData = {};
 let guideLinksLoadPromise = null;
+let rankingAuthorizationPromise = null;
+let rankingAuthorizationRefreshTimer = 0;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -7821,11 +7824,23 @@ function resetRankingManagerData() {
   activeRankingCompareSnapshotId = "";
 }
 
-async function ensureRankingAuthorization() {
+async function ensureRankingAuthorization({ forceRefresh = false } = {}) {
   const session = siteData.managerSession;
   if (!session?.managerId) throw new Error("Sign in to continue.");
   const auth = session.rankingAuth || {};
-  if (auth.accessToken && Date.parse(auth.accessExpiresAt || "") > Date.now() + 30000) return auth.accessToken;
+  if (!forceRefresh && auth.accessToken && Date.parse(auth.accessExpiresAt || "") > Date.now() + 30000) {
+    scheduleRankingAuthorizationRefresh();
+    return auth.accessToken;
+  }
+  if (rankingAuthorizationPromise) return rankingAuthorizationPromise;
+
+  rankingAuthorizationPromise = renewRankingAuthorization(session, auth).finally(() => {
+    rankingAuthorizationPromise = null;
+  });
+  return rankingAuthorizationPromise;
+}
+
+async function renewRankingAuthorization(session, auth) {
   let response;
   if (auth.refreshToken && Date.parse(auth.refreshExpiresAt || "") > Date.now() + 30000) {
     response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/refresh`, {
@@ -7844,15 +7859,53 @@ async function ensureRankingAuthorization() {
   }
   const value = await response.json().catch(() => ({}));
   if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize manager data.");
-  siteData.managerSession = { ...session, rankingAuth: value };
+  if (String(siteData.managerSession?.managerId || "") !== String(session.managerId)) {
+    throw new Error("The active manager changed while authorization was refreshing.");
+  }
+  siteData.managerSession = { ...siteData.managerSession, rankingAuth: value };
   try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+  scheduleRankingAuthorizationRefresh();
   return value.accessToken;
 }
 
 function clearRankingAuthorization() {
   if (!siteData.managerSession) return;
-  siteData.managerSession = { ...siteData.managerSession, rankingAuth: null };
+  const auth = siteData.managerSession.rankingAuth || {};
+  const refreshAuth = auth.refreshToken ? {
+    refreshExpiresAt: auth.refreshExpiresAt,
+    refreshToken: auth.refreshToken,
+  } : null;
+  window.clearTimeout(rankingAuthorizationRefreshTimer);
+  rankingAuthorizationRefreshTimer = 0;
+  siteData.managerSession = { ...siteData.managerSession, rankingAuth: refreshAuth };
   try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+}
+
+function scheduleRankingAuthorizationRefresh() {
+  window.clearTimeout(rankingAuthorizationRefreshTimer);
+  rankingAuthorizationRefreshTimer = 0;
+  const auth = siteData.managerSession?.rankingAuth || {};
+  if (!siteData.managerSession?.managerId || !auth.refreshToken) return;
+  const accessExpiresAt = Date.parse(auth.accessExpiresAt || "");
+  if (!Number.isFinite(accessExpiresAt)) return;
+  const delay = Math.max(1000, accessExpiresAt - Date.now() - MANAGER_AUTH_REFRESH_LEEWAY_MS);
+  rankingAuthorizationRefreshTimer = window.setTimeout(() => {
+    rankingAuthorizationRefreshTimer = 0;
+    void ensureRankingAuthorization({ forceRefresh: true })
+      .catch((error) => recordDiagnostic("manager authorization background refresh failed", error));
+  }, Math.min(delay, 2147483647));
+}
+
+function refreshManagerAuthorizationInBackground() {
+  const auth = siteData.managerSession?.rankingAuth || {};
+  if (!siteData.managerSession?.managerId || !auth.refreshToken) return;
+  const accessExpiresAt = Date.parse(auth.accessExpiresAt || "");
+  if (auth.accessToken && Number.isFinite(accessExpiresAt) && accessExpiresAt > Date.now() + MANAGER_AUTH_REFRESH_LEEWAY_MS) {
+    scheduleRankingAuthorizationRefresh();
+    return;
+  }
+  void ensureRankingAuthorization({ forceRefresh: true })
+    .catch((error) => recordDiagnostic("manager authorization background refresh failed", error));
 }
 
 async function requestRankingAuthorizationForLogin(managerId, passphrase) {
@@ -12909,12 +12962,14 @@ footyNotificationToggle?.addEventListener("click", () => {
 window.addEventListener("focus", () => {
   checkFootyMatchNotifications();
   refreshFootyMatchNotesIfNeeded();
+  refreshManagerAuthorizationInBackground();
 });
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     checkFootyMatchNotifications();
     refreshFootyMatchNotesIfNeeded();
+    refreshManagerAuthorizationInBackground();
   }
 });
 
@@ -14352,6 +14407,7 @@ function hydrateManagerSession() {
   hydrateStoredManagerSession();
   renderLoginState();
   renderManagerHub();
+  refreshManagerAuthorizationInBackground();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
 }
 
@@ -14379,6 +14435,7 @@ function saveManagerSession(session) {
 
   renderLoginState();
   renderManagerHub();
+  scheduleRankingAuthorizationRefresh();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
 
   pageDataPromises.delete("manager-hub");
@@ -14389,6 +14446,8 @@ function saveManagerSession(session) {
 }
 
 function signOutManager() {
+  window.clearTimeout(rankingAuthorizationRefreshTimer);
+  rankingAuthorizationRefreshTimer = 0;
   siteData.managerSession = null;
   activeRankingManagerId = "";
   resetRankingManagerData();
@@ -14640,13 +14699,9 @@ async function handleManagerLogin() {
     }
 
     const manager = getPortalManagerById(managerId) ?? response.manager ?? { id: managerId, name: response.displayName };
-    let rankingAuth = response.rankingAuth || null;
-    if (!rankingAuth) {
-      try {
-        rankingAuth = await requestRankingAuthorizationForLogin(managerId, passphrase);
-      } catch (error) {
-        recordDiagnostic("ranking login authorization failed", error);
-      }
+    const rankingAuth = response.rankingAuth || await requestRankingAuthorizationForLogin(managerId, passphrase);
+    if (!rankingAuth?.accessToken || !rankingAuth?.refreshToken) {
+      throw new Error("Manager authorization could not be established. Please try signing in again.");
     }
     saveManagerSession({
       manager,

@@ -8692,11 +8692,9 @@ html.has-followed-teams-dialog body {
 }
 
 .followed-teams-picker {
-  -webkit-overflow-scrolling: touch;
   min-height: 0;
-  overscroll-behavior: contain;
-  overflow-y: auto;
-  touch-action: pan-y;
+  overflow: hidden;
+  touch-action: none;
 }
 
 .followed-team-picker-group-label {

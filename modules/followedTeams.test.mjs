@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { effectiveTeamIds, followedTeamBadge, normalizeLeagues, normalizeSelectableLeague, paginatePickerTeams, partitionPickerTeams, personalTeamIds } from "./followedTeams.js";
+import { effectiveTeamIds, followedTeamBadge, normalizeLeagues, normalizeSelectableLeague, paginatePickerTeams, partitionPickerTeams, personalTeamIds, pickerPageSizeForViewport } from "./followedTeams.js";
 
 test("team picker shows unique canonical domestic leagues", () => {
   const response = {
@@ -68,4 +68,11 @@ test("team picker paginates the ordered default-first catalog", () => {
     page: 3,
     pageCount: 3,
   });
+});
+
+test("team picker uses smaller pages instead of scrolling on compact viewports", () => {
+  assert.equal(pickerPageSizeForViewport({ height: 900, width: 1200 }), 5);
+  assert.equal(pickerPageSizeForViewport({ height: 700, width: 1200 }), 3);
+  assert.equal(pickerPageSizeForViewport({ height: 900, width: 600 }), 3);
+  assert.equal(pickerPageSizeForViewport({ height: 540, width: 400 }), 2);
 });

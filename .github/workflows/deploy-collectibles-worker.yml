@@ -1,12 +1,6 @@
 name: Deploy Collectibles Worker
 
 on:
-  push:
-    branches:
-      - dev
-    paths:
-      - ".github/workflows/deploy-collectibles-worker.yml"
-      - "workers/collectibles/**"
   workflow_dispatch:
 
 permissions:

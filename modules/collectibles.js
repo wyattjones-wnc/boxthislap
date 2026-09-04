@@ -94,6 +94,13 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
     want.disabled = event.target.value === "owned";
     if (want.disabled) want.checked = false;
   });
+  detail?.addEventListener("error", (event) => {
+    const image = event.target.closest?.(".collectible-detail-gallery img");
+    if (!image) return;
+    const gallery = image.parentElement;
+    image.remove();
+    if (!gallery.querySelector("img")) gallery.innerHTML = `<span class="table-message">No image available.</span>`;
+  }, true);
 
   async function renderPage() {
     state.filters = { ...DEFAULT_FILTERS, ...filtersFromUrl() };
@@ -252,7 +259,7 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
   async function quickToggle(id, desiredOwned, button) {
     button.disabled = true;
     try {
-      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: desiredOwned ? "owned" : "not_owned" });
+      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: desiredOwned ? "owned" : "not_owned", ...(desiredOwned ? { wanted: false } : {}) });
       const card = button.closest("[data-collectible-id]");
       const name = card?.querySelector("h2")?.textContent?.trim() || "collectible";
       const toggleLabel = desiredOwned ? `Mark ${name} as don't have` : `Mark ${name} as have`;

@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-09-03T14:37:01.828Z",
+  "generatedAt": "2026-09-04T14:24:00.726Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-09-03T14:37:01.828Z",
-    "attemptedAt": "2026-09-03T14:37:01.828Z",
-    "updatedAt": "2026-09-03T14:37:01.828Z",
-    "oldestTeamUpdatedAt": "2026-09-03T14:37:01.828Z",
+    "generatedAt": "2026-09-04T14:24:00.726Z",
+    "attemptedAt": "2026-09-04T14:24:00.726Z",
+    "updatedAt": "2026-09-04T14:24:00.726Z",
+    "oldestTeamUpdatedAt": "2026-09-04T14:24:00.726Z",
     "competitionCount": 10,
-    "competitionFixtureCount": 2114,
+    "competitionFixtureCount": 2115,
     "teamCount": 7,
     "fixtureCount": 211,
     "statuses": {
@@ -45,14 +45,14 @@
     "sync": {
       "status": "synced",
       "rows": 248,
-      "syncedAt": "2026-09-03T14:37:01.828Z",
+      "syncedAt": "2026-09-04T14:24:00.726Z",
       "appended": 0,
       "updated": 248
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-09-03T14:41:42.082Z",
+      "attemptedAt": "2026-09-04T14:28:40.889Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -13908,15 +13908,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:08.554Z",
+      "attemptedAt": "2026-09-04T14:29:07.038Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -14124,15 +14124,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:41:54.985Z",
+      "attemptedAt": "2026-09-04T14:28:53.858Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19394,15 +19394,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:01.846Z",
+      "attemptedAt": "2026-09-04T14:29:00.490Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -20538,7 +20538,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-03 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-03T19:00:00Z",
           "venue": "",
@@ -20574,7 +20574,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "2026-09-05 13:15:00Z",
+          "status": "2026-09-04 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-04T19:00:00Z",
           "venue": "",
@@ -20610,7 +20610,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "2026-09-05 14:15:00Z",
+          "status": "TIMED",
           "time": "14:15:00",
           "timestamp": "2026-09-05T14:15:00Z",
           "venue": "",
@@ -33291,15 +33291,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:08.550Z",
+      "attemptedAt": "2026-09-04T14:29:07.036Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -34209,7 +34209,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-28 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-08-28T19:00:00Z",
           "venue": "",
@@ -34247,7 +34247,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -34283,7 +34283,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -34319,7 +34319,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-08-29T11:30:00Z",
           "venue": "",
@@ -34355,7 +34355,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34391,7 +34391,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34427,7 +34427,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34463,7 +34463,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34499,7 +34499,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34535,7 +34535,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34571,7 +34571,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34607,7 +34607,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-08-29 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-08-29T14:00:00Z",
           "venue": "",
@@ -34643,7 +34643,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-01T18:45:00Z",
           "venue": "",
@@ -34679,7 +34679,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-01T18:45:00Z",
           "venue": "",
@@ -34715,7 +34715,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-01T18:45:00Z",
           "venue": "",
@@ -34751,7 +34751,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-01T18:45:00Z",
           "venue": "",
@@ -34787,7 +34787,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-01T18:45:00Z",
           "venue": "",
@@ -34823,7 +34823,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-01T18:45:00Z",
           "venue": "",
@@ -34859,7 +34859,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-01T19:00:00Z",
           "venue": "",
@@ -34895,7 +34895,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-01 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-01T19:00:00Z",
           "venue": "",
@@ -34933,7 +34933,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-02 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-02T18:45:00Z",
           "venue": "",
@@ -35007,7 +35007,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "2026-09-02 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-02T18:45:00Z",
           "venue": "",
@@ -35079,7 +35079,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-05T11:30:00Z",
           "venue": "",
@@ -35115,7 +35115,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-05T11:30:00Z",
           "venue": "",
@@ -35151,7 +35151,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-05T11:30:00Z",
           "venue": "",
@@ -35187,7 +35187,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35223,7 +35223,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35259,7 +35259,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35295,7 +35295,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35331,7 +35331,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35367,7 +35367,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35403,7 +35403,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-05T14:00:00Z",
           "venue": "",
@@ -35441,7 +35441,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-05 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-05T19:00:00Z",
           "venue": "",
@@ -35479,7 +35479,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-06 10:00:00Z",
           "time": "11:00:00",
           "timestamp": "2026-09-06T11:00:00Z",
           "venue": "",
@@ -35515,7 +35515,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-08 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-08T18:45:00Z",
           "venue": "",
@@ -35551,7 +35551,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-08 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-08T18:45:00Z",
           "venue": "",
@@ -35587,7 +35587,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-08 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-08T18:45:00Z",
           "venue": "",
@@ -35623,7 +35623,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-08 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-08T18:45:00Z",
           "venue": "",
@@ -35660,7 +35660,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-08 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-08T18:45:00Z",
           "venue": "",
@@ -35698,7 +35698,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-08 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-08T19:00:00Z",
           "venue": "",
@@ -35734,7 +35734,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "POSTPONED",
+          "status": "2026-10-20 17:45:00Z",
           "time": "00:00:00",
           "timestamp": "2026-09-09T00:00:00Z",
           "venue": "",
@@ -35770,7 +35770,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-09 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-09T18:45:00Z",
           "venue": "",
@@ -35806,7 +35806,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-09 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-09T18:45:00Z",
           "venue": "",
@@ -35842,7 +35842,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-09 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-09T19:00:00Z",
           "venue": "",
@@ -35879,7 +35879,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-11 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-11T19:00:00Z",
           "venue": "",
@@ -35917,7 +35917,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-12T11:30:00Z",
           "venue": "",
@@ -35953,7 +35953,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-12T11:30:00Z",
           "venue": "",
@@ -35989,7 +35989,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-12T11:30:00Z",
           "venue": "",
@@ -36025,7 +36025,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36061,7 +36061,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36097,7 +36097,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36133,7 +36133,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36169,7 +36169,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36205,7 +36205,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36241,7 +36241,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-12 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-12T14:00:00Z",
           "venue": "",
@@ -36277,7 +36277,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-13 10:00:00Z",
           "time": "11:00:00",
           "timestamp": "2026-09-13T11:00:00Z",
           "venue": "",
@@ -36313,7 +36313,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-15 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-15T18:45:00Z",
           "venue": "",
@@ -36349,7 +36349,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-15 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-09-15T18:45:00Z",
           "venue": "",
@@ -36385,7 +36385,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-18 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-09-18T19:00:00Z",
           "venue": "",
@@ -36421,7 +36421,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-19T11:30:00Z",
           "venue": "",
@@ -36457,7 +36457,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-19T11:30:00Z",
           "venue": "",
@@ -36493,7 +36493,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-09-19T11:30:00Z",
           "venue": "",
@@ -36530,7 +36530,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-19T14:00:00Z",
           "venue": "",
@@ -36568,7 +36568,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-19T14:00:00Z",
           "venue": "",
@@ -36604,7 +36604,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-19T14:00:00Z",
           "venue": "",
@@ -36640,7 +36640,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-19T14:00:00Z",
           "venue": "",
@@ -36676,7 +36676,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-19T14:00:00Z",
           "venue": "",
@@ -36712,7 +36712,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-19 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-09-19T14:00:00Z",
           "venue": "",
@@ -36748,7 +36748,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-20 10:00:00Z",
           "time": "11:00:00",
           "timestamp": "2026-09-20T11:00:00Z",
           "venue": "",
@@ -36784,7 +36784,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-09-20 11:30:00Z",
           "time": "12:30:00",
           "timestamp": "2026-09-20T12:30:00Z",
           "venue": "",
@@ -36820,7 +36820,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-09 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-10-09T19:00:00Z",
           "venue": "",
@@ -36856,7 +36856,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-10T11:30:00Z",
           "venue": "",
@@ -36892,7 +36892,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-10T11:30:00Z",
           "venue": "",
@@ -36928,7 +36928,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-10T11:30:00Z",
           "venue": "",
@@ -36964,7 +36964,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37000,7 +37000,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37037,7 +37037,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37075,7 +37075,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37111,7 +37111,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37147,7 +37147,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37183,7 +37183,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-10 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "",
@@ -37219,7 +37219,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-11 10:00:00Z",
           "time": "11:00:00",
           "timestamp": "2026-10-11T11:00:00Z",
           "venue": "",
@@ -37255,7 +37255,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37292,7 +37292,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37330,7 +37330,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37366,7 +37366,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37402,7 +37402,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37438,7 +37438,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37474,7 +37474,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 18:00:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-13T18:45:00Z",
           "venue": "",
@@ -37510,7 +37510,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-13 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -37546,7 +37546,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-14 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-14T18:45:00Z",
           "venue": "",
@@ -37582,7 +37582,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-14 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-14T18:45:00Z",
           "venue": "",
@@ -37618,7 +37618,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-14 17:45:00Z",
           "time": "18:45:00",
           "timestamp": "2026-10-14T18:45:00Z",
           "venue": "",
@@ -37654,7 +37654,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-14 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -37690,7 +37690,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-16 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-10-16T19:00:00Z",
           "venue": "",
@@ -37726,7 +37726,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-17T11:30:00Z",
           "venue": "",
@@ -37762,7 +37762,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-17T11:30:00Z",
           "venue": "",
@@ -37798,7 +37798,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-17T11:30:00Z",
           "venue": "",
@@ -37834,7 +37834,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -37870,7 +37870,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -37906,7 +37906,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -37942,7 +37942,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -37978,7 +37978,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -38014,7 +38014,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -38050,7 +38050,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -38087,7 +38087,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-17 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-17T14:00:00Z",
           "venue": "",
@@ -38125,7 +38125,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-23 18:00:00Z",
           "time": "19:00:00",
           "timestamp": "2026-10-23T19:00:00Z",
           "venue": "",
@@ -38161,7 +38161,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-24T11:30:00Z",
           "venue": "",
@@ -38197,7 +38197,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-24T11:30:00Z",
           "venue": "",
@@ -38233,7 +38233,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 10:30:00Z",
           "time": "11:30:00",
           "timestamp": "2026-10-24T11:30:00Z",
           "venue": "",
@@ -38269,7 +38269,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38305,7 +38305,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38341,7 +38341,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38377,7 +38377,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38413,7 +38413,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38449,7 +38449,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38486,7 +38486,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -38524,7 +38524,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "2026-10-24 13:00:00Z",
           "time": "14:00:00",
           "timestamp": "2026-10-24T14:00:00Z",
           "venue": "",
@@ -53333,15 +53333,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:08.555Z",
+      "attemptedAt": "2026-09-04T14:29:07.039Z",
       "competition": {
         "code": "SDE",
         "followedTeamNames": [
@@ -53439,15 +53439,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:14.192Z",
+      "attemptedAt": "2026-09-04T14:29:13.220Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -71453,15 +71453,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:14.197Z",
+      "attemptedAt": "2026-09-04T14:29:13.227Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -74255,15 +74255,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (79 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:14.200Z",
+      "attemptedAt": "2026-09-04T14:29:13.231Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -74279,7 +74279,7 @@
         "type": "CUP"
       },
       "errors": [],
-      "fixtureCount": 61,
+      "fixtureCount": 62,
       "fixtures": [
         {
           "away": "Atlas FC",
@@ -76394,12 +76394,47 @@
           "awayTeamId": "team:club-de-futbol-monterrey-rayados-a-c"
         },
         {
-          "away": "TBC Away",
+          "away": "Club América",
           "awayBadge": "",
           "date": "2026-09-06",
-          "home": "TBC Home",
+          "home": "Club León",
           "homeBadge": "",
           "id": "iCalendar:MLS-MAT-000A5P",
+          "isCompetitionFixture": true,
+          "leagueId": "",
+          "league": "Leagues Cup",
+          "round": "",
+          "season": "2026",
+          "source": "iCalendar",
+          "sourceIds": {
+            "iCalendar": "MLS-MAT-000A5P"
+          },
+          "sources": [
+            "iCalendar"
+          ],
+          "sourceDetail": "league-calendar-feed",
+          "status": "Scheduled",
+          "time": "22:00:00",
+          "timestamp": "2026-09-06T22:00:00Z",
+          "venue": "Shell Energy Stadium, Houston, TX",
+          "matchId": "footy_comp_icalendar_mls_mat_000a5p",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:club-leon",
+          "awayTeamId": "team:club-america"
+        },
+        {
+          "away": "Club de Fútbol Monterrey Rayados, A.C.",
+          "awayBadge": "",
+          "date": "2026-09-07",
+          "home": "Toluca FC",
+          "homeBadge": "",
+          "id": "iCalendar:MLS-MAT-000A5O",
           "isCompetitionFixture": true,
           "leagueId": "",
           "league": "Leagues Cup",
@@ -76414,34 +76449,33 @@
           ],
           "sourceDetail": "league-calendar-feed",
           "status": "Scheduled",
-          "time": "16:00:00",
-          "timestamp": "2026-09-06T16:00:00Z",
-          "venue": "TBC, unknown",
-          "lastSeen": "",
+          "time": "01:15:00",
+          "timestamp": "2026-09-07T01:15:00Z",
+          "venue": "Shell Energy Stadium, Houston, TX",
           "matchId": "footy_comp_icalendar_mls_mat_000a5o",
-          "priority": "",
-          "teamBadge": "",
           "followedTeamNames": [],
           "isHome": null,
           "opponent": "",
+          "priority": "",
+          "teamBadge": "",
           "teamId": "",
           "teamName": "",
-          "homeTeamId": "team:tbc-home",
-          "awayTeamId": "team:tbc-away"
+          "homeTeamId": "team:toluca-fc",
+          "awayTeamId": "team:club-de-futbol-monterrey-rayados-a-c"
         }
       ],
       "notes": [
-        "Loaded the full available Leagues Cup schedule (61 matches)."
+        "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     },
     {
-      "attemptedAt": "2026-09-03T14:42:14.200Z",
+      "attemptedAt": "2026-09-04T14:29:13.231Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -76499,12 +76533,12 @@
       "notes": [
         "Loaded the full available Campeones Cup schedule (1 matches)."
       ],
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-03T14:37:01.828Z"
+      "updatedAt": "2026-09-04T14:24:00.726Z"
     }
   ],
   "teamCatalog": [
@@ -79848,10 +79882,6 @@
       "id": "team:tbc-away",
       "leagues": [
         {
-          "id": "leagues cup",
-          "name": "Leagues Cup"
-        },
-        {
           "id": "u.s. open cup",
           "name": "U.S. Open Cup"
         }
@@ -79864,10 +79894,6 @@
       "badge": "",
       "id": "team:tbc-home",
       "leagues": [
-        {
-          "id": "leagues cup",
-          "name": "Leagues Cup"
-        },
         {
           "id": "u.s. open cup",
           "name": "U.S. Open Cup"
@@ -80286,9 +80312,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -82443,19 +82469,19 @@
         }
       ],
       "notes": [
-        "Loaded 44 SCHEDULED matches from 2026-09-03 through 2027-09-03.",
+        "Loaded 44 SCHEDULED matches from 2026-09-04 through 2027-09-04.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 45 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-03.",
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-04.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -82969,11 +82995,11 @@
           "time": "19:00:00",
           "timestamp": "2026-09-19T19:00:00Z",
           "venue": "Sevilla, Sevilla",
-          "isFriendly": false,
-          "matchId": "footy_1548b5fb0796",
           "awayProviderTeamId": "81",
           "homeProviderTeamId": "559",
           "lastSeen": "",
+          "matchId": "footy_1548b5fb0796",
+          "isFriendly": false,
           "homeTeamId": "team:sevilla-fc",
           "awayTeamId": "2"
         },
@@ -83358,7 +83384,7 @@
           "teamName": "Barcelona",
           "time": "17:45:00",
           "timestamp": "2026-11-25T17:45:00Z",
-          "venue": "Masazir, Masazir",
+          "venue": "TBC",
           "awayProviderTeamId": "81",
           "homeProviderTeamId": "10233",
           "lastSeen": "",
@@ -84560,18 +84586,18 @@
         }
       ],
       "notes": [
-        "Loaded 43 SCHEDULED matches from 2026-09-03 through 2027-09-03.",
+        "Loaded 43 SCHEDULED matches from 2026-09-04 through 2027-09-04.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 49 iCalendar fixtures from 2026-07-01 through 2027-09-03.",
-        "Preserved 3 registered fixtures that were not returned by providers this run."
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-04.",
+        "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -86542,18 +86568,18 @@
         }
       ],
       "notes": [
-        "Loaded 42 SCHEDULED matches from 2026-09-03 through 2027-09-03.",
+        "Loaded 42 SCHEDULED matches from 2026-09-04 through 2027-09-04.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 45 iCalendar fixtures from 2026-07-01 through 2027-09-03.",
+        "Loaded 45 iCalendar fixtures from 2026-07-01 through 2027-09-04.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -86573,9 +86599,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "no-fixtures",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -86595,9 +86621,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -87631,15 +87657,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 22 iCalendar fixtures from 2026-01-01 through 2027-09-03.",
+        "Loaded 22 iCalendar fixtures from 2026-01-01 through 2027-09-04.",
         "Preserved 8 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-03T14:37:01.828Z",
-      "updatedAt": "2026-09-03T14:37:01.828Z",
-      "previousUpdatedAt": "2026-09-02T14:32:32.557Z",
+      "attemptedAt": "2026-09-04T14:24:00.726Z",
+      "updatedAt": "2026-09-04T14:24:00.726Z",
+      "previousUpdatedAt": "2026-09-03T14:37:01.828Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -88567,7 +88593,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 20 iCalendar fixtures from 2026-01-01 through 2027-09-03.",
+        "Loaded 20 iCalendar fixtures from 2026-01-01 through 2027-09-04.",
         "Preserved 6 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

@@ -370,7 +370,7 @@ import { createPlatinumsController } from "./modules/platinums.js?v=202608301400
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608301800";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
-import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
+import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310007";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202609040002";
 import {

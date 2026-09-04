@@ -10384,6 +10384,30 @@ html.has-followed-teams-dialog body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.draft-list-notes-field {
+  grid-column: 1 / -1;
+}
+
+.draft-list-notes-field summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.draft-list-notes-field label,
+.draft-list-notes-field textarea {
+  display: block;
+  width: 100%;
+}
+
+.draft-list-notes-field textarea {
+  margin-top: 0.65rem;
+  resize: vertical;
+}
+
+.draft-list-delete-sheet-button {
+  color: var(--danger-color, #c33);
+}
+
 @media (max-width: 760px) {
   .draft-list-heading {
     align-items: start;

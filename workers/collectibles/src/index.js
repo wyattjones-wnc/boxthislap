@@ -193,7 +193,7 @@ async function listCollectibles(env, searchParams) {
       (SELECT COUNT(*) FROM scoped) AS stats_total,
       (SELECT COUNT(*) FROM scoped WHERE collection_status = 'owned') AS stats_owned,
       (SELECT COUNT(*) FROM scoped WHERE collection_status = 'not_owned') AS stats_missing,
-      (SELECT COUNT(*) FROM scoped WHERE wanted = 1) AS stats_wanted
+      (SELECT COUNT(*) FROM scoped WHERE wanted = 1 AND collection_status != 'owned') AS stats_wanted
     FROM scoped
     ORDER BY ${sort}
     LIMIT ? OFFSET ?
@@ -233,7 +233,7 @@ function buildScope(searchParams) {
   if (status === "owned") where.push("ci.status = 'owned'");
   if (status === "unreviewed") where.push("ci.collectible_id IS NULL");
   if (["not_owned", "missing"].includes(status)) where.push("COALESCE(ci.status, 'not_owned') = 'not_owned'");
-  if (status === "wanted" || booleanQuery(searchParams.get("wanted"))) where.push("COALESCE(ci.wanted, 0) = 1");
+  if (status === "wanted" || booleanQuery(searchParams.get("wanted"))) where.push("COALESCE(ci.wanted, 0) = 1 AND COALESCE(ci.status, 'not_owned') != 'owned'");
   for (const [key, column] of [["special", "c.is_special_release"], ["storeExclusive", "c.is_store_exclusive"], ["eventExclusive", "c.is_event_exclusive"]]) {
     if (searchParams.has(key)) { where.push(`${column} = ?`); params.push(booleanQuery(searchParams.get(key)) ? 1 : 0); }
   }
@@ -264,7 +264,7 @@ async function listGroups(env, searchParams) {
   const countColumns = `COUNT(DISTINCT s.id) AS total,
     COUNT(DISTINCT CASE WHEN s.collection_status = 'owned' THEN s.id END) AS owned,
     COUNT(DISTINCT CASE WHEN s.collection_status = 'not_owned' THEN s.id END) AS missing,
-    COUNT(DISTINCT CASE WHEN s.wanted = 1 THEN s.id END) AS wanted,
+    COUNT(DISTINCT CASE WHEN s.wanted = 1 AND s.collection_status != 'owned' THEN s.id END) AS wanted,
     COALESCE(MAX(CASE WHEN s.primary_image_url NOT LIKE '%TruckNeeded%' THEN NULLIF(s.primary_image_url, '') END), MAX(NULLIF(s.primary_image_url, ''))) AS image_url`;
   const common = `WITH scoped AS (
       SELECT DISTINCT c.id, c.year, c.primary_image_url,
@@ -276,7 +276,7 @@ async function listGroups(env, searchParams) {
       SELECT COUNT(*) AS stats_total,
         COUNT(CASE WHEN collection_status = 'owned' THEN 1 END) AS stats_owned,
         COUNT(CASE WHEN collection_status = 'not_owned' THEN 1 END) AS stats_missing,
-        COUNT(CASE WHEN wanted = 1 THEN 1 END) AS stats_wanted
+        COUNT(CASE WHEN wanted = 1 AND collection_status != 'owned' THEN 1 END) AS stats_wanted
       FROM scoped
     )`;
   let sql;
@@ -343,7 +343,7 @@ async function readStats(env, searchParams) {
     SELECT COUNT(DISTINCT c.id) AS total,
       COUNT(DISTINCT CASE WHEN ci.status = 'owned' THEN c.id END) AS owned,
       COUNT(DISTINCT CASE WHEN COALESCE(ci.status, 'not_owned') = 'not_owned' THEN c.id END) AS missing,
-      COUNT(DISTINCT CASE WHEN ci.wanted = 1 THEN c.id END) AS wanted
+      COUNT(DISTINCT CASE WHEN ci.wanted = 1 AND COALESCE(ci.status, 'not_owned') != 'owned' THEN c.id END) AS wanted
     FROM collectibles c JOIN manufacturers m ON m.id = c.manufacturer_id
     LEFT JOIN product_lines pl ON pl.id = c.product_line_id
     LEFT JOIN collection_items ci ON ci.collectible_id = c.id
@@ -388,9 +388,10 @@ async function readCollectible(env, id) {
     rowsPrepared(env, "SELECT cat.slug, cat.name, cat.category_type AS type, cat.checklist_mode AS checklistMode FROM collectible_categories cc JOIN catalog_categories cat ON cat.id = cc.category_id WHERE cc.collectible_id = ? ORDER BY cat.source_sort_order", id),
     discoverSourceImages(row.source_url),
   ]);
-  const validStoredImages = sourceDiscovery.images.length ? storedImages : (await Promise.all(storedImages.map(async (image) => await remoteImageExists(image.sourceUrl) ? image : null))).filter(Boolean);
-  const sourceUrls = new Set(sourceDiscovery.images.map((image) => image.sourceUrl));
-  const images = [...sourceDiscovery.images, ...validStoredImages.filter((image) => !sourceUrls.has(image.sourceUrl))];
+  const validStoredImages = (await Promise.all(storedImages.map(async (image) => await remoteImageExists(image.sourceUrl) ? image : null))).filter(Boolean);
+  const validSourceImages = (await Promise.all(sourceDiscovery.images.map(async (image) => await remoteImageExists(image.sourceUrl) ? image : null))).filter(Boolean);
+  const sourceUrls = new Set(validSourceImages.map((image) => image.sourceUrl));
+  const images = [...validSourceImages, ...validStoredImages.filter((image) => !sourceUrls.has(image.sourceUrl))];
   const mapped = mapCard(row);
   return { ...mapped, image: images[0]?.localUrl || images[0]?.sourceUrl || "", sourceUrl: sourceDiscovery.available ? mapped.sourceUrl : sourceIndexUrl(mapped.sourceUrl), normalizedName: row.normalized_name || "", releaseCategory: row.release_category || "", releaseSeries: row.release_series || "", mix: row.mix_name || "", sourceSite: row.source_site, categories, variants, images };
 }
@@ -440,7 +441,7 @@ async function saveCollection(env, collectibleId, body) {
   if (!Number.isInteger(quantity) || quantity < 0 || quantity > 999) throw httpError(400, "Quantity must be from 0 through 999.");
   if (status === "owned" && quantity < 1) quantity = 1;
   if (status === "not_owned") quantity = 0;
-  const wanted = body.wanted === undefined ? Boolean(current?.wanted) : Boolean(body.wanted);
+  const wanted = status === "owned" ? false : body.wanted === undefined ? Boolean(current?.wanted) : Boolean(body.wanted);
   const acquiredAt = body.acquiredAt === undefined ? current?.acquired_at || null : cleanDate(body.acquiredAt);
   const notes = body.notes === undefined ? current?.notes || null : cleanText(body.notes, 4000) || null;
   await env.DB.prepare(`INSERT INTO collection_items (collectible_id, status, quantity, wanted, acquired_at, notes, updated_at)
@@ -562,7 +563,7 @@ function mapCard(row) {
     image: row.primary_image_url || "", sourceUrl: row.source_url || "",
     special: Boolean(row.is_special_release), storeExclusive: Boolean(row.is_store_exclusive), eventExclusive: Boolean(row.is_event_exclusive),
     exclusion: { excluded: Boolean(row.is_excluded), itemExclusionId: row.item_exclusion_id ? Number(row.item_exclusion_id) : null },
-    collection: { status: row.collection_status || "not_owned", quantity: Number(row.quantity || 0), wanted: Boolean(row.wanted), acquiredAt: row.acquired_at || null, notes: row.collection_notes ?? row.notes ?? null, updatedAt: row.updated_at || null },
+    collection: { status: row.collection_status || "not_owned", quantity: Number(row.quantity || 0), wanted: Boolean(row.wanted) && row.collection_status !== "owned", acquiredAt: row.acquired_at || null, notes: row.collection_notes ?? row.notes ?? null, updatedAt: row.updated_at || null },
   };
 }
 async function rows(env, sql) { const value = await env.DB.prepare(sql).all(); return value.results || []; }

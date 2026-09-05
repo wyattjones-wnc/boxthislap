@@ -279,8 +279,15 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
   async function openDetail(id) {
     dialog.showModal(); detail.innerHTML = loading("Loading collectible details...");
     const fallback = state.catalog?.items?.find((entry) => entry.id === id);
-    const item = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
+    const catalogItem = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
     try {
+      let item = catalogItem;
+      try {
+        const response = await request(`/api/collectibles/${encodeURIComponent(id)}`);
+        if (response.collectible) item = { ...catalogItem, ...response.collectible };
+      } catch (error) {
+        console.warn("Unable to load live collectible details; using the catalogue preview.", error);
+      }
       if (!item) throw new Error("Collectible details are temporarily unavailable.");
       const owned = item.collection?.status === "owned";
       const wanted = !owned && item.collection?.wanted;

@@ -52,7 +52,7 @@ export default {
 async function listItems(env) {
   const result = await env.DB.prepare(`
     SELECT id, thing, image_url, start_date, end_date, time, priority,
-      completed, non_admin, revision, created_at, updated_at
+      completed, non_admin, revision, source_match_id, created_at, updated_at
     FROM next_items
     ORDER BY start_date, time, priority DESC, thing
   `).all();
@@ -63,7 +63,7 @@ async function listItems(env) {
 async function getItem(env, id) {
   const row = await env.DB.prepare(`
     SELECT id, thing, image_url, start_date, end_date, time, priority,
-      completed, non_admin, revision, created_at, updated_at
+      completed, non_admin, revision, source_match_id, created_at, updated_at
     FROM next_items
     WHERE id = ?
   `).bind(id).first();
@@ -73,11 +73,12 @@ async function getItem(env, id) {
 
 async function addItem(env, body, managerId) {
   const item = normalizeItem(body);
+  await assertSourceMatchAvailable(env, item.sourceMatchId);
   const result = await env.DB.prepare(`
     INSERT INTO next_items (
       thing, image_url, start_date, end_date, time, priority,
-      completed, non_admin, revision, updated_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+      completed, non_admin, source_match_id, revision, updated_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
   `).bind(...itemValues(item), managerId).run();
   const id = Number(result.meta?.last_row_id);
 
@@ -98,11 +99,12 @@ async function updateItem(env, id, body, managerId) {
   }
 
   const item = normalizeItem(body);
+  await assertSourceMatchAvailable(env, item.sourceMatchId, id);
   const nextRevision = existing.revision + 1;
   const result = await env.DB.prepare(`
     UPDATE next_items SET
       thing = ?, image_url = ?, start_date = ?, end_date = ?, time = ?,
-      priority = ?, completed = ?, non_admin = ?, revision = ?,
+      priority = ?, completed = ?, non_admin = ?, source_match_id = ?, revision = ?,
       updated_at = CURRENT_TIMESTAMP, updated_by = ?
     WHERE id = ? AND revision = ?
   `).bind(...itemValues(item), nextRevision, managerId, id, expectedRevision).run();
@@ -120,6 +122,13 @@ async function updateItem(env, id, body, managerId) {
   return savedItem;
 }
 
+async function assertSourceMatchAvailable(env, sourceMatchId, existingId = 0) {
+  if (!sourceMatchId) return;
+  const existing = await env.DB.prepare("SELECT id FROM next_items WHERE source_match_id = ? AND id <> ?")
+    .bind(sourceMatchId, existingId).first();
+  if (existing) throw httpError(409, "This match is already on the Next list.");
+}
+
 function itemValues(item) {
   return [
     item.thing,
@@ -130,6 +139,7 @@ function itemValues(item) {
     item.priority,
     Number(item.completed),
     Number(item.nonAdmin),
+    item.sourceMatchId,
   ];
 }
 
@@ -154,6 +164,7 @@ function normalizeItem(body) {
     imageUrl: cleanOptionalUrl(body.imageUrl),
     nonAdmin: Boolean(body.nonAdmin),
     priority,
+    sourceMatchId: cleanText(body.sourceMatchId, 200, "Source match ID"),
     thing: cleanText(body.thing, 300, "Thing", true),
     time: cleanText(body.time, 30, "Time"),
   };
@@ -227,6 +238,7 @@ function mapItem(row) {
     nonAdmin: Boolean(row.non_admin),
     priority: Number(row.priority || 0),
     revision: Number(row.revision || 0),
+    sourceMatchId: String(row.source_match_id || ""),
     thing: String(row.thing || ""),
     time: String(row.time || ""),
     updatedAt: String(row.updated_at || ""),

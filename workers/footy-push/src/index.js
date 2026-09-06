@@ -168,6 +168,7 @@ async function sendDueFootyAlerts(env) {
   let failed = 0;
   let removed = 0;
   const followedTeamIdsByManager = new Map();
+  const matchNotificationIdsByManager = new Map();
 
   for (const subscription of subscriptions) {
     const managerId = String(subscription.record.managerId || "").trim();
@@ -176,16 +177,22 @@ async function sendDueFootyAlerts(env) {
       continue;
     }
     if (!followedTeamIdsByManager.has(managerId)) {
-      followedTeamIdsByManager.set(managerId, await readManagerFollowedTeamIds(env, managerId));
+      const [followedTeamIds, matchNotificationIds] = await Promise.all([
+        readManagerFollowedTeamIds(env, managerId),
+        readManagerMatchNotificationIds(env, managerId),
+      ]);
+      followedTeamIdsByManager.set(managerId, followedTeamIds);
+      matchNotificationIdsByManager.set(managerId, matchNotificationIds);
     }
     const followedTeamIds = followedTeamIdsByManager.get(managerId);
+    const matchNotificationIds = matchNotificationIdsByManager.get(managerId);
     const channel = getFootySubscriptionChannel(subscription.record);
     const dueAlerts = dueAlertsByChannel[channel];
     const pendingNotifications = [];
     const pendingSentKeys = [];
 
     for (const alert of dueAlerts) {
-      if (!alert.teamIds.some((teamId) => followedTeamIds.has(teamId))) {
+      if (!isFootyAlertSelected(alert, followedTeamIds, matchNotificationIds)) {
         skipped += 1;
         continue;
       }
@@ -309,6 +316,7 @@ function getDueFootyAlerts(schedule, env) {
       alerts.push({
         body: [teams, formatFixtureTime(fixtureTime)].filter(Boolean).join(" • "),
         key: `${getFixtureKey(fixture)}:${offset.key}`,
+        matchId: String(fixture.matchId || fixture.id || "").trim(),
         teamIds: getFixtureTeamIds(fixture),
         title,
       });
@@ -335,6 +343,17 @@ async function readManagerFollowedTeamIds(env, managerId) {
   const defaultResult = await env.DB.prepare("SELECT team_id FROM manager_followed_teams WHERE manager_id = ? AND notifications_enabled = 1 ORDER BY priority")
     .bind(defaultManagerId).all();
   return new Set(resolveFollowedTeamIds(ownIds, (defaultResult.results || []).map((row) => String(row.team_id)), managerId, defaultManagerId));
+}
+
+async function readManagerMatchNotificationIds(env, managerId) {
+  const result = await env.DB.prepare("SELECT match_id FROM manager_match_notifications WHERE manager_id = ?")
+    .bind(managerId).all();
+  return new Set((result.results || []).map((row) => String(row.match_id)));
+}
+
+export function isFootyAlertSelected(alert = {}, followedTeamIds = new Set(), matchNotificationIds = new Set()) {
+  return matchNotificationIds.has(String(alert.matchId || "")) ||
+    (Array.isArray(alert.teamIds) && alert.teamIds.some((teamId) => followedTeamIds.has(String(teamId))));
 }
 
 export function resolveFollowedTeamIds(managerIds = [], defaultIds = [], managerId = "", defaultManagerId = "6") {
@@ -377,12 +396,17 @@ function getNextFootyAlertWindows(fixtures, env) {
   return windows.sort((left, right) => Date.parse(left.alertAt) - Date.parse(right.alertAt));
 }
 
-function getUniqueFixtures(schedule) {
+export function getUniqueFixtures(schedule) {
   const fixtureMap = new Map();
 
-  (schedule?.teamSchedules || []).forEach((teamSchedule) => {
-    (teamSchedule.fixtures || []).forEach((fixture) => {
-      const key = getFixtureKey(fixture);
+  const fixtureGroups = [
+    ...(schedule?.teamSchedules || []).map((teamSchedule) => teamSchedule.fixtures || []),
+    ...(schedule?.competitionSchedules || []).map((competitionSchedule) => competitionSchedule.fixtures || []),
+  ];
+
+  fixtureGroups.forEach((fixtures) => {
+    fixtures.forEach((fixture) => {
+      const key = getFixtureIdentity(fixture);
 
       if (!key || fixtureMap.has(key)) {
         return;
@@ -393,6 +417,10 @@ function getUniqueFixtures(schedule) {
   });
 
   return [...fixtureMap.values()];
+}
+
+function getFixtureIdentity(fixture) {
+  return String(fixture.matchId || fixture.id || "").trim() || getFixtureKey(fixture);
 }
 
 function getFixtureKey(fixture) {

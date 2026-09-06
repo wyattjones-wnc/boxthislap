@@ -46,6 +46,14 @@ export default {
         return json({ ok: true, ...result }, 200, cors);
       }
 
+      if (url.pathname === "/api/me/match-notifications" && ["GET", "PUT"].includes(request.method)) {
+        const manager = await requireManager(request, env);
+        const result = request.method === "GET"
+          ? await readMatchNotifications(env, manager.sub)
+          : await setMatchNotification(env, manager.sub, await readBody(request));
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
       const draftListsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/draft-lists$/);
       if (draftListsMatch && ["GET", "POST"].includes(request.method)) {
         const managerId = parseId(draftListsMatch[1], "manager ID");
@@ -294,6 +302,50 @@ async function replaceFollowedTeams(env, managerId, body, channel = "main") {
     throw error;
   }
   return readFollowedTeams(env, managerId);
+}
+
+async function readMatchNotifications(env, managerId) {
+  const result = await env.DB.prepare("SELECT match_id, created_at, updated_at FROM manager_match_notifications WHERE manager_id = ? ORDER BY created_at, match_id")
+    .bind(managerId).all();
+  return {
+    matchIds: (result.results || []).map((row) => String(row.match_id)),
+    matches: (result.results || []).map((row) => ({
+      createdAt: String(row.created_at || ""),
+      matchId: String(row.match_id),
+      updatedAt: String(row.updated_at || ""),
+    })),
+  };
+}
+
+async function setMatchNotification(env, managerId, body) {
+  const preference = normalizeMatchNotificationRequest(body);
+  if (preference.enabled) {
+    const existing = await env.DB.prepare("SELECT match_id FROM manager_match_notifications WHERE manager_id = ? AND match_id = ?")
+      .bind(managerId, preference.matchId).first();
+    if (!existing) {
+      const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM manager_match_notifications WHERE manager_id = ?")
+        .bind(managerId).first();
+      if (Number(count?.count || 0) >= 500) {
+        throw httpError(400, "A manager can select up to 500 match notifications.");
+      }
+    }
+    await env.DB.prepare("INSERT INTO manager_match_notifications (manager_id, match_id, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (manager_id, match_id) DO UPDATE SET updated_at = excluded.updated_at")
+      .bind(managerId, preference.matchId).run();
+  } else {
+    await env.DB.prepare("DELETE FROM manager_match_notifications WHERE manager_id = ? AND match_id = ?")
+      .bind(managerId, preference.matchId).run();
+  }
+  return readMatchNotifications(env, managerId);
+}
+
+export function normalizeMatchNotificationRequest(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw httpError(400, "A match notification preference is required.");
+  }
+  const matchId = String(body.matchId || "").trim();
+  if (!matchId) throw httpError(400, "Match ID is required.");
+  if (matchId.length > 200) throw httpError(400, "Match ID is too long.");
+  return { enabled: Boolean(body.enabled), matchId };
 }
 
 export function normalizeSubmittedTeamIds(values) {

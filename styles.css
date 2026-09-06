@@ -5024,6 +5024,24 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 34px;
 }
 
+.footy-match-notification-button,
+.footy-next-export-button {
+  height: 34px;
+  min-height: 34px;
+  width: 34px;
+}
+
+.footy-match-notification-button svg,
+.footy-next-export-button svg {
+  height: 17px;
+  width: 17px;
+}
+
+.footy-match-notification-button.is-inherited:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .footy-highlight-button svg {
   fill: currentColor;
   height: 18px;

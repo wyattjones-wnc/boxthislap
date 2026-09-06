@@ -39,7 +39,6 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   };
   let draggedId = "";
   let lockedScrollY = 0;
-  let touchY = 0;
 
   root?.addEventListener("click", handleRootClick);
   chooseButton?.addEventListener("click", openPicker);
@@ -57,9 +56,11 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   dialogDone?.addEventListener("click", () => { void save({ closeDialog: true }); });
   dialog?.addEventListener("click", (event) => { if (event.target === dialog) closePicker(); });
   dialog?.addEventListener("close", unlockPageScroll);
-  dialog?.addEventListener("wheel", containDialogScroll, { passive: false });
-  dialog?.addEventListener("touchstart", (event) => { touchY = event.touches[0]?.clientY || 0; }, { passive: true });
-  dialog?.addEventListener("touchmove", containDialogTouchScroll, { passive: false });
+  window.addEventListener("resize", () => {
+    if (!dialog?.open) return;
+    state.pickerPage = 1;
+    renderPicker();
+  });
 
   function reset() {
     if (dialog?.open) dialog.close();
@@ -239,24 +240,6 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     if (wasLocked) window.scrollTo(0, lockedScrollY);
   }
 
-  function containDialogScroll(event) {
-    if (!picker?.contains(event.target) || !canScrollPicker(event.deltaY)) event.preventDefault();
-  }
-
-  function containDialogTouchScroll(event) {
-    const currentY = event.touches[0]?.clientY ?? touchY;
-    const deltaY = touchY - currentY;
-    touchY = currentY;
-    if (!picker?.contains(event.target) || !canScrollPicker(deltaY)) event.preventDefault();
-  }
-
-  function canScrollPicker(deltaY) {
-    if (!picker || picker.scrollHeight <= picker.clientHeight) return false;
-    if (deltaY < 0) return picker.scrollTop > 0;
-    if (deltaY > 0) return picker.scrollTop + picker.clientHeight < picker.scrollHeight - 1;
-    return true;
-  }
-
   function renderPicker() {
     if (!picker) return;
     const query = normalize(search?.value);
@@ -267,7 +250,10 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       return team.active && matchesText && matchesLeague;
     });
     leagueFilter.innerHTML = [`<option value="">All competitions</option>`, ...state.leagues.map((league) => `<option value="${escapeAttribute(league.id)}"${league.id === leagueId ? " selected" : ""}>${escapeHtml(league.name)}</option>`)].join("");
-    const page = paginatePickerTeams(visible, state.defaultIds, state.pickerPage);
+    const page = paginatePickerTeams(visible, state.defaultIds, state.pickerPage, pickerPageSizeForViewport({
+      height: window.innerHeight,
+      width: window.innerWidth,
+    }));
     state.pickerPage = page.page;
     const renderTeam = (team) => {
       const selected = state.pendingIds.includes(team.id);
@@ -519,6 +505,12 @@ export function paginatePickerTeams(teams = [], defaultIds = [], requestedPage =
     page,
     pageCount,
   };
+}
+
+export function pickerPageSizeForViewport({ height = 800, width = 1024 } = {}) {
+  if (Number(height) < 580) return 2;
+  if (Number(height) < 760 || Number(width) <= 620) return 3;
+  return 5;
 }
 
 export function normalizeSelectableLeague(value) {

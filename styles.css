@@ -5024,6 +5024,24 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 34px;
 }
 
+.footy-match-notification-button,
+.footy-next-export-button {
+  height: 34px;
+  min-height: 34px;
+  width: 34px;
+}
+
+.footy-match-notification-button svg,
+.footy-next-export-button svg {
+  height: 17px;
+  width: 17px;
+}
+
+.footy-match-notification-button.is-inherited:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .footy-highlight-button svg {
   fill: currentColor;
   height: 18px;
@@ -8692,11 +8710,9 @@ html.has-followed-teams-dialog body {
 }
 
 .followed-teams-picker {
-  -webkit-overflow-scrolling: touch;
   min-height: 0;
-  overscroll-behavior: contain;
-  overflow-y: auto;
-  touch-action: pan-y;
+  overflow: hidden;
+  touch-action: none;
 }
 
 .followed-team-picker-group-label {
@@ -10382,6 +10398,30 @@ html.has-followed-teams-dialog body {
 
 .draft-list-dialog-checks {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.draft-list-notes-field {
+  grid-column: 1 / -1;
+}
+
+.draft-list-notes-field summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.draft-list-notes-field label,
+.draft-list-notes-field textarea {
+  display: block;
+  width: 100%;
+}
+
+.draft-list-notes-field textarea {
+  margin-top: 0.65rem;
+  resize: vertical;
+}
+
+.draft-list-delete-sheet-button {
+  color: var(--danger-color, #c33);
 }
 
 @media (max-width: 760px) {

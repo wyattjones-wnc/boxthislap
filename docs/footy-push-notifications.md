@@ -5,7 +5,7 @@ This setup uses a Cloudflare Worker with KV and the shared Rankings D1 database 
 ## Pieces
 
 - `service-worker.js`: receives push events and displays pending notifications.
-- `workers/footy-push`: Cloudflare Worker that stores authenticated manager push subscriptions, checks the Footy schedule, resolves current followed-team recipients from D1, and sends Web Push wakeups.
+- `workers/footy-push`: Cloudflare Worker that stores authenticated manager push subscriptions, checks the Footy schedule, resolves current followed-team and match-specific recipients from D1, and sends Web Push wakeups.
 - `FOOTY_PUSH_ENDPOINT` in `modules/siteConfig.js`: the deployed Worker URL used by the site.
 - `FOOTY_PUSH_ENDPOINT` in `service-worker.js`: the same deployed Worker URL used by the background service worker.
 - `FOOTY_SCHEDULE_URL` / `NOTIFICATION_URL`: production schedule and destination.
@@ -36,13 +36,14 @@ This setup uses a Cloudflare Worker with KV and the shared Rankings D1 database 
    ```
 
 7. Apply `workers/rankings/migrations/0005_manager_followed_teams.sql` to the shared `rankings` D1 database.
-8. Deploy from `workers/footy-push`:
+8. Apply `workers/rankings/migrations/0007_manager_match_notifications.sql` to the same database.
+9. Deploy from `workers/footy-push`:
 
    ```bash
    wrangler deploy
    ```
 
-9. Copy the deployed Worker URL into both:
+10. Copy the deployed Worker URL into both:
 
    - `modules/siteConfig.js` as `FOOTY_PUSH_ENDPOINT`
    - `service-worker.js` as `FOOTY_PUSH_ENDPOINT`
@@ -79,7 +80,7 @@ Each sent alert writes a KV key using:
 sent:{matchKey}:{offset}:{managerId}
 ```
 
-The event's canonical home and away team IDs are intersected with each manager's current followed teams immediately before delivery. A manager following both teams still receives one alert for the event and offset.
+The event's canonical home and away team IDs are intersected with each manager's current followed teams immediately before delivery. A match is also eligible when its stable match ID appears in that manager's `manager_match_notifications` rows. A manager following both teams or explicitly selecting the same match still receives one alert for the event and offset.
 
 Offsets:
 

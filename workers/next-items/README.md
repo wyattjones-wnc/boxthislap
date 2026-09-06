@@ -22,3 +22,5 @@ Delete the generated `legacy-import.sql` after the import; it is ignored by Git.
 npx wrangler d1 migrations apply DB --remote --config workers\next-items\wrangler.toml
 npx wrangler deploy --config workers\next-items\wrangler.toml
 ```
+
+Migration `0002_source_match.sql` records the stable Footy match ID on exported fixtures and prevents the same match from being added twice.

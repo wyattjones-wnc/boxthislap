@@ -1,0 +1,1 @@
+ALTER TABLE draft_items ADD COLUMN notes TEXT NOT NULL DEFAULT '';

@@ -16,6 +16,7 @@ export function createDraftListsController({ getManagerId, request }) {
   const clearFilters = document.querySelector("#draft-list-clear-filters");
   const addButton = document.querySelector("#draft-list-add-button");
   const newSheetButton = document.querySelector("#draft-list-new-sheet-button");
+  const deleteSheetButton = document.querySelector("#draft-list-delete-sheet-button");
   const itemDialog = document.querySelector("#draft-list-item-dialog");
   const itemForm = document.querySelector("#draft-list-item-form");
   const itemDialogTitle = document.querySelector("#draft-list-item-dialog-title");
@@ -25,6 +26,7 @@ export function createDraftListsController({ getManagerId, request }) {
   const itemRankInput = document.querySelector("#draft-list-item-rank");
   const itemDataUrlInput = document.querySelector("#draft-list-item-data-url");
   const itemImageUrlInput = document.querySelector("#draft-list-item-image-url");
+  const itemNotesInput = document.querySelector("#draft-list-item-notes");
   const itemArchivedInput = document.querySelector("#draft-list-item-archived");
   const itemDraftedInput = document.querySelector("#draft-list-item-drafted");
   const itemUnavailableInput = document.querySelector("#draft-list-item-unavailable");
@@ -193,6 +195,10 @@ export function createDraftListsController({ getManagerId, request }) {
     if (clearFilters) clearFilters.disabled = !hasFilters;
     if (addButton) addButton.disabled = state.loading || !hasSheet;
     if (newSheetButton) newSheetButton.disabled = state.loading;
+    if (deleteSheetButton) {
+      deleteSheetButton.hidden = !hasSheet || Boolean(getActiveSheet()?.isSystem);
+      deleteSheetButton.disabled = state.loading;
+    }
     setPageStatus(state.error || state.message, Boolean(state.error));
   }
 
@@ -372,6 +378,10 @@ export function createDraftListsController({ getManagerId, request }) {
       openSheetDialog();
       return;
     }
+    if (event.target.closest("#draft-list-delete-sheet-button")) {
+      void deleteActiveSheet();
+      return;
+    }
     if (event.target.closest("#draft-list-add-button, [data-draft-list-add-empty]")) {
       openItemDialog();
       return;
@@ -435,6 +445,9 @@ export function createDraftListsController({ getManagerId, request }) {
     itemRankInput.value = String(item?.rank || getSheetItems(sheet.id).length + 1);
     itemDataUrlInput.value = item?.dataUrl || "";
     itemImageUrlInput.value = item?.imageUrl || "";
+    itemNotesInput.value = item?.notes || "";
+    const notesDetails = itemNotesInput.closest("details");
+    if (notesDetails) notesDetails.open = Boolean(item?.notes);
     itemArchivedInput.checked = Boolean(item?.archived);
     itemDraftedInput.checked = Boolean(item?.drafted);
     itemUnavailableInput.checked = Boolean(item?.unavailable);
@@ -465,6 +478,7 @@ export function createDraftListsController({ getManagerId, request }) {
       imageUrl: itemImageUrlInput.value.trim(),
       manualRank: Number(itemRankInput.value),
       name: itemNameInput.value.trim(),
+      notes: itemNotesInput.value.trim(),
       releaseDate: itemReleaseDateInput.value,
       revision: Number(sheet.revision || 0),
       unavailable: itemUnavailableInput.checked,
@@ -537,6 +551,30 @@ export function createDraftListsController({ getManagerId, request }) {
       if (error.status === 409) void reloadAfterConflict();
     } finally {
       setFormBusy(itemForm, false);
+    }
+  }
+
+  async function deleteActiveSheet() {
+    const sheet = getActiveSheet();
+    if (!sheet || sheet.isSystem || !window.confirm(`Delete ${sheet.name} and all of its items? This cannot be undone.`)) return;
+    deleteSheetButton.disabled = true;
+    state.error = "";
+    state.message = `Deleting ${sheet.name}...`;
+    syncControls();
+    try {
+      await request(getSheetPath(sheet.id), {
+        body: JSON.stringify({ revision: Number(sheet.revision || 0) }),
+        method: "DELETE",
+      });
+      state.sheets = state.sheets.filter((entry) => entry.id !== sheet.id);
+      state.items = state.items.filter((entry) => entry.sheetId !== sheet.id);
+      state.activeSheetId = state.sheets.find((entry) => entry.id === DEFAULT_SHEET_ID)?.id || state.sheets[0]?.id || "";
+      state.message = `${sheet.name} deleted.`;
+    } catch (error) {
+      state.error = error.message || "Draft List sheet could not be deleted.";
+      if (error.status === 409) await reloadAfterConflict();
+    } finally {
+      render();
     }
   }
 
@@ -732,6 +770,7 @@ function normalizeItem(item = {}) {
     entryDate: String(item.entryDate || ""),
     id: String(item.id || ""),
     imageUrl: String(item.imageUrl || ""),
+    notes: String(item.notes || ""),
     name: String(item.name || "Untitled"),
     rank: Number(item.rank || item.manualRank || 0),
     releaseDate: String(item.releaseDate || ""),

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeSubmittedTeamIds, resolveFollowedTeamRows } from "../src/index.js";
+import { normalizeMatchNotificationRequest, normalizeSubmittedTeamIds, resolveFollowedTeamRows } from "../src/index.js";
 
 test("followed team order is preserved", () => {
   assert.deepEqual(normalizeSubmittedTeamIds(["arsenal", "atlanta-united"]), ["arsenal", "atlanta-united"]);
@@ -24,4 +24,16 @@ test("personal choices replace defaults and the admin never falls back to itself
   const defaults = [{ team_id: "1", priority: 1 }];
   assert.deepEqual(resolveFollowedTeamRows(choices, defaults, "9", "6"), { rows: choices, usingDefault: false });
   assert.deepEqual(resolveFollowedTeamRows([], defaults, "6", "6"), { rows: [], usingDefault: false });
+});
+
+test("match notification preferences normalize a stable match ID and enabled state", () => {
+  assert.deepEqual(normalizeMatchNotificationRequest({ enabled: true, matchId: " footy_comp_123 " }), {
+    enabled: true,
+    matchId: "footy_comp_123",
+  });
+});
+
+test("match notification preferences require a bounded match ID", () => {
+  assert.throws(() => normalizeMatchNotificationRequest({ enabled: true, matchId: "" }), /match ID is required/i);
+  assert.throws(() => normalizeMatchNotificationRequest({ enabled: true, matchId: "x".repeat(201) }), /too long/i);
 });

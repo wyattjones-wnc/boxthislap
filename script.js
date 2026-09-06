@@ -1,5 +1,10 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import {
+  buildFootyNextItemDefaults,
+  getFootyNotificationFixtures,
+  isFootyFixtureFollowed,
+} from "./modules/footyMatchActions.js?v=202609060137";
+import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
   MANAGER_SESSION_STORAGE_KEY,
@@ -370,9 +375,9 @@ import { createPlatinumsController } from "./modules/platinums.js?v=202608301400
 import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608301800";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
-import { createDraftListsController } from "./modules/draftLists.js?v=202608270400";
+import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310007";
-import { createCollectiblesController } from "./modules/collectibles.js?v=202609011540";
+import { createCollectiblesController } from "./modules/collectibles.js?v=202609050001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -464,6 +469,8 @@ const FOOTY_NOTIFICATION_OFFSETS = [
 ];
 let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
+let footyMatchNotificationsLoadPromise = null;
+const pendingFootyMatchNotificationIds = new Set();
 let footyMatchNotesLoadPromise = null;
 let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
@@ -519,6 +526,7 @@ const FOOTY_DISPLAY_TEAM_NAMES = {
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
 const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
+const MANAGER_AUTH_REFRESH_LEEWAY_MS = 2 * 60 * 1000;
 const BRACKET_SUBMISSIONS_ARCHIVED = true;
 const RANKING_BASE_RATING = 1500;
 const RANKING_ELO_K_FACTOR = 32;
@@ -570,6 +578,7 @@ const expandedFootyMatchIds = new Set();
 const expandedFootyPastWeekKeys = new Set();
 const footyGoalAssistEntries = [];
 let activeFootyNoteMatchId = "";
+let activeNextSourceMatchId = "";
 let activeAutocompleteInput = null;
 let footyRosterLoadPromise = null;
 const footyNoteGoalAssistEntries = {
@@ -579,6 +588,8 @@ const footyNoteGoalAssistEntries = {
 const AUTOCOMPLETE_OPTION_LIMIT = 8;
 const siteData = {};
 let guideLinksLoadPromise = null;
+let rankingAuthorizationPromise = null;
+let rankingAuthorizationRefreshTimer = 0;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -3093,6 +3104,81 @@ function stopFootyNotificationMonitor() {
   footyNotificationTimer = null;
 }
 
+function getFootyMatchNotificationIdSet() {
+  return new Set((siteData.footyMatchNotificationIds || []).map(String));
+}
+
+function resetFootyMatchNotifications() {
+  footyMatchNotificationsLoadPromise = null;
+  pendingFootyMatchNotificationIds.clear();
+  siteData.footyMatchNotificationIds = [];
+  siteData.footyMatchNotificationsManagerId = "";
+}
+
+function loadFootyMatchNotifications(options = {}) {
+  const managerId = getCurrentManagerId();
+  if (!managerId) {
+    resetFootyMatchNotifications();
+    return Promise.resolve([]);
+  }
+  if (!options.force && siteData.footyMatchNotificationsManagerId === managerId) {
+    return Promise.resolve(siteData.footyMatchNotificationIds || []);
+  }
+  if (!options.force && footyMatchNotificationsLoadPromise) return footyMatchNotificationsLoadPromise;
+
+  footyMatchNotificationsLoadPromise = rankingApiRequest("/api/me/match-notifications")
+    .then((response) => {
+      if (getCurrentManagerId() !== managerId) return [];
+      siteData.footyMatchNotificationIds = Array.isArray(response.matchIds) ? response.matchIds.map(String) : [];
+      siteData.footyMatchNotificationsManagerId = managerId;
+      if (siteData.footySchedule) {
+        renderFootySchedule(siteData.footySchedule);
+        renderFootyTeamPage();
+      }
+      return siteData.footyMatchNotificationIds;
+    })
+    .finally(() => {
+      footyMatchNotificationsLoadPromise = null;
+    });
+  return footyMatchNotificationsLoadPromise;
+}
+
+async function toggleFootyMatchNotification(matchId) {
+  const normalizedId = String(matchId || "").trim();
+  if (!normalizedId || pendingFootyMatchNotificationIds.has(normalizedId)) return;
+  const ids = getFootyMatchNotificationIdSet();
+  const enabled = !ids.has(normalizedId);
+  pendingFootyMatchNotificationIds.add(normalizedId);
+  renderFootySchedule(siteData.footySchedule);
+  renderFootyTeamPage();
+
+  try {
+    const response = await rankingApiRequest("/api/me/match-notifications", {
+      body: JSON.stringify({ enabled, matchId: normalizedId }),
+      method: "PUT",
+    });
+    siteData.footyMatchNotificationIds = Array.isArray(response.matchIds) ? response.matchIds.map(String) : [];
+    siteData.footyMatchNotificationsManagerId = getCurrentManagerId();
+    setFootyNotificationStatus(enabled
+      ? isFootyNotificationEnabled()
+        ? "Match alerts selected."
+        : "Match selected. Turn on match alerts for this device to receive them."
+      : "Match alerts removed.", "success");
+  } catch (error) {
+    recordDiagnostic("Footy match notification save failed", error, { matchId: normalizedId });
+    setFootyNotificationStatus(error.message || "Match notification preference was not saved.", "error");
+  } finally {
+    pendingFootyMatchNotificationIds.delete(normalizedId);
+    renderFootySchedule(siteData.footySchedule);
+    renderFootyTeamPage();
+  }
+}
+
+function shouldNotifyForFootyFixture(fixture) {
+  return isFootyFixtureFollowed(fixture, followedTeamsController.getFollowedTeamIds()) ||
+    getFootyMatchNotificationIdSet().has(String(fixture?.matchId || fixture?.id || "").trim());
+}
+
 function checkFootyMatchNotifications() {
   if (isFootyPushNotificationSupported() || !isFootyNotificationEnabled() || !siteData.footySchedule) {
     return;
@@ -3102,8 +3188,8 @@ function checkFootyMatchNotifications() {
   const sentNotifications = getStoredJsonObject(FOOTY_NOTIFICATION_SENT_STORAGE_KEY);
   let didUpdateSentNotifications = false;
 
-  getFootyScheduleFixtures(siteData.footySchedule).forEach((fixture) => {
-    if (!hasFootyFixtureNotificationTime(fixture)) {
+  getFootyNotificationFixtures(siteData.footySchedule).forEach((fixture) => {
+    if (!hasFootyFixtureNotificationTime(fixture) || !shouldNotifyForFootyFixture(fixture)) {
       return;
     }
 
@@ -3393,6 +3479,31 @@ function closeProfileDropdown() {
   }
 }
 
+function renderFootyMatchNotificationAction(fixture = {}) {
+  const matchId = String(fixture.matchId || fixture.id || "").trim();
+  if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixtureStarted(fixture)) {
+    return "";
+  }
+  const isFollowed = isFootyFixtureFollowed(fixture, followedTeamsController.getFollowedTeamIds());
+  const isSelected = getFootyMatchNotificationIdSet().has(matchId);
+  const isPending = pendingFootyMatchNotificationIds.has(matchId);
+  const isActive = isFollowed || isSelected;
+  const label = isFollowed
+    ? "Match alerts included because you follow a team"
+    : isSelected
+      ? "Turn off alerts for this match"
+      : "Turn on alerts for this match";
+
+  return `
+    <button class="icon-action-button footy-match-notification-button${isActive ? " is-active" : ""}${isFollowed ? " is-inherited" : ""}${isPending ? " is-loading" : ""}" type="button" data-footy-match-notification="${escapeHtml(matchId)}" aria-label="${label}" title="${label}" aria-pressed="${String(isActive)}"${isFollowed || isPending ? " disabled" : ""}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"></path>
+        <path d="M13.7 21a2 2 0 0 1-3.4 0"></path>
+      </svg>
+    </button>
+  `;
+}
+
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
   const sideLabel = fixture.isHome ? "H" : "A";
@@ -3432,6 +3543,7 @@ function renderFootyFixture(fixture) {
     `
     : "";
   const detailsMarkup = isExpanded ? renderFootyFixtureDetails(fixture) : "";
+  const notificationMarkup = renderFootyMatchNotificationAction(fixture);
   const followedTeamLabel = Array.isArray(fixture.followedTeamNames) && fixture.followedTeamNames.length > 0
     ? fixture.followedTeamNames.join(" · ")
     : fixture.teamName || "";
@@ -3467,6 +3579,7 @@ function renderFootyFixture(fixture) {
       </div>
       <div class="footy-fixture-side-actions">
         <strong>${escapeHtml(dateLabel)}</strong>
+        ${notificationMarkup}
         ${highlightMarkup}
       </div>
       ${detailsMarkup}
@@ -3555,15 +3668,25 @@ function renderFootyFixtureDetails(fixture) {
   const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canShowSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
+  const canExportToNext = isCurrentManagerAdmin() && Boolean(fixture?.matchId) && !isFootyFixtureStarted(fixture);
   const seenMatch = canShowSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
   const canManageSeenMatch = Boolean(seenMatch) || isFootyFixtureStarted(fixture);
-  const actionsMarkup = canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote
+  const actionsMarkup = canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote || canExportToNext
     ? `
       <div class="footy-fixture-detail-actions">
         ${canAddPerfectPerformance
           ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
           : "<span></span>"}
         <div class="footy-fixture-detail-actions-right">
+          ${canExportToNext ? `
+            <button class="icon-action-button footy-next-export-button" type="button" data-footy-next-export="${escapeHtml(fixture.matchId)}" aria-label="Export match to Next list" title="Export to Next">
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M5 4h11a2 2 0 0 1 2 2v14H5Z"></path>
+                <path d="M9 9h5M9 13h5"></path>
+                <path d="M20 4v6M17 7h6"></path>
+              </svg>
+            </button>
+          ` : ""}
           ${canShowSeenMatch ? `
             <button class="icon-action-button footy-seen-match-button${seenMatch ? " is-active" : ""}" type="button" data-footy-seen-match="${escapeHtml(fixture.matchId)}" aria-label="${seenMatch ? "Edit seen match" : canManageSeenMatch ? "Add seen match" : "Seen match available after kickoff"}" title="${canManageSeenMatch ? "Seen Match" : "Available after kickoff"}"${canManageSeenMatch ? "" : " disabled"}>
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -5627,6 +5750,7 @@ function normalizeNextItem(row) {
     priority,
     raw: { ...row, Time: rawTime },
     revision: Number(row?.revision || 0),
+    sourceMatchId: String(row?.sourceMatchId || row?.source_match_id || "").trim(),
     searchText: normalizeLookupName([
       thing,
       dateKey,
@@ -6045,16 +6169,18 @@ function isNextDateSpanPast(dateKey, endDateKey = "") {
   return Boolean(lastDateKey && lastDateKey < getDateKey(0));
 }
 
-function openNextItemDialog(itemId = "") {
+function openNextItemDialog(itemId = "", options = {}) {
   if (!isCurrentManagerAdmin() || !nextItemDialog) {
     return;
   }
 
   const item = itemId ? getNextItemById(itemId) : null;
+  const fixtureDefaults = options.fixture ? buildFootyNextItemDefaults(options.fixture) : null;
   activeNextItemId = String(itemId || "").trim();
+  activeNextSourceMatchId = item?.sourceMatchId || fixtureDefaults?.sourceMatchId || "";
 
   if (nextItemDialogTitle) {
-    nextItemDialogTitle.textContent = item ? "Edit Next Item" : "Add Next Item";
+    nextItemDialogTitle.textContent = item ? "Edit Next Item" : fixtureDefaults ? "Export Match to Next" : "Add Next Item";
   }
 
   if (nextItemId) {
@@ -6062,7 +6188,7 @@ function openNextItemDialog(itemId = "") {
   }
 
   if (nextThingInput) {
-    nextThingInput.value = item?.thing || "";
+    nextThingInput.value = item?.thing || fixtureDefaults?.thing || "";
   }
 
   if (nextImageUrlInput) {
@@ -6070,7 +6196,7 @@ function openNextItemDialog(itemId = "") {
   }
 
   if (nextStartDateInput) {
-    nextStartDateInput.value = item?.dateKey || "";
+    nextStartDateInput.value = item?.dateKey || fixtureDefaults?.date || "";
   }
 
   if (nextEndDateInput) {
@@ -6078,7 +6204,7 @@ function openNextItemDialog(itemId = "") {
   }
 
   if (nextTimeInput) {
-    nextTimeInput.value = formatNextTimeInputValue(item?.raw?.Time || "");
+    nextTimeInput.value = item ? formatNextTimeInputValue(item.raw?.Time || "") : fixtureDefaults?.time || "";
   }
 
   if (nextPriorityInput) {
@@ -6115,6 +6241,7 @@ function closeNextItemDialog() {
   } else {
     nextItemDialog.removeAttribute("open");
   }
+  activeNextSourceMatchId = "";
 }
 
 function getNextItemById(itemId) {
@@ -6150,6 +6277,7 @@ function buildNextItemPayloadFromForm() {
     nonAdmin: Boolean(nextItemNonAdminInput?.checked),
     priority,
     revision: Number(existing?.revision || 0),
+    sourceMatchId: existing?.sourceMatchId || activeNextSourceMatchId,
     thing,
     time: time ? formatNextTimeForSheet(time) : "",
   };
@@ -7821,11 +7949,23 @@ function resetRankingManagerData() {
   activeRankingCompareSnapshotId = "";
 }
 
-async function ensureRankingAuthorization() {
+async function ensureRankingAuthorization({ forceRefresh = false } = {}) {
   const session = siteData.managerSession;
   if (!session?.managerId) throw new Error("Sign in to continue.");
   const auth = session.rankingAuth || {};
-  if (auth.accessToken && Date.parse(auth.accessExpiresAt || "") > Date.now() + 30000) return auth.accessToken;
+  if (!forceRefresh && auth.accessToken && Date.parse(auth.accessExpiresAt || "") > Date.now() + 30000) {
+    scheduleRankingAuthorizationRefresh();
+    return auth.accessToken;
+  }
+  if (rankingAuthorizationPromise) return rankingAuthorizationPromise;
+
+  rankingAuthorizationPromise = renewRankingAuthorization(session, auth).finally(() => {
+    rankingAuthorizationPromise = null;
+  });
+  return rankingAuthorizationPromise;
+}
+
+async function renewRankingAuthorization(session, auth) {
   let response;
   if (auth.refreshToken && Date.parse(auth.refreshExpiresAt || "") > Date.now() + 30000) {
     response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/auth/refresh`, {
@@ -7844,15 +7984,53 @@ async function ensureRankingAuthorization() {
   }
   const value = await response.json().catch(() => ({}));
   if (!response.ok || !value.accessToken) throw new Error(value.error || "Unable to authorize manager data.");
-  siteData.managerSession = { ...session, rankingAuth: value };
+  if (String(siteData.managerSession?.managerId || "") !== String(session.managerId)) {
+    throw new Error("The active manager changed while authorization was refreshing.");
+  }
+  siteData.managerSession = { ...siteData.managerSession, rankingAuth: value };
   try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+  scheduleRankingAuthorizationRefresh();
   return value.accessToken;
 }
 
 function clearRankingAuthorization() {
   if (!siteData.managerSession) return;
-  siteData.managerSession = { ...siteData.managerSession, rankingAuth: null };
+  const auth = siteData.managerSession.rankingAuth || {};
+  const refreshAuth = auth.refreshToken ? {
+    refreshExpiresAt: auth.refreshExpiresAt,
+    refreshToken: auth.refreshToken,
+  } : null;
+  window.clearTimeout(rankingAuthorizationRefreshTimer);
+  rankingAuthorizationRefreshTimer = 0;
+  siteData.managerSession = { ...siteData.managerSession, rankingAuth: refreshAuth };
   try { localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(siteData.managerSession)); } catch {}
+}
+
+function scheduleRankingAuthorizationRefresh() {
+  window.clearTimeout(rankingAuthorizationRefreshTimer);
+  rankingAuthorizationRefreshTimer = 0;
+  const auth = siteData.managerSession?.rankingAuth || {};
+  if (!siteData.managerSession?.managerId || !auth.refreshToken) return;
+  const accessExpiresAt = Date.parse(auth.accessExpiresAt || "");
+  if (!Number.isFinite(accessExpiresAt)) return;
+  const delay = Math.max(1000, accessExpiresAt - Date.now() - MANAGER_AUTH_REFRESH_LEEWAY_MS);
+  rankingAuthorizationRefreshTimer = window.setTimeout(() => {
+    rankingAuthorizationRefreshTimer = 0;
+    void ensureRankingAuthorization({ forceRefresh: true })
+      .catch((error) => recordDiagnostic("manager authorization background refresh failed", error));
+  }, Math.min(delay, 2147483647));
+}
+
+function refreshManagerAuthorizationInBackground() {
+  const auth = siteData.managerSession?.rankingAuth || {};
+  if (!siteData.managerSession?.managerId || !auth.refreshToken) return;
+  const accessExpiresAt = Date.parse(auth.accessExpiresAt || "");
+  if (auth.accessToken && Number.isFinite(accessExpiresAt) && accessExpiresAt > Date.now() + MANAGER_AUTH_REFRESH_LEEWAY_MS) {
+    scheduleRankingAuthorizationRefresh();
+    return;
+  }
+  void ensureRankingAuthorization({ forceRefresh: true })
+    .catch((error) => recordDiagnostic("manager authorization background refresh failed", error));
 }
 
 async function requestRankingAuthorizationForLogin(managerId, passphrase) {
@@ -12765,6 +12943,21 @@ document.addEventListener("click", (event) => {
 });
 
 function handleFootyFixtureListClick(event) {
+  const notificationButton = event.target.closest("[data-footy-match-notification]");
+
+  if (notificationButton) {
+    void toggleFootyMatchNotification(notificationButton.getAttribute("data-footy-match-notification"));
+    return;
+  }
+
+  const nextExportButton = event.target.closest("[data-footy-next-export]");
+
+  if (nextExportButton) {
+    const fixture = getFootyFixtureByMatchId(nextExportButton.getAttribute("data-footy-next-export"));
+    if (fixture) openNextItemDialog("", { fixture });
+    return;
+  }
+
   const seenButton = event.target.closest("[data-footy-seen-match]");
 
   if (seenButton) {
@@ -12909,12 +13102,14 @@ footyNotificationToggle?.addEventListener("click", () => {
 window.addEventListener("focus", () => {
   checkFootyMatchNotifications();
   refreshFootyMatchNotesIfNeeded();
+  refreshManagerAuthorizationInBackground();
 });
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     checkFootyMatchNotifications();
     refreshFootyMatchNotesIfNeeded();
+    refreshManagerAuthorizationInBackground();
   }
 });
 
@@ -14352,7 +14547,9 @@ function hydrateManagerSession() {
   hydrateStoredManagerSession();
   renderLoginState();
   renderManagerHub();
+  refreshManagerAuthorizationInBackground();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
+  void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
 }
 
 function hydrateStoredManagerSession() {
@@ -14370,6 +14567,7 @@ function saveManagerSession(session) {
   resetRankingManagerData();
   draftListsController.reset();
   followedTeamsController.reset();
+  resetFootyMatchNotifications();
 
   try {
     localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -14379,7 +14577,9 @@ function saveManagerSession(session) {
 
   renderLoginState();
   renderManagerHub();
+  scheduleRankingAuthorizationRefresh();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
+  void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
 
   pageDataPromises.delete("manager-hub");
   sharedDataPromises.delete("manager-hub");
@@ -14389,11 +14589,14 @@ function saveManagerSession(session) {
 }
 
 function signOutManager() {
+  window.clearTimeout(rankingAuthorizationRefreshTimer);
+  rankingAuthorizationRefreshTimer = 0;
   siteData.managerSession = null;
   activeRankingManagerId = "";
   resetRankingManagerData();
   draftListsController.reset();
   followedTeamsController.reset();
+  resetFootyMatchNotifications();
 
   try {
     localStorage.removeItem(MANAGER_SESSION_STORAGE_KEY);
@@ -14640,13 +14843,9 @@ async function handleManagerLogin() {
     }
 
     const manager = getPortalManagerById(managerId) ?? response.manager ?? { id: managerId, name: response.displayName };
-    let rankingAuth = response.rankingAuth || null;
-    if (!rankingAuth) {
-      try {
-        rankingAuth = await requestRankingAuthorizationForLogin(managerId, passphrase);
-      } catch (error) {
-        recordDiagnostic("ranking login authorization failed", error);
-      }
+    const rankingAuth = response.rankingAuth || await requestRankingAuthorizationForLogin(managerId, passphrase);
+    if (!rankingAuth?.accessToken || !rankingAuth?.refreshToken) {
+      throw new Error("Manager authorization could not be established. Please try signing in again.");
     }
     saveManagerSession({
       manager,

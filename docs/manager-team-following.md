@@ -13,12 +13,12 @@ Manager followed teams are application state in the shared `rankings` D1 databas
 
 | Trigger | Former lookup | Required event IDs | Deduplication | Updated |
 | --- | --- | --- | --- | --- |
-| Scheduled Web Push: 2 hours before kickoff | Every active push subscription received every tracked fixture | `homeTeamId`, `awayTeamId` | manager + fixture + `2h` | Yes |
-| Scheduled Web Push: 1 hour before kickoff | Every active push subscription received every tracked fixture | `homeTeamId`, `awayTeamId` | manager + fixture + `1h` | Yes |
-| Scheduled Web Push: kickoff | Every active push subscription received every tracked fixture | `homeTeamId`, `awayTeamId` | manager + fixture + `start` | Yes |
-| In-browser fallback for the same three offsets | Global `teamSchedules` list | manager-selected canonical IDs | browser sent-event key | Yes |
+| Scheduled Web Push: 2 hours before kickoff | Every active push subscription received every tracked fixture | `homeTeamId`, `awayTeamId`, `matchId` | manager + fixture + `2h` | Yes |
+| Scheduled Web Push: 1 hour before kickoff | Every active push subscription received every tracked fixture | `homeTeamId`, `awayTeamId`, `matchId` | manager + fixture + `1h` | Yes |
+| Scheduled Web Push: kickoff | Every active push subscription received every tracked fixture | `homeTeamId`, `awayTeamId`, `matchId` | manager + fixture + `start` | Yes |
+| In-browser fallback for the same three offsets | Full team and competition schedules | manager-selected canonical IDs or `matchId` | browser sent-event key | Yes |
 
-The push Worker reads current D1 relationships immediately before delivery, falls back to the configured default manager when a recipient has no personal selection, intersects the effective selection with event team IDs, and writes one manager-level sent key. Turning off alerts removes that device subscription, so account/device-level delivery choice still overrides team opt-in.
+The push Worker reads current D1 relationships immediately before delivery, falls back to the configured default manager when a recipient has no personal team selection, and sends an event when either team is followed or its stable match ID is explicitly selected in `manager_match_notifications`. It writes one manager-level sent key. Turning off alerts removes that device subscription, so account/device-level delivery choice still overrides team or match opt-in.
 
 ## Migration and rollout
 
@@ -26,7 +26,7 @@ Migration `0005_manager_followed_teams.sql` creates manager preferences and pres
 
 Before the feature is usable in an environment:
 
-1. Apply the Rankings D1 migration.
+1. Apply the Rankings D1 migrations, including `0007_manager_match_notifications.sql`.
 2. Deploy the Rankings Worker.
 3. Set the Footy Push Worker `AUTH_SECRET` to the same value used by Rankings.
 4. Deploy the Footy Push Worker with its new shared D1 binding.

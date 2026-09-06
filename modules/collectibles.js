@@ -87,6 +87,20 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
     const button = event.target.closest("[data-collectible-exclusion]");
     if (button) void toggleExclusion(button);
   });
+  detail?.addEventListener("change", (event) => {
+    if (event.target.name !== "status") return;
+    const want = event.target.form?.elements.namedItem("wanted");
+    if (!want) return;
+    want.disabled = event.target.value === "owned";
+    if (want.disabled) want.checked = false;
+  });
+  detail?.addEventListener("error", (event) => {
+    const image = event.target.closest?.(".collectible-detail-gallery img");
+    if (!image) return;
+    const gallery = image.parentElement;
+    image.remove();
+    if (!gallery.querySelector("img")) gallery.innerHTML = `<span class="table-message">No image available.</span>`;
+  }, true);
 
   async function renderPage() {
     state.filters = { ...DEFAULT_FILTERS, ...filtersFromUrl() };
@@ -245,7 +259,7 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
   async function quickToggle(id, desiredOwned, button) {
     button.disabled = true;
     try {
-      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: desiredOwned ? "owned" : "not_owned" });
+      await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: desiredOwned ? "owned" : "not_owned", ...(desiredOwned ? { wanted: false } : {}) });
       const card = button.closest("[data-collectible-id]");
       const name = card?.querySelector("h2")?.textContent?.trim() || "collectible";
       const toggleLabel = desiredOwned ? `Mark ${name} as don't have` : `Mark ${name} as have`;
@@ -255,6 +269,7 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
       button.setAttribute("aria-pressed", String(desiredOwned));
       button.setAttribute("aria-label", toggleLabel);
       button.setAttribute("title", toggleLabel);
+      if (desiredOwned) card?.querySelector(".collectible-card-image > b")?.remove();
       button.disabled = false;
       await refreshOverlay();
     }
@@ -264,10 +279,18 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
   async function openDetail(id) {
     dialog.showModal(); detail.innerHTML = loading("Loading collectible details...");
     const fallback = state.catalog?.items?.find((entry) => entry.id === id);
-    const item = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
+    const catalogItem = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
     try {
+      let item = catalogItem;
+      try {
+        const response = await request(`/api/collectibles/${encodeURIComponent(id)}`);
+        if (response.collectible) item = { ...catalogItem, ...response.collectible };
+      } catch (error) {
+        console.warn("Unable to load live collectible details; using the catalogue preview.", error);
+      }
       if (!item) throw new Error("Collectible details are temporarily unavailable.");
       const owned = item.collection?.status === "owned";
+      const wanted = !owned && item.collection?.wanted;
       const availableImages = item.images?.length ? item.images : item.image ? [{ sourceUrl: item.image }] : [];
       const fullSizeImages = availableImages.filter((image) => !isThumbnailImage(image));
       const dialogImages = fullSizeImages.length ? fullSizeImages : availableImages;
@@ -279,7 +302,7 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
           <form class="collectible-detail-form" data-collectible-form data-id="${escapeHtml(item.id)}">
             <label><span>Status</span><select name="status"><option value="not_owned" ${owned ? "" : "selected"}>Don't Have</option><option value="owned" ${owned ? "selected" : ""}>Have</option></select></label>
             <label><span>Quantity</span><input name="quantity" type="number" min="0" max="999" value="${escapeHtml(item.collection?.quantity || 0)}"></label>
-            <label class="collectible-check"><input name="wanted" type="checkbox" ${item.collection?.wanted ? "checked" : ""}><span>Want</span></label>
+            <label class="collectible-check"><input name="wanted" type="checkbox" ${wanted ? "checked" : ""}${owned ? " disabled" : ""}><span>Want</span></label>
             <label><span>Acquired</span><input name="acquiredAt" type="date" value="${escapeHtml(item.collection?.acquiredAt || "")}"></label>
             <label class="collectible-notes"><span>Notes</span><textarea name="notes" rows="4">${escapeHtml(item.collection?.notes || "")}</textarea></label>
             ${exclusionAction(item)}
@@ -296,7 +319,7 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
     try {
       const id = formElement.dataset.id;
       const owned = data.get("status") === "owned";
-      const wanted = data.get("wanted") === "on";
+      const wanted = !owned && data.get("wanted") === "on";
       await mutate(`/api/collection/${encodeURIComponent(id)}`, { status: data.get("status"), quantity: Number(data.get("quantity") || 0), wanted, acquiredAt: data.get("acquiredAt") || null, notes: data.get("notes") || null });
       const card = grid.querySelector(`[data-collectible-id="${CSS.escape(id)}"]`);
       const toggle = card?.querySelector("[data-collectible-toggle]");

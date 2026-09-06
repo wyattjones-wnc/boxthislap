@@ -10,10 +10,10 @@
 // - Fantasy Critic: show the first incomplete item whose Thing contains that text.
 
 const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev/api/items";
-const SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/#next";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
 const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache-v2.json";
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
+const CURRENT_TIMED_EVENT_WINDOW_MS = 60 * 60 * 1000;
 
 const COLORS = {
   background: new Color("#101820"),
@@ -120,7 +120,7 @@ async function chooseFocusItem(items) {
   const sortedItems = sortItemsForPicker(items.filter(isUpcomingItem));
   const alert = new Alert();
   alert.title = "Choose Next Widget Focus";
-  alert.message = "Pick any upcoming incomplete item from the Next list. The widget will keep showing this item until it passes, you choose another one, or set a widget parameter.";
+  alert.message = "Pick any upcoming incomplete item from the Next list. The widget will keep showing this item through its current-event window, until you choose another one, or until you set a widget parameter.";
 
   sortedItems.forEach((item) => {
     alert.addAction(`${item.thing} (${formatPickerDate(item)})`);
@@ -224,7 +224,6 @@ function sortItemsForPicker(items) {
 async function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  widget.url = SITE_URL;
   widget.setPadding(14, 14, 14, 14);
 
   const hasBackgroundImage = item ? await applyItemBackground(widget, item) : false;
@@ -281,15 +280,12 @@ async function createWidget(item, result) {
 
   content.addSpacer(hasBackgroundImage ? 5 : 8);
 
-  const countdown = eventState.usesLiveTimer
-    ? content.addDate(item.startDate)
-    : content.addText(eventState.label);
+  // Scriptable's timer style counts upward after the date passes. A text
+  // countdown lets the widget hold on "Now" until its next event refresh.
+  const countdown = content.addText(eventState.label);
   countdown.font = Font.heavySystemFont(hasBackgroundImage ? 22 : 24);
   countdown.textColor = eventState.color;
   countdown.minimumScaleFactor = 0.7;
-  if (eventState.usesLiveTimer) {
-    countdown.applyTimerStyle();
-  }
   applyTextShadow(countdown, hasBackgroundImage);
 
   content.addSpacer(hasBackgroundImage ? 3 : 6);
@@ -519,7 +515,7 @@ function getEventState(item) {
   }
 
   if (item.startDate <= now) {
-    return { label: "Past", color: COLORS.muted };
+    return { label: "Now", color: COLORS.warning };
   }
 
   const remaining = item.startDate.getTime() - now.getTime();
@@ -532,10 +528,10 @@ function getEventState(item) {
   }
 
   if (hours > 0) {
-    return { label: `${hours}h ${minutes}m`, color: COLORS.accent, usesLiveTimer: true };
+    return { label: `${hours}h ${minutes}m`, color: COLORS.accent };
   }
 
-  return { label: "< 1 hr", color: COLORS.accent, usesLiveTimer: true };
+  return { label: minutes > 0 ? `${minutes}m` : "< 1m", color: COLORS.accent };
 }
 
 function getWidgetRefreshDate(item) {
@@ -566,7 +562,9 @@ function getItemRelevantEnd(item) {
     return endOfDay(item.endDate);
   }
 
-  return item.time ? item.startDate : endOfDay(item.startDate);
+  return item.time
+    ? new Date(item.startDate.getTime() + CURRENT_TIMED_EVENT_WINDOW_MS)
+    : endOfDay(item.startDate);
 }
 
 function formatDateRange(item) {

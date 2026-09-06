@@ -11,7 +11,7 @@ On the iPhone:
 3. Open [`scriptable/box-this-lap-widget-loader.js`](../scriptable/box-this-lap-widget-loader.js), tap **Raw**, copy its contents into the new script, and save.
 4. Run `Box This Lap Widget Loader`.
 5. Tap **Install or update both** (or choose one widget).
-6. Add a medium Scriptable widget to the Home Screen.
+6. Add a medium or large Scriptable widget to the Home Screen.
 7. Edit the Home Screen widget and select `Box This Lap Footy` or `Box This Lap Next`.
 8. Set **When Interacting** to **Run Script**.
 
@@ -51,7 +51,7 @@ Both widgets continue to request automatic background refreshes. iOS decides whe
 
 ## Footy
 
-Footy shows the next three matches. Its optional widget parameter is:
+Footy shows the next three matches in a medium widget or the next six matches in a large widget. Its optional widget parameter is:
 
 ```text
 dev

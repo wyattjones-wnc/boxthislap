@@ -1,9 +1,9 @@
 // Box This Lap - Upcoming Footy Matches Widget for Scriptable
 //
-// Add this script to Scriptable, then create a medium widget. It shows the
-// next three matches from the Box This Lap Footy schedule. The first match is
-// intentionally larger. Future matches inside 24 hours are highlighted; a
-// started match stays visible for one hour and is highlighted red.
+// Add this script to Scriptable, then create a medium or large widget. It shows
+// the next three matches in a medium widget and the next six in a large widget.
+// Future matches inside 24 hours are highlighted; a started match stays visible
+// for one hour and is highlighted red.
 
 const SITE_CHANNEL = String(args.widgetParameter || "main").trim().toLowerCase() === "dev" ? "dev" : "main";
 const SITE_ROOT = SITE_CHANNEL === "dev"
@@ -11,7 +11,7 @@ const SITE_ROOT = SITE_CHANNEL === "dev"
   : "https://wyattjones-wnc.github.io/boxthislap/";
 const SCHEDULE_URL = `${SITE_ROOT}data/footy-schedule.json`;
 const SITE_ASSET_BASE_URL = SITE_ROOT;
-const MATCH_LIMIT = 3;
+const MATCH_LIMIT = config.widgetFamily === "large" ? 6 : 3;
 const SCHEDULE_CACHE_FILE = `box-this-lap-footy-schedule-${SITE_CHANNEL}.json`;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
 const WIDGET_LOCAL_BADGE_PATHS = {

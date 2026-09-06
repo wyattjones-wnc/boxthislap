@@ -19,7 +19,7 @@ const REPOSITORY_RAW_ROOT = `https://raw.githubusercontent.com/wyattjones-wnc/bo
 const AVAILABLE_WIDGETS = [
   {
     name: "Box This Lap Footy",
-    description: "The next three Footy matches",
+    description: "The next three or six Footy matches",
     sourceFile: "box-this-lap-footy-widget.js",
   },
   {

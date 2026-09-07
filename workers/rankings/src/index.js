@@ -183,18 +183,37 @@ async function loginAuth(request, env) {
   const managerId = parseId(body.managerId, "manager ID");
   const passphrase = String(body.passphrase || "");
   if (!passphrase.trim()) throw httpError(400, "Passphrase is required.");
-  const response = await fetch(env.MANAGER_PORTAL_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "login", managerId, passphrase }),
+  const callbackName = "boxThisLapWorkerLogin";
+  const portalUrl = new URL(env.MANAGER_PORTAL_ENDPOINT);
+  portalUrl.searchParams.set("payload", JSON.stringify({ action: "login", callback: callbackName, managerId, passphrase }));
+  portalUrl.searchParams.set("callback", callbackName);
+  const response = await fetch(portalUrl, {
+    headers: { Accept: "application/javascript, application/json" },
     redirect: "follow",
   });
   if (!response.ok) throw httpError(502, "Manager login could not be verified.");
-  const value = await response.json().catch(() => null);
+  const value = parseManagerPortalResponse(await response.text(), callbackName);
   if (!value || value.source !== "boxthislap-manager-portal" || !value.ok || String(value.managerId || "") !== managerId) {
     throw httpError(401, value?.error || "Manager login was not accepted.");
   }
   return issueTokens(env, managerId);
+}
+
+export function parseManagerPortalResponse(text, callbackName) {
+  const responseText = String(text || "").trim();
+
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    const prefix = `${callbackName}(`;
+    if (!responseText.startsWith(prefix) || !responseText.endsWith(");")) return null;
+
+    try {
+      return JSON.parse(responseText.slice(prefix.length, -2));
+    } catch {
+      return null;
+    }
+  }
 }
 
 async function refreshAuth(request, env) {

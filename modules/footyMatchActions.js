@@ -18,6 +18,13 @@ export function isFootyFixtureFollowed(fixture = {}, followedTeamIds = []) {
     .some((teamId) => teamId && followed.has(teamId));
 }
 
+export function shouldOfferFootyMatchNotification(fixture = {}, options = {}) {
+  if (!options.followedTeamsLoaded || !options.matchNotificationsLoaded) return false;
+  const matchId = String(fixture.matchId || fixture.id || "").trim();
+  if (!matchId || new Set((options.matchNotificationIds || []).map(String)).has(matchId)) return false;
+  return !isFootyFixtureFollowed(fixture, options.notificationTeamIds || []);
+}
+
 export function buildFootyNextItemDefaults(fixture = {}, timeZone = "America/New_York") {
   const timestamp = Date.parse(String(fixture.timestamp || ""));
   let date = String(fixture.date || "").trim();

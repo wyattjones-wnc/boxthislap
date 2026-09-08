@@ -4,6 +4,7 @@ import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
+  shouldOfferFootyMatchNotification,
 } from "./footyMatchActions.js";
 
 test("notification fixtures include and deduplicate full competition matches", () => {
@@ -18,6 +19,16 @@ test("notification fixtures include and deduplicate full competition matches", (
 test("a fixture is followed when any canonical side is selected", () => {
   assert.equal(isFootyFixtureFollowed({ homeTeamId: "8", awayTeamId: "9" }, ["9"]), true);
   assert.equal(isFootyFixtureFollowed({ homeTeamId: "8", awayTeamId: "9" }, ["10"]), false);
+});
+
+test("match alert action is offered only after recipient state loads and the match is uncovered", () => {
+  const fixture = { homeTeamId: "8", awayTeamId: "9", matchId: "match-2" };
+  const loaded = { followedTeamsLoaded: true, matchNotificationsLoaded: true };
+  assert.equal(shouldOfferFootyMatchNotification(fixture, loaded), true);
+  assert.equal(shouldOfferFootyMatchNotification(fixture, { ...loaded, matchNotificationIds: ["match-2"] }), false);
+  assert.equal(shouldOfferFootyMatchNotification(fixture, { ...loaded, notificationTeamIds: ["9"] }), false);
+  assert.equal(shouldOfferFootyMatchNotification(fixture, { ...loaded, followedTeamsLoaded: false }), false);
+  assert.equal(shouldOfferFootyMatchNotification(fixture, { ...loaded, matchNotificationsLoaded: false }), false);
 });
 
 test("Next defaults use the displayed Eastern match date and time", () => {

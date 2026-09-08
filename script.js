@@ -3,7 +3,8 @@ import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
-} from "./modules/footyMatchActions.js?v=202609060137";
+  shouldOfferFootyMatchNotification,
+} from "./modules/footyMatchActions.js?v=202609080422";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -376,7 +377,7 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310007";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609080422";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202609050001";
 import {
   formatUpdatedTime,
@@ -908,8 +909,8 @@ function getFootyTeamSlug(teamName) {
 function getFootyTeamFromSlug(slug) {
   const normalizedSlug = String(slug || "").trim();
 
-  return getFootyShortcutTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
-    getAllFootyScheduleTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+  return getAllFootyScheduleTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+    getFootyShortcutTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
     null;
 }
 
@@ -936,7 +937,7 @@ function getAllFootyScheduleTeams(schedule) {
     priority: Number.MAX_SAFE_INTEGER,
     projectedPoints: null,
   }));
-  return uniqueFootyTeams([...scheduled, ...catalog])
+  return uniqueFootyTeams([...catalog, ...scheduled])
     .sort(compareFootyTeamsByPriorityThenName);
 }
 
@@ -3484,18 +3485,20 @@ function renderFootyMatchNotificationAction(fixture = {}) {
   if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixtureStarted(fixture)) {
     return "";
   }
-  const isFollowed = isFootyFixtureFollowed(fixture, followedTeamsController.getFollowedTeamIds());
-  const isSelected = getFootyMatchNotificationIdSet().has(matchId);
+  const followedNotificationState = followedTeamsController.getNotificationSelectionState();
+  if (!shouldOfferFootyMatchNotification(fixture, {
+    followedTeamsLoaded: followedNotificationState.loaded,
+    matchNotificationIds: siteData.footyMatchNotificationIds,
+    matchNotificationsLoaded: siteData.footyMatchNotificationsManagerId === getCurrentManagerId(),
+    notificationTeamIds: followedNotificationState.teamIds,
+  })) {
+    return "";
+  }
   const isPending = pendingFootyMatchNotificationIds.has(matchId);
-  const isActive = isFollowed || isSelected;
-  const label = isFollowed
-    ? "Match alerts included because you follow a team"
-    : isSelected
-      ? "Turn off alerts for this match"
-      : "Turn on alerts for this match";
+  const label = "Turn on alerts for this match";
 
   return `
-    <button class="icon-action-button footy-match-notification-button${isActive ? " is-active" : ""}${isFollowed ? " is-inherited" : ""}${isPending ? " is-loading" : ""}" type="button" data-footy-match-notification="${escapeHtml(matchId)}" aria-label="${label}" title="${label}" aria-pressed="${String(isActive)}"${isFollowed || isPending ? " disabled" : ""}>
+    <button class="icon-action-button footy-match-notification-button${isPending ? " is-loading" : ""}" type="button" data-footy-match-notification="${escapeHtml(matchId)}" aria-label="${label}" title="${label}" aria-pressed="false"${isPending ? " disabled" : ""}>
       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
         <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"></path>
         <path d="M13.7 21a2 2 0 0 1-3.4 0"></path>
@@ -3543,7 +3546,6 @@ function renderFootyFixture(fixture) {
     `
     : "";
   const detailsMarkup = isExpanded ? renderFootyFixtureDetails(fixture) : "";
-  const notificationMarkup = renderFootyMatchNotificationAction(fixture);
   const followedTeamLabel = Array.isArray(fixture.followedTeamNames) && fixture.followedTeamNames.length > 0
     ? fixture.followedTeamNames.join(" · ")
     : fixture.teamName || "";
@@ -3579,7 +3581,6 @@ function renderFootyFixture(fixture) {
       </div>
       <div class="footy-fixture-side-actions">
         <strong>${escapeHtml(dateLabel)}</strong>
-        ${notificationMarkup}
         ${highlightMarkup}
       </div>
       ${detailsMarkup}
@@ -3665,19 +3666,21 @@ function toggleFootyFixtureExpansion(matchId) {
 
 function renderFootyFixtureDetails(fixture) {
   const matchNoteMarkup = renderFootyMatchNote(fixture);
+  const notificationMarkup = renderFootyMatchNotificationAction(fixture);
   const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canShowSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
   const canExportToNext = isCurrentManagerAdmin() && Boolean(fixture?.matchId) && !isFootyFixtureStarted(fixture);
   const seenMatch = canShowSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
   const canManageSeenMatch = Boolean(seenMatch) || isFootyFixtureStarted(fixture);
-  const actionsMarkup = canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote || canExportToNext
+  const actionsMarkup = notificationMarkup || canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote || canExportToNext
     ? `
       <div class="footy-fixture-detail-actions">
         ${canAddPerfectPerformance
           ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
           : "<span></span>"}
         <div class="footy-fixture-detail-actions-right">
+          ${notificationMarkup}
           ${canExportToNext ? `
             <button class="icon-action-button footy-next-export-button" type="button" data-footy-next-export="${escapeHtml(fixture.matchId)}" aria-label="Export match to Next list" title="Export to Next">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">

@@ -934,6 +934,7 @@ function getFootyMissingNotesFixtures(schedule = {}) {
       isFootyFixturePast(fixture) &&
       !isFootyFriendlyFixture(fixture) &&
       getFootyCanonicalCompetition(fixture.league).key !== "leagues cup" &&
+      getFootyCanonicalCompetition(fixture.league).key !== "u.s. open cup" &&
       !hasFootyMatchNoteData(fixture)
     ));
 }

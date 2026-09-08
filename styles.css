@@ -2396,6 +2396,17 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.footy-missing-notes-summary {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 850;
+  margin: -6px 0 12px;
+}
+
+.footy-missing-notes-summary:empty {
+  display: none;
+}
+
 .next-controls {
   display: grid;
   margin: -8px 0 14px;

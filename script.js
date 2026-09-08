@@ -79,6 +79,17 @@ import {
   managerHubSubtitle,
   workflowCount,
   workflowList,
+  footyMissingNotesFilterToggle,
+  footyMissingNotesFilters,
+  footyMissingNotesSearch,
+  footyMissingNotesDateFrom,
+  footyMissingNotesDateTo,
+  footyMissingNotesCompetition,
+  footyMissingNotesMatchPeriod,
+  footyMissingNotesTeam,
+  footyMissingNotesFriendlies,
+  footyMissingNotesSummary,
+  footyMissingNotesList,
   managerSummaryList,
   managerSummaryYearSelect,
   managerAwardsList,
@@ -386,8 +397,8 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202609010322";
-import { createRouter, scrollToPageTop } from "./modules/router.js?v=202608190003";
+} from "./modules/domRefs.js?v=202609081516";
+import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608301830";
@@ -420,6 +431,7 @@ const formulaOneResultsMode = {
 let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
+let shouldShowFootyMissingNotesFilters = false;
 let shouldShowFootyCustomFilters = false;
 let isFootyCustomScheduleConfirmed = false;
 const selectedFootyCustomTeamKeys = new Set();
@@ -636,7 +648,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -681,6 +693,7 @@ const followedTeamsController = createFollowedTeamsController({
     if (siteData.footySchedule) {
       renderFollowedTeamShortcuts(siteData.footySchedule);
       renderFootySchedule(siteData.footySchedule);
+      renderFootyMissingNotesPage();
       renderFootyTeamPage();
     }
   },
@@ -826,6 +839,197 @@ function renderFootySchedule(schedule) {
     </div>
     ${isCompetitionMode || isPastWeekMode ? "" : renderFootyShowAllControl(hiddenFixtureCount, visibleFixtures.length)}
   `;
+}
+
+function renderFootyMissingNotesPage() {
+  if (!footyMissingNotesList || !isCurrentManagerAdmin()) {
+    return;
+  }
+
+  const selection = followedTeamsController.getSelectionState();
+
+  if (!siteData.footySchedule || !selection.loaded) {
+    footyMissingNotesList.setAttribute("aria-busy", "true");
+    footyMissingNotesList.innerHTML = renderLoadingMessage("Loading followed-team competitions...");
+    return;
+  }
+
+  if (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes()) {
+    footyMissingNotesList.setAttribute("aria-busy", "true");
+    footyMissingNotesList.innerHTML = renderLoadingMessage("Loading match notes...");
+    ensureFootyMatchNotes({ force: shouldRefreshFootyMatchNotes() })
+      .then(() => {
+        renderFootyMissingNotesPage();
+        if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
+      })
+      .catch((error) => {
+        siteData.footyMatchNotesError = error;
+        footyMissingNotesList.setAttribute("aria-busy", "false");
+        footyMissingNotesList.innerHTML = `<p class="table-message">Unable to load match notes: ${escapeHtml(error.message)}</p>`;
+      });
+    return;
+  }
+
+  const missingFixtures = getFootyMissingNotesFixtures(siteData.footySchedule);
+  syncFootyMissingNotesFilters(missingFixtures);
+  const visibleFixtures = getFilteredFootyMissingNotesFixtures(missingFixtures)
+    .sort(compareFootyFixturesDescending);
+  const hasFilters = hasActiveFootyMissingNotesFilters();
+
+  footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
+  footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
+  if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
+  if (footyMissingNotesSummary) {
+    footyMissingNotesSummary.textContent = missingFixtures.length
+      ? `Showing ${visibleFixtures.length} of ${missingFixtures.length} ${missingFixtures.length === 1 ? "match" : "matches"} needing notes.`
+      : "";
+  }
+
+  footyMissingNotesList.setAttribute("aria-busy", "false");
+  footyMissingNotesList.innerHTML = visibleFixtures.length
+    ? `<div class="footy-list footy-list--calendar-weeks">${visibleFixtures.map(renderFootyFixture).join("")}</div>`
+    : `<p class="table-message">${missingFixtures.length && hasFilters
+      ? "No matches needing notes match the current filters."
+      : "All past matches in your followed-team competitions have match notes."}</p>`;
+}
+
+function getFootyMissingNotesFixtures(schedule = {}) {
+  const followedFixtures = getFootyScheduleFixtures(schedule);
+  const relevantCompetitionKeys = new Set(followedFixtures
+    .map((fixture) => getFootyCanonicalCompetition(fixture.league).key)
+    .filter(Boolean));
+  const competitionSchedules = getFootyCompetitionSchedules(schedule);
+  const fullCompetitionKeys = new Set();
+  const fixtures = [];
+
+  competitionSchedules.forEach((competitionSchedule) => {
+    const competition = competitionSchedule?.competition || {};
+    const competitionKey = competition.key || getFootyCanonicalCompetition(competition.name).key;
+
+    if (!competitionKey || !relevantCompetitionKeys.has(competitionKey)) {
+      return;
+    }
+
+    fullCompetitionKeys.add(competitionKey);
+    fixtures.push(...getFootyCompetitionFixtures(followedFixtures, competitionKey, competitionSchedules));
+  });
+
+  followedFixtures.forEach((fixture) => {
+    const competitionKey = getFootyCanonicalCompetition(fixture.league).key;
+    if (!fullCompetitionKeys.has(competitionKey)) fixtures.push(fixture);
+  });
+
+  const fixturesByMatch = new Map();
+  fixtures.forEach((fixture) => {
+    const matchId = String(fixture.matchId || "").trim();
+    if (!matchId) return;
+    const normalizedFixture = decorateFootyMissingNotesFixture(fixture, schedule);
+    const existing = fixturesByMatch.get(matchId);
+    fixturesByMatch.set(matchId, existing
+      ? mergeFootyCompetitionFixtures(existing, normalizedFixture)
+      : normalizedFixture);
+  });
+
+  return [...fixturesByMatch.values()]
+    .filter((fixture) => isFootyFixturePast(fixture) && !hasFootyMatchNoteData(fixture));
+}
+
+function decorateFootyMissingNotesFixture(fixture = {}, schedule = {}) {
+  const followedIds = new Set(followedTeamsController.getFollowedTeamIds().map(String));
+  const teams = new Map(getAllFootyScheduleTeams(schedule).map((team) => [String(team.id), team]));
+  const sides = [
+    { id: String(fixture.homeTeamId || ""), isHome: true, name: fixture.home },
+    { id: String(fixture.awayTeamId || ""), isHome: false, name: fixture.away },
+  ].filter((side) => followedIds.has(side.id));
+  const primary = sides[0];
+  const team = primary ? teams.get(primary.id) || {} : {};
+
+  return {
+    ...fixture,
+    followedTeamNames: sides.map((side) => teamNameForFootyMissingNotesSide(side, teams)),
+    isCompetitionFixture: Boolean(fixture.isCompetitionFixture || !fixture.teamName),
+    isHome: primary ? primary.isHome : null,
+    opponent: primary ? (primary.isHome ? fixture.away : fixture.home) : "",
+    teamBadge: primary ? team.badge || (primary.isHome ? fixture.homeBadge : fixture.awayBadge) || "" : "",
+    teamId: primary?.id || "",
+    teamName: primary ? teamNameForFootyMissingNotesSide(primary, teams) : "",
+  };
+}
+
+function teamNameForFootyMissingNotesSide(side, teams) {
+  return getFootyDisplayTeamName(teams.get(side.id)?.name || side.name || "");
+}
+
+function syncFootyMissingNotesFilters(fixtures = []) {
+  const competitions = [...new Set(fixtures.map((fixture) => getFootyCanonicalCompetition(fixture.league).name).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second));
+  const teams = [...new Set(fixtures.flatMap((fixture) => [fixture.home, fixture.away]).map(getFootyDisplayTeamName).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second));
+
+  syncFootyCustomSelect(footyMissingNotesCompetition, competitions, "All competitions");
+  syncFootyCustomSelect(footyMissingNotesTeam, teams, "All teams");
+  syncFootyMissingNotesMatchPeriodFilter(fixtures);
+}
+
+function syncFootyMissingNotesMatchPeriodFilter(fixtures = []) {
+  if (!footyMissingNotesMatchPeriod) return;
+  const selectedValue = footyMissingNotesMatchPeriod.value;
+  const recordsByKey = new Map();
+
+  fixtures.forEach((fixture) => {
+    const record = getFootyMatchPeriod(fixture);
+    if (record && !recordsByKey.has(record.key)) recordsByKey.set(record.key, record);
+  });
+
+  const records = [...recordsByKey.values()].sort((first, second) => (
+    first.sortGroup - second.sortGroup ||
+    first.sortNumber - second.sortNumber ||
+    first.label.localeCompare(second.label)
+  ));
+  footyMissingNotesMatchPeriod.innerHTML = [
+    '<option value="">All match weeks / days</option>',
+    ...records.map((record) => `<option value="${escapeHtml(record.key)}">${escapeHtml(record.label)}</option>`),
+  ].join("");
+  footyMissingNotesMatchPeriod.value = recordsByKey.has(selectedValue) ? selectedValue : "";
+  footyMissingNotesMatchPeriod.disabled = records.length === 0;
+}
+
+function getFilteredFootyMissingNotesFixtures(fixtures = []) {
+  const searchTerm = normalizeLookupName(footyMissingNotesSearch?.value || "");
+  const competition = getFootyCanonicalCompetition(footyMissingNotesCompetition?.value).key;
+  const team = getFootyTeamFilterKey(footyMissingNotesTeam?.value);
+  const matchPeriod = String(footyMissingNotesMatchPeriod?.value || "");
+  const dateRange = getFootyMissingNotesDateRange();
+
+  return fixtures.filter((fixture) => {
+    if (footyMissingNotesFriendlies && !footyMissingNotesFriendlies.checked && isFootyFriendlyFixture(fixture)) return false;
+    if (competition && getFootyCanonicalCompetition(fixture.league).key !== competition) return false;
+    if (team && ![fixture.home, fixture.away].some((name) => getFootyTeamFilterKey(name) === team)) return false;
+    if (matchPeriod && getFootyMatchPeriod(fixture)?.key !== matchPeriod) return false;
+    if (dateRange && !isFootyFixtureInDateRange(fixture, dateRange)) return false;
+    return !searchTerm || getFootyFixtureSearchText(fixture).includes(searchTerm);
+  });
+}
+
+function getFootyMissingNotesDateRange() {
+  const startValue = String(footyMissingNotesDateFrom?.value || "").trim();
+  const endValue = String(footyMissingNotesDateTo?.value || "").trim();
+  if (!startValue && !endValue) return null;
+  const start = startValue || endValue;
+  const end = endValue || startValue;
+  return start <= end ? { start, end } : { start: end, end: start };
+}
+
+function hasActiveFootyMissingNotesFilters() {
+  return Boolean(
+    String(footyMissingNotesSearch?.value || "").trim() ||
+    String(footyMissingNotesDateFrom?.value || "").trim() ||
+    String(footyMissingNotesDateTo?.value || "").trim() ||
+    String(footyMissingNotesCompetition?.value || "").trim() ||
+    String(footyMissingNotesMatchPeriod?.value || "").trim() ||
+    String(footyMissingNotesTeam?.value || "").trim() ||
+    (footyMissingNotesFriendlies && !footyMissingNotesFriendlies.checked)
+  );
 }
 
 function getFootyCustomScheduleRecords(schedule = {}) {
@@ -3781,6 +3985,7 @@ function toggleFootyFixtureExpansion(matchId) {
   }
 
   renderFootySchedule(siteData.footySchedule);
+  renderFootyMissingNotesPage();
   renderFootyCustomSchedule();
   renderFootyTeamPage();
 }
@@ -4557,6 +4762,10 @@ function openFootyNoteDialog(matchId) {
     return;
   }
 
+  if (footyNoteDialog.closest("[data-page]") && activePageName !== "footy") {
+    document.body.append(footyNoteDialog);
+  }
+
   activeFootyNoteMatchId = String(matchId || "").trim();
   const note = fixture.matchNote || {};
 
@@ -4630,6 +4839,10 @@ function closeFootyNoteDialog() {
 
   if (!footyNoteDialog) {
     return;
+  }
+
+  if (footyNoteDialog.closest("[data-page]") && activePageName !== "footy") {
+    document.body.append(footyNoteDialog);
   }
 
   if (typeof footyNoteDialog.close === "function") {
@@ -4886,6 +5099,8 @@ async function saveFootyMatchNoteFromDialog() {
     upsertFootyMatchNote(savedNote);
     updateFootyFixtureMatchNote(savedNote);
     renderFootySchedule(siteData.footySchedule);
+    renderFootyMissingNotesPage();
+    if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
     closeFootyNoteDialog();
   } catch (error) {
     setFootyNoteStatus(error.message || "Unable to save match note.", true);
@@ -11645,6 +11860,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
 
+  if (pageName === "footy-missing-notes") {
+    renderFootyMissingNotesPage();
+    return;
+  }
+
   if (pageName === "footy-custom-schedule") {
     if (siteData.footySchedule) renderFootyCustomSchedule();
     else if (footyCustomScheduleList) footyCustomScheduleList.innerHTML = renderLoadingMessage("Loading teams and matches...");
@@ -13137,7 +13357,7 @@ function handleFootyFixtureListKeydown(event) {
   toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
 }
 
-[footyScheduleList, footyTeamContent, footyCustomScheduleList].forEach((container) => {
+[footyScheduleList, footyTeamContent, footyCustomScheduleList, footyMissingNotesList].forEach((container) => {
   container?.addEventListener("click", handleFootyFixtureListClick);
   container?.addEventListener("keydown", handleFootyFixtureListKeydown);
 });
@@ -13453,6 +13673,24 @@ footyNoteForm?.addEventListener("keydown", (event) => {
 footyFilterToggle?.addEventListener("click", () => {
   shouldShowFootyFilters = !shouldShowFootyFilters;
   renderFootySchedule(siteData.footySchedule);
+});
+
+footyMissingNotesFilterToggle?.addEventListener("click", () => {
+  shouldShowFootyMissingNotesFilters = !shouldShowFootyMissingNotesFilters;
+  renderFootyMissingNotesPage();
+});
+
+[
+  footyMissingNotesSearch,
+  footyMissingNotesDateFrom,
+  footyMissingNotesDateTo,
+  footyMissingNotesCompetition,
+  footyMissingNotesMatchPeriod,
+  footyMissingNotesTeam,
+  footyMissingNotesFriendlies,
+].forEach((control) => {
+  control?.addEventListener("input", renderFootyMissingNotesPage);
+  control?.addEventListener("change", renderFootyMissingNotesPage);
 });
 
 footyCustomFilterToggle?.addEventListener("click", () => {
@@ -14853,7 +15091,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -15506,9 +15744,9 @@ function renderManagerWorkflow(managerId) {
     return;
   }
 
-  const drafts = siteData.portalDrafts || [];
+  const drafts = siteData.portalDrafts;
 
-  if (!drafts.length) {
+  if (!Array.isArray(drafts)) {
     workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading notifications...</p></article>`;
     return;
   }
@@ -15529,11 +15767,38 @@ function renderManagerWorkflow(managerId) {
 
 function buildManagerWorkflowItems(managerId) {
   return [
+    ...buildFootyMissingNotesWorkflowItems(),
     ...buildFootyTeamSelectionWorkflowItems(),
     ...buildDraftWorkflowItems(managerId),
     ...buildFantasyCriticWorkflowItems(managerId),
     ...buildFormulaOneWeeklyWorkflowItems(managerId),
   ];
+}
+
+function buildFootyMissingNotesWorkflowItems() {
+  const selection = followedTeamsController.getSelectionState();
+
+  if (!isCurrentManagerAdmin() || !selection.loaded || !siteData.footySchedule || !hasFootyMatchNotesLoaded()) {
+    return [];
+  }
+
+  const fixtures = getFootyMissingNotesFixtures(siteData.footySchedule);
+  if (!fixtures.length) return [];
+  const competitionCount = new Set(fixtures
+    .map((fixture) => getFootyCanonicalCompetition(fixture.league).key)
+    .filter(Boolean)).size;
+
+  return [{
+    actionLabel: "Review matches",
+    description: `${fixtures.length} past ${fixtures.length === 1 ? "match has" : "matches have"} no saved score or match notes.`,
+    dueDate: "",
+    id: "footy-missing-match-notes",
+    priority: "1",
+    status: `${competitionCount} ${competitionCount === 1 ? "competition" : "competitions"}`,
+    target: "footy-missing-notes",
+    title: "Match notes need updating",
+    url: "",
+  }];
 }
 
 function buildFootyTeamSelectionWorkflowItems() {
@@ -17154,6 +17419,10 @@ function getPageDataScope(pageName = "") {
     return "account-settings";
   }
 
+  if (page === "footy-missing-notes") {
+    return "footy-missing-notes";
+  }
+
   if (page === "footy" || page === "footy-custom-schedule" || page.startsWith("footy-team-") || page === "footy-goal-assists" || page === "footy-perfect" || page === "footy-seen") {
     return "footy";
   }
@@ -17292,6 +17561,10 @@ function loadPageData(scope) {
     return followedTeamsController.load();
   }
 
+  if (scope === "footy-missing-notes") {
+    return ensureFootyMissingNotesData();
+  }
+
   if (scope === "footy") {
     return ensureFootyData();
   }
@@ -17412,6 +17685,11 @@ function renderPageDataError(scope, error) {
     renderFootyScheduleError(error);
   }
 
+  if (scope === "footy-missing-notes" && footyMissingNotesList) {
+    footyMissingNotesList.setAttribute("aria-busy", "false");
+    footyMissingNotesList.innerHTML = `<p class="table-message">Unable to load missing match notes: ${escapeHtml(message)}</p>`;
+  }
+
   if (scope === "next") {
     renderNextListError(error);
   }
@@ -17497,6 +17775,8 @@ function ensureFootyData() {
           renderFootySchedule(siteData.footySchedule);
           renderFootyTeamPage();
         }
+        renderFootyMissingNotesPage();
+        if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
         console.info("Box This Lap footy match notes loaded", notes);
       })
       .catch((error) => {
@@ -17986,7 +18266,7 @@ function ensureManagerHubData() {
   }
 
   return ensureSharedData("manager-hub", async () => {
-    await Promise.allSettled([
+    const loads = [
       ensurePortalData(),
       ensureWorldCupStandingsData(),
       ensureFantasyCriticData(2025),
@@ -17998,10 +18278,23 @@ function ensureManagerHubData() {
       ensureFormulaOneData(2026, "questions"),
       ensureFormulaOneData(2025, "weekly-results"),
       ensureFormulaOneData(2026, "weekly-results"),
-    ]);
+    ];
+    if (isCurrentManagerAdmin()) loads.push(ensureFootyMissingNotesData());
+    await Promise.allSettled(loads);
     renderManagerHub();
     return true;
   });
+}
+
+async function ensureFootyMissingNotesData() {
+  if (!isCurrentManagerAdmin()) return [];
+  await Promise.all([
+    followedTeamsController.load(),
+    ensureFootyData(),
+  ]);
+  await ensureFootyMatchNotes({ force: shouldRefreshFootyMatchNotes() });
+  renderFootyMissingNotesPage();
+  return getFootyMissingNotesFixtures(siteData.footySchedule);
 }
 
 populateNextTimeOptions();

@@ -842,7 +842,7 @@ function renderFootySchedule(schedule) {
 }
 
 function renderFootyMissingNotesPage() {
-  if (!footyMissingNotesList || !isCurrentManagerAdmin()) {
+  if (!footyMissingNotesList || !isCurrentManagerAdmin() || !shouldRenderPageSection("footy-missing-notes")) {
     return;
   }
 
@@ -1376,7 +1376,6 @@ function renderFootyTeamPage(pageName = activePageName) {
     .filter((fixture) => isSameFootyTeamName(fixture.teamName, team.name));
   const upcomingFixtures = fixtures.filter((fixture) => !isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures);
   const pastFixtures = fixtures.filter((fixture) => isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures).reverse();
-  const competitivePastFixtureCount = pastFixtures.filter((fixture) => !isFootyFriendlyFixture(fixture)).length;
   const teamSlug = getFootyTeamSlug(team.name);
   const nextFixtureLimit = footyTeamFixtureLimits.get(teamSlug) || 5;
   const nextFixtures = upcomingFixtures.slice(0, nextFixtureLimit);
@@ -1420,7 +1419,7 @@ function renderFootyTeamPage(pageName = activePageName) {
         </div>
         <div>
           <dt>Past</dt>
-          <dd>${escapeHtml(String(competitivePastFixtureCount))}</dd>
+          <dd>${escapeHtml(String(pastFixtures.length))}</dd>
         </div>
         ${projectedPointsMarkup}
       </dl>

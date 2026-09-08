@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.08.20.08";
+      window.BOX_THIS_LAP_VERSION = "2026.09.08.22.21";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609082008">
+    <link rel="stylesheet" href="styles.css?v=202609082221">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1154,6 +1154,39 @@
         <dialog class="footy-note-dialog footy-trading-card-dialog" id="footy-trading-card-dialog">
           <form class="footy-note-form footy-trading-card-form" method="dialog">
             <div id="footy-trading-card-content" class="footy-trading-card-content"></div>
+          </form>
+        </dialog>
+        <dialog class="footy-note-dialog footy-roster-editor-dialog" id="footy-roster-editor-dialog" data-admin-only hidden>
+          <form class="footy-note-form footy-roster-editor-form" id="footy-roster-editor-form">
+            <div class="dialog-heading">
+              <div><span class="eyebrow" id="footy-roster-editor-season"></span><h2 id="footy-roster-editor-title">Edit player</h2></div>
+              <button class="icon-action-button" id="footy-roster-editor-close" type="button" aria-label="Close roster editor" title="Close">×</button>
+            </div>
+            <input id="footy-roster-editor-id" type="hidden">
+            <div class="footy-roster-editor-fields">
+              <label><span>Player</span><input id="footy-roster-editor-name" required maxlength="300"></label>
+              <label><span>Position</span><input id="footy-roster-editor-position" maxlength="100"></label>
+              <label><span>Number</span><input id="footy-roster-editor-number" maxlength="20"></label>
+              <label><span>Appearances</span><input id="footy-roster-editor-appearances" maxlength="40"></label>
+              <label><span>Birthday</span><input id="footy-roster-editor-birthday" type="date"></label>
+              <label><span>Home country</span><input id="footy-roster-editor-country" maxlength="100"></label>
+              <label><span>Year joined</span><input id="footy-roster-editor-joined" maxlength="20"></label>
+              <label><span>Club joined from</span><input id="footy-roster-editor-from" maxlength="200"></label>
+              <label><span>Profile image</span><input id="footy-roster-editor-profile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+              <label><span>Trading-card image</span><input id="footy-roster-editor-card" type="file" accept="image/png,image/jpeg,image/webp"></label>
+            </div>
+            <div class="footy-roster-editor-checks">
+              <label><input id="footy-roster-editor-academy" type="checkbox"><span>Academy product</span></label>
+              <label><input id="footy-roster-editor-new" type="checkbox"><span>New player</span></label>
+              <label><input id="footy-roster-editor-transfer" type="checkbox"><span>Transfer out</span></label>
+              <label id="footy-roster-editor-default-profile-row" hidden><input id="footy-roster-editor-default-profile" type="checkbox"><span>Use default profile image</span></label>
+              <label id="footy-roster-editor-default-card-row" hidden><input id="footy-roster-editor-default-card" type="checkbox"><span>Use default card image</span></label>
+              <label id="footy-roster-editor-keep-row" hidden><input id="footy-roster-editor-keep" type="checkbox"><span>Keep manually if provider omits player</span></label>
+              <label><input id="footy-roster-editor-archive" type="checkbox"><span>Archive from this season</span></label>
+            </div>
+            <p class="table-message footy-roster-editor-source" id="footy-roster-editor-source"></p>
+            <p class="form-status" id="footy-roster-editor-status" role="status"></p>
+            <div class="dialog-actions"><button class="footer-copy-link" id="footy-roster-editor-cancel" type="button">Cancel</button><button class="action-button" type="submit">Save player</button></div>
           </form>
         </dialog>
       </section>
@@ -2822,6 +2855,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609082008"></script>
+    <script type="module" src="script.js?v=202609082221"></script>
   </body>
 </html>

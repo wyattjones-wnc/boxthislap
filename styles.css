@@ -5593,6 +5593,28 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 14px;
 }
 
+.footy-roster-toolbar,
+.footy-roster-admin-actions {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.footy-roster-toolbar > label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 850;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+.footy-roster-toolbar select {
+  min-width: 118px;
+}
+
 .footy-team-player-grid {
   display: grid;
   gap: 12px;
@@ -5619,6 +5641,46 @@ body.has-shell-stale-warning .stale-shell-alert {
   min-height: 176px;
   overflow: hidden;
   position: relative;
+}
+
+.footy-team-player-card.needs-review {
+  border-color: color-mix(in srgb, #d88a00 66%, var(--line));
+}
+
+.footy-team-player-card.is-archived {
+  filter: grayscale(1);
+  opacity: 0.54;
+}
+
+.footy-roster-edit-player {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: flex;
+  font-size: 1rem;
+  height: 34px;
+  justify-content: center;
+  left: 8px;
+  padding: 0;
+  position: absolute;
+  top: 8px;
+  width: 34px;
+  z-index: 3;
+}
+
+.footy-roster-review-badge {
+  background: #9a5c00;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 950;
+  left: 8px;
+  padding: 4px 7px;
+  position: absolute;
+  top: 48px;
+  z-index: 2;
 }
 
 .footy-team-player-card--loading {
@@ -5751,6 +5813,52 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: auto;
 }
 
+.footy-roster-editor-dialog {
+  max-width: min(720px, calc(100vw - 24px));
+  width: 100%;
+}
+
+.footy-roster-editor-fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.footy-roster-editor-fields label,
+.footy-roster-editor-checks {
+  display: grid;
+  gap: 6px;
+}
+
+.footy-roster-editor-fields label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.footy-roster-editor-checks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.footy-roster-editor-checks label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.footy-roster-editor-source {
+  margin: 0;
+  text-align: left;
+}
+
+@media (max-width: 560px) {
+  .footy-roster-editor-fields,
+  .footy-roster-editor-checks {
+    grid-template-columns: 1fr;
+  }
+}
+
 .footy-trading-card-form {
   background: transparent;
   border: 0;
@@ -5845,6 +5953,10 @@ body.has-shell-stale-warning .stale-shell-alert {
 .trading-card-background {
   object-fit: fill;
   z-index: 0;
+}
+
+.trading-card-background.is-default {
+  object-fit: cover;
 }
 
 .trading-card-frame {

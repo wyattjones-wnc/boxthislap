@@ -1,0 +1,28 @@
+name: Update Footy Rosters
+
+on:
+  schedule:
+    - cron: "42 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-footy-rosters-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update-footy-rosters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Synchronize provider and curated rosters
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          FOOTY_ROSTER_SYNC_ENDPOINT: ${{ secrets.FOOTY_ROSTER_SYNC_ENDPOINT }}
+          FOOTY_ROSTER_SYNC_TOKEN: ${{ secrets.FOOTY_ROSTER_SYNC_TOKEN }}
+        run: node scripts/update-footy-rosters.mjs

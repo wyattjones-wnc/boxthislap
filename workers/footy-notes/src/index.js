@@ -18,6 +18,44 @@ export default {
         return json({ ok: true, service: "box-this-lap-footy-notes" }, 200, cors);
       }
 
+      const rosterMediaRoute = url.pathname.match(/^\/media\/rosters\/(.+)$/);
+      if (request.method === "GET" && rosterMediaRoute) {
+        return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), cors);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/rosters") {
+        return json({ ok: true, rosters: await listRosters(env, url.searchParams) }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/rosters/sync") {
+        requireRosterSync(request, env);
+        const result = await syncRosters(env, await readBody(request));
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/roster-players") {
+        const managerId = await requireAdmin(request, env);
+        return json({ ok: true, player: await createRosterPlayer(env, await readBody(request), managerId) }, 201, cors);
+      }
+
+      const rosterMediaMutation = url.pathname.match(/^\/api\/roster-players\/([^/]+)\/media(?:\/([^/]+))?$/);
+      if (rosterMediaMutation && ["POST", "DELETE"].includes(request.method)) {
+        const managerId = await requireAdmin(request, env);
+        const playerId = decodeURIComponent(rosterMediaMutation[1]);
+        const kind = rosterMediaMutation[2] ? decodeURIComponent(rosterMediaMutation[2]) : "";
+        const player = request.method === "POST"
+          ? await saveRosterMedia(env, playerId, await readBody(request), managerId)
+          : await deleteRosterMedia(env, playerId, kind, managerId);
+        return json({ ok: true, player }, 200, cors);
+      }
+
+      const rosterPlayerRoute = url.pathname.match(/^\/api\/roster-players\/([^/]+)$/);
+      if (request.method === "PUT" && rosterPlayerRoute) {
+        const managerId = await requireAdmin(request, env);
+        const player = await updateRosterPlayer(env, decodeURIComponent(rosterPlayerRoute[1]), await readBody(request), managerId);
+        return json({ ok: true, player }, 200, cors);
+      }
+
       if (request.method === "GET" && url.pathname === "/api/match-notes") {
         return json({ ok: true, notes: await listMatchNotes(env) }, 200, cors);
       }
@@ -90,6 +128,204 @@ export default {
     }
   },
 };
+
+const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "profileImage", "cardImage"];
+
+async function listRosters(env, searchParams) {
+  const teamId = cleanText(searchParams.get("teamId"), 80, "Team ID");
+  const season = cleanText(searchParams.get("season"), 20, "Season");
+  const conditions = searchParams.get("includeArchived") === "1" ? ["1 = 1"] : ["p.status <> 'archived'"];
+  const bindings = [];
+  if (teamId) { conditions.push("p.team_id = ?"); bindings.push(teamId); }
+  if (season) { conditions.push("p.season = ?"); bindings.push(season); }
+  if (!season && searchParams.get("includeInactive") !== "1") conditions.push("(s.is_active = 1 OR s.is_active IS NULL)");
+  const result = await env.DB.prepare(`
+    SELECT p.*, COALESCE(s.is_active, 0) AS is_active
+    FROM footy_roster_players p
+    LEFT JOIN footy_roster_seasons s ON s.team_id = p.team_id AND s.season = p.season
+    WHERE ${conditions.join(" AND ")}
+    ORDER BY p.team_id, p.season DESC, p.status, p.created_at
+  `).bind(...bindings).all();
+  const groups = new Map();
+  for (const row of result.results || []) {
+    const key = `${row.team_id}|${row.season}`;
+    if (!groups.has(key)) groups.set(key, { teamId: String(row.team_id), season: String(row.season), active: Boolean(row.is_active), players: [] });
+    groups.get(key).players.push(mapRosterPlayer(row));
+  }
+  return [...groups.values()];
+}
+
+async function syncRosters(env, body) {
+  if (!Array.isArray(body.rosters) || body.rosters.length > 100) throw httpError(400, "Rosters must be a list.");
+  const now = new Date().toISOString();
+  let added = 0;
+  let updated = 0;
+  let reviewDepartures = 0;
+  for (const rosterValue of body.rosters) {
+    const teamId = requireText(rosterValue?.teamId, 80, "Team ID");
+    const season = requireText(rosterValue?.season, 20, "Season");
+    const players = Array.isArray(rosterValue?.players) ? rosterValue.players : [];
+    if (players.length > 200) throw httpError(400, "A roster has too many players.");
+    await env.DB.batch([
+      env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId),
+      env.DB.prepare(`INSERT INTO footy_roster_seasons (team_id, season, is_active, last_synced_at, updated_at)
+        VALUES (?, ?, 1, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET is_active = 1, last_synced_at = excluded.last_synced_at, updated_at = excluded.updated_at`).bind(teamId, season, now, now),
+    ]);
+    const seenKeys = [];
+    for (const value of players) {
+      const provider = cleanText(value?.provider, 80, "Provider") || "manual-import";
+      const providerPlayerId = cleanText(value?.providerPlayerId, 120, "Provider player ID");
+      const providerData = normalizeRosterData(value?.providerData || value);
+      if (!providerData.name) continue;
+      const playerKey = cleanText(value?.playerKey, 160, "Player key") || `${provider}:${providerPlayerId || slugRosterValue(providerData.name)}`;
+      const existing = await env.DB.prepare("SELECT id FROM footy_roster_players WHERE team_id = ? AND season = ? AND player_key = ?").bind(teamId, season, playerKey).first();
+      const id = existing?.id || crypto.randomUUID();
+      const seedOverrides = existing ? null : normalizeRosterData(value?.seedOverrides || {});
+      const manual = value?.manual ? 1 : 0;
+      await env.DB.prepare(`INSERT INTO footy_roster_players
+        (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual, source_seen_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+        ON CONFLICT(team_id, season, player_key) DO UPDATE SET provider = excluded.provider, provider_player_id = excluded.provider_player_id,
+          provider_data = excluded.provider_data,
+          status = CASE WHEN footy_roster_players.status = 'archived' THEN 'archived' ELSE 'active' END,
+          source_seen_at = excluded.source_seen_at, updated_at = excluded.updated_at`
+      ).bind(id, teamId, season, playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(seedOverrides || {}), manual, now, now).run();
+      seenKeys.push(playerKey);
+      existing ? updated += 1 : added += 1;
+    }
+    const activeProviderRows = await env.DB.prepare("SELECT id, player_key FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
+    const seen = new Set(seenKeys);
+    for (const row of activeProviderRows.results || []) {
+      if (seen.has(row.player_key)) continue;
+      await env.DB.prepare("UPDATE footy_roster_players SET status = 'review_departure', updated_at = ? WHERE id = ?").bind(now, row.id).run();
+      reviewDepartures += 1;
+    }
+  }
+  return { added, updated, reviewDepartures };
+}
+
+async function createRosterPlayer(env, body, managerId) {
+  const teamId = requireText(body?.teamId, 80, "Team ID");
+  const season = requireText(body?.season, 20, "Season");
+  const overrides = normalizeRosterData(body?.overrides || body);
+  if (!overrides.name) throw httpError(400, "Player name is required.");
+  const id = crypto.randomUUID();
+  const playerKey = `manual:${id}`;
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO footy_roster_seasons (team_id, season, is_active, updated_at) VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+      ON CONFLICT(team_id, season) DO NOTHING`).bind(teamId, season),
+    env.DB.prepare(`INSERT INTO footy_roster_players
+      (id, team_id, season, player_key, overrides, status, manual, updated_by)
+      VALUES (?, ?, ?, ?, ?, 'active', 1, ?)`
+    ).bind(id, teamId, season, playerKey, JSON.stringify(overrides), managerId),
+  ]);
+  return getRosterPlayer(env, id);
+}
+
+async function updateRosterPlayer(env, id, body, managerId) {
+  const existing = await getRosterPlayerRow(env, id);
+  if (!existing) throw httpError(404, "Roster player was not found.");
+  const overrides = normalizeRosterData(body?.overrides || body);
+  const status = ["active", "review_departure", "archived"].includes(body?.status) ? body.status : existing.status;
+  const manual = body?.keepManually ? 1 : Number(existing.manual || 0);
+  if (!(overrides.name || safeJson(existing.provider_data).name)) throw httpError(400, "Player name is required.");
+  await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, status = ?, manual = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
+    .bind(JSON.stringify(overrides), status, manual, managerId, id).run();
+  return getRosterPlayer(env, id);
+}
+
+async function saveRosterMedia(env, id, body, managerId) {
+  if (!env.ROSTER_MEDIA) throw new Error("Roster media storage is not configured.");
+  const row = await getRosterPlayerRow(env, id);
+  if (!row) throw httpError(404, "Roster player was not found.");
+  const kind = ["profile", "card"].includes(body?.kind) ? body.kind : "";
+  if (!kind) throw httpError(400, "Image kind must be profile or card.");
+  const match = String(body?.dataUrl || "").match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) throw httpError(400, "Upload a PNG, JPEG, or WebP image.");
+  const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
+  if (bytes.byteLength > 5 * 1024 * 1024) throw httpError(413, "Roster images must be 5 MB or smaller.");
+  const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[match[1]];
+  const key = `${row.team_id}/${row.season}/${id}/${kind}.${extension}`;
+  const overrides = safeJson(row.overrides);
+  const field = kind === "profile" ? "profileImage" : "cardImage";
+  const previousPath = String(overrides[field] || "").split("?")[0];
+  const previousKey = previousPath.startsWith("/media/rosters/") ? previousPath.slice("/media/rosters/".length) : "";
+  if (previousKey && previousKey !== key) await env.ROSTER_MEDIA.delete(previousKey);
+  await env.ROSTER_MEDIA.put(key, bytes, { httpMetadata: { contentType: match[1], cacheControl: "public, max-age=31536000, immutable" } });
+  overrides[field] = `/media/rosters/${key}?v=${Date.now()}`;
+  await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
+    .bind(JSON.stringify(overrides), managerId, id).run();
+  return getRosterPlayer(env, id);
+}
+
+async function deleteRosterMedia(env, id, kind, managerId) {
+  if (!env.ROSTER_MEDIA) throw new Error("Roster media storage is not configured.");
+  if (!["profile", "card"].includes(kind)) throw httpError(400, "Image kind must be profile or card.");
+  const row = await getRosterPlayerRow(env, id);
+  if (!row) throw httpError(404, "Roster player was not found.");
+  const overrides = safeJson(row.overrides);
+  const field = kind === "profile" ? "profileImage" : "cardImage";
+  const path = String(overrides[field] || "").split("?")[0];
+  const key = path.startsWith("/media/rosters/") ? path.slice("/media/rosters/".length) : "";
+  if (key) await env.ROSTER_MEDIA.delete(key);
+  delete overrides[field];
+  await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
+    .bind(JSON.stringify(overrides), managerId, id).run();
+  return getRosterPlayer(env, id);
+}
+
+async function getRosterMedia(env, key, cors) {
+  if (!env.ROSTER_MEDIA || !key || key.includes("..")) return json({ ok: false, error: "Image was not found." }, 404, cors);
+  const object = await env.ROSTER_MEDIA.get(key);
+  if (!object) return json({ ok: false, error: "Image was not found." }, 404, cors);
+  const headers = new Headers(cors);
+  object.writeHttpMetadata(headers);
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.delete("Content-Type");
+  headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
+  return new Response(object.body, { headers });
+}
+
+async function getRosterPlayerRow(env, id) {
+  return env.DB.prepare("SELECT * FROM footy_roster_players WHERE id = ?").bind(id).first();
+}
+
+async function getRosterPlayer(env, id) {
+  const row = await getRosterPlayerRow(env, id);
+  return row ? mapRosterPlayer(row) : null;
+}
+
+function mapRosterPlayer(row) {
+  const providerData = safeJson(row.provider_data);
+  const overrides = safeJson(row.overrides);
+  const effective = { ...providerData, ...overrides };
+  return { ...effective, id: String(row.id), teamId: String(row.team_id), season: String(row.season), playerKey: String(row.player_key), provider: String(row.provider || ""), providerPlayerId: String(row.provider_player_id || ""), providerData, overrides, status: String(row.status), manual: Boolean(row.manual), reviewDeparture: row.status === "review_departure" };
+}
+
+function normalizeRosterData(value) {
+  const result = {};
+  for (const field of ROSTER_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(value || {}, field)) continue;
+    result[field] = ["fromAcademy", "isNew", "transferOut"].includes(field)
+      ? Boolean(value[field])
+      : cleanText(value[field], field.includes("Image") ? 3000 : 300, field);
+  }
+  return result;
+}
+
+function safeJson(value) {
+  try { const parsed = JSON.parse(String(value || "{}")); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}; } catch { return {}; }
+}
+
+function slugRosterValue(value) {
+  return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function requireRosterSync(request, env) {
+  const expected = String(env.ROSTER_SYNC_TOKEN || "");
+  const supplied = String(request.headers.get("X-Roster-Sync-Token") || "");
+  if (!expected || !supplied || supplied !== expected) throw httpError(401, "Roster synchronization is not authorized.");
+}
 
 async function listSeenMatches(env) {
   const result = await env.DB.prepare(`
@@ -440,7 +676,7 @@ async function saveMatchNote(env, matchId, body, managerId) {
 
 async function requireAdmin(request, env) {
   const authorization = request.headers.get("Authorization") || "";
-  if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in as an admin to edit match notes.");
+  if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in as an admin to edit Footy data.");
   if (!env.MANAGER_AUTH) throw new Error("Manager authorization is not configured.");
   const accessToken = authorization.slice(7);
 
@@ -461,7 +697,7 @@ async function requireAdmin(request, env) {
     .map((entry) => entry.trim())
     .filter(Boolean));
 
-  if (!adminIds.has(managerId)) throw httpError(403, "Only an admin can edit match notes.");
+  if (!adminIds.has(managerId)) throw httpError(403, "Only an admin can edit Footy data.");
   return managerId;
 }
 
@@ -573,7 +809,7 @@ function allowedOrigin(origin, env) {
 function corsHeaders(origin, env) {
   const headers = {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     Vary: "Origin",

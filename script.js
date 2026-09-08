@@ -4762,7 +4762,7 @@ function openFootyNoteDialog(matchId) {
     return;
   }
 
-  if (footyNoteDialog.closest("[data-page]") && activePageName !== "footy") {
+  if (footyNoteDialog.parentElement !== document.body) {
     document.body.append(footyNoteDialog);
   }
 
@@ -4839,10 +4839,6 @@ function closeFootyNoteDialog() {
 
   if (!footyNoteDialog) {
     return;
-  }
-
-  if (footyNoteDialog.closest("[data-page]") && activePageName !== "footy") {
-    document.body.append(footyNoteDialog);
   }
 
   if (typeof footyNoteDialog.close === "function") {

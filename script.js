@@ -3,7 +3,8 @@ import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
-} from "./modules/footyMatchActions.js?v=202609060137";
+  shouldOfferFootyMatchNotification,
+} from "./modules/footyMatchActions.js?v=202609080422";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -376,7 +377,7 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202608302030";
 import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202608310007";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609080422";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202609050001";
 import {
   formatUpdatedTime,
@@ -3484,18 +3485,20 @@ function renderFootyMatchNotificationAction(fixture = {}) {
   if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixtureStarted(fixture)) {
     return "";
   }
-  const isFollowed = isFootyFixtureFollowed(fixture, followedTeamsController.getFollowedTeamIds());
-  const isSelected = getFootyMatchNotificationIdSet().has(matchId);
+  const followedNotificationState = followedTeamsController.getNotificationSelectionState();
+  if (!shouldOfferFootyMatchNotification(fixture, {
+    followedTeamsLoaded: followedNotificationState.loaded,
+    matchNotificationIds: siteData.footyMatchNotificationIds,
+    matchNotificationsLoaded: siteData.footyMatchNotificationsManagerId === getCurrentManagerId(),
+    notificationTeamIds: followedNotificationState.teamIds,
+  })) {
+    return "";
+  }
   const isPending = pendingFootyMatchNotificationIds.has(matchId);
-  const isActive = isFollowed || isSelected;
-  const label = isFollowed
-    ? "Match alerts included because you follow a team"
-    : isSelected
-      ? "Turn off alerts for this match"
-      : "Turn on alerts for this match";
+  const label = "Turn on alerts for this match";
 
   return `
-    <button class="icon-action-button footy-match-notification-button${isActive ? " is-active" : ""}${isFollowed ? " is-inherited" : ""}${isPending ? " is-loading" : ""}" type="button" data-footy-match-notification="${escapeHtml(matchId)}" aria-label="${label}" title="${label}" aria-pressed="${String(isActive)}"${isFollowed || isPending ? " disabled" : ""}>
+    <button class="icon-action-button footy-match-notification-button${isPending ? " is-loading" : ""}" type="button" data-footy-match-notification="${escapeHtml(matchId)}" aria-label="${label}" title="${label}" aria-pressed="false"${isPending ? " disabled" : ""}>
       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
         <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"></path>
         <path d="M13.7 21a2 2 0 0 1-3.4 0"></path>

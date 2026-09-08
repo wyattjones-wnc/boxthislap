@@ -33,6 +33,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     pickerPage: 1,
     revision: 0,
     savedIds: [],
+    savedNotificationIds: [],
     savedPersonalIds: [],
     saving: false,
     usingDefault: true,
@@ -76,6 +77,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.pickerPage = 1;
     state.revision = 0;
     state.savedIds = [];
+    state.savedNotificationIds = [];
     state.savedPersonalIds = [];
     state.saving = false;
     state.usingDefault = true;
@@ -105,6 +107,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       state.revision = Number(preferences?.revision || 0);
       state.usingDefault = !managerId || Boolean(preferences?.usingDefault);
       state.savedIds = effectiveTeamIds(state.defaultIds, preferences);
+      state.savedNotificationIds = notificationTeamIds(preferences);
       state.savedPersonalIds = personalTeamIds(state.savedIds, state.usingDefault);
       state.pendingIds = [...state.savedPersonalIds];
       state.loadedManagerId = loadKey;
@@ -130,6 +133,14 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       ...(teams.get(id) || { active: false, badge: "", id, leagues: [], name: `Unavailable team (${id})` }),
       priority: index + 1,
     }));
+  }
+
+  function getNotificationSelectionState() {
+    const managerId = String(getManagerId() || "").trim();
+    return {
+      loaded: Boolean(managerId) && state.loadedManagerId === managerId,
+      teamIds: [...state.savedNotificationIds],
+    };
   }
 
   function getSelectionState() {
@@ -385,6 +396,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
 
   function applyPreference(response = {}) {
     state.savedIds = preferenceTeamIds(response);
+    state.savedNotificationIds = notificationTeamIds(response);
     state.revision = Number(response.revision ?? state.revision + 1);
     state.usingDefault = Boolean(response.usingDefault);
     state.savedPersonalIds = personalTeamIds(state.savedIds, state.usingDefault);
@@ -429,11 +441,18 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function setDialogStatus(message, error = false) { if (dialogStatus) { dialogStatus.textContent = message || ""; dialogStatus.classList.toggle("is-error", error); } }
   function syncDialogAction() { if (dialogDone) { dialogDone.disabled = state.saving; dialogDone.textContent = state.saving ? "Saving…" : hasChanges() ? "Save teams" : "Done"; } }
 
-  return { getFollowedTeamIds, getFollowedTeams, getSelectionState, load, openPicker, render, reset, resetToDefault };
+  return { getFollowedTeamIds, getFollowedTeams, getNotificationSelectionState, getSelectionState, load, openPicker, render, reset, resetToDefault };
 }
 
 function preferenceTeamIds(preferences = {}) {
   return [...(preferences.teams || [])]
+    .sort((left, right) => left.priority - right.priority)
+    .map((team) => String(team.teamId));
+}
+
+function notificationTeamIds(preferences = {}) {
+  return [...(preferences?.teams || [])]
+    .filter((team) => team.notificationsEnabled !== false)
     .sort((left, right) => left.priority - right.priority)
     .map((team) => String(team.teamId));
 }

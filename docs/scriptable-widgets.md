@@ -51,7 +51,7 @@ Both widgets continue to request automatic background refreshes. iOS decides whe
 
 ## Footy
 
-Footy shows the next three matches in a medium widget or the next six matches in a large widget. Its optional widget parameter is:
+Footy shows the next three matches in a medium widget or the next eight matches in a large widget. Its optional widget parameter is:
 
 ```text
 dev

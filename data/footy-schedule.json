@@ -8,7 +8,7 @@
     "updatedAt": "2026-09-08T16:44:37.416Z",
     "oldestTeamUpdatedAt": "2026-09-08T16:44:37.416Z",
     "competitionCount": 10,
-    "competitionFixtureCount": 2125,
+    "competitionFixtureCount": 2123,
     "teamCount": 7,
     "fixtureCount": 211,
     "statuses": {
@@ -53833,7 +53833,7 @@
         "type": "LEAGUE"
       },
       "errors": [],
-      "fixtureCount": 510,
+      "fixtureCount": 509,
       "fixtures": [
         {
           "away": "Charlotte FC",
@@ -65510,41 +65510,6 @@
           "awayTeamId": "team:houston-dynamo-fc"
         },
         {
-          "away": "D.C. United (result unknown)",
-          "awayBadge": "",
-          "date": "2026-09-05",
-          "home": "FC Cincinnati",
-          "homeBadge": "",
-          "id": "iCalendar:MLS-MAT-0009KD",
-          "isCompetitionFixture": true,
-          "leagueId": "",
-          "league": "MLS - Regular Season",
-          "round": "",
-          "season": "2026",
-          "source": "iCalendar",
-          "sourceIds": {
-            "iCalendar": "MLS-MAT-0009KD"
-          },
-          "sources": [
-            "iCalendar"
-          ],
-          "sourceDetail": "league-calendar-feed",
-          "status": "Scheduled",
-          "time": "23:30:00",
-          "timestamp": "2026-09-05T23:30:00Z",
-          "venue": "TQL Stadium, Cincinnati, OH",
-          "matchId": "footy_comp_icalendar_mls_mat_0009kd",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:fc-cincinnati",
-          "awayTeamId": "team:d-c-united-result-unknown"
-        },
-        {
           "away": "Colorado Rapids",
           "awayBadge": "",
           "date": "2026-09-05",
@@ -71821,7 +71786,7 @@
         }
       ],
       "notes": [
-        "Loaded the full available MLS schedule (510 matches)."
+        "Loaded the full available MLS schedule (509 matches)."
       ],
       "previousUpdatedAt": "2026-09-01T04:39:31.760Z",
       "sources": [
@@ -71846,43 +71811,8 @@
         "type": "CUP"
       },
       "errors": [],
-      "fixtureCount": 79,
+      "fixtureCount": 78,
       "fixtures": [
-        {
-          "away": "FC America CFL Spurs (result unknown)",
-          "awayBadge": "",
-          "date": "2026-03-17",
-          "home": "South Georgia Tormenta FC",
-          "homeBadge": "",
-          "id": "iCalendar:MLS-MAT-000A5W",
-          "isCompetitionFixture": true,
-          "leagueId": "",
-          "league": "U.S. Open Cup",
-          "round": "",
-          "season": "2026",
-          "source": "iCalendar",
-          "sourceIds": {
-            "iCalendar": "MLS-MAT-000A5W"
-          },
-          "sources": [
-            "iCalendar"
-          ],
-          "sourceDetail": "league-calendar-feed",
-          "status": "Scheduled",
-          "time": "22:00:00",
-          "timestamp": "2026-03-17T22:00:00Z",
-          "venue": "Tormenta Stadium, Statesboro, GA",
-          "matchId": "footy_comp_icalendar_mls_mat_000a5w",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:south-georgia-tormenta-fc",
-          "awayTeamId": "team:fc-america-cfl-spurs-result-unknown"
-        },
         {
           "away": "Northern Virginia FC",
           "awayBadge": "",
@@ -74623,7 +74553,7 @@
         }
       ],
       "notes": [
-        "Loaded the full available U.S. Open Cup schedule (79 matches)."
+        "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
       "previousUpdatedAt": "2026-09-01T04:39:31.760Z",
       "sources": [
@@ -78105,19 +78035,6 @@
     },
     {
       "active": true,
-      "badge": "",
-      "id": "team:d-c-united-result-unknown",
-      "leagues": [
-        {
-          "id": "mls",
-          "name": "MLS"
-        }
-      ],
-      "name": "D.C. United (result unknown)",
-      "prettyName": "D.C. United (result unknown)"
-    },
-    {
-      "active": true,
       "badge": "https://crests.football-data.org/263.png",
       "id": "team:deportivo-alaves",
       "leagues": [
@@ -78274,19 +78191,6 @@
       ],
       "name": "FC America CFL Spurs",
       "prettyName": "FC America CFL Spurs"
-    },
-    {
-      "active": true,
-      "badge": "",
-      "id": "team:fc-america-cfl-spurs-result-unknown",
-      "leagues": [
-        {
-          "id": "u.s. open cup",
-          "name": "U.S. Open Cup"
-        }
-      ],
-      "name": "FC America CFL Spurs (result unknown)",
-      "prettyName": "FC America CFL Spurs (result unknown)"
     },
     {
       "active": true,

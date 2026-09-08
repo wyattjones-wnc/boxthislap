@@ -979,6 +979,7 @@ async function loadCalendarSchedules({ dateFrom, dateTo, teamRowsById, teams }) 
       const events = parseICalendarEvents(await loadText(normalizeCalendarUrl(calendarUrl), { extension: "ics" }));
       const matchEvents = events
         .filter((event) => isCalendarMatchEvent(event, team))
+        .filter(isActiveCalendarEvent)
         .filter((event) => isCalendarEventInRange(event, scheduleDateFrom, dateTo));
       fixtures.push(...matchEvents.map((event) => normalizeCalendarMatch(event, team)));
       notes.push(`${team.name}: Loaded ${matchEvents.length} ${ICALENDAR_PROVIDER_NAME} fixtures from ${scheduleDateFrom} through ${dateTo}.`);
@@ -1151,6 +1152,7 @@ async function loadMlsCompetitionSchedules({ dateFrom, dateTo, followedFixtures 
     const fixturesByCompetition = new Map();
 
     parseICalendarEvents(calendarText)
+      .filter(isActiveCalendarEvent)
       .filter((event) => isCalendarEventInRange(event, seasonDateFrom, dateTo))
       .map(normalizeFullCalendarMatch)
       .forEach((fixture) => {
@@ -2885,6 +2887,17 @@ function isCalendarEventInRange(event, dateFrom, dateTo) {
   return eventDate >= dateFrom && eventDate <= dateTo;
 }
 
+function isActiveCalendarEvent(event) {
+  const status = normalizeText(event.STATUS);
+  const summary = normalizeText(event.SUMMARY);
+
+  if (["cancelled", "canceled", "postponed"].includes(status)) {
+    return false;
+  }
+
+  return !/\b(?:result unknown|postponed|cancelled|canceled|abandoned|suspended)\b/.test(summary);
+}
+
 function getSportDbTimestamp(event) {
   if (event.strTimestamp) {
     return normalizeUtcTimestamp(event.strTimestamp);
@@ -3254,6 +3267,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
 export {
   getCurrentTeamFixtures,
   getSportDbTimestamp,
+  isActiveCalendarEvent,
   isSameFootballClubName,
   mergeFixtures,
 };

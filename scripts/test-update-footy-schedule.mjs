@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   getCurrentTeamFixtures,
   getSportDbTimestamp,
+  isActiveCalendarEvent,
   isSameFootballClubName,
   mergeFixtures,
 } from "./update-footy-schedule.mjs";
@@ -24,6 +25,10 @@ assert.equal(getSportDbTimestamp({ strTimestamp: "2026-08-19T18:00:00" }), "2026
 assert.equal(getSportDbTimestamp({ strTimestamp: "2026-08-19T18:00:00+00:00" }), "2026-08-19T18:00:00+00:00");
 assert.equal(isSameFootballClubName("Rayo Vallecano", "Rayo Vallecano de Madrid"), true);
 assert.equal(isSameFootballClubName("Athletic Club", "Athletic Bilbao"), true);
+assert.equal(isActiveCalendarEvent({ SUMMARY: "FC Cincinnati vs. D.C. United (result unknown)" }), false);
+assert.equal(isActiveCalendarEvent({ STATUS: "CANCELLED", SUMMARY: "FC Cincinnati vs. D.C. United" }), false);
+assert.equal(isActiveCalendarEvent({ STATUS: "POSTPONED", SUMMARY: "FC Cincinnati vs. D.C. United" }), false);
+assert.equal(isActiveCalendarEvent({ SUMMARY: "FC Cincinnati vs. D.C. United (Time TBC)" }), true);
 
 const [rescheduledAthletic] = mergeFixtures([
   fixture({

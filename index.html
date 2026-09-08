@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.08.04.58";
+      window.BOX_THIS_LAP_VERSION = "2026.09.08.05.38";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609080458">
+    <link rel="stylesheet" href="styles.css?v=202609080538">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1024,7 +1024,7 @@
             <h1>Custom Schedule</h1>
           </div>
           <div class="heading-actions">
-            <button class="icon-action-button" id="footy-custom-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-custom-filters" aria-label="Show custom schedule filters" title="Filters">
+            <button class="icon-action-button" id="footy-custom-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-custom-filters" aria-label="Show custom schedule filters" title="Filters" disabled>
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
               </svg>
@@ -1032,6 +1032,13 @@
           </div>
         </div>
         <p class="body-copy footy-custom-intro">Choose any number of teams to build a combined schedule. Your choices last only while this page is open.</p>
+        <div class="footy-custom-selection-summary" id="footy-custom-selection-summary" hidden>
+          <div>
+            <span>Schedule for</span>
+            <strong id="footy-custom-selection-names"></strong>
+          </div>
+          <button class="action-button" id="footy-custom-change" type="button">Change teams</button>
+        </div>
         <div class="footy-filters footy-custom-filters" id="footy-custom-filters" hidden>
           <label>
             <span>Search matches</span>
@@ -1075,8 +1082,11 @@
         <div class="footy-custom-team-picker" id="footy-custom-team-picker" aria-live="polite">
           <p class="table-message loading-message"><span class="loading-spinner"></span>Loading teams...</p>
         </div>
+        <div class="footy-custom-team-actions" id="footy-custom-team-actions">
+          <button class="action-button" id="footy-custom-confirm" type="button" disabled>Show schedule</button>
+        </div>
         <div class="content-shell footy-custom-schedule-list" id="footy-custom-schedule-list" aria-live="polite">
-          <p class="table-message">Select at least one team to create a schedule.</p>
+          <p class="table-message">Confirm your teams to create a schedule.</p>
         </div>
       </section>
 
@@ -2767,6 +2777,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609080458"></script>
+    <script type="module" src="script.js?v=202609080538"></script>
   </body>
 </html>

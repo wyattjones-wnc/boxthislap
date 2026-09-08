@@ -109,7 +109,13 @@ import {
   footyCustomTeamCompetition,
   footyCustomSelectedOnly,
   footyCustomClear,
+  footyCustomTeamTools,
   footyCustomTeamPicker,
+  footyCustomTeamActions,
+  footyCustomConfirm,
+  footyCustomSelectionSummary,
+  footyCustomSelectionNames,
+  footyCustomChange,
   footyCustomMatchSearch,
   footyCustomDateFrom,
   footyCustomDateTo,
@@ -415,6 +421,7 @@ let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowFootyCustomFilters = false;
+let isFootyCustomScheduleConfirmed = false;
 const selectedFootyCustomTeamKeys = new Set();
 let shouldShowAllFootyFixtures = false;
 let shouldShowFootyTeamOptions = false;
@@ -870,17 +877,25 @@ function renderFootyCustomSchedule() {
   const selectedOnly = Boolean(footyCustomSelectedOnly?.checked);
   const visibleTeams = teams.filter((team) => (!teamQuery || normalizeLookupName(team.name).includes(teamQuery)) && (!teamCompetition || team.competitions.has(teamCompetition)) && (!selectedOnly || selectedFootyCustomTeamKeys.has(team.key)));
   const selectionCount = selectedFootyCustomTeamKeys.size;
+  const selectedTeams = teams.filter((team) => selectedFootyCustomTeamKeys.has(team.key));
 
+  if (footyCustomTeamTools) footyCustomTeamTools.hidden = isFootyCustomScheduleConfirmed;
+  footyCustomTeamPicker.hidden = isFootyCustomScheduleConfirmed;
+  if (footyCustomTeamActions) footyCustomTeamActions.hidden = isFootyCustomScheduleConfirmed;
+  if (footyCustomSelectionSummary) footyCustomSelectionSummary.hidden = !isFootyCustomScheduleConfirmed;
+  if (footyCustomSelectionNames) footyCustomSelectionNames.textContent = selectedTeams.map((team) => team.name).join(" · ");
+  if (footyCustomConfirm) footyCustomConfirm.disabled = selectionCount === 0;
   footyCustomTeamPicker.innerHTML = visibleTeams.length
     ? `<div class="footy-custom-team-summary"><strong>${selectionCount} selected</strong><span>${visibleTeams.length} teams shown</span></div><div class="footy-custom-team-grid">${visibleTeams.map((team) => `<label class="footy-custom-team-option${selectedFootyCustomTeamKeys.has(team.key) ? " is-selected" : ""}"><input type="checkbox" value="${escapeHtml(team.key)}"${selectedFootyCustomTeamKeys.has(team.key) ? " checked" : ""}><span class="footy-fixture-badge" aria-hidden="true">${renderFootyBadgeMarkup({ fallbackText: getFootyTeamFallbackBadge(team.name), primarySrc: team.badge })}</span><span>${escapeHtml(team.name)}</span></label>`).join("")}</div>`
     : `<p class="table-message">${selectionCount && selectedOnly ? "No selected teams match these tools." : "No teams match these tools."}</p>`;
-  footyCustomFilterToggle?.classList.toggle("is-active", shouldShowFootyCustomFilters);
-  footyCustomFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyCustomFilters));
-  if (footyCustomFilters) footyCustomFilters.hidden = !shouldShowFootyCustomFilters;
+  if (footyCustomFilterToggle) footyCustomFilterToggle.disabled = !isFootyCustomScheduleConfirmed;
+  footyCustomFilterToggle?.classList.toggle("is-active", isFootyCustomScheduleConfirmed && shouldShowFootyCustomFilters);
+  footyCustomFilterToggle?.setAttribute("aria-expanded", String(isFootyCustomScheduleConfirmed && shouldShowFootyCustomFilters));
+  if (footyCustomFilters) footyCustomFilters.hidden = !isFootyCustomScheduleConfirmed || !shouldShowFootyCustomFilters;
   if (footyCustomClear) footyCustomClear.disabled = selectionCount === 0;
+  footyCustomScheduleList.hidden = !isFootyCustomScheduleConfirmed;
 
-  if (!selectionCount) {
-    footyCustomScheduleList.innerHTML = '<p class="table-message">Select at least one team to create a schedule.</p>';
+  if (!isFootyCustomScheduleConfirmed || !selectionCount) {
     return;
   }
 
@@ -13456,6 +13471,21 @@ footyCustomTeamPicker?.addEventListener("change", (event) => {
 footyCustomClear?.addEventListener("click", () => {
   selectedFootyCustomTeamKeys.clear();
   renderFootyCustomSchedule();
+});
+
+footyCustomConfirm?.addEventListener("click", () => {
+  if (!selectedFootyCustomTeamKeys.size) return;
+  isFootyCustomScheduleConfirmed = true;
+  shouldShowFootyCustomFilters = false;
+  renderFootyCustomSchedule();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+footyCustomChange?.addEventListener("click", () => {
+  isFootyCustomScheduleConfirmed = false;
+  shouldShowFootyCustomFilters = false;
+  renderFootyCustomSchedule();
+  footyCustomTeamSearch?.focus();
 });
 
 [footyCustomTeamSearch, footyCustomTeamCompetition, footyCustomSelectedOnly, footyCustomMatchSearch, footyCustomDateFrom, footyCustomDateTo, footyCustomMatchCompetition, footyCustomTimeFilter].forEach((control) => {

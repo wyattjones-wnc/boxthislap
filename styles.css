@@ -2135,6 +2135,55 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 12px;
 }
 
+.footy-custom-team-tools[hidden],
+.footy-custom-team-picker[hidden],
+.footy-custom-team-actions[hidden],
+.footy-custom-selection-summary[hidden],
+.footy-custom-schedule-list[hidden] {
+  display: none;
+}
+
+.footy-custom-team-actions {
+  display: flex;
+  justify-content: center;
+  margin: -12px 0 26px;
+}
+
+.footy-custom-team-actions .action-button {
+  min-height: 46px;
+  min-width: min(240px, 100%);
+}
+
+.footy-custom-selection-summary {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.footy-custom-selection-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.footy-custom-selection-summary span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.footy-custom-selection-summary strong {
+  line-height: 1.4;
+}
+
 .footy-custom-team-summary,
 .footy-custom-result-summary {
   align-items: center;
@@ -2212,6 +2261,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 
   .footy-custom-team-grid {
     grid-template-columns: 1fr;
+  }
+
+  .footy-custom-selection-summary {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

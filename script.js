@@ -936,7 +936,7 @@ function getAllFootyScheduleTeams(schedule) {
     priority: Number.MAX_SAFE_INTEGER,
     projectedPoints: null,
   }));
-  return uniqueFootyTeams([...scheduled, ...catalog])
+  return uniqueFootyTeams([...catalog, ...scheduled])
     .sort(compareFootyTeamsByPriorityThenName);
 }
 

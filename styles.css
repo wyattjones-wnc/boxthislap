@@ -2075,6 +2075,146 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: none;
 }
 
+.footy-custom-intro {
+  margin: -8px 0 16px;
+}
+
+.footy-custom-team-tools {
+  align-items: end;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(190px, 1fr) minmax(180px, 0.7fr) auto auto;
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.footy-custom-team-tools label:not(.footy-checkbox-control) {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.footy-custom-team-tools input[type="search"],
+.footy-custom-team-tools select {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.footy-custom-team-tools .footy-checkbox-control {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 10px;
+  white-space: nowrap;
+}
+
+.footy-custom-team-picker {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 26px;
+  max-height: min(48vh, 520px);
+  overflow: auto;
+  padding: 12px;
+}
+
+.footy-custom-team-summary,
+.footy-custom-result-summary {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.85rem;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.footy-custom-team-summary strong,
+.footy-custom-result-summary strong {
+  color: var(--ink);
+}
+
+.footy-custom-team-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+.footy-custom-team-option {
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  font-weight: 850;
+  gap: 9px;
+  grid-template-columns: auto 42px minmax(0, 1fr);
+  min-height: 58px;
+  padding: 7px 10px;
+}
+
+.footy-custom-team-option.is-selected {
+  border-color: var(--track);
+  box-shadow: inset 0 0 0 1px var(--track);
+}
+
+.footy-custom-team-option input {
+  accent-color: var(--track);
+  height: 18px;
+  width: 18px;
+}
+
+.footy-custom-team-option .footy-fixture-badge {
+  height: 38px;
+  width: 38px;
+}
+
+.footy-custom-filters {
+  grid-template-columns: minmax(180px, 1.2fr) minmax(220px, 1fr) minmax(170px, 0.8fr) minmax(160px, 0.7fr);
+  margin-top: 0;
+}
+
+.footy-custom-filters[hidden] {
+  display: none;
+}
+
+.footy-custom-schedule-list {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .footy-custom-team-tools,
+  .footy-custom-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .footy-custom-team-tools .footer-copy-link {
+    justify-self: start;
+  }
+
+  .footy-custom-team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .footy-past-toggle-icon {
   display: none;
   fill: none;

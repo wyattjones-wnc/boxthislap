@@ -87,7 +87,6 @@ import {
   footyMissingNotesCompetition,
   footyMissingNotesMatchPeriod,
   footyMissingNotesTeam,
-  footyMissingNotesFriendlies,
   footyMissingNotesSummary,
   footyMissingNotesList,
   managerSummaryList,
@@ -397,7 +396,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202609081516";
+} from "./modules/domRefs.js?v=202609081551";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -931,7 +930,12 @@ function getFootyMissingNotesFixtures(schedule = {}) {
   });
 
   return [...fixturesByMatch.values()]
-    .filter((fixture) => isFootyFixturePast(fixture) && !hasFootyMatchNoteData(fixture));
+    .filter((fixture) => (
+      isFootyFixturePast(fixture) &&
+      !isFootyFriendlyFixture(fixture) &&
+      getFootyCanonicalCompetition(fixture.league).key !== "leagues cup" &&
+      !hasFootyMatchNoteData(fixture)
+    ));
 }
 
 function decorateFootyMissingNotesFixture(fixture = {}, schedule = {}) {
@@ -1002,7 +1006,6 @@ function getFilteredFootyMissingNotesFixtures(fixtures = []) {
   const dateRange = getFootyMissingNotesDateRange();
 
   return fixtures.filter((fixture) => {
-    if (footyMissingNotesFriendlies && !footyMissingNotesFriendlies.checked && isFootyFriendlyFixture(fixture)) return false;
     if (competition && getFootyCanonicalCompetition(fixture.league).key !== competition) return false;
     if (team && ![fixture.home, fixture.away].some((name) => getFootyTeamFilterKey(name) === team)) return false;
     if (matchPeriod && getFootyMatchPeriod(fixture)?.key !== matchPeriod) return false;
@@ -1027,8 +1030,7 @@ function hasActiveFootyMissingNotesFilters() {
     String(footyMissingNotesDateTo?.value || "").trim() ||
     String(footyMissingNotesCompetition?.value || "").trim() ||
     String(footyMissingNotesMatchPeriod?.value || "").trim() ||
-    String(footyMissingNotesTeam?.value || "").trim() ||
-    (footyMissingNotesFriendlies && !footyMissingNotesFriendlies.checked)
+    String(footyMissingNotesTeam?.value || "").trim()
   );
 }
 
@@ -13684,7 +13686,6 @@ footyMissingNotesFilterToggle?.addEventListener("click", () => {
   footyMissingNotesCompetition,
   footyMissingNotesMatchPeriod,
   footyMissingNotesTeam,
-  footyMissingNotesFriendlies,
 ].forEach((control) => {
   control?.addEventListener("input", renderFootyMissingNotesPage);
   control?.addEventListener("change", renderFootyMissingNotesPage);

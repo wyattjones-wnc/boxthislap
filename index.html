@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.08.15.45";
+      window.BOX_THIS_LAP_VERSION = "2026.09.08.15.51";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609081545">
+    <link rel="stylesheet" href="styles.css?v=202609081551">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -666,7 +666,7 @@
           <div>
             <a class="back-link" href="#manager-hub" data-page-link="manager-hub">Manager Hub</a>
             <h1>Missing Match Notes</h1>
-            <p class="body-copy">Past matches without saved scores or notes from competitions connected to your followed teams.</p>
+            <p class="body-copy">Past competitive matches without saved scores or notes from competitions connected to your followed teams, excluding Leagues Cup.</p>
           </div>
           <div class="heading-actions">
             <button class="icon-action-button footy-filter-toggle" id="footy-missing-notes-filter-toggle" type="button" aria-expanded="false" aria-controls="footy-missing-notes-filters" aria-label="Show missing match note filters" title="Filters">
@@ -700,12 +700,6 @@
             <span>Team</span>
             <select id="footy-missing-notes-team"><option value="">All teams</option></select>
           </label>
-          <div class="footy-filter-toggles">
-            <label class="footy-checkbox-control">
-              <input id="footy-missing-notes-friendlies" type="checkbox" checked>
-              <span>Friendlies</span>
-            </label>
-          </div>
         </div>
         <p class="footy-missing-notes-summary" id="footy-missing-notes-summary" aria-live="polite"></p>
         <div class="content-shell" id="footy-missing-notes-list" aria-live="polite" aria-busy="true">
@@ -2828,6 +2822,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609081545"></script>
+    <script type="module" src="script.js?v=202609081551"></script>
   </body>
 </html>

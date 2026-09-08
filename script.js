@@ -444,6 +444,7 @@ const footyTeamFixtureLimits = new Map();
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
+const nextCardElementCache = new Map();
 let isSavingNextItem = false;
 let shouldShowTodoFilters = false;
 let shouldShowTodoMoreData = false;
@@ -6046,22 +6047,65 @@ function renderNextList(items = siteData.nextItems || []) {
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
   const renderedItems = [...visibleItems, ...previousTailItems];
-  const previousDivider = previousTailItems.length
-    ? `<div class="next-previous-divider" role="separator" aria-label="Previous items"><span>Previous</span></div>`
-    : "";
+  pruneNextCardElementCache(normalizedItems);
 
   if (!renderedItems.length) {
     nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
     return;
   }
 
-  nextList.innerHTML = `
-    <div class="next-list">
-      ${visibleItems.map((item) => renderNextItem(item, { showPassedStatus: showDefaultPassedStatus })).join("")}
-      ${previousDivider}
-      ${previousTailItems.map(renderNextItem).join("")}
-    </div>
-  `;
+  const list = document.createElement("div");
+  list.className = "next-list";
+  visibleItems.forEach((item) => {
+    list.append(getNextCardElement(item, { showPassedStatus: showDefaultPassedStatus }));
+  });
+
+  if (previousTailItems.length) {
+    const divider = document.createElement("div");
+    divider.className = "next-previous-divider";
+    divider.setAttribute("role", "separator");
+    divider.setAttribute("aria-label", "Previous items");
+    divider.innerHTML = "<span>Previous</span>";
+    list.append(divider);
+    previousTailItems.forEach((item) => list.append(getNextCardElement(item)));
+  }
+
+  nextList.replaceChildren(list);
+}
+
+function pruneNextCardElementCache(items = []) {
+  const currentIds = new Set(items.map((item) => item.id).filter(Boolean));
+
+  nextCardElementCache.forEach((_entry, id) => {
+    if (!currentIds.has(id)) {
+      nextCardElementCache.delete(id);
+    }
+  });
+}
+
+function getNextCardElement(item, options = {}) {
+  const markup = renderNextItem(item, options).trim();
+  const cached = item.id ? nextCardElementCache.get(item.id) : null;
+
+  if (cached?.markup === markup) {
+    return cached.element;
+  }
+
+  const template = document.createElement("template");
+  template.innerHTML = markup;
+  const element = template.content.firstElementChild;
+  const cachedImage = cached?.element.querySelector("[data-next-card-image]");
+  const nextImage = element?.querySelector("[data-next-card-image]");
+
+  if (cachedImage && nextImage && cachedImage.getAttribute("src") === nextImage.getAttribute("src")) {
+    nextImage.replaceWith(cachedImage);
+  }
+
+  if (item.id && element) {
+    nextCardElementCache.set(item.id, { element, markup });
+  }
+
+  return element;
 }
 
 function normalizeNextItem(row) {

@@ -908,8 +908,8 @@ function getFootyTeamSlug(teamName) {
 function getFootyTeamFromSlug(slug) {
   const normalizedSlug = String(slug || "").trim();
 
-  return getFootyShortcutTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
-    getAllFootyScheduleTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+  return getAllFootyScheduleTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
+    getFootyShortcutTeams(siteData.footySchedule).find((team) => getFootyTeamSlug(team.name) === normalizedSlug) ||
     null;
 }
 

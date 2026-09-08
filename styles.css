@@ -2049,6 +2049,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   flex-wrap: nowrap;
 }
 
+.footy-heading--actions-only {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .footy-team-choice-actions {
   align-items: center;
   display: flex;

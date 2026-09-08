@@ -3543,7 +3543,6 @@ function renderFootyFixture(fixture) {
     `
     : "";
   const detailsMarkup = isExpanded ? renderFootyFixtureDetails(fixture) : "";
-  const notificationMarkup = renderFootyMatchNotificationAction(fixture);
   const followedTeamLabel = Array.isArray(fixture.followedTeamNames) && fixture.followedTeamNames.length > 0
     ? fixture.followedTeamNames.join(" · ")
     : fixture.teamName || "";
@@ -3579,7 +3578,6 @@ function renderFootyFixture(fixture) {
       </div>
       <div class="footy-fixture-side-actions">
         <strong>${escapeHtml(dateLabel)}</strong>
-        ${notificationMarkup}
         ${highlightMarkup}
       </div>
       ${detailsMarkup}
@@ -3665,19 +3663,21 @@ function toggleFootyFixtureExpansion(matchId) {
 
 function renderFootyFixtureDetails(fixture) {
   const matchNoteMarkup = renderFootyMatchNote(fixture);
+  const notificationMarkup = renderFootyMatchNotificationAction(fixture);
   const canAddPerfectPerformance = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canShowSeenMatch = isCurrentManagerAdmin() && Boolean(fixture?.matchId);
   const canEditMatchNote = shouldRenderFootyNoteEditButton(fixture);
   const canExportToNext = isCurrentManagerAdmin() && Boolean(fixture?.matchId) && !isFootyFixtureStarted(fixture);
   const seenMatch = canShowSeenMatch ? getFootySeenMatchByMatchId(fixture.matchId) : null;
   const canManageSeenMatch = Boolean(seenMatch) || isFootyFixtureStarted(fixture);
-  const actionsMarkup = canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote || canExportToNext
+  const actionsMarkup = notificationMarkup || canAddPerfectPerformance || canShowSeenMatch || canEditMatchNote || canExportToNext
     ? `
       <div class="footy-fixture-detail-actions">
         ${canAddPerfectPerformance
           ? `<button class="action-button footy-perfect-match-button" type="button" data-footy-perfect-match="${escapeHtml(fixture.matchId)}">10/10</button>`
           : "<span></span>"}
         <div class="footy-fixture-detail-actions-right">
+          ${notificationMarkup}
           ${canExportToNext ? `
             <button class="icon-action-button footy-next-export-button" type="button" data-footy-next-export="${escapeHtml(fixture.matchId)}" aria-label="Export match to Next list" title="Export to Next">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">

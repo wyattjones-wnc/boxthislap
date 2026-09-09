@@ -646,6 +646,7 @@ let activeNextSourceMatchId = "";
 let activeAutocompleteInput = null;
 let footyRosterLoadPromise = null;
 let footyRosterEditMode = false;
+const footyRosterDiscoveryStates = new Map();
 const activeFootyRosterSeasons = new Map();
 const footyNoteGoalAssistEntries = {
   follow: [],
@@ -1493,7 +1494,13 @@ function renderFootyTeamPlayers(team) {
   }
 
   if (!roster) {
-    footyTeamContent.innerHTML = `<section class="footy-team-player-section"><p class="table-message">No roster loaded for ${escapeHtml(team.name)}.</p>${isCurrentManagerAdmin() ? `<button class="action-button" type="button" data-footy-roster-add>Add first player</button>` : ""}</section>`;
+    const discoveryKey = getFootyRosterDiscoveryKey(team);
+    const discovery = footyRosterDiscoveryStates.get(discoveryKey);
+    if (getCurrentManagerId() && !discovery) void discoverFootyRoster(team);
+    const message = discovery?.status === "error"
+      ? escapeHtml(discovery.error || `No provider roster was found for ${team.name}.`)
+      : `Loading ${escapeHtml(team.name)} roster…`;
+    footyTeamContent.innerHTML = `<section class="footy-team-player-section"><p class="table-message">${message}</p>${discovery?.status === "error" ? `<button class="footer-copy-link" type="button" data-footy-roster-discover>Try provider lookup again</button>` : ""}${isCurrentManagerAdmin() ? `<button class="action-button" type="button" data-footy-roster-add>Add first player</button>` : ""}</section>`;
     return;
   }
 
@@ -5604,18 +5611,48 @@ function getFootyRosterPlayersForTeam(teamInput) {
     .sort(compareFootyRosterPlayers);
 }
 
+function getFootyRosterDiscoveryKey(team) {
+  return `${String(team?.id || team?.teamId || "")}|${getDefaultFootyRosterSeason(team)}`;
+}
+
+async function discoverFootyRoster(team) {
+  const key = getFootyRosterDiscoveryKey(team);
+  if (footyRosterDiscoveryStates.get(key)?.status === "loading") return;
+  footyRosterDiscoveryStates.set(key, { status: "loading" });
+  try {
+    const value = await requestFootyRosterApi("/api/rosters/discover", {
+      method: "POST",
+      body: {
+        teamId: String(team.id || team.teamId || ""),
+        teamName: team.name,
+        season: getDefaultFootyRosterSeason(team),
+        leagueNames: (team.leagues || []).map((league) => league.name).filter(Boolean),
+      },
+    });
+    const normalized = normalizeFootyRosters(value.roster ? [value.roster] : [])[0];
+    if (!normalized) throw new Error(`No provider roster was found for ${team.name}.`);
+    siteData.footyRosters = (siteData.footyRosters || []).filter((roster) =>
+      !(String(roster.teamId) === normalized.teamId && roster.season === normalized.season));
+    siteData.footyRosters.push(normalized);
+    footyRosterDiscoveryStates.set(key, { status: "complete" });
+  } catch (error) {
+    footyRosterDiscoveryStates.set(key, { status: "error", error: error.message || "Unable to load this roster." });
+  }
+  if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && activeFootyTeamViewMode === "team") renderFootyTeamPage();
+}
+
 function shouldShowFootyRosterPlayerInSeason(player, roster) {
   if (!player?.transferOutDate) return true;
-  const transferSeason = getFootyRosterSeasonForDate(player.teamId, player.transferOutDate);
+  const transferSeason = getFootyRosterSeasonForDate(player.teamId, player.transferOutDate, roster?.season);
   return !transferSeason || String(roster?.season || "").localeCompare(transferSeason) < 0;
 }
 
-function getFootyRosterSeasonForDate(teamId, value) {
+function getFootyRosterSeasonForDate(teamId, value, rosterSeason = "") {
   const match = String(value || "").match(/^(\d{4})-(\d{2})-\d{2}$/);
   if (!match) return "";
   const year = Number(match[1]);
   const month = Number(match[2]);
-  if (["1", "2", "3"].includes(String(teamId))) {
+  if (String(rosterSeason).includes("-") || ["1", "2", "3"].includes(String(teamId))) {
     const start = month >= 7 ? year : year - 1;
     return `${start}-${String(start + 1).slice(-2)}`;
   }
@@ -5820,7 +5857,9 @@ async function requestFootyRosterApi(path, options = {}) {
 function getDefaultFootyRosterSeason(team, date = new Date()) {
   const id = String(team?.id || team?.teamId || "");
   const year = date.getFullYear();
-  if (["1", "2", "3"].includes(id)) {
+  const competitionNames = (team?.leagues || []).map((league) => String(league?.name || "")).join(" ");
+  const usesCalendarSeason = ["4", "5", "6", "7"].includes(id) || /\b(?:MLS|NWSL|USL|World Cup|Nations League|International)\b/i.test(competitionNames);
+  if (!usesCalendarSeason) {
     const start = date.getMonth() >= 6 ? year : year - 1;
     return `${start}-${String(start + 1).slice(-2)}`;
   }
@@ -13708,6 +13747,15 @@ footyTeamContent?.addEventListener("click", (event) => {
 
   if (event.target.closest("[data-footy-roster-add]")) {
     openFootyRosterEditor(getActiveFootyTeam(), null);
+    return;
+  }
+
+  if (event.target.closest("[data-footy-roster-discover]")) {
+    const team = getActiveFootyTeam();
+    if (team) {
+      footyRosterDiscoveryStates.delete(getFootyRosterDiscoveryKey(team));
+      renderFootyTeamPlayers(team);
+    }
     return;
   }
 

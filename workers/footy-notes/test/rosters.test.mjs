@@ -21,6 +21,13 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   const db = await worker.getD1Database("DB");
   await executeSql(db, await readFile(schemaPath, "utf8"));
 
+  const unauthorizedDiscovery = await worker.dispatchFetch("http://localhost:8787/api/rosters/discover", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ teamId: "team:example", teamName: "Example FC", season: "2026-27" }),
+  });
+  assert.equal(unauthorizedDiscovery.status, 401);
+
   await sync(worker, [{
     teamId: "1",
     season: "2026-27",

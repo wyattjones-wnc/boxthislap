@@ -33,6 +33,12 @@ export default {
         return json({ ok: true, ...result }, 200, cors);
       }
 
+      if (request.method === "POST" && url.pathname === "/api/rosters/discover") {
+        await requireManager(request, env);
+        const roster = await discoverRoster(env, await readBody(request));
+        return json({ ok: true, roster }, 200, cors);
+      }
+
       if (request.method === "POST" && url.pathname === "/api/roster-players") {
         const managerId = await requireAdmin(request, env);
         return json({ ok: true, player: await createRosterPlayer(env, await readBody(request), managerId) }, 201, cors);
@@ -130,6 +136,79 @@ export default {
 };
 
 const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOutDate", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
+
+async function discoverRoster(env, body) {
+  const teamId = requireText(body?.teamId, 80, "Team ID");
+  const teamName = requireText(body?.teamName, 200, "Team name");
+  const season = requireText(body?.season, 20, "Season");
+  if (!/^\d{4}(?:-\d{2})?$/.test(season)) throw httpError(400, "Season is invalid.");
+  const leagueNames = (Array.isArray(body?.leagueNames) ? body.leagueNames : [])
+    .slice(0, 20).map((value) => cleanText(value, 160, "League")).filter(Boolean);
+  const providerTeam = await discoverSportDbTeam(teamName, leagueNames);
+  if (!providerTeam) throw httpError(404, `No roster provider match was found for ${teamName}.`);
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(providerTeam.idTeam)}`);
+  if (!response.ok) throw httpError(502, "The roster provider could not be reached.");
+  const value = await response.json().catch(() => null);
+  const players = (Array.isArray(value?.player) ? value.player : [])
+    .filter((player) => player?.idPlayer && player?.strPlayer && !/coach|manager/i.test(String(player.strPosition || player.strStatus || "")))
+    .map((player) => ({
+      playerKey: `thesportsdb:${player.idPlayer}`,
+      provider: "TheSportsDB",
+      providerPlayerId: String(player.idPlayer),
+      providerData: {
+        name: String(player.strPlayer || ""),
+        position: normalizeRosterPosition(player.strPosition),
+        number: String(player.strNumber || ""),
+        birthday: String(player.dateBorn || ""),
+        homeCountry: String(player.strNationality || ""),
+        profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
+        cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
+      },
+    }));
+  if (!players.length) throw httpError(404, `No active players were found for ${teamName}.`);
+  await syncRosters(env, { rosters: [{ teamId, season, active: true, refreshedProviders: ["TheSportsDB"], players }] });
+  const params = new URLSearchParams({ teamId, season, includeInactive: "1" });
+  return (await listRosters(env, params))[0] || null;
+}
+
+async function discoverSportDbTeam(teamName, leagueNames) {
+  const queries = [...new Set([teamName, stripRosterClubSuffix(teamName)].filter(Boolean))];
+  const candidates = new Map();
+  for (const query of queries) {
+    const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(query)}`);
+    if (!response.ok) continue;
+    const value = await response.json().catch(() => null);
+    for (const team of Array.isArray(value?.teams) ? value.teams : []) {
+      if (team?.idTeam) candidates.set(String(team.idTeam), team);
+    }
+  }
+  return [...candidates.values()]
+    .filter((team) => String(team.strSport || "").toLowerCase() === "soccer")
+    .sort((first, second) => scoreRosterTeam(second, teamName, leagueNames) - scoreRosterTeam(first, teamName, leagueNames))[0] || null;
+}
+
+function scoreRosterTeam(team, teamName, leagueNames) {
+  const candidateName = slugRosterValue(team.strTeam);
+  const requestedName = slugRosterValue(teamName);
+  const strippedName = slugRosterValue(stripRosterClubSuffix(teamName));
+  const league = slugRosterValue(team.strLeague);
+  const leagueMatch = leagueNames.some((name) => {
+    const normalized = slugRosterValue(name);
+    return normalized && league && (league.includes(normalized) || normalized.includes(league));
+  });
+  return (candidateName === requestedName ? 100 : 0) + (candidateName === strippedName ? 90 : 0) +
+    (leagueMatch ? 40 : 0) + (/male/i.test(String(team.strGender || "")) ? 20 : 0) -
+    (/women|ladies|u\d{2}|youth|reserve/i.test(`${team.strTeam || ""} ${team.strLeague || ""}`) ? 80 : 0);
+}
+
+function stripRosterClubSuffix(value) {
+  return String(value || "").replace(/\*+$/g, "").replace(/\s+(?:AFC|FC|CF|SC)$/i, "").trim();
+}
+
+function normalizeRosterPosition(value) {
+  const position = String(value || "").trim();
+  return ({ Goalkeeper: "GK", Defence: "DF", Defender: "DF", Midfield: "MF", Midfielder: "MF", Offence: "FW", Attacker: "FW", Forward: "FW" })[position] || position;
+}
 
 async function listRosters(env, searchParams) {
   const teamId = cleanText(searchParams.get("teamId"), 80, "Team ID");
@@ -729,8 +808,19 @@ async function saveMatchNote(env, matchId, body, managerId) {
 }
 
 async function requireAdmin(request, env) {
+  const managerId = await requireManager(request, env);
+  const adminIds = new Set(String(env.ADMIN_MANAGER_IDS || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean));
+
+  if (!adminIds.has(managerId)) throw httpError(403, "Only an admin can edit Footy data.");
+  return managerId;
+}
+
+async function requireManager(request, env) {
   const authorization = request.headers.get("Authorization") || "";
-  if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in as an admin to edit Footy data.");
+  if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in to load this roster.");
   if (!env.MANAGER_AUTH) throw new Error("Manager authorization is not configured.");
   const accessToken = authorization.slice(7);
 
@@ -745,14 +835,7 @@ async function requireAdmin(request, env) {
     throw httpError(401, value?.error || "Manager authorization is invalid.");
   }
 
-  const managerId = String(value.managerId);
-  const adminIds = new Set(String(env.ADMIN_MANAGER_IDS || "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean));
-
-  if (!adminIds.has(managerId)) throw httpError(403, "Only an admin can edit Footy data.");
-  return managerId;
+  return String(value.managerId);
 }
 
 function normalizeMatchNote(note) {

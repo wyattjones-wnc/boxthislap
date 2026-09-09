@@ -1,6 +1,6 @@
 import { exchangeAccessCodeForAuthTokens, exchangeNpssoForAccessCode } from "psn-api";
 import { getPsnAuthStatus, savePsnNpsso } from "../psn/stored-auth.ts";
-import { refreshPublicSnapshots } from "./router.ts";
+import { refreshPublicSnapshots, refreshPublicStatusSnapshot } from "./router.ts";
 import type { PsnEnvironment } from "../types";
 
 const LOG_VIEWS = new Set(["unsorted", "favorites", "seen", "all", "platinums"]);
@@ -9,8 +9,8 @@ const LOG_SORTS: Record<string, string> = {
   oldest: "t.earned_at ASC, t.game_id ASC, t.trophy_id ASC",
   name: "t.trophy_name COLLATE NOCASE ASC, t.game_id ASC, t.trophy_id ASC",
   rarity: "t.earned_rate ASC, t.earned_at DESC",
-  "platinum-duration-desc": "t.completion_seconds DESC, t.earned_at DESC",
-  "platinum-duration-asc": "(t.completion_seconds IS NULL) ASC, t.completion_seconds ASC, t.earned_at DESC",
+  "platinum-duration-desc": "completion_seconds DESC, t.earned_at DESC",
+  "platinum-duration-asc": "(completion_seconds IS NULL) ASC, completion_seconds ASC, t.earned_at DESC",
 };
 
 export async function routeTrophyManagementApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
@@ -33,7 +33,9 @@ export async function routeTrophyManagementApi(request: Request, env: PsnEnviron
   if (isSync) {
     const { syncTrophyBatch } = await import("../sync/sync-one-game.ts");
     const result = await syncTrophyBatch(env, 0, { prioritizeChanges: true });
-    await refreshPublicSnapshots(env);
+    await (result.priorityTitles > 0 || result.titlesAdded > 0
+      ? refreshPublicSnapshots(env)
+      : refreshPublicStatusSnapshot(env));
     return noStoreJson({ ok: true, ...result });
   }
   if (isSeenThrough) return updateSeenThrough(request, env, managerId);
@@ -42,24 +44,22 @@ export async function routeTrophyManagementApi(request: Request, env: PsnEnviron
 
 async function listPlatinums(env: PsnEnvironment, params: URLSearchParams): Promise<Response> {
   const { limit, offset, page } = parsePagination(params, 200);
-  const result = await env.DB.prepare(`
-    WITH numbered AS (
+  const [result, count] = await Promise.all([
+    env.DB.prepare(`
       SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name,
-        ROW_NUMBER() OVER (ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC) AS trophy_number,
-        SUM(CASE WHEN t.trophy_type = 'platinum' THEN 1 ELSE 0 END) OVER (
-          ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC ROWS UNBOUNDED PRECEDING
-        ) AS platinum_number,
-        CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
+        t.earned_number AS trophy_number, t.platinum_number,
+        CASE WHEN g.first_trophy_at IS NOT NULL
           THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
       FROM trophies t JOIN games g ON g.id = t.game_id
-      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
-    )
-    SELECT *, COUNT(*) OVER () AS total_count FROM numbered
-    WHERE trophy_type = 'platinum' ORDER BY platinum_number DESC LIMIT ? OFFSET ?
-  `).bind(limit + 1, offset).all<Record<string, unknown>>();
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.trophy_type = 'platinum'
+      ORDER BY t.platinum_number DESC LIMIT ? OFFSET ?
+    `).bind(limit + 1, offset).all<Record<string, unknown>>(),
+    env.DB.prepare("SELECT COUNT(*) AS total_count FROM trophies WHERE earned = 1 AND earned_at IS NOT NULL AND trophy_type = 'platinum'")
+      .first<Record<string, unknown>>(),
+  ]);
   const rows = result.results || [];
-  const total = numberValue(rows[0]?.total_count);
+  const total = numberValue(count?.total_count);
   return noStoreJson({
     ok: true,
     items: rows.slice(0, limit).map((row) => ({ ...mapTrophy(row), platinumNumber: numberValue(row.platinum_number) })),
@@ -77,27 +77,20 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
   const view = sort.startsWith("platinum-duration-") ? "platinums" : evergreen ? "all" : requestedView;
   const { limit, offset, page } = parsePagination(params, 48);
   const filters = ["1 = 1"];
-  if (view === "unsorted") filters.push("t.state IS NULL");
-  if (view === "favorites") filters.push("t.state = 'favorite'");
-  if (view === "seen") filters.push("t.state = 'seen'");
+  if (view === "unsorted") filters.push("p.state IS NULL");
+  if (view === "favorites") filters.push("p.state = 'favorite'");
+  if (view === "seen") filters.push("p.state = 'seen'");
   if (view === "platinums") filters.push("t.trophy_type = 'platinum'");
   const result = await env.DB.prepare(`
-    WITH numbered AS (
-      SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
-        t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name, p.state,
-        ROW_NUMBER() OVER (ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC) AS trophy_number,
-        SUM(CASE WHEN t.trophy_type = 'platinum' THEN 1 ELSE 0 END) OVER (
-          ORDER BY t.earned_at ASC, t.game_id ASC, t.trophy_id ASC ROWS UNBOUNDED PRECEDING
-        ) AS platinum_number,
-        CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
-          THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
-      FROM trophies t
-      JOIN games g ON g.id = t.game_id
-      LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
-      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
-    )
-    SELECT * FROM numbered t
-    WHERE ${filters.join(" AND ")}
+    SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
+      t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name, p.state,
+      t.earned_number AS trophy_number, t.platinum_number,
+      CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
+        THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
+    FROM trophies t
+    JOIN games g ON g.id = t.game_id
+    LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+    WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND ${filters.join(" AND ")}
     ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).bind(limit + 1, offset).all<Record<string, unknown>>();

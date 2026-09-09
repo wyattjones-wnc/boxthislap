@@ -88,16 +88,13 @@ test("returns null for routes outside the PSN public API", async () => {
 
 test("returns aggregate trophy statistics without exposing database rows", async () => {
   const rows = [
-    { games: 1, platinums: 1, hundred_percent: 1, updated_at: "2026-08-29T05:28:15.835Z" },
-    { total_trophies: 48, earned_trophies: 48, bronze: 34, silver: 10, gold: 3, platinum: 1 },
+    { games: 1, platinums: 1, hundred_percent: 1, updated_at: "2026-08-29T05:28:15.835Z", total_trophies: 48, earned_trophies: 48, bronze: 34, silver: 10, gold: 3, platinum: 1 },
     { game_id: "NPWR07722_00", title_name: "Grim Fandango Remastered", trophy_id: 12, trophy_name: "Rarest", trophy_type: "silver", icon_url: null, earned_at: "2020-01-01T00:00:00Z", rarity_class: 1, earned_rate: 4.2 },
     { game_id: "NPWR07722_00", title_name: "Grim Fandango Remastered", trophy_id: 48, trophy_name: "Latest", trophy_type: "platinum", icon_url: null, earned_at: "2020-02-01T00:00:00Z", rarity_class: 2, earned_rate: 12.5 },
-    [
-      { game_id: "B", title_name: "Bronze Game", trophy_id: 1, trophy_name: "Bronze Rarest", trophy_type: "bronze", icon_url: null, earned_at: "2020-01-01T00:00:00Z", rarity_class: 0, earned_rate: 0.1 },
-      { game_id: "S", title_name: "Silver Game", trophy_id: 2, trophy_name: "Silver Rarest", trophy_type: "silver", icon_url: null, earned_at: "2020-01-02T00:00:00Z", rarity_class: 0, earned_rate: 0.2 },
-      { game_id: "G", title_name: "Gold Game", trophy_id: 3, trophy_name: "Gold Rarest", trophy_type: "gold", icon_url: null, earned_at: "2020-01-03T00:00:00Z", rarity_class: 0, earned_rate: 0.3 },
-      { game_id: "P", title_name: "Platinum Game", trophy_id: 4, trophy_name: "Platinum Rarest", trophy_type: "platinum", icon_url: null, earned_at: "2020-01-04T00:00:00Z", rarity_class: 0, earned_rate: 0.4 },
-    ],
+    { game_id: "B", title_name: "Bronze Game", trophy_id: 1, trophy_name: "Bronze Rarest", trophy_type: "bronze", icon_url: null, earned_at: "2020-01-01T00:00:00Z", rarity_class: 0, earned_rate: 0.1 },
+    { game_id: "S", title_name: "Silver Game", trophy_id: 2, trophy_name: "Silver Rarest", trophy_type: "silver", icon_url: null, earned_at: "2020-01-02T00:00:00Z", rarity_class: 0, earned_rate: 0.2 },
+    { game_id: "G", title_name: "Gold Game", trophy_id: 3, trophy_name: "Gold Rarest", trophy_type: "gold", icon_url: null, earned_at: "2020-01-03T00:00:00Z", rarity_class: 0, earned_rate: 0.3 },
+    { game_id: "P", title_name: "Platinum Game", trophy_id: 4, trophy_name: "Platinum Rarest", trophy_type: "platinum", icon_url: null, earned_at: "2020-01-04T00:00:00Z", rarity_class: 0, earned_rate: 0.4 },
   ];
   let queryIndex = 0;
   const env = {
@@ -105,9 +102,11 @@ test("returns aggregate trophy statistics without exposing database rows", async
       batch: async () => [],
       prepare: () => {
         const index = queryIndex++;
+        const read = async () => ({ results: [rows[index]] });
         return {
           first: async () => rows[index],
-          all: async () => ({ results: Array.isArray(rows[index]) ? rows[index] : [rows[index]] }),
+          all: read,
+          bind: () => ({ all: read }),
         };
       },
     },

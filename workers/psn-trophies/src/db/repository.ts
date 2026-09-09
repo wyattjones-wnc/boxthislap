@@ -32,6 +32,26 @@ export async function saveGame(
   syncedAt: string,
 ): Promise<boolean> {
   const existing = await env.DB.prepare("SELECT id FROM games WHERE id = ?").bind(game.id).first();
+  const existingTrophies = await env.DB.prepare(`
+    SELECT trophy_id, earned_number, platinum_number FROM trophies WHERE game_id = ?
+  `).bind(game.id).all<Record<string, unknown>>();
+  const existingById = new Map((existingTrophies.results || []).map((row) => [Number(row.trophy_id), row]));
+  const ordinalById = new Map<number, { earnedNumber: number | null; platinumNumber: number | null }>();
+  const newlyEarned = trophies
+    .filter((trophy) => trophy.earned && !Number(existingById.get(trophy.trophyId)?.earned_number))
+    .sort((first, second) => String(first.earnedAt || "").localeCompare(String(second.earnedAt || "")) || first.trophyId - second.trophyId);
+  const newPlatinums = newlyEarned.filter((trophy) => trophy.type === "platinum").length;
+  const [earnedMaximum, platinumMaximum] = await Promise.all([
+    reserveOrdinalRange(env, "earned_number", newlyEarned.length),
+    reserveOrdinalRange(env, "platinum_number", newPlatinums),
+  ]);
+  let nextEarnedNumber = earnedMaximum - newlyEarned.length;
+  let nextPlatinumNumber = platinumMaximum - newPlatinums;
+  for (const trophy of newlyEarned) {
+    nextEarnedNumber += 1;
+    const platinumNumber = trophy.type === "platinum" ? ++nextPlatinumNumber : null;
+    ordinalById.set(trophy.trophyId, { earnedNumber: nextEarnedNumber, platinumNumber });
+  }
   await env.DB.prepare(`
     INSERT INTO games (
       id, np_communication_id, title_name, platforms, icon_url, progress,
@@ -89,18 +109,24 @@ export async function saveGame(
     ...trophies.map((trophy) => env.DB.prepare(`
       INSERT INTO trophies (
         game_id, trophy_id, trophy_group_id, trophy_name, trophy_description, trophy_type,
-        icon_url, earned, earned_at, rarity_class, earned_rate, progress, first_seen_at, last_synced_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        icon_url, earned, earned_at, rarity_class, earned_rate, progress, first_seen_at, last_synced_at,
+        earned_number, platinum_number
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(game_id, trophy_id) DO UPDATE SET
         trophy_group_id = excluded.trophy_group_id, trophy_name = excluded.trophy_name,
         trophy_description = excluded.trophy_description, trophy_type = excluded.trophy_type,
         icon_url = excluded.icon_url, earned = excluded.earned, earned_at = excluded.earned_at,
         rarity_class = excluded.rarity_class, earned_rate = excluded.earned_rate,
-        progress = excluded.progress, last_synced_at = excluded.last_synced_at
+        progress = excluded.progress, last_synced_at = excluded.last_synced_at,
+        earned_number = CASE WHEN excluded.earned = 1 THEN COALESCE(trophies.earned_number, excluded.earned_number) ELSE NULL END,
+        platinum_number = CASE WHEN excluded.earned = 1 AND excluded.trophy_type = 'platinum'
+          THEN COALESCE(trophies.platinum_number, excluded.platinum_number) ELSE NULL END
     `).bind(
       trophy.gameId, trophy.trophyId, trophy.groupId, trophy.name, trophy.description, trophy.type,
       trophy.iconUrl, Number(trophy.earned), trophy.earnedAt, trophy.rarityClass, trophy.earnedRate,
       trophy.progress, syncedAt, syncedAt,
+      ordinalById.get(trophy.trophyId)?.earnedNumber || existingById.get(trophy.trophyId)?.earned_number || null,
+      ordinalById.get(trophy.trophyId)?.platinumNumber || existingById.get(trophy.trophyId)?.platinum_number || null,
     )),
   ];
 
@@ -108,6 +134,19 @@ export async function saveGame(
     await env.DB.batch(statements.slice(index, index + 100));
   }
   return !existing;
+}
+
+async function reserveOrdinalRange(env: PsnEnvironment, key: string, count: number): Promise<number> {
+  if (!count) {
+    const current = await env.DB.prepare("SELECT value FROM sync_state WHERE key = ?").bind(key).first<{ value?: unknown }>();
+    return Number(current?.value || 0);
+  }
+  const row = await env.DB.prepare(`
+    INSERT INTO sync_state (key, value, updated_at) VALUES (?, ?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = CAST(sync_state.value AS INTEGER) + CAST(excluded.value AS INTEGER), updated_at = excluded.updated_at
+    RETURNING value
+  `).bind(key, String(count), new Date().toISOString()).first<{ value?: unknown }>();
+  return Number(row?.value || count);
 }
 
 export async function getSyncCursor(env: PsnEnvironment): Promise<number> {

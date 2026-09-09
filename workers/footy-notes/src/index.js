@@ -129,7 +129,7 @@ export default {
   },
 };
 
-const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
+const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "transferOutDate", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
 
 async function listRosters(env, searchParams) {
   const teamId = cleanText(searchParams.get("teamId"), 80, "Team ID");

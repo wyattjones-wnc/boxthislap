@@ -62,7 +62,7 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
 
   for (const player of legacy?.players || []) {
     if (matchedLegacy.has(player)) continue;
-    const providerData = normalizeLegacyPlayer(player);
+    const providerData = normalizeLegacyPlayer(player, season);
     players.push({
       playerKey: `legacy-sheet:${player.id || normalizeName(player.player)}`,
       provider: "legacy-sheet",
@@ -81,7 +81,7 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
         provider: "legacy-history",
         providerPlayerId: String(player.id || ""),
         manual: true,
-        providerData: { ...normalizeLegacyPlayer(player), transferOut: false },
+        providerData: normalizeLegacyPlayer(player, season),
         seedOverrides: await legacyOverrides(player, legacy?.season || season),
       })));
     if (priorPlayers.length) rosters.push({ teamId, season: priorSeason, active: false, players: priorPlayers });
@@ -150,7 +150,7 @@ async function loadSportDbPlayers(teamId) {
     }));
 }
 
-function normalizeLegacyPlayer(player) {
+function normalizeLegacyPlayer(player, season) {
   return {
     name: String(player.player || ""),
     position: String(player.position || ""),
@@ -162,12 +162,12 @@ function normalizeLegacyPlayer(player) {
     clubJoinedFrom: String(player.left || ""),
     fromAcademy: truthy(player.fromAcademy),
     isNew: marked(player.new),
-    transferOut: truthy(player.transferOut),
+    transferOutDate: truthy(player.transferOut) ? rosterSeasonStartDate(player.teamId, season) : "",
   };
 }
 
 async function legacyOverrides(player, assetSeason) {
-  const normalized = normalizeLegacyPlayer(player);
+  const normalized = normalizeLegacyPlayer(player, assetSeason);
   const data = Object.fromEntries(Object.entries(normalized).filter(([, value]) => value !== "" && value !== false));
   const folderSeason = String(assetSeason || "").replace(/[^a-z0-9]+/gi, "_");
   const base = `assets/players/${folderSeason}/${player.teamId}/${player.id}`;
@@ -224,6 +224,12 @@ function previousSeason(teamId, season) {
     return `${start}-${String(start + 1).slice(-2)}`;
   }
   return String(Number(season) - 1);
+}
+
+function rosterSeasonStartDate(teamId, season) {
+  const year = String(season || "").slice(0, 4);
+  if (!/^\d{4}$/.test(year)) return "";
+  return ["1", "2", "3"].includes(String(teamId)) ? `${year}-07-01` : `${year}-01-01`;
 }
 
 function wasOnRosterBySeason(player, season, currentRosterSeason) {

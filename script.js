@@ -1558,7 +1558,7 @@ function formatFootyPlayerNumber(number) {
 }
 
 function getFootyPlayerTradingCardBackgroundPath(player = {}) {
-  if (player.useDefaultCardImage) return player.imagePath || "assets/players/default-profile.svg";
+  if (player.useDefaultCardImage) return "assets/players/default-profile.svg";
   if (player.cardImagePath) return player.cardImagePath;
   const id = String(player.id || "").trim();
   const teamId = String(player.teamId || "").trim();
@@ -1604,7 +1604,7 @@ function openFootyTradingCard(player, team) {
     >
       <div class="trading-card-flip-inner" data-trading-card-flip-inner>
         <div class="trading-card-face trading-card-face--front">
-          ${backgroundPath ? `<img class="trading-card-background${player.overrides?.cardImage ? "" : " is-default"}" src="${escapeHtml(backgroundPath)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : ""}
+          ${backgroundPath ? `<img class="trading-card-background${player.overrides?.cardImage && !player.useDefaultCardImage ? "" : " is-default"}" src="${escapeHtml(backgroundPath)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : ""}
           <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="" decoding="async">
           <div class="trading-card-team-badge" aria-hidden="true">${badgeMarkup}</div>
           ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}
@@ -1764,7 +1764,7 @@ async function drawFootyTradingCardFrontCanvas(context, player, team, width, hei
   context.fillStyle = "#07111d";
   context.fillRect(0, 0, width, height);
 
-  await drawCanvasImage(context, backgroundPath, 0, 0, width, height, { cover: !player.overrides?.cardImage });
+  await drawCanvasImage(context, backgroundPath, 0, 0, width, height, { cover: player.useDefaultCardImage || !player.overrides?.cardImage });
   await drawCanvasImage(context, framePath, 0, 0, width, height);
 
   let didDrawBadge = false;
@@ -5378,6 +5378,10 @@ function normalizeFootyRosterPlayer(player = {}) {
   const transparent = String(player.transparent || player.Transparent || "").trim();
   const useDefaultProfileImage = normalizeBooleanish(player.useDefaultProfileImage);
   const useDefaultCardImage = normalizeBooleanish(player.useDefaultCardImage);
+  const explicitTransferOutDate = String(player.transferOutDate || player.TransferOutDate || "").trim();
+  const transferOutDate = /^\d{4}-\d{2}-\d{2}$/.test(explicitTransferOutDate)
+    ? explicitTransferOutDate
+    : (normalizeBooleanish(player.transferOut || player.TransferOut) ? getFootyRosterSeasonStartDate(teamId, season) : "");
   const explicitProfileImage = resolveFootyRosterMediaUrl(player.profileImage || player.ProfileImage || "");
   const explicitCardImage = resolveFootyRosterMediaUrl(player.cardImage || player.CardImage || "");
   const legacyImagePaths = getFootyPlayerTransparentPaths({ id, season, teamId, transparent });
@@ -5408,7 +5412,8 @@ function normalizeFootyRosterPlayer(player = {}) {
     manual: Boolean(player.manual),
     status: String(player.status || "active"),
     transparent,
-    transferOut: normalizeBooleanish(player.transferOut || player.TransferOut),
+    transferOut: Boolean(transferOutDate),
+    transferOutDate,
     useDefaultCardImage,
     useDefaultProfileImage,
     yearJoined: String(player.joined || player.Joined || player.yearJoined || player["Year Joined"] || "").trim(),
@@ -5594,8 +5599,33 @@ function getFootyRosterPlayersForTeam(teamInput) {
   }
 
   return roster.players
+    .filter((player) => shouldShowFootyRosterPlayerInSeason(player, roster) || (footyRosterEditMode && isCurrentManagerAdmin()))
     .filter((player) => player.status !== "archived" || (footyRosterEditMode && isCurrentManagerAdmin()))
     .sort(compareFootyRosterPlayers);
+}
+
+function shouldShowFootyRosterPlayerInSeason(player, roster) {
+  if (!player?.transferOutDate) return true;
+  const transferSeason = getFootyRosterSeasonForDate(player.teamId, player.transferOutDate);
+  return !transferSeason || String(roster?.season || "").localeCompare(transferSeason) < 0;
+}
+
+function getFootyRosterSeasonForDate(teamId, value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-\d{2}$/);
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (["1", "2", "3"].includes(String(teamId))) {
+    const start = month >= 7 ? year : year - 1;
+    return `${start}-${String(start + 1).slice(-2)}`;
+  }
+  return String(year);
+}
+
+function getFootyRosterSeasonStartDate(teamId, season) {
+  const year = String(season || "").slice(0, 4);
+  if (!/^\d{4}$/.test(year)) return "";
+  return ["1", "2", "3"].includes(String(teamId)) ? `${year}-07-01` : `${year}-01-01`;
 }
 
 function compareFootyRosterPlayers(first, second) {
@@ -5690,7 +5720,7 @@ function openFootyRosterEditor(team, player) {
   footyRosterEditorFrom.value = player?.clubJoinedFrom || "";
   footyRosterEditorAcademy.checked = Boolean(player?.fromAcademy);
   footyRosterEditorNew.checked = Boolean(player?.isNew);
-  footyRosterEditorTransfer.checked = Boolean(player?.transferOut);
+  footyRosterEditorTransfer.value = player?.transferOutDate || "";
   footyRosterEditorDefaultProfileRow.hidden = !player;
   footyRosterEditorDefaultProfile.checked = Boolean(player?.useDefaultProfileImage);
   footyRosterEditorDefaultCardRow.hidden = !player;
@@ -5720,7 +5750,7 @@ async function saveFootyRosterEditor() {
     clubJoinedFrom: footyRosterEditorFrom.value.trim(),
     fromAcademy: footyRosterEditorAcademy.checked,
     isNew: footyRosterEditorNew.checked,
-    transferOut: footyRosterEditorTransfer.checked,
+    transferOutDate: footyRosterEditorTransfer.value,
     useDefaultProfileImage: footyRosterEditorDefaultProfile.checked,
     useDefaultCardImage: footyRosterEditorDefaultCard.checked,
   };

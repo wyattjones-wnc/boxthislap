@@ -42,6 +42,24 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   assert.equal(roster.players.find((player) => player.providerPlayerId === "10").number, "10");
   assert.equal(roster.players.find((player) => player.providerPlayerId === "11").reviewDeparture, true);
   assert.equal(roster.players.find((player) => player.providerPlayerId === "12").status, "active");
+
+  await db.prepare(`INSERT INTO footy_roster_players
+    (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual)
+    VALUES ('duplicate-12', '1', '2026-27', 'old-provider:12', 'old-provider', '12', '{"name":"Manual Player","birthday":"2001-02-03"}', '{}', 'active', 0)`).run();
+  const merged = await sync(worker, [{ teamId: "1", season: "2026-27", players: [
+    { playerKey: "new-provider:12", provider: "new-provider", providerPlayerId: "12", providerData: { name: "Manual Player", birthday: "2001-02-03", number: "8" } },
+  ] }]);
+  roster = (await getJson(worker, "/api/rosters?includeInactive=1")).rosters[0];
+  assert.equal(roster.players.filter((player) => player.name === "Manual Player").length, 1);
+  assert.equal(roster.players.find((player) => player.name === "Manual Player").playerKey, "new-provider:12");
+  assert.equal(merged.duplicatesMerged, 1);
+
+  await sync(worker, [{ teamId: "1", season: "2025-26", active: false, players: [
+    { playerKey: "history:12", provider: "legacy-history", providerPlayerId: "12", manual: true, providerData: { name: "Manual Player" } },
+  ] }]);
+  const rosters = (await getJson(worker, "/api/rosters?includeInactive=1")).rosters;
+  assert.equal(rosters.find((entry) => entry.season === "2026-27").active, true);
+  assert.equal(rosters.find((entry) => entry.season === "2025-26").active, false);
 });
 
 async function sync(worker, rosters) {
@@ -53,6 +71,7 @@ async function sync(worker, rosters) {
   const value = await response.json();
   assert.equal(response.status, 200, JSON.stringify(value));
   assert.equal(value.ok, true, JSON.stringify(value));
+  return value;
 }
 
 async function getJson(worker, route) {

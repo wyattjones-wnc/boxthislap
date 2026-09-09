@@ -5672,6 +5672,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-roster-review-badge {
   background: #9a5c00;
+  border: 0;
   border-radius: 999px;
   color: #fff;
   font-size: 0.66rem;
@@ -5681,6 +5682,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   position: absolute;
   top: 48px;
   z-index: 2;
+}
+
+button.footy-roster-review-badge {
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .footy-team-player-card--loading {

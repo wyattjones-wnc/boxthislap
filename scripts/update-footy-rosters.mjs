@@ -19,15 +19,12 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
     loadFootballDataPlayers(teamId),
     loadSportDbPlayers(teamId),
   ]);
-  const sportDbByName = new Map(sportDbPlayers.map((player) => [normalizeName(player.name), player]));
-  const legacyByName = new Map((legacy?.players || []).map((player) => [normalizeName(player.player), player]));
   const players = [];
   const matchedLegacy = new Set();
 
   for (const player of footballPlayers) {
-    const key = normalizeName(player.name);
-    const legacyPlayer = legacyByName.get(key);
-    const media = sportDbByName.get(key) || {};
+    const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
+    const media = findIdentityMatch(player, sportDbPlayers) || {};
     if (legacyPlayer) matchedLegacy.add(legacyPlayer);
     players.push({
       playerKey: `football-data.org:${player.id}`,
@@ -47,9 +44,8 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
   }
 
   for (const player of sportDbPlayers) {
-    const key = normalizeName(player.name);
-    if (footballPlayers.some((candidate) => normalizeName(candidate.name) === key)) continue;
-    const legacyPlayer = legacyByName.get(key);
+    if (findIdentityMatch(player, footballPlayers)) continue;
+    const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
     if (legacyPlayer) matchedLegacy.add(legacyPlayer);
     players.push({
       playerKey: `thesportsdb:${player.id}`,
@@ -72,7 +68,21 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
       seedOverrides: await legacyOverrides(player, legacy?.season || season),
     });
   }
-  if (players.length) rosters.push({ teamId, season, players });
+  if (SHOULD_SEED_LEGACY && legacy?.players?.length) {
+    const priorSeason = previousSeason(teamId, season);
+    const priorPlayers = await Promise.all(legacy.players
+      .filter((player) => wasOnRosterBySeason(player, priorSeason, season))
+      .map(async (player) => ({
+        playerKey: `legacy-history:${season}:${player.id || normalizeName(player.player)}`,
+        provider: "legacy-history",
+        providerPlayerId: String(player.id || ""),
+        manual: true,
+        providerData: { ...normalizeLegacyPlayer(player), transferOut: false },
+        seedOverrides: await legacyOverrides(player, legacy?.season || season),
+      })));
+    if (priorPlayers.length) rosters.push({ teamId, season: priorSeason, active: false, players: priorPlayers });
+  }
+  if (players.length) rosters.push({ teamId, season, active: true, players });
 }
 
 const summary = rosters.map((roster) => ({ teamId: roster.teamId, season: roster.season, players: roster.players.length }));
@@ -147,7 +157,7 @@ function normalizeLegacyPlayer(player) {
     yearJoined: String(player.joined || ""),
     clubJoinedFrom: String(player.left || ""),
     fromAcademy: truthy(player.fromAcademy),
-    isNew: truthy(player.new),
+    isNew: marked(player.new),
     transferOut: truthy(player.transferOut),
   };
 }
@@ -184,6 +194,48 @@ function normalizeName(value) {
   return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+function findIdentityMatch(player, candidates, excluded = new Set()) {
+  const name = normalizeName(player.name || player.player);
+  const birthday = normalizeBirthday(player.birthday || player.dateOfBirth);
+  return candidates.find((candidate) => {
+    if (excluded.has(candidate)) return false;
+    const candidateName = normalizeName(candidate.name || candidate.player);
+    const candidateBirthday = normalizeBirthday(candidate.birthday || candidate.dateOfBirth);
+    return Boolean(name && candidateName && name === candidateName) || Boolean(birthday && candidateBirthday && birthday === candidateBirthday);
+  });
+}
+
+function normalizeBirthday(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const direct = text.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (direct) return direct;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+function previousSeason(teamId, season) {
+  if (["1", "2", "3"].includes(teamId)) {
+    const start = Number(String(season).slice(0, 4)) - 1;
+    return `${start}-${String(start + 1).slice(-2)}`;
+  }
+  return String(Number(season) - 1);
+}
+
+function wasOnRosterBySeason(player, season, currentRosterSeason) {
+  const joined = Number(String(player.joined || "").match(/\d{4}/)?.[0]);
+  const start = Number(String(season).slice(0, 4));
+  const seasonEnd = String(season).includes("-") ? start + 1 : start;
+  const currentStart = Number(String(currentRosterSeason).slice(0, 4));
+  if (marked(player.new) && joined && currentStart && joined >= currentStart) return false;
+  return !joined || !seasonEnd || joined <= seasonEnd;
+}
+
 function truthy(value) {
   return ["1", "true", "yes", "y"].includes(String(value || "").trim().toLowerCase());
+}
+
+function marked(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return Boolean(normalized) && !["0", "false", "no", "n"].includes(normalized);
 }

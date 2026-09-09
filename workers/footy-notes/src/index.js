@@ -161,16 +161,20 @@ async function syncRosters(env, body) {
   let added = 0;
   let updated = 0;
   let reviewDepartures = 0;
+  let duplicatesMerged = 0;
   for (const rosterValue of body.rosters) {
     const teamId = requireText(rosterValue?.teamId, 80, "Team ID");
     const season = requireText(rosterValue?.season, 20, "Season");
     const players = Array.isArray(rosterValue?.players) ? rosterValue.players : [];
     if (players.length > 200) throw httpError(400, "A roster has too many players.");
-    await env.DB.batch([
-      env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId),
-      env.DB.prepare(`INSERT INTO footy_roster_seasons (team_id, season, is_active, last_synced_at, updated_at)
-        VALUES (?, ?, 1, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET is_active = 1, last_synced_at = excluded.last_synced_at, updated_at = excluded.updated_at`).bind(teamId, season, now, now),
-    ]);
+    const isActive = rosterValue?.active !== false;
+    const seasonStatements = [];
+    if (isActive) seasonStatements.push(env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId));
+    seasonStatements.push(env.DB.prepare(`INSERT INTO footy_roster_seasons (team_id, season, is_active, last_synced_at, updated_at)
+      VALUES (?, ?, ?, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET is_active = excluded.is_active, last_synced_at = excluded.last_synced_at, updated_at = excluded.updated_at`).bind(teamId, season, isActive ? 1 : 0, now, now));
+    await env.DB.batch(seasonStatements);
+    const existingResult = await env.DB.prepare("SELECT * FROM footy_roster_players WHERE team_id = ? AND season = ?").bind(teamId, season).all();
+    let existingRows = [...(existingResult.results || [])];
     const seenKeys = [];
     for (const value of players) {
       const provider = cleanText(value?.provider, 80, "Provider") || "manual-import";
@@ -178,20 +182,33 @@ async function syncRosters(env, body) {
       const providerData = normalizeRosterData(value?.providerData || value);
       if (!providerData.name) continue;
       const playerKey = cleanText(value?.playerKey, 160, "Player key") || `${provider}:${providerPlayerId || slugRosterValue(providerData.name)}`;
-      const existing = await env.DB.prepare("SELECT id FROM footy_roster_players WHERE team_id = ? AND season = ? AND player_key = ?").bind(teamId, season, playerKey).first();
+      const matches = existingRows.filter((row) => row.player_key === playerKey || rosterIdentityMatches(row, providerData));
+      const existing = chooseRosterSurvivor(matches, playerKey);
+      const duplicateRows = matches.filter((row) => row.id !== existing?.id);
+      const mergedOverrides = mergeRosterOverrides(matches, value?.seedOverrides || {});
+      for (const duplicate of duplicateRows) {
+        await env.DB.prepare("DELETE FROM footy_roster_players WHERE id = ?").bind(duplicate.id).run();
+        duplicatesMerged += 1;
+      }
+      existingRows = existingRows.filter((row) => !duplicateRows.some((duplicate) => duplicate.id === row.id));
       const id = existing?.id || crypto.randomUUID();
-      const seedOverrides = existing ? null : normalizeRosterData(value?.seedOverrides || {});
-      const manual = value?.manual ? 1 : 0;
-      await env.DB.prepare(`INSERT INTO footy_roster_players
-        (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual, source_seen_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
-        ON CONFLICT(team_id, season, player_key) DO UPDATE SET provider = excluded.provider, provider_player_id = excluded.provider_player_id,
-          provider_data = excluded.provider_data,
-          status = CASE WHEN footy_roster_players.status = 'archived' THEN 'archived' ELSE 'active' END,
-          source_seen_at = excluded.source_seen_at, updated_at = excluded.updated_at`
-      ).bind(id, teamId, season, playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(seedOverrides || {}), manual, now, now).run();
+      const preserveManual = existing && Number(existing.manual) === 1 && existing.provider !== "legacy-sheet" && existing.provider !== "legacy-history";
+      const manual = value?.manual || preserveManual ? 1 : 0;
+      if (existing) {
+        await env.DB.prepare(`UPDATE footy_roster_players SET player_key = ?, provider = ?, provider_player_id = ?, provider_data = ?, overrides = ?,
+          status = CASE WHEN status = 'archived' THEN 'archived' ELSE 'active' END, manual = ?, source_seen_at = ?, updated_at = ? WHERE id = ?`)
+          .bind(playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(mergedOverrides), manual, now, now, id).run();
+        existingRows = existingRows.map((row) => row.id === id ? { ...row, player_key: playerKey, provider, provider_player_id: providerPlayerId, provider_data: JSON.stringify(providerData), overrides: JSON.stringify(mergedOverrides), manual } : row);
+        updated += 1;
+      } else {
+        await env.DB.prepare(`INSERT INTO footy_roster_players
+          (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual, source_seen_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
+          .bind(id, teamId, season, playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(mergedOverrides), manual, now, now).run();
+        existingRows.push({ id, team_id: teamId, season, player_key: playerKey, provider, provider_player_id: providerPlayerId, provider_data: JSON.stringify(providerData), overrides: JSON.stringify(mergedOverrides), status: "active", manual });
+        added += 1;
+      }
       seenKeys.push(playerKey);
-      existing ? updated += 1 : added += 1;
     }
     const activeProviderRows = await env.DB.prepare("SELECT id, player_key FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
     const seen = new Set(seenKeys);
@@ -201,7 +218,7 @@ async function syncRosters(env, body) {
       reviewDepartures += 1;
     }
   }
-  return { added, updated, reviewDepartures };
+  return { added, updated, reviewDepartures, duplicatesMerged };
 }
 
 async function createRosterPlayer(env, body, managerId) {
@@ -319,6 +336,38 @@ function safeJson(value) {
 
 function slugRosterValue(value) {
   return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function rosterIdentityMatches(row, incoming) {
+  const effective = { ...safeJson(row.provider_data), ...safeJson(row.overrides) };
+  const rowName = slugRosterValue(effective.name);
+  const incomingName = slugRosterValue(incoming.name);
+  const rowBirthday = normalizeRosterBirthday(effective.birthday);
+  const incomingBirthday = normalizeRosterBirthday(incoming.birthday);
+  return Boolean(rowName && incomingName && rowName === incomingName) || Boolean(rowBirthday && incomingBirthday && rowBirthday === incomingBirthday);
+}
+
+function normalizeRosterBirthday(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const direct = text.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (direct) return direct;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+function chooseRosterSurvivor(rows, playerKey) {
+  return [...rows].sort((first, second) => rosterRowPriority(second, playerKey) - rosterRowPriority(first, playerKey))[0] || null;
+}
+
+function rosterRowPriority(row, playerKey) {
+  return (row.updated_by ? 1000 : 0) + (["legacy-sheet", "legacy-history"].includes(row.provider) ? 100 : 0) +
+    Object.keys(safeJson(row.overrides)).length * 10 + (row.player_key === playerKey ? 1 : 0);
+}
+
+function mergeRosterOverrides(rows, seedOverrides) {
+  const ordered = [...rows].sort((first, second) => rosterRowPriority(first, "") - rosterRowPriority(second, ""));
+  return normalizeRosterData(Object.assign({}, normalizeRosterData(seedOverrides || {}), ...ordered.map((row) => safeJson(row.overrides))));
 }
 
 function requireRosterSync(request, env) {

@@ -1543,7 +1543,7 @@ function renderFootyTeamPlayerCard(player) {
     <article class="footy-team-player-card${player.reviewDeparture ? " needs-review" : ""}" tabindex="0" role="button" data-footy-player-id="${escapeHtml(player.id)}" data-footy-team-id="${escapeHtml(player.teamId)}" aria-label="${shouldExportFootyTradingCards ? "Export" : "Open"} ${escapeHtml(player.name)} trading card">
       <div class="footy-team-player-art" aria-hidden="true">${imageMarkup}</div>
       ${footyRosterEditMode && isCurrentManagerAdmin() ? `<button class="footy-roster-edit-player" type="button" data-footy-roster-edit="${escapeHtml(player.id)}" aria-label="Edit ${escapeHtml(player.name)}" title="Edit player">✎</button>` : ""}
-      ${player.reviewDeparture && isCurrentManagerAdmin() ? `<span class="footy-roster-review-badge" title="This player was missing from the latest provider roster">Review</span>` : ""}
+      ${player.reviewDeparture && isCurrentManagerAdmin() ? `<button class="footy-roster-review-badge" type="button" data-footy-roster-edit="${escapeHtml(player.id)}" aria-label="Review ${escapeHtml(player.name)}" title="Missing from the latest provider roster; review this player">Review</button>` : ""}
       ${player.status === "archived" ? `<span class="footy-roster-review-badge" title="This player is archived">Archived</span>` : ""}
       ${number ? `<div class="footy-team-player-number">${escapeHtml(number)}</div>` : ""}
       <div class="footy-team-player-name">${escapeHtml(player.name)}</div>

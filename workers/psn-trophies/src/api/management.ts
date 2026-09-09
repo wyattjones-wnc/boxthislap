@@ -13,6 +13,16 @@ const LOG_SORTS: Record<string, string> = {
   "platinum-duration-asc": "(completion_seconds IS NULL) ASC, completion_seconds ASC, t.earned_at DESC",
 };
 
+// D1's query planner otherwise prefers the older earned/type index and builds a
+// temporary sort over the full trophy collection. These names are selected only
+// from the validated sort key above, never from request text.
+const LOG_SORT_INDEXES: Record<string, string> = {
+  newest: "idx_trophies_log_date_desc",
+  oldest: "idx_trophies_log_date",
+  name: "idx_trophies_log_name",
+  rarity: "idx_trophies_log_rarity",
+};
+
 export async function routeTrophyManagementApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
   const url = new URL(request.url);
   const isLog = request.method === "GET" && url.pathname === "/api/psn/trophy-log";
@@ -73,6 +83,7 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
   const sort = String(params.get("sort") || "newest").toLowerCase();
   const orderBy = LOG_SORTS[sort];
   if (!orderBy) throw httpError(400, `sort must be ${Object.keys(LOG_SORTS).join(", ")}.`);
+  const indexHint = LOG_SORT_INDEXES[sort] ? ` INDEXED BY ${LOG_SORT_INDEXES[sort]}` : "";
   const evergreen = params.get("evergreen") === "true";
   const view = sort.startsWith("platinum-duration-") ? "platinums" : evergreen ? "all" : requestedView;
   const { limit, offset, page } = parsePagination(params, 48);
@@ -87,7 +98,7 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
       t.earned_number AS trophy_number, t.platinum_number,
       CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
         THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
-    FROM trophies t
+    FROM trophies t${indexHint}
     JOIN games g ON g.id = t.game_id
     LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
     WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND ${filters.join(" AND ")}

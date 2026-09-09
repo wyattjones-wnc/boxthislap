@@ -41,6 +41,7 @@ test("returns an authenticated unsorted trophy page", async () => {
   assert.equal(body.items[0].platinumNumber, 161);
   assert.equal(body.items[0].completionSeconds, 172800);
   assert.match(sql, /p\.state IS NULL/);
+  assert.match(sql, /FROM trophies t INDEXED BY idx_trophies_log_date_desc/);
   assert.doesNotMatch(sql, /ROW_NUMBER\(\)/);
   assert.doesNotMatch(sql, /t\.trophy_type <> 'platinum'/);
   assert.deepEqual(bindings, [49, 0]);
@@ -118,6 +119,7 @@ test("ordinary evergreen sorting always uses all earned trophies", async () => {
   const body = await response.json() as any;
   assert.equal(body.view, "all");
   assert.doesNotMatch(sql, /p\.state = 'seen'/);
+  assert.match(sql, /FROM trophies t INDEXED BY idx_trophies_log_rarity/);
 });
 
 test("stores a favorite preference for an earned platinum trophy", async () => {

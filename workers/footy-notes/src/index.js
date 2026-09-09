@@ -129,7 +129,7 @@ export default {
   },
 };
 
-const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "transferOutDate", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
+const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOutDate", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
 
 async function listRosters(env, searchParams) {
   const teamId = cleanText(searchParams.get("teamId"), 80, "Team ID");
@@ -328,7 +328,7 @@ function normalizeRosterData(value) {
   const result = {};
   for (const field of ROSTER_FIELDS) {
     if (!Object.prototype.hasOwnProperty.call(value || {}, field)) continue;
-    result[field] = ["fromAcademy", "isNew", "transferOut", "useDefaultProfileImage", "useDefaultCardImage"].includes(field)
+    result[field] = ["fromAcademy", "isNew", "useDefaultProfileImage", "useDefaultCardImage"].includes(field)
       ? Boolean(value[field])
       : cleanText(value[field], field.includes("Image") ? 3000 : 300, field);
   }

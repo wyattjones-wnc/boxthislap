@@ -17,7 +17,7 @@ Each confirmed save increments a revision number and appends the full saved stat
 - `GET /api/rosters` returns the active season for each team; `includeInactive=1` includes historical seasons.
 - `POST /api/rosters/sync` performs the scheduled hybrid provider merge using `X-Roster-Sync-Token`. Provider omissions are marked for review rather than removed.
 - `POST /api/roster-players` and `PUT /api/roster-players/:id` create or curate season roster entries for an authenticated admin.
-- `POST /api/roster-players/:id/media` stores a custom profile or trading-card image in R2; deleting `/media/:kind` restores the provider/default image.
+- `POST /api/roster-players/:id/media` stores a custom profile or trading-card image in R2. Roster override flags can temporarily use fallback images without deleting the stored custom image; deleting `/media/:kind` permanently removes it.
 
 Dev and production intentionally share this Worker and database. Apply migrations with `npx wrangler d1 migrations apply DB --remote`, import the legacy sheet with `scripts/migrate-footy-match-notes.mjs`, and deploy with `npx wrangler deploy` from this directory.
 

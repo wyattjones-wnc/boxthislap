@@ -1558,6 +1558,7 @@ function formatFootyPlayerNumber(number) {
 }
 
 function getFootyPlayerTradingCardBackgroundPath(player = {}) {
+  if (player.useDefaultCardImage) return player.imagePath || "assets/players/default-profile.svg";
   if (player.cardImagePath) return player.cardImagePath;
   const id = String(player.id || "").trim();
   const teamId = String(player.teamId || "").trim();
@@ -5375,10 +5376,14 @@ function normalizeFootyRosterPlayer(player = {}) {
   const season = String(player.season || player.Season || "").trim();
   const teamId = String(player.teamId || player["Team ID"] || "").trim();
   const transparent = String(player.transparent || player.Transparent || "").trim();
+  const useDefaultProfileImage = normalizeBooleanish(player.useDefaultProfileImage);
+  const useDefaultCardImage = normalizeBooleanish(player.useDefaultCardImage);
   const explicitProfileImage = resolveFootyRosterMediaUrl(player.profileImage || player.ProfileImage || "");
   const explicitCardImage = resolveFootyRosterMediaUrl(player.cardImage || player.CardImage || "");
   const legacyImagePaths = getFootyPlayerTransparentPaths({ id, season, teamId, transparent });
-  const imagePaths = [explicitProfileImage, ...legacyImagePaths, "assets/players/default-profile.svg"].filter(Boolean);
+  const imagePaths = useDefaultProfileImage
+    ? ["assets/players/default-profile.svg"]
+    : [explicitProfileImage, ...legacyImagePaths, "assets/players/default-profile.svg"].filter(Boolean);
 
   return {
     appearances: String(player.app || player.App || player.appearances || player.Appearances || "").trim(),
@@ -5389,7 +5394,7 @@ function normalizeFootyRosterPlayer(player = {}) {
     id,
     imageFallbackPaths: imagePaths.slice(1),
     imagePath: imagePaths[0] || "",
-    cardImagePath: explicitCardImage,
+    cardImagePath: useDefaultCardImage ? "" : explicitCardImage,
     isNew: normalizeFootyRosterMarker(player.new || player.New),
     name: String(player.player || player.Player || player.name || "").trim(),
     number: String(player.number || player["#"] || "").trim(),
@@ -5404,6 +5409,8 @@ function normalizeFootyRosterPlayer(player = {}) {
     status: String(player.status || "active"),
     transparent,
     transferOut: normalizeBooleanish(player.transferOut || player.TransferOut),
+    useDefaultCardImage,
+    useDefaultProfileImage,
     yearJoined: String(player.joined || player.Joined || player.yearJoined || player["Year Joined"] || "").trim(),
   };
 }
@@ -5684,10 +5691,10 @@ function openFootyRosterEditor(team, player) {
   footyRosterEditorAcademy.checked = Boolean(player?.fromAcademy);
   footyRosterEditorNew.checked = Boolean(player?.isNew);
   footyRosterEditorTransfer.checked = Boolean(player?.transferOut);
-  footyRosterEditorDefaultProfileRow.hidden = !player?.overrides?.profileImage;
-  footyRosterEditorDefaultProfile.checked = false;
-  footyRosterEditorDefaultCardRow.hidden = !player?.overrides?.cardImage;
-  footyRosterEditorDefaultCard.checked = false;
+  footyRosterEditorDefaultProfileRow.hidden = !player;
+  footyRosterEditorDefaultProfile.checked = Boolean(player?.useDefaultProfileImage);
+  footyRosterEditorDefaultCardRow.hidden = !player;
+  footyRosterEditorDefaultCard.checked = Boolean(player?.useDefaultCardImage);
   footyRosterEditorArchive.checked = player?.status === "archived";
   footyRosterEditorKeepRow.hidden = !player?.reviewDeparture;
   footyRosterEditorKeep.checked = false;
@@ -5714,6 +5721,8 @@ async function saveFootyRosterEditor() {
     fromAcademy: footyRosterEditorAcademy.checked,
     isNew: footyRosterEditorNew.checked,
     transferOut: footyRosterEditorTransfer.checked,
+    useDefaultProfileImage: footyRosterEditorDefaultProfile.checked,
+    useDefaultCardImage: footyRosterEditorDefaultCard.checked,
   };
   if (!values.name) return;
   const overrides = buildFootyRosterOverrides(values, player);
@@ -5731,10 +5740,6 @@ async function saveFootyRosterEditor() {
         method: "POST",
         body: { teamId: String(team.id || team.teamId || ""), season: roster?.season || getDefaultFootyRosterSeason(team), overrides },
       })).player;
-    }
-    for (const [kind, checkbox] of [["profile", footyRosterEditorDefaultProfile], ["card", footyRosterEditorDefaultCard]]) {
-      if (!checkbox.checked) continue;
-      saved = (await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media/${kind}`, { method: "DELETE" })).player;
     }
     for (const [kind, input] of [["profile", footyRosterEditorProfile], ["card", footyRosterEditorCard]]) {
       const file = input.files?.[0];

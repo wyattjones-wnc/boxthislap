@@ -129,7 +129,7 @@ export default {
   },
 };
 
-const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "profileImage", "cardImage"];
+const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
 
 async function listRosters(env, searchParams) {
   const teamId = cleanText(searchParams.get("teamId"), 80, "Team ID");
@@ -268,11 +268,13 @@ async function saveRosterMedia(env, id, body, managerId) {
   const key = `${row.team_id}/${row.season}/${id}/${kind}.${extension}`;
   const overrides = safeJson(row.overrides);
   const field = kind === "profile" ? "profileImage" : "cardImage";
+  const defaultField = kind === "profile" ? "useDefaultProfileImage" : "useDefaultCardImage";
   const previousPath = String(overrides[field] || "").split("?")[0];
   const previousKey = previousPath.startsWith("/media/rosters/") ? previousPath.slice("/media/rosters/".length) : "";
   if (previousKey && previousKey !== key) await env.ROSTER_MEDIA.delete(previousKey);
   await env.ROSTER_MEDIA.put(key, bytes, { httpMetadata: { contentType: match[1], cacheControl: "public, max-age=31536000, immutable" } });
   overrides[field] = `/media/rosters/${key}?v=${Date.now()}`;
+  delete overrides[defaultField];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
     .bind(JSON.stringify(overrides), managerId, id).run();
   return getRosterPlayer(env, id);
@@ -326,7 +328,7 @@ function normalizeRosterData(value) {
   const result = {};
   for (const field of ROSTER_FIELDS) {
     if (!Object.prototype.hasOwnProperty.call(value || {}, field)) continue;
-    result[field] = ["fromAcademy", "isNew", "transferOut"].includes(field)
+    result[field] = ["fromAcademy", "isNew", "transferOut", "useDefaultProfileImage", "useDefaultCardImage"].includes(field)
       ? Boolean(value[field])
       : cleanText(value[field], field.includes("Image") ? 3000 : 300, field);
   }

@@ -169,6 +169,16 @@ import {
   footyRosterEditorArchive,
   footyRosterEditorSource,
   footyRosterEditorStatus,
+  tradingCardImageEditorDialog,
+  tradingCardImageEditorForm,
+  tradingCardImageEditorClose,
+  tradingCardImageEditorCancel,
+  tradingCardImageEditorReset,
+  tradingCardImageEditorStage,
+  tradingCardImageEditorCanvas,
+  tradingCardImageEditorOverlay,
+  tradingCardImageEditorZoom,
+  tradingCardImageEditorStatus,
   footyGoalAssistsButton,
   footyGoalAssistsBack,
   footyGoalAssistsForm,
@@ -425,7 +435,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202609081551";
+} from "./modules/domRefs.js?v=202609091415";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -646,6 +656,8 @@ let activeNextSourceMatchId = "";
 let activeAutocompleteInput = null;
 let footyRosterLoadPromise = null;
 let footyRosterEditMode = false;
+let pendingFootyRosterCardFile = null;
+let tradingCardImageEditorState = null;
 const footyRosterDiscoveryStates = new Map();
 const activeFootyRosterSeasons = new Map();
 const footyNoteGoalAssistEntries = {
@@ -5744,6 +5756,7 @@ function openFootyRosterEditor(team, player) {
   const roster = getFootyRosterForTeam(team);
   const season = roster?.season || getDefaultFootyRosterSeason(team);
   footyRosterEditorForm?.reset();
+  pendingFootyRosterCardFile = null;
   footyRosterEditorId.value = player?.id || "";
   footyRosterEditorTitle.textContent = player ? `Edit ${player.name}` : "Add player";
   footyRosterEditorSeason.textContent = `${team.prettyName || team.name} • ${season}`;
@@ -5787,6 +5800,145 @@ async function showFootyRosterMediaUsage() {
   }
 }
 
+async function openTradingCardImageEditor(file) {
+  if (!file || !tradingCardImageEditorDialog || !tradingCardImageEditorCanvas) return;
+  if (!/^image\/(?:png|jpeg|webp)$/.test(file.type)) {
+    footyRosterEditorStatus.textContent = "Choose a PNG, JPEG, or WebP image.";
+    footyRosterEditorCard.value = "";
+    return;
+  }
+  const imageUrl = URL.createObjectURL(file);
+  const image = new Image();
+  try {
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("The selected image could not be opened."));
+      image.src = imageUrl;
+    });
+  } catch (error) {
+    URL.revokeObjectURL(imageUrl);
+    footyRosterEditorStatus.textContent = error.message;
+    footyRosterEditorCard.value = "";
+    return;
+  }
+  tradingCardImageEditorState = {
+    file,
+    image,
+    imageUrl,
+    offsetX: 0,
+    offsetY: 0,
+    pointers: new Map(),
+    zoom: 1,
+  };
+  tradingCardImageEditorZoom.value = "1";
+  renderTradingCardImageEditorOverlay();
+  renderTradingCardImageEditorCanvas();
+  tradingCardImageEditorStatus.textContent = "";
+  tradingCardImageEditorDialog.showModal();
+}
+
+function renderTradingCardImageEditorOverlay() {
+  const team = getActiveFootyTeam();
+  if (!team || !tradingCardImageEditorOverlay) return;
+  const badgeSources = getFootyTradingCardBadgeSources(team);
+  const badgeMarkup = renderFootyBadgeMarkup({
+    fallbackSrc: badgeSources[1] || "",
+    fallbackText: getFootyTeamFallbackBadge(team.name),
+    loading: "eager",
+    primarySrc: badgeSources[0] || "",
+  });
+  const name = footyRosterEditorName.value.trim() || "Player name";
+  const number = formatFootyPlayerNumber(footyRosterEditorNumber.value);
+  tradingCardImageEditorOverlay.innerHTML = `
+    <img class="trading-card-frame" src="assets/trading-card/trading-card.svg" alt="">
+    <div class="trading-card-team-badge">${badgeMarkup}</div>
+    ${number ? `<div class="trading-card-number">${escapeHtml(number)}</div>` : ""}
+    <div class="trading-card-name">${escapeHtml(name)}</div>
+  `;
+}
+
+function renderTradingCardImageEditorCanvas() {
+  const state = tradingCardImageEditorState;
+  const canvas = tradingCardImageEditorCanvas;
+  if (!state || !canvas) return;
+  const width = 750;
+  const height = 1056;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  drawPositionedTradingCardImage(context, state.image, width, height, state.zoom, state.offsetX, state.offsetY);
+}
+
+function drawPositionedTradingCardImage(context, image, width, height, zoom, offsetX, offsetY) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight) * zoom;
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  const overflowX = Math.max(0, (drawWidth - width) / (2 * width));
+  const overflowY = Math.max(0, (drawHeight - height) / (2 * height));
+  const boundedX = Math.max(-overflowX, Math.min(overflowX, offsetX));
+  const boundedY = Math.max(-overflowY, Math.min(overflowY, offsetY));
+  if (tradingCardImageEditorState) {
+    tradingCardImageEditorState.offsetX = boundedX;
+    tradingCardImageEditorState.offsetY = boundedY;
+  }
+  context.fillStyle = "#07111d";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, (width - drawWidth) / 2 + boundedX * width, (height - drawHeight) / 2 + boundedY * height, drawWidth, drawHeight);
+}
+
+function resetTradingCardImageEditor() {
+  if (!tradingCardImageEditorState) return;
+  tradingCardImageEditorState.zoom = 1;
+  tradingCardImageEditorState.offsetX = 0;
+  tradingCardImageEditorState.offsetY = 0;
+  tradingCardImageEditorZoom.value = "1";
+  renderTradingCardImageEditorCanvas();
+}
+
+function closeTradingCardImageEditor({ discard = true } = {}) {
+  if (discard) {
+    pendingFootyRosterCardFile = null;
+    if (footyRosterEditorCard) footyRosterEditorCard.value = "";
+  }
+  if (tradingCardImageEditorState?.imageUrl) URL.revokeObjectURL(tradingCardImageEditorState.imageUrl);
+  tradingCardImageEditorState = null;
+  tradingCardImageEditorDialog?.close();
+}
+
+async function usePositionedTradingCardImage() {
+  const state = tradingCardImageEditorState;
+  if (!state) return;
+  tradingCardImageEditorStatus.textContent = "Preparing image...";
+  tradingCardImageEditorForm.querySelector('button[type="submit"]').disabled = true;
+  try {
+    const canvas = createFootyTradingCardCanvas(2500, 3520);
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("This browser could not prepare the image.");
+    drawPositionedTradingCardImage(context, state.image, canvas.width, canvas.height, state.zoom, state.offsetX, state.offsetY);
+    let blob = await canvasToBlob(canvas, "image/webp", 0.9);
+    if (blob.size > 5 * 1024 * 1024) blob = await canvasToBlob(canvas, "image/webp", 0.78);
+    if (blob.size > 5 * 1024 * 1024) throw new Error("The edited image is still larger than 5 MB. Choose a smaller source image.");
+    const baseName = state.file.name.replace(/\.[^.]+$/, "") || "trading-card";
+    const outputType = ["image/webp", "image/jpeg", "image/png"].includes(blob.type) ? blob.type : "image/png";
+    const extension = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }[outputType];
+    pendingFootyRosterCardFile = new File([blob], `${baseName}-positioned.${extension}`, { type: outputType });
+    closeTradingCardImageEditor({ discard: false });
+    footyRosterEditorDefaultCard.checked = false;
+    footyRosterEditorStatus.textContent = "Trading-card image is positioned and ready to upload when you save the player.";
+  } catch (error) {
+    tradingCardImageEditorStatus.textContent = error.message || "The image could not be prepared.";
+  } finally {
+    tradingCardImageEditorForm.querySelector('button[type="submit"]').disabled = false;
+  }
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("The image could not be encoded.")), type, quality));
+}
+
 async function saveFootyRosterEditor() {
   const team = getActiveFootyTeam();
   if (!team) return;
@@ -5826,7 +5978,7 @@ async function saveFootyRosterEditor() {
       })).player;
     }
     for (const [kind, input] of [["profile", footyRosterEditorProfile], ["card", footyRosterEditorCard]]) {
-      const file = input.files?.[0];
+      const file = kind === "card" ? pendingFootyRosterCardFile : input.files?.[0];
       if (!file) continue;
       if (file.size > 5 * 1024 * 1024) throw new Error(`${kind === "profile" ? "Profile" : "Trading-card"} image must be 5 MB or smaller.`);
       footyRosterEditorStatus.textContent = `Uploading ${kind} image...`;
@@ -13821,6 +13973,61 @@ footyRosterEditorForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   void saveFootyRosterEditor();
 });
+footyRosterEditorCard?.addEventListener("change", () => {
+  const file = footyRosterEditorCard.files?.[0];
+  pendingFootyRosterCardFile = null;
+  if (file) void openTradingCardImageEditor(file);
+});
+[tradingCardImageEditorClose, tradingCardImageEditorCancel].forEach((button) => button?.addEventListener("click", () => closeTradingCardImageEditor()));
+tradingCardImageEditorReset?.addEventListener("click", resetTradingCardImageEditor);
+tradingCardImageEditorForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  void usePositionedTradingCardImage();
+});
+tradingCardImageEditorDialog?.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeTradingCardImageEditor();
+});
+tradingCardImageEditorZoom?.addEventListener("input", () => {
+  if (!tradingCardImageEditorState) return;
+  tradingCardImageEditorState.zoom = Number(tradingCardImageEditorZoom.value || 1);
+  renderTradingCardImageEditorCanvas();
+});
+tradingCardImageEditorStage?.addEventListener("pointerdown", (event) => {
+  const state = tradingCardImageEditorState;
+  if (!state) return;
+  tradingCardImageEditorStage.setPointerCapture(event.pointerId);
+  state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (state.pointers.size === 2) {
+    const [first, second] = [...state.pointers.values()];
+    state.pinch = { distance: Math.hypot(second.x - first.x, second.y - first.y), zoom: state.zoom };
+  }
+});
+tradingCardImageEditorStage?.addEventListener("pointermove", (event) => {
+  const state = tradingCardImageEditorState;
+  const previous = state?.pointers.get(event.pointerId);
+  if (!state || !previous) return;
+  state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (state.pointers.size >= 2 && state.pinch) {
+    const [first, second] = [...state.pointers.values()];
+    const distance = Math.hypot(second.x - first.x, second.y - first.y);
+    state.zoom = Math.max(1, Math.min(3, state.pinch.zoom * distance / Math.max(1, state.pinch.distance)));
+    tradingCardImageEditorZoom.value = String(state.zoom);
+  } else {
+    const rect = tradingCardImageEditorStage.getBoundingClientRect();
+    state.offsetX += (event.clientX - previous.x) / rect.width;
+    state.offsetY += (event.clientY - previous.y) / rect.height;
+  }
+  renderTradingCardImageEditorCanvas();
+});
+const finishTradingCardImagePointer = (event) => {
+  const state = tradingCardImageEditorState;
+  if (!state) return;
+  state.pointers.delete(event.pointerId);
+  state.pinch = null;
+};
+tradingCardImageEditorStage?.addEventListener("pointerup", finishTradingCardImagePointer);
+tradingCardImageEditorStage?.addEventListener("pointercancel", finishTradingCardImagePointer);
 
 footyTeamContent?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {

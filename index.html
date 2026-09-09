@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.09.05.23";
+      window.BOX_THIS_LAP_VERSION = "2026.09.09.14.15";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609090523">
+    <link rel="stylesheet" href="styles.css?v=202609091415">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1187,6 +1187,22 @@
             <p class="table-message footy-roster-editor-source" id="footy-roster-editor-source"></p>
             <p class="form-status" id="footy-roster-editor-status" role="status"></p>
             <div class="dialog-actions"><button class="footer-copy-link" id="footy-roster-editor-cancel" type="button">Cancel</button><button class="action-button" type="submit">Save player</button></div>
+          </form>
+        </dialog>
+        <dialog class="footy-note-dialog trading-card-image-editor-dialog" id="trading-card-image-editor-dialog" data-admin-only hidden>
+          <form class="footy-note-form trading-card-image-editor-form" id="trading-card-image-editor-form">
+            <div class="dialog-heading">
+              <div><span class="eyebrow">Trading-card image</span><h2>Position image</h2></div>
+              <button class="icon-action-button" id="trading-card-image-editor-close" type="button" aria-label="Close image editor" title="Close">×</button>
+            </div>
+            <p class="table-message trading-card-image-editor-help">Drag the image to position it. Use the slider or pinch to resize it. The card elements are previews and will remain layered above the saved image.</p>
+            <div class="trading-card-image-editor-stage" id="trading-card-image-editor-stage">
+              <canvas id="trading-card-image-editor-canvas"></canvas>
+              <div id="trading-card-image-editor-overlay" class="trading-card-image-editor-overlay" aria-hidden="true"></div>
+            </div>
+            <label class="trading-card-image-editor-zoom"><span>Image size</span><input id="trading-card-image-editor-zoom" type="range" min="1" max="3" step="0.01" value="1"></label>
+            <p class="form-status" id="trading-card-image-editor-status" role="status"></p>
+            <div class="dialog-actions"><button class="footer-copy-link" id="trading-card-image-editor-reset" type="button">Reset</button><button class="footer-copy-link" id="trading-card-image-editor-cancel" type="button">Cancel</button><button class="action-button" type="submit">Use image</button></div>
           </form>
         </dialog>
       </section>
@@ -2855,6 +2871,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609090523"></script>
+    <script type="module" src="script.js?v=202609091415"></script>
   </body>
 </html>

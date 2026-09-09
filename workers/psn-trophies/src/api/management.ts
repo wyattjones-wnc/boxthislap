@@ -110,13 +110,25 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
   if (view === "unsorted") {
     const inboxOrderBy = INBOX_SORTS[sort] || INBOX_SORTS.newest;
     const inboxIndex = INBOX_SORT_INDEXES[sort] || INBOX_SORT_INDEXES.newest;
-    statement = env.DB.prepare(`${select}
-      FROM trophy_inbox i INDEXED BY ${inboxIndex}
-      JOIN trophies t ON t.game_id = i.game_id AND t.trophy_id = i.trophy_id
-      JOIN games g ON g.id = t.game_id
-      ORDER BY ${inboxOrderBy}
-      LIMIT ? OFFSET ?`);
-    bindings = [limit + 1, offset];
+    try {
+      const result = await env.DB.prepare(`${select}
+        FROM trophy_inbox i INDEXED BY ${inboxIndex}
+        JOIN trophies t ON t.game_id = i.game_id AND t.trophy_id = i.trophy_id
+        JOIN games g ON g.id = t.game_id
+        ORDER BY ${inboxOrderBy}
+        LIMIT ? OFFSET ?`).bind(limit + 1, offset).all<Record<string, unknown>>();
+      return trophyLogResponse(result.results || [], { evergreen, limit, page, sort, view });
+    } catch (error) {
+      if (!isMissingInboxError(error)) throw error;
+      statement = env.DB.prepare(`${select}
+        FROM trophies t${indexHint}
+        JOIN games g ON g.id = t.game_id
+        LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+        WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND p.state IS NULL
+        ORDER BY ${orderBy}
+        LIMIT ? OFFSET ?`);
+      bindings = [limit + 1, offset];
+    }
   } else if (view === "favorites" || view === "seen") {
     statement = env.DB.prepare(`${select}
       FROM trophy_preferences p INDEXED BY idx_trophy_preferences_state
@@ -139,7 +151,14 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
     bindings = [limit + 1, offset];
   }
   const result = await statement.bind(...bindings).all<Record<string, unknown>>();
-  const rows = result.results || [];
+  return trophyLogResponse(result.results || [], { evergreen, limit, page, sort, view });
+}
+
+function trophyLogResponse(
+  rows: Record<string, unknown>[],
+  values: { evergreen: boolean; limit: number; page: number; sort: string; view: string },
+): Response {
+  const { evergreen, limit, page, sort, view } = values;
   return noStoreJson({
     ok: true,
     items: rows.slice(0, limit).map(mapTrophy),
@@ -162,9 +181,15 @@ async function updateSeenThrough(request: Request, env: PsnEnvironment, managerI
   if (requestedView !== "unsorted" || body.evergreen === true) throw httpError(400, "Seen through is available only in the unsorted view.");
   const sort = String(body.sort || "newest").toLowerCase();
   if (sort !== "newest") throw httpError(400, "Seen through requires newest-first sorting.");
-  const anchorRow = await env.DB.prepare(`
-    SELECT earned_at FROM trophy_inbox WHERE game_id = ? AND trophy_id = ?
-  `).bind(gameId, trophyId).first<{ earned_at?: unknown }>();
+  let anchorRow;
+  try {
+    anchorRow = await env.DB.prepare(`
+      SELECT earned_at FROM trophy_inbox WHERE game_id = ? AND trophy_id = ?
+    `).bind(gameId, trophyId).first<{ earned_at?: unknown }>();
+  } catch (error) {
+    if (!isMissingInboxError(error)) throw error;
+    return updateSeenThroughLegacy(env, managerId, gameId, trophyId);
+  }
   const earnedAt = String(anchorRow?.earned_at || "");
   if (!earnedAt) throw httpError(409, "That trophy is no longer awaiting review.");
   const targets = await env.DB.prepare(`
@@ -187,6 +212,43 @@ async function updateSeenThrough(request: Request, env: PsnEnvironment, managerI
     await env.DB.batch(statements);
   }
   return noStoreJson({ ok: true, seen: rows.length });
+}
+
+async function updateSeenThroughLegacy(
+  env: PsnEnvironment,
+  managerId: string,
+  gameId: string,
+  trophyId: number,
+): Promise<Response> {
+  const targets = await env.DB.prepare(`
+    WITH ordered AS (
+      SELECT t.game_id, t.trophy_id, p.state,
+        ROW_NUMBER() OVER (ORDER BY t.earned_at DESC, t.game_id ASC, t.trophy_id ASC) AS display_rank
+      FROM trophies t
+      LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
+    ), anchor AS (
+      SELECT display_rank FROM ordered WHERE game_id = ? AND trophy_id = ?
+    )
+    SELECT game_id, trophy_id FROM ordered
+    WHERE state IS NULL AND display_rank <= (SELECT display_rank FROM anchor)
+    ORDER BY display_rank
+  `).bind(gameId, trophyId).all<Record<string, unknown>>();
+  const rows = targets.results || [];
+  const updatedAt = new Date().toISOString();
+  for (let offset = 0; offset < rows.length; offset += 100) {
+    await env.DB.batch(rows.slice(offset, offset + 100).map((row) => env.DB.prepare(`
+      INSERT INTO trophy_preferences (game_id, trophy_id, state, updated_at, updated_by)
+      VALUES (?, ?, 'seen', ?, ?)
+      ON CONFLICT(game_id, trophy_id) DO UPDATE SET state = 'seen',
+        updated_at = excluded.updated_at, updated_by = excluded.updated_by
+    `).bind(String(row.game_id), Number(row.trophy_id), updatedAt, managerId)));
+  }
+  return noStoreJson({ ok: true, seen: rows.length });
+}
+
+function isMissingInboxError(error: unknown): boolean {
+  return /no such table:\s*trophy_inbox/i.test(error instanceof Error ? error.message : String(error));
 }
 
 async function updatePreference(

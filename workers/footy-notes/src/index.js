@@ -166,6 +166,8 @@ async function syncRosters(env, body) {
     const teamId = requireText(rosterValue?.teamId, 80, "Team ID");
     const season = requireText(rosterValue?.season, 20, "Season");
     const players = Array.isArray(rosterValue?.players) ? rosterValue.players : [];
+    const refreshedProviders = new Set((Array.isArray(rosterValue?.refreshedProviders) ? rosterValue.refreshedProviders : [])
+      .map((value) => cleanText(value, 80, "Provider")).filter(Boolean));
     if (players.length > 200) throw httpError(400, "A roster has too many players.");
     const isActive = rosterValue?.active !== false;
     const seasonStatements = [];
@@ -210,10 +212,11 @@ async function syncRosters(env, body) {
       }
       seenKeys.push(playerKey);
     }
-    const activeProviderRows = await env.DB.prepare("SELECT id, player_key FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
+    const activeProviderRows = await env.DB.prepare("SELECT id, player_key, provider FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
     const seen = new Set(seenKeys);
     for (const row of activeProviderRows.results || []) {
       if (seen.has(row.player_key)) continue;
+      if (refreshedProviders.size && !refreshedProviders.has(String(row.provider || ""))) continue;
       await env.DB.prepare("UPDATE footy_roster_players SET status = 'review_departure', updated_at = ? WHERE id = ?").bind(now, row.id).run();
       reviewDepartures += 1;
     }

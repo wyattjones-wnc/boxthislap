@@ -60,6 +60,13 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   const rosters = (await getJson(worker, "/api/rosters?includeInactive=1")).rosters;
   assert.equal(rosters.find((entry) => entry.season === "2026-27").active, true);
   assert.equal(rosters.find((entry) => entry.season === "2025-26").active, false);
+
+  await db.prepare("UPDATE footy_roster_players SET status = 'active' WHERE provider_player_id = '10'").run();
+  await sync(worker, [{ teamId: "1", season: "2026-27", refreshedProviders: ["new-provider"], players: [
+    { playerKey: "new-provider:12", provider: "new-provider", providerPlayerId: "12", providerData: { name: "Manual Player", birthday: "2001-02-03" } },
+  ] }]);
+  roster = (await getJson(worker, "/api/rosters?teamId=1&season=2026-27")).rosters[0];
+  assert.equal(roster.players.find((player) => player.providerPlayerId === "10").reviewDeparture, false);
 });
 
 async function sync(worker, rosters) {

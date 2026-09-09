@@ -15,6 +15,10 @@ const rosters = [];
 for (const teamId of FOLLOWED_TEAM_IDS) {
   const legacy = legacyRosters.find((roster) => String(roster.teamId) === teamId);
   const season = currentSeason(teamId);
+  const refreshedProviders = [
+    FOOTBALL_DATA_TEAM_IDS[teamId] && FOOTBALL_DATA_API_KEY ? "football-data.org" : "",
+    SPORTDB_TEAM_IDS[teamId] ? "TheSportsDB" : "",
+  ].filter(Boolean);
   const [footballPlayers, sportDbPlayers] = await Promise.all([
     loadFootballDataPlayers(teamId),
     loadSportDbPlayers(teamId),
@@ -82,7 +86,7 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
       })));
     if (priorPlayers.length) rosters.push({ teamId, season: priorSeason, active: false, players: priorPlayers });
   }
-  if (players.length) rosters.push({ teamId, season, active: true, players });
+  if (players.length) rosters.push({ teamId, season, active: true, refreshedProviders, players });
 }
 
 const summary = rosters.map((roster) => ({ teamId: roster.teamId, season: roster.season, players: roster.players.length }));

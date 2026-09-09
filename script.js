@@ -5918,9 +5918,7 @@ async function usePositionedTradingCardImage() {
     const context = canvas.getContext("2d");
     if (!context) throw new Error("This browser could not prepare the image.");
     drawPositionedTradingCardImage(context, state.image, canvas.width, canvas.height, state.zoom, state.offsetX, state.offsetY);
-    let blob = await canvasToBlob(canvas, "image/webp", 0.9);
-    if (blob.size > 5 * 1024 * 1024) blob = await canvasToBlob(canvas, "image/webp", 0.78);
-    if (blob.size > 5 * 1024 * 1024) throw new Error("The edited image is still larger than 5 MB. Choose a smaller source image.");
+    const blob = await encodeTradingCardUpload(canvas);
     const baseName = state.file.name.replace(/\.[^.]+$/, "") || "trading-card";
     const outputType = ["image/webp", "image/jpeg", "image/png"].includes(blob.type) ? blob.type : "image/png";
     const extension = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }[outputType];
@@ -5937,6 +5935,23 @@ async function usePositionedTradingCardImage() {
 
 function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("The image could not be encoded.")), type, quality));
+}
+
+async function encodeTradingCardUpload(canvas) {
+  const maximumBytes = 5 * 1024 * 1024;
+  const attempts = [
+    ["image/webp", 0.9],
+    ["image/webp", 0.78],
+    ["image/jpeg", 0.9],
+    ["image/jpeg", 0.8],
+    ["image/jpeg", 0.68],
+    ["image/jpeg", 0.55],
+  ];
+  for (const [type, quality] of attempts) {
+    const blob = await canvasToBlob(canvas, type, quality);
+    if (blob.size <= maximumBytes && ["image/webp", "image/jpeg"].includes(blob.type)) return blob;
+  }
+  throw new Error("This browser could not prepare the card image below the 5 MB upload limit.");
 }
 
 async function saveFootyRosterEditor() {

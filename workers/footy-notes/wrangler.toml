@@ -14,3 +14,7 @@ service = "box-this-lap-rankings"
 binding = "DB"
 database_name = "footy-match-notes"
 database_id = "af010919-5364-4324-8b89-72c832c215ed"
+
+[[r2_buckets]]
+binding = "ROSTER_MEDIA"
+bucket_name = "box-this-lap-footy-roster-media"

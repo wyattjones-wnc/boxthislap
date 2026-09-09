@@ -1,5 +1,5 @@
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, context) {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin, env);
 
@@ -20,11 +20,16 @@ export default {
 
       const rosterMediaRoute = url.pathname.match(/^\/media\/rosters\/(.+)$/);
       if (request.method === "GET" && rosterMediaRoute) {
-        return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), cors);
+        return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), request, context);
       }
 
       if (request.method === "GET" && url.pathname === "/api/rosters") {
         return json({ ok: true, rosters: await listRosters(env, url.searchParams) }, 200, cors);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/roster-media/usage") {
+        await requireAdmin(request, env);
+        return json({ ok: true, usage: await getRosterMediaUsage(env) }, 200, cors);
       }
 
       if (request.method === "POST" && url.pathname === "/api/rosters/sync") {
@@ -49,10 +54,10 @@ export default {
         const managerId = await requireAdmin(request, env);
         const playerId = decodeURIComponent(rosterMediaMutation[1]);
         const kind = rosterMediaMutation[2] ? decodeURIComponent(rosterMediaMutation[2]) : "";
-        const player = request.method === "POST"
+        const result = request.method === "POST"
           ? await saveRosterMedia(env, playerId, await readBody(request), managerId)
           : await deleteRosterMedia(env, playerId, kind, managerId);
-        return json({ ok: true, player }, 200, cors);
+        return json({ ok: true, ...result }, 200, cors);
       }
 
       const rosterPlayerRoute = url.pathname.match(/^\/api\/roster-players\/([^/]+)$/);
@@ -136,6 +141,10 @@ export default {
 };
 
 const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOutDate", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
+const ROSTER_MEDIA_STORAGE_LIMIT = 8_000_000_000;
+const ROSTER_MEDIA_STORAGE_WARNING = 7_000_000_000;
+const ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT = 250_000;
+const ROSTER_MEDIA_MONTHLY_UPLOAD_WARNING = 200_000;
 
 async function discoverRoster(env, body) {
   const teamId = requireText(body?.teamId, 80, "Team ID");
@@ -368,20 +377,37 @@ async function saveRosterMedia(env, id, body, managerId) {
   if (!match) throw httpError(400, "Upload a PNG, JPEG, or WebP image.");
   const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
   if (bytes.byteLength > 5 * 1024 * 1024) throw httpError(413, "Roster images must be 5 MB or smaller.");
+  await ensureRosterMediaLedger(env);
   const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[match[1]];
-  const key = `${row.team_id}/${row.season}/${id}/${kind}.${extension}`;
+  const key = `${row.team_id}/${row.season}/${id}/${kind}-${Date.now()}.${extension}`;
   const overrides = safeJson(row.overrides);
   const field = kind === "profile" ? "profileImage" : "cardImage";
   const defaultField = kind === "profile" ? "useDefaultProfileImage" : "useDefaultCardImage";
   const previousPath = String(overrides[field] || "").split("?")[0];
   const previousKey = previousPath.startsWith("/media/rosters/") ? previousPath.slice("/media/rosters/".length) : "";
+  const usage = await getRosterMediaUsage(env, { reconciled: true });
+  const previousObject = previousKey
+    ? await env.DB.prepare("SELECT size_bytes FROM footy_roster_media_objects WHERE object_key = ?").bind(previousKey).first()
+    : null;
+  const projectedStorage = usage.storageBytes - Number(previousObject?.size_bytes || 0) + bytes.byteLength;
+  if (projectedStorage > ROSTER_MEDIA_STORAGE_LIMIT) throw httpError(413, "Roster media has reached its free-tier safety limit. Delete or replace images before uploading more.");
+  if (usage.monthlyUploads >= ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT) throw httpError(429, "Roster media has reached its monthly upload safety limit. Try again next month.");
   if (previousKey && previousKey !== key) await env.ROSTER_MEDIA.delete(previousKey);
   await env.ROSTER_MEDIA.put(key, bytes, { httpMetadata: { contentType: match[1], cacheControl: "public, max-age=31536000, immutable" } });
-  overrides[field] = `/media/rosters/${key}?v=${Date.now()}`;
+  const period = new Date().toISOString().slice(0, 7);
+  const statements = [
+    env.DB.prepare(`INSERT INTO footy_roster_media_objects (object_key, size_bytes, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(object_key) DO UPDATE SET size_bytes = excluded.size_bytes, updated_at = CURRENT_TIMESTAMP`).bind(key, bytes.byteLength),
+    env.DB.prepare(`INSERT INTO footy_roster_media_usage (period, upload_count, updated_at) VALUES (?, 1, CURRENT_TIMESTAMP)
+      ON CONFLICT(period) DO UPDATE SET upload_count = upload_count + 1, updated_at = CURRENT_TIMESTAMP`).bind(period),
+  ];
+  if (previousKey && previousKey !== key) statements.push(env.DB.prepare("DELETE FROM footy_roster_media_objects WHERE object_key = ?").bind(previousKey));
+  await env.DB.batch(statements);
+  overrides[field] = `/media/rosters/${key}`;
   delete overrides[defaultField];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
     .bind(JSON.stringify(overrides), managerId, id).run();
-  return getRosterPlayer(env, id);
+  return { player: await getRosterPlayer(env, id), usage: await getRosterMediaUsage(env, { reconciled: true }) };
 }
 
 async function deleteRosterMedia(env, id, kind, managerId) {
@@ -394,22 +420,65 @@ async function deleteRosterMedia(env, id, kind, managerId) {
   const path = String(overrides[field] || "").split("?")[0];
   const key = path.startsWith("/media/rosters/") ? path.slice("/media/rosters/".length) : "";
   if (key) await env.ROSTER_MEDIA.delete(key);
+  if (key) await env.DB.prepare("DELETE FROM footy_roster_media_objects WHERE object_key = ?").bind(key).run();
   delete overrides[field];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
     .bind(JSON.stringify(overrides), managerId, id).run();
-  return getRosterPlayer(env, id);
+  return { player: await getRosterPlayer(env, id), usage: await getRosterMediaUsage(env) };
 }
 
-async function getRosterMedia(env, key, cors) {
-  if (!env.ROSTER_MEDIA || !key || key.includes("..")) return json({ ok: false, error: "Image was not found." }, 404, cors);
+async function getRosterMediaUsage(env, options = {}) {
+  if (!env.ROSTER_MEDIA) throw new Error("Roster media storage is not configured.");
+  if (!options.reconciled) await ensureRosterMediaLedger(env);
+  const storage = await env.DB.prepare("SELECT COALESCE(SUM(size_bytes), 0) AS storage_bytes, COUNT(*) AS object_count FROM footy_roster_media_objects").first();
+  const period = new Date().toISOString().slice(0, 7);
+  const monthly = await env.DB.prepare("SELECT upload_count FROM footy_roster_media_usage WHERE period = ?").bind(period).first();
+  const storageBytes = Number(storage?.storage_bytes || 0);
+  const monthlyUploads = Number(monthly?.upload_count || 0);
+  return {
+    storageBytes,
+    objectCount: Number(storage?.object_count || 0),
+    monthlyUploads,
+    storageLimitBytes: ROSTER_MEDIA_STORAGE_LIMIT,
+    monthlyUploadLimit: ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT,
+    warning: storageBytes >= ROSTER_MEDIA_STORAGE_WARNING || monthlyUploads >= ROSTER_MEDIA_MONTHLY_UPLOAD_WARNING,
+  };
+}
+
+async function ensureRosterMediaLedger(env) {
+  const initialized = await env.DB.prepare("SELECT state_value FROM footy_roster_media_state WHERE state_key = 'r2-ledger-initialized'").first();
+  if (initialized?.state_value === "1") return;
+  let cursor;
+  do {
+    const page = await env.ROSTER_MEDIA.list({ cursor, limit: 1000 });
+    const statements = (page.objects || []).map((object) => env.DB.prepare(`INSERT INTO footy_roster_media_objects
+      (object_key, size_bytes, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(object_key) DO UPDATE SET size_bytes = excluded.size_bytes, updated_at = CURRENT_TIMESTAMP`).bind(object.key, object.size));
+    if (statements.length) await env.DB.batch(statements);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  await env.DB.prepare(`INSERT INTO footy_roster_media_state (state_key, state_value, updated_at) VALUES ('r2-ledger-initialized', '1', CURRENT_TIMESTAMP)
+    ON CONFLICT(state_key) DO UPDATE SET state_value = '1', updated_at = CURRENT_TIMESTAMP`).run();
+}
+
+async function getRosterMedia(env, key, request, context) {
+  const headers = new Headers({ "Access-Control-Allow-Origin": "*" });
+  if (!env.ROSTER_MEDIA || !key || key.includes("..")) return json({ ok: false, error: "Image was not found." }, 404, headers);
+  const cacheUrl = new URL(request.url);
+  cacheUrl.search = "";
+  const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
+  const cache = typeof caches === "undefined" ? null : caches.default;
+  const cached = cache ? await cache.match(cacheKey) : null;
+  if (cached) return cached;
   const object = await env.ROSTER_MEDIA.get(key);
-  if (!object) return json({ ok: false, error: "Image was not found." }, 404, cors);
-  const headers = new Headers(cors);
+  if (!object) return json({ ok: false, error: "Image was not found." }, 404, headers);
   object.writeHttpMetadata(headers);
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.delete("Content-Type");
   headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
-  return new Response(object.body, { headers });
+  const response = new Response(object.body, { headers });
+  if (cache) context?.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
 }
 
 async function getRosterPlayerRow(env, id) {

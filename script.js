@@ -5768,6 +5768,23 @@ function openFootyRosterEditor(team, player) {
   footyRosterEditorSource.textContent = player?.provider ? `Roster source: ${player.provider}${player.reviewDeparture ? " • Missing from latest sync" : ""}` : "Manual roster entry";
   footyRosterEditorStatus.textContent = "";
   footyRosterEditorDialog.showModal();
+  void showFootyRosterMediaUsage();
+}
+
+async function showFootyRosterMediaUsage() {
+  try {
+    const { usage } = await requestFootyRosterApi("/api/roster-media/usage");
+    if (!footyRosterEditorDialog?.open || !usage) return;
+    const used = Number(usage.storageBytes || 0);
+    const limit = Number(usage.storageLimitBytes || 0);
+    const uploads = Number(usage.monthlyUploads || 0);
+    const uploadLimit = Number(usage.monthlyUploadLimit || 0);
+    const usedLabel = used >= 1_000_000 ? `${(used / 1_000_000).toFixed(1)} MB` : `${Math.ceil(used / 1000)} KB`;
+    const limitLabel = `${(limit / 1_000_000_000).toFixed(0)} GB`;
+    footyRosterEditorStatus.textContent = `${usage.warning ? "Approaching roster-media safety limit. " : ""}Custom images: ${usedLabel} of ${limitLabel}; ${uploads.toLocaleString()} of ${uploadLimit.toLocaleString()} monthly uploads.`;
+  } catch (error) {
+    if (footyRosterEditorDialog?.open) footyRosterEditorStatus.textContent = "Roster-media usage could not be checked. Upload safety limits still apply.";
+  }
 }
 
 async function saveFootyRosterEditor() {
@@ -5813,7 +5830,8 @@ async function saveFootyRosterEditor() {
       if (!file) continue;
       if (file.size > 5 * 1024 * 1024) throw new Error(`${kind === "profile" ? "Profile" : "Trading-card"} image must be 5 MB or smaller.`);
       footyRosterEditorStatus.textContent = `Uploading ${kind} image...`;
-      saved = (await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media`, { method: "POST", body: { kind, dataUrl: await readFileAsDataUrl(file) } })).player;
+      const mediaResult = await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media`, { method: "POST", body: { kind, dataUrl: await readFileAsDataUrl(file) } });
+      saved = mediaResult.player;
     }
     footyRosterEditorDialog.close();
     footyRosterLoadPromise = null;

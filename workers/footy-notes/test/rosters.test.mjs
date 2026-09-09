@@ -8,6 +8,7 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
 const schemaPath = fileURLToPath(new URL("../migrations/0006_rosters.sql", import.meta.url));
 const providerSchemaPath = fileURLToPath(new URL("../migrations/0007_roster_providers.sql", import.meta.url));
+const mediaUsageSchemaPath = fileURLToPath(new URL("../migrations/0008_roster_media_usage.sql", import.meta.url));
 
 test("roster sync merges provider data, preserves overrides, and flags departures", async (context) => {
   const worker = new Miniflare({
@@ -22,6 +23,7 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   const db = await worker.getD1Database("DB");
   await executeSql(db, await readFile(schemaPath, "utf8"));
   await executeSql(db, await readFile(providerSchemaPath, "utf8"));
+  await executeSql(db, await readFile(mediaUsageSchemaPath, "utf8"));
 
   const unauthorizedDiscovery = await worker.dispatchFetch("http://localhost:8787/api/rosters/discover", {
     method: "POST",

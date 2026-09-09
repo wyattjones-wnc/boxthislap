@@ -166,7 +166,15 @@ async function discoverRoster(env, body) {
       },
     }));
   if (!players.length) throw httpError(404, `No active players were found for ${teamName}.`);
-  await syncRosters(env, { rosters: [{ teamId, season, active: true, refreshedProviders: ["TheSportsDB"], players }] });
+  await syncRosters(env, { rosters: [{
+    teamId,
+    season,
+    active: true,
+    provider: "TheSportsDB",
+    providerTeamId: String(providerTeam.idTeam),
+    refreshedProviders: ["TheSportsDB"],
+    players,
+  }] });
   const params = new URLSearchParams({ teamId, season, includeInactive: "1" });
   return (await listRosters(env, params))[0] || null;
 }
@@ -219,7 +227,9 @@ async function listRosters(env, searchParams) {
   if (season) { conditions.push("p.season = ?"); bindings.push(season); }
   if (!season && searchParams.get("includeInactive") !== "1") conditions.push("(s.is_active = 1 OR s.is_active IS NULL)");
   const result = await env.DB.prepare(`
-    SELECT p.*, COALESCE(s.is_active, 0) AS is_active
+    SELECT p.*, COALESCE(s.is_active, 0) AS is_active,
+      COALESCE(s.provider, '') AS roster_provider,
+      COALESCE(s.provider_team_id, '') AS roster_provider_team_id
     FROM footy_roster_players p
     LEFT JOIN footy_roster_seasons s ON s.team_id = p.team_id AND s.season = p.season
     WHERE ${conditions.join(" AND ")}
@@ -228,7 +238,14 @@ async function listRosters(env, searchParams) {
   const groups = new Map();
   for (const row of result.results || []) {
     const key = `${row.team_id}|${row.season}`;
-    if (!groups.has(key)) groups.set(key, { teamId: String(row.team_id), season: String(row.season), active: Boolean(row.is_active), players: [] });
+    if (!groups.has(key)) groups.set(key, {
+      teamId: String(row.team_id),
+      season: String(row.season),
+      active: Boolean(row.is_active),
+      provider: String(row.roster_provider || ""),
+      providerTeamId: String(row.roster_provider_team_id || ""),
+      players: [],
+    });
     groups.get(key).players.push(mapRosterPlayer(row));
   }
   return [...groups.values()];
@@ -244,6 +261,8 @@ async function syncRosters(env, body) {
   for (const rosterValue of body.rosters) {
     const teamId = requireText(rosterValue?.teamId, 80, "Team ID");
     const season = requireText(rosterValue?.season, 20, "Season");
+    const rosterProvider = cleanText(rosterValue?.provider, 80, "Roster provider");
+    const rosterProviderTeamId = cleanText(rosterValue?.providerTeamId, 120, "Roster provider team ID");
     const players = Array.isArray(rosterValue?.players) ? rosterValue.players : [];
     const refreshedProviders = new Set((Array.isArray(rosterValue?.refreshedProviders) ? rosterValue.refreshedProviders : [])
       .map((value) => cleanText(value, 80, "Provider")).filter(Boolean));
@@ -251,8 +270,14 @@ async function syncRosters(env, body) {
     const isActive = rosterValue?.active !== false;
     const seasonStatements = [];
     if (isActive) seasonStatements.push(env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId));
-    seasonStatements.push(env.DB.prepare(`INSERT INTO footy_roster_seasons (team_id, season, is_active, last_synced_at, updated_at)
-      VALUES (?, ?, ?, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET is_active = excluded.is_active, last_synced_at = excluded.last_synced_at, updated_at = excluded.updated_at`).bind(teamId, season, isActive ? 1 : 0, now, now));
+    seasonStatements.push(env.DB.prepare(`INSERT INTO footy_roster_seasons
+      (team_id, season, is_active, provider, provider_team_id, last_synced_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET
+      is_active = excluded.is_active,
+      provider = CASE WHEN excluded.provider <> '' THEN excluded.provider ELSE footy_roster_seasons.provider END,
+      provider_team_id = CASE WHEN excluded.provider_team_id <> '' THEN excluded.provider_team_id ELSE footy_roster_seasons.provider_team_id END,
+      last_synced_at = excluded.last_synced_at,
+      updated_at = excluded.updated_at`).bind(teamId, season, isActive ? 1 : 0, rosterProvider, rosterProviderTeamId, now, now));
     await env.DB.batch(seasonStatements);
     const existingResult = await env.DB.prepare("SELECT * FROM footy_roster_players WHERE team_id = ? AND season = ?").bind(teamId, season).all();
     let existingRows = [...(existingResult.results || [])];

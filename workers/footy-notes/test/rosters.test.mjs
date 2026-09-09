@@ -7,6 +7,7 @@ import { Miniflare } from "miniflare";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
 const schemaPath = fileURLToPath(new URL("../migrations/0006_rosters.sql", import.meta.url));
+const providerSchemaPath = fileURLToPath(new URL("../migrations/0007_roster_providers.sql", import.meta.url));
 
 test("roster sync merges provider data, preserves overrides, and flags departures", async (context) => {
   const worker = new Miniflare({
@@ -20,6 +21,7 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   context.after(() => worker.dispose());
   const db = await worker.getD1Database("DB");
   await executeSql(db, await readFile(schemaPath, "utf8"));
+  await executeSql(db, await readFile(providerSchemaPath, "utf8"));
 
   const unauthorizedDiscovery = await worker.dispatchFetch("http://localhost:8787/api/rosters/discover", {
     method: "POST",
@@ -31,6 +33,8 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   await sync(worker, [{
     teamId: "1",
     season: "2026-27",
+    provider: "TheSportsDB",
+    providerTeamId: "133604",
     players: [
       { playerKey: "provider:10", provider: "provider", providerPlayerId: "10", providerData: { name: "First Player", number: "9" }, seedOverrides: { number: "10", cardImage: "assets/custom.webp", useDefaultCardImage: true, transferOutDate: "2026-07-01" } },
       { playerKey: "provider:11", provider: "provider", providerPlayerId: "11", providerData: { name: "Second Player", number: "11" } },
@@ -39,6 +43,8 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   }]);
   let roster = (await getJson(worker, "/api/rosters?includeInactive=1")).rosters[0];
   assert.equal(roster.players.length, 3);
+  assert.equal(roster.provider, "TheSportsDB");
+  assert.equal(roster.providerTeamId, "133604");
   assert.equal(roster.players.find((player) => player.providerPlayerId === "10").number, "10");
   assert.equal(roster.players.find((player) => player.providerPlayerId === "10").cardImage, "assets/custom.webp");
   assert.equal(roster.players.find((player) => player.providerPlayerId === "10").useDefaultCardImage, true);

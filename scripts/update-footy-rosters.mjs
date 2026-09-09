@@ -7,21 +7,24 @@ const SYNC_TOKEN = process.env.FOOTY_ROSTER_SYNC_TOKEN || "";
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const FOOTBALL_DATA_TEAM_IDS = { "1": "57", "2": "81", "3": "404" };
 const SPORTDB_TEAM_IDS = { "1": "133604", "2": "133739", "3": "134775", "6": "140078", "7": "137699" };
-const FOLLOWED_TEAM_IDS = ["1", "2", "3", "4", "5", "6", "7"];
+const DEFAULT_TEAM_IDS = ["1", "2", "3", "4", "5", "6", "7"];
 const SHOULD_SEED_LEGACY = process.argv.includes("--seed-legacy");
 
 const legacyRosters = SHOULD_SEED_LEGACY ? await loadLegacyRosters() : [];
+const storedRosterTargets = ROSTER_ENDPOINT ? await loadStoredRosterTargets() : [];
+const rosterTargets = buildRosterTargets(storedRosterTargets);
 const rosters = [];
-for (const teamId of FOLLOWED_TEAM_IDS) {
+for (const target of rosterTargets) {
+  const { teamId, footballDataTeamId, sportDbTeamId } = target;
   const legacy = legacyRosters.find((roster) => String(roster.teamId) === teamId);
-  const season = currentSeason(teamId);
+  const season = target.season || currentSeason(teamId);
   const refreshedProviders = [
-    FOOTBALL_DATA_TEAM_IDS[teamId] && FOOTBALL_DATA_API_KEY ? "football-data.org" : "",
-    SPORTDB_TEAM_IDS[teamId] ? "TheSportsDB" : "",
+    footballDataTeamId && FOOTBALL_DATA_API_KEY ? "football-data.org" : "",
+    sportDbTeamId ? "TheSportsDB" : "",
   ].filter(Boolean);
   const [footballPlayers, sportDbPlayers] = await Promise.all([
-    loadFootballDataPlayers(teamId),
-    loadSportDbPlayers(teamId),
+    loadFootballDataPlayers(footballDataTeamId),
+    loadSportDbPlayers(sportDbTeamId),
   ]);
   const players = [];
   const matchedLegacy = new Set();
@@ -86,7 +89,15 @@ for (const teamId of FOLLOWED_TEAM_IDS) {
       })));
     if (priorPlayers.length) rosters.push({ teamId, season: priorSeason, active: false, players: priorPlayers });
   }
-  if (players.length) rosters.push({ teamId, season, active: true, refreshedProviders, players });
+  if (players.length) rosters.push({
+    teamId,
+    season,
+    active: true,
+    provider: sportDbTeamId ? "TheSportsDB" : footballDataTeamId ? "football-data.org" : "",
+    providerTeamId: String(sportDbTeamId || footballDataTeamId || ""),
+    refreshedProviders,
+    players,
+  });
 }
 
 const summary = rosters.map((roster) => ({ teamId: roster.teamId, season: roster.season, players: roster.players.length }));
@@ -121,8 +132,38 @@ async function loadLegacyRosters() {
   return Array.isArray(value.rosters) ? value.rosters : [];
 }
 
-async function loadFootballDataPlayers(teamId) {
-  const providerId = FOOTBALL_DATA_TEAM_IDS[teamId];
+async function loadStoredRosterTargets() {
+  try {
+    const response = await fetch(`${ROSTER_ENDPOINT.replace(/\/$/, "")}/api/rosters?includeInactive=1`);
+    if (!response.ok) throw new Error(`roster endpoint returned ${response.status}`);
+    const value = await response.json();
+    return (Array.isArray(value?.rosters) ? value.rosters : []).filter((roster) => roster?.active && roster?.provider && roster?.providerTeamId);
+  } catch (error) {
+    console.warn(`Stored roster targets could not be loaded: ${error.message}`);
+    return [];
+  }
+}
+
+function buildRosterTargets(storedTargets) {
+  const targets = new Map(DEFAULT_TEAM_IDS.map((teamId) => [teamId, {
+    teamId,
+    season: currentSeason(teamId),
+    footballDataTeamId: FOOTBALL_DATA_TEAM_IDS[teamId] || "",
+    sportDbTeamId: SPORTDB_TEAM_IDS[teamId] || "",
+  }]));
+  for (const roster of storedTargets) {
+    const teamId = String(roster.teamId || "");
+    if (!teamId) continue;
+    const target = targets.get(teamId) || { teamId, season: String(roster.season || ""), footballDataTeamId: "", sportDbTeamId: "" };
+    target.season = String(roster.season || target.season || "");
+    if (roster.provider === "TheSportsDB") target.sportDbTeamId = String(roster.providerTeamId);
+    if (roster.provider === "football-data.org") target.footballDataTeamId = String(roster.providerTeamId);
+    targets.set(teamId, target);
+  }
+  return [...targets.values()];
+}
+
+async function loadFootballDataPlayers(providerId) {
   if (!providerId || !FOOTBALL_DATA_API_KEY) return [];
   const response = await fetch(`https://api.football-data.org/v4/teams/${providerId}`, { headers: { "X-Auth-Token": FOOTBALL_DATA_API_KEY } });
   if (!response.ok) throw new Error(`football-data.org team ${providerId} returned ${response.status}.`);
@@ -130,8 +171,7 @@ async function loadFootballDataPlayers(teamId) {
   return (value.squad || []).filter((person) => person.id && person.name && person.position);
 }
 
-async function loadSportDbPlayers(teamId) {
-  const providerId = SPORTDB_TEAM_IDS[teamId];
+async function loadSportDbPlayers(providerId) {
   if (!providerId) return [];
   const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${providerId}`);
   if (!response.ok) return [];

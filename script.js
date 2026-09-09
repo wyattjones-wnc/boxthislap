@@ -5588,6 +5588,11 @@ function renderFootyPlayerAutocomplete(input) {
     return;
   }
 
+  if (!String(input.value || "").trim()) {
+    closeAutocompleteDropdown();
+    return;
+  }
+
   activeAutocompleteInput = input;
 
   if (!Array.isArray(siteData.footyRosters)) {

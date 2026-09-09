@@ -36,7 +36,7 @@ export default {
 
   async scheduled(_controller: ScheduledController, env: PsnEnvironment, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(syncScheduledTrophyBatch(env).then((result) =>
-      result.priorityTitles > 0 || result.titlesAdded > 0
+      result.trophiesUpdated > 0 || result.titlesAdded > 0
         ? refreshPublicSnapshots(env)
         : refreshPublicStatusSnapshot(env)));
   },

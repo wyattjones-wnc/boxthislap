@@ -45,28 +45,28 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
     env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
-      FROM trophies t
+      FROM trophies t INDEXED BY idx_trophies_log_rarity
       JOIN games g ON g.id = t.game_id
-      WHERE t.earned = 1 AND t.earned_rate IS NOT NULL
-      ORDER BY t.earned_rate ASC, t.earned_at ASC, t.trophy_id ASC
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.earned_rate IS NOT NULL
+      ORDER BY t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
       LIMIT 1
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
-      FROM trophies t
+      FROM trophies t INDEXED BY idx_trophies_log_date_desc
       JOIN games g ON g.id = t.game_id
       WHERE t.earned = 1 AND t.earned_at IS NOT NULL
-      ORDER BY t.earned_at DESC, t.trophy_id DESC
+      ORDER BY t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
       LIMIT 1
     `).all<Record<string, unknown>>(),
     ...trophyTypes.map((type) => env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
-      FROM trophies t
+      FROM trophies t INDEXED BY idx_trophies_log_rarity
       JOIN games g ON g.id = t.game_id
-      WHERE t.earned = 1 AND t.earned_rate IS NOT NULL AND t.trophy_type = ?
-      ORDER BY t.earned_rate ASC, t.earned_at ASC, t.game_id ASC, t.trophy_id ASC
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.earned_rate IS NOT NULL AND t.trophy_type = ?
+      ORDER BY t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
       LIMIT 1
     `).bind(type).all<Record<string, unknown>>()),
   ]);

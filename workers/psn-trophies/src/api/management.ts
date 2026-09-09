@@ -8,9 +8,20 @@ const LOG_SORTS: Record<string, string> = {
   newest: "t.earned_at DESC, t.game_id ASC, t.trophy_id ASC",
   oldest: "t.earned_at ASC, t.game_id ASC, t.trophy_id ASC",
   name: "t.trophy_name COLLATE NOCASE ASC, t.game_id ASC, t.trophy_id ASC",
-  rarity: "t.earned_rate ASC, t.earned_at DESC",
+  rarity: "t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC",
   "platinum-duration-desc": "completion_seconds DESC, t.earned_at DESC",
   "platinum-duration-asc": "(completion_seconds IS NULL) ASC, completion_seconds ASC, t.earned_at DESC",
+};
+
+const INBOX_SORTS: Record<string, string> = {
+  newest: "i.earned_at DESC, i.game_id ASC, i.trophy_id ASC",
+  oldest: "i.earned_at ASC, i.game_id ASC, i.trophy_id ASC",
+  name: "i.trophy_name COLLATE NOCASE ASC, i.game_id ASC, i.trophy_id ASC",
+  rarity: "i.earned_rate ASC, i.earned_at DESC, i.game_id ASC, i.trophy_id ASC",
+};
+
+const INBOX_SORT_INDEXES: Record<string, string> = {
+  newest: "idx_trophy_inbox_newest",
 };
 
 // D1's query planner otherwise prefers the older earned/type index and builds a
@@ -43,7 +54,7 @@ export async function routeTrophyManagementApi(request: Request, env: PsnEnviron
   if (isSync) {
     const { syncTrophyBatch } = await import("../sync/sync-one-game.ts");
     const result = await syncTrophyBatch(env, 0, { prioritizeChanges: true });
-    await (result.priorityTitles > 0 || result.titlesAdded > 0
+    await (result.trophiesUpdated > 0 || result.titlesAdded > 0
       ? refreshPublicSnapshots(env)
       : refreshPublicStatusSnapshot(env));
     return noStoreJson({ ok: true, ...result });
@@ -65,7 +76,7 @@ async function listPlatinums(env: PsnEnvironment, params: URLSearchParams): Prom
       WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.trophy_type = 'platinum'
       ORDER BY t.platinum_number DESC LIMIT ? OFFSET ?
     `).bind(limit + 1, offset).all<Record<string, unknown>>(),
-    env.DB.prepare("SELECT COUNT(*) AS total_count FROM trophies WHERE earned = 1 AND earned_at IS NOT NULL AND trophy_type = 'platinum'")
+    env.DB.prepare("SELECT value AS total_count FROM sync_state WHERE key = 'platinum_number'")
       .first<Record<string, unknown>>(),
   ]);
   const rows = result.results || [];
@@ -87,24 +98,47 @@ async function listTrophyLog(env: PsnEnvironment, params: URLSearchParams): Prom
   const evergreen = params.get("evergreen") === "true";
   const view = sort.startsWith("platinum-duration-") ? "platinums" : evergreen ? "all" : requestedView;
   const { limit, offset, page } = parsePagination(params, 48);
-  const filters = ["1 = 1"];
-  if (view === "unsorted") filters.push("p.state IS NULL");
-  if (view === "favorites") filters.push("p.state = 'favorite'");
-  if (view === "seen") filters.push("p.state = 'seen'");
-  if (view === "platinums") filters.push("t.trophy_type = 'platinum'");
-  const result = await env.DB.prepare(`
+  const stateColumn = view === "unsorted" ? "NULL AS state" : "p.state";
+  const select = `
     SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
-      t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name, p.state,
+      t.icon_url, t.earned_at, t.rarity_class, t.earned_rate, g.title_name, ${stateColumn},
       t.earned_number AS trophy_number, t.platinum_number,
       CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
-        THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
-    FROM trophies t${indexHint}
-    JOIN games g ON g.id = t.game_id
-    LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
-    WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND ${filters.join(" AND ")}
-    ORDER BY ${orderBy}
-    LIMIT ? OFFSET ?
-  `).bind(limit + 1, offset).all<Record<string, unknown>>();
+        THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds`;
+  let statement;
+  let bindings: unknown[];
+  if (view === "unsorted") {
+    const inboxOrderBy = INBOX_SORTS[sort] || INBOX_SORTS.newest;
+    const inboxIndex = INBOX_SORT_INDEXES[sort] || INBOX_SORT_INDEXES.newest;
+    statement = env.DB.prepare(`${select}
+      FROM trophy_inbox i INDEXED BY ${inboxIndex}
+      JOIN trophies t ON t.game_id = i.game_id AND t.trophy_id = i.trophy_id
+      JOIN games g ON g.id = t.game_id
+      ORDER BY ${inboxOrderBy}
+      LIMIT ? OFFSET ?`);
+    bindings = [limit + 1, offset];
+  } else if (view === "favorites" || view === "seen") {
+    statement = env.DB.prepare(`${select}
+      FROM trophy_preferences p INDEXED BY idx_trophy_preferences_state
+      JOIN trophies t ON t.game_id = p.game_id AND t.trophy_id = p.trophy_id
+      JOIN games g ON g.id = t.game_id
+      WHERE p.state = ? AND t.earned = 1 AND t.earned_at IS NOT NULL
+      ORDER BY ${orderBy}
+      LIMIT ? OFFSET ?`);
+    bindings = [view === "favorites" ? "favorite" : "seen", limit + 1, offset];
+  } else {
+    const filters = ["t.earned = 1", "t.earned_at IS NOT NULL"];
+    if (view === "platinums") filters.push("t.trophy_type = 'platinum'");
+    statement = env.DB.prepare(`${select}
+      FROM trophies t${indexHint}
+      JOIN games g ON g.id = t.game_id
+      LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
+      WHERE ${filters.join(" AND ")}
+      ORDER BY ${orderBy}
+      LIMIT ? OFFSET ?`);
+    bindings = [limit + 1, offset];
+  }
+  const result = await statement.bind(...bindings).all<Record<string, unknown>>();
   const rows = result.results || [];
   return noStoreJson({
     ok: true,
@@ -125,34 +159,22 @@ async function updateSeenThrough(request: Request, env: PsnEnvironment, managerI
   const trophyId = Number(anchorValue.trophyId);
   if (!Number.isSafeInteger(trophyId) || trophyId < 0) throw httpError(400, "Trophy ID is invalid.");
   const requestedView = String(body.view || "unsorted").toLowerCase();
-  if (!LOG_VIEWS.has(requestedView)) throw httpError(400, "view must be unsorted, favorites, seen, all, or platinums.");
+  if (requestedView !== "unsorted" || body.evergreen === true) throw httpError(400, "Seen through is available only in the unsorted view.");
   const sort = String(body.sort || "newest").toLowerCase();
-  const orderBy = LOG_SORTS[sort];
-  if (!orderBy) throw httpError(400, `sort must be ${Object.keys(LOG_SORTS).join(", ")}.`);
-  const evergreen = body.evergreen === true;
-  const view = sort.startsWith("platinum-duration-") ? "platinums" : evergreen ? "all" : requestedView;
-  const datasetFilter = view === "platinums" ? "WHERE t.trophy_type = 'platinum'" : "";
+  if (sort !== "newest") throw httpError(400, "Seen through requires newest-first sorting.");
+  const anchorRow = await env.DB.prepare(`
+    SELECT earned_at FROM trophy_inbox WHERE game_id = ? AND trophy_id = ?
+  `).bind(gameId, trophyId).first<{ earned_at?: unknown }>();
+  const earnedAt = String(anchorRow?.earned_at || "");
+  if (!earnedAt) throw httpError(409, "That trophy is no longer awaiting review.");
   const targets = await env.DB.prepare(`
-    WITH numbered AS (
-      SELECT t.game_id, t.trophy_id, t.trophy_name, t.trophy_type, t.earned_at, t.earned_rate,
-        p.state,
-        CASE WHEN t.trophy_type = 'platinum' AND g.first_trophy_at IS NOT NULL
-          THEN CAST((julianday(t.earned_at) - julianday(g.first_trophy_at)) * 86400 AS INTEGER) END AS completion_seconds
-      FROM trophies t
-      JOIN games g ON g.id = t.game_id
-      LEFT JOIN trophy_preferences p ON p.game_id = t.game_id AND p.trophy_id = t.trophy_id
-      WHERE t.earned = 1 AND t.earned_at IS NOT NULL
-    ), ordered AS (
-      SELECT t.game_id, t.trophy_id, t.state,
-        ROW_NUMBER() OVER (ORDER BY ${orderBy}) AS display_rank
-      FROM numbered t ${datasetFilter}
-    ), anchor AS (
-      SELECT display_rank FROM ordered WHERE game_id = ? AND trophy_id = ?
+    SELECT game_id, trophy_id
+    FROM trophy_inbox INDEXED BY idx_trophy_inbox_newest
+    WHERE earned_at >= ? AND (
+      earned_at > ? OR (earned_at = ? AND (game_id < ? OR (game_id = ? AND trophy_id <= ?)))
     )
-    SELECT game_id, trophy_id FROM ordered
-    WHERE state IS NULL AND display_rank <= (SELECT display_rank FROM anchor)
-    ORDER BY display_rank
-  `).bind(gameId, trophyId).all<Record<string, unknown>>();
+    ORDER BY earned_at DESC, game_id ASC, trophy_id ASC
+  `).bind(earnedAt, earnedAt, earnedAt, gameId, gameId, trophyId).all<Record<string, unknown>>();
   const rows = targets.results || [];
   const updatedAt = new Date().toISOString();
   for (let offset = 0; offset < rows.length; offset += 100) {

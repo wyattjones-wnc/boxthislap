@@ -40,8 +40,8 @@ test("returns an authenticated unsorted trophy page", async () => {
   assert.equal(body.items[0].trophyNumber, 11630);
   assert.equal(body.items[0].platinumNumber, 161);
   assert.equal(body.items[0].completionSeconds, 172800);
-  assert.match(sql, /p\.state IS NULL/);
-  assert.match(sql, /FROM trophies t INDEXED BY idx_trophies_log_date_desc/);
+  assert.match(sql, /FROM trophy_inbox i INDEXED BY idx_trophy_inbox_newest/);
+  assert.doesNotMatch(sql, /p\.state IS NULL/);
   assert.doesNotMatch(sql, /ROW_NUMBER\(\)/);
   assert.doesNotMatch(sql, /t\.trophy_type <> 'platinum'/);
   assert.deepEqual(bindings, [49, 0]);
@@ -57,9 +57,11 @@ test("stores every unsorted trophy through an anchor in the global sort", async 
       batch: async (statements: unknown[]) => { batchSize = statements.length; return []; },
       prepare: (query: string) => {
         queries.push(query);
-        return { bind: () => query.includes("WITH numbered")
-          ? { all: async () => ({ results: [{ game_id: "NPWR1_00", trophy_id: 2 }, { game_id: "NPWR2_00", trophy_id: 3 }] }) }
-          : {} };
+        return { bind: () => query.includes("SELECT earned_at FROM trophy_inbox")
+          ? { first: async () => ({ earned_at: "2026-08-30T00:00:00Z" }) }
+          : query.includes("FROM trophy_inbox INDEXED BY idx_trophy_inbox_newest")
+            ? { all: async () => ({ results: [{ game_id: "NPWR1_00", trophy_id: 2 }, { game_id: "NPWR2_00", trophy_id: 3 }] }) }
+            : {} };
       },
     },
   } as any;
@@ -71,9 +73,10 @@ test("stores every unsorted trophy through an anchor in the global sort", async 
   assert.ok(response);
   assert.equal((await response.json() as any).seen, 2);
   assert.equal(batchSize, 2);
-  assert.match(queries[0], /ROW_NUMBER\(\) OVER \(ORDER BY t\.earned_at DESC/);
-  assert.match(queries[0], /state IS NULL AND display_rank <=/);
-  assert.match(queries[1], /VALUES \(\?, \?, 'seen', \?, \?\)/);
+  assert.match(queries[0], /SELECT earned_at FROM trophy_inbox/);
+  assert.match(queries[1], /earned_at >= \?/);
+  assert.doesNotMatch(queries[1], /ROW_NUMBER\(\)/);
+  assert.match(queries[2], /VALUES \(\?, \?, 'seen', \?, \?\)/);
 });
 
 test("platinum duration sorting always uses the evergreen platinum view", async () => {

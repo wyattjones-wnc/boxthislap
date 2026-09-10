@@ -7173,6 +7173,11 @@ main {
   margin: 4px 0 0;
 }
 
+.formula-one-question-manage-link {
+  justify-self: end;
+  margin-left: auto;
+}
+
 .fantasy-critic-standings {
   display: grid;
   gap: 18px;

@@ -696,6 +696,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
+    (pageName === "formula-1-2026-manage" && !isCurrentManagerAdmin()) ||
     (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
@@ -12591,6 +12592,12 @@ function renderActivePageContent(pageName = "") {
   const formulaOneYear = getFormulaOneYearFromPage(pageName);
 
   if (formulaOneYear) {
+    if (pageName.endsWith("-manage")) {
+      renderFormulaOneAdminWeekly();
+      if (isCurrentManagerAdmin()) void ensureFormulaOneAdminData();
+      return;
+    }
+
     if (pageName.endsWith("-calculator")) {
       if (siteData[`formulaOne${formulaOneYear}Calculator`]) {
         renderFormulaOneCalculator(formulaOneYear);
@@ -12619,10 +12626,6 @@ function renderActivePageContent(pageName = "") {
         formulaOneViews[2026].weeklyForm.innerHTML = renderLoadingMessage("Loading Formula 1 bet forms...");
       } else {
         renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
-      }
-      if (formulaOneYear === "2026") {
-        renderFormulaOneAdminWeekly();
-        if (isCurrentManagerAdmin()) void ensureFormulaOneAdminData();
       }
       return;
     }
@@ -15989,11 +15992,9 @@ function renderLoginState() {
   loginOnlyElements.forEach((element) => {
     element.hidden = !managerMeta;
   });
-  if (managerMeta?.isAdmin && activePageName === "formula-1-2026-weekly") {
+  if (managerMeta?.isAdmin && activePageName === "formula-1-2026-manage") {
     renderFormulaOneAdminWeekly();
     void ensureFormulaOneAdminData();
-  } else if (!managerMeta?.isAdmin && document.querySelector('[data-tab-panel="formula-one-2026-weekly-manage"].is-active')) {
-    showTab("formula-one-2026-weekly-bet");
   }
   syncFootyGoalAssistsButton();
   if (managerMeta?.isAdmin && siteData.footySchedule && !Array.isArray(siteData.footySeenMatches)) {
@@ -16004,7 +16005,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -19027,7 +19028,8 @@ function refreshFormulaOnePage(year) {
   } else if (page === `formula-1-${year}-weekly`) {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
     renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
-    if (String(year) === "2026") renderFormulaOneAdminWeekly();
+  } else if (page === `formula-1-${year}-manage` && String(year) === "2026") {
+    renderFormulaOneAdminWeekly();
   } else if (page === `formula-1-${year}-results`) {
     renderFormulaOneResults(year);
   }

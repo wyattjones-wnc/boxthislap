@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.10.19.41";
+      window.BOX_THIS_LAP_VERSION = "2026.09.10.19.47";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609101941">
+    <link rel="stylesheet" href="styles.css?v=202609101947">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -2638,6 +2638,7 @@
             <h2>Formula 1</h2>
             <p>2026 Questions</p>
           </div>
+          <a class="action-button formula-one-question-manage-link" href="#formula-1-2026-manage" data-page-link="formula-1-2026-manage" data-admin-only hidden>Manage</a>
         </div>
 
         <div class="formula-one-controls">
@@ -2709,7 +2710,6 @@
           <button class="tab is-active" type="button" data-tab="formula-one-2026-weekly-bet" aria-selected="true" role="tab">Bet</button>
           <button class="tab" type="button" data-tab="formula-one-2026-weekly-results" aria-selected="false" role="tab">Results</button>
           <button class="tab" type="button" data-tab="formula-one-2026-weekly-managers" aria-selected="false" role="tab">Managers' Championship</button>
-          <button class="tab" type="button" data-tab="formula-one-2026-weekly-manage" aria-selected="false" role="tab" data-admin-only hidden>Manage</button>
         </div>
 
         <section class="tab-panel is-active" data-tab-panel="formula-one-2026-weekly-bet" role="tabpanel">
@@ -2753,15 +2753,23 @@
           </div>
         </section>
 
-        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-manage" role="tabpanel" data-admin-only hidden>
-          <div class="formula-one-admin" id="formula-one-2026-weekly-admin">
-            <div class="formula-one-admin-notice">
-              <strong>Admin preview</strong>
-              <p>This D1-backed workflow is intentionally admin-only while it is validated against the current Google Sheet. Later: open native weekly picks to managers after deadline privacy, scoring reconciliation, and the 2026 migration are verified.</p>
-            </div>
-            <p class="table-message">Loading Formula 1 administration...</p>
+      </section>
+
+      <section class="page league-detail-page" id="formula-1-2026-manage" data-page="formula-1-2026-manage" data-admin-only hidden>
+        <div class="league-detail-heading">
+          <div>
+            <h2>Formula 1</h2>
+            <p>2026 Manage</p>
           </div>
-        </section>
+        </div>
+
+        <div class="formula-one-admin" id="formula-one-2026-weekly-admin">
+          <div class="formula-one-admin-notice">
+            <strong>Admin preview</strong>
+            <p>This D1-backed workflow is intentionally admin-only while it is validated against the current Google Sheet. Later: open native weekly picks to managers after deadline privacy, scoring reconciliation, and the 2026 migration are verified.</p>
+          </div>
+          <p class="table-message">Loading Formula 1 administration...</p>
+        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-calculator" data-page="formula-1-2026-calculator">
@@ -2882,6 +2890,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609101941"></script>
+    <script type="module" src="script.js?v=202609101947"></script>
   </body>
 </html>

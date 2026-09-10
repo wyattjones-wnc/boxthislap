@@ -29,88 +29,79 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
 }
 
 export async function buildStats(env: PsnEnvironment): Promise<Record<string, unknown>> {
-  const [gamesResult, trophiesResult, rarestEarnedResult, latestEarnedResult, rarestByTypeRows] = await Promise.all([
+  const trophyTypes = ["bronze", "silver", "gold", "platinum"];
+  const [summaryResult, rarestEarnedResult, latestEarnedResult, ...rarestTypeResults] = await Promise.all([
     env.DB.prepare(`
       SELECT COUNT(*) AS games, COALESCE(SUM(platinum_earned), 0) AS platinums,
-        COALESCE(SUM(is_100_percent), 0) AS hundred_percent, MAX(last_synced_at) AS updated_at
+        COALESCE(SUM(is_100_percent), 0) AS hundred_percent, MAX(last_synced_at) AS updated_at,
+        COALESCE(SUM(COALESCE(defined_bronze, 0) + COALESCE(defined_silver, 0) + COALESCE(defined_gold, 0) + COALESCE(defined_platinum, 0)), 0) AS total_trophies,
+        COALESCE(SUM(COALESCE(earned_bronze, 0) + COALESCE(earned_silver, 0) + COALESCE(earned_gold, 0) + COALESCE(earned_platinum, 0)), 0) AS earned_trophies,
+        COALESCE(SUM(earned_bronze), 0) AS bronze,
+        COALESCE(SUM(earned_silver), 0) AS silver,
+        COALESCE(SUM(earned_gold), 0) AS gold,
+        COALESCE(SUM(earned_platinum), 0) AS platinum
       FROM games
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
-      SELECT COUNT(*) AS total_trophies, COALESCE(SUM(earned), 0) AS earned_trophies,
-        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'bronze' THEN 1 ELSE 0 END), 0) AS bronze,
-        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'silver' THEN 1 ELSE 0 END), 0) AS silver,
-        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'gold' THEN 1 ELSE 0 END), 0) AS gold,
-        COALESCE(SUM(CASE WHEN earned = 1 AND trophy_type = 'platinum' THEN 1 ELSE 0 END), 0) AS platinum
-      FROM trophies
-    `).all<Record<string, unknown>>(),
-    env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
-      FROM trophies t
+      FROM trophies t INDEXED BY idx_trophies_log_rarity
       JOIN games g ON g.id = t.game_id
-      WHERE t.earned = 1 AND t.earned_rate IS NOT NULL
-      ORDER BY t.earned_rate ASC, t.earned_at ASC, t.trophy_id ASC
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.earned_rate IS NOT NULL
+      ORDER BY t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
       LIMIT 1
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
-      FROM trophies t
+      FROM trophies t INDEXED BY idx_trophies_log_date_desc
       JOIN games g ON g.id = t.game_id
       WHERE t.earned = 1 AND t.earned_at IS NOT NULL
-      ORDER BY t.earned_at DESC, t.trophy_id DESC
+      ORDER BY t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
       LIMIT 1
     `).all<Record<string, unknown>>(),
-    env.DB.prepare(`
-      WITH ranked AS (
-        SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
-          t.icon_url, t.earned_at, t.rarity_class, t.earned_rate,
-          ROW_NUMBER() OVER (
-            PARTITION BY t.trophy_type
-            ORDER BY t.earned_rate ASC, t.earned_at ASC, t.game_id ASC, t.trophy_id ASC
-          ) AS rarity_rank
-        FROM trophies t
-        JOIN games g ON g.id = t.game_id
-        WHERE t.earned = 1 AND t.earned_rate IS NOT NULL
-      )
-      SELECT * FROM ranked WHERE rarity_rank = 1
-    `).all<Record<string, unknown>>(),
+    ...trophyTypes.map((type) => env.DB.prepare(`
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+        t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
+      FROM trophies t INDEXED BY idx_trophies_log_rarity
+      JOIN games g ON g.id = t.game_id
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.earned_rate IS NOT NULL AND t.trophy_type = ?
+      ORDER BY t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
+      LIMIT 1
+    `).bind(type).all<Record<string, unknown>>()),
   ]);
 
-  const games = gamesResult.results?.[0] || null;
-  const trophies = trophiesResult.results?.[0] || null;
+  const summary = summaryResult.results?.[0] || null;
   const rarestEarned = rarestEarnedResult.results?.[0] || null;
   const latestEarned = latestEarnedResult.results?.[0] || null;
 
-  const rarestByType = Object.fromEntries(["bronze", "silver", "gold", "platinum"].map((type) => {
-    const row = (rarestByTypeRows.results || []).find((entry) => entry.trophy_type === type) || null;
-    return [type, mapStatTrophy(row)];
-  }));
+  const rarestByType = Object.fromEntries(trophyTypes.map((type, index) =>
+    [type, mapStatTrophy(rarestTypeResults[index]?.results?.[0] || null)]));
 
   const value = {
     counts: {
-      earnedTrophies: numberValue(trophies?.earned_trophies),
-      games: numberValue(games?.games),
-      hundredPercent: numberValue(games?.hundred_percent),
-      platinums: numberValue(games?.platinums),
-      totalTrophies: numberValue(trophies?.total_trophies),
+      earnedTrophies: numberValue(summary?.earned_trophies),
+      games: numberValue(summary?.games),
+      hundredPercent: numberValue(summary?.hundred_percent),
+      platinums: numberValue(summary?.platinums),
+      totalTrophies: numberValue(summary?.total_trophies),
     },
     earnedByType: {
-      bronze: numberValue(trophies?.bronze),
-      silver: numberValue(trophies?.silver),
-      gold: numberValue(trophies?.gold),
-      platinum: numberValue(trophies?.platinum),
+      bronze: numberValue(summary?.bronze),
+      silver: numberValue(summary?.silver),
+      gold: numberValue(summary?.gold),
+      platinum: numberValue(summary?.platinum),
     },
     latestEarned: mapStatTrophy(latestEarned),
     rarestByType,
     rarestEarned: mapStatTrophy(rarestEarned),
-    updatedAt: games?.updated_at || null,
+    updatedAt: summary?.updated_at || null,
   };
   console.log(JSON.stringify({
     event: "psn_d1_snapshot_rebuilt",
     snapshot: "stats",
-    queries: 5,
-    rowsRead: [gamesResult, trophiesResult, rarestEarnedResult, latestEarnedResult, rarestByTypeRows]
+    queries: 7,
+    rowsRead: [summaryResult, rarestEarnedResult, latestEarnedResult, ...rarestTypeResults]
       .reduce((total, result) => total + Number(result.meta?.rows_read || 0), 0),
   }));
   return value;
@@ -139,6 +130,11 @@ export async function refreshPublicSnapshots(env: PsnEnvironment): Promise<void>
     writeSnapshot(env, STATS_SNAPSHOT_KEY, stats),
     writeSnapshot(env, STATUS_SNAPSHOT_KEY, status),
   ]);
+}
+
+export async function refreshPublicStatusSnapshot(env: PsnEnvironment): Promise<void> {
+  if (!env.SNAPSHOTS) return;
+  await writeSnapshot(env, STATUS_SNAPSHOT_KEY, await buildStatus(env));
 }
 
 async function readSnapshot(env: PsnEnvironment, key: string): Promise<Record<string, unknown> | null> {

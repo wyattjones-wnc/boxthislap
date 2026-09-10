@@ -5672,6 +5672,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-roster-review-badge {
   background: #9a5c00;
+  border: 0;
   border-radius: 999px;
   color: #fff;
   font-size: 0.66rem;
@@ -5681,6 +5682,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   position: absolute;
   top: 48px;
   z-index: 2;
+}
+
+button.footy-roster-review-badge {
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .footy-team-player-card--loading {
@@ -5815,6 +5821,70 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-roster-editor-dialog {
   max-width: min(720px, calc(100vw - 24px));
+  width: 100%;
+}
+
+.trading-card-image-editor-dialog {
+  max-height: calc(100dvh - 20px);
+  max-width: min(560px, calc(100vw - 20px));
+  width: 100%;
+}
+
+.trading-card-image-editor-form {
+  gap: 14px;
+}
+
+.trading-card-image-editor-help {
+  margin: 0;
+  text-align: left;
+}
+
+.trading-card-image-editor-stage {
+  aspect-ratio: 2500 / 3520;
+  background: #07111d;
+  border-radius: 8px;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 0.3);
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  width: min(100%, 390px, 44dvh);
+}
+
+.trading-card-image-editor-stage canvas,
+.trading-card-image-editor-overlay {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.trading-card-image-editor-stage canvas {
+  display: block;
+}
+
+.trading-card-image-editor-overlay {
+  pointer-events: none;
+}
+
+.trading-card-image-editor-overlay .trading-card-frame {
+  object-fit: fill;
+}
+
+.trading-card-image-editor-zoom {
+  display: grid;
+  gap: 7px;
+}
+
+.trading-card-image-editor-zoom span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.trading-card-image-editor-zoom input {
   width: 100%;
 }
 

@@ -1,5 +1,5 @@
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, context) {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin, env);
 
@@ -20,17 +20,28 @@ export default {
 
       const rosterMediaRoute = url.pathname.match(/^\/media\/rosters\/(.+)$/);
       if (request.method === "GET" && rosterMediaRoute) {
-        return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), cors);
+        return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), request, context);
       }
 
       if (request.method === "GET" && url.pathname === "/api/rosters") {
         return json({ ok: true, rosters: await listRosters(env, url.searchParams) }, 200, cors);
       }
 
+      if (request.method === "GET" && url.pathname === "/api/roster-media/usage") {
+        await requireAdmin(request, env);
+        return json({ ok: true, usage: await getRosterMediaUsage(env) }, 200, cors);
+      }
+
       if (request.method === "POST" && url.pathname === "/api/rosters/sync") {
         requireRosterSync(request, env);
         const result = await syncRosters(env, await readBody(request));
         return json({ ok: true, ...result }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/rosters/discover") {
+        await requireManager(request, env);
+        const roster = await discoverRoster(env, await readBody(request));
+        return json({ ok: true, roster }, 200, cors);
       }
 
       if (request.method === "POST" && url.pathname === "/api/roster-players") {
@@ -43,10 +54,10 @@ export default {
         const managerId = await requireAdmin(request, env);
         const playerId = decodeURIComponent(rosterMediaMutation[1]);
         const kind = rosterMediaMutation[2] ? decodeURIComponent(rosterMediaMutation[2]) : "";
-        const player = request.method === "POST"
+        const result = request.method === "POST"
           ? await saveRosterMedia(env, playerId, await readBody(request), managerId)
           : await deleteRosterMedia(env, playerId, kind, managerId);
-        return json({ ok: true, player }, 200, cors);
+        return json({ ok: true, ...result }, 200, cors);
       }
 
       const rosterPlayerRoute = url.pathname.match(/^\/api\/roster-players\/([^/]+)$/);
@@ -129,7 +140,221 @@ export default {
   },
 };
 
-const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOut", "profileImage", "cardImage"];
+const ROSTER_FIELDS = ["name", "position", "number", "appearances", "birthday", "homeCountry", "yearJoined", "clubJoinedFrom", "fromAcademy", "isNew", "transferOutDate", "profileImage", "cardImage", "useDefaultProfileImage", "useDefaultCardImage"];
+const ROSTER_MEDIA_STORAGE_LIMIT = 8_000_000_000;
+const ROSTER_MEDIA_STORAGE_WARNING = 7_000_000_000;
+const ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT = 250_000;
+const ROSTER_MEDIA_MONTHLY_UPLOAD_WARNING = 200_000;
+
+async function discoverRoster(env, body) {
+  const teamId = requireText(body?.teamId, 80, "Team ID");
+  const teamName = requireText(body?.teamName, 200, "Team name");
+  const season = requireText(body?.season, 20, "Season");
+  if (!/^\d{4}(?:-\d{2})?$/.test(season)) throw httpError(400, "Season is invalid.");
+  const leagueNames = (Array.isArray(body?.leagueNames) ? body.leagueNames : [])
+    .slice(0, 20).map((value) => cleanText(value, 160, "League")).filter(Boolean);
+  const requestedProviderIds = body?.providerTeamIds && typeof body.providerTeamIds === "object" ? body.providerTeamIds : {};
+  const footballDataTeamId = cleanText(requestedProviderIds["football-data.org"], 120, "football-data.org team ID");
+  const requestedSportDbTeamId = cleanText(requestedProviderIds.TheSportsDB, 120, "TheSportsDB team ID");
+  const providerTeam = requestedSportDbTeamId ? { idTeam: requestedSportDbTeamId } : await discoverSportDbTeam(teamName, leagueNames);
+  const sportDbTeamId = String(providerTeam?.idTeam || "");
+  const existingParams = new URLSearchParams({ teamId, season, includeInactive: "1" });
+  const existingPlayers = (await listRosters(env, existingParams))[0]?.players || [];
+  const [footballPlayers, sportDbPlayers] = await Promise.all([
+    loadFootballDataRosterPlayers(env, footballDataTeamId),
+    loadSportDbRosterPlayers(sportDbTeamId),
+  ]);
+  const sportDbMedia = footballPlayers.length
+    ? await enrichSportDbRosterMedia(footballPlayers, sportDbPlayers, existingPlayers, sportDbTeamId)
+    : new Map();
+  const players = footballPlayers.length
+    ? footballPlayers.map((player) => {
+      const media = sportDbMedia.get(String(player.id)) || {};
+      return {
+        playerKey: `football-data.org:${player.id}`,
+        provider: "football-data.org",
+        providerPlayerId: String(player.id),
+        providerData: {
+          name: player.name,
+          position: normalizeRosterPosition(player.position),
+          number: String(player.shirtNumber || ""),
+          birthday: String(player.dateOfBirth || ""),
+          homeCountry: String(player.nationality || ""),
+          profileImage: media.profileImage || "",
+          cardImage: media.cardImage || "",
+        },
+      };
+    })
+    : sportDbPlayers.map((player) => ({
+      playerKey: `thesportsdb:${player.id}`,
+      provider: "TheSportsDB",
+      providerPlayerId: player.id,
+      providerData: player,
+    }));
+  if (!players.length) throw httpError(404, `No active players were found for ${teamName}.`);
+  const primaryProvider = footballPlayers.length ? "football-data.org" : "TheSportsDB";
+  const primaryProviderTeamId = footballPlayers.length ? footballDataTeamId : sportDbTeamId;
+  await syncRosters(env, { rosters: [{
+    teamId,
+    season,
+    active: true,
+    provider: primaryProvider,
+    providerTeamId: primaryProviderTeamId,
+    refreshedProviders: [footballPlayers.length ? "football-data.org" : "", sportDbPlayers.length ? "TheSportsDB" : ""].filter(Boolean),
+    players,
+  }] });
+  const params = new URLSearchParams({ teamId, season, includeInactive: "1" });
+  return (await listRosters(env, params))[0] || null;
+}
+
+async function loadFootballDataRosterPlayers(env, providerTeamId) {
+  if (!providerTeamId || !env.FOOTBALL_DATA_API_KEY) return [];
+  const response = await fetch(`https://api.football-data.org/v4/teams/${encodeURIComponent(providerTeamId)}`, {
+    headers: { "X-Auth-Token": env.FOOTBALL_DATA_API_KEY },
+  });
+  if (!response.ok) throw httpError(502, `football-data.org could not load this squad (${response.status}).`);
+  const value = await response.json().catch(() => null);
+  return (Array.isArray(value?.squad) ? value.squad : [])
+    .filter((player) => player?.id && player?.name && player?.position);
+}
+
+async function loadSportDbRosterPlayers(providerTeamId) {
+  if (!providerTeamId) return [];
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(providerTeamId)}`);
+  if (!response.ok) return [];
+  const value = await response.json().catch(() => null);
+  return (Array.isArray(value?.player) ? value.player : [])
+    .filter((player) => player?.idPlayer && player?.strPlayer && isRosterPlayerRole(player.strPosition, player.strStatus))
+    .map((player) => ({
+      id: String(player.idPlayer),
+      name: String(player.strPlayer || ""),
+      position: normalizeRosterPosition(player.strPosition),
+      number: String(player.strNumber || ""),
+      birthday: String(player.dateBorn || ""),
+      homeCountry: String(player.strNationality || ""),
+      profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
+      cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
+    }));
+}
+
+async function enrichSportDbRosterMedia(footballPlayers, teamPlayers, existingPlayers, providerTeamId) {
+  const media = new Map();
+  const missing = [];
+  for (const player of footballPlayers) {
+    const teamMatch = findRosterIdentityMatch(player, teamPlayers) || {};
+    const existingMatch = findRosterIdentityMatch(player, existingPlayers) || {};
+    const resolved = mergeRosterMedia(teamMatch, existingMatch);
+    media.set(String(player.id), resolved);
+    if ((!resolved.profileImage || !resolved.cardImage) && missing.length < 35) missing.push(player);
+  }
+  // The free player-search endpoint throttles concurrent bursts. Resolve missing
+  // media sequentially and persist it so later refreshes do not repeat the work.
+  const searched = await mapWithConcurrency(missing, 1, (player) => searchSportDbRosterPlayer(player, providerTeamId));
+  missing.forEach((player, index) => media.set(String(player.id), mergeRosterMedia(searched[index], media.get(String(player.id)))));
+  return media;
+}
+
+async function searchSportDbRosterPlayer(player, providerTeamId) {
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(player.name)}`);
+  if (!response.ok) return {};
+  const value = await response.json().catch(() => null);
+  const candidates = (Array.isArray(value?.player) ? value.player : [])
+    .filter((candidate) => candidate?.idPlayer && candidate?.strPlayer && isRosterPlayerRole(candidate.strPosition, candidate.strStatus));
+  const match = selectSportDbPlayerMatch(player, candidates, providerTeamId);
+  return match ? normalizeSportDbRosterPlayer(match) : {};
+}
+
+export function selectSportDbPlayerMatch(player, candidates, providerTeamId = "") {
+  const exact = candidates.filter((candidate) => findRosterIdentityMatch(player, [{
+    name: candidate.strPlayer,
+    birthday: candidate.dateBorn,
+  }]));
+  return exact.sort((first, second) =>
+    Number(String(second.idTeam || "") === String(providerTeamId)) - Number(String(first.idTeam || "") === String(providerTeamId)))[0] || null;
+}
+
+function normalizeSportDbRosterPlayer(player) {
+  return {
+    id: String(player.idPlayer),
+    name: String(player.strPlayer || ""),
+    position: normalizeRosterPosition(player.strPosition),
+    number: String(player.strNumber || ""),
+    birthday: String(player.dateBorn || ""),
+    homeCountry: String(player.strNationality || ""),
+    profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
+    cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
+  };
+}
+
+function mergeRosterMedia(primary = {}, fallback = {}) {
+  return {
+    profileImage: String(primary?.profileImage || fallback?.profileImage || ""),
+    cardImage: String(primary?.cardImage || fallback?.cardImage || ""),
+  };
+}
+
+async function mapWithConcurrency(values, concurrency, callback) {
+  const results = new Array(values.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (next < values.length) {
+      const index = next++;
+      results[index] = await callback(values[index], index);
+    }
+  }));
+  return results;
+}
+
+function findRosterIdentityMatch(player, candidates) {
+  const name = slugRosterValue(player?.name);
+  const birthday = normalizeRosterBirthday(player?.birthday || player?.dateOfBirth);
+  return candidates.find((candidate) =>
+    (name && slugRosterValue(candidate?.name) === name) ||
+    (birthday && normalizeRosterBirthday(candidate?.birthday || candidate?.dateOfBirth) === birthday));
+}
+
+export function isRosterPlayerRole(position, status) {
+  return !/coach|manager|coaching|chief|ceo|president|director|chairman|owner|staff/i.test(`${position || ""} ${status || ""}`);
+}
+
+async function discoverSportDbTeam(teamName, leagueNames) {
+  const queries = [...new Set([teamName, stripRosterClubSuffix(teamName)].filter(Boolean))];
+  const candidates = new Map();
+  for (const query of queries) {
+    const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(query)}`);
+    if (!response.ok) continue;
+    const value = await response.json().catch(() => null);
+    for (const team of Array.isArray(value?.teams) ? value.teams : []) {
+      if (team?.idTeam) candidates.set(String(team.idTeam), team);
+    }
+  }
+  return [...candidates.values()]
+    .filter((team) => String(team.strSport || "").toLowerCase() === "soccer")
+    .sort((first, second) => scoreRosterTeam(second, teamName, leagueNames) - scoreRosterTeam(first, teamName, leagueNames))[0] || null;
+}
+
+function scoreRosterTeam(team, teamName, leagueNames) {
+  const candidateName = slugRosterValue(team.strTeam);
+  const requestedName = slugRosterValue(teamName);
+  const strippedName = slugRosterValue(stripRosterClubSuffix(teamName));
+  const league = slugRosterValue(team.strLeague);
+  const leagueMatch = leagueNames.some((name) => {
+    const normalized = slugRosterValue(name);
+    return normalized && league && (league.includes(normalized) || normalized.includes(league));
+  });
+  return (candidateName === requestedName ? 100 : 0) + (candidateName === strippedName ? 90 : 0) +
+    (leagueMatch ? 40 : 0) + (/male/i.test(String(team.strGender || "")) ? 20 : 0) -
+    (/women|ladies|u\d{2}|youth|reserve/i.test(`${team.strTeam || ""} ${team.strLeague || ""}`) ? 80 : 0);
+}
+
+function stripRosterClubSuffix(value) {
+  return String(value || "").replace(/\*+$/g, "").replace(/\s+(?:AFC|FC|CF|SC)$/i, "").trim();
+}
+
+function normalizeRosterPosition(value) {
+  const position = String(value || "").trim();
+  return ({ Goalkeeper: "GK", Defence: "DF", Defender: "DF", Midfield: "MF", Midfielder: "MF", Offence: "FW", Attacker: "FW", Forward: "FW" })[position] || position;
+}
 
 async function listRosters(env, searchParams) {
   const teamId = cleanText(searchParams.get("teamId"), 80, "Team ID");
@@ -140,7 +365,9 @@ async function listRosters(env, searchParams) {
   if (season) { conditions.push("p.season = ?"); bindings.push(season); }
   if (!season && searchParams.get("includeInactive") !== "1") conditions.push("(s.is_active = 1 OR s.is_active IS NULL)");
   const result = await env.DB.prepare(`
-    SELECT p.*, COALESCE(s.is_active, 0) AS is_active
+    SELECT p.*, COALESCE(s.is_active, 0) AS is_active,
+      COALESCE(s.provider, '') AS roster_provider,
+      COALESCE(s.provider_team_id, '') AS roster_provider_team_id
     FROM footy_roster_players p
     LEFT JOIN footy_roster_seasons s ON s.team_id = p.team_id AND s.season = p.season
     WHERE ${conditions.join(" AND ")}
@@ -149,7 +376,14 @@ async function listRosters(env, searchParams) {
   const groups = new Map();
   for (const row of result.results || []) {
     const key = `${row.team_id}|${row.season}`;
-    if (!groups.has(key)) groups.set(key, { teamId: String(row.team_id), season: String(row.season), active: Boolean(row.is_active), players: [] });
+    if (!groups.has(key)) groups.set(key, {
+      teamId: String(row.team_id),
+      season: String(row.season),
+      active: Boolean(row.is_active),
+      provider: String(row.roster_provider || ""),
+      providerTeamId: String(row.roster_provider_team_id || ""),
+      players: [],
+    });
     groups.get(key).players.push(mapRosterPlayer(row));
   }
   return [...groups.values()];
@@ -161,16 +395,30 @@ async function syncRosters(env, body) {
   let added = 0;
   let updated = 0;
   let reviewDepartures = 0;
+  let duplicatesMerged = 0;
   for (const rosterValue of body.rosters) {
     const teamId = requireText(rosterValue?.teamId, 80, "Team ID");
     const season = requireText(rosterValue?.season, 20, "Season");
+    const rosterProvider = cleanText(rosterValue?.provider, 80, "Roster provider");
+    const rosterProviderTeamId = cleanText(rosterValue?.providerTeamId, 120, "Roster provider team ID");
     const players = Array.isArray(rosterValue?.players) ? rosterValue.players : [];
+    const refreshedProviders = new Set((Array.isArray(rosterValue?.refreshedProviders) ? rosterValue.refreshedProviders : [])
+      .map((value) => cleanText(value, 80, "Provider")).filter(Boolean));
     if (players.length > 200) throw httpError(400, "A roster has too many players.");
-    await env.DB.batch([
-      env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId),
-      env.DB.prepare(`INSERT INTO footy_roster_seasons (team_id, season, is_active, last_synced_at, updated_at)
-        VALUES (?, ?, 1, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET is_active = 1, last_synced_at = excluded.last_synced_at, updated_at = excluded.updated_at`).bind(teamId, season, now, now),
-    ]);
+    const isActive = rosterValue?.active !== false;
+    const seasonStatements = [];
+    if (isActive) seasonStatements.push(env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId));
+    seasonStatements.push(env.DB.prepare(`INSERT INTO footy_roster_seasons
+      (team_id, season, is_active, provider, provider_team_id, last_synced_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET
+      is_active = excluded.is_active,
+      provider = CASE WHEN excluded.provider <> '' THEN excluded.provider ELSE footy_roster_seasons.provider END,
+      provider_team_id = CASE WHEN excluded.provider_team_id <> '' THEN excluded.provider_team_id ELSE footy_roster_seasons.provider_team_id END,
+      last_synced_at = excluded.last_synced_at,
+      updated_at = excluded.updated_at`).bind(teamId, season, isActive ? 1 : 0, rosterProvider, rosterProviderTeamId, now, now));
+    await env.DB.batch(seasonStatements);
+    const existingResult = await env.DB.prepare("SELECT * FROM footy_roster_players WHERE team_id = ? AND season = ?").bind(teamId, season).all();
+    let existingRows = [...(existingResult.results || [])];
     const seenKeys = [];
     for (const value of players) {
       const provider = cleanText(value?.provider, 80, "Provider") || "manual-import";
@@ -178,30 +426,44 @@ async function syncRosters(env, body) {
       const providerData = normalizeRosterData(value?.providerData || value);
       if (!providerData.name) continue;
       const playerKey = cleanText(value?.playerKey, 160, "Player key") || `${provider}:${providerPlayerId || slugRosterValue(providerData.name)}`;
-      const existing = await env.DB.prepare("SELECT id FROM footy_roster_players WHERE team_id = ? AND season = ? AND player_key = ?").bind(teamId, season, playerKey).first();
+      const matches = existingRows.filter((row) => row.player_key === playerKey || rosterIdentityMatches(row, providerData));
+      const existing = chooseRosterSurvivor(matches, playerKey);
+      const duplicateRows = matches.filter((row) => row.id !== existing?.id);
+      const mergedOverrides = mergeRosterOverrides(matches, value?.seedOverrides || {});
+      for (const duplicate of duplicateRows) {
+        await env.DB.prepare("DELETE FROM footy_roster_players WHERE id = ?").bind(duplicate.id).run();
+        duplicatesMerged += 1;
+      }
+      existingRows = existingRows.filter((row) => !duplicateRows.some((duplicate) => duplicate.id === row.id));
       const id = existing?.id || crypto.randomUUID();
-      const seedOverrides = existing ? null : normalizeRosterData(value?.seedOverrides || {});
-      const manual = value?.manual ? 1 : 0;
-      await env.DB.prepare(`INSERT INTO footy_roster_players
-        (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual, source_seen_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
-        ON CONFLICT(team_id, season, player_key) DO UPDATE SET provider = excluded.provider, provider_player_id = excluded.provider_player_id,
-          provider_data = excluded.provider_data,
-          status = CASE WHEN footy_roster_players.status = 'archived' THEN 'archived' ELSE 'active' END,
-          source_seen_at = excluded.source_seen_at, updated_at = excluded.updated_at`
-      ).bind(id, teamId, season, playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(seedOverrides || {}), manual, now, now).run();
+      const preserveManual = existing && Number(existing.manual) === 1 && existing.provider !== "legacy-sheet" && existing.provider !== "legacy-history";
+      const manual = value?.manual || preserveManual ? 1 : 0;
+      if (existing) {
+        await env.DB.prepare(`UPDATE footy_roster_players SET player_key = ?, provider = ?, provider_player_id = ?, provider_data = ?, overrides = ?,
+          status = CASE WHEN status = 'archived' THEN 'archived' ELSE 'active' END, manual = ?, source_seen_at = ?, updated_at = ? WHERE id = ?`)
+          .bind(playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(mergedOverrides), manual, now, now, id).run();
+        existingRows = existingRows.map((row) => row.id === id ? { ...row, player_key: playerKey, provider, provider_player_id: providerPlayerId, provider_data: JSON.stringify(providerData), overrides: JSON.stringify(mergedOverrides), manual } : row);
+        updated += 1;
+      } else {
+        await env.DB.prepare(`INSERT INTO footy_roster_players
+          (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual, source_seen_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
+          .bind(id, teamId, season, playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(mergedOverrides), manual, now, now).run();
+        existingRows.push({ id, team_id: teamId, season, player_key: playerKey, provider, provider_player_id: providerPlayerId, provider_data: JSON.stringify(providerData), overrides: JSON.stringify(mergedOverrides), status: "active", manual });
+        added += 1;
+      }
       seenKeys.push(playerKey);
-      existing ? updated += 1 : added += 1;
     }
-    const activeProviderRows = await env.DB.prepare("SELECT id, player_key FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
+    const activeProviderRows = await env.DB.prepare("SELECT id, player_key, provider FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
     const seen = new Set(seenKeys);
     for (const row of activeProviderRows.results || []) {
       if (seen.has(row.player_key)) continue;
+      if (refreshedProviders.size && !refreshedProviders.has(String(row.provider || ""))) continue;
       await env.DB.prepare("UPDATE footy_roster_players SET status = 'review_departure', updated_at = ? WHERE id = ?").bind(now, row.id).run();
       reviewDepartures += 1;
     }
   }
-  return { added, updated, reviewDepartures };
+  return { added, updated, reviewDepartures, duplicatesMerged };
 }
 
 async function createRosterPlayer(env, body, managerId) {
@@ -244,18 +506,37 @@ async function saveRosterMedia(env, id, body, managerId) {
   if (!match) throw httpError(400, "Upload a PNG, JPEG, or WebP image.");
   const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
   if (bytes.byteLength > 5 * 1024 * 1024) throw httpError(413, "Roster images must be 5 MB or smaller.");
+  await ensureRosterMediaLedger(env);
   const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[match[1]];
-  const key = `${row.team_id}/${row.season}/${id}/${kind}.${extension}`;
+  const key = `${row.team_id}/${row.season}/${id}/${kind}-${Date.now()}.${extension}`;
   const overrides = safeJson(row.overrides);
   const field = kind === "profile" ? "profileImage" : "cardImage";
+  const defaultField = kind === "profile" ? "useDefaultProfileImage" : "useDefaultCardImage";
   const previousPath = String(overrides[field] || "").split("?")[0];
   const previousKey = previousPath.startsWith("/media/rosters/") ? previousPath.slice("/media/rosters/".length) : "";
+  const usage = await getRosterMediaUsage(env, { reconciled: true });
+  const previousObject = previousKey
+    ? await env.DB.prepare("SELECT size_bytes FROM footy_roster_media_objects WHERE object_key = ?").bind(previousKey).first()
+    : null;
+  const projectedStorage = usage.storageBytes - Number(previousObject?.size_bytes || 0) + bytes.byteLength;
+  if (projectedStorage > ROSTER_MEDIA_STORAGE_LIMIT) throw httpError(413, "Roster media has reached its free-tier safety limit. Delete or replace images before uploading more.");
+  if (usage.monthlyUploads >= ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT) throw httpError(429, "Roster media has reached its monthly upload safety limit. Try again next month.");
   if (previousKey && previousKey !== key) await env.ROSTER_MEDIA.delete(previousKey);
   await env.ROSTER_MEDIA.put(key, bytes, { httpMetadata: { contentType: match[1], cacheControl: "public, max-age=31536000, immutable" } });
-  overrides[field] = `/media/rosters/${key}?v=${Date.now()}`;
+  const period = new Date().toISOString().slice(0, 7);
+  const statements = [
+    env.DB.prepare(`INSERT INTO footy_roster_media_objects (object_key, size_bytes, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(object_key) DO UPDATE SET size_bytes = excluded.size_bytes, updated_at = CURRENT_TIMESTAMP`).bind(key, bytes.byteLength),
+    env.DB.prepare(`INSERT INTO footy_roster_media_usage (period, upload_count, updated_at) VALUES (?, 1, CURRENT_TIMESTAMP)
+      ON CONFLICT(period) DO UPDATE SET upload_count = upload_count + 1, updated_at = CURRENT_TIMESTAMP`).bind(period),
+  ];
+  if (previousKey && previousKey !== key) statements.push(env.DB.prepare("DELETE FROM footy_roster_media_objects WHERE object_key = ?").bind(previousKey));
+  await env.DB.batch(statements);
+  overrides[field] = `/media/rosters/${key}`;
+  delete overrides[defaultField];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
     .bind(JSON.stringify(overrides), managerId, id).run();
-  return getRosterPlayer(env, id);
+  return { player: await getRosterPlayer(env, id), usage: await getRosterMediaUsage(env, { reconciled: true }) };
 }
 
 async function deleteRosterMedia(env, id, kind, managerId) {
@@ -268,22 +549,65 @@ async function deleteRosterMedia(env, id, kind, managerId) {
   const path = String(overrides[field] || "").split("?")[0];
   const key = path.startsWith("/media/rosters/") ? path.slice("/media/rosters/".length) : "";
   if (key) await env.ROSTER_MEDIA.delete(key);
+  if (key) await env.DB.prepare("DELETE FROM footy_roster_media_objects WHERE object_key = ?").bind(key).run();
   delete overrides[field];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
     .bind(JSON.stringify(overrides), managerId, id).run();
-  return getRosterPlayer(env, id);
+  return { player: await getRosterPlayer(env, id), usage: await getRosterMediaUsage(env) };
 }
 
-async function getRosterMedia(env, key, cors) {
-  if (!env.ROSTER_MEDIA || !key || key.includes("..")) return json({ ok: false, error: "Image was not found." }, 404, cors);
+async function getRosterMediaUsage(env, options = {}) {
+  if (!env.ROSTER_MEDIA) throw new Error("Roster media storage is not configured.");
+  if (!options.reconciled) await ensureRosterMediaLedger(env);
+  const storage = await env.DB.prepare("SELECT COALESCE(SUM(size_bytes), 0) AS storage_bytes, COUNT(*) AS object_count FROM footy_roster_media_objects").first();
+  const period = new Date().toISOString().slice(0, 7);
+  const monthly = await env.DB.prepare("SELECT upload_count FROM footy_roster_media_usage WHERE period = ?").bind(period).first();
+  const storageBytes = Number(storage?.storage_bytes || 0);
+  const monthlyUploads = Number(monthly?.upload_count || 0);
+  return {
+    storageBytes,
+    objectCount: Number(storage?.object_count || 0),
+    monthlyUploads,
+    storageLimitBytes: ROSTER_MEDIA_STORAGE_LIMIT,
+    monthlyUploadLimit: ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT,
+    warning: storageBytes >= ROSTER_MEDIA_STORAGE_WARNING || monthlyUploads >= ROSTER_MEDIA_MONTHLY_UPLOAD_WARNING,
+  };
+}
+
+async function ensureRosterMediaLedger(env) {
+  const initialized = await env.DB.prepare("SELECT state_value FROM footy_roster_media_state WHERE state_key = 'r2-ledger-initialized'").first();
+  if (initialized?.state_value === "1") return;
+  let cursor;
+  do {
+    const page = await env.ROSTER_MEDIA.list({ cursor, limit: 1000 });
+    const statements = (page.objects || []).map((object) => env.DB.prepare(`INSERT INTO footy_roster_media_objects
+      (object_key, size_bytes, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(object_key) DO UPDATE SET size_bytes = excluded.size_bytes, updated_at = CURRENT_TIMESTAMP`).bind(object.key, object.size));
+    if (statements.length) await env.DB.batch(statements);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  await env.DB.prepare(`INSERT INTO footy_roster_media_state (state_key, state_value, updated_at) VALUES ('r2-ledger-initialized', '1', CURRENT_TIMESTAMP)
+    ON CONFLICT(state_key) DO UPDATE SET state_value = '1', updated_at = CURRENT_TIMESTAMP`).run();
+}
+
+async function getRosterMedia(env, key, request, context) {
+  const headers = new Headers({ "Access-Control-Allow-Origin": "*" });
+  if (!env.ROSTER_MEDIA || !key || key.includes("..")) return json({ ok: false, error: "Image was not found." }, 404, headers);
+  const cacheUrl = new URL(request.url);
+  cacheUrl.search = "";
+  const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
+  const cache = typeof caches === "undefined" ? null : caches.default;
+  const cached = cache ? await cache.match(cacheKey) : null;
+  if (cached) return cached;
   const object = await env.ROSTER_MEDIA.get(key);
-  if (!object) return json({ ok: false, error: "Image was not found." }, 404, cors);
-  const headers = new Headers(cors);
+  if (!object) return json({ ok: false, error: "Image was not found." }, 404, headers);
   object.writeHttpMetadata(headers);
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.delete("Content-Type");
   headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
-  return new Response(object.body, { headers });
+  const response = new Response(object.body, { headers });
+  if (cache) context?.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
 }
 
 async function getRosterPlayerRow(env, id) {
@@ -306,7 +630,7 @@ function normalizeRosterData(value) {
   const result = {};
   for (const field of ROSTER_FIELDS) {
     if (!Object.prototype.hasOwnProperty.call(value || {}, field)) continue;
-    result[field] = ["fromAcademy", "isNew", "transferOut"].includes(field)
+    result[field] = ["fromAcademy", "isNew", "useDefaultProfileImage", "useDefaultCardImage"].includes(field)
       ? Boolean(value[field])
       : cleanText(value[field], field.includes("Image") ? 3000 : 300, field);
   }
@@ -319,6 +643,38 @@ function safeJson(value) {
 
 function slugRosterValue(value) {
   return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function rosterIdentityMatches(row, incoming) {
+  const effective = { ...safeJson(row.provider_data), ...safeJson(row.overrides) };
+  const rowName = slugRosterValue(effective.name);
+  const incomingName = slugRosterValue(incoming.name);
+  const rowBirthday = normalizeRosterBirthday(effective.birthday);
+  const incomingBirthday = normalizeRosterBirthday(incoming.birthday);
+  return Boolean(rowName && incomingName && rowName === incomingName) || Boolean(rowBirthday && incomingBirthday && rowBirthday === incomingBirthday);
+}
+
+function normalizeRosterBirthday(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const direct = text.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (direct) return direct;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+function chooseRosterSurvivor(rows, playerKey) {
+  return [...rows].sort((first, second) => rosterRowPriority(second, playerKey) - rosterRowPriority(first, playerKey))[0] || null;
+}
+
+function rosterRowPriority(row, playerKey) {
+  return (row.updated_by ? 1000 : 0) + (["legacy-sheet", "legacy-history"].includes(row.provider) ? 100 : 0) +
+    Object.keys(safeJson(row.overrides)).length * 10 + (row.player_key === playerKey ? 1 : 0);
+}
+
+function mergeRosterOverrides(rows, seedOverrides) {
+  const ordered = [...rows].sort((first, second) => rosterRowPriority(first, "") - rosterRowPriority(second, ""));
+  return normalizeRosterData(Object.assign({}, normalizeRosterData(seedOverrides || {}), ...ordered.map((row) => safeJson(row.overrides))));
 }
 
 function requireRosterSync(request, env) {
@@ -675,8 +1031,19 @@ async function saveMatchNote(env, matchId, body, managerId) {
 }
 
 async function requireAdmin(request, env) {
+  const managerId = await requireManager(request, env);
+  const adminIds = new Set(String(env.ADMIN_MANAGER_IDS || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean));
+
+  if (!adminIds.has(managerId)) throw httpError(403, "Only an admin can edit Footy data.");
+  return managerId;
+}
+
+async function requireManager(request, env) {
   const authorization = request.headers.get("Authorization") || "";
-  if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in as an admin to edit Footy data.");
+  if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in to load this roster.");
   if (!env.MANAGER_AUTH) throw new Error("Manager authorization is not configured.");
   const accessToken = authorization.slice(7);
 
@@ -691,14 +1058,7 @@ async function requireAdmin(request, env) {
     throw httpError(401, value?.error || "Manager authorization is invalid.");
   }
 
-  const managerId = String(value.managerId);
-  const adminIds = new Set(String(env.ADMIN_MANAGER_IDS || "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean));
-
-  if (!adminIds.has(managerId)) throw httpError(403, "Only an admin can edit Footy data.");
-  return managerId;
+  return String(value.managerId);
 }
 
 function normalizeMatchNote(note) {

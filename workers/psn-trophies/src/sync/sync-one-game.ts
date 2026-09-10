@@ -14,7 +14,10 @@ import type { PsnEnvironment } from "../types";
 import { getTitleBatch } from "./title-batch";
 
 const PAGE_LIMIT = 100;
-export const TITLE_BATCH_LIMIT = 4;
+// Changed games are always prioritized. One unchanged game per hour keeps older
+// rarity metadata fresh on a slow maintenance cycle without rewriting the whole
+// collection every week.
+export const TITLE_BATCH_LIMIT = 1;
 const PRIORITY_BATCH_LIMIT = 4;
 
 export interface TrophySyncBatchResult {
@@ -61,9 +64,10 @@ export async function syncTrophyBatch(
           getTitleTrophyGroups(auth, summary.npCommunicationId, options),
         ]);
         const normalized = normalizeProofGame(summary, metadata, earnings, groups);
-        titlesAdded += Number(await saveGame(env, normalized.game, normalized.groups, normalized.trophies, startedAt));
+        const saved = await saveGame(env, normalized.game, normalized.groups, normalized.trophies, startedAt);
+        titlesAdded += Number(saved.added);
         titlesSynced += 1;
-        trophiesUpdated += normalized.trophies.length;
+        trophiesUpdated += saved.trophiesWritten;
       } catch (error) {
         failures.push({ gameId: summary.npCommunicationId, error: safeErrorMessage(error) });
       }

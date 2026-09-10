@@ -1,4 +1,4 @@
-import { refreshPublicSnapshots, routePublicApi } from "./api/router";
+import { refreshPublicSnapshots, refreshPublicStatusSnapshot, routePublicApi } from "./api/router";
 import { routeTrophyManagementApi } from "./api/management";
 import { syncScheduledTrophyBatch, syncTrophyBatch } from "./sync/sync-one-game";
 import type { PsnEnvironment } from "./types";
@@ -23,7 +23,7 @@ export default {
       if (request.method === "POST" && url.pathname === "/internal/psn/sync") {
         requireSyncSecret(request, env);
         const result = await syncTrophyBatch(env, parseSyncOffset(url));
-        await refreshPublicSnapshots(env);
+        if (result.nextOffset === null) await refreshPublicSnapshots(env);
         return json({ ok: true, ...result }, 200, cors);
       }
       return json({ error: "Not found." }, 404, cors);
@@ -35,7 +35,10 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: PsnEnvironment, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(syncScheduledTrophyBatch(env).then(() => refreshPublicSnapshots(env)));
+    ctx.waitUntil(syncScheduledTrophyBatch(env).then((result) =>
+      result.trophiesUpdated > 0 || result.titlesAdded > 0
+        ? refreshPublicSnapshots(env)
+        : refreshPublicStatusSnapshot(env)));
   },
 };
 

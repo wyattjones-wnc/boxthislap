@@ -5,6 +5,7 @@ const VIEWS = [
   ["all", "All Earned"],
   ["platinums", "Platinums"],
 ];
+const TROPHY_LOG_CACHE_MS = 5 * 60 * 1000;
 
 export function createTrophyLogController({ endpoint, getAccessToken }) {
   const root = document.querySelector("#trophy-log");
@@ -20,6 +21,8 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   const authForm = document.querySelector("#psn-auth-form");
   const authStatus = document.querySelector("#psn-auth-status");
   const state = { view: "unsorted", sort: "newest", evergreenSort: false, page: 1, busy: false, syncing: false, items: [] };
+  const pageCache = new Map();
+  let authStatusLoaded = false;
   if (!root) return { renderPage: () => Promise.resolve() };
 
   filters?.addEventListener("click", (event) => {
@@ -88,18 +91,21 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     return Promise.all([load(), loadAuthStatus()]);
   }
 
-  async function load() {
+  async function load(force = false) {
     if (!grid || state.busy) return;
+    const cacheKey = `${state.view}:${state.sort}:${state.evergreenSort}:${state.page}`;
+    const cached = pageCache.get(cacheKey);
+    if (!force && cached && Date.now() - cached.savedAt < TROPHY_LOG_CACHE_MS) {
+      applyPage(cached.value);
+      return;
+    }
     state.busy = true;
     grid.setAttribute("aria-busy", "true");
     grid.innerHTML = loading("Loading trophy log...");
     try {
       const value = await request(`/api/psn/trophy-log?view=${encodeURIComponent(state.view)}&sort=${encodeURIComponent(state.sort)}&evergreen=${state.evergreenSort}&page=${state.page}&limit=48`);
-      state.view = value.view || state.view;
-      syncFilters();
-      state.items = value.items || [];
-      renderItems(state.items);
-      renderPagination(value.pagination || {});
+      pageCache.set(cacheKey, { savedAt: Date.now(), value });
+      applyPage(value);
     } catch (error) {
       grid.innerHTML = `<p class="table-message">${escapeHtml(error.message)}</p>`;
       if (resultLabel) resultLabel.textContent = "Unable to load trophies";
@@ -107,6 +113,14 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       state.busy = false;
       grid.setAttribute("aria-busy", "false");
     }
+  }
+
+  function applyPage(value) {
+    state.view = value.view || state.view;
+    syncFilters();
+    state.items = value.items || [];
+    renderItems(state.items);
+    renderPagination(value.pagination || {});
   }
 
   function renderItems(items) {
@@ -122,7 +136,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       return `<article class="trophy-log-card" data-game-id="${escapeHtml(item.gameId)}" data-trophy-id="${escapeHtml(item.id)}" data-preference-state="${escapeHtml(current)}">
         <div class="trophy-log-image">${item.iconUrl ? `<img src="${escapeHtml(item.iconUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span aria-hidden="true">★</span>`}</div>
         <div class="trophy-log-copy"><p>${escapeHtml(item.gameName || "Unknown game")}</p><h2>${escapeHtml(item.name || "Unknown trophy")}</h2>${item.description ? `<span>${escapeHtml(item.description)}</span>` : ""}<small>${escapeHtml(details)}</small>${numbering.length ? `<div class="trophy-log-numbering">${numbering.map((value) => `<span class="trophy-metadata-chip">${escapeHtml(value)}</span>`).join("")}</div>` : ""}</div>
-        <div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">${renderActions(current)}</div>
+        <div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">${renderActions(current, state.view)}</div>
       </article>`;
     }).join("");
   }
@@ -144,6 +158,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ state: nextState }),
       });
+      pageCache.clear();
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
       updatePreferenceInPlace(card, nextState);
     } catch (error) {
@@ -170,11 +185,12 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
           evergreen: state.evergreenSort,
         }),
       });
+      pageCache.clear();
       window.dispatchEvent(new CustomEvent("boxthislap:trophy-preferences-changed"));
       const seen = Number(value.seen) || 0;
       state.page = 1;
       state.busy = false;
-      await load();
+      await load(true);
       syncStatus.textContent = `${seen} ${seen === 1 ? "trophy" : "trophies"} across all applicable pages marked Not Favorite.`;
     } catch (error) {
       button.disabled = false;
@@ -203,7 +219,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     const current = nextState || "unsorted";
     card.dataset.preferenceState = current;
     const actions = card.querySelector(".trophy-log-actions");
-    if (actions) actions.innerHTML = renderActions(current);
+    if (actions) actions.innerHTML = renderActions(current, state.view);
   }
 
   async function refreshTrophies() {
@@ -214,9 +230,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     syncStatus.textContent = "Checking PSN for changed and recently played games...";
     try {
       const value = await request("/api/psn/sync", { method: "POST" });
+      pageCache.clear();
       syncStatus.textContent = `Refresh complete: ${value.titlesSynced || 0} games checked and ${value.trophiesUpdated || 0} trophies updated.`;
       state.page = 1;
-      await load();
+      await load(true);
     } catch (error) {
       syncStatus.textContent = error.message;
     } finally {
@@ -227,9 +244,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   }
 
   async function loadAuthStatus() {
-    if (!authStatus) return;
+    if (!authStatus || authStatusLoaded) return;
     try {
       const value = await request("/api/psn/auth");
+      authStatusLoaded = true;
       authStatus.textContent = value.updatedAt
         ? `Encrypted PSN access updated ${formatDate(value.updatedAt)}.`
         : value.configured ? "PSN access is configured. You can replace it below when Sony expires it." : "PSN access is not configured.";
@@ -251,6 +269,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ npsso }),
       });
+      authStatusLoaded = true;
       input.value = "";
       authStatus.textContent = `PSN access updated ${formatDate(value.updatedAt)}. The next hourly sync will use it.`;
     } catch (error) {
@@ -285,6 +304,6 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
 function loading(label) { return `<p class="table-message"><span class="loading-spinner"></span>${escapeHtml(label)}</p>`; }
 function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); }
 function capitalize(value) { const text = String(value || ""); return text ? `${text[0].toUpperCase()}${text.slice(1)}` : ""; }
-function renderActions(current) { const favorite = current === "favorite"; return `<button type="button" data-trophy-preference="${favorite ? "seen" : "favorite"}">${favorite ? "★ Unfavorite" : "☆ Favorite"}</button>${current === "unsorted" ? `<button class="action-button trophy-seen-through-button" type="button" data-trophy-seen-through aria-expanded="false" aria-label="Seen through here"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg><span>Seen through here</span></button>` : ""}`; }
+function renderActions(current, view) { const favorite = current === "favorite"; return `<button type="button" data-trophy-preference="${favorite ? "seen" : "favorite"}">${favorite ? "★ Unfavorite" : "☆ Favorite"}</button>${current === "unsorted" && view === "unsorted" ? `<button class="action-button trophy-seen-through-button" type="button" data-trophy-seen-through aria-expanded="false" aria-label="Seen through here"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg><span>Seen through here</span></button>` : ""}`; }
 function formatElapsed(seconds) { const value = Math.max(0, Number(seconds) || 0); const totalDays = Math.floor(value / 86400); const years = Math.floor(totalDays / 365); const months = Math.floor((totalDays % 365) / 30); const days = (totalDays % 365) % 30; const parts = [[years, "year"], [months, "month"], [days, "day"]].filter(([amount]) => amount).map(([amount, unit]) => `${amount} ${unit}${amount === 1 ? "" : "s"}`); if (parts.length) return parts.join(", "); const hours = Math.floor(value / 3600); if (hours) return `${hours} hour${hours === 1 ? "" : "s"}`; const minutes = Math.floor(value / 60); return `${minutes} minute${minutes === 1 ? "" : "s"}`; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }

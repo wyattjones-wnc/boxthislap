@@ -10,6 +10,7 @@
     "test:footy-rosters": "node --test workers/footy-notes/test/rosters.test.mjs",
     "test:formula-one": "node --test workers/formula-one/test/*.test.mjs",
     "formula-one:migrate:2026": "node scripts/migrate-formula-one-2026.mjs",
+    "formula-one:seed-sql": "node scripts/build-formula-one-seed-sql.mjs",
     "test:psn": "node --experimental-strip-types --test workers/psn-trophies/test/*.test.ts"
   },
   "devDependencies": {

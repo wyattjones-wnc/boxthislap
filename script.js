@@ -13141,7 +13141,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
           <button class="action-button" type="button" data-formula-one-admin-action="fetch">Fetch</button>
           <button class="action-button" type="button" data-formula-one-admin-action="approve"${selectedSession?.status === "needs_review" ? "" : " disabled"}>Approve</button>
           <button class="footer-copy-link" type="button" data-formula-one-admin-action="reopen"${selectedSession?.status === "approved" ? "" : " disabled"}>Reopen</button>
-          <button class="footer-copy-link" type="button" data-formula-one-admin-action="export">Export Sheet</button>
+          <button class="footer-copy-link" type="button" data-formula-one-admin-action="export"${data.capabilities?.googleSheetsExport ? "" : " disabled title=\"Google Sheets export is not connected yet.\""}>Export Sheet</button>
         </div>
       </div>
       <div class="formula-one-admin-statuses">${sessions.map((session) => renderFormulaOneAdminStatus(data, selectedRound.round, session)).join("")}</div>

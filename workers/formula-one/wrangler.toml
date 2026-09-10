@@ -5,9 +5,11 @@ compatibility_date = "2026-09-10"
 [[d1_databases]]
 binding = "DB"
 database_name = "formula-one"
-# Replace after creating the production D1 database. The placeholder keeps local
-# development and dry-run bundling explicit without pointing at another database.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "b3e28ed0-a9c9-43d1-a6cb-ae22b8a181a6"
+
+[[services]]
+binding = "AUTH_SERVICE"
+service = "box-this-lap-rankings"
 
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"

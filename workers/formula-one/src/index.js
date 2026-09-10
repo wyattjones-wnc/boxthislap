@@ -83,10 +83,12 @@ export default {
 async function requireAdmin(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in is required.");
-  const response = await fetch(String(env.AUTH_VERIFY_URL || ""), {
+  const verifyRequest = new Request(String(env.AUTH_VERIFY_URL || "https://box-this-lap-rankings.internal/api/auth/verify"), {
     method: "POST",
-    headers: { Authorization: authorization },
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken: authorization.slice(7) }),
   });
+  const response = env.AUTH_SERVICE ? await env.AUTH_SERVICE.fetch(verifyRequest) : await fetch(verifyRequest);
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.ok || !result.managerId) throw httpError(401, "Your session has expired. Sign in again.");
   const managerId = String(result.managerId);
@@ -113,6 +115,7 @@ async function readAdminWeekly(env, year, managerId) {
   return {
     year,
     rollout: "admin_preview",
+    capabilities: { googleSheetsExport: Boolean(String(env.GOOGLE_SHEETS_EXPORT_ENDPOINT || "").trim() && String(env.GOOGLE_SHEETS_EXPORT_KEY || "").trim()) },
     rounds,
     drivers: driverQuery.results || [],
     sessions,

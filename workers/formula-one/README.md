@@ -8,11 +8,11 @@ The new Weekly controls and native picks are intentionally visible only to admin
 
 ## Provisioning and migration
 
-1. Create the `formula-one` D1 database and replace the placeholder ID in `wrangler.toml`.
-2. Apply `migrations/0001_initial.sql` locally, verify it, then apply it remotely.
+1. The `formula-one` D1 database is provisioned and its ID is recorded in `wrangler.toml`.
+2. `migrations/0001_initial.sql` is applied locally and remotely.
 3. Set `GOOGLE_SHEETS_EXPORT_KEY` as a Worker secret. Deploy `scripts/formula-one-export-webapp.gs`, set its matching script properties, and configure `GOOGLE_SHEETS_EXPORT_ENDPOINT`.
-4. Run `node scripts/migrate-formula-one-2026.mjs` to create the reviewable payload. After checking it, rerun with `--apply` and temporary `FORMULA_ONE_ENDPOINT` / `FORMULA_ONE_ACCESS_TOKEN` environment variables.
-5. Reconcile every imported weekly score against the current workbook before enabling the endpoint in `modules/siteConfig.js`.
-6. Deploy the Worker, set `FORMULA_ONE_ENDPOINT`, and keep the UI admin-only for the initial validation period.
+4. Run `node scripts/migrate-formula-one-2026.mjs` to refresh the reviewable payload. Build an idempotent D1 seed with `node scripts/build-formula-one-seed-sql.mjs` when a direct database import is preferable to the authenticated API.
+5. Reconcile every imported weekly score against the current workbook before expanding access.
+6. The Worker and `FORMULA_ONE_ENDPOINT` are deployed. Keep the UI admin-only for the initial validation period.
 
 No cron trigger is configured. Admins explicitly fetch a session and explicitly approve it.

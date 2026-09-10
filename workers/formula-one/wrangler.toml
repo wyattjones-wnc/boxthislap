@@ -16,4 +16,4 @@ ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http:/
 AUTH_VERIFY_URL = "https://box-this-lap-rankings.boxthislap.workers.dev/api/auth/verify"
 ADMIN_MANAGER_IDS = "6"
 JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1"
-GOOGLE_SHEETS_EXPORT_ENDPOINT = ""
+GOOGLE_SHEETS_EXPORT_ENDPOINT = "https://script.google.com/macros/s/AKfycbyPCg9hlmB82fHaF_zF3KjEu2rrqFoFJzq-flKjX3wmX_8jEXNL15nGRFn_VQBiA8yT/exec"

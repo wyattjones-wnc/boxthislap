@@ -1519,6 +1519,11 @@ function renderFootyTeamPlayers(team) {
     return;
   }
 
+  const discoveryKey = getFootyRosterDiscoveryKey(team);
+  if (getCurrentManagerId() && roster.provider !== "football-data.org" && team.providerTeamIds?.["football-data.org"] && !footyRosterDiscoveryStates.has(discoveryKey)) {
+    void discoverFootyRoster(team);
+  }
+
   const players = getFootyRosterPlayersForTeam(team);
   const seasons = getFootyRosterSeasonsForTeam(team);
   footyTeamContent.innerHTML = `
@@ -5385,6 +5390,8 @@ function normalizeFootyRosters(rosters = []) {
           : [],
         season: String(roster.season || "").trim(),
         active: Boolean(roster.active),
+        provider: String(roster.provider || "").trim(),
+        providerTeamId: String(roster.providerTeamId || "").trim(),
         sheetName: String(roster.sheetName || "").trim(),
         team: String(roster.team || roster.name || "").trim(),
         teamId,

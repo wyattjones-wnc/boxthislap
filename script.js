@@ -2,7 +2,7 @@ import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js
 import {
   buildFormulaOneQualifyingComparisons,
   summarizeFormulaOneQualifyingComparisons,
-} from "./modules/formulaOneQualifying.js?v=202609102010";
+} from "./modules/formulaOneQualifying.js?v=202609102059";
 import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,

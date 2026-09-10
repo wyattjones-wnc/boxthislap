@@ -7677,6 +7677,100 @@ main {
   margin: 0;
 }
 
+.formula-one-admin {
+  display: grid;
+  gap: 16px;
+}
+
+.formula-one-admin-notice,
+.formula-one-admin-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  padding: 16px;
+}
+
+.formula-one-admin-notice {
+  border-left: 4px solid var(--accent);
+}
+
+.formula-one-admin-notice p,
+.formula-one-admin-card p {
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.formula-one-admin-toolbar,
+.formula-one-admin-actions,
+.formula-one-admin-form-grid {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+}
+
+.formula-one-admin-toolbar {
+  grid-template-columns: repeat(2, minmax(160px, 240px)) minmax(0, 1fr);
+}
+
+.formula-one-admin-actions {
+  grid-template-columns: repeat(4, max-content);
+  justify-content: end;
+}
+
+.formula-one-admin-form-grid {
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  margin-top: 14px;
+}
+
+.formula-one-admin-form-grid .select-control select,
+.formula-one-admin-form-grid .select-control input {
+  min-width: 0;
+  width: 100%;
+}
+
+.formula-one-admin-statuses {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.formula-one-admin-status {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+}
+
+.formula-one-admin-status span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.formula-one-admin-status strong[data-status="approved"] {
+  color: var(--success, #287a49);
+}
+
+.formula-one-admin-status strong[data-status="needs_review"] {
+  color: var(--accent-dark);
+}
+
+.formula-one-admin-feedback {
+  margin: 0;
+  min-height: 1.3em;
+}
+
+.formula-one-admin-results td:first-child,
+.formula-one-admin-results th:first-child {
+  text-align: right;
+  width: 52px;
+}
+
 .formula-one-form-header {
   align-items: end;
   display: grid;
@@ -9862,6 +9956,17 @@ html.has-followed-teams-dialog body {
   .formula-one-form-header {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .formula-one-admin-toolbar,
+  .formula-one-admin-form-grid,
+  .formula-one-admin-statuses {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-one-admin-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
   }
 
   .formula-one-form-link {

@@ -392,6 +392,7 @@ export const formulaOneViews = {
     resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
     weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
+    weeklyAdmin: document.querySelector("#formula-one-2026-weekly-admin"),
     weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
     weeklyManagers: document.querySelector("#formula-one-2026-weekly-managers"),
     weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),

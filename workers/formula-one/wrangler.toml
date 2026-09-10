@@ -1,0 +1,17 @@
+name = "box-this-lap-formula-one"
+main = "src/index.js"
+compatibility_date = "2026-09-10"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "formula-one"
+# Replace after creating the production D1 database. The placeholder keeps local
+# development and dry-run bundling explicit without pointing at another database.
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
+AUTH_VERIFY_URL = "https://box-this-lap-rankings.boxthislap.workers.dev/api/auth/verify"
+ADMIN_MANAGER_IDS = "6"
+JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1"
+GOOGLE_SHEETS_EXPORT_ENDPOINT = ""

@@ -17,6 +17,7 @@ import {
   NEXT_ITEMS_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
+  FORMULA_ONE_ENDPOINT,
   PSN_TROPHIES_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
   COLLECTIBLES_ENDPOINT,
@@ -669,6 +670,9 @@ const siteData = {};
 let guideLinksLoadPromise = null;
 let rankingAuthorizationPromise = null;
 let rankingAuthorizationRefreshTimer = 0;
+let formulaOneAdminLoadPromise = null;
+let formulaOneAdminSelectedRound = "";
+let formulaOneAdminSelectedSession = "qualifying";
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -12616,6 +12620,10 @@ function renderActivePageContent(pageName = "") {
       } else {
         renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
       }
+      if (formulaOneYear === "2026") {
+        renderFormulaOneAdminWeekly();
+        if (isCurrentManagerAdmin()) void ensureFormulaOneAdminData();
+      }
       return;
     }
 
@@ -13080,6 +13088,192 @@ function formatFormulaOnePosition(position) {
   }
 
   return `P${value}`;
+}
+
+function renderFormulaOneAdminWeekly(feedback = {}) {
+  const container = formulaOneViews[2026]?.weeklyAdmin;
+  if (!container || !isCurrentManagerAdmin()) return;
+
+  const notice = `
+    <div class="formula-one-admin-notice">
+      <strong>Admin preview</strong>
+      <p>This D1-backed workflow is intentionally admin-only while it is validated against the current Google Sheet. Later: open native weekly picks to managers after deadline privacy, scoring reconciliation, and the 2026 migration are verified.</p>
+    </div>`;
+
+  if (!FORMULA_ONE_ENDPOINT) {
+    container.innerHTML = `${notice}
+      <div class="formula-one-admin-card">
+        <strong>Backend setup required</strong>
+        <p>The admin interface is ready, but the Formula 1 Worker endpoint remains disabled until its D1 database, migrations, authentication, and export secret are provisioned.</p>
+      </div>`;
+    return;
+  }
+
+  const data = siteData.formulaOne2026Admin;
+  if (!data) {
+    container.innerHTML = `${notice}${feedback.error
+      ? `<div class="formula-one-admin-card"><p class="formula-one-admin-feedback" role="alert">${escapeHtml(feedback.error)}</p><button class="action-button" type="button" data-formula-one-admin-action="refresh">Try again</button></div>`
+      : renderLoadingMessage("Loading Formula 1 administration...")}`;
+    return;
+  }
+
+  const rounds = data.rounds || [];
+  if (!rounds.length) {
+    container.innerHTML = `${notice}<div class="formula-one-admin-card"><strong>No rounds imported</strong><p>Run the 2026 migration importer, then refresh this page.</p><button class="action-button" type="button" data-formula-one-admin-action="refresh">Refresh</button></div>`;
+    return;
+  }
+
+  const selectedRound = rounds.find((round) => String(round.round) === formulaOneAdminSelectedRound) || rounds.at(-1);
+  formulaOneAdminSelectedRound = String(selectedRound.round);
+  const sessions = ["qualifying", ...(selectedRound.has_sprint ? ["sprint"] : []), "race"];
+  if (!sessions.includes(formulaOneAdminSelectedSession)) formulaOneAdminSelectedSession = sessions[0];
+  const selectedSession = data.sessions?.find((session) => Number(session.round) === Number(selectedRound.round) && session.session_type === formulaOneAdminSelectedSession);
+  const results = (data.results || []).filter((result) => Number(result.round) === Number(selectedRound.round) && result.session_type === formulaOneAdminSelectedSession);
+  const entry = data.entries?.find((item) => Number(item.round) === Number(selectedRound.round));
+  const score = data.scores?.find((item) => Number(item.round) === Number(selectedRound.round));
+
+  container.innerHTML = `${notice}
+    <div class="formula-one-admin-card">
+      <div class="formula-one-admin-toolbar">
+        <label class="select-control"><span>Round</span><select data-formula-one-admin-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>
+        <label class="select-control"><span>Session</span><select data-formula-one-admin-session>${sessions.map((session) => `<option value="${session}"${session === formulaOneAdminSelectedSession ? " selected" : ""}>${escapeHtml(formatFormulaOneSessionName(session))}</option>`).join("")}</select></label>
+        <div class="formula-one-admin-actions">
+          <button class="action-button" type="button" data-formula-one-admin-action="fetch">Fetch</button>
+          <button class="action-button" type="button" data-formula-one-admin-action="approve"${selectedSession?.status === "needs_review" ? "" : " disabled"}>Approve</button>
+          <button class="footer-copy-link" type="button" data-formula-one-admin-action="reopen"${selectedSession?.status === "approved" ? "" : " disabled"}>Reopen</button>
+          <button class="footer-copy-link" type="button" data-formula-one-admin-action="export">Export Sheet</button>
+        </div>
+      </div>
+      <div class="formula-one-admin-statuses">${sessions.map((session) => renderFormulaOneAdminStatus(data, selectedRound.round, session)).join("")}</div>
+      <p><strong>Round status:</strong> ${selectedRound.is_complete ? "Complete" : "Waiting for every required session approval"}</p>
+      <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+    </div>
+    <div class="formula-one-admin-card">
+      <strong>${escapeHtml(formatFormulaOneSessionName(formulaOneAdminSelectedSession))} results</strong>
+      <p>${selectedSession ? `${escapeHtml(formatFormulaOneSessionStatus(selectedSession.status))}${selectedSession.fetched_at ? ` · fetched ${escapeHtml(formatFormulaOneAdminDate(selectedSession.fetched_at))}` : ""}` : "Not fetched yet."}</p>
+      <div class="table-wrap"><table class="formula-one-admin-results"><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Status / time</th></tr></thead><tbody>${results.length ? results.map((result) => `<tr><td data-label="Pos">${escapeHtml(formatFormulaOnePosition(result.position))}</td><td data-label="Driver">${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</td><td data-label="Team">${escapeHtml(getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</td><td data-label="Status / time">${escapeHtml(result.time_text || result.status || [result.q1, result.q2, result.q3].filter(Boolean).join(" / "))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="4">No staged results for this session.</td></tr>`}</tbody></table></div>
+    </div>
+    ${renderFormulaOneAdminPicks(data, selectedRound, entry, score)}
+    ${renderFormulaOneAdminFacts(selectedRound)}
+  `;
+}
+
+function renderFormulaOneAdminStatus(data, round, sessionType) {
+  const session = data.sessions?.find((item) => Number(item.round) === Number(round) && item.session_type === sessionType);
+  const status = session?.status || "planned";
+  return `<div class="formula-one-admin-status"><span>${escapeHtml(formatFormulaOneSessionName(sessionType))}</span><strong data-status="${escapeHtml(status)}">${escapeHtml(formatFormulaOneSessionStatus(status))}</strong></div>`;
+}
+
+function renderFormulaOneAdminPicks(data, round, entry, score) {
+  const driverOptions = (value) => `<option value="">Choose driver</option>${(data.drivers || []).map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
+  const deadline = round.deadline_at ? formatFormulaOneAdminDate(round.deadline_at) : "Not set";
+  return `<form class="formula-one-admin-card" data-formula-one-admin-picks>
+    <strong>Native weekly picks preview</strong>
+    <p>Only the signed-in admin can use this preview. Deadline: ${escapeHtml(deadline)}${entry ? ` · ${escapeHtml(formatFormulaOneSessionStatus(entry.entry_status || "draft"))}` : ""}${score ? ` · Current score: ${escapeHtml(formatFormulaOnePointValue(score.total_points))}` : ""}</p>
+    <div class="formula-one-admin-form-grid">
+      <label class="select-control"><span>P1</span><select name="p1DriverId">${driverOptions(entry?.p1_driver_id)}</select></label>
+      <label class="select-control"><span>P2</span><select name="p2DriverId">${driverOptions(entry?.p2_driver_id)}</select></label>
+      <label class="select-control"><span>P3</span><select name="p3DriverId">${driverOptions(entry?.p3_driver_id)}</select></label>
+      <label class="select-control"><span>Wildcard</span><select name="wildcardDriverId">${driverOptions(entry?.wildcard_driver_id)}</select></label>
+    </div>
+    <div class="formula-one-admin-actions">
+      <button class="footer-copy-link" type="submit" value="draft">Save draft</button>
+      <button class="action-button" type="submit" value="submit">Submit picks</button>
+    </div>
+  </form>`;
+}
+
+function renderFormulaOneAdminFacts(round) {
+  return `<form class="formula-one-admin-card" data-formula-one-admin-facts>
+    <strong>Manual round facts</strong>
+    <p>Use this for facts that cannot be trusted to the classification feed, including Driver of the Day.</p>
+    <div class="formula-one-admin-form-grid">
+      <label class="select-control"><span>Driver of the Day</span><input name="driverOfTheDay" value="${escapeHtml(round.driver_of_the_day || "")}"></label>
+      <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}"></label>
+      <label class="select-control"><span>Fastest pit team</span><input name="fastestPitTeam" value="${escapeHtml(round.fastest_pit_team || "")}"></label>
+      <label class="select-control"><span>DNFs</span><input name="dnfCount" value="${escapeHtml(round.dnf_count || "")}"></label>
+      <label class="select-control"><span>Safety car</span><input name="safetyCar" value="${escapeHtml(round.safety_car || "")}"></label>
+    </div>
+    <button class="action-button" type="submit">Save facts</button>
+  </form>`;
+}
+
+async function ensureFormulaOneAdminData({ force = false } = {}) {
+  if (!isCurrentManagerAdmin() || !FORMULA_ONE_ENDPOINT) return null;
+  if (siteData.formulaOne2026Admin && !force) return siteData.formulaOne2026Admin;
+  if (formulaOneAdminLoadPromise && !force) return formulaOneAdminLoadPromise;
+  formulaOneAdminLoadPromise = formulaOneAdminRequest("/api/admin/seasons/2026/weekly")
+    .then((result) => {
+      siteData.formulaOne2026Admin = result;
+      renderFormulaOneAdminWeekly();
+      return result;
+    })
+    .catch((error) => {
+      renderFormulaOneAdminWeekly({ error: getErrorMessage(error) });
+      throw error;
+    })
+    .finally(() => { formulaOneAdminLoadPromise = null; });
+  return formulaOneAdminLoadPromise;
+}
+
+async function formulaOneAdminRequest(path, options = {}) {
+  if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
+  const token = await ensureRankingAuthorization();
+  if (!token) throw new Error("Sign in again to manage Formula 1 data.");
+  const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}${path}`, {
+    method: options.method || "GET",
+    headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false) throw new Error(result.error || "Formula 1 data could not be updated.");
+  return result;
+}
+
+async function runFormulaOneAdminAction(action) {
+  const pathBase = `/api/admin/seasons/2026/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}`;
+  renderFormulaOneAdminWeekly({ message: action === "fetch" ? "Fetching provider results..." : "Updating session..." });
+  if (action === "refresh") {
+    await ensureFormulaOneAdminData({ force: true });
+    return;
+  }
+  const path = action === "export"
+    ? "/api/admin/seasons/2026/export/google-sheets"
+    : `${pathBase}/sessions/${encodeURIComponent(formulaOneAdminSelectedSession)}/${action}`;
+  const result = await formulaOneAdminRequest(path, { method: "POST" });
+  if (action === "export" && result.spreadsheetUrl) window.open(result.spreadsheetUrl, "_blank", "noopener");
+  await ensureFormulaOneAdminData({ force: true });
+  renderFormulaOneAdminWeekly({ message: action === "export" ? "Google Sheets snapshot exported." : `${formatFormulaOneSessionName(formulaOneAdminSelectedSession)} ${action === "fetch" ? "is ready for review" : action === "approve" ? "approved" : "reopened"}.` });
+}
+
+async function submitFormulaOneAdminForm(form, kind, options = {}) {
+  const body = Object.fromEntries(new FormData(form).entries());
+  if (kind === "picks") body.submit = options.submit !== false;
+  const path = `/api/admin/seasons/2026/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}/${kind === "picks" ? "picks/me" : "facts"}`;
+  await formulaOneAdminRequest(path, { method: "PUT", body });
+  await ensureFormulaOneAdminData({ force: true });
+  renderFormulaOneAdminWeekly({ message: kind === "picks" ? (body.submit ? "Native picks submitted." : "Native picks draft saved.") : "Round facts saved." });
+}
+
+function getFormulaOneAdminDriver(data, driverId) {
+  return data.drivers?.find((driver) => driver.driver_id === driverId);
+}
+
+function getFormulaOneAdminDriverName(data, driverId) {
+  return getFormulaOneAdminDriver(data, driverId)?.display_name || driverId;
+}
+
+function formatFormulaOneSessionName(value) {
+  return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : "Session";
+}
+
+function formatFormulaOneSessionStatus(value) {
+  return String(value || "planned").replace(/_/g, " ").replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function formatFormulaOneAdminDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? String(value || "") : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
 function renderFormulaOneError(year, error) {
@@ -15384,6 +15578,36 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     event.preventDefault();
     toggleFormulaOneWeeklyEntry(entry);
   });
+
+  if (String(year) === "2026") {
+    view.weeklyAdmin?.addEventListener("change", (event) => {
+      if (event.target.matches("[data-formula-one-admin-round]")) {
+        formulaOneAdminSelectedRound = event.target.value;
+        renderFormulaOneAdminWeekly();
+      } else if (event.target.matches("[data-formula-one-admin-session]")) {
+        formulaOneAdminSelectedSession = event.target.value;
+        renderFormulaOneAdminWeekly();
+      }
+    });
+
+    view.weeklyAdmin?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-formula-one-admin-action]");
+      if (!button || button.disabled) return;
+      button.disabled = true;
+      void runFormulaOneAdminAction(button.dataset.formulaOneAdminAction)
+        .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+    });
+
+    view.weeklyAdmin?.addEventListener("submit", (event) => {
+      const form = event.target.closest("[data-formula-one-admin-picks], [data-formula-one-admin-facts]");
+      if (!form) return;
+      event.preventDefault();
+      const kind = form.hasAttribute("data-formula-one-admin-picks") ? "picks" : "facts";
+      form.querySelectorAll("button[type='submit']").forEach((button) => button.setAttribute("disabled", ""));
+      void submitFormulaOneAdminForm(form, kind, { submit: event.submitter?.value !== "draft" })
+        .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+    });
+  }
 });
 
 Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
@@ -15765,6 +15989,12 @@ function renderLoginState() {
   loginOnlyElements.forEach((element) => {
     element.hidden = !managerMeta;
   });
+  if (managerMeta?.isAdmin && activePageName === "formula-1-2026-weekly") {
+    renderFormulaOneAdminWeekly();
+    void ensureFormulaOneAdminData();
+  } else if (!managerMeta?.isAdmin && document.querySelector('[data-tab-panel="formula-one-2026-weekly-manage"].is-active')) {
+    showTab("formula-one-2026-weekly-bet");
+  }
   syncFootyGoalAssistsButton();
   if (managerMeta?.isAdmin && siteData.footySchedule && !Array.isArray(siteData.footySeenMatches)) {
     ensureFootySeenMatches().catch((error) => recordDiagnostic("seen matches failed to load", error));
@@ -18797,6 +19027,7 @@ function refreshFormulaOnePage(year) {
   } else if (page === `formula-1-${year}-weekly`) {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
     renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+    if (String(year) === "2026") renderFormulaOneAdminWeekly();
   } else if (page === `formula-1-${year}-results`) {
     renderFormulaOneResults(year);
   }

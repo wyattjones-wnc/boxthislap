@@ -1,8 +1,9 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import {
+  buildFormulaOneMainDatasets,
   buildFormulaOneQualifyingComparisons,
   summarizeFormulaOneQualifyingComparisons,
-} from "./modules/formulaOneQualifying.js?v=202609102124";
+} from "./modules/formulaOneQualifying.js?v=202609102156";
 import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
@@ -13119,11 +13120,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
     <div class="formula-one-admin-notice">
       <strong>Weekly admin preview</strong>
       <p>Weekly picks remain admin-only while this workflow is validated. Later: open native weekly picks to managers after deadline privacy, scoring reconciliation, and migration are verified.</p>
-    </div>` : `
-    <div class="formula-one-admin-notice">
-      <strong>Main data workflow</strong>
-      <p>Fetch every available session for a round, review the staged data, then approve it. Main data management is restricted to admins.</p>
-    </div>`;
+    </div>` : "";
 
   if (!FORMULA_ONE_ENDPOINT) {
     container.innerHTML = `${tabs}${notice}
@@ -13148,88 +13145,137 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
     return;
   }
 
-  const selectedRound = rounds.find((round) => String(round.round) === formulaOneAdminSelectedRound) || rounds.find((round) => !round.is_complete) || rounds.at(-1);
-  formulaOneAdminSelectedRound = String(selectedRound.round);
+  const selectedAll = formulaOneAdminMode === "main" && formulaOneAdminSelectedRound === "all";
+  const selectedRound = selectedAll ? null : rounds.find((round) => String(round.round) === formulaOneAdminSelectedRound) || rounds.find((round) => !round.is_complete) || rounds.at(-1);
+  if (!selectedAll) formulaOneAdminSelectedRound = String(selectedRound.round);
+  const exportControl = `<div class="formula-one-export-row"><button class="footer-copy-link" type="button" data-formula-one-admin-action="export"${data.capabilities?.googleSheetsExport ? "" : " disabled title=\"Google Sheets export is not connected yet.\""}>Export ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"}</button></div>`;
+  if (selectedAll) {
+    const seasonYears = [...new Set([...(siteData.formulaOneAdminSeasons || []).map((season) => String(season.year)), String(data.year)])]
+      .sort((a, b) => Number(b) - Number(a));
+    const yearControl = renderFormulaOneAdminYearControl(seasonYears);
+    const roundControl = renderFormulaOneAdminRoundControl(rounds, null, true);
+    container.innerHTML = `${exportControl}${tabs}
+      <div class="formula-one-admin-card"><div class="formula-one-admin-toolbar">${yearControl}${roundControl}</div></div>
+      ${renderFormulaOneCalculatedDetails(data, null, true)}`;
+    return;
+  }
   const sessions = ["qualifying", ...(selectedRound.has_sprint ? ["sprint"] : []), "race"];
   if (!sessions.includes(formulaOneAdminSelectedSession)) formulaOneAdminSelectedSession = sessions[0];
   const roundSessions = sessions.map((sessionType) => data.sessions?.find((session) => Number(session.round) === Number(selectedRound.round) && session.session_type === sessionType)).filter(Boolean);
-  const canContinue = roundSessions.length > 0;
+  const canContinue = roundSessions.some((session) => session.status === "needs_review");
   const entry = data.entries?.find((item) => Number(item.round) === Number(selectedRound.round));
   const score = data.scores?.find((item) => Number(item.round) === Number(selectedRound.round));
   const seasonYears = [...new Set([...(siteData.formulaOneAdminSeasons || []).map((season) => String(season.year)), String(data.year)])]
     .sort((a, b) => Number(b) - Number(a));
-  const yearControl = `<label class="select-control"><span>Year</span><select data-formula-one-admin-year>${seasonYears.map((year) => `<option value="${escapeHtml(year)}"${year === formulaOneAdminSelectedYear ? " selected" : ""}>${escapeHtml(year)}</option>`).join("")}</select></label>`;
-  const roundControl = `<label class="select-control"><span>Round</span><select data-formula-one-admin-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>`;
+  const yearControl = renderFormulaOneAdminYearControl(seasonYears);
+  const roundControl = renderFormulaOneAdminRoundControl(rounds, selectedRound, formulaOneAdminMode === "main");
 
   if (formulaOneAdminMode === "weekly") {
-    container.innerHTML = `${tabs}${notice}
+    container.innerHTML = `${exportControl}${tabs}${notice}
       <div class="formula-one-admin-card">
         <div class="formula-one-admin-toolbar">
           ${yearControl}${roundControl}
-          <div class="formula-one-admin-actions">
-            <button class="action-button" type="button" data-formula-one-admin-action="export"${data.capabilities?.googleSheetsExport ? "" : " disabled title=\"Google Sheets export is not connected yet.\""}>Export Weekly</button>
-          </div>
         </div>
-        <p>Exports every weekly picks and scoring row for ${escapeHtml(formulaOneAdminSelectedYear)}.</p>
         <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
       </div>
       ${renderFormulaOneAdminPicks(data, selectedRound, entry, score)}`;
     return;
   }
 
-  container.innerHTML = `${tabs}${notice}
+  const hasApprovedData = roundSessions.some((session) => session.status === "approved");
+  container.innerHTML = `${exportControl}${tabs}
     <div class="formula-one-admin-card">
       <div class="formula-one-admin-toolbar">
         ${yearControl}${roundControl}
-        <div class="formula-one-admin-actions">
-          <button class="action-button" type="button" data-formula-one-admin-action="fetch">Fetch round</button>
-          <button class="action-button" type="button" data-formula-one-admin-action="continue"${canContinue ? "" : " disabled"}>Continue</button>
-          <button class="footer-copy-link" type="button" data-formula-one-admin-action="export"${data.capabilities?.googleSheetsExport ? "" : " disabled title=\"Google Sheets export is not connected yet.\""}>Export Main</button>
-        </div>
+        <button class="action-button" type="button" data-formula-one-admin-action="fetch">Fetch round</button>
       </div>
       <div class="formula-one-admin-statuses">${sessions.map((session) => renderFormulaOneAdminStatus(data, selectedRound.round, session)).join("")}<div class="formula-one-admin-status"><span>Round facts</span><strong data-status="${selectedRound.facts_complete ? "approved" : "planned"}">${selectedRound.facts_complete ? "Complete" : "Needed"}</strong></div></div>
       <p><strong>Round status:</strong> ${selectedRound.is_complete ? "Complete" : "Waiting for required session approvals and round facts"}</p>
       <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+      <div class="formula-one-workflow-footer"><button class="action-button" type="button" data-formula-one-admin-action="continue"${canContinue ? "" : " disabled"}>Continue</button></div>
     </div>
     ${renderFormulaOneAdminFacts(selectedRound, data)}
-    ${selectedRound.is_complete ? renderFormulaOneCompletedRoundData(data, selectedRound) : ""}
-    <div class="formula-one-admin-card">
-      <strong>Main season export coverage</strong>
-      <p>Includes race points, podiums, qualifying times and progression, laps, pole and finishing positions, teammate comparisons, round facts, sprint points, adjusted sprint points, and sprint/race winner comparisons for the entire selected year.</p>
-    </div>
+    ${hasApprovedData ? renderFormulaOneCalculatedDetails(data, selectedRound) : ""}
   `;
 }
 
-function renderFormulaOneCompletedRoundData(data, round) {
-  const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || [])
-    .filter((comparison) => comparison.round === Number(round.round));
-  return getFormulaOneRoundSessionTypes(round).map((sessionType) => {
-    const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === sessionType);
-    return `<div class="formula-one-admin-card">
-      <strong>${escapeHtml(formatFormulaOneSessionName(sessionType))} results</strong>
-      <p>Approved data saved for this round.</p>
-      ${sessionType === "qualifying"
-        ? renderFormulaOneQualifyingReviewTable(data, results, comparisons)
-        : renderFormulaOneSessionReviewTable(data, results)}
-    </div>`;
-  }).join("");
+function renderFormulaOneAdminYearControl(years) {
+  return `<label class="select-control"><span>Year</span><select data-formula-one-admin-year>${years.map((year) => `<option value="${escapeHtml(year)}"${year === formulaOneAdminSelectedYear ? " selected" : ""}>${escapeHtml(year)}</option>`).join("")}</select></label>`;
+}
+
+function renderFormulaOneAdminRoundControl(rounds, selectedRound, includeAll = false) {
+  return `<label class="select-control"><span>Round</span><select data-formula-one-admin-round>${includeAll ? `<option value="all"${formulaOneAdminSelectedRound === "all" ? " selected" : ""}>All</option>` : ""}${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound?.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>`;
 }
 
 function renderFormulaOneAdminStatus(data, round, sessionType) {
   const session = data.sessions?.find((item) => Number(item.round) === Number(round) && item.session_type === sessionType);
   const status = session?.status || "planned";
-  return `<div class="formula-one-admin-status"><span>${escapeHtml(formatFormulaOneSessionName(sessionType))}</span><strong data-status="${escapeHtml(status)}">${escapeHtml(formatFormulaOneSessionStatus(status))}</strong></div>`;
+  const content = `<span>${escapeHtml(formatFormulaOneSessionName(sessionType))}</span><strong data-status="${escapeHtml(status)}">${escapeHtml(formatFormulaOneSessionStatus(status))}</strong>`;
+  return session ? `<button class="formula-one-admin-status" type="button" data-formula-one-review-session="${escapeHtml(sessionType)}">${content}</button>` : `<div class="formula-one-admin-status">${content}</div>`;
+}
+
+function renderFormulaOneCalculatedDetails(data, round = null, open = false) {
+  const approvedKeys = new Set((data.sessions || []).filter((session) => session.status === "approved")
+    .map((session) => `${session.round}:${session.session_type}`));
+  const approvedResults = (data.results || []).filter((result) => approvedKeys.has(`${result.round}:${result.session_type}`));
+  const comparisons = buildFormulaOneQualifyingComparisons(approvedResults, data.drivers || [])
+    .filter((comparison) => !round || comparison.round === Number(round.round));
+  const calculated = buildFormulaOneMainDatasets({
+    year: data.year,
+    rounds: round ? [round] : data.rounds || [],
+    drivers: data.drivers || [],
+    sessions: data.sessions || [],
+    results: approvedResults,
+  });
+  return `<details class="formula-one-admin-card formula-one-more-details"${open ? " open" : ""}>
+    <summary><strong>More Details</strong><span>${round ? `Calculated data for ${escapeHtml(round.name)}` : `Calculated data across approved ${escapeHtml(formulaOneAdminSelectedYear)} rounds`}</span></summary>
+    ${round ? renderFormulaOneRoundComparisonTable(calculated.teammateComparisons, calculated.sprintSummary) : `${renderFormulaOneAllComparisonTable(calculated.teammateComparisons)}${renderFormulaOneSeasonQualifyingSummary(comparisons)}`}
+  </details>`;
+}
+
+function renderFormulaOneRoundComparisonTable(comparisons, sprintSummaries = []) {
+  const sprint = sprintSummaries[0];
+  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${comparisons.length ? comparisons.map((comparison) => `<tr><td>${escapeHtml(comparison.team)}</td><td>${escapeHtml(`${comparison.firstDriver} / ${comparison.secondDriver}`)}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.adjustedWinner, comparison.adjustedGapSeconds, comparison.adjustedSession))}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.unadjustedWinner, comparison.unadjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.qualifyingPositionWinner, comparison.qualifyingPositionGap))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.racePositionWinner, comparison.racePositionGap))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="6">No approved teammate comparison is available.</td></tr>`}</tbody></table></div>${sprint?.sprintWinner ? `<p><strong>Sprint winner:</strong> ${escapeHtml(sprint.sprintWinner)} · <strong>Race winner:</strong> ${escapeHtml(sprint.raceWinner || "—")} · <strong>Same winner:</strong> ${escapeHtml(sprint.sameRaceAndSprintWinner || "—")}</p>` : ""}`;
+}
+
+function formatFormulaOneComparisonResult(winner, gap, session = "") {
+  if (!winner) return "—";
+  if (winner === "Tie") return "Tie";
+  return `${winner}${gap === "" ? "" : ` by ${Number(gap).toFixed(3)}s`}${session ? ` (${session})` : ""}`;
+}
+
+function formatFormulaOnePositionComparison(winner, gap) {
+  if (!winner) return "—";
+  if (winner === "Tie") return "Tie";
+  return `${winner}${gap === "" ? "" : ` by ${gap}`}`;
+}
+
+function renderFormulaOneAllComparisonTable(comparisons) {
+  const groups = new Map();
+  comparisons.forEach((comparison) => {
+    const key = `${comparison.team}:${[comparison.firstDriverId, comparison.secondDriverId].sort().join(":")}`;
+    if (!groups.has(key)) groups.set(key, { team: comparison.team, first: comparison.firstDriver, second: comparison.secondDriver, rounds: 0, adjusted: new Map(), unadjusted: new Map(), qualifying: new Map(), race: new Map() });
+    const group = groups.get(key);
+    group.rounds += 1;
+    [["adjusted", comparison.adjustedWinner], ["unadjusted", comparison.unadjustedWinner], ["qualifying", comparison.qualifyingPositionWinner], ["race", comparison.racePositionWinner]].forEach(([field, winner]) => {
+      if (winner) group[field].set(winner, (group[field].get(winner) || 0) + 1);
+    });
+  });
+  const record = (group, field) => `${group.first} ${group[field].get(group.first) || 0}–${group[field].get(group.second) || 0} ${group.second}`;
+  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Rounds</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${groups.size ? [...groups.values()].map((group) => `<tr><td>${escapeHtml(group.team)}</td><td>${escapeHtml(`${group.first} / ${group.second}`)}</td><td>${group.rounds}</td><td>${escapeHtml(record(group, "adjusted"))}</td><td>${escapeHtml(record(group, "unadjusted"))}</td><td>${escapeHtml(record(group, "qualifying"))}</td><td>${escapeHtml(record(group, "race"))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="7">No approved teammate comparisons are available.</td></tr>`}</tbody></table></div>`;
 }
 
 function getFormulaOneAdminData(year = formulaOneAdminSelectedYear) {
   return siteData.formulaOneAdminByYear?.[String(year)] || null;
 }
 
-function openFormulaOneReview() {
+function openFormulaOneReview(sessionType = "") {
   const data = getFormulaOneAdminData();
   const round = data?.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
   const sessionTypes = round ? getFormulaOneRoundSessionTypes(round) : [];
-  formulaOneReviewSelectedSession = sessionTypes.find((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review") || sessionTypes[0] || "qualifying";
+  formulaOneReviewSelectedSession = sessionTypes.includes(sessionType)
+    ? sessionType
+    : sessionTypes.find((item) => getFormulaOneSession(data, round.round, item)?.status === "needs_review") || sessionTypes[0] || "qualifying";
   const target = "formula-1-2026-review";
   if (window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
   showPage(target, { scrollToTop: true });
@@ -13258,35 +13304,26 @@ function renderFormulaOneReview(feedback = {}) {
   }
   const session = getFormulaOneSession(data, round.round, formulaOneReviewSelectedSession);
   const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === formulaOneReviewSelectedSession);
-  const reviewedCount = sessionTypes.filter((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "approved").length;
   const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
+  const unapprovedSessions = sessionTypes.filter((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review");
+  const nextUnapprovedSession = unapprovedSessions.find((sessionType) => sessionType !== formulaOneReviewSelectedSession);
+  const isLastUnapproved = session?.status === "needs_review" && !nextUnapprovedSession;
+  const actionMarkup = session?.status === "needs_review"
+    ? `<button class="action-button" type="button" data-formula-one-review-action="approve">${isLastUnapproved ? "Finish" : "Approve and Continue"}</button>`
+    : session?.status === "approved"
+      ? `<button class="footer-copy-link" type="button" data-formula-one-review-action="reopen">Reopen</button>`
+      : "";
 
   container.innerHTML = `
-    <div class="formula-one-admin-card formula-one-review-progress">
-      <div>
-        <strong>${escapeHtml(`${formulaOneAdminSelectedYear} · ${round.round}. ${round.name}`)}</strong>
-        <p>${reviewedCount} of ${sessionTypes.length} required sessions approved</p>
-      </div>
-      <div class="formula-one-review-session-nav" role="tablist" aria-label="Round sessions">
-        ${sessionTypes.map((sessionType) => {
-          const item = getFormulaOneSession(data, round.round, sessionType);
-          return `<button class="footer-copy-link${sessionType === formulaOneReviewSelectedSession ? " is-active" : ""}" type="button" data-formula-one-review-session="${sessionType}" aria-selected="${String(sessionType === formulaOneReviewSelectedSession)}">${escapeHtml(formatFormulaOneSessionName(sessionType))} · ${escapeHtml(formatFormulaOneSessionStatus(item?.status || "planned"))}</button>`;
-        }).join("")}
-      </div>
-      <p class="formula-one-admin-feedback" role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
-    </div>
     <div class="formula-one-admin-card">
-      <strong>${escapeHtml(formatFormulaOneSessionName(formulaOneReviewSelectedSession))} data</strong>
+      <strong>${escapeHtml(`${round.round}. ${round.name} · ${formatFormulaOneSessionName(formulaOneReviewSelectedSession)}`)}</strong>
       <p>${session ? `${escapeHtml(formatFormulaOneSessionStatus(session.status))}${session.fetched_at ? ` · fetched ${escapeHtml(formatFormulaOneAdminDate(session.fetched_at))}` : ""}` : "No provider data has been fetched for this session."}</p>
       ${formulaOneReviewSelectedSession === "qualifying"
         ? renderFormulaOneQualifyingReviewTable(data, results, comparisons.filter((comparison) => comparison.round === Number(round.round)))
         : renderFormulaOneSessionReviewTable(data, results)}
-      <div class="formula-one-review-actions">
-        <button class="footer-copy-link" type="button" data-formula-one-review-action="reopen"${session?.status === "approved" ? "" : " disabled"}>Reopen</button>
-        <button class="action-button" type="button" data-formula-one-review-action="approve"${session?.status === "needs_review" ? "" : " disabled"}>Approve &amp; continue</button>
-      </div>
+      <p class="formula-one-admin-feedback" role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+      <div class="formula-one-review-actions">${actionMarkup}</div>
     </div>
-    ${renderFormulaOneSeasonQualifyingSummary(comparisons)}
   `;
 }
 
@@ -13318,7 +13355,7 @@ function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
 
 function renderFormulaOneSeasonQualifyingSummary(comparisons) {
   const summaries = summarizeFormulaOneQualifyingComparisons(comparisons);
-  return `<div class="formula-one-admin-card">
+  return `<div class="formula-one-calculated-summary">
     <strong>Season qualifying comparison</strong>
     <p>Adjusted compares teammates in their latest shared qualifying session. Unadjusted compares each driver's last completed session.</p>
     <div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted H2H</th><th>Adjusted average</th><th>Unadjusted average</th></tr></thead><tbody>${summaries.length ? summaries.map((summary) => `<tr><td>${escapeHtml(summary.constructorName)}</td><td>${escapeHtml(`${summary.firstDriverName} / ${summary.secondDriverName}`)}</td><td>${summary.adjusted ? escapeHtml(`${summary.firstDriverName} ${summary.adjusted.firstDriverWins}–${summary.adjusted.secondDriverWins} ${summary.secondDriverName}`) : "—"}</td><td>${escapeHtml(formatFormulaOneAverageDifference(summary, summary.adjusted))}</td><td>${escapeHtml(formatFormulaOneAverageDifference(summary, summary.unadjusted))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="5">Qualifying comparisons will appear after Q1/Q2/Q3 times are fetched.</td></tr>`}</tbody></table></div>
@@ -13352,6 +13389,10 @@ function getFormulaOneSession(data, round, sessionType) {
 }
 
 async function runFormulaOneReviewAction(action) {
+  if (action === "back") {
+    returnToFormulaOneManage();
+    return;
+  }
   const path = `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}/sessions/${encodeURIComponent(formulaOneReviewSelectedSession)}/${action}`;
   renderFormulaOneReview({ message: action === "approve" ? "Approving session..." : "Reopening session..." });
   await formulaOneAdminRequest(path, { method: "POST" });
@@ -13359,8 +13400,19 @@ async function runFormulaOneReviewAction(action) {
   const data = getFormulaOneAdminData();
   const round = data.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
   const nextSession = getFormulaOneRoundSessionTypes(round).find((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review");
+  if (action === "approve" && !nextSession) {
+    returnToFormulaOneManage();
+    return;
+  }
   if (nextSession) formulaOneReviewSelectedSession = nextSession;
   renderFormulaOneReview({ message: action === "approve" ? (nextSession ? "Approved. Review the next session." : "Approved. Every available session has been reviewed.") : "Session reopened for review." });
+}
+
+function returnToFormulaOneManage() {
+  const target = "formula-1-2026-manage";
+  if (window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
+  showPage(target, { scrollToTop: true });
+  renderFormulaOneAdminWeekly();
 }
 
 function renderFormulaOneAdminPicks(data, round, entry, score) {
@@ -13394,8 +13446,8 @@ function renderFormulaOneAdminFacts(round, data) {
   };
   const safetyCar = round.safety_car ? `${round.safety_car.charAt(0).toUpperCase()}${round.safety_car.slice(1).toLowerCase()}` : "";
   return `<form class="formula-one-admin-card" data-formula-one-admin-facts>
-    <strong>Manual round facts</strong>
-    <p>Use this for facts that cannot be trusted to the classification feed, including Driver of the Day.</p>
+    <strong>Round facts</strong>
+    <p>Review automatically filled facts, including Safety Car, and complete the facts that still require a manual source.</p>
     <div class="formula-one-admin-form-grid">
       <label class="select-control"><span>Driver of the Day</span><select name="driverOfTheDay">${options(driverNames, round.driver_of_the_day, "Choose driver")}</select></label>
       <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}"></label>
@@ -13474,7 +13526,8 @@ async function runFormulaOneAdminAction(action) {
   const fetched = action === "fetch" ? Number(result.fetchedCount || 0) : 0;
   const unavailable = action === "fetch" ? (result.sessions || []).filter((session) => session.status === "unavailable") : [];
   const unavailableMessage = unavailable.length ? ` ${unavailable.map((session) => formatFormulaOneSessionName(session.sessionType)).join(", ")} ${unavailable.length === 1 ? "is" : "are"} not available from the provider yet.` : "";
-  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${unavailableMessage}` });
+  const safetyCarMessage = action === "fetch" && result.safetyCar ? ` Safety Car: ${result.safetyCar.value} (${result.safetyCar.detail}).` : "";
+  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${unavailableMessage}` });
 }
 
 async function submitFormulaOneAdminForm(form, kind, options = {}) {
@@ -15831,6 +15884,11 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       if (modeButton) {
         formulaOneAdminMode = modeButton.dataset.formulaOneAdminMode;
         renderFormulaOneAdminWeekly();
+        return;
+      }
+      const sessionButton = event.target.closest("[data-formula-one-review-session]");
+      if (sessionButton) {
+        openFormulaOneReview(sessionButton.dataset.formulaOneReviewSession);
         return;
       }
       const button = event.target.closest("[data-formula-one-admin-action]");

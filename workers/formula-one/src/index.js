@@ -213,11 +213,68 @@ async function fetchRound(env, year, round, actorManagerId) {
   }
 
   await syncActiveDriversForRound(env, year, round);
+  const safetyCar = await fetchRoundSafetyCar(env, year, round).catch((error) => {
+    console.warn("OpenF1 race-control data could not be fetched.", error);
+    return null;
+  });
+  if (safetyCar) {
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE f1_rounds SET safety_car = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE year = ? AND round = ?`).bind(safetyCar.value, year, round),
+      auditInsert(env, year, round, actorManagerId, "safety_car_fetched", safetyCar),
+    ]);
+  }
 
   return {
     round: { year, round, name: roundRow.name },
     sessions,
     fetchedCount: sessions.filter((session) => session.status === "needs_review").length,
+    safetyCar,
+  };
+}
+
+async function fetchRoundSafetyCar(env, year, round) {
+  const roundRow = await env.DB.prepare(`SELECT race_date, EXISTS(
+      SELECT 1 FROM f1_session_results WHERE year = ? AND round = ? AND session_type = 'race'
+    ) AS has_race_results FROM f1_rounds WHERE year = ? AND round = ?`).bind(year, round, year, round).first();
+  const raceDate = String(roundRow?.race_date || "").trim();
+  if (!raceDate || !Number(roundRow?.has_race_results)) return null;
+
+  const baseUrl = String(env.OPENF1_BASE_URL || "https://api.openf1.org/v1").replace(/\/$/, "");
+  const sessionsUrl = `${baseUrl}/sessions?year=${encodeURIComponent(year)}&session_name=Race`;
+  const sessionsResponse = await fetch(sessionsUrl, { headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" } });
+  if (!sessionsResponse.ok) throw new Error(`OpenF1 sessions returned ${sessionsResponse.status}.`);
+  const sessions = await sessionsResponse.json();
+  if (!Array.isArray(sessions) || !sessions.length) return null;
+
+  const raceTimestamp = Date.parse(`${raceDate}T12:00:00Z`);
+  const datedSessions = sessions
+    .map((session) => ({ session, distance: Math.abs(Date.parse(session.date_start) - raceTimestamp) }))
+    .filter((item) => Number.isFinite(item.distance))
+    .sort((a, b) => a.distance - b.distance);
+  const nearest = datedSessions[0];
+  const session = nearest?.distance <= 36 * 60 * 60 * 1000 ? nearest.session : sessions[round - 1];
+  if (!session?.session_key) return null;
+
+  const sourceUrl = `${baseUrl}/race_control?session_key=${encodeURIComponent(session.session_key)}`;
+  const messagesResponse = await fetch(sourceUrl, { headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" } });
+  if (!messagesResponse.ok) throw new Error(`OpenF1 race control returned ${messagesResponse.status}.`);
+  const messages = await messagesResponse.json();
+  if (!Array.isArray(messages) || !messages.length) return null;
+  return { ...deriveSafetyCarValue(messages), source: "openf1", sourceUrl, sessionKey: session.session_key };
+}
+
+export function deriveSafetyCarValue(messages = []) {
+  const safetyCarMessages = messages.filter((item) => String(item?.category || "").toLowerCase() === "safetycar");
+  const deployed = safetyCarMessages.some((item) => {
+    const message = String(item?.message || "").toUpperCase();
+    return message.includes("SAFETY CAR DEPLOYED") && !message.includes("VSC") && !message.includes("VIRTUAL");
+  });
+  const virtualOnly = !deployed && safetyCarMessages.some((item) => /\bVSC\b|VIRTUAL SAFETY CAR/i.test(String(item?.message || "")));
+  return {
+    value: deployed ? "Yes" : "No",
+    detail: deployed ? "Safety Car deployed" : virtualOnly ? "Virtual Safety Car only" : "No Safety Car deployment",
+    raceControlMessageCount: safetyCarMessages.length,
   };
 }
 

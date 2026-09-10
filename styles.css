@@ -7696,6 +7696,13 @@ main {
   margin-top: 0;
 }
 
+.formula-one-export-row,
+.formula-one-review-back,
+.formula-one-workflow-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .formula-one-admin-notice,
 .formula-one-admin-card {
   background: var(--panel);
@@ -7758,12 +7765,25 @@ main {
 }
 
 .formula-one-admin-status {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 6px;
   display: grid;
   gap: 3px;
   padding: 10px;
+}
+
+button.formula-one-admin-status {
+  cursor: pointer;
+}
+
+button.formula-one-admin-status:hover,
+button.formula-one-admin-status:focus-visible {
+  border-color: var(--accent);
 }
 
 .formula-one-admin-status span {
@@ -7818,9 +7838,31 @@ main {
   color: var(--ink);
 }
 
-.formula-one-review-actions {
+.formula-one-review-actions,
+.formula-one-workflow-footer {
   justify-content: flex-end;
-  margin-top: 14px;
+  margin-top: 16px;
+}
+
+.formula-one-more-details summary {
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+
+.formula-one-more-details summary span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.formula-one-more-details[open] summary {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+}
+
+.formula-one-calculated-summary {
+  min-width: 0;
 }
 
 .formula-one-review-table-wrap {

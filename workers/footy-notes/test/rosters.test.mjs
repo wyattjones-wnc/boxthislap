@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
-import { isRosterPlayerRole } from "../src/index.js";
+import { isRosterPlayerRole, selectSportDbPlayerMatch } from "../src/index.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
@@ -15,6 +15,14 @@ test("roster discovery excludes staff roles without rejecting players", () => {
   assert.equal(isRosterPlayerRole("CEO", "Coaching"), false);
   assert.equal(isRosterPlayerRole("Director of Football", "Active"), false);
   assert.equal(isRosterPlayerRole("Centre-Back", "Active"), true);
+});
+
+test("individual image enrichment prefers the matching team", () => {
+  const match = selectSportDbPlayerMatch({ name: "Phil Foden", dateOfBirth: "2000-05-28" }, [
+    { dateBorn: "2000-05-28", idPlayer: "other", idTeam: "other-team", strPlayer: "Phil Foden" },
+    { dateBorn: "2000-05-28", idPlayer: "city", idTeam: "133613", strPlayer: "Phil Foden" },
+  ], "133613");
+  assert.equal(match.idPlayer, "city");
 });
 
 test("roster sync merges provider data, preserves overrides, and flags departures", async (context) => {

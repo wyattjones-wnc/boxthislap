@@ -1520,7 +1520,10 @@ function renderFootyTeamPlayers(team) {
   }
 
   const discoveryKey = getFootyRosterDiscoveryKey(team);
-  if (getCurrentManagerId() && roster.provider !== "football-data.org" && team.providerTeamIds?.["football-data.org"] && !footyRosterDiscoveryStates.has(discoveryKey)) {
+  const providerPlayers = roster.players.filter((player) => player.status === "active" && player.provider === "football-data.org");
+  const providerMediaCount = providerPlayers.filter((player) => player.providerData?.profileImage || player.providerData?.cardImage).length;
+  const needsProviderUpgrade = roster.provider !== "football-data.org" || (providerPlayers.length && providerMediaCount < providerPlayers.length / 2);
+  if (getCurrentManagerId() && needsProviderUpgrade && team.providerTeamIds?.["football-data.org"] && !footyRosterDiscoveryStates.has(discoveryKey)) {
     void discoverFootyRoster(team);
   }
 

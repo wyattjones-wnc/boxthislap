@@ -158,13 +158,18 @@ async function discoverRoster(env, body) {
   const requestedSportDbTeamId = cleanText(requestedProviderIds.TheSportsDB, 120, "TheSportsDB team ID");
   const providerTeam = requestedSportDbTeamId ? { idTeam: requestedSportDbTeamId } : await discoverSportDbTeam(teamName, leagueNames);
   const sportDbTeamId = String(providerTeam?.idTeam || "");
+  const existingParams = new URLSearchParams({ teamId, season, includeInactive: "1" });
+  const existingPlayers = (await listRosters(env, existingParams))[0]?.players || [];
   const [footballPlayers, sportDbPlayers] = await Promise.all([
     loadFootballDataRosterPlayers(env, footballDataTeamId),
     loadSportDbRosterPlayers(sportDbTeamId),
   ]);
+  const sportDbMedia = footballPlayers.length
+    ? await enrichSportDbRosterMedia(footballPlayers, sportDbPlayers, existingPlayers, sportDbTeamId)
+    : new Map();
   const players = footballPlayers.length
     ? footballPlayers.map((player) => {
-      const media = findRosterIdentityMatch(player, sportDbPlayers) || {};
+      const media = sportDbMedia.get(String(player.id)) || {};
       return {
         playerKey: `football-data.org:${player.id}`,
         provider: "football-data.org",
@@ -230,6 +235,72 @@ async function loadSportDbRosterPlayers(providerTeamId) {
       profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
       cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
     }));
+}
+
+async function enrichSportDbRosterMedia(footballPlayers, teamPlayers, existingPlayers, providerTeamId) {
+  const media = new Map();
+  const missing = [];
+  for (const player of footballPlayers) {
+    const teamMatch = findRosterIdentityMatch(player, teamPlayers) || {};
+    const existingMatch = findRosterIdentityMatch(player, existingPlayers) || {};
+    const resolved = mergeRosterMedia(teamMatch, existingMatch);
+    media.set(String(player.id), resolved);
+    if ((!resolved.profileImage || !resolved.cardImage) && missing.length < 35) missing.push(player);
+  }
+  const searched = await mapWithConcurrency(missing, 5, (player) => searchSportDbRosterPlayer(player, providerTeamId));
+  missing.forEach((player, index) => media.set(String(player.id), mergeRosterMedia(searched[index], media.get(String(player.id)))));
+  return media;
+}
+
+async function searchSportDbRosterPlayer(player, providerTeamId) {
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(player.name)}`);
+  if (!response.ok) return {};
+  const value = await response.json().catch(() => null);
+  const candidates = (Array.isArray(value?.player) ? value.player : [])
+    .filter((candidate) => candidate?.idPlayer && candidate?.strPlayer && isRosterPlayerRole(candidate.strPosition, candidate.strStatus));
+  const match = selectSportDbPlayerMatch(player, candidates, providerTeamId);
+  return match ? normalizeSportDbRosterPlayer(match) : {};
+}
+
+export function selectSportDbPlayerMatch(player, candidates, providerTeamId = "") {
+  const exact = candidates.filter((candidate) => findRosterIdentityMatch(player, [{
+    name: candidate.strPlayer,
+    birthday: candidate.dateBorn,
+  }]));
+  return exact.sort((first, second) =>
+    Number(String(second.idTeam || "") === String(providerTeamId)) - Number(String(first.idTeam || "") === String(providerTeamId)))[0] || null;
+}
+
+function normalizeSportDbRosterPlayer(player) {
+  return {
+    id: String(player.idPlayer),
+    name: String(player.strPlayer || ""),
+    position: normalizeRosterPosition(player.strPosition),
+    number: String(player.strNumber || ""),
+    birthday: String(player.dateBorn || ""),
+    homeCountry: String(player.strNationality || ""),
+    profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
+    cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
+  };
+}
+
+function mergeRosterMedia(primary = {}, fallback = {}) {
+  return {
+    profileImage: String(primary?.profileImage || fallback?.profileImage || ""),
+    cardImage: String(primary?.cardImage || fallback?.cardImage || ""),
+  };
+}
+
+async function mapWithConcurrency(values, concurrency, callback) {
+  const results = new Array(values.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (next < values.length) {
+      const index = next++;
+      results[index] = await callback(values[index], index);
+    }
+  }));
+  return results;
 }
 
 function findRosterIdentityMatch(player, candidates) {

@@ -29,12 +29,15 @@ for (const target of rosterTargets) {
     loadFootballDataPlayers(footballDataTeamId),
     loadSportDbPlayers(sportDbTeamId),
   ]);
+  const sportDbMedia = footballPlayers.length
+    ? await enrichSportDbPlayerMedia(footballPlayers, sportDbPlayers, target.existingPlayers || [], sportDbTeamId)
+    : new Map();
   const players = [];
   const matchedLegacy = new Set();
 
   for (const player of footballPlayers) {
     const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
-    const media = findIdentityMatch(player, sportDbPlayers) || {};
+    const media = sportDbMedia.get(String(player.id)) || {};
     if (legacyPlayer) matchedLegacy.add(legacyPlayer);
     players.push({
       playerKey: `football-data.org:${player.id}`,
@@ -169,6 +172,7 @@ function buildRosterTargets(storedTargets, catalog = []) {
     target.leagueNames = target.leagueNames?.length ? target.leagueNames : (catalogTeam.leagues || []).map((league) => String(league.name || "")).filter(Boolean);
     target.footballDataTeamId ||= String(providerIds["football-data.org"] || "");
     target.sportDbTeamId ||= String(providerIds.TheSportsDB || "");
+    target.existingPlayers = Array.isArray(roster.players) ? roster.players : target.existingPlayers || [];
     if (roster.provider === "TheSportsDB") target.sportDbTeamId = String(roster.providerTeamId);
     if (roster.provider === "football-data.org") target.footballDataTeamId = String(roster.providerTeamId);
     targets.set(teamId, target);
@@ -215,6 +219,55 @@ async function loadSportDbPlayers(providerId) {
       profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
       cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
     }));
+}
+
+async function enrichSportDbPlayerMedia(footballPlayers, teamPlayers, existingPlayers, providerTeamId) {
+  const media = new Map();
+  const missing = [];
+  for (const player of footballPlayers) {
+    const teamMatch = findIdentityMatch(player, teamPlayers) || {};
+    const existingMatch = findIdentityMatch(player, existingPlayers) || {};
+    const resolved = mergePlayerMedia(teamMatch, existingMatch);
+    media.set(String(player.id), resolved);
+    if ((!resolved.profileImage || !resolved.cardImage) && missing.length < 35) missing.push(player);
+  }
+  const searched = await mapWithConcurrency(missing, 5, (player) => searchSportDbPlayer(player, providerTeamId));
+  missing.forEach((player, index) => media.set(String(player.id), mergePlayerMedia(searched[index], media.get(String(player.id)))));
+  return media;
+}
+
+async function searchSportDbPlayer(player, providerTeamId) {
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(player.name)}`);
+  if (!response.ok) return {};
+  const value = await response.json().catch(() => null);
+  const candidates = (Array.isArray(value?.player) ? value.player : [])
+    .filter((candidate) => candidate?.idPlayer && candidate?.strPlayer && isRosterPlayerRole(candidate.strPosition, candidate.strStatus));
+  const exact = candidates.filter((candidate) => findIdentityMatch(player, [{ name: candidate.strPlayer, birthday: candidate.dateBorn }]));
+  const match = exact.sort((first, second) =>
+    Number(String(second.idTeam || "") === String(providerTeamId)) - Number(String(first.idTeam || "") === String(providerTeamId)))[0];
+  return match ? {
+    profileImage: String(match.strCutout || match.strRender || match.strThumb || ""),
+    cardImage: String(match.strThumb || match.strRender || match.strCutout || ""),
+  } : {};
+}
+
+function mergePlayerMedia(primary = {}, fallback = {}) {
+  return {
+    profileImage: String(primary?.profileImage || fallback?.profileImage || ""),
+    cardImage: String(primary?.cardImage || fallback?.cardImage || ""),
+  };
+}
+
+async function mapWithConcurrency(values, concurrency, callback) {
+  const results = new Array(values.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (next < values.length) {
+      const index = next++;
+      results[index] = await callback(values[index], index);
+    }
+  }));
+  return results;
 }
 
 function normalizeLegacyPlayer(player, season) {

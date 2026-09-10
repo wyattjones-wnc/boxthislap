@@ -119,6 +119,105 @@ export function summarizeFormulaOneQualifyingComparisons(comparisons = []) {
   })).sort((a, b) => a.constructorName.localeCompare(b.constructorName));
 }
 
+export function buildFormulaOneMainDatasets({ year, rounds = [], drivers = [], sessions = [], results = [] } = {}) {
+  const resultByKey = new Map(results.map((result) => [`${result.round}:${result.session_type}:${result.driver_id}`, result]));
+  const driverById = new Map(drivers.map((driver) => [driver.driver_id, driver]));
+  const qualifyingComparisons = buildFormulaOneQualifyingComparisons(results, drivers);
+  const comparisonByRoundTeam = new Map(qualifyingComparisons.map((comparison) => [
+    `${comparison.round}:${comparison.constructorId || comparison.constructorName}`,
+    comparison,
+  ]));
+  const driverPairs = buildRoundDriverPairs(results, driverById);
+  const teammateComparisons = driverPairs.map((pair) => {
+    const comparison = comparisonByRoundTeam.get(`${pair.round}:${pair.constructorId || pair.constructorName}`);
+    const firstQualifying = resultByKey.get(`${pair.round}:qualifying:${pair.firstDriverId}`);
+    const secondQualifying = resultByKey.get(`${pair.round}:qualifying:${pair.secondDriverId}`);
+    const firstRace = resultByKey.get(`${pair.round}:race:${pair.firstDriverId}`);
+    const secondRace = resultByKey.get(`${pair.round}:race:${pair.secondDriverId}`);
+    return {
+      year: Number(year), round: pair.round, team: pair.constructorName,
+      firstDriver: pair.firstDriverName, secondDriver: pair.secondDriverName,
+      firstDriverId: pair.firstDriverId, secondDriverId: pair.secondDriverId,
+      unadjustedWinner: comparisonWinner(pair, comparison?.unadjusted),
+      unadjustedGapSeconds: absoluteDifference(comparison?.unadjusted?.differenceSeconds),
+      adjustedWinner: comparisonWinner(pair, comparison?.adjusted),
+      adjustedGapSeconds: absoluteDifference(comparison?.adjusted?.differenceSeconds),
+      adjustedSession: comparison?.adjusted?.session?.toUpperCase() || "",
+      qualifyingPositionWinner: positionWinner(pair, firstQualifying, secondQualifying),
+      qualifyingPositionGap: positionGap(firstQualifying, secondQualifying),
+      racePositionWinner: positionWinner(pair, firstRace, secondRace),
+      racePositionGap: positionGap(firstRace, secondRace),
+    };
+  });
+  const comparisonByDriver = new Map();
+  for (const comparison of teammateComparisons) {
+    comparisonByDriver.set(`${comparison.round}:${comparison.firstDriverId}`, { comparison, driverName: comparison.firstDriver });
+    comparisonByDriver.set(`${comparison.round}:${comparison.secondDriverId}`, { comparison, driverName: comparison.secondDriver });
+  }
+
+  const mainData = rounds.flatMap((round) => drivers.map((driver) => {
+    const qualifying = resultByKey.get(`${round.round}:qualifying:${driver.driver_id}`);
+    const race = resultByKey.get(`${round.round}:race:${driver.driver_id}`);
+    const qualifyingComparison = qualifyingComparisons.find((comparison) => Number(comparison.round) === Number(round.round)
+      && [comparison.firstDriverId, comparison.secondDriverId].includes(driver.driver_id));
+    const side = qualifyingComparison?.firstDriverId === driver.driver_id ? "first" : "second";
+    const driverComparison = comparisonByDriver.get(`${round.round}:${driver.driver_id}`);
+    const unadjusted = qualifyingComparison?.unadjusted?.[side] || getLastQualifyingTime(qualifying);
+    const adjusted = qualifyingComparison?.adjusted?.[side] || null;
+    return {
+      year: Number(year), round: Number(round.round), roundName: round.name, raceDate: round.race_date,
+      driverId: driver.driver_id, driver: driver.display_name, team: driver.constructor_name,
+      racePoints: valueOrBlank(race?.points), racePodium: yesNo(race, numericPosition(race) <= 3),
+      qualifyingUnadjustedTime: unadjusted?.time || "", qualifyingUnadjustedSeconds: valueOrBlank(unadjusted?.seconds),
+      unadjustedQualifyingHeadToHead: headToHeadOutcome(driverComparison?.comparison.unadjustedWinner, driverComparison?.driverName),
+      qualifyingAdjustedTime: adjusted?.time || "", qualifyingAdjustedSeconds: valueOrBlank(adjusted?.seconds),
+      qualifyingAdjustedSession: adjusted?.session?.toUpperCase() || "",
+      adjustedQualifyingHeadToHead: headToHeadOutcome(driverComparison?.comparison.adjustedWinner, driverComparison?.driverName),
+      qualifyingPosition: sessionPosition(qualifying),
+      qualifyingPositionHeadToHead: headToHeadOutcome(driverComparison?.comparison.qualifyingPositionWinner, driverComparison?.driverName),
+      madeQ2: yesNo(qualifying, Boolean(qualifying?.q2) || numericPosition(qualifying) <= 15),
+      madeQ3: yesNo(qualifying, Boolean(qualifying?.q3) || numericPosition(qualifying) <= 10),
+      raceLapsCompleted: valueOrBlank(race?.laps), polePosition: yesNo(qualifying, numericPosition(qualifying) === 1),
+      raceFinishingPosition: sessionPosition(race),
+      raceFinishingPositionHeadToHead: headToHeadOutcome(driverComparison?.comparison.racePositionWinner, driverComparison?.driverName),
+    };
+  }));
+
+  const roundSummary = rounds.map((round) => ({
+    year: Number(year), round: Number(round.round), roundName: round.name, raceDate: round.race_date,
+    driverOfTheDay: round.driver_of_the_day || "", fastestPitTime: round.fastest_pit_time || "",
+    fastestPitTeam: round.fastest_pit_team || "", dnfCount: round.dnf_count || "", safetyCar: normalizeYesNo(round.safety_car),
+  }));
+
+  const sprintRounds = rounds.filter((round) => round.has_sprint);
+  const sprintData = sprintRounds.flatMap((round) => drivers.map((driver) => {
+    const sprint = resultByKey.get(`${round.round}:sprint:${driver.driver_id}`);
+    return {
+      year: Number(year), round: Number(round.round), roundName: round.name,
+      driverId: driver.driver_id, driver: driver.display_name, team: driver.constructor_name,
+      sprintPosition: valueOrBlank(sprint?.position), sprintPoints: valueOrBlank(sprint?.points),
+      adjustedSprintPoints: sprint ? getRacePointsForPosition(numericPosition(sprint)) : "",
+    };
+  }));
+
+  const sprintSummary = sprintRounds.map((round) => {
+    const sprintWinner = results.find((result) => Number(result.round) === Number(round.round) && result.session_type === "sprint" && numericPosition(result) === 1);
+    const raceWinner = results.find((result) => Number(result.round) === Number(round.round) && result.session_type === "race" && numericPosition(result) === 1);
+    return {
+      year: Number(year), round: Number(round.round), roundName: round.name,
+      sprintWinner: driverById.get(sprintWinner?.driver_id)?.display_name || sprintWinner?.driver_id || "",
+      raceWinner: driverById.get(raceWinner?.driver_id)?.display_name || raceWinner?.driver_id || "",
+      sameRaceAndSprintWinner: sprintWinner && raceWinner ? (sprintWinner.driver_id === raceWinner.driver_id ? "Yes" : "No") : "",
+    };
+  });
+
+  return { mainData, roundSummary, teammateComparisons, sprintData, sprintSummary };
+}
+
+export function getRacePointsForPosition(position) {
+  return ({ 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 })[Number(position)] ?? 0;
+}
+
 function summarizeDifferences(differences) {
   if (!differences.length) return null;
   return {
@@ -127,6 +226,87 @@ function summarizeDifferences(differences) {
     secondDriverWins: differences.filter((value) => value > 0).length,
     rounds: differences.length,
   };
+}
+
+function yesNo(record, value) {
+  return record ? (value ? "Yes" : "No") : "";
+}
+
+function normalizeYesNo(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (text === "yes") return "Yes";
+  if (text === "no") return "No";
+  return String(value || "").trim();
+}
+
+function valueOrBlank(value) {
+  return value === null || value === undefined ? "" : value;
+}
+
+function sessionPosition(result) {
+  return valueOrBlank(result?.position ?? result?.classified_position);
+}
+
+function numericPosition(result) {
+  const position = Number(result?.position);
+  return Number.isFinite(position) ? position : Number.POSITIVE_INFINITY;
+}
+
+function absoluteDifference(value) {
+  return Number.isFinite(value) ? Math.abs(value) : "";
+}
+
+function buildRoundDriverPairs(results, driverById) {
+  const groups = new Map();
+  for (const result of results) {
+    const driver = driverById.get(result.driver_id);
+    const constructorId = driver?.constructor_id || driver?.constructor_name;
+    if (!constructorId) continue;
+    const key = `${result.round}:${constructorId}`;
+    if (!groups.has(key)) groups.set(key, { round: Number(result.round), constructorId, constructorName: driver.constructor_name || "", driverIds: new Set() });
+    groups.get(key).driverIds.add(result.driver_id);
+  }
+  return [...groups.values()].flatMap((group) => {
+    if (group.driverIds.size !== 2) return [];
+    const [firstDriverId, secondDriverId] = [...group.driverIds].sort((firstId, secondId) => (
+      (driverById.get(firstId)?.display_name || firstId).localeCompare(driverById.get(secondId)?.display_name || secondId)
+    ));
+    return [{
+      round: group.round,
+      constructorId: group.constructorId,
+      constructorName: group.constructorName,
+      firstDriverId,
+      firstDriverName: driverById.get(firstDriverId)?.display_name || firstDriverId,
+      secondDriverId,
+      secondDriverName: driverById.get(secondDriverId)?.display_name || secondDriverId,
+    }];
+  }).sort((a, b) => a.round - b.round || a.constructorName.localeCompare(b.constructorName));
+}
+
+function comparisonWinner(comparison, values) {
+  if (!values || !Number.isFinite(values.differenceSeconds)) return "";
+  if (Math.abs(values.differenceSeconds) < 0.0005) return "Tie";
+  return values.differenceSeconds < 0 ? comparison.firstDriverName : comparison.secondDriverName;
+}
+
+function positionWinner(comparison, first, second) {
+  const firstPosition = numericPosition(first);
+  const secondPosition = numericPosition(second);
+  if (!Number.isFinite(firstPosition) || !Number.isFinite(secondPosition)) return "";
+  if (firstPosition === secondPosition) return "Tie";
+  return firstPosition < secondPosition ? comparison.firstDriverName : comparison.secondDriverName;
+}
+
+function positionGap(first, second) {
+  const firstPosition = numericPosition(first);
+  const secondPosition = numericPosition(second);
+  return Number.isFinite(firstPosition) && Number.isFinite(secondPosition) ? Math.abs(firstPosition - secondPosition) : "";
+}
+
+function headToHeadOutcome(winner, driverName) {
+  if (!winner || !driverName) return "";
+  if (winner === "Tie") return "Tie";
+  return winner === driverName ? "Win" : "Loss";
 }
 
 function getDriverName(result) {

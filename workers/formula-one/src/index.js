@@ -1,4 +1,5 @@
 import { scoreWeeklyEntry } from "./scoring.js";
+import { buildFormulaOneMainDatasets } from "../../../modules/formulaOneQualifying.js";
 
 const SESSION_TYPES = new Set(["qualifying", "sprint", "race"]);
 
@@ -15,6 +16,11 @@ export default {
       const url = new URL(request.url);
       if (request.method === "GET" && url.pathname === "/health") {
         return json({ ok: true, service: "box-this-lap-formula-one" }, 200, cors);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/admin/seasons") {
+        await requireAdmin(request, env);
+        return json({ ok: true, seasons: await readAdminSeasons(env) }, 200, cors);
       }
 
       const overviewMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/weekly$/);
@@ -74,7 +80,7 @@ export default {
       const exportMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/export\/google-sheets$/);
       if (exportMatch && request.method === "POST") {
         const admin = await requireAdmin(request, env);
-        return json({ ok: true, ...(await exportToGoogleSheets(env, parseYear(exportMatch[1]), admin.managerId)) }, 200, cors);
+        return json({ ok: true, ...(await exportToGoogleSheets(env, parseYear(exportMatch[1]), admin.managerId, url.searchParams.get("dataset"))) }, 200, cors);
       }
 
       return json({ ok: false, error: "Not found." }, 404, cors);
@@ -85,6 +91,11 @@ export default {
     }
   },
 };
+
+async function readAdminSeasons(env) {
+  const query = await env.DB.prepare("SELECT year, status, created_at, updated_at FROM f1_seasons ORDER BY year DESC").all();
+  return query.results || [];
+}
 
 async function requireAdmin(request, env) {
   const authorization = request.headers.get("Authorization") || "";
@@ -115,8 +126,10 @@ async function readAdminWeekly(env, year, managerId) {
   const sessions = sessionQuery.results || [];
   const rounds = (roundQuery.results || []).map((round) => {
     const requiredSessions = ["qualifying", ...(round.has_sprint ? ["sprint"] : []), "race"];
-    const isComplete = requiredSessions.every((sessionType) => sessions.some((session) => Number(session.round) === Number(round.round) && session.session_type === sessionType && session.status === "approved"));
-    return { ...round, is_complete: isComplete ? 1 : 0 };
+    const sessionsComplete = requiredSessions.every((sessionType) => sessions.some((session) => Number(session.round) === Number(round.round) && session.session_type === sessionType && session.status === "approved"));
+    const factsComplete = [round.driver_of_the_day, round.fastest_pit_time, round.fastest_pit_team, round.dnf_count, round.safety_car]
+      .every((value) => String(value ?? "").trim() !== "");
+    return { ...round, facts_complete: factsComplete ? 1 : 0, is_complete: sessionsComplete && factsComplete ? 1 : 0 };
   });
   return {
     year,
@@ -288,12 +301,17 @@ async function saveWeeklyPicks(env, year, round, managerId, body) {
 }
 
 async function saveRoundFacts(env, year, round, body, actorManagerId) {
+  const safetyCar = clean(body.safetyCar, 40);
+  const normalizedSafetyCar = safetyCar ? `${safetyCar.charAt(0).toUpperCase()}${safetyCar.slice(1).toLowerCase()}` : "";
+  if (normalizedSafetyCar && !["Yes", "No"].includes(normalizedSafetyCar)) throw httpError(400, "Safety car must be Yes or No.");
+  const dnfCount = clean(body.dnfCount, 20);
+  if (dnfCount && (!/^\d+$/.test(dnfCount) || Number(dnfCount) < 0)) throw httpError(400, "DNFs must be a whole number of zero or more.");
   const facts = {
     driverOfTheDay: clean(body.driverOfTheDay, 120),
     fastestPitTime: clean(body.fastestPitTime, 40),
     fastestPitTeam: clean(body.fastestPitTeam, 120),
-    dnfCount: clean(body.dnfCount, 20),
-    safetyCar: clean(body.safetyCar, 40),
+    dnfCount,
+    safetyCar: normalizedSafetyCar,
   };
   const result = await env.DB.prepare(`UPDATE f1_rounds SET driver_of_the_day = ?, fastest_pit_time = ?, fastest_pit_team = ?,
     dnf_count = ?, safety_car = ?, updated_at = CURRENT_TIMESTAMP WHERE year = ? AND round = ?`)
@@ -358,10 +376,12 @@ async function importSeason(env, year, body, actorManagerId) {
   return { imported: { year, rounds: rounds.length, drivers: drivers.length, entries: entries.length, sessions: sessions.length, results: results.length } };
 }
 
-async function exportToGoogleSheets(env, year, actorManagerId) {
+async function exportToGoogleSheets(env, year, actorManagerId, requestedDataset) {
   const endpoint = String(env.GOOGLE_SHEETS_EXPORT_ENDPOINT || "").trim();
   if (!endpoint) throw httpError(503, "Google Sheets export has not been configured yet.");
-  const snapshot = await readExportSnapshot(env, year);
+  const dataset = String(requestedDataset || "main").trim().toLowerCase();
+  if (!["main", "weekly"].includes(dataset)) throw httpError(400, "Export dataset must be main or weekly.");
+  const snapshot = await readExportSnapshot(env, year, dataset);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -369,15 +389,39 @@ async function exportToGoogleSheets(env, year, actorManagerId) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result.ok === false) throw httpError(502, result.error || "Google Sheets export failed.");
-  await auditInsert(env, year, null, actorManagerId, "google_sheets_exported", { spreadsheetUrl: result.spreadsheetUrl || "" }).run();
-  return { spreadsheetUrl: result.spreadsheetUrl || "", exportedAt: new Date().toISOString() };
+  await auditInsert(env, year, null, actorManagerId, "google_sheets_exported", { dataset, spreadsheetUrl: result.spreadsheetUrl || "" }).run();
+  return { dataset, spreadsheetUrl: result.spreadsheetUrl || "", exportedAt: new Date().toISOString() };
 }
 
-async function readExportSnapshot(env, year) {
+async function readExportSnapshot(env, year, dataset) {
   const data = await readAdminWeekly(env, year, "");
-  const allEntries = await env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? ORDER BY round, manager_id").bind(year).all();
-  const allScores = await env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all();
-  return { ...data, entries: allEntries.results || [], scores: allScores.results || [], generatedAt: new Date().toISOString() };
+  const generatedAt = new Date().toISOString();
+  const [allDrivers, allEntries, allScores] = await Promise.all([
+    env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
+  ]);
+  const drivers = allDrivers.results || [];
+  const baseSnapshot = {
+    dataset,
+    year,
+    rounds: data.rounds,
+    drivers,
+    sessions: data.sessions,
+    results: data.results,
+    entries: allEntries.results || [],
+    scores: allScores.results || [],
+    generatedAt,
+  };
+  if (dataset === "weekly") return baseSnapshot;
+  const approvedSessionKeys = new Set(data.sessions
+    .filter((session) => session.status === "approved")
+    .map((session) => `${session.round}:${session.session_type}`));
+  const approvedResults = data.results.filter((result) => approvedSessionKeys.has(`${result.round}:${result.session_type}`));
+  return {
+    ...baseSnapshot,
+    ...buildFormulaOneMainDatasets({ year, rounds: data.rounds, drivers, sessions: data.sessions, results: approvedResults }),
+  };
 }
 
 async function recalculateRoundScores(env, year, round) {

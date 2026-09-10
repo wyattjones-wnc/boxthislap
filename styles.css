@@ -7692,6 +7692,10 @@ main {
   min-width: 0;
 }
 
+.formula-one-manage-tabs {
+  margin-top: 0;
+}
+
 .formula-one-admin-notice,
 .formula-one-admin-card {
   background: var(--panel);
@@ -7727,7 +7731,7 @@ main {
 }
 
 .formula-one-admin-toolbar {
-  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  grid-template-columns: minmax(100px, 140px) minmax(160px, 240px) minmax(0, 1fr);
 }
 
 .formula-one-admin-actions {

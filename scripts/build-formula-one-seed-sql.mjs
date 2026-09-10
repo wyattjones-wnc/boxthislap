@@ -5,6 +5,22 @@ const inputPath = process.argv[2] || "data/formula-one-2026-migration.json";
 const outputPath = process.argv[3] || ".tmp/formula-one-2026-seed.sql";
 const data = JSON.parse(await readFile(inputPath, "utf8"));
 const year = Number(data.rounds?.[0]?.raceDate?.slice(0, 4) || 2026);
+if (process.argv.includes("--race-details-only")) {
+  const raceUpdates = (data.results || [])
+    .filter((result) => result.sessionType === "race")
+    .map((result) => `UPDATE f1_session_results SET points = ${number(result.points)}, laps = ${nullableNumber(result.laps)}, updated_at = CURRENT_TIMESTAMP WHERE year = ${year} AND round = ${integer(result.round)} AND session_type = 'race' AND driver_id = ${text(result.driverId)};`);
+  await writeFile(outputPath, `${raceUpdates.join("\n")}\n`, "utf8");
+  console.log(`Wrote ${raceUpdates.length} historical race-detail updates to ${outputPath}.`);
+  process.exit(0);
+}
+if (process.argv.includes("--sprint-details-only")) {
+  const sprintUpserts = (data.results || [])
+    .filter((result) => result.sessionType === "sprint")
+    .map((result) => `INSERT INTO f1_session_results (year, round, session_type, driver_id, position, classified_position, points, raw_json, updated_at) VALUES (${year}, ${integer(result.round)}, 'sprint', ${text(result.driverId)}, ${nullableNumber(result.position)}, ${text(result.classifiedPosition)}, ${number(result.points)}, '{}', CURRENT_TIMESTAMP) ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position, classified_position = excluded.classified_position, points = excluded.points, updated_at = CURRENT_TIMESTAMP;`);
+  await writeFile(outputPath, `${sprintUpserts.join("\n")}\n`, "utf8");
+  console.log(`Wrote ${sprintUpserts.length} historical sprint-detail upserts to ${outputPath}.`);
+  process.exit(0);
+}
 const statements = ["PRAGMA foreign_keys = ON;"];
 
 statements.push(`INSERT INTO f1_seasons (year, status, updated_at) VALUES (${year}, 'active', CURRENT_TIMESTAMP) ON CONFLICT(year) DO UPDATE SET status = 'active', updated_at = CURRENT_TIMESTAMP;`);
@@ -30,8 +46,8 @@ ON CONFLICT(year, round, session_type) DO UPDATE SET status = excluded.status, s
 
 for (const result of data.results || []) {
   statements.push(`INSERT INTO f1_session_results (year, round, session_type, driver_id, position, classified_position, grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, qualifying_unadjusted_seconds, qualifying_adjusted_seconds, qualifying_adjusted_session, raw_json, updated_at)
-VALUES (${year}, ${integer(result.round)}, ${text(result.sessionType)}, ${text(result.driverId)}, ${nullableNumber(result.position)}, ${text(result.classifiedPosition)}, NULL, ${number(result.points)}, NULL, ${text(result.status)}, '', '', '', '', NULL, ${nullableNumber(result.qualifyingUnadjustedSeconds)}, ${nullableNumber(result.qualifyingAdjustedSeconds)}, '', '{}', CURRENT_TIMESTAMP)
-ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position, classified_position = excluded.classified_position, points = excluded.points, status = excluded.status, qualifying_unadjusted_seconds = excluded.qualifying_unadjusted_seconds, qualifying_adjusted_seconds = excluded.qualifying_adjusted_seconds, updated_at = CURRENT_TIMESTAMP;`);
+VALUES (${year}, ${integer(result.round)}, ${text(result.sessionType)}, ${text(result.driverId)}, ${nullableNumber(result.position)}, ${text(result.classifiedPosition)}, NULL, ${number(result.points)}, ${nullableNumber(result.laps)}, ${text(result.status)}, '', '', '', '', NULL, ${nullableNumber(result.qualifyingUnadjustedSeconds)}, ${nullableNumber(result.qualifyingAdjustedSeconds)}, '', '{}', CURRENT_TIMESTAMP)
+ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position, classified_position = excluded.classified_position, points = excluded.points, laps = excluded.laps, status = excluded.status, qualifying_unadjusted_seconds = excluded.qualifying_unadjusted_seconds, qualifying_adjusted_seconds = excluded.qualifying_adjusted_seconds, updated_at = CURRENT_TIMESTAMP;`);
 }
 
 for (const entry of data.entries || []) {

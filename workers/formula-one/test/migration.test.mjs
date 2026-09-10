@@ -21,6 +21,14 @@ test("2026 migration snapshot is internally consistent", () => {
   const qualifyingResults = migration.results.filter((result) => result.sessionType === "qualifying");
   assert.equal(qualifyingResults.filter((result) => Number.isFinite(result.qualifyingUnadjustedSeconds)).length, 237);
   assert.equal(qualifyingResults.filter((result) => Number.isFinite(result.qualifyingAdjustedSeconds)).length, 238);
+  const raceResults = migration.results.filter((result) => result.sessionType === "race");
+  assert.equal(raceResults.length, 242);
+  assert.equal(raceResults.filter((result) => Number.isFinite(result.points)).length, raceResults.length);
+  assert.equal(raceResults.filter((result) => Number.isInteger(result.laps)).length, raceResults.length);
+  const sprintResults = migration.results.filter((result) => result.sessionType === "sprint");
+  assert.equal(sprintResults.length, 88);
+  assert.equal(sprintResults.filter((result) => Number.isFinite(result.points)).length, sprintResults.length);
+  assert.equal(sprintResults.filter((result) => Number.isInteger(result.position)).length, 40);
 });
 
 test("sprint sessions use league round IDs derived from event names", () => {

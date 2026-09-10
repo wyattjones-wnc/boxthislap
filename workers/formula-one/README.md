@@ -4,6 +4,8 @@ This Worker is the D1-backed source of truth for modular Formula 1 data entry. A
 
 Qualifying imports preserve Q1, Q2, and Q3 times. The review page shows an unadjusted teammate comparison using each driver's last completed qualifying session and an adjusted comparison using the latest session in which both teammates recorded a time. Season summaries keep both measurements visible rather than replacing the raw session times.
 
+The service stores the reusable facts (session positions, points, laps, qualifying times, and manual round facts) and derives podium/pole/progression flags, teammate head-to-heads, adjusted sprint points, and winner comparisons for a selected season. Main and Weekly exports are separate full-season operations; the Apps Script writes them to year-prefixed tabs so another season does not overwrite the prior one.
+
 ## Admin-preview rollout
 
 The new Manage page and native picks are intentionally visible only to admins. Non-admin managers continue using the existing Google Form/Sheet flow. This must be changed later, after the 2026 migration and score totals are reconciled and deadline-based pick privacy is verified. At that point, expose native picks to signed-in managers and retire the old form flow deliberately.

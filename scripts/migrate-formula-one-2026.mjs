@@ -114,13 +114,16 @@ function parseSessionTables(driverRows, sprintRows, driverLookup, rounds) {
     unadjusted: parseDriverTimeTable(driverRows, headers[2].index, driverLookup),
     adjusted: parseDriverTimeTable(driverRows, headers[3].index, driverLookup),
   };
+  const racePoints = parseDriverNumberTable(driverRows, headers[0].index, driverLookup);
+  const racingLapsHeader = driverRows.findIndex((row) => normalize(row[0]) === "racing laps");
+  const racingLaps = parseDriverNumberTable(driverRows, racingLapsHeader, driverLookup);
   addPositionTable(driverRows, headers.at(-2).index, "qualifying", driverLookup, sessions, results, qualifyingTimes);
-  addPositionTable(driverRows, headers.at(-1).index, "race", driverLookup, sessions, results);
+  addPositionTable(driverRows, headers.at(-1).index, "race", driverLookup, sessions, results, null, { racePoints, racingLaps });
   addSprintTable(sprintRows, driverLookup, rounds, sessions, results);
   return { sessions, results };
 }
 
-function addPositionTable(rows, headerIndex, sessionType, driverLookup, sessions, results, qualifyingTimes = null) {
+function addPositionTable(rows, headerIndex, sessionType, driverLookup, sessions, results, qualifyingTimes = null, supplemental = {}) {
   const header = rows[headerIndex];
   const driverRows = rows.slice(headerIndex + 1, headerIndex + 23);
   for (let column = 1; column < header.length; column += 1) {
@@ -142,9 +145,29 @@ function addPositionTable(rows, headerIndex, sessionType, driverLookup, sessions
         result.qualifyingUnadjustedSeconds = qualifyingTimes.unadjusted.get(`${round}:${driverId}`) ?? null;
         result.qualifyingAdjustedSeconds = qualifyingTimes.adjusted.get(`${round}:${driverId}`) ?? null;
       }
+      if (sessionType === "race") {
+        result.points = supplemental.racePoints?.get(`${round}:${driverId}`) ?? 0;
+        result.laps = supplemental.racingLaps?.get(`${round}:${driverId}`) ?? null;
+      }
       results.push(result);
     }
   }
+}
+
+function parseDriverNumberTable(rows, headerIndex, driverLookup) {
+  const header = rows[headerIndex] || [];
+  const values = new Map();
+  if (headerIndex < 0) return values;
+  for (const row of rows.slice(headerIndex + 1, headerIndex + 23)) {
+    const driverId = resolveDriverId(row[0], driverLookup);
+    for (let column = 1; column < header.length; column += 1) {
+      const round = Number(String(header[column]).match(/Round\s+(\d+)/i)?.[1]);
+      const raw = String(row[column] || "").trim();
+      const number = Number(raw);
+      if (round && raw && Number.isFinite(number)) values.set(`${round}:${driverId}`, number);
+    }
+  }
+  return values;
 }
 
 function parseDriverTimeTable(rows, headerIndex, driverLookup) {
@@ -164,17 +187,37 @@ function parseDriverTimeTable(rows, headerIndex, driverLookup) {
 function addSprintTable(rows, driverLookup, rounds, sessions, results) {
   const header = rows[0] || [];
   const driverRows = rows.slice(1, 23);
+  const adjustedHeaderIndex = rows.findIndex((row, index) => index > 0 && normalize(row[0]) === "driver");
+  const adjustedRows = rows.slice(adjustedHeaderIndex + 1, adjustedHeaderIndex + 23);
+  const adjustedByDriver = new Map(adjustedRows.map((row) => [resolveDriverId(row[0], driverLookup), row]));
   const roundsByName = new Map(rounds.map((round) => [normalize(round.name), round.round]));
   for (let column = 1; column < header.length - 1; column += 1) {
     const sprintName = normalize(String(header[column]).replace(/^Round\s+\d+\s*/i, ""));
     const round = roundsByName.get(sprintName);
-    const pointRows = driverRows.map((row) => ({ name: row[0], points: Number(row[column]) })).filter((item) => Number.isFinite(item.points) && item.points > 0);
-    if (!round || !pointRows.length) continue;
+    const hasResults = driverRows.some((row) => String(row[column] || "").trim())
+      || adjustedRows.some((row) => String(row[column] || "").trim());
+    if (!round || !hasResults) continue;
     sessions.push({ round, sessionType: "sprint", status: "approved", source: "google_sheet_2026", sourceUrl: SOURCE_URL });
-    for (const item of pointRows) {
-      results.push({ round, sessionType: "sprint", driverId: resolveDriverId(item.name, driverLookup), displayName: item.name, position: 9 - item.points, classifiedPosition: String(9 - item.points), points: item.points });
+    for (const row of driverRows) {
+      const driverId = resolveDriverId(row[0], driverLookup);
+      const sprintPoints = Number(row[column]) || 0;
+      const adjustedPoints = Number(adjustedByDriver.get(driverId)?.[column]) || 0;
+      const position = racePositionFromPoints(adjustedPoints);
+      results.push({
+        round,
+        sessionType: "sprint",
+        driverId,
+        displayName: row[0],
+        position,
+        classifiedPosition: position ? String(position) : "",
+        points: sprintPoints,
+      });
     }
   }
+}
+
+function racePositionFromPoints(points) {
+  return ({ 25: 1, 18: 2, 15: 3, 12: 4, 10: 5, 8: 6, 6: 7, 4: 8, 2: 9, 1: 10 })[Number(points)] || null;
 }
 
 function parseWeeklyEntries(rows, driverLookup) {

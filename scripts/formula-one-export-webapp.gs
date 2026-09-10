@@ -1,4 +1,18 @@
-const TAB_NAMES = ['Rounds', 'Sessions', 'Session Results', 'Weekly Picks', 'Weekly Scores'];
+const MAIN_TABS = [
+  ['Main Data', 'mainData'],
+  ['Round Summary', 'roundSummary'],
+  ['Teammate Comparisons', 'teammateComparisons'],
+  ['Sprint Data', 'sprintData'],
+  ['Sprint Summary', 'sprintSummary'],
+  ['Rounds', 'rounds'],
+  ['Drivers', 'drivers'],
+  ['Sessions', 'sessions'],
+  ['Session Results', 'results'],
+];
+const WEEKLY_TABS = [
+  ['Weekly Picks', 'entries'],
+  ['Weekly Scores', 'scores'],
+];
 
 function doPost(event) {
   try {
@@ -7,11 +21,10 @@ function doPost(event) {
     if (!expectedKey || payload.exportKey !== expectedKey) return jsonResponse({ ok: false, error: 'Unauthorized.' });
     const spreadsheetId = PropertiesService.getScriptProperties().getProperty('BOX_THIS_LAP_EXPORT_SPREADSHEET_ID');
     const workbook = SpreadsheetApp.openById(spreadsheetId);
-    writeObjects(workbook, TAB_NAMES[0], payload.rounds || []);
-    writeObjects(workbook, TAB_NAMES[1], payload.sessions || []);
-    writeObjects(workbook, TAB_NAMES[2], payload.results || []);
-    writeObjects(workbook, TAB_NAMES[3], payload.entries || []);
-    writeObjects(workbook, TAB_NAMES[4], payload.scores || []);
+    const year = Number(payload.year);
+    if (!Number.isInteger(year)) throw new Error('A valid export year is required.');
+    const tabs = payload.dataset === 'weekly' ? WEEKLY_TABS : MAIN_TABS;
+    tabs.forEach(([label, key]) => writeObjects(workbook, `${year} ${label}`, payload[key] || []));
     return jsonResponse({ ok: true, spreadsheetUrl: workbook.getUrl() });
   } catch (error) {
     return jsonResponse({ ok: false, error: error.message });

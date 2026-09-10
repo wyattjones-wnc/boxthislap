@@ -1,6 +1,8 @@
 # Formula 1 data service
 
-This Worker is the D1-backed source of truth for modular Formula 1 data entry. Provider fetches are manual and always land in `needs_review`; qualifying, sprint, and race approvals are independent. Weekly scoring is published only after qualifying and race are both approved. Driver of the Day and other subjective or unsupported round facts remain manual.
+This Worker is the D1-backed source of truth for modular Formula 1 data entry. A round fetch checks qualifying, sprint when applicable, and race data; every available session lands in `needs_review`, and approvals remain independent. Weekly scoring is published only after qualifying and race are both approved. Driver of the Day and other subjective or unsupported round facts remain manual.
+
+Qualifying imports preserve Q1, Q2, and Q3 times. The review page shows an unadjusted teammate comparison using each driver's last completed qualifying session and an adjusted comparison using the latest session in which both teammates recorded a time. Season summaries keep both measurements visible rather than replacing the raw session times.
 
 ## Admin-preview rollout
 

@@ -8,6 +8,7 @@ const year = Number(data.rounds?.[0]?.raceDate?.slice(0, 4) || 2026);
 const statements = ["PRAGMA foreign_keys = ON;"];
 
 statements.push(`INSERT INTO f1_seasons (year, status, updated_at) VALUES (${year}, 'active', CURRENT_TIMESTAMP) ON CONFLICT(year) DO UPDATE SET status = 'active', updated_at = CURRENT_TIMESTAMP;`);
+statements.push(`UPDATE f1_drivers SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE year = ${year};`);
 
 for (const round of data.rounds || []) {
   statements.push(`INSERT INTO f1_rounds (year, round, name, race_date, deadline_at, has_sprint, driver_of_the_day, fastest_pit_time, fastest_pit_team, dnf_count, safety_car, updated_at)
@@ -28,9 +29,9 @@ ON CONFLICT(year, round, session_type) DO UPDATE SET status = excluded.status, s
 }
 
 for (const result of data.results || []) {
-  statements.push(`INSERT INTO f1_session_results (year, round, session_type, driver_id, position, classified_position, grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, raw_json, updated_at)
-VALUES (${year}, ${integer(result.round)}, ${text(result.sessionType)}, ${text(result.driverId)}, ${nullableNumber(result.position)}, ${text(result.classifiedPosition)}, NULL, ${number(result.points)}, NULL, ${text(result.status)}, '', '', '', '', NULL, '{}', CURRENT_TIMESTAMP)
-ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position, classified_position = excluded.classified_position, points = excluded.points, status = excluded.status, updated_at = CURRENT_TIMESTAMP;`);
+  statements.push(`INSERT INTO f1_session_results (year, round, session_type, driver_id, position, classified_position, grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, qualifying_unadjusted_seconds, qualifying_adjusted_seconds, qualifying_adjusted_session, raw_json, updated_at)
+VALUES (${year}, ${integer(result.round)}, ${text(result.sessionType)}, ${text(result.driverId)}, ${nullableNumber(result.position)}, ${text(result.classifiedPosition)}, NULL, ${number(result.points)}, NULL, ${text(result.status)}, '', '', '', '', NULL, ${nullableNumber(result.qualifyingUnadjustedSeconds)}, ${nullableNumber(result.qualifyingAdjustedSeconds)}, '', '{}', CURRENT_TIMESTAMP)
+ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position, classified_position = excluded.classified_position, points = excluded.points, status = excluded.status, qualifying_unadjusted_seconds = excluded.qualifying_unadjusted_seconds, qualifying_adjusted_seconds = excluded.qualifying_adjusted_seconds, updated_at = CURRENT_TIMESTAMP;`);
 }
 
 for (const entry of data.entries || []) {

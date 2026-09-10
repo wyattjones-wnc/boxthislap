@@ -7727,7 +7727,7 @@ main {
 }
 
 .formula-one-admin-toolbar {
-  grid-template-columns: repeat(2, minmax(160px, 240px)) minmax(0, 1fr);
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
 }
 
 .formula-one-admin-actions {
@@ -7786,6 +7786,56 @@ main {
 .formula-one-admin-results th:first-child {
   text-align: right;
   width: 52px;
+}
+
+.formula-one-review-progress,
+.formula-one-review-session-nav,
+.formula-one-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.formula-one-review-progress {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.formula-one-review-progress .formula-one-admin-feedback {
+  flex-basis: 100%;
+}
+
+.formula-one-review-session-nav {
+  justify-content: flex-end;
+}
+
+.formula-one-review-session-nav .is-active {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.formula-one-review-actions {
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.formula-one-review-table-wrap {
+  margin-top: 14px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.formula-one-qualifying-review-table {
+  min-width: 820px;
+}
+
+.formula-one-qualifying-review-table td small {
+  color: var(--muted);
+  display: block;
+  margin-top: 3px;
+  white-space: nowrap;
 }
 
 .formula-one-form-header {

@@ -1,6 +1,6 @@
 {
   "sourceUrl": "https://docs.google.com/spreadsheets/d/142OIev2l32tXB1PmKvN3pdqhNwdlesqPMiBTy5hqJWM/edit",
-  "generatedAt": "2026-09-10T15:06:22.996Z",
+  "generatedAt": "2026-09-10T20:24:32.340Z",
   "rounds": [
     {
       "round": 1,
@@ -298,7 +298,9 @@
       "code": "NOR",
       "givenName": "Lando",
       "familyName": "Norris",
-      "displayName": "Lando Norris"
+      "displayName": "Lando Norris",
+      "constructorId": "mclaren",
+      "constructorName": "McLaren"
     },
     {
       "driverId": "piastri",
@@ -306,7 +308,9 @@
       "code": "PIA",
       "givenName": "Oscar",
       "familyName": "Piastri",
-      "displayName": "Oscar Piastri"
+      "displayName": "Oscar Piastri",
+      "constructorId": "mclaren",
+      "constructorName": "McLaren"
     },
     {
       "driverId": "russell",
@@ -314,7 +318,9 @@
       "code": "RUS",
       "givenName": "George",
       "familyName": "Russell",
-      "displayName": "George Russell"
+      "displayName": "George Russell",
+      "constructorId": "mercedes",
+      "constructorName": "Mercedes"
     },
     {
       "driverId": "antonelli",
@@ -322,7 +328,9 @@
       "code": "ANT",
       "givenName": "Andrea Kimi",
       "familyName": "Antonelli",
-      "displayName": "Andrea Kimi Antonelli"
+      "displayName": "Andrea Kimi Antonelli",
+      "constructorId": "mercedes",
+      "constructorName": "Mercedes"
     },
     {
       "driverId": "max_verstappen",
@@ -330,7 +338,9 @@
       "code": "",
       "givenName": "Max",
       "familyName": "Verstappen",
-      "displayName": "Max Verstappen"
+      "displayName": "Max Verstappen",
+      "constructorId": "red_bull",
+      "constructorName": "Red Bull Racing"
     },
     {
       "driverId": "hadjar",
@@ -338,7 +348,9 @@
       "code": "HAD",
       "givenName": "Isack",
       "familyName": "Hadjar",
-      "displayName": "Isack Hadjar"
+      "displayName": "Isack Hadjar",
+      "constructorId": "red_bull",
+      "constructorName": "Red Bull Racing"
     },
     {
       "driverId": "leclerc",
@@ -346,7 +358,9 @@
       "code": "LEC",
       "givenName": "Charles",
       "familyName": "Leclerc",
-      "displayName": "Charles Leclerc"
+      "displayName": "Charles Leclerc",
+      "constructorId": "ferrari",
+      "constructorName": "Ferrari"
     },
     {
       "driverId": "hamilton",
@@ -354,7 +368,9 @@
       "code": "HAM",
       "givenName": "Lewis",
       "familyName": "Hamilton",
-      "displayName": "Lewis Hamilton"
+      "displayName": "Lewis Hamilton",
+      "constructorId": "ferrari",
+      "constructorName": "Ferrari"
     },
     {
       "driverId": "albon",
@@ -362,7 +378,9 @@
       "code": "ALB",
       "givenName": "Alexander",
       "familyName": "Albon",
-      "displayName": "Alexander Albon"
+      "displayName": "Alexander Albon",
+      "constructorId": "williams",
+      "constructorName": "Williams"
     },
     {
       "driverId": "sainz",
@@ -370,7 +388,9 @@
       "code": "SAI",
       "givenName": "Carlos",
       "familyName": "Sainz",
-      "displayName": "Carlos Sainz"
+      "displayName": "Carlos Sainz",
+      "constructorId": "williams",
+      "constructorName": "Williams"
     },
     {
       "driverId": "lawson",
@@ -378,7 +398,9 @@
       "code": "LAW",
       "givenName": "Liam",
       "familyName": "Lawson",
-      "displayName": "Liam Lawson"
+      "displayName": "Liam Lawson",
+      "constructorId": "rb",
+      "constructorName": "Racing Bulls"
     },
     {
       "driverId": "arvid_lindblad",
@@ -386,7 +408,9 @@
       "code": "LIN",
       "givenName": "Arvid",
       "familyName": "Lindblad",
-      "displayName": "Arvid Lindblad"
+      "displayName": "Arvid Lindblad",
+      "constructorId": "rb",
+      "constructorName": "Racing Bulls"
     },
     {
       "driverId": "alonso",
@@ -394,7 +418,9 @@
       "code": "ALO",
       "givenName": "Fernando",
       "familyName": "Alonso",
-      "displayName": "Fernando Alonso"
+      "displayName": "Fernando Alonso",
+      "constructorId": "aston_martin",
+      "constructorName": "Aston Martin"
     },
     {
       "driverId": "stroll",
@@ -402,7 +428,9 @@
       "code": "STR",
       "givenName": "Lance",
       "familyName": "Stroll",
-      "displayName": "Lance Stroll"
+      "displayName": "Lance Stroll",
+      "constructorId": "aston_martin",
+      "constructorName": "Aston Martin"
     },
     {
       "driverId": "ocon",
@@ -410,7 +438,9 @@
       "code": "OCO",
       "givenName": "Esteban",
       "familyName": "Ocon",
-      "displayName": "Esteban Ocon"
+      "displayName": "Esteban Ocon",
+      "constructorId": "haas",
+      "constructorName": "Haas"
     },
     {
       "driverId": "bearman",
@@ -418,7 +448,9 @@
       "code": "BEA",
       "givenName": "Oliver",
       "familyName": "Bearman",
-      "displayName": "Oliver Bearman"
+      "displayName": "Oliver Bearman",
+      "constructorId": "haas",
+      "constructorName": "Haas"
     },
     {
       "driverId": "hulkenberg",
@@ -426,7 +458,9 @@
       "code": "HUL",
       "givenName": "Nico",
       "familyName": "Hülkenberg",
-      "displayName": "Nico Hülkenberg"
+      "displayName": "Nico Hülkenberg",
+      "constructorId": "audi",
+      "constructorName": "Audi"
     },
     {
       "driverId": "bortoleto",
@@ -434,7 +468,9 @@
       "code": "BOR",
       "givenName": "Gabriel",
       "familyName": "Bortoleto",
-      "displayName": "Gabriel Bortoleto"
+      "displayName": "Gabriel Bortoleto",
+      "constructorId": "audi",
+      "constructorName": "Audi"
     },
     {
       "driverId": "gasly",
@@ -442,7 +478,9 @@
       "code": "GAS",
       "givenName": "Pierre",
       "familyName": "Gasly",
-      "displayName": "Pierre Gasly"
+      "displayName": "Pierre Gasly",
+      "constructorId": "alpine",
+      "constructorName": "Alpine"
     },
     {
       "driverId": "colapinto",
@@ -450,7 +488,9 @@
       "code": "COL",
       "givenName": "Franco",
       "familyName": "Colapinto",
-      "displayName": "Franco Colapinto"
+      "displayName": "Franco Colapinto",
+      "constructorId": "alpine",
+      "constructorName": "Alpine"
     },
     {
       "driverId": "perez",
@@ -458,7 +498,9 @@
       "code": "PER",
       "givenName": "Sergio",
       "familyName": "Pérez",
-      "displayName": "Sergio Pérez"
+      "displayName": "Sergio Pérez",
+      "constructorId": "cadillac",
+      "constructorName": "Cadillac"
     },
     {
       "driverId": "bottas",
@@ -466,7 +508,9 @@
       "code": "BOT",
       "givenName": "Valtteri",
       "familyName": "Bottas",
-      "displayName": "Valtteri Bottas"
+      "displayName": "Valtteri Bottas",
+      "constructorId": "cadillac",
+      "constructorName": "Cadillac"
     }
   ],
   "sessions": [
@@ -661,7 +705,9 @@
       "displayName": "Lando Norris",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 79.475,
+      "qualifyingAdjustedSeconds": 79.475
     },
     {
       "round": 1,
@@ -670,7 +716,9 @@
       "displayName": "Oscar Piastri",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.38,
+      "qualifyingAdjustedSeconds": 79.38
     },
     {
       "round": 1,
@@ -679,7 +727,9 @@
       "displayName": "George Russell",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 78.518,
+      "qualifyingAdjustedSeconds": 78.518
     },
     {
       "round": 1,
@@ -688,7 +738,9 @@
       "displayName": "Kimi Antonelli",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 78.811,
+      "qualifyingAdjustedSeconds": 78.811
     },
     {
       "round": 1,
@@ -697,7 +749,9 @@
       "displayName": "Max Verstappen",
       "position": null,
       "classifiedPosition": "N/A",
-      "status": "N/A"
+      "status": "N/A",
+      "qualifyingUnadjustedSeconds": null,
+      "qualifyingAdjustedSeconds": null
     },
     {
       "round": 1,
@@ -706,7 +760,9 @@
       "displayName": "Isack Hadjar",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 79.303,
+      "qualifyingAdjustedSeconds": 79.303
     },
     {
       "round": 1,
@@ -715,7 +771,9 @@
       "displayName": "Charles Leclerc",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 79.327,
+      "qualifyingAdjustedSeconds": 79.327
     },
     {
       "round": 1,
@@ -724,7 +782,9 @@
       "displayName": "Lewis Hamilton",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 79.478,
+      "qualifyingAdjustedSeconds": 79.478
     },
     {
       "round": 1,
@@ -733,7 +793,9 @@
       "displayName": "Alex Albon",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.941,
+      "qualifyingAdjustedSeconds": 80.941
     },
     {
       "round": 1,
@@ -742,7 +804,9 @@
       "displayName": "Carlos Sainz",
       "position": null,
       "classifiedPosition": "N/A",
-      "status": "N/A"
+      "status": "N/A",
+      "qualifyingUnadjustedSeconds": null,
+      "qualifyingAdjustedSeconds": null
     },
     {
       "round": 1,
@@ -751,7 +815,9 @@
       "displayName": "Liam Lawson",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 79.994,
+      "qualifyingAdjustedSeconds": 79.994
     },
     {
       "round": 1,
@@ -760,7 +826,9 @@
       "displayName": "Arvid Lindblad",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 81.247,
+      "qualifyingAdjustedSeconds": 79.971
     },
     {
       "round": 1,
@@ -769,7 +837,9 @@
       "displayName": "Fernando Alonso",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 81.969,
+      "qualifyingAdjustedSeconds": 81.969
     },
     {
       "round": 1,
@@ -778,7 +848,9 @@
       "displayName": "Lance Stroll",
       "position": null,
       "classifiedPosition": "N/A",
-      "status": "N/A"
+      "status": "N/A",
+      "qualifyingUnadjustedSeconds": null,
+      "qualifyingAdjustedSeconds": null
     },
     {
       "round": 1,
@@ -787,7 +859,9 @@
       "displayName": "Esteban Ocon",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.491,
+      "qualifyingAdjustedSeconds": 80.491
     },
     {
       "round": 1,
@@ -796,7 +870,9 @@
       "displayName": "Oliver Bearman",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.311,
+      "qualifyingAdjustedSeconds": 80.311
     },
     {
       "round": 1,
@@ -805,7 +881,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.303,
+      "qualifyingAdjustedSeconds": 80.303
     },
     {
       "round": 1,
@@ -814,7 +892,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.221,
+      "qualifyingAdjustedSeconds": 80.221
     },
     {
       "round": 1,
@@ -823,7 +903,9 @@
       "displayName": "Pierre Gasly",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.501,
+      "qualifyingAdjustedSeconds": 80.501
     },
     {
       "round": 1,
@@ -832,7 +914,9 @@
       "displayName": "Franco Colapinto",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 81.27,
+      "qualifyingAdjustedSeconds": 81.2
     },
     {
       "round": 1,
@@ -841,7 +925,9 @@
       "displayName": "Sergio Perez",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 82.605,
+      "qualifyingAdjustedSeconds": 82.605
     },
     {
       "round": 1,
@@ -850,7 +936,9 @@
       "displayName": "Valtteri Bottas",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 83.244,
+      "qualifyingAdjustedSeconds": 83.244
     },
     {
       "round": 2,
@@ -859,7 +947,9 @@
       "displayName": "Lando Norris",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.608,
+      "qualifyingAdjustedSeconds": 92.608
     },
     {
       "round": 2,
@@ -868,7 +958,9 @@
       "displayName": "Oscar Piastri",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.55,
+      "qualifyingAdjustedSeconds": 92.55
     },
     {
       "round": 2,
@@ -877,7 +969,9 @@
       "displayName": "George Russell",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.286,
+      "qualifyingAdjustedSeconds": 92.286
     },
     {
       "round": 2,
@@ -886,7 +980,9 @@
       "displayName": "Kimi Antonelli",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.064,
+      "qualifyingAdjustedSeconds": 92.064
     },
     {
       "round": 2,
@@ -895,7 +991,9 @@
       "displayName": "Max Verstappen",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.002,
+      "qualifyingAdjustedSeconds": 93.002
     },
     {
       "round": 2,
@@ -904,7 +1002,9 @@
       "displayName": "Isack Hadjar",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.121,
+      "qualifyingAdjustedSeconds": 93.121
     },
     {
       "round": 2,
@@ -913,7 +1013,9 @@
       "displayName": "Charles Leclerc",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.428,
+      "qualifyingAdjustedSeconds": 92.428
     },
     {
       "round": 2,
@@ -922,7 +1024,9 @@
       "displayName": "Lewis Hamilton",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.415,
+      "qualifyingAdjustedSeconds": 92.415
     },
     {
       "round": 2,
@@ -931,7 +1035,9 @@
       "displayName": "Alex Albon",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 94.772,
+      "qualifyingAdjustedSeconds": 94.772
     },
     {
       "round": 2,
@@ -940,7 +1046,9 @@
       "displayName": "Carlos Sainz",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 94.317,
+      "qualifyingAdjustedSeconds": 94.317
     },
     {
       "round": 2,
@@ -949,7 +1057,9 @@
       "displayName": "Liam Lawson",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.765,
+      "qualifyingAdjustedSeconds": 93.765
     },
     {
       "round": 2,
@@ -958,7 +1068,9 @@
       "displayName": "Arvid Lindblad",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.784,
+      "qualifyingAdjustedSeconds": 93.784
     },
     {
       "round": 2,
@@ -967,7 +1079,9 @@
       "displayName": "Fernando Alonso",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 95.203,
+      "qualifyingAdjustedSeconds": 95.203
     },
     {
       "round": 2,
@@ -976,7 +1090,9 @@
       "displayName": "Lance Stroll",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 95.995,
+      "qualifyingAdjustedSeconds": 95.995
     },
     {
       "round": 2,
@@ -985,7 +1101,9 @@
       "displayName": "Esteban Ocon",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.538,
+      "qualifyingAdjustedSeconds": 93.538
     },
     {
       "round": 2,
@@ -994,7 +1112,9 @@
       "displayName": "Oliver Bearman",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.292,
+      "qualifyingAdjustedSeconds": 93.197
     },
     {
       "round": 2,
@@ -1003,7 +1123,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.354,
+      "qualifyingAdjustedSeconds": 93.354
     },
     {
       "round": 2,
@@ -1012,7 +1134,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.965,
+      "qualifyingAdjustedSeconds": 93.965
     },
     {
       "round": 2,
@@ -1021,7 +1145,9 @@
       "displayName": "Pierre Gasly",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.873,
+      "qualifyingAdjustedSeconds": 93.003
     },
     {
       "round": 2,
@@ -1030,7 +1156,9 @@
       "displayName": "Franco Colapinto",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.357,
+      "qualifyingAdjustedSeconds": 93.357
     },
     {
       "round": 2,
@@ -1039,7 +1167,9 @@
       "displayName": "Sergio Perez",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 96.906,
+      "qualifyingAdjustedSeconds": 96.906
     },
     {
       "round": 2,
@@ -1048,7 +1178,9 @@
       "displayName": "Valtteri Bottas",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 95.436,
+      "qualifyingAdjustedSeconds": 95.436
     },
     {
       "round": 3,
@@ -1057,7 +1189,9 @@
       "displayName": "Lando Norris",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.409,
+      "qualifyingAdjustedSeconds": 89.409
     },
     {
       "round": 3,
@@ -1066,7 +1200,9 @@
       "displayName": "Oscar Piastri",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.132,
+      "qualifyingAdjustedSeconds": 89.132
     },
     {
       "round": 3,
@@ -1075,7 +1211,9 @@
       "displayName": "George Russell",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.076,
+      "qualifyingAdjustedSeconds": 89.076
     },
     {
       "round": 3,
@@ -1084,7 +1222,9 @@
       "displayName": "Kimi Antonelli",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.778,
+      "qualifyingAdjustedSeconds": 88.778
     },
     {
       "round": 3,
@@ -1093,7 +1233,9 @@
       "displayName": "Max Verstappen",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.262,
+      "qualifyingAdjustedSeconds": 90.262
     },
     {
       "round": 3,
@@ -1102,7 +1244,9 @@
       "displayName": "Isack Hadjar",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.978,
+      "qualifyingAdjustedSeconds": 90.104
     },
     {
       "round": 3,
@@ -1111,7 +1255,9 @@
       "displayName": "Charles Leclerc",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.405,
+      "qualifyingAdjustedSeconds": 89.405
     },
     {
       "round": 3,
@@ -1120,7 +1266,9 @@
       "displayName": "Lewis Hamilton",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.567,
+      "qualifyingAdjustedSeconds": 89.567
     },
     {
       "round": 3,
@@ -1129,7 +1277,9 @@
       "displayName": "Alex Albon",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.088,
+      "qualifyingAdjustedSeconds": 91.088
     },
     {
       "round": 3,
@@ -1138,7 +1288,9 @@
       "displayName": "Carlos Sainz",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.033,
+      "qualifyingAdjustedSeconds": 90.927
     },
     {
       "round": 3,
@@ -1147,7 +1299,9 @@
       "displayName": "Liam Lawson",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.495,
+      "qualifyingAdjustedSeconds": 90.495
     },
     {
       "round": 3,
@@ -1156,7 +1310,9 @@
       "displayName": "Arvid Lindblad",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.319,
+      "qualifyingAdjustedSeconds": 90.781
     },
     {
       "round": 3,
@@ -1165,7 +1321,9 @@
       "displayName": "Fernando Alonso",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.646,
+      "qualifyingAdjustedSeconds": 92.646
     },
     {
       "round": 3,
@@ -1174,7 +1332,9 @@
       "displayName": "Lance Stroll",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.92,
+      "qualifyingAdjustedSeconds": 92.92
     },
     {
       "round": 3,
@@ -1183,7 +1343,9 @@
       "displayName": "Esteban Ocon",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.309,
+      "qualifyingAdjustedSeconds": 90.915
     },
     {
       "round": 3,
@@ -1192,7 +1354,9 @@
       "displayName": "Oliver Bearman",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.09,
+      "qualifyingAdjustedSeconds": 91.09
     },
     {
       "round": 3,
@@ -1201,7 +1365,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.387,
+      "qualifyingAdjustedSeconds": 90.387
     },
     {
       "round": 3,
@@ -1210,7 +1376,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.274,
+      "qualifyingAdjustedSeconds": 89.99
     },
     {
       "round": 3,
@@ -1219,7 +1387,9 @@
       "displayName": "Pierre Gasly",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.978,
+      "qualifyingAdjustedSeconds": 89.874
     },
     {
       "round": 3,
@@ -1228,7 +1398,9 @@
       "displayName": "Franco Colapinto",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.627,
+      "qualifyingAdjustedSeconds": 90.627
     },
     {
       "round": 3,
@@ -1237,7 +1409,9 @@
       "displayName": "Sergio Perez",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.206,
+      "qualifyingAdjustedSeconds": 92.206
     },
     {
       "round": 3,
@@ -1246,7 +1420,9 @@
       "displayName": "Valtteri Bottas",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.92,
+      "qualifyingAdjustedSeconds": 92.92
     },
     {
       "round": 4,
@@ -1255,7 +1431,9 @@
       "displayName": "Lando Norris",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.183,
+      "qualifyingAdjustedSeconds": 88.183
     },
     {
       "round": 4,
@@ -1264,7 +1442,9 @@
       "displayName": "Oscar Piastri",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.5,
+      "qualifyingAdjustedSeconds": 88.5
     },
     {
       "round": 4,
@@ -1273,7 +1453,9 @@
       "displayName": "George Russell",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.197,
+      "qualifyingAdjustedSeconds": 88.197
     },
     {
       "round": 4,
@@ -1282,7 +1464,9 @@
       "displayName": "Kimi Antonelli",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 87.798,
+      "qualifyingAdjustedSeconds": 87.798
     },
     {
       "round": 4,
@@ -1291,7 +1475,9 @@
       "displayName": "Max Verstappen",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 87.964,
+      "qualifyingAdjustedSeconds": 87.964
     },
     {
       "round": 4,
@@ -1300,7 +1486,9 @@
       "displayName": "Isack Hadjar",
       "position": null,
       "classifiedPosition": "DSQ",
-      "status": "DSQ"
+      "status": "DSQ",
+      "qualifyingUnadjustedSeconds": null,
+      "qualifyingAdjustedSeconds": null
     },
     {
       "round": 4,
@@ -1309,7 +1497,9 @@
       "displayName": "Charles Leclerc",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.143,
+      "qualifyingAdjustedSeconds": 88.143
     },
     {
       "round": 4,
@@ -1318,7 +1508,9 @@
       "displayName": "Lewis Hamilton",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.319,
+      "qualifyingAdjustedSeconds": 88.319
     },
     {
       "round": 4,
@@ -1327,7 +1519,9 @@
       "displayName": "Alex Albon",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.946,
+      "qualifyingAdjustedSeconds": 89.946
     },
     {
       "round": 4,
@@ -1336,7 +1530,9 @@
       "displayName": "Carlos Sainz",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.568,
+      "qualifyingAdjustedSeconds": 89.568
     },
     {
       "round": 4,
@@ -1345,7 +1541,9 @@
       "displayName": "Liam Lawson",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.499,
+      "qualifyingAdjustedSeconds": 89.595
     },
     {
       "round": 4,
@@ -1354,7 +1552,9 @@
       "displayName": "Arvid Lindblad",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.133,
+      "qualifyingAdjustedSeconds": 90.133
     },
     {
       "round": 4,
@@ -1363,7 +1563,9 @@
       "displayName": "Fernando Alonso",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.098,
+      "qualifyingAdjustedSeconds": 91.098
     },
     {
       "round": 4,
@@ -1372,7 +1574,9 @@
       "displayName": "Lance Stroll",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.164,
+      "qualifyingAdjustedSeconds": 91.164
     },
     {
       "round": 4,
@@ -1381,7 +1585,9 @@
       "displayName": "Esteban Ocon",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.772,
+      "qualifyingAdjustedSeconds": 89.772
     },
     {
       "round": 4,
@@ -1390,7 +1596,9 @@
       "displayName": "Oliver Bearman",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.567,
+      "qualifyingAdjustedSeconds": 89.567
     },
     {
       "round": 4,
@@ -1399,7 +1607,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.439,
+      "qualifyingAdjustedSeconds": 89.645
     },
     {
       "round": 4,
@@ -1408,7 +1618,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.737,
+      "qualifyingAdjustedSeconds": 93.737
     },
     {
       "round": 4,
@@ -1417,7 +1629,9 @@
       "displayName": "Pierre Gasly",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.81,
+      "qualifyingAdjustedSeconds": 88.81
     },
     {
       "round": 4,
@@ -1426,7 +1640,9 @@
       "displayName": "Franco Colapinto",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.762,
+      "qualifyingAdjustedSeconds": 88.762
     },
     {
       "round": 4,
@@ -1435,7 +1651,9 @@
       "displayName": "Sergio Perez",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.967,
+      "qualifyingAdjustedSeconds": 91.967
     },
     {
       "round": 4,
@@ -1444,7 +1662,9 @@
       "displayName": "Valtteri Bottas",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.629,
+      "qualifyingAdjustedSeconds": 91.629
     },
     {
       "round": 5,
@@ -1453,7 +1673,9 @@
       "displayName": "Lando Norris",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.729,
+      "qualifyingAdjustedSeconds": 72.729
     },
     {
       "round": 5,
@@ -1462,7 +1684,9 @@
       "displayName": "Oscar Piastri",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.781,
+      "qualifyingAdjustedSeconds": 72.781
     },
     {
       "round": 5,
@@ -1471,7 +1695,9 @@
       "displayName": "George Russell",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.578,
+      "qualifyingAdjustedSeconds": 72.578
     },
     {
       "round": 5,
@@ -1480,7 +1706,9 @@
       "displayName": "Kimi Antonelli",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.646,
+      "qualifyingAdjustedSeconds": 72.646
     },
     {
       "round": 5,
@@ -1489,7 +1717,9 @@
       "displayName": "Max Verstappen",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.907,
+      "qualifyingAdjustedSeconds": 72.907
     },
     {
       "round": 5,
@@ -1498,7 +1728,9 @@
       "displayName": "Isack Hadjar",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.935,
+      "qualifyingAdjustedSeconds": 72.935
     },
     {
       "round": 5,
@@ -1507,7 +1739,9 @@
       "displayName": "Charles Leclerc",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.976,
+      "qualifyingAdjustedSeconds": 72.976
     },
     {
       "round": 5,
@@ -1516,7 +1750,9 @@
       "displayName": "Lewis Hamilton",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.868,
+      "qualifyingAdjustedSeconds": 72.868
     },
     {
       "round": 5,
@@ -1525,7 +1761,9 @@
       "displayName": "Alex Albon",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.841,
+      "qualifyingAdjustedSeconds": 74.851
     },
     {
       "round": 5,
@@ -1534,7 +1772,9 @@
       "displayName": "Carlos Sainz",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.273,
+      "qualifyingAdjustedSeconds": 74.276
     },
     {
       "round": 5,
@@ -1543,7 +1783,9 @@
       "displayName": "Liam Lawson",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.897,
+      "qualifyingAdjustedSeconds": 73.346
     },
     {
       "round": 5,
@@ -1552,7 +1794,9 @@
       "displayName": "Arvid Lindblad",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.28,
+      "qualifyingAdjustedSeconds": 73.548
     },
     {
       "round": 5,
@@ -1561,7 +1805,9 @@
       "displayName": "Fernando Alonso",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.196,
+      "qualifyingAdjustedSeconds": 75.196
     },
     {
       "round": 5,
@@ -1570,7 +1816,9 @@
       "displayName": "Lance Stroll",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.195,
+      "qualifyingAdjustedSeconds": 76.195
     },
     {
       "round": 5,
@@ -1579,7 +1827,9 @@
       "displayName": "Esteban Ocon",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.845,
+      "qualifyingAdjustedSeconds": 74.845
     },
     {
       "round": 5,
@@ -1588,7 +1838,9 @@
       "displayName": "Oliver Bearman",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.416,
+      "qualifyingAdjustedSeconds": 74.449
     },
     {
       "round": 5,
@@ -1597,7 +1849,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.886,
+      "qualifyingAdjustedSeconds": 73.886
     },
     {
       "round": 5,
@@ -1606,7 +1860,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.071,
+      "qualifyingAdjustedSeconds": 74.071
     },
     {
       "round": 5,
@@ -1615,7 +1871,9 @@
       "displayName": "Pierre Gasly",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.187,
+      "qualifyingAdjustedSeconds": 74.187
     },
     {
       "round": 5,
@@ -1624,7 +1882,9 @@
       "displayName": "Franco Colapinto",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.697,
+      "qualifyingAdjustedSeconds": 73.857
     },
     {
       "round": 5,
@@ -1633,7 +1893,9 @@
       "displayName": "Sergio Perez",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.429,
+      "qualifyingAdjustedSeconds": 75.429
     },
     {
       "round": 5,
@@ -1642,7 +1904,9 @@
       "displayName": "Valtteri Bottas",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.272,
+      "qualifyingAdjustedSeconds": 76.272
     },
     {
       "round": 6,
@@ -1651,7 +1915,9 @@
       "displayName": "Lando Norris",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.765,
+      "qualifyingAdjustedSeconds": 72.765
     },
     {
       "round": 6,
@@ -1660,7 +1926,9 @@
       "displayName": "Oscar Piastri",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.624,
+      "qualifyingAdjustedSeconds": 72.624
     },
     {
       "round": 6,
@@ -1669,7 +1937,9 @@
       "displayName": "George Russell",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.445,
+      "qualifyingAdjustedSeconds": 72.445
     },
     {
       "round": 6,
@@ -1678,7 +1948,9 @@
       "displayName": "Kimi Antonelli",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.051,
+      "qualifyingAdjustedSeconds": 72.051
     },
     {
       "round": 6,
@@ -1687,7 +1959,9 @@
       "displayName": "Max Verstappen",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.094,
+      "qualifyingAdjustedSeconds": 72.094
     },
     {
       "round": 6,
@@ -1696,7 +1970,9 @@
       "displayName": "Isack Hadjar",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.434,
+      "qualifyingAdjustedSeconds": 72.434
     },
     {
       "round": 6,
@@ -1705,7 +1981,9 @@
       "displayName": "Charles Leclerc",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.351,
+      "qualifyingAdjustedSeconds": 72.351
     },
     {
       "round": 6,
@@ -1714,7 +1992,9 @@
       "displayName": "Lewis Hamilton",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 72.279,
+      "qualifyingAdjustedSeconds": 72.279
     },
     {
       "round": 6,
@@ -1723,7 +2003,9 @@
       "displayName": "Alex Albon",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.787,
+      "qualifyingAdjustedSeconds": 73.787
     },
     {
       "round": 6,
@@ -1732,7 +2014,9 @@
       "displayName": "Carlos Sainz",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.815,
+      "qualifyingAdjustedSeconds": 73.815
     },
     {
       "round": 6,
@@ -1741,7 +2025,9 @@
       "displayName": "Liam Lawson",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.412,
+      "qualifyingAdjustedSeconds": 73.471
     },
     {
       "round": 6,
@@ -1750,7 +2036,9 @@
       "displayName": "Arvid Lindblad",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.248,
+      "qualifyingAdjustedSeconds": 74.248
     },
     {
       "round": 6,
@@ -1759,7 +2047,9 @@
       "displayName": "Fernando Alonso",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.349,
+      "qualifyingAdjustedSeconds": 75.349
     },
     {
       "round": 6,
@@ -1768,7 +2058,9 @@
       "displayName": "Lance Stroll",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.061,
+      "qualifyingAdjustedSeconds": 76.061
     },
     {
       "round": 6,
@@ -1777,7 +2069,9 @@
       "displayName": "Esteban Ocon",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.722,
+      "qualifyingAdjustedSeconds": 74.722
     },
     {
       "round": 6,
@@ -1786,7 +2080,9 @@
       "displayName": "Oliver Bearman",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.814,
+      "qualifyingAdjustedSeconds": 74.814
     },
     {
       "round": 6,
@@ -1795,7 +2091,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.902,
+      "qualifyingAdjustedSeconds": 73.923
     },
     {
       "round": 6,
@@ -1804,7 +2102,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.683,
+      "qualifyingAdjustedSeconds": 74.683
     },
     {
       "round": 6,
@@ -1813,7 +2113,9 @@
       "displayName": "Pierre Gasly",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.226,
+      "qualifyingAdjustedSeconds": 73.762
     },
     {
       "round": 6,
@@ -1822,7 +2124,9 @@
       "displayName": "Franco Colapinto",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 73.995,
+      "qualifyingAdjustedSeconds": 73.995
     },
     {
       "round": 6,
@@ -1831,7 +2135,9 @@
       "displayName": "Sergio Perez",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.747,
+      "qualifyingAdjustedSeconds": 74.747
     },
     {
       "round": 6,
@@ -1840,7 +2146,9 @@
       "displayName": "Valtteri Bottas",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.283,
+      "qualifyingAdjustedSeconds": 75.283
     },
     {
       "round": 7,
@@ -1849,7 +2157,9 @@
       "displayName": "Lando Norris",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.001,
+      "qualifyingAdjustedSeconds": 75.001
     },
     {
       "round": 7,
@@ -1858,7 +2168,9 @@
       "displayName": "Oscar Piastri",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.09,
+      "qualifyingAdjustedSeconds": 75.09
     },
     {
       "round": 7,
@@ -1867,7 +2179,9 @@
       "displayName": "George Russell",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.679,
+      "qualifyingAdjustedSeconds": 74.679
     },
     {
       "round": 7,
@@ -1876,7 +2190,9 @@
       "displayName": "Kimi Antonelli",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.998,
+      "qualifyingAdjustedSeconds": 74.998
     },
     {
       "round": 7,
@@ -1885,7 +2201,9 @@
       "displayName": "Max Verstappen",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.021,
+      "qualifyingAdjustedSeconds": 75.021
     },
     {
       "round": 7,
@@ -1894,7 +2212,9 @@
       "displayName": "Isack Hadjar",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.077,
+      "qualifyingAdjustedSeconds": 75.077
     },
     {
       "round": 7,
@@ -1903,7 +2223,9 @@
       "displayName": "Charles Leclerc",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": null,
+      "qualifyingAdjustedSeconds": 75.281
     },
     {
       "round": 7,
@@ -1912,7 +2234,9 @@
       "displayName": "Lewis Hamilton",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 74.743,
+      "qualifyingAdjustedSeconds": 75.418
     },
     {
       "round": 7,
@@ -1921,7 +2245,9 @@
       "displayName": "Alex Albon",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.424,
+      "qualifyingAdjustedSeconds": 77.424
     },
     {
       "round": 7,
@@ -1930,7 +2256,9 @@
       "displayName": "Carlos Sainz",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.827,
+      "qualifyingAdjustedSeconds": 76.881
     },
     {
       "round": 7,
@@ -1939,7 +2267,9 @@
       "displayName": "Liam Lawson",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.542,
+      "qualifyingAdjustedSeconds": 76.542
     },
     {
       "round": 7,
@@ -1948,7 +2278,9 @@
       "displayName": "Arvid Lindblad",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 75.84,
+      "qualifyingAdjustedSeconds": 75.84
     },
     {
       "round": 7,
@@ -1957,7 +2289,9 @@
       "displayName": "Fernando Alonso",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 78.815,
+      "qualifyingAdjustedSeconds": 78.815
     },
     {
       "round": 7,
@@ -1966,7 +2300,9 @@
       "displayName": "Lance Stroll",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 78.758,
+      "qualifyingAdjustedSeconds": 78.758
     },
     {
       "round": 7,
@@ -1975,7 +2311,9 @@
       "displayName": "Esteban Ocon",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.073,
+      "qualifyingAdjustedSeconds": 77.073
     },
     {
       "round": 7,
@@ -1984,7 +2322,9 @@
       "displayName": "Oliver Bearman",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.389,
+      "qualifyingAdjustedSeconds": 76.571
     },
     {
       "round": 7,
@@ -1993,7 +2333,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.657,
+      "qualifyingAdjustedSeconds": 75.768
     },
     {
       "round": 7,
@@ -2002,7 +2344,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.001,
+      "qualifyingAdjustedSeconds": 76.001
     },
     {
       "round": 7,
@@ -2011,7 +2355,9 @@
       "displayName": "Pierre Gasly",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.261,
+      "qualifyingAdjustedSeconds": 76.261
     },
     {
       "round": 7,
@@ -2020,7 +2366,9 @@
       "displayName": "Franco Colapinto",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 76.191,
+      "qualifyingAdjustedSeconds": 76.191
     },
     {
       "round": 7,
@@ -2029,7 +2377,9 @@
       "displayName": "Sergio Perez",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.545,
+      "qualifyingAdjustedSeconds": 77.545
     },
     {
       "round": 7,
@@ -2038,7 +2388,9 @@
       "displayName": "Valtteri Bottas",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.757,
+      "qualifyingAdjustedSeconds": 77.757
     },
     {
       "round": 8,
@@ -2047,7 +2399,9 @@
       "displayName": "Lando Norris",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.502,
+      "qualifyingAdjustedSeconds": 66.502
     },
     {
       "round": 8,
@@ -2056,7 +2410,9 @@
       "displayName": "Oscar Piastri",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.511,
+      "qualifyingAdjustedSeconds": 66.511
     },
     {
       "round": 8,
@@ -2065,7 +2421,9 @@
       "displayName": "George Russell",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.113,
+      "qualifyingAdjustedSeconds": 66.113
     },
     {
       "round": 8,
@@ -2074,7 +2432,9 @@
       "displayName": "Kimi Antonelli",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.414,
+      "qualifyingAdjustedSeconds": 66.414
     },
     {
       "round": 8,
@@ -2083,7 +2443,9 @@
       "displayName": "Max Verstappen",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.475,
+      "qualifyingAdjustedSeconds": 66.475
     },
     {
       "round": 8,
@@ -2092,7 +2454,9 @@
       "displayName": "Isack Hadjar",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.632,
+      "qualifyingAdjustedSeconds": 66.632
     },
     {
       "round": 8,
@@ -2101,7 +2465,9 @@
       "displayName": "Charles Leclerc",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.349,
+      "qualifyingAdjustedSeconds": 66.349
     },
     {
       "round": 8,
@@ -2110,7 +2476,9 @@
       "displayName": "Lewis Hamilton",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.408,
+      "qualifyingAdjustedSeconds": 66.408
     },
     {
       "round": 8,
@@ -2119,7 +2487,9 @@
       "displayName": "Alex Albon",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 68.509,
+      "qualifyingAdjustedSeconds": 68.509
     },
     {
       "round": 8,
@@ -2128,7 +2498,9 @@
       "displayName": "Carlos Sainz",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 68.252,
+      "qualifyingAdjustedSeconds": 68.252
     },
     {
       "round": 8,
@@ -2137,7 +2509,9 @@
       "displayName": "Liam Lawson",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 66.955,
+      "qualifyingAdjustedSeconds": 66.955
     },
     {
       "round": 8,
@@ -2146,7 +2520,9 @@
       "displayName": "Arvid Lindblad",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 67.007,
+      "qualifyingAdjustedSeconds": 67.007
     },
     {
       "round": 8,
@@ -2155,7 +2531,9 @@
       "displayName": "Fernando Alonso",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 69.942,
+      "qualifyingAdjustedSeconds": 69.942
     },
     {
       "round": 8,
@@ -2164,7 +2542,9 @@
       "displayName": "Lance Stroll",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 70.363,
+      "qualifyingAdjustedSeconds": 70.363
     },
     {
       "round": 8,
@@ -2173,7 +2553,9 @@
       "displayName": "Esteban Ocon",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 67.817,
+      "qualifyingAdjustedSeconds": 67.817
     },
     {
       "round": 8,
@@ -2182,7 +2564,9 @@
       "displayName": "Oliver Bearman",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 67.523,
+      "qualifyingAdjustedSeconds": 67.523
     },
     {
       "round": 8,
@@ -2191,7 +2575,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 67.611,
+      "qualifyingAdjustedSeconds": 67.611
     },
     {
       "round": 8,
@@ -2200,7 +2586,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 67.293,
+      "qualifyingAdjustedSeconds": 67.293
     },
     {
       "round": 8,
@@ -2209,7 +2597,9 @@
       "displayName": "Pierre Gasly",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 67.223,
+      "qualifyingAdjustedSeconds": 67.223
     },
     {
       "round": 8,
@@ -2218,7 +2608,9 @@
       "displayName": "Franco Colapinto",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 68.171,
+      "qualifyingAdjustedSeconds": 68.171
     },
     {
       "round": 8,
@@ -2227,7 +2619,9 @@
       "displayName": "Sergio Perez",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 68.945,
+      "qualifyingAdjustedSeconds": 68.945
     },
     {
       "round": 8,
@@ -2236,7 +2630,9 @@
       "displayName": "Valtteri Bottas",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 69.03,
+      "qualifyingAdjustedSeconds": 69.03
     },
     {
       "round": 9,
@@ -2245,7 +2641,9 @@
       "displayName": "Lando Norris",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.877,
+      "qualifyingAdjustedSeconds": 88.877
     },
     {
       "round": 9,
@@ -2254,7 +2652,9 @@
       "displayName": "Oscar Piastri",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.032,
+      "qualifyingAdjustedSeconds": 89.032
     },
     {
       "round": 9,
@@ -2263,7 +2663,9 @@
       "displayName": "George Russell",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.481,
+      "qualifyingAdjustedSeconds": 88.481
     },
     {
       "round": 9,
@@ -2272,7 +2674,9 @@
       "displayName": "Kimi Antonelli",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.111,
+      "qualifyingAdjustedSeconds": 88.111
     },
     {
       "round": 9,
@@ -2281,7 +2685,9 @@
       "displayName": "Max Verstappen",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.893,
+      "qualifyingAdjustedSeconds": 88.893
     },
     {
       "round": 9,
@@ -2290,7 +2696,9 @@
       "displayName": "Isack Hadjar",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.746,
+      "qualifyingAdjustedSeconds": 88.746
     },
     {
       "round": 9,
@@ -2299,7 +2707,9 @@
       "displayName": "Charles Leclerc",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.286,
+      "qualifyingAdjustedSeconds": 88.286
     },
     {
       "round": 9,
@@ -2308,7 +2718,9 @@
       "displayName": "Lewis Hamilton",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.458,
+      "qualifyingAdjustedSeconds": 88.458
     },
     {
       "round": 9,
@@ -2317,7 +2729,9 @@
       "displayName": "Alex Albon",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.341,
+      "qualifyingAdjustedSeconds": 91.341
     },
     {
       "round": 9,
@@ -2326,7 +2740,9 @@
       "displayName": "Carlos Sainz",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.623,
+      "qualifyingAdjustedSeconds": 90.623
     },
     {
       "round": 9,
@@ -2335,7 +2751,9 @@
       "displayName": "Liam Lawson",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.716,
+      "qualifyingAdjustedSeconds": 89.716
     },
     {
       "round": 9,
@@ -2344,7 +2762,9 @@
       "displayName": "Arvid Lindblad",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.305,
+      "qualifyingAdjustedSeconds": 89.305
     },
     {
       "round": 9,
@@ -2353,7 +2773,9 @@
       "displayName": "Fernando Alonso",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 93.025,
+      "qualifyingAdjustedSeconds": 93.025
     },
     {
       "round": 9,
@@ -2362,7 +2784,9 @@
       "displayName": "Lance Stroll",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 92.863,
+      "qualifyingAdjustedSeconds": 92.863
     },
     {
       "round": 9,
@@ -2371,7 +2795,9 @@
       "displayName": "Esteban Ocon",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.68,
+      "qualifyingAdjustedSeconds": 90.68
     },
     {
       "round": 9,
@@ -2380,7 +2806,9 @@
       "displayName": "Oliver Bearman",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.501,
+      "qualifyingAdjustedSeconds": 90.57
     },
     {
       "round": 9,
@@ -2389,7 +2817,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.076,
+      "qualifyingAdjustedSeconds": 90.076
     },
     {
       "round": 9,
@@ -2398,7 +2828,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.461,
+      "qualifyingAdjustedSeconds": 89.461
     },
     {
       "round": 9,
@@ -2407,7 +2839,9 @@
       "displayName": "Pierre Gasly",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 90.063,
+      "qualifyingAdjustedSeconds": 90.345
     },
     {
       "round": 9,
@@ -2416,7 +2850,9 @@
       "displayName": "Franco Colapinto",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.321,
+      "qualifyingAdjustedSeconds": 91.321
     },
     {
       "round": 9,
@@ -2425,7 +2861,9 @@
       "displayName": "Sergio Perez",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.451,
+      "qualifyingAdjustedSeconds": 91.451
     },
     {
       "round": 9,
@@ -2434,7 +2872,9 @@
       "displayName": "Valtteri Bottas",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 91.227,
+      "qualifyingAdjustedSeconds": 91.227
     },
     {
       "round": 10,
@@ -2443,7 +2883,9 @@
       "displayName": "Lando Norris",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 104.678,
+      "qualifyingAdjustedSeconds": 104.678
     },
     {
       "round": 10,
@@ -2452,7 +2894,9 @@
       "displayName": "Oscar Piastri",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 105.016,
+      "qualifyingAdjustedSeconds": 105.016
     },
     {
       "round": 10,
@@ -2461,7 +2905,9 @@
       "displayName": "George Russell",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 104.869,
+      "qualifyingAdjustedSeconds": 104.869
     },
     {
       "round": 10,
@@ -2470,7 +2916,9 @@
       "displayName": "Kimi Antonelli",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 104.361,
+      "qualifyingAdjustedSeconds": 104.361
     },
     {
       "round": 10,
@@ -2479,7 +2927,9 @@
       "displayName": "Max Verstappen",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 104.678,
+      "qualifyingAdjustedSeconds": 105.589
     },
     {
       "round": 10,
@@ -2488,7 +2938,9 @@
       "displayName": "Isack Hadjar",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 105.823,
+      "qualifyingAdjustedSeconds": 105.823
     },
     {
       "round": 10,
@@ -2497,7 +2949,9 @@
       "displayName": "Charles Leclerc",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 104.893,
+      "qualifyingAdjustedSeconds": 104.893
     },
     {
       "round": 10,
@@ -2506,7 +2960,9 @@
       "displayName": "Lewis Hamilton",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 104.895,
+      "qualifyingAdjustedSeconds": 104.895
     },
     {
       "round": 10,
@@ -2515,7 +2971,9 @@
       "displayName": "Alex Albon",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 107.12,
+      "qualifyingAdjustedSeconds": 107.12
     },
     {
       "round": 10,
@@ -2524,7 +2982,9 @@
       "displayName": "Carlos Sainz",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 106.777,
+      "qualifyingAdjustedSeconds": 107.08
     },
     {
       "round": 10,
@@ -2533,7 +2993,9 @@
       "displayName": "Liam Lawson",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 106.12,
+      "qualifyingAdjustedSeconds": 106.12
     },
     {
       "round": 10,
@@ -2542,7 +3004,9 @@
       "displayName": "Arvid Lindblad",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 105.143,
+      "qualifyingAdjustedSeconds": 105.629
     },
     {
       "round": 10,
@@ -2551,7 +3015,9 @@
       "displayName": "Fernando Alonso",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 110.002,
+      "qualifyingAdjustedSeconds": 110.002
     },
     {
       "round": 10,
@@ -2560,7 +3026,9 @@
       "displayName": "Lance Stroll",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 110.177,
+      "qualifyingAdjustedSeconds": 110.177
     },
     {
       "round": 10,
@@ -2569,7 +3037,9 @@
       "displayName": "Esteban Ocon",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 107.801,
+      "qualifyingAdjustedSeconds": 107.801
     },
     {
       "round": 10,
@@ -2578,7 +3048,9 @@
       "displayName": "Oliver Bearman",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 106.779,
+      "qualifyingAdjustedSeconds": 107.113
     },
     {
       "round": 10,
@@ -2587,7 +3059,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 106.671,
+      "qualifyingAdjustedSeconds": 106.671
     },
     {
       "round": 10,
@@ -2596,7 +3070,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 105.628,
+      "qualifyingAdjustedSeconds": 106.082
     },
     {
       "round": 10,
@@ -2605,7 +3081,9 @@
       "displayName": "Pierre Gasly",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 106.331,
+      "qualifyingAdjustedSeconds": 106.331
     },
     {
       "round": 10,
@@ -2614,7 +3092,9 @@
       "displayName": "Franco Colapinto",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 106.392,
+      "qualifyingAdjustedSeconds": 106.392
     },
     {
       "round": 10,
@@ -2623,7 +3103,9 @@
       "displayName": "Sergio Perez",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 107.971,
+      "qualifyingAdjustedSeconds": 107.971
     },
     {
       "round": 10,
@@ -2632,7 +3114,9 @@
       "displayName": "Valtteri Bottas",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 107.823,
+      "qualifyingAdjustedSeconds": 107.823
     },
     {
       "round": 11,
@@ -2641,7 +3125,9 @@
       "displayName": "Lando Norris",
       "position": 1,
       "classifiedPosition": "1",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.207,
+      "qualifyingAdjustedSeconds": 77.207
     },
     {
       "round": 11,
@@ -2650,7 +3136,9 @@
       "displayName": "Oscar Piastri",
       "position": 5,
       "classifiedPosition": "5",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.684,
+      "qualifyingAdjustedSeconds": 77.684
     },
     {
       "round": 11,
@@ -2659,7 +3147,9 @@
       "displayName": "George Russell",
       "position": 7,
       "classifiedPosition": "7",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.76,
+      "qualifyingAdjustedSeconds": 77.76
     },
     {
       "round": 11,
@@ -2668,7 +3158,9 @@
       "displayName": "Kimi Antonelli",
       "position": 4,
       "classifiedPosition": "4",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.479,
+      "qualifyingAdjustedSeconds": 77.479
     },
     {
       "round": 11,
@@ -2677,7 +3169,9 @@
       "displayName": "Max Verstappen",
       "position": 6,
       "classifiedPosition": "6",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.725,
+      "qualifyingAdjustedSeconds": 77.725
     },
     {
       "round": 11,
@@ -2686,7 +3180,9 @@
       "displayName": "Isack Hadjar",
       "position": 8,
       "classifiedPosition": "8",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.856,
+      "qualifyingAdjustedSeconds": 77.856
     },
     {
       "round": 11,
@@ -2695,7 +3191,9 @@
       "displayName": "Charles Leclerc",
       "position": 3,
       "classifiedPosition": "3",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.445,
+      "qualifyingAdjustedSeconds": 77.445
     },
     {
       "round": 11,
@@ -2704,7 +3202,9 @@
       "displayName": "Lewis Hamilton",
       "position": 2,
       "classifiedPosition": "2",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 77.219,
+      "qualifyingAdjustedSeconds": 77.219
     },
     {
       "round": 11,
@@ -2713,7 +3213,9 @@
       "displayName": "Alex Albon",
       "position": 19,
       "classifiedPosition": "19",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.658,
+      "qualifyingAdjustedSeconds": 80.658
     },
     {
       "round": 11,
@@ -2722,7 +3224,9 @@
       "displayName": "Carlos Sainz",
       "position": 18,
       "classifiedPosition": "18",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.621,
+      "qualifyingAdjustedSeconds": 80.621
     },
     {
       "round": 11,
@@ -2731,7 +3235,9 @@
       "displayName": "Liam Lawson",
       "position": 11,
       "classifiedPosition": "11",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.765,
+      "qualifyingAdjustedSeconds": 88.765
     },
     {
       "round": 11,
@@ -2740,7 +3246,9 @@
       "displayName": "Arvid Lindblad",
       "position": 9,
       "classifiedPosition": "9",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.281,
+      "qualifyingAdjustedSeconds": 88.36
     },
     {
       "round": 11,
@@ -2749,7 +3257,9 @@
       "displayName": "Fernando Alonso",
       "position": 16,
       "classifiedPosition": "16",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.808,
+      "qualifyingAdjustedSeconds": 80.126
     },
     {
       "round": 11,
@@ -2758,7 +3268,9 @@
       "displayName": "Lance Stroll",
       "position": 20,
       "classifiedPosition": "20",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.659,
+      "qualifyingAdjustedSeconds": 80.659
     },
     {
       "round": 11,
@@ -2767,7 +3279,9 @@
       "displayName": "Esteban Ocon",
       "position": 15,
       "classifiedPosition": "15",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.734,
+      "qualifyingAdjustedSeconds": 80.01
     },
     {
       "round": 11,
@@ -2776,7 +3290,9 @@
       "displayName": "Oliver Bearman",
       "position": 17,
       "classifiedPosition": "17",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.233,
+      "qualifyingAdjustedSeconds": 80.233
     },
     {
       "round": 11,
@@ -2785,7 +3301,9 @@
       "displayName": "Nico Hulkenberg",
       "position": 10,
       "classifiedPosition": "10",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.686,
+      "qualifyingAdjustedSeconds": 88.639
     },
     {
       "round": 11,
@@ -2794,7 +3312,9 @@
       "displayName": "Gabriel Bortoleto",
       "position": 14,
       "classifiedPosition": "14",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.105,
+      "qualifyingAdjustedSeconds": 89.105
     },
     {
       "round": 11,
@@ -2803,7 +3323,9 @@
       "displayName": "Pierre Gasly",
       "position": 12,
       "classifiedPosition": "12",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 88.844,
+      "qualifyingAdjustedSeconds": 88.844
     },
     {
       "round": 11,
@@ -2812,7 +3334,9 @@
       "displayName": "Franco Colapinto",
       "position": 13,
       "classifiedPosition": "13",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 89.027,
+      "qualifyingAdjustedSeconds": 89.027
     },
     {
       "round": 11,
@@ -2821,7 +3345,9 @@
       "displayName": "Sergio Perez",
       "position": 22,
       "classifiedPosition": "22",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 81.322,
+      "qualifyingAdjustedSeconds": 81.322
     },
     {
       "round": 11,
@@ -2830,7 +3356,9 @@
       "displayName": "Valtteri Bottas",
       "position": 21,
       "classifiedPosition": "21",
-      "status": ""
+      "status": "",
+      "qualifyingUnadjustedSeconds": 80.886,
+      "qualifyingAdjustedSeconds": 80.886
     },
     {
       "round": 1,

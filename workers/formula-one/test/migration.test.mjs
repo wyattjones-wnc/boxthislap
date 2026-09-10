@@ -10,6 +10,7 @@ test("2026 migration snapshot is internally consistent", () => {
   assert.ok(migration.results.length > 0);
   assert.ok(migration.entries.length > 0);
   const driverIds = new Set(migration.drivers.map((driver) => driver.driverId));
+  assert.equal(migration.drivers.filter((driver) => driver.constructorId && driver.constructorName).length, 22);
   const usedDriverIds = new Set([
     ...migration.results.map((result) => result.driverId),
     ...migration.entries.flatMap((entry) => [entry.p1DriverId, entry.p2DriverId, entry.p3DriverId, entry.wildcardDriverId]),
@@ -17,6 +18,9 @@ test("2026 migration snapshot is internally consistent", () => {
   assert.deepEqual([...usedDriverIds].filter((driverId) => !driverIds.has(driverId)), []);
   assert.equal(usedDriverIds.has("n_a"), false);
   assert.equal(migration.entries.filter((entry) => [entry.p1DriverId, entry.p2DriverId, entry.p3DriverId, entry.wildcardDriverId].some((value) => !value)).length, 1);
+  const qualifyingResults = migration.results.filter((result) => result.sessionType === "qualifying");
+  assert.equal(qualifyingResults.filter((result) => Number.isFinite(result.qualifyingUnadjustedSeconds)).length, 237);
+  assert.equal(qualifyingResults.filter((result) => Number.isFinite(result.qualifyingAdjustedSeconds)).length, 238);
 });
 
 test("sprint sessions use league round IDs derived from event names", () => {

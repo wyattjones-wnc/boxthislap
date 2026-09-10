@@ -389,6 +389,7 @@ export const formulaOneViews = {
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),
+    review: document.querySelector("#formula-one-2026-review-content"),
     resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
     weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),

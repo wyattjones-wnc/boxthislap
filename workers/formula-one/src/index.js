@@ -23,6 +23,12 @@ export default {
         return json({ ok: true, ...(await readAdminWeekly(env, Number(overviewMatch[1]), admin.managerId)) }, 200, cors);
       }
 
+      const roundFetchMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/fetch$/);
+      if (roundFetchMatch && request.method === "POST") {
+        const admin = await requireAdmin(request, env);
+        return json({ ok: true, ...(await fetchRound(env, parseYear(roundFetchMatch[1]), parseRound(roundFetchMatch[2]), admin.managerId)) }, 200, cors);
+      }
+
       const sessionMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/sessions\/(qualifying|sprint|race)\/(fetch|approve|reopen)$/);
       if (sessionMatch && request.method === "POST") {
         const admin = await requireAdmin(request, env);
@@ -138,9 +144,14 @@ async function fetchSession(env, year, round, sessionType, actorManagerId) {
   const payload = await response.json();
   const race = payload?.MRData?.RaceTable?.Races?.[0];
   if (!race) throw httpError(404, "No provider results are available for this session yet.");
-  const sourceResults = sessionType === "qualifying" ? race.QualifyingResults : race.Results;
+  const sourceResults = sessionType === "qualifying"
+    ? race.QualifyingResults
+    : sessionType === "sprint"
+      ? race.SprintResults
+      : race.Results;
   if (!Array.isArray(sourceResults) || !sourceResults.length) throw httpError(404, "No provider results are available for this session yet.");
   const results = sourceResults.map((result) => normalizeProviderResult(result));
+  if (sessionType === "qualifying") enrichProviderQualifyingTimes(results);
   const fetchedAt = new Date().toISOString();
   const hasSprint = Boolean(race.Sprint || sessionType === "sprint");
   const statements = [
@@ -164,6 +175,35 @@ async function fetchSession(env, year, round, sessionType, actorManagerId) {
   statements.push(auditInsert(env, year, round, actorManagerId, "session_fetched", { sessionType, sourceUrl, resultCount: results.length }));
   await env.DB.batch(statements);
   return { session: { year, round, sessionType, status: "needs_review", source: "jolpica", sourceUrl, fetchedAt }, results };
+}
+
+async function fetchRound(env, year, round, actorManagerId) {
+  const roundRow = await env.DB.prepare("SELECT name, has_sprint FROM f1_rounds WHERE year = ? AND round = ?").bind(year, round).first();
+  if (!roundRow) throw httpError(404, "Round not found.");
+  const sessionTypes = ["qualifying", ...(roundRow.has_sprint ? ["sprint"] : []), "race"];
+  const sessions = [];
+
+  for (const sessionType of sessionTypes) {
+    const existing = await env.DB.prepare("SELECT status FROM f1_sessions WHERE year = ? AND round = ? AND session_type = ?")
+      .bind(year, round, sessionType).first();
+    if (existing?.status === "approved") {
+      sessions.push({ sessionType, status: "approved", skipped: true });
+      continue;
+    }
+    try {
+      const result = await fetchSession(env, year, round, sessionType, actorManagerId);
+      sessions.push({ sessionType, status: result.session.status, resultCount: result.results.length });
+    } catch (error) {
+      if (![404, 502].includes(Number(error?.status))) throw error;
+      sessions.push({ sessionType, status: "unavailable", error: error.message });
+    }
+  }
+
+  return {
+    round: { year, round, name: roundRow.name },
+    sessions,
+    fetchedCount: sessions.filter((session) => session.status === "needs_review").length,
+  };
 }
 
 async function saveSessionDraft(env, year, round, sessionType, body, actorManagerId) {
@@ -389,6 +429,9 @@ function normalizeProviderResult(result) {
     q1: clean(result.Q1, 40), q2: clean(result.Q2, 40), q3: clean(result.Q3, 40),
     timeText: clean(result.Time?.time, 60),
     fastestLapRank: optionalInteger(result.FastestLap?.rank),
+    qualifyingUnadjustedSeconds: null,
+    qualifyingAdjustedSeconds: null,
+    qualifyingAdjustedSession: "",
     rawJson: JSON.stringify(result),
   };
 }
@@ -407,8 +450,54 @@ function normalizeDraftResult(result) {
     grid: optionalInteger(result.grid), points: optionalNumber(result.points) ?? 0, laps: optionalInteger(result.laps),
     status: clean(result.status, 120), q1: clean(result.q1, 40), q2: clean(result.q2, 40), q3: clean(result.q3, 40),
     timeText: clean(result.timeText || result.time_text, 60), fastestLapRank: optionalInteger(result.fastestLapRank || result.fastest_lap_rank),
+    qualifyingUnadjustedSeconds: optionalNumber(result.qualifyingUnadjustedSeconds ?? result.qualifying_unadjusted_seconds),
+    qualifyingAdjustedSeconds: optionalNumber(result.qualifyingAdjustedSeconds ?? result.qualifying_adjusted_seconds),
+    qualifyingAdjustedSession: clean(result.qualifyingAdjustedSession || result.qualifying_adjusted_session, 20),
     rawJson: JSON.stringify(result),
   };
+}
+
+function enrichProviderQualifyingTimes(results) {
+  const byConstructor = new Map();
+  for (const result of results) {
+    const last = getLastQualifyingLap(result);
+    result.qualifyingUnadjustedSeconds = last?.seconds ?? null;
+    if (!result.constructorId) continue;
+    if (!byConstructor.has(result.constructorId)) byConstructor.set(result.constructorId, []);
+    byConstructor.get(result.constructorId).push(result);
+  }
+  for (const teammates of byConstructor.values()) {
+    if (teammates.length !== 2) continue;
+    const [first, second] = teammates;
+    for (const session of ["q3", "q2", "q1"]) {
+      const firstSeconds = parseQualifyingLap(first[session]);
+      const secondSeconds = parseQualifyingLap(second[session]);
+      if (firstSeconds === null || secondSeconds === null) continue;
+      first.qualifyingAdjustedSeconds = firstSeconds;
+      second.qualifyingAdjustedSeconds = secondSeconds;
+      first.qualifyingAdjustedSession = session;
+      second.qualifyingAdjustedSession = session;
+      break;
+    }
+  }
+}
+
+function getLastQualifyingLap(result) {
+  for (const session of ["q3", "q2", "q1"]) {
+    const seconds = parseQualifyingLap(result[session]);
+    if (seconds !== null) return { session, seconds };
+  }
+  return null;
+}
+
+function parseQualifyingLap(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  const parts = text.split(":").map(Number);
+  if (parts.some((part) => !Number.isFinite(part))) return null;
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return (parts[0] * 60) + parts[1];
+  return null;
 }
 
 function driverUpsert(env, year, result) {
@@ -424,15 +513,20 @@ function driverUpsert(env, year, result) {
 
 function resultInsert(env, year, round, sessionType, result) {
   return env.DB.prepare(`INSERT INTO f1_session_results (year, round, session_type, driver_id, position, classified_position,
-    grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, raw_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, qualifying_unadjusted_seconds,
+    qualifying_adjusted_seconds, qualifying_adjusted_session, raw_json, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position,
       classified_position = excluded.classified_position, grid = excluded.grid, points = excluded.points,
       laps = excluded.laps, status = excluded.status, q1 = excluded.q1, q2 = excluded.q2, q3 = excluded.q3,
       time_text = excluded.time_text, fastest_lap_rank = excluded.fastest_lap_rank,
+      qualifying_unadjusted_seconds = excluded.qualifying_unadjusted_seconds,
+      qualifying_adjusted_seconds = excluded.qualifying_adjusted_seconds,
+      qualifying_adjusted_session = excluded.qualifying_adjusted_session,
       raw_json = excluded.raw_json, updated_at = CURRENT_TIMESTAMP`)
     .bind(year, round, sessionType, result.driverId, result.position, result.classifiedPosition, result.grid, result.points,
-      result.laps, result.status, result.q1, result.q2, result.q3, result.timeText, result.fastestLapRank, result.rawJson);
+      result.laps, result.status, result.q1, result.q2, result.q3, result.timeText, result.fastestLapRank,
+      result.qualifyingUnadjustedSeconds, result.qualifyingAdjustedSeconds, result.qualifyingAdjustedSession, result.rawJson);
 }
 
 function auditInsert(env, year, round, actorManagerId, action, details) {

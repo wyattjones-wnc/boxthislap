@@ -10,6 +10,19 @@ const MANAGER_IDS = new Map([
   ["jonathan", "1"], ["jordan", "2"], ["luisa", "3"],
   ["michael", "4"], ["sean", "5"], ["wyatt", "6"],
 ]);
+const CONSTRUCTORS = [
+  ["mclaren", "McLaren", ["norris", "piastri"]],
+  ["mercedes", "Mercedes", ["russell", "antonelli"]],
+  ["red_bull", "Red Bull Racing", ["max_verstappen", "hadjar"]],
+  ["ferrari", "Ferrari", ["leclerc", "hamilton"]],
+  ["williams", "Williams", ["albon", "sainz"]],
+  ["rb", "Racing Bulls", ["lawson", "arvid_lindblad"]],
+  ["aston_martin", "Aston Martin", ["alonso", "stroll"]],
+  ["haas", "Haas", ["ocon", "bearman"]],
+  ["audi", "Audi", ["hulkenberg", "bortoleto"]],
+  ["alpine", "Alpine", ["gasly", "colapinto"]],
+  ["cadillac", "Cadillac", ["perez", "bottas"]],
+];
 
 const args = new Set(process.argv.slice(2));
 const outputIndex = process.argv.indexOf("--output");
@@ -26,7 +39,11 @@ const { sessions, results } = parseSessionTables(driverRows, sprintRows, driverL
 const entries = parseWeeklyEntries(weeklyRows, driverLookup);
 const usedDriverIds = new Set([...results.map((result) => result.driverId), ...entries.flatMap((entry) => [entry.p1DriverId, entry.p2DriverId, entry.p3DriverId, entry.wildcardDriverId])].filter(Boolean));
 const providerDriversById = new Map(providerDrivers.map((driver) => [driver.driverId, normalizeProviderDriver(driver)]));
-const drivers = [...usedDriverIds].map((driverId) => providerDriversById.get(driverId) || fallbackDriver(driverId, results));
+const constructorByDriver = new Map(CONSTRUCTORS.flatMap(([constructorId, constructorName, driverIds]) => driverIds.map((driverId) => [driverId, { constructorId, constructorName }])));
+const drivers = [...usedDriverIds].map((driverId) => ({
+  ...(providerDriversById.get(driverId) || fallbackDriver(driverId, results)),
+  ...(constructorByDriver.get(driverId) || {}),
+}));
 const payload = { sourceUrl: SOURCE_URL, generatedAt: new Date().toISOString(), rounds, drivers, sessions, results, entries };
 
 if (apply) {
@@ -93,13 +110,17 @@ function parseSessionTables(driverRows, sprintRows, driverLookup, rounds) {
   }
   const sessions = [];
   const results = [];
-  addPositionTable(driverRows, headers.at(-2).index, "qualifying", driverLookup, sessions, results);
+  const qualifyingTimes = {
+    unadjusted: parseDriverTimeTable(driverRows, headers[2].index, driverLookup),
+    adjusted: parseDriverTimeTable(driverRows, headers[3].index, driverLookup),
+  };
+  addPositionTable(driverRows, headers.at(-2).index, "qualifying", driverLookup, sessions, results, qualifyingTimes);
   addPositionTable(driverRows, headers.at(-1).index, "race", driverLookup, sessions, results);
   addSprintTable(sprintRows, driverLookup, rounds, sessions, results);
   return { sessions, results };
 }
 
-function addPositionTable(rows, headerIndex, sessionType, driverLookup, sessions, results) {
+function addPositionTable(rows, headerIndex, sessionType, driverLookup, sessions, results, qualifyingTimes = null) {
   const header = rows[headerIndex];
   const driverRows = rows.slice(headerIndex + 1, headerIndex + 23);
   for (let column = 1; column < header.length; column += 1) {
@@ -113,9 +134,31 @@ function addPositionTable(rows, headerIndex, sessionType, driverLookup, sessions
       if (!raw) continue;
       const driverId = resolveDriverId(row[0], driverLookup);
       const position = Number(raw);
-      results.push({ round, sessionType, driverId, displayName: row[0], position: Number.isInteger(position) ? position : null, classifiedPosition: raw, status: Number.isInteger(position) ? "" : raw });
+      const result = {
+        round, sessionType, driverId, displayName: row[0], position: Number.isInteger(position) ? position : null,
+        classifiedPosition: raw, status: Number.isInteger(position) ? "" : raw,
+      };
+      if (qualifyingTimes) {
+        result.qualifyingUnadjustedSeconds = qualifyingTimes.unadjusted.get(`${round}:${driverId}`) ?? null;
+        result.qualifyingAdjustedSeconds = qualifyingTimes.adjusted.get(`${round}:${driverId}`) ?? null;
+      }
+      results.push(result);
     }
   }
+}
+
+function parseDriverTimeTable(rows, headerIndex, driverLookup) {
+  const header = rows[headerIndex] || [];
+  const values = new Map();
+  for (const row of rows.slice(headerIndex + 1, headerIndex + 23)) {
+    const driverId = resolveDriverId(row[0], driverLookup);
+    for (let column = 1; column < header.length; column += 1) {
+      const round = Number(String(header[column]).match(/Round\s+(\d+)/i)?.[1]);
+      const seconds = Number(row[column]);
+      if (round && Number.isFinite(seconds) && seconds > 0) values.set(`${round}:${driverId}`, seconds);
+    }
+  }
+  return values;
 }
 
 function addSprintTable(rows, driverLookup, rounds, sessions, results) {

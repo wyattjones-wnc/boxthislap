@@ -7178,6 +7178,10 @@ main {
   margin-left: auto;
 }
 
+.formula-one-question-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .fantasy-critic-standings {
   display: grid;
   gap: 18px;
@@ -7685,6 +7689,7 @@ main {
 .formula-one-admin {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .formula-one-admin-notice,
@@ -7693,7 +7698,14 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 8px 18px var(--shadow);
+  max-width: 100%;
+  min-width: 0;
   padding: 16px;
+}
+
+.formula-one-admin-card .table-wrap {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .formula-one-admin-notice {

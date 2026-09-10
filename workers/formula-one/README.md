@@ -4,7 +4,7 @@ This Worker is the D1-backed source of truth for modular Formula 1 data entry. P
 
 ## Admin-preview rollout
 
-The new Weekly controls and native picks are intentionally visible only to admins. Non-admin managers continue using the existing Google Form/Sheet flow. This must be changed later, after the 2026 migration and score totals are reconciled and deadline-based pick privacy is verified. At that point, expose native picks to signed-in managers and retire the old form flow deliberately.
+The new Manage page and native picks are intentionally visible only to admins. Non-admin managers continue using the existing Google Form/Sheet flow. This must be changed later, after the 2026 migration and score totals are reconciled and deadline-based pick privacy is verified. At that point, expose native picks to signed-in managers and retire the old form flow deliberately.
 
 ## Provisioning and migration
 

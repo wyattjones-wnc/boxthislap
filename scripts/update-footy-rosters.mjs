@@ -231,7 +231,9 @@ async function enrichSportDbPlayerMedia(footballPlayers, teamPlayers, existingPl
     media.set(String(player.id), resolved);
     if ((!resolved.profileImage || !resolved.cardImage) && missing.length < 35) missing.push(player);
   }
-  const searched = await mapWithConcurrency(missing, 5, (player) => searchSportDbPlayer(player, providerTeamId));
+  // Keep the scheduled path on the same provider-safe behavior as on-demand
+  // discovery; stored media means this is normally a one-time pass per player.
+  const searched = await mapWithConcurrency(missing, 1, (player) => searchSportDbPlayer(player, providerTeamId));
   missing.forEach((player, index) => media.set(String(player.id), mergePlayerMedia(searched[index], media.get(String(player.id)))));
   return media;
 }

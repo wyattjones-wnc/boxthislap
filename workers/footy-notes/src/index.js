@@ -247,7 +247,9 @@ async function enrichSportDbRosterMedia(footballPlayers, teamPlayers, existingPl
     media.set(String(player.id), resolved);
     if ((!resolved.profileImage || !resolved.cardImage) && missing.length < 35) missing.push(player);
   }
-  const searched = await mapWithConcurrency(missing, 5, (player) => searchSportDbRosterPlayer(player, providerTeamId));
+  // The free player-search endpoint throttles concurrent bursts. Resolve missing
+  // media sequentially and persist it so later refreshes do not repeat the work.
+  const searched = await mapWithConcurrency(missing, 1, (player) => searchSportDbRosterPlayer(player, providerTeamId));
   missing.forEach((player, index) => media.set(String(player.id), mergeRosterMedia(searched[index], media.get(String(player.id)))));
   return media;
 }

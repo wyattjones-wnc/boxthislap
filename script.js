@@ -1310,9 +1310,18 @@ function getAllFootyScheduleTeams(schedule) {
     name: getFootyDisplayTeamName(team.name),
     prettyName: team.prettyName || team.name,
     priority: Number.MAX_SAFE_INTEGER,
+    providerTeamIds: { ...(team.providerTeamIds || {}) },
     projectedPoints: null,
   }));
   return uniqueFootyTeams([...catalog, ...scheduled])
+    .map((team) => {
+      const followed = (siteData.followedTeams || []).find((entry) =>
+        String(entry.id || "") === String(team.id || "") || isSameFootyTeamName(entry.name, team.name));
+      return followed ? {
+        ...team,
+        providerTeamIds: { ...(team.providerTeamIds || {}), ...(followed.providerTeamIds || {}) },
+      } : team;
+    })
     .sort(compareFootyTeamsByPriorityThenName);
 }
 

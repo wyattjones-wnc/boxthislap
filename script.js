@@ -2,7 +2,7 @@ import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js
 import {
   buildFormulaOneQualifyingComparisons,
   summarizeFormulaOneQualifyingComparisons,
-} from "./modules/formulaOneQualifying.js?v=202609102059";
+} from "./modules/formulaOneQualifying.js?v=202609102124";
 import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
@@ -13192,11 +13192,27 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
       <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
     </div>
     ${renderFormulaOneAdminFacts(selectedRound, data)}
+    ${selectedRound.is_complete ? renderFormulaOneCompletedRoundData(data, selectedRound) : ""}
     <div class="formula-one-admin-card">
       <strong>Main season export coverage</strong>
       <p>Includes race points, podiums, qualifying times and progression, laps, pole and finishing positions, teammate comparisons, round facts, sprint points, adjusted sprint points, and sprint/race winner comparisons for the entire selected year.</p>
     </div>
   `;
+}
+
+function renderFormulaOneCompletedRoundData(data, round) {
+  const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || [])
+    .filter((comparison) => comparison.round === Number(round.round));
+  return getFormulaOneRoundSessionTypes(round).map((sessionType) => {
+    const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === sessionType);
+    return `<div class="formula-one-admin-card">
+      <strong>${escapeHtml(formatFormulaOneSessionName(sessionType))} results</strong>
+      <p>Approved data saved for this round.</p>
+      ${sessionType === "qualifying"
+        ? renderFormulaOneQualifyingReviewTable(data, results, comparisons)
+        : renderFormulaOneSessionReviewTable(data, results)}
+    </div>`;
+  }).join("");
 }
 
 function renderFormulaOneAdminStatus(data, round, sessionType) {
@@ -13275,9 +13291,9 @@ function renderFormulaOneReview(feedback = {}) {
 }
 
 function renderFormulaOneSessionReviewTable(data, results) {
-  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-admin-results"><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Status / time</th></tr></thead><tbody>${results.length
-    ? results.map((result) => `<tr><td>${escapeHtml(formatFormulaOnePosition(result.position))}</td><td>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</td><td>${escapeHtml(getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</td><td>${escapeHtml(result.time_text || result.status || "")}</td></tr>`).join("")
-    : `<tr><td class="table-message" colspan="4">No staged results for this session.</td></tr>`}</tbody></table></div>`;
+  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-admin-results"><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Points</th><th>Laps</th><th>Status / time</th></tr></thead><tbody>${results.length
+    ? results.map((result) => `<tr><td>${escapeHtml(formatFormulaOnePosition(result.position))}</td><td>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</td><td>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</td><td>${escapeHtml(formatFormulaOnePointValue(result.points))}</td><td>${escapeHtml(result.laps ?? "—")}</td><td>${escapeHtml(result.time_text || result.status || "")}</td></tr>`).join("")
+    : `<tr><td class="table-message" colspan="6">No staged results for this session.</td></tr>`}</tbody></table></div>`;
 }
 
 function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
@@ -13295,7 +13311,7 @@ function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
       const unadjustedGap = unadjusted ? getFormulaOneDriverGap(unadjusted.differenceSeconds, item.side) : null;
       const adjustedTime = adjusted?.[item.side]?.time || "—";
       const adjustedGap = adjusted ? getFormulaOneDriverGap(adjusted.differenceSeconds, item.side) : null;
-      return `<tr><td>${escapeHtml(formatFormulaOnePosition(result.position))}</td><td><strong>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</strong><small>${escapeHtml(getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</small></td><td>${escapeHtml(result.q1 || "—")}</td><td>${escapeHtml(result.q2 || "—")}</td><td>${escapeHtml(result.q3 || "—")}</td><td>${escapeHtml(unadjustedTime)}${unadjusted ? `<small>${escapeHtml(`${unadjusted[item.side].session.toUpperCase()} · ${formatFormulaOneGap(unadjustedGap)}`)}</small>` : ""}</td><td>${escapeHtml(adjustedTime)}${adjusted ? `<small>${escapeHtml(`${adjusted.session.toUpperCase()} · ${formatFormulaOneGap(adjustedGap)}`)}</small>` : ""}</td></tr>`;
+      return `<tr><td>${escapeHtml(formatFormulaOnePosition(result.position))}</td><td><strong>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</strong><small>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</small></td><td>${escapeHtml(result.q1 || "—")}</td><td>${escapeHtml(result.q2 || "—")}</td><td>${escapeHtml(result.q3 || "—")}</td><td>${escapeHtml(unadjustedTime)}${unadjusted ? `<small>${escapeHtml(`${unadjusted[item.side].session.toUpperCase()} · ${formatFormulaOneGap(unadjustedGap)}`)}</small>` : ""}</td><td>${escapeHtml(adjustedTime)}${adjusted ? `<small>${escapeHtml(`${adjusted.session.toUpperCase()} · ${formatFormulaOneGap(adjustedGap)}`)}</small>` : ""}</td></tr>`;
     }).join("")
     : `<tr><td class="table-message" colspan="7">No staged qualifying times.</td></tr>`}</tbody></table></div>`;
 }
@@ -13348,7 +13364,10 @@ async function runFormulaOneReviewAction(action) {
 }
 
 function renderFormulaOneAdminPicks(data, round, entry, score) {
-  const driverOptions = (value) => `<option value="">Choose driver</option>${(data.drivers || []).map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
+  const driverOptions = (value) => {
+    const activeDrivers = (data.drivers || []).filter((driver) => driver.active !== 0 || driver.driver_id === value);
+    return `<option value="">Choose driver</option>${activeDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
+  };
   const deadline = round.deadline_at ? formatFormulaOneAdminDate(round.deadline_at) : "Not set";
   return `<form class="formula-one-admin-card" data-formula-one-admin-picks>
     <strong>Native weekly picks preview</strong>

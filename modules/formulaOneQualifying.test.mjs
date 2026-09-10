@@ -63,6 +63,21 @@ test("builds round and season teammate comparisons", () => {
   });
 });
 
+test("uses the constructor recorded for the round when a driver changes teams", () => {
+  const drivers = [
+    { driver_id: "a", display_name: "Alex A", constructor_id: "new_team", constructor_name: "New Team" },
+    { driver_id: "b", display_name: "Blake B", constructor_id: "old_team", constructor_name: "Old Team" },
+  ];
+  const results = [
+    { round: 1, session_type: "qualifying", driver_id: "a", constructor_id: "old_team", constructor_name: "Old Team", q1: "1:21.000" },
+    { round: 1, session_type: "qualifying", driver_id: "b", constructor_id: "old_team", constructor_name: "Old Team", q1: "1:20.750" },
+  ];
+  const comparisons = buildFormulaOneQualifyingComparisons(results, drivers);
+  assert.equal(comparisons.length, 1);
+  assert.equal(comparisons[0].constructorId, "old_team");
+  assert.equal(comparisons[0].constructorName, "Old Team");
+});
+
 test("builds complete main and sprint export datasets from stored results", () => {
   const rounds = [{
     round: 1,

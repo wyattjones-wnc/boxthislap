@@ -59,7 +59,12 @@ export function buildFormulaOneQualifyingComparisons(results = [], drivers = [])
   const roundGroups = new Map();
 
   for (const result of qualifyingResults) {
-    const driver = driversById.get(result.driver_id) || {};
+    const storedDriver = driversById.get(result.driver_id) || {};
+    const driver = {
+      ...storedDriver,
+      constructor_id: result.constructor_id || storedDriver.constructor_id || "",
+      constructor_name: result.constructor_name || storedDriver.constructor_name || "",
+    };
     const constructorKey = driver.constructor_id || driver.constructor_name;
     if (!constructorKey) continue;
     const key = `${result.round}:${constructorKey}`;
@@ -155,7 +160,13 @@ export function buildFormulaOneMainDatasets({ year, rounds = [], drivers = [], s
     comparisonByDriver.set(`${comparison.round}:${comparison.secondDriverId}`, { comparison, driverName: comparison.secondDriver });
   }
 
-  const mainData = rounds.flatMap((round) => drivers.map((driver) => {
+  const participantIdsByRound = new Map();
+  for (const result of results) {
+    const key = Number(result.round);
+    if (!participantIdsByRound.has(key)) participantIdsByRound.set(key, new Set());
+    participantIdsByRound.get(key).add(result.driver_id);
+  }
+  const mainData = rounds.flatMap((round) => drivers.filter((driver) => participantIdsByRound.get(Number(round.round))?.has(driver.driver_id)).map((driver) => {
     const qualifying = resultByKey.get(`${round.round}:qualifying:${driver.driver_id}`);
     const race = resultByKey.get(`${round.round}:race:${driver.driver_id}`);
     const qualifyingComparison = qualifyingComparisons.find((comparison) => Number(comparison.round) === Number(round.round)
@@ -166,7 +177,8 @@ export function buildFormulaOneMainDatasets({ year, rounds = [], drivers = [], s
     const adjusted = qualifyingComparison?.adjusted?.[side] || null;
     return {
       year: Number(year), round: Number(round.round), roundName: round.name, raceDate: round.race_date,
-      driverId: driver.driver_id, driver: driver.display_name, team: driver.constructor_name,
+      driverId: driver.driver_id, driver: driver.display_name,
+      team: qualifying?.constructor_name || race?.constructor_name || driver.constructor_name,
       racePoints: valueOrBlank(race?.points), racePodium: yesNo(race, numericPosition(race) <= 3),
       qualifyingUnadjustedTime: unadjusted?.time || "", qualifyingUnadjustedSeconds: valueOrBlank(unadjusted?.seconds),
       unadjustedQualifyingHeadToHead: headToHeadOutcome(driverComparison?.comparison.unadjustedWinner, driverComparison?.driverName),
@@ -190,11 +202,14 @@ export function buildFormulaOneMainDatasets({ year, rounds = [], drivers = [], s
   }));
 
   const sprintRounds = rounds.filter((round) => round.has_sprint);
-  const sprintData = sprintRounds.flatMap((round) => drivers.map((driver) => {
-    const sprint = resultByKey.get(`${round.round}:sprint:${driver.driver_id}`);
+  const sprintData = sprintRounds.flatMap((round) => results
+    .filter((result) => Number(result.round) === Number(round.round) && result.session_type === "sprint")
+    .map((sprint) => {
+    const driver = driverById.get(sprint.driver_id) || {};
     return {
       year: Number(year), round: Number(round.round), roundName: round.name,
-      driverId: driver.driver_id, driver: driver.display_name, team: driver.constructor_name,
+      driverId: sprint.driver_id, driver: driver.display_name || sprint.driver_id,
+      team: sprint.constructor_name || driver.constructor_name,
       sprintPosition: valueOrBlank(sprint?.position), sprintPoints: valueOrBlank(sprint?.points),
       adjustedSprintPoints: sprint ? getRacePointsForPosition(numericPosition(sprint)) : "",
     };
@@ -260,10 +275,10 @@ function buildRoundDriverPairs(results, driverById) {
   const groups = new Map();
   for (const result of results) {
     const driver = driverById.get(result.driver_id);
-    const constructorId = driver?.constructor_id || driver?.constructor_name;
+    const constructorId = result.constructor_id || result.constructor_name || driver?.constructor_id || driver?.constructor_name;
     if (!constructorId) continue;
     const key = `${result.round}:${constructorId}`;
-    if (!groups.has(key)) groups.set(key, { round: Number(result.round), constructorId, constructorName: driver.constructor_name || "", driverIds: new Set() });
+    if (!groups.has(key)) groups.set(key, { round: Number(result.round), constructorId, constructorName: result.constructor_name || driver.constructor_name || "", driverIds: new Set() });
     groups.get(key).driverIds.add(result.driver_id);
   }
   return [...groups.values()].flatMap((group) => {

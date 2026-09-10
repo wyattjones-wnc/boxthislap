@@ -17,6 +17,7 @@ test("2026 migration snapshot is internally consistent", () => {
   ].filter(Boolean));
   assert.deepEqual([...usedDriverIds].filter((driverId) => !driverIds.has(driverId)), []);
   assert.equal(usedDriverIds.has("n_a"), false);
+  assert.equal(migration.results.filter((result) => !result.constructorId || !result.constructorName).length, 0);
   assert.equal(migration.entries.filter((entry) => [entry.p1DriverId, entry.p2DriverId, entry.p3DriverId, entry.wildcardDriverId].some((value) => !value)).length, 1);
   const qualifyingResults = migration.results.filter((result) => result.sessionType === "qualifying");
   assert.equal(qualifyingResults.filter((result) => Number.isFinite(result.qualifyingUnadjustedSeconds)).length, 237);

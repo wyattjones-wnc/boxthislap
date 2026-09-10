@@ -117,7 +117,7 @@ async function requireAdmin(request, env) {
 async function readAdminWeekly(env, year, managerId) {
   const [roundQuery, driverQuery, sessionQuery, resultQuery, entryQuery, scoreQuery] = await Promise.all([
     env.DB.prepare("SELECT * FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
-    env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? AND active = 1 ORDER BY display_name").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_sessions WHERE year = ? ORDER BY round, CASE session_type WHEN 'qualifying' THEN 1 WHEN 'sprint' THEN 2 ELSE 3 END").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_session_results WHERE year = ? ORDER BY round, session_type, position").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? AND manager_id = ? ORDER BY round").bind(year, managerId).all(),
@@ -212,11 +212,23 @@ async function fetchRound(env, year, round, actorManagerId) {
     }
   }
 
+  await syncActiveDriversForRound(env, year, round);
+
   return {
     round: { year, round, name: roundRow.name },
     sessions,
     fetchedCount: sessions.filter((session) => session.status === "needs_review").length,
   };
+}
+
+async function syncActiveDriversForRound(env, year, round) {
+  const resultCount = await env.DB.prepare("SELECT COUNT(DISTINCT driver_id) AS count FROM f1_session_results WHERE year = ? AND round = ?")
+    .bind(year, round).first();
+  if (!Number(resultCount?.count)) return;
+  await env.DB.prepare(`UPDATE f1_drivers SET active = CASE WHEN driver_id IN (
+      SELECT DISTINCT driver_id FROM f1_session_results WHERE year = ? AND round = ?
+    ) THEN 1 ELSE 0 END, updated_at = CURRENT_TIMESTAMP WHERE year = ?`)
+    .bind(year, round, year).run();
 }
 
 async function saveSessionDraft(env, year, round, sessionType, body, actorManagerId) {
@@ -551,24 +563,28 @@ function driverUpsert(env, year, result) {
     constructor_id, constructor_name, active, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
     ON CONFLICT(year, driver_id) DO UPDATE SET permanent_number = excluded.permanent_number, code = excluded.code,
       given_name = excluded.given_name, family_name = excluded.family_name, display_name = excluded.display_name,
-      constructor_id = excluded.constructor_id, constructor_name = excluded.constructor_name, active = 1, updated_at = CURRENT_TIMESTAMP`)
+      constructor_id = CASE WHEN excluded.constructor_id <> '' THEN excluded.constructor_id ELSE f1_drivers.constructor_id END,
+      constructor_name = CASE WHEN excluded.constructor_name <> '' THEN excluded.constructor_name ELSE f1_drivers.constructor_name END,
+      active = 1, updated_at = CURRENT_TIMESTAMP`)
     .bind(year, result.driverId, result.permanentNumber, result.code, result.givenName, result.familyName, displayName, result.constructorId, result.constructorName);
 }
 
 function resultInsert(env, year, round, sessionType, result) {
   return env.DB.prepare(`INSERT INTO f1_session_results (year, round, session_type, driver_id, position, classified_position,
-    grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, qualifying_unadjusted_seconds,
+    constructor_id, constructor_name, grid, points, laps, status, q1, q2, q3, time_text, fastest_lap_rank, qualifying_unadjusted_seconds,
     qualifying_adjusted_seconds, qualifying_adjusted_session, raw_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = excluded.position,
-      classified_position = excluded.classified_position, grid = excluded.grid, points = excluded.points,
+      classified_position = excluded.classified_position, constructor_id = excluded.constructor_id,
+      constructor_name = excluded.constructor_name, grid = excluded.grid, points = excluded.points,
       laps = excluded.laps, status = excluded.status, q1 = excluded.q1, q2 = excluded.q2, q3 = excluded.q3,
       time_text = excluded.time_text, fastest_lap_rank = excluded.fastest_lap_rank,
       qualifying_unadjusted_seconds = excluded.qualifying_unadjusted_seconds,
       qualifying_adjusted_seconds = excluded.qualifying_adjusted_seconds,
       qualifying_adjusted_session = excluded.qualifying_adjusted_session,
       raw_json = excluded.raw_json, updated_at = CURRENT_TIMESTAMP`)
-    .bind(year, round, sessionType, result.driverId, result.position, result.classifiedPosition, result.grid, result.points,
+    .bind(year, round, sessionType, result.driverId, result.position, result.classifiedPosition,
+      result.constructorId, result.constructorName, result.grid, result.points,
       result.laps, result.status, result.q1, result.q2, result.q3, result.timeText, result.fastestLapRank,
       result.qualifyingUnadjustedSeconds, result.qualifyingAdjustedSeconds, result.qualifyingAdjustedSession, result.rawJson);
 }

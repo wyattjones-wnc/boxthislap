@@ -40,11 +40,12 @@ const entries = parseWeeklyEntries(weeklyRows, driverLookup);
 const usedDriverIds = new Set([...results.map((result) => result.driverId), ...entries.flatMap((entry) => [entry.p1DriverId, entry.p2DriverId, entry.p3DriverId, entry.wildcardDriverId])].filter(Boolean));
 const providerDriversById = new Map(providerDrivers.map((driver) => [driver.driverId, normalizeProviderDriver(driver)]));
 const constructorByDriver = new Map(CONSTRUCTORS.flatMap(([constructorId, constructorName, driverIds]) => driverIds.map((driverId) => [driverId, { constructorId, constructorName }])));
+const resultsWithConstructors = results.map((result) => ({ ...result, ...(constructorByDriver.get(result.driverId) || {}) }));
 const drivers = [...usedDriverIds].map((driverId) => ({
   ...(providerDriversById.get(driverId) || fallbackDriver(driverId, results)),
   ...(constructorByDriver.get(driverId) || {}),
 }));
-const payload = { sourceUrl: SOURCE_URL, generatedAt: new Date().toISOString(), rounds, drivers, sessions, results, entries };
+const payload = { sourceUrl: SOURCE_URL, generatedAt: new Date().toISOString(), rounds, drivers, sessions, results: resultsWithConstructors, entries };
 
 if (apply) {
   const endpoint = String(process.env.FORMULA_ONE_ENDPOINT || "").replace(/\/$/, "");

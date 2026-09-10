@@ -153,39 +153,95 @@ async function discoverRoster(env, body) {
   if (!/^\d{4}(?:-\d{2})?$/.test(season)) throw httpError(400, "Season is invalid.");
   const leagueNames = (Array.isArray(body?.leagueNames) ? body.leagueNames : [])
     .slice(0, 20).map((value) => cleanText(value, 160, "League")).filter(Boolean);
-  const providerTeam = await discoverSportDbTeam(teamName, leagueNames);
-  if (!providerTeam) throw httpError(404, `No roster provider match was found for ${teamName}.`);
-  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(providerTeam.idTeam)}`);
-  if (!response.ok) throw httpError(502, "The roster provider could not be reached.");
-  const value = await response.json().catch(() => null);
-  const players = (Array.isArray(value?.player) ? value.player : [])
-    .filter((player) => player?.idPlayer && player?.strPlayer && !/coach|manager/i.test(String(player.strPosition || player.strStatus || "")))
-    .map((player) => ({
-      playerKey: `thesportsdb:${player.idPlayer}`,
+  const requestedProviderIds = body?.providerTeamIds && typeof body.providerTeamIds === "object" ? body.providerTeamIds : {};
+  const footballDataTeamId = cleanText(requestedProviderIds["football-data.org"], 120, "football-data.org team ID");
+  const requestedSportDbTeamId = cleanText(requestedProviderIds.TheSportsDB, 120, "TheSportsDB team ID");
+  const providerTeam = requestedSportDbTeamId ? { idTeam: requestedSportDbTeamId } : await discoverSportDbTeam(teamName, leagueNames);
+  const sportDbTeamId = String(providerTeam?.idTeam || "");
+  const [footballPlayers, sportDbPlayers] = await Promise.all([
+    loadFootballDataRosterPlayers(env, footballDataTeamId),
+    loadSportDbRosterPlayers(sportDbTeamId),
+  ]);
+  const players = footballPlayers.length
+    ? footballPlayers.map((player) => {
+      const media = findRosterIdentityMatch(player, sportDbPlayers) || {};
+      return {
+        playerKey: `football-data.org:${player.id}`,
+        provider: "football-data.org",
+        providerPlayerId: String(player.id),
+        providerData: {
+          name: player.name,
+          position: normalizeRosterPosition(player.position),
+          number: String(player.shirtNumber || ""),
+          birthday: String(player.dateOfBirth || ""),
+          homeCountry: String(player.nationality || ""),
+          profileImage: media.profileImage || "",
+          cardImage: media.cardImage || "",
+        },
+      };
+    })
+    : sportDbPlayers.map((player) => ({
+      playerKey: `thesportsdb:${player.id}`,
       provider: "TheSportsDB",
-      providerPlayerId: String(player.idPlayer),
-      providerData: {
-        name: String(player.strPlayer || ""),
-        position: normalizeRosterPosition(player.strPosition),
-        number: String(player.strNumber || ""),
-        birthday: String(player.dateBorn || ""),
-        homeCountry: String(player.strNationality || ""),
-        profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
-        cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
-      },
+      providerPlayerId: player.id,
+      providerData: player,
     }));
   if (!players.length) throw httpError(404, `No active players were found for ${teamName}.`);
+  const primaryProvider = footballPlayers.length ? "football-data.org" : "TheSportsDB";
+  const primaryProviderTeamId = footballPlayers.length ? footballDataTeamId : sportDbTeamId;
   await syncRosters(env, { rosters: [{
     teamId,
     season,
     active: true,
-    provider: "TheSportsDB",
-    providerTeamId: String(providerTeam.idTeam),
-    refreshedProviders: ["TheSportsDB"],
+    provider: primaryProvider,
+    providerTeamId: primaryProviderTeamId,
+    refreshedProviders: [footballPlayers.length ? "football-data.org" : "", sportDbPlayers.length ? "TheSportsDB" : ""].filter(Boolean),
     players,
   }] });
   const params = new URLSearchParams({ teamId, season, includeInactive: "1" });
   return (await listRosters(env, params))[0] || null;
+}
+
+async function loadFootballDataRosterPlayers(env, providerTeamId) {
+  if (!providerTeamId || !env.FOOTBALL_DATA_API_KEY) return [];
+  const response = await fetch(`https://api.football-data.org/v4/teams/${encodeURIComponent(providerTeamId)}`, {
+    headers: { "X-Auth-Token": env.FOOTBALL_DATA_API_KEY },
+  });
+  if (!response.ok) throw httpError(502, `football-data.org could not load this squad (${response.status}).`);
+  const value = await response.json().catch(() => null);
+  return (Array.isArray(value?.squad) ? value.squad : [])
+    .filter((player) => player?.id && player?.name && player?.position);
+}
+
+async function loadSportDbRosterPlayers(providerTeamId) {
+  if (!providerTeamId) return [];
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(providerTeamId)}`);
+  if (!response.ok) return [];
+  const value = await response.json().catch(() => null);
+  return (Array.isArray(value?.player) ? value.player : [])
+    .filter((player) => player?.idPlayer && player?.strPlayer && isRosterPlayerRole(player.strPosition, player.strStatus))
+    .map((player) => ({
+      id: String(player.idPlayer),
+      name: String(player.strPlayer || ""),
+      position: normalizeRosterPosition(player.strPosition),
+      number: String(player.strNumber || ""),
+      birthday: String(player.dateBorn || ""),
+      homeCountry: String(player.strNationality || ""),
+      profileImage: String(player.strCutout || player.strRender || player.strThumb || ""),
+      cardImage: String(player.strThumb || player.strRender || player.strCutout || ""),
+    }));
+}
+
+function findRosterIdentityMatch(player, candidates) {
+  const name = slugRosterValue(player?.name);
+  const birthday = normalizeRosterBirthday(player?.birthday || player?.dateOfBirth);
+  return candidates.find((candidate) =>
+    (name && slugRosterValue(candidate?.name) === name) ||
+    (birthday && normalizeRosterBirthday(candidate?.birthday || candidate?.dateOfBirth) === birthday));
+}
+
+export function isRosterPlayerRole(position, status) {
+  return !/coach|manager|coaching|chief|ceo|president|director|chairman|owner|staff/i.test(`${position || ""} ${status || ""}`);
 }
 
 async function discoverSportDbTeam(teamName, leagueNames) {

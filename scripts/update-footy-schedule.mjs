@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { attachCanonicalFootyTeams } from "./footy-team-catalog.mjs";
 import { isSameFootballClubName, normalizeFootballClubName } from "./footy-club-names.mjs";
+import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -291,6 +292,8 @@ async function main() {
     teams,
   }));
   const teamCatalog = attachCanonicalFootyTeams({ competitionSchedules, teamSchedules });
+  const rosterProviderIndex = buildRosterProviderIndex({ competitionSchedules, teamCatalog, teamSchedules });
+  for (const team of teamCatalog) team.providerTeamIds = getRosterProviderIds(rosterProviderIndex, team);
   const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
   const payload = {
     generatedAt,

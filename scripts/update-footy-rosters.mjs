@@ -1,5 +1,6 @@
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
+import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
 
 const FOOTY_DATA_ENDPOINT = process.env.FOOTY_DATA_ENDPOINT || "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 const ROSTER_ENDPOINT = process.env.FOOTY_ROSTER_SYNC_ENDPOINT || "";
@@ -12,10 +13,12 @@ const SHOULD_SEED_LEGACY = process.argv.includes("--seed-legacy");
 
 const legacyRosters = SHOULD_SEED_LEGACY ? await loadLegacyRosters() : [];
 const storedRosterTargets = ROSTER_ENDPOINT ? await loadStoredRosterTargets() : [];
-const rosterTargets = buildRosterTargets(storedRosterTargets);
+const rosterCatalog = await loadRosterCatalog();
+const rosterTargets = buildRosterTargets(storedRosterTargets, rosterCatalog);
 const rosters = [];
 for (const target of rosterTargets) {
-  const { teamId, footballDataTeamId, sportDbTeamId } = target;
+  const { teamId, footballDataTeamId } = target;
+  const sportDbTeamId = target.sportDbTeamId || await discoverSportDbTeamId(target.teamName, target.leagueNames);
   const legacy = legacyRosters.find((roster) => String(roster.teamId) === teamId);
   const season = target.season || currentSeason(teamId);
   const refreshedProviders = [
@@ -50,17 +53,18 @@ for (const target of rosterTargets) {
     });
   }
 
-  for (const player of sportDbPlayers) {
-    if (findIdentityMatch(player, footballPlayers)) continue;
-    const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
-    if (legacyPlayer) matchedLegacy.add(legacyPlayer);
-    players.push({
-      playerKey: `thesportsdb:${player.id}`,
-      provider: "TheSportsDB",
-      providerPlayerId: player.id,
-      providerData: player,
-      seedOverrides: legacyPlayer ? await legacyOverrides(legacyPlayer, legacy?.season || season) : {},
-    });
+  if (!footballPlayers.length) {
+    for (const player of sportDbPlayers) {
+      const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
+      if (legacyPlayer) matchedLegacy.add(legacyPlayer);
+      players.push({
+        playerKey: `thesportsdb:${player.id}`,
+        provider: "TheSportsDB",
+        providerPlayerId: player.id,
+        providerData: player,
+        seedOverrides: legacyPlayer ? await legacyOverrides(legacyPlayer, legacy?.season || season) : {},
+      });
+    }
   }
 
   for (const player of legacy?.players || []) {
@@ -93,8 +97,8 @@ for (const target of rosterTargets) {
     teamId,
     season,
     active: true,
-    provider: sportDbTeamId ? "TheSportsDB" : footballDataTeamId ? "football-data.org" : "",
-    providerTeamId: String(sportDbTeamId || footballDataTeamId || ""),
+    provider: footballDataTeamId && footballPlayers.length ? "football-data.org" : sportDbTeamId ? "TheSportsDB" : "",
+    providerTeamId: String(footballDataTeamId && footballPlayers.length ? footballDataTeamId : sportDbTeamId || ""),
     refreshedProviders,
     players,
   });
@@ -144,23 +148,46 @@ async function loadStoredRosterTargets() {
   }
 }
 
-function buildRosterTargets(storedTargets) {
+function buildRosterTargets(storedTargets, catalog = []) {
+  const catalogById = new Map(catalog.map((team) => [String(team.id), team]));
   const targets = new Map(DEFAULT_TEAM_IDS.map((teamId) => [teamId, {
     teamId,
     season: currentSeason(teamId),
     footballDataTeamId: FOOTBALL_DATA_TEAM_IDS[teamId] || "",
     sportDbTeamId: SPORTDB_TEAM_IDS[teamId] || "",
+    teamName: String(catalogById.get(teamId)?.name || ""),
+    leagueNames: (catalogById.get(teamId)?.leagues || []).map((league) => String(league.name || "")).filter(Boolean),
   }]));
   for (const roster of storedTargets) {
     const teamId = String(roster.teamId || "");
     if (!teamId) continue;
-    const target = targets.get(teamId) || { teamId, season: String(roster.season || ""), footballDataTeamId: "", sportDbTeamId: "" };
+    const catalogTeam = catalogById.get(teamId) || {};
+    const providerIds = catalogTeam.providerTeamIds || {};
+    const target = targets.get(teamId) || { teamId, season: String(roster.season || ""), footballDataTeamId: "", sportDbTeamId: "", teamName: String(catalogTeam.name || ""), leagueNames: (catalogTeam.leagues || []).map((league) => String(league.name || "")).filter(Boolean) };
     target.season = String(roster.season || target.season || "");
+    target.teamName ||= String(catalogTeam.name || "");
+    target.leagueNames = target.leagueNames?.length ? target.leagueNames : (catalogTeam.leagues || []).map((league) => String(league.name || "")).filter(Boolean);
+    target.footballDataTeamId ||= String(providerIds["football-data.org"] || "");
+    target.sportDbTeamId ||= String(providerIds.TheSportsDB || "");
     if (roster.provider === "TheSportsDB") target.sportDbTeamId = String(roster.providerTeamId);
     if (roster.provider === "football-data.org") target.footballDataTeamId = String(roster.providerTeamId);
     targets.set(teamId, target);
   }
   return [...targets.values()];
+}
+
+async function loadRosterCatalog() {
+  try {
+    const schedule = JSON.parse(await readFile(path.resolve("data", "footy-schedule.json"), "utf8"));
+    const providerIndex = buildRosterProviderIndex(schedule);
+    return (Array.isArray(schedule.teamCatalog) ? schedule.teamCatalog : []).map((team) => ({
+      ...team,
+      providerTeamIds: getRosterProviderIds(providerIndex, team),
+    }));
+  } catch (error) {
+    console.warn(`Footy team catalog could not be loaded: ${error.message}`);
+    return [];
+  }
 }
 
 async function loadFootballDataPlayers(providerId) {
@@ -177,7 +204,7 @@ async function loadSportDbPlayers(providerId) {
   if (!response.ok) return [];
   const value = await response.json();
   return (value.player || [])
-    .filter((player) => player.idPlayer && player.strPlayer && !/coach|manager/i.test(String(player.strPosition || player.strStatus || "")))
+    .filter((player) => player.idPlayer && player.strPlayer && isRosterPlayerRole(player.strPosition, player.strStatus))
     .map((player) => ({
       id: String(player.idPlayer),
       name: String(player.strPlayer),
@@ -236,6 +263,39 @@ function normalizePosition(value) {
 
 function normalizeName(value) {
   return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+async function discoverSportDbTeamId(teamName, leagueNames = []) {
+  if (!teamName) return "";
+  const queries = [...new Set([teamName, String(teamName).replace(/\s+(?:AFC|FC|CF|SC)$/i, "").trim()].filter(Boolean))];
+  const candidates = new Map();
+  for (const query of queries) {
+    const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(query)}`);
+    if (!response.ok) continue;
+    const value = await response.json().catch(() => null);
+    for (const team of Array.isArray(value?.teams) ? value.teams : []) if (team?.idTeam) candidates.set(String(team.idTeam), team);
+  }
+  return String([...candidates.values()]
+    .filter((team) => String(team.strSport || "").toLowerCase() === "soccer")
+    .sort((first, second) => scoreSportDbTeam(second, teamName, leagueNames) - scoreSportDbTeam(first, teamName, leagueNames))[0]?.idTeam || "");
+}
+
+function scoreSportDbTeam(team, teamName, leagueNames) {
+  const candidateName = normalizeName(team.strTeam);
+  const requestedName = normalizeName(teamName);
+  const strippedName = normalizeName(String(teamName).replace(/\s+(?:AFC|FC|CF|SC)$/i, ""));
+  const league = normalizeName(team.strLeague);
+  const leagueMatch = leagueNames.some((name) => {
+    const normalized = normalizeName(name);
+    return normalized && league && (league.includes(normalized) || normalized.includes(league));
+  });
+  return (candidateName === requestedName ? 100 : 0) + (candidateName === strippedName ? 90 : 0) +
+    (leagueMatch ? 40 : 0) + (/male/i.test(String(team.strGender || "")) ? 20 : 0) -
+    (/women|ladies|u\d{2}|youth|reserve/i.test(`${team.strTeam || ""} ${team.strLeague || ""}`) ? 80 : 0);
+}
+
+function isRosterPlayerRole(position, status) {
+  return !/coach|manager|coaching|chief|ceo|president|director|chairman|owner|staff/i.test(`${position || ""} ${status || ""}`);
 }
 
 function findIdentityMatch(player, candidates, excluded = new Set()) {

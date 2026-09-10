@@ -445,7 +445,7 @@ import { createTrophyStatsController } from "./modules/trophyStats.js?v=20260830
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
 import { createTrophyLogController } from "./modules/trophyLog.js?v=202609091449";
 import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609080422";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609100137";
 import { createCollectiblesController } from "./modules/collectibles.js?v=202609050001";
 import {
   formatUpdatedTime,
@@ -729,8 +729,11 @@ const draftListsController = createDraftListsController({
 const followedTeamsController = createFollowedTeamsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
-  onChanged: (teams) => {
+  onChanged: (teams, change = {}) => {
     siteData.followedTeams = teams;
+    if (change.source === "save" && change.addedTeamIds?.length) {
+      void initializeNewlyFollowedRosters(teams, change.addedTeamIds);
+    }
     if (siteData.managerSession) {
       renderManagerWorkflow(siteData.managerSession.managerId);
     }
@@ -5624,7 +5627,7 @@ function getFootyRosterPlayersForTeam(teamInput) {
 
   return roster.players
     .filter((player) => shouldShowFootyRosterPlayerInSeason(player, roster) || (footyRosterEditMode && isCurrentManagerAdmin()))
-    .filter((player) => player.status !== "archived" || (footyRosterEditMode && isCurrentManagerAdmin()))
+    .filter((player) => player.status === "active" || (footyRosterEditMode && isCurrentManagerAdmin()))
     .sort(compareFootyRosterPlayers);
 }
 
@@ -5644,6 +5647,7 @@ async function discoverFootyRoster(team) {
         teamName: team.name,
         season: getDefaultFootyRosterSeason(team),
         leagueNames: (team.leagues || []).map((league) => league.name).filter(Boolean),
+        providerTeamIds: team.providerTeamIds || {},
       },
     });
     const normalized = normalizeFootyRosters(value.roster ? [value.roster] : [])[0];
@@ -5656,6 +5660,18 @@ async function discoverFootyRoster(team) {
     footyRosterDiscoveryStates.set(key, { status: "error", error: error.message || "Unable to load this roster." });
   }
   if (activePageName === `footy-team-${getFootyTeamSlug(team.name)}` && activeFootyTeamViewMode === "team") renderFootyTeamPage();
+}
+
+async function initializeNewlyFollowedRosters(teams, addedTeamIds) {
+  try {
+    await ensureFootyRosters();
+    const added = new Set(addedTeamIds.map(String));
+    for (const team of teams.filter((entry) => added.has(String(entry.id)))) {
+      if (!getFootyRosterForTeam(team)) await discoverFootyRoster(team);
+    }
+  } catch (error) {
+    recordDiagnostic("newly followed roster setup failed", error);
+  }
 }
 
 function shouldShowFootyRosterPlayerInSeason(player, roster) {

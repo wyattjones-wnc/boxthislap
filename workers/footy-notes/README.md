@@ -31,7 +31,8 @@ Roster metadata uses migration `0006_rosters.sql`; uploaded images use the `box-
 npx wrangler r2 bucket create box-this-lap-footy-roster-media
 npx wrangler d1 migrations apply DB --remote
 npx wrangler secret put ROSTER_SYNC_TOKEN
+npx wrangler secret put FOOTBALL_DATA_API_KEY
 npx wrangler deploy
 ```
 
-Run those commands from `workers/footy-notes`. Configure the same random sync token as the repository secret `FOOTY_ROSTER_SYNC_TOKEN`, and set `FOOTY_ROSTER_SYNC_ENDPOINT` to this Worker's public origin. Run `node scripts/update-footy-rosters.mjs --seed-legacy` once from the repository root with those environment variables to migrate current Sheet records and local image paths. The `Update Footy Rosters` workflow then uses only football-data.org and TheSportsDB for its daily refresh; the Sheet is no longer a live dependency. European club seasons use split-year labels such as `2026-27`; MLS and national-team editions use calendar years.
+Run those commands from `workers/footy-notes`. Configure the same random sync token as the repository secret `FOOTY_ROSTER_SYNC_TOKEN`, and reuse the repository's free football-data.org key for `FOOTBALL_DATA_API_KEY`. Set `FOOTY_ROSTER_SYNC_ENDPOINT` to this Worker's public origin. Run `node scripts/update-footy-rosters.mjs --seed-legacy` once from the repository root with those environment variables to migrate current Sheet records and local image paths. The `Update Footy Rosters` workflow then uses football-data.org as the authoritative squad and TheSportsDB for image enrichment during its daily refresh; the Sheet is no longer a live dependency. European club seasons use split-year labels such as `2026-27`; MLS and national-team editions use calendar years.

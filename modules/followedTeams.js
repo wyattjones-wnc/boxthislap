@@ -325,12 +325,16 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     syncDialogAction();
     render();
     try {
+      const previousIds = new Set(state.savedIds);
       const response = await request("/api/me/followed-teams", {
         body: JSON.stringify({ revision: state.revision, teamIds: state.pendingIds }),
         method: "PUT",
       });
       applyPreference(response);
-      onChanged(getFollowedTeams());
+      onChanged(getFollowedTeams(), {
+        addedTeamIds: state.savedIds.filter((id) => !previousIds.has(id)),
+        source: "save",
+      });
       successMessage = state.usingDefault
         ? "Reset to the admin’s default teams."
         : "Followed teams saved. Team notifications now use this list.";
@@ -464,7 +468,8 @@ function normalizeCatalog(response = {}) {
   for (const source of [...fromTopLevel, ...fromLeagues]) {
     const id = String(source.id || "").trim();
     if (!id) continue;
-    const existing = teams.get(id) || { active: source.active !== false, badge: followedTeamBadge(source), id, leagues: [], name: source.name || id, prettyName: source.prettyName || source.name || id };
+    const existing = teams.get(id) || { active: source.active !== false, badge: followedTeamBadge(source), id, leagues: [], name: source.name || id, prettyName: source.prettyName || source.name || id, providerTeamIds: { ...(source.providerTeamIds || {}) } };
+    existing.providerTeamIds = { ...existing.providerTeamIds, ...(source.providerTeamIds || {}) };
     for (const league of source.leagues || []) if (!existing.leagues.some((entry) => entry.id === String(league.id))) existing.leagues.push({ id: String(league.id), name: String(league.name || "Competition") });
     teams.set(id, existing);
   }

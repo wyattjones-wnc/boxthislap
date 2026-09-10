@@ -3,12 +3,19 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
+import { isRosterPlayerRole } from "../src/index.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
 const schemaPath = fileURLToPath(new URL("../migrations/0006_rosters.sql", import.meta.url));
 const providerSchemaPath = fileURLToPath(new URL("../migrations/0007_roster_providers.sql", import.meta.url));
 const mediaUsageSchemaPath = fileURLToPath(new URL("../migrations/0008_roster_media_usage.sql", import.meta.url));
+
+test("roster discovery excludes staff roles without rejecting players", () => {
+  assert.equal(isRosterPlayerRole("CEO", "Coaching"), false);
+  assert.equal(isRosterPlayerRole("Director of Football", "Active"), false);
+  assert.equal(isRosterPlayerRole("Centre-Back", "Active"), true);
+});
 
 test("roster sync merges provider data, preserves overrides, and flags departures", async (context) => {
   const worker = new Miniflare({

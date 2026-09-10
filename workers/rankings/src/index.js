@@ -1,3 +1,5 @@
+import { buildRosterProviderIndex, getRosterProviderIds } from "../../../scripts/footy-roster-providers.mjs";
+
 const TYPES = new Set(["games", "movies", "tv", "mcu"]);
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -408,6 +410,7 @@ async function readFootyTeamCatalogMap(env, channel = "main") {
   const schedule = await response.json();
   const sourceTeams = Array.isArray(schedule?.teamCatalog) ? schedule.teamCatalog : [];
   if (!sourceTeams.length) throw new Error("The Footy team catalog is empty.");
+  const rosterProviderIndex = buildRosterProviderIndex(schedule);
   const teams = new Map();
   for (const source of sourceTeams) {
     const id = parseId(source.id, "team ID");
@@ -424,6 +427,7 @@ async function readFootyTeamCatalogMap(env, channel = "main") {
       })),
       name,
       prettyName: String(source.prettyName || name),
+      providerTeamIds: getRosterProviderIds(rosterProviderIndex, source),
     });
   }
   footyCatalogCache.set(scheduleUrl, { expiresAt: Date.now() + 5 * 60 * 1000, teams });

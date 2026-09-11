@@ -132,7 +132,7 @@ async function readAdminWeekly(env, year) {
     env.DB.prepare("SELECT * FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_sessions WHERE year = ? ORDER BY round, CASE session_type WHEN 'qualifying' THEN 1 WHEN 'sprint' THEN 2 ELSE 3 END").bind(year).all(),
-    env.DB.prepare("SELECT * FROM f1_session_results WHERE year = ? ORDER BY round, session_type, position").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_session_results WHERE year = ? ORDER BY round, session_type, position IS NULL, position, driver_id").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
   ]);
@@ -185,10 +185,11 @@ async function readPublicWeekly(env, year) {
   return { year, races, standings: buildWeeklyStandings(scores) };
 }
 
-async function fetchSession(env, year, round, sessionType, actorManagerId) {
-  const existing = await env.DB.prepare("SELECT status FROM f1_sessions WHERE year = ? AND round = ? AND session_type = ?")
+async function fetchSession(env, year, round, sessionType, actorManagerId, options = {}) {
+  const existing = await env.DB.prepare("SELECT status, source FROM f1_sessions WHERE year = ? AND round = ? AND session_type = ?")
     .bind(year, round, sessionType).first();
-  if (existing?.status === "approved") throw httpError(409, "Reopen this approved session before fetching it again.");
+  const reconcileApproved = existing?.status === "approved" && options.reconcileApproved && !String(existing.source || "").startsWith("jolpica");
+  if (existing?.status === "approved" && !reconcileApproved) throw httpError(409, "Reopen this approved session before fetching it again.");
 
   const baseUrl = String(env.JOLPICA_BASE_URL || "https://api.jolpi.ca/ergast/f1").replace(/\/$/, "");
   const endpoint = sessionType === "qualifying" ? "qualifying" : sessionType === "sprint" ? "sprint" : "results";
@@ -216,19 +217,19 @@ async function fetchSession(env, year, round, sessionType, actorManagerId) {
         has_sprint = MAX(f1_rounds.has_sprint, excluded.has_sprint), updated_at = CURRENT_TIMESTAMP`)
       .bind(year, round, String(race.raceName || `Round ${round}`), String(race.date || ""), hasSprint ? 1 : 0),
     env.DB.prepare(`INSERT INTO f1_sessions (year, round, session_type, status, source, source_url, fetched_at, updated_at)
-      VALUES (?, ?, ?, 'needs_review', 'jolpica', ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(year, round, session_type) DO UPDATE SET status = 'needs_review', source = 'jolpica',
+      VALUES (?, ?, ?, 'needs_review', ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(year, round, session_type) DO UPDATE SET status = 'needs_review', source = excluded.source,
         source_url = excluded.source_url, fetched_at = excluded.fetched_at, approved_at = '', approved_by = '', updated_at = CURRENT_TIMESTAMP`)
-      .bind(year, round, sessionType, sourceUrl, fetchedAt),
-    env.DB.prepare("DELETE FROM f1_session_results WHERE year = ? AND round = ? AND session_type = ?").bind(year, round, sessionType),
+      .bind(year, round, sessionType, reconcileApproved ? "jolpica_reconciled" : "jolpica", sourceUrl, fetchedAt),
   ];
+  if (!reconcileApproved) statements.push(env.DB.prepare("DELETE FROM f1_session_results WHERE year = ? AND round = ? AND session_type = ?").bind(year, round, sessionType));
   for (const result of results) {
     statements.push(driverUpsert(env, year, result));
     statements.push(resultInsert(env, year, round, sessionType, result));
   }
-  statements.push(auditInsert(env, year, round, actorManagerId, "session_fetched", { sessionType, sourceUrl, resultCount: results.length }));
+  statements.push(auditInsert(env, year, round, actorManagerId, reconcileApproved ? "session_reconciled" : "session_fetched", { sessionType, sourceUrl, resultCount: results.length }));
   await env.DB.batch(statements);
-  return { session: { year, round, sessionType, status: "needs_review", source: "jolpica", sourceUrl, fetchedAt }, results };
+  return { session: { year, round, sessionType, status: "needs_review", source: reconcileApproved ? "jolpica_reconciled" : "jolpica", sourceUrl, fetchedAt, reconciled: reconcileApproved }, results };
 }
 
 async function fetchRound(env, year, round, actorManagerId) {
@@ -238,15 +239,15 @@ async function fetchRound(env, year, round, actorManagerId) {
   const sessions = [];
 
   for (const sessionType of sessionTypes) {
-    const existing = await env.DB.prepare("SELECT status FROM f1_sessions WHERE year = ? AND round = ? AND session_type = ?")
+    const existing = await env.DB.prepare("SELECT status, source FROM f1_sessions WHERE year = ? AND round = ? AND session_type = ?")
       .bind(year, round, sessionType).first();
-    if (existing?.status === "approved") {
+    if (existing?.status === "approved" && String(existing.source || "").startsWith("jolpica")) {
       sessions.push({ sessionType, status: "approved", skipped: true });
       continue;
     }
     try {
-      const result = await fetchSession(env, year, round, sessionType, actorManagerId);
-      sessions.push({ sessionType, status: result.session.status, resultCount: result.results.length });
+      const result = await fetchSession(env, year, round, sessionType, actorManagerId, { reconcileApproved: true });
+      sessions.push({ sessionType, status: result.session.status, resultCount: result.results.length, reconciled: Boolean(result.session.reconciled) });
     } catch (error) {
       if (![404, 502].includes(Number(error?.status))) throw error;
       sessions.push({ sessionType, status: "unavailable", error: error.message });

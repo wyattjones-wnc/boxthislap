@@ -164,3 +164,21 @@ test("builds complete main and sprint export datasets from stored results", () =
 test("uses the race points system for adjusted sprint points", () => {
   assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(getRacePointsForPosition), [25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0]);
 });
+
+test("does not create position head-to-heads from non-numeric classifications", () => {
+  const drivers = [
+    { driver_id: "a", display_name: "Alex A", constructor_id: "team", constructor_name: "Team" },
+    { driver_id: "b", display_name: "Blake B", constructor_id: "team", constructor_name: "Team" },
+  ];
+  const results = [
+    { round: 1, session_type: "qualifying", driver_id: "a", constructor_id: "team", constructor_name: "Team", position: 1, classified_position: "1" },
+    { round: 1, session_type: "qualifying", driver_id: "b", constructor_id: "team", constructor_name: "Team", position: null, classified_position: "DNS" },
+    { round: 1, session_type: "race", driver_id: "a", constructor_id: "team", constructor_name: "Team", position: 1, classified_position: "1" },
+    { round: 1, session_type: "race", driver_id: "b", constructor_id: "team", constructor_name: "Team", position: null, classified_position: "DNF" },
+  ];
+  const comparison = buildFormulaOneMainDatasets({ year: 2026, rounds: [{ round: 1, name: "Test" }], drivers, results }).teammateComparisons[0];
+  assert.equal(comparison.qualifyingPositionWinner, "");
+  assert.equal(comparison.qualifyingPositionGap, "");
+  assert.equal(comparison.racePositionWinner, "");
+  assert.equal(comparison.racePositionGap, "");
+});

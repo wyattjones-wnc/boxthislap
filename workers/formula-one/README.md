@@ -21,4 +21,6 @@ The new Manage page and native picks are intentionally visible only to admins. N
 
 The public `GET /api/seasons/:year/weekly` endpoint exposes scored, completed weekly rounds for the Results standings. Admin reads and Weekly exports include every manager's entries and scores; exports also include season standings and the podium/wildcard scoring reference tables.
 
+`Fetch round` treats approved sheet/manual sessions as reconciliation candidates: provider rows are merged into the imported session, non-participant classifications are retained, and the session returns to review. Sessions already sourced from Jolpica remain unchanged until explicitly reopened.
+
 No cron trigger is configured. Admins explicitly fetch a session and explicitly approve it.

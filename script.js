@@ -3,7 +3,7 @@ import {
   buildFormulaOneMainDatasets,
   buildFormulaOneQualifyingComparisons,
   summarizeFormulaOneQualifyingComparisons,
-} from "./modules/formulaOneQualifying.js?v=202609102156";
+} from "./modules/formulaOneQualifying.js?v=202609110445";
 import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
@@ -13236,13 +13236,13 @@ function renderFormulaOneCalculatedDetails(data, round = null, open = false) {
 }
 
 function renderFormulaOneRoundComparisonTable(comparisons) {
-  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${comparisons.length ? comparisons.map((comparison) => `<tr><td>${escapeHtml(comparison.team)}</td><td>${escapeHtml(`${comparison.firstDriver} / ${comparison.secondDriver}`)}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.adjustedWinner, comparison.adjustedGapSeconds, comparison.adjustedSession))}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.unadjustedWinner, comparison.unadjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.qualifyingPositionWinner, comparison.qualifyingPositionGap))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.racePositionWinner, comparison.racePositionGap))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="6">No approved teammate comparison is available.</td></tr>`}</tbody></table></div>`;
+  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${comparisons.length ? comparisons.map((comparison) => `<tr><td>${escapeHtml(comparison.team)}</td><td>${escapeHtml(`${comparison.firstDriver} / ${comparison.secondDriver}`)}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.adjustedWinner, comparison.adjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.unadjustedWinner, comparison.unadjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.qualifyingPositionWinner, comparison.qualifyingPositionGap))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.racePositionWinner, comparison.racePositionGap))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="6">No approved teammate comparison is available.</td></tr>`}</tbody></table></div>`;
 }
 
-function formatFormulaOneComparisonResult(winner, gap, session = "") {
+function formatFormulaOneComparisonResult(winner, gap) {
   if (!winner) return "—";
   if (winner === "Tie") return "Tie";
-  return `${winner}${gap === "" ? "" : ` by ${Number(gap).toFixed(3)}s`}${session ? ` · ${session}` : ""}`;
+  return `${winner}${gap === "" ? "" : ` by ${Number(gap).toFixed(3)}s`}`;
 }
 
 function formatFormulaOnePositionComparison(winner, gap) {
@@ -13262,7 +13262,7 @@ function renderFormulaOneAllComparisonTable(comparisons) {
       if (winner) group[field].set(winner, (group[field].get(winner) || 0) + 1);
     });
   });
-  const record = (group, field) => `${group.first} ${group[field].get(group.first) || 0}–${group[field].get(group.second) || 0} ${group.second}`;
+  const record = (group, field) => group[field].size ? `${group.first} ${group[field].get(group.first) || 0}–${group[field].get(group.second) || 0} ${group.second}` : "—";
   return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Rounds</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${groups.size ? [...groups.values()].map((group) => `<tr><td>${escapeHtml(group.team)}</td><td>${escapeHtml(`${group.first} / ${group.second}`)}</td><td>${group.rounds}</td><td>${escapeHtml(record(group, "adjusted"))}</td><td>${escapeHtml(record(group, "unadjusted"))}</td><td>${escapeHtml(record(group, "qualifying"))}</td><td>${escapeHtml(record(group, "race"))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="7">No approved teammate comparisons are available.</td></tr>`}</tbody></table></div>`;
 }
 
@@ -13327,7 +13327,7 @@ function renderFormulaOneReview(feedback = {}) {
 
   container.innerHTML = `
     <div class="formula-one-admin-card">
-      <strong>${escapeHtml(`${round.round}. ${round.name} · ${formatFormulaOneSessionName(formulaOneReviewSelectedSession)}`)}</strong>
+      <div class="formula-one-review-card-heading"><strong>${escapeHtml(`${round.round}. ${round.name} · ${formatFormulaOneSessionName(formulaOneReviewSelectedSession)}`)}</strong><a class="footer-copy-link" href="#formula-1-2026-manage" data-page-link="formula-1-2026-manage">Back</a></div>
       <p>${session ? `${escapeHtml(formatFormulaOneSessionStatus(session.status))}${session.fetched_at ? ` · fetched ${escapeHtml(formatFormulaOneAdminDate(session.fetched_at))}` : ""}` : "No provider data has been fetched for this session."}</p>
       ${formulaOneReviewSelectedSession === "qualifying"
         ? renderFormulaOneQualifyingReviewTable(data, results, comparisons.filter((comparison) => comparison.round === Number(round.round)))
@@ -13339,19 +13339,21 @@ function renderFormulaOneReview(feedback = {}) {
 }
 
 function renderFormulaOneSessionReviewTable(data, results) {
-  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-admin-results"><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Points</th><th>Laps</th><th>Status / time</th></tr></thead><tbody>${results.length
-    ? results.map((result) => `<tr><td>${escapeHtml(formatFormulaOnePosition(result.position))}</td><td>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</td><td>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</td><td>${escapeHtml(formatFormulaOnePointValue(result.points))}</td><td>${escapeHtml(result.laps ?? "—")}</td><td>${escapeHtml(result.time_text || result.status || "")}</td></tr>`).join("")
+  const sortedResults = sortFormulaOneSessionResults(results, data);
+  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-admin-results"><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Points</th><th>Laps</th><th>Status / time</th></tr></thead><tbody>${sortedResults.length
+    ? sortedResults.map((result) => `<tr><td>${escapeHtml(formatFormulaOneResultPosition(result))}</td><td>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</td><td>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</td><td>${escapeHtml(formatFormulaOnePointValue(result.points))}</td><td>${escapeHtml(result.laps ?? "—")}</td><td>${escapeHtml(result.time_text || result.status || "")}</td></tr>`).join("")
     : `<tr><td class="table-message" colspan="6">No staged results for this session.</td></tr>`}</tbody></table></div>`;
 }
 
 function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
+  const sortedResults = sortFormulaOneSessionResults(results, data);
   const comparisonsByDriver = new Map();
   comparisons.forEach((comparison) => {
     comparisonsByDriver.set(comparison.firstDriverId, { comparison, side: "first" });
     comparisonsByDriver.set(comparison.secondDriverId, { comparison, side: "second" });
   });
-  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-qualifying-review-table"><thead><tr><th>Pos</th><th>Driver</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Unadjusted</th><th>Adjusted</th></tr></thead><tbody>${results.length
-    ? results.map((result) => {
+  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-qualifying-review-table"><thead><tr><th>Pos</th><th>Driver</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Unadjusted</th><th>Adjusted</th></tr></thead><tbody>${sortedResults.length
+    ? sortedResults.map((result) => {
       const item = comparisonsByDriver.get(result.driver_id);
       const unadjusted = item?.comparison.unadjusted;
       const adjusted = item?.comparison.adjusted;
@@ -13359,7 +13361,7 @@ function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
       const unadjustedGap = unadjusted ? getFormulaOneDriverGap(unadjusted.differenceSeconds, item.side) : null;
       const adjustedTime = adjusted?.[item.side]?.time || "—";
       const adjustedGap = adjusted ? getFormulaOneDriverGap(adjusted.differenceSeconds, item.side) : null;
-      return `<tr><td>${escapeHtml(formatFormulaOnePosition(result.position))}</td><td><strong>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</strong><small>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</small></td><td>${escapeHtml(result.q1 || "—")}</td><td>${escapeHtml(result.q2 || "—")}</td><td>${escapeHtml(result.q3 || "—")}</td><td>${escapeHtml(unadjustedTime)}${unadjusted ? `<small>${escapeHtml(`${unadjusted[item.side].session.toUpperCase()} · ${formatFormulaOneGap(unadjustedGap)}`)}</small>` : ""}</td><td>${escapeHtml(adjustedTime)}${adjusted ? `<small>${escapeHtml(`${adjusted.session.toUpperCase()} · ${formatFormulaOneGap(adjustedGap)}`)}</small>` : ""}</td></tr>`;
+      return `<tr><td>${escapeHtml(formatFormulaOneResultPosition(result))}</td><td><strong>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</strong><small>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</small></td><td>${escapeHtml(result.q1 || "—")}</td><td>${escapeHtml(result.q2 || "—")}</td><td>${escapeHtml(result.q3 || "—")}</td><td>${escapeHtml(unadjustedTime)}${unadjusted ? `<small>${escapeHtml(`${unadjusted[item.side].session.toUpperCase()} · ${formatFormulaOneGap(unadjustedGap)}`)}</small>` : ""}</td><td>${escapeHtml(adjustedTime)}${adjusted ? `<small>${escapeHtml(`${adjusted.session.toUpperCase()} · ${formatFormulaOneGap(adjustedGap)}`)}</small>` : ""}</td></tr>`;
     }).join("")
     : `<tr><td class="table-message" colspan="7">No staged qualifying times.</td></tr>`}</tbody></table></div>`;
 }
@@ -13476,6 +13478,22 @@ function renderFormulaOneAdminPicks(data, round) {
   }).join("")}</div>`;
 }
 
+function formatFormulaOneResultPosition(result) {
+  return formatFormulaOnePosition(result?.position ?? result?.classified_position ?? result?.status);
+}
+
+function sortFormulaOneSessionResults(results, data) {
+  return [...results].sort((first, second) => {
+    const firstPosition = Number(first.position);
+    const secondPosition = Number(second.position);
+    const firstIsNumeric = first.position !== null && first.position !== "" && Number.isFinite(firstPosition) && firstPosition > 0;
+    const secondIsNumeric = second.position !== null && second.position !== "" && Number.isFinite(secondPosition) && secondPosition > 0;
+    if (firstIsNumeric !== secondIsNumeric) return firstIsNumeric ? -1 : 1;
+    if (firstIsNumeric && firstPosition !== secondPosition) return firstPosition - secondPosition;
+    return getFormulaOneAdminDriverName(data, first.driver_id).localeCompare(getFormulaOneAdminDriverName(data, second.driver_id));
+  });
+}
+
 function renderFormulaOneWeeklyChoiceResult(data, round, driverId, score, pointsKey, sessionType) {
   if (!driverId) return `<small class="formula-one-choice-result">No choice · 0 points</small>`;
   if (!score) return `<small class="formula-one-choice-result">Waiting for qualifying and race results</small>`;
@@ -13501,7 +13519,7 @@ function renderFormulaOneAdminFacts(round, data, { review = false, feedback = {}
   const disabled = locked ? " disabled" : "";
   const pendingAfterFacts = review ? getFormulaOnePendingDatasets(data, round).some((dataset) => dataset !== "facts") : false;
   return `<form class="formula-one-admin-card" data-formula-one-admin-facts>
-    <strong>${review ? escapeHtml(`${round.round}. ${round.name} · Round facts`) : "Round facts"}</strong>
+    ${review ? `<div class="formula-one-review-card-heading"><strong>${escapeHtml(`${round.round}. ${round.name} · Round facts`)}</strong><a class="footer-copy-link" href="#formula-1-2026-manage" data-page-link="formula-1-2026-manage">Back</a></div>` : "<strong>Round facts</strong>"}
     <div class="formula-one-admin-form-grid">
       <label class="select-control"><span>Driver of the Day</span><select name="driverOfTheDay" required${disabled}>${options(driverNames, round.driver_of_the_day, "Choose driver")}</select></label>
       <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}" required${disabled}></label>

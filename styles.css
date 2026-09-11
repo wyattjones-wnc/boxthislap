@@ -7765,7 +7765,6 @@ main {
 }
 
 .formula-one-export-row,
-.formula-one-review-back,
 .formula-one-workflow-footer {
   display: flex;
   justify-content: flex-end;
@@ -7806,7 +7805,21 @@ main {
 }
 
 .formula-one-admin-toolbar {
-  grid-template-columns: minmax(100px, 140px) minmax(160px, 240px) minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.formula-one-admin-toolbar .select-control:first-child {
+  flex: 0 1 140px;
+}
+
+.formula-one-admin-toolbar .select-control:nth-child(2) {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.formula-one-admin-toolbar > .action-button {
+  margin-left: auto;
 }
 
 .formula-one-admin-actions {
@@ -7886,6 +7899,13 @@ button.formula-one-admin-status:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.formula-one-review-card-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
 }
 
 .formula-one-review-progress {

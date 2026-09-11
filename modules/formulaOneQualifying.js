@@ -263,8 +263,10 @@ function sessionPosition(result) {
 }
 
 function numericPosition(result) {
-  const position = Number(result?.position);
-  return Number.isFinite(position) ? position : Number.POSITIVE_INFINITY;
+  const rawPosition = result?.position;
+  if (rawPosition === null || rawPosition === undefined || String(rawPosition).trim() === "") return Number.POSITIVE_INFINITY;
+  const position = Number(rawPosition);
+  return Number.isFinite(position) && position > 0 ? position : Number.POSITIVE_INFINITY;
 }
 
 function absoluteDifference(value) {

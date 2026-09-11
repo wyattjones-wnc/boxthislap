@@ -47,6 +47,7 @@ export const footyMissingNotesMatchPeriod = document.querySelector("#footy-missi
 export const footyMissingNotesTeam = document.querySelector("#footy-missing-notes-team");
 export const footyMissingNotesSummary = document.querySelector("#footy-missing-notes-summary");
 export const footyMissingNotesList = document.querySelector("#footy-missing-notes-list");
+export const footyMissingNotesPagination = document.querySelector("#footy-missing-notes-pagination");
 export const managerSummaryList = document.querySelector("#manager-summary-list");
 export const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
 export const managerAwardsList = document.querySelector("#manager-awards-list");

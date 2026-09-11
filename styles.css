@@ -1437,6 +1437,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trophy-log-filters button,
 .trophy-log-pagination button,
+.footy-missing-notes-pagination button,
 .trophy-log-actions button {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -1452,6 +1453,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 .trophy-log-filters button:hover,
 .trophy-log-filters button.is-active,
 .trophy-log-pagination button:hover:not(:disabled),
+.footy-missing-notes-pagination button:hover:not(:disabled),
 .trophy-log-actions button:hover:not(:disabled) {
   background: var(--track);
   border-color: var(--accent);
@@ -1619,7 +1621,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .trophy-log-actions button:disabled,
-.trophy-log-pagination button:disabled {
+.trophy-log-pagination button:disabled,
+.footy-missing-notes-pagination button:disabled {
   cursor: default;
   opacity: 0.48;
 }
@@ -2405,6 +2408,28 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-missing-notes-summary:empty {
   display: none;
+}
+
+.footy-missing-notes-pagination {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto 1fr;
+  padding-top: 14px;
+}
+
+.footy-missing-notes-pagination button:first-child {
+  justify-self: start;
+}
+
+.footy-missing-notes-pagination button:last-child {
+  justify-self: end;
+}
+
+.footy-missing-notes-pagination span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .next-controls {

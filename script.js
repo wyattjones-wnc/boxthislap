@@ -95,6 +95,7 @@ import {
   footyMissingNotesTeam,
   footyMissingNotesSummary,
   footyMissingNotesList,
+  footyMissingNotesPagination,
   managerSummaryList,
   managerSummaryYearSelect,
   managerAwardsList,
@@ -441,7 +442,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202609091415";
+} from "./modules/domRefs.js?v=202609110445";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -476,6 +477,7 @@ let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowFootyMissingNotesFilters = false;
+let activeFootyMissingNotesPage = 1;
 let shouldShowFootyCustomFilters = false;
 let isFootyCustomScheduleConfirmed = false;
 const selectedFootyCustomTeamKeys = new Set();
@@ -534,6 +536,7 @@ let pendingWantMoveItemId = "";
 let draggedWantItemId = "";
 let didMoveWantPointer = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const FOOTY_MISSING_NOTES_PAGE_SIZE = 20;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
 const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
@@ -938,22 +941,34 @@ function renderFootyMissingNotesPage() {
   const visibleFixtures = getFilteredFootyMissingNotesFixtures(missingFixtures)
     .sort(compareFootyFixturesDescending);
   const hasFilters = hasActiveFootyMissingNotesFilters();
+  const pageCount = Math.max(1, Math.ceil(visibleFixtures.length / FOOTY_MISSING_NOTES_PAGE_SIZE));
+  activeFootyMissingNotesPage = Math.min(Math.max(1, activeFootyMissingNotesPage), pageCount);
+  const pageStart = (activeFootyMissingNotesPage - 1) * FOOTY_MISSING_NOTES_PAGE_SIZE;
+  const pageFixtures = visibleFixtures.slice(pageStart, pageStart + FOOTY_MISSING_NOTES_PAGE_SIZE);
 
   footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
   footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
   if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
   if (footyMissingNotesSummary) {
-    footyMissingNotesSummary.textContent = missingFixtures.length
-      ? `Showing ${visibleFixtures.length} of ${missingFixtures.length} ${missingFixtures.length === 1 ? "match" : "matches"} needing notes.`
+    const pageEnd = Math.min(pageStart + pageFixtures.length, visibleFixtures.length);
+    footyMissingNotesSummary.textContent = visibleFixtures.length
+      ? `Showing ${pageStart + 1}-${pageEnd} of ${visibleFixtures.length} ${visibleFixtures.length === 1 ? "match" : "matches"} needing notes${hasFilters && visibleFixtures.length !== missingFixtures.length ? ` (${missingFixtures.length} total)` : ""}.`
       : "";
   }
 
   footyMissingNotesList.setAttribute("aria-busy", "false");
   footyMissingNotesList.innerHTML = visibleFixtures.length
-    ? `<div class="footy-list footy-list--calendar-weeks">${visibleFixtures.map(renderFootyFixture).join("")}</div>`
+    ? `<div class="footy-list footy-list--calendar-weeks">${pageFixtures.map(renderFootyFixture).join("")}</div>`
     : `<p class="table-message">${missingFixtures.length && hasFilters
       ? "No matches needing notes match the current filters."
       : "All past matches in your followed-team competitions have match notes."}</p>`;
+
+  if (footyMissingNotesPagination) {
+    footyMissingNotesPagination.hidden = visibleFixtures.length <= FOOTY_MISSING_NOTES_PAGE_SIZE;
+    footyMissingNotesPagination.innerHTML = visibleFixtures.length <= FOOTY_MISSING_NOTES_PAGE_SIZE
+      ? ""
+      : `<button type="button" data-footy-missing-notes-page="${activeFootyMissingNotesPage - 1}" ${activeFootyMissingNotesPage <= 1 ? "disabled" : ""}>Previous</button><span>Page ${activeFootyMissingNotesPage} of ${pageCount}</span><button type="button" data-footy-missing-notes-page="${activeFootyMissingNotesPage + 1}" ${activeFootyMissingNotesPage >= pageCount ? "disabled" : ""}>Next</button>`;
+  }
 }
 
 function getFootyMissingNotesFixtures(schedule = {}) {
@@ -14957,8 +14972,19 @@ footyMissingNotesFilterToggle?.addEventListener("click", () => {
   footyMissingNotesMatchPeriod,
   footyMissingNotesTeam,
 ].forEach((control) => {
-  control?.addEventListener("input", renderFootyMissingNotesPage);
-  control?.addEventListener("change", renderFootyMissingNotesPage);
+  const renderFirstFootyMissingNotesPage = () => {
+    activeFootyMissingNotesPage = 1;
+    renderFootyMissingNotesPage();
+  };
+  control?.addEventListener(control === footyMissingNotesSearch ? "input" : "change", renderFirstFootyMissingNotesPage);
+});
+
+footyMissingNotesPagination?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-footy-missing-notes-page]");
+  if (!button || button.disabled) return;
+  activeFootyMissingNotesPage = Number(button.dataset.footyMissingNotesPage) || 1;
+  renderFootyMissingNotesPage();
+  scrollToPageTop();
 });
 
 footyCustomFilterToggle?.addEventListener("click", () => {

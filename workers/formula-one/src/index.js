@@ -136,6 +136,7 @@ async function readAdminWeekly(env, year) {
     env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
   ]);
+  await backfillMissingQualifyingDeadlines(env, year, roundQuery.results || []);
   const sessions = sessionQuery.results || [];
   const rounds = (roundQuery.results || []).map((round) => {
     const requiredSessions = ["qualifying", ...(round.has_sprint ? ["sprint"] : []), "race"];
@@ -235,6 +236,9 @@ async function fetchSession(env, year, round, sessionType, actorManagerId, optio
 async function fetchRound(env, year, round, actorManagerId) {
   const roundRow = await env.DB.prepare("SELECT name, has_sprint FROM f1_rounds WHERE year = ? AND round = ?").bind(year, round).first();
   if (!roundRow) throw httpError(404, "Round not found.");
+  await syncRoundQualifyingDeadline(env, year, round).catch((error) => {
+    console.warn("The qualifying deadline could not be synchronized.", error);
+  });
   const sessionTypes = ["qualifying", ...(roundRow.has_sprint ? ["sprint"] : []), "race"];
   const sessions = [];
 
@@ -276,6 +280,57 @@ async function fetchRound(env, year, round, actorManagerId) {
     safetyCar,
     safetyCarError,
   };
+}
+
+async function backfillMissingQualifyingDeadlines(env, year, rounds) {
+  const missingRounds = new Set(rounds
+    .filter((round) => !String(round.deadline_at || "").trim())
+    .map((round) => Number(round.round)));
+  if (!missingRounds.size) return;
+
+  try {
+    const races = await fetchProviderSchedule(env, year);
+    const updates = [];
+    for (const race of races) {
+      const round = Number(race?.round);
+      const deadlineAt = getQualifyingDeadline(race);
+      if (!missingRounds.has(round) || !deadlineAt) continue;
+      updates.push(env.DB.prepare(`UPDATE f1_rounds SET deadline_at = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE year = ? AND round = ?`).bind(deadlineAt, year, round));
+      const row = rounds.find((item) => Number(item.round) === round);
+      if (row) row.deadline_at = deadlineAt;
+    }
+    if (updates.length) await env.DB.batch(updates);
+  } catch (error) {
+    console.warn("Missing qualifying deadlines could not be backfilled.", error);
+  }
+}
+
+async function syncRoundQualifyingDeadline(env, year, round) {
+  const races = await fetchProviderSchedule(env, year, round);
+  const race = races.find((item) => Number(item?.round) === Number(round)) || races[0];
+  const deadlineAt = getQualifyingDeadline(race);
+  if (!deadlineAt) return "";
+  await env.DB.prepare(`UPDATE f1_rounds SET deadline_at = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE year = ? AND round = ?`).bind(deadlineAt, year, round).run();
+  return deadlineAt;
+}
+
+async function fetchProviderSchedule(env, year, round = null) {
+  const baseUrl = String(env.JOLPICA_BASE_URL || "https://api.jolpi.ca/ergast/f1").replace(/\/$/, "");
+  const sourceUrl = `${baseUrl}/${year}${round ? `/${round}` : ""}.json`;
+  const response = await fetch(sourceUrl, { headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" } });
+  if (!response.ok) throw new Error(`The Formula 1 schedule provider returned ${response.status}.`);
+  const payload = await response.json();
+  return Array.isArray(payload?.MRData?.RaceTable?.Races) ? payload.MRData.RaceTable.Races : [];
+}
+
+export function getQualifyingDeadline(race) {
+  const date = String(race?.Qualifying?.date || "").trim();
+  const time = String(race?.Qualifying?.time || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}(?::\d{2})?Z$/.test(time)) return "";
+  const timestamp = Date.parse(`${date}T${time}`);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : "";
 }
 
 async function fetchRoundSafetyCar(env, year, round) {

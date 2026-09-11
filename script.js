@@ -13477,7 +13477,6 @@ function renderFormulaOneAdminFacts(round, data, { review = false, feedback = {}
   const pendingAfterFacts = review ? getFormulaOnePendingDatasets(data, round).some((dataset) => dataset !== "facts") : false;
   return `<form class="formula-one-admin-card" data-formula-one-admin-facts>
     <strong>${review ? escapeHtml(`${round.round}. ${round.name} · Round facts`) : "Round facts"}</strong>
-    <p>Review automatically filled facts, including Safety Car, and complete the facts that still require a manual source.</p>
     <div class="formula-one-admin-form-grid">
       <label class="select-control"><span>Driver of the Day</span><select name="driverOfTheDay" required${disabled}>${options(driverNames, round.driver_of_the_day, "Choose driver")}</select></label>
       <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}" required${disabled}></label>
@@ -13560,7 +13559,8 @@ async function runFormulaOneAdminAction(action) {
   const unavailable = action === "fetch" ? (result.sessions || []).filter((session) => session.status === "unavailable") : [];
   const unavailableMessage = unavailable.length ? ` ${unavailable.map((session) => formatFormulaOneSessionName(session.sessionType)).join(", ")} ${unavailable.length === 1 ? "is" : "are"} not available from the provider yet.` : "";
   const safetyCarMessage = action === "fetch" && result.safetyCar ? ` Safety Car: ${result.safetyCar.value} (${result.safetyCar.detail}).` : "";
-  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${unavailableMessage}` });
+  const safetyCarError = action === "fetch" && result.safetyCarError ? ` Safety Car could not be determined automatically: ${result.safetyCarError}` : "";
+  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${safetyCarError}${unavailableMessage}` });
 }
 
 async function submitFormulaOneAdminForm(form, kind, options = {}) {

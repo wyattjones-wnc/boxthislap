@@ -213,8 +213,10 @@ async function fetchRound(env, year, round, actorManagerId) {
   }
 
   await syncActiveDriversForRound(env, year, round);
+  let safetyCarError = "";
   const safetyCar = await fetchRoundSafetyCar(env, year, round).catch((error) => {
     console.warn("OpenF1 race-control data could not be fetched.", error);
+    safetyCarError = String(error?.message || "Race-control data is unavailable.");
     return null;
   });
   if (safetyCar) {
@@ -230,6 +232,7 @@ async function fetchRound(env, year, round, actorManagerId) {
     sessions,
     fetchedCount: sessions.filter((session) => session.status === "needs_review").length,
     safetyCar,
+    safetyCarError,
   };
 }
 
@@ -242,9 +245,7 @@ async function fetchRoundSafetyCar(env, year, round) {
 
   const baseUrl = String(env.OPENF1_BASE_URL || "https://api.openf1.org/v1").replace(/\/$/, "");
   const sessionsUrl = `${baseUrl}/sessions?year=${encodeURIComponent(year)}&session_name=Race`;
-  const sessionsResponse = await fetch(sessionsUrl, { headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" } });
-  if (!sessionsResponse.ok) throw new Error(`OpenF1 sessions returned ${sessionsResponse.status}.`);
-  const sessions = await sessionsResponse.json();
+  const sessions = await fetchOpenF1Json(sessionsUrl, "sessions");
   if (!Array.isArray(sessions) || !sessions.length) return null;
 
   const raceTimestamp = Date.parse(`${raceDate}T12:00:00Z`);
@@ -257,11 +258,24 @@ async function fetchRoundSafetyCar(env, year, round) {
   if (!session?.session_key) return null;
 
   const sourceUrl = `${baseUrl}/race_control?session_key=${encodeURIComponent(session.session_key)}`;
-  const messagesResponse = await fetch(sourceUrl, { headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" } });
-  if (!messagesResponse.ok) throw new Error(`OpenF1 race control returned ${messagesResponse.status}.`);
-  const messages = await messagesResponse.json();
+  const messages = await fetchOpenF1Json(sourceUrl, "race control");
   if (!Array.isArray(messages) || !messages.length) return null;
   return { ...deriveSafetyCarValue(messages), source: "openf1", sourceUrl, sessionKey: session.session_key };
+}
+
+async function fetchOpenF1Json(url, label) {
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(url, { headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" } });
+      if (response.ok) return await response.json();
+      lastError = new Error(`OpenF1 ${label} returned ${response.status}.`);
+      if (response.status < 500 && response.status !== 429) break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error(`OpenF1 ${label} is unavailable.`);
 }
 
 export function deriveSafetyCarValue(messages = []) {

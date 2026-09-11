@@ -33,3 +33,37 @@ export function scoreWeeklyEntry(entry, qualifyingResults = [], raceResults = []
     totalPoints: p1Points + p2Points + p3Points + wildcardQualifyingPoints + wildcardRacePoints,
   };
 }
+
+export function buildWeeklyStandings(scores = []) {
+  const scoresByManager = new Map();
+  for (const score of scores) {
+    const managerId = String(score.manager_id ?? score.managerId ?? "").trim();
+    const round = Number(score.round);
+    if (!managerId || !Number.isInteger(round) || round < 1) continue;
+    if (!scoresByManager.has(managerId)) scoresByManager.set(managerId, []);
+    scoresByManager.get(managerId).push({ round, points: Number(score.total_points ?? score.totalPoints) || 0 });
+  }
+
+  const standings = [...scoresByManager.entries()].map(([managerId, managerScores]) => {
+    const blocks = new Map();
+    for (const score of managerScores) {
+      const block = Math.floor((score.round - 1) / 8) + 1;
+      if (!blocks.has(block)) blocks.set(block, []);
+      blocks.get(block).push(score);
+    }
+    const blockTotals = [...blocks.entries()].sort(([first], [second]) => first - second).map(([block, blockScores]) => {
+      const counted = [...blockScores].sort((first, second) => second.points - first.points || first.round - second.round).slice(0, 4);
+      return { block, points: counted.reduce((total, score) => total + score.points, 0), countedRounds: counted.map((score) => score.round) };
+    });
+    return { managerId, points: blockTotals.reduce((total, block) => total + block.points, 0), blockTotals };
+  }).sort((first, second) => second.points - first.points || first.managerId.localeCompare(second.managerId, undefined, { numeric: true }));
+
+  let previousPoints = null;
+  let previousRank = 0;
+  return standings.map((standing, index) => {
+    const rank = standing.points === previousPoints ? previousRank : index + 1;
+    previousPoints = standing.points;
+    previousRank = rank;
+    return { ...standing, rank };
+  });
+}

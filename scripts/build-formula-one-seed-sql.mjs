@@ -52,7 +52,7 @@ ON CONFLICT(year, round, session_type, driver_id) DO UPDATE SET position = exclu
 
 for (const entry of data.entries || []) {
   const picks = [entry.p1DriverId, entry.p2DriverId, entry.p3DriverId, entry.wildcardDriverId];
-  const entryStatus = picks.every(Boolean) ? "submitted" : "draft";
+  const entryStatus = picks.some(Boolean) ? "submitted" : "draft";
   statements.push(`INSERT INTO f1_weekly_entries (year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at)
 VALUES (${year}, ${integer(entry.round)}, ${text(entry.managerId)}, ${text(entry.p1DriverId)}, ${text(entry.p2DriverId)}, ${text(entry.p3DriverId)}, ${text(entry.wildcardDriverId)}, ${text(entryStatus)}, ${entryStatus === "submitted" ? text(data.generatedAt) : "''"}, CURRENT_TIMESTAMP)
 ON CONFLICT(year, round, manager_id) DO UPDATE SET p1_driver_id = excluded.p1_driver_id, p2_driver_id = excluded.p2_driver_id, p3_driver_id = excluded.p3_driver_id, wildcard_driver_id = excluded.wildcard_driver_id, entry_status = excluded.entry_status, submitted_at = excluded.submitted_at, updated_at = CURRENT_TIMESTAMP;`);
@@ -60,7 +60,7 @@ ON CONFLICT(year, round, manager_id) DO UPDATE SET p1_driver_id = excluded.p1_dr
 
 const resultsBySession = new Map();
 for (const result of data.results || []) resultsBySession.set(`${result.round}:${result.sessionType}`, [...(resultsBySession.get(`${result.round}:${result.sessionType}`) || []), { driver_id: result.driverId, position: result.position }]);
-for (const entry of (data.entries || []).filter((item) => [item.p1DriverId, item.p2DriverId, item.p3DriverId, item.wildcardDriverId].every(Boolean))) {
+for (const entry of (data.entries || []).filter((item) => [item.p1DriverId, item.p2DriverId, item.p3DriverId, item.wildcardDriverId].some(Boolean))) {
   const qualifying = resultsBySession.get(`${entry.round}:qualifying`);
   const race = resultsBySession.get(`${entry.round}:race`);
   if (!qualifying?.length || !race?.length) continue;

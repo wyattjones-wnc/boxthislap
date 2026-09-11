@@ -7692,6 +7692,24 @@ main {
   min-width: 0;
 }
 
+.formula-one-weekly-admin-list {
+  display: grid;
+  gap: 16px;
+}
+
+.formula-one-weekly-manager-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+}
+
+.formula-one-weekly-manager-heading > span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .formula-one-manage-tabs {
   margin-top: 0;
 }

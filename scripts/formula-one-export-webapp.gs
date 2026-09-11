@@ -12,6 +12,9 @@ const MAIN_TABS = [
 const WEEKLY_TABS = [
   ['Weekly Picks', 'entries'],
   ['Weekly Scores', 'scores'],
+  ['Weekly Standings', 'standings'],
+  ['Wildcard Scoring', 'wildcardScoring'],
+  ['Podium Scoring', 'podiumScoring'],
 ];
 
 function doPost(event) {

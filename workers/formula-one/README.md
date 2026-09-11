@@ -19,4 +19,6 @@ The new Manage page and native picks are intentionally visible only to admins. N
 5. Reconcile every imported weekly score against the current workbook before expanding access.
 6. The Worker and `FORMULA_ONE_ENDPOINT` are deployed. Keep the UI admin-only for the initial validation period.
 
+The public `GET /api/seasons/:year/weekly` endpoint exposes scored, completed weekly rounds for the Results standings. Admin reads and Weekly exports include every manager's entries and scores; exports also include season standings and the podium/wildcard scoring reference tables.
+
 No cron trigger is configured. Admins explicitly fetch a session and explicitly approve it.

@@ -1,4 +1,4 @@
-import { scoreWeeklyEntry } from "./scoring.js";
+import { buildWeeklyStandings, scoreWeeklyEntry, WILDCARD_POINTS } from "./scoring.js";
 import { buildFormulaOneMainDatasets } from "../../../modules/formulaOneQualifying.js";
 
 const SESSION_TYPES = new Set(["qualifying", "sprint", "race"]);
@@ -23,10 +23,15 @@ export default {
         return json({ ok: true, seasons: await readAdminSeasons(env) }, 200, cors);
       }
 
+      const publicWeeklyMatch = url.pathname.match(/^\/api\/seasons\/(\d{4})\/weekly$/);
+      if (publicWeeklyMatch && request.method === "GET") {
+        return json({ ok: true, ...(await readPublicWeekly(env, parseYear(publicWeeklyMatch[1]))) }, 200, cors);
+      }
+
       const overviewMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/weekly$/);
       if (overviewMatch && request.method === "GET") {
-        const admin = await requireAdmin(request, env);
-        return json({ ok: true, ...(await readAdminWeekly(env, Number(overviewMatch[1]), admin.managerId)) }, 200, cors);
+        await requireAdmin(request, env);
+        return json({ ok: true, ...(await readAdminWeekly(env, Number(overviewMatch[1]))) }, 200, cors);
       }
 
       const roundFetchMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/fetch$/);
@@ -63,6 +68,14 @@ export default {
       if (picksMatch && request.method === "PUT") {
         const admin = await requireAdmin(request, env);
         return json({ ok: true, ...(await saveWeeklyPicks(env, parseYear(picksMatch[1]), parseRound(picksMatch[2]), admin.managerId, await readBody(request))) }, 200, cors);
+      }
+
+      const managerPicksMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/picks\/([^/]+)$/);
+      if (managerPicksMatch && request.method === "PUT") {
+        const admin = await requireAdmin(request, env);
+        const managerId = clean(decodeURIComponent(managerPicksMatch[3]), 80);
+        if (!managerId) throw httpError(400, "A manager is required.");
+        return json({ ok: true, ...(await saveWeeklyPicks(env, parseYear(managerPicksMatch[1]), parseRound(managerPicksMatch[2]), managerId, await readBody(request), admin.managerId)) }, 200, cors);
       }
 
       const factsMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/facts$/);
@@ -114,14 +127,14 @@ async function requireAdmin(request, env) {
   return { managerId };
 }
 
-async function readAdminWeekly(env, year, managerId) {
+async function readAdminWeekly(env, year) {
   const [roundQuery, driverQuery, sessionQuery, resultQuery, entryQuery, scoreQuery] = await Promise.all([
     env.DB.prepare("SELECT * FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_sessions WHERE year = ? ORDER BY round, CASE session_type WHEN 'qualifying' THEN 1 WHEN 'sprint' THEN 2 ELSE 3 END").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_session_results WHERE year = ? ORDER BY round, session_type, position").bind(year).all(),
-    env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? AND manager_id = ? ORDER BY round").bind(year, managerId).all(),
-    env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? AND manager_id = ? ORDER BY round").bind(year, managerId).all(),
+    env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
   ]);
   const sessions = sessionQuery.results || [];
   const rounds = (roundQuery.results || []).map((round) => {
@@ -142,6 +155,34 @@ async function readAdminWeekly(env, year, managerId) {
     entries: entryQuery.results || [],
     scores: scoreQuery.results || [],
   };
+}
+
+async function readPublicWeekly(env, year) {
+  const [roundQuery, entryQuery, scoreQuery] = await Promise.all([
+    env.DB.prepare("SELECT round, name FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? AND entry_status = 'submitted' AND EXISTS (SELECT 1 FROM f1_weekly_scores scores WHERE scores.year = f1_weekly_entries.year AND scores.round = f1_weekly_entries.round AND scores.manager_id = f1_weekly_entries.manager_id) ORDER BY round, manager_id").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
+  ]);
+  const roundsById = new Map((roundQuery.results || []).map((round) => [Number(round.round), round]));
+  const scores = scoreQuery.results || [];
+  const scoreByEntry = new Map(scores.map((score) => [`${score.round}:${score.manager_id}`, score]));
+  const races = [];
+  for (const entry of entryQuery.results || []) {
+    const round = Number(entry.round);
+    let race = races.find((item) => item.id === round);
+    if (!race) {
+      race = { id: round, name: roundsById.get(round)?.name || `Round ${round}`, entries: [] };
+      races.push(race);
+    }
+    const score = scoreByEntry.get(`${round}:${entry.manager_id}`) || {};
+    race.entries.push({
+      managerId: String(entry.manager_id),
+      picks: { p1: entry.p1_driver_id, p2: entry.p2_driver_id, p3: entry.p3_driver_id, wildcard: entry.wildcard_driver_id },
+      points: { p1: score.p1_points, p2: score.p2_points, p3: score.p3_points, wildcardQualifying: score.wildcard_qualifying_points, wildcardRace: score.wildcard_race_points },
+      total: Number(score.total_points) || 0,
+    });
+  }
+  return { year, races, standings: buildWeeklyStandings(scores) };
 }
 
 async function fetchSession(env, year, round, sessionType, actorManagerId) {
@@ -352,7 +393,7 @@ async function reopenSession(env, year, round, sessionType, actorManagerId) {
   return { session: { year, round, sessionType, status: "needs_review" } };
 }
 
-async function saveWeeklyPicks(env, year, round, managerId, body) {
+async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId = managerId) {
   const roundRow = await env.DB.prepare("SELECT deadline_at FROM f1_rounds WHERE year = ? AND round = ?").bind(year, round).first();
   if (!roundRow) throw httpError(404, "Round not found.");
   if (roundRow.deadline_at && Date.now() >= Date.parse(roundRow.deadline_at) && !body.force) throw httpError(409, "The weekly picks deadline has passed.");
@@ -377,7 +418,7 @@ async function saveWeeklyPicks(env, year, round, managerId, body) {
         wildcard_driver_id = excluded.wildcard_driver_id, entry_status = excluded.entry_status,
         submitted_at = excluded.submitted_at, updated_at = CURRENT_TIMESTAMP`)
       .bind(year, round, managerId, ...picks, entryStatus, submittedAt),
-    auditInsert(env, year, round, managerId, "weekly_picks_saved", { forced: Boolean(body.force), entryStatus }),
+    auditInsert(env, year, round, actorManagerId, "weekly_picks_saved", { forced: Boolean(body.force), entryStatus, managerId }),
   ]);
   await recalculateRoundScores(env, year, round);
   return { entry: { year, round, manager_id: managerId, p1_driver_id: picks[0], p2_driver_id: picks[1], p3_driver_id: picks[2], wildcard_driver_id: picks[3], entry_status: entryStatus } };
@@ -444,7 +485,7 @@ async function importSeason(env, year, body, actorManagerId) {
   }
   for (const item of entries) {
     const picks = [clean(item.p1DriverId, 80), clean(item.p2DriverId, 80), clean(item.p3DriverId, 80), clean(item.wildcardDriverId, 80)];
-    const entryStatus = picks.every(Boolean) ? "submitted" : "draft";
+    const entryStatus = picks.some(Boolean) ? "submitted" : "draft";
     statements.push(env.DB.prepare(`INSERT INTO f1_weekly_entries (year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(year, round, manager_id) DO UPDATE SET p1_driver_id = excluded.p1_driver_id, p2_driver_id = excluded.p2_driver_id,
@@ -477,7 +518,7 @@ async function exportToGoogleSheets(env, year, actorManagerId, requestedDataset)
 }
 
 async function readExportSnapshot(env, year, dataset) {
-  const data = await readAdminWeekly(env, year, "");
+  const data = await readAdminWeekly(env, year);
   const generatedAt = new Date().toISOString();
   const [allDrivers, allEntries, allScores] = await Promise.all([
     env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
@@ -496,7 +537,17 @@ async function readExportSnapshot(env, year, dataset) {
     scores: allScores.results || [],
     generatedAt,
   };
-  if (dataset === "weekly") return baseSnapshot;
+  if (dataset === "weekly") return {
+    ...baseSnapshot,
+    standings: buildWeeklyStandings(allScores.results || []),
+    wildcardScoring: Object.entries(WILDCARD_POINTS).map(([position, points]) => ({ position: Number(position), points })),
+    podiumScoring: [
+      { result: "P1", points: 60 },
+      { result: "P2", points: 50 },
+      { result: "P3", points: 50 },
+      { result: "P1-3 (wrong position)", points: 25 },
+    ],
+  };
   const approvedSessionKeys = new Set(data.sessions
     .filter((session) => session.status === "approved")
     .map((session) => `${session.round}:${session.session_type}`));
@@ -519,7 +570,7 @@ async function recalculateRoundScores(env, year, round) {
     env.DB.prepare("SELECT driver_id, position FROM f1_session_results WHERE year = ? AND round = ? AND session_type = 'qualifying'").bind(year, round).all(),
     env.DB.prepare("SELECT driver_id, position FROM f1_session_results WHERE year = ? AND round = ? AND session_type = 'race'").bind(year, round).all(),
   ]);
-  const statements = [];
+  const statements = [env.DB.prepare("DELETE FROM f1_weekly_scores WHERE year = ? AND round = ?").bind(year, round)];
   for (const entry of entryQuery.results || []) {
     const score = scoreWeeklyEntry(entry, qualifyingQuery.results || [], raceQuery.results || []);
     statements.push(env.DB.prepare(`INSERT INTO f1_weekly_scores (year, round, manager_id, p1_points, p2_points, p3_points,
@@ -532,7 +583,7 @@ async function recalculateRoundScores(env, year, round) {
       .bind(year, round, entry.manager_id, score.p1Points, score.p2Points, score.p3Points, score.wildcardQualifyingPoints,
         score.wildcardRacePoints, score.totalPoints, JSON.stringify(score)));
   }
-  if (statements.length) await env.DB.batch(statements);
+  await env.DB.batch(statements);
 }
 
 function normalizeProviderResult(result) {

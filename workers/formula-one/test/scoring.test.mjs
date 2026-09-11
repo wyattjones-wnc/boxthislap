@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { scorePodiumPick, scoreWeeklyEntry, scoreWildcardPosition } from "../src/scoring.js";
+import { buildWeeklyStandings, scorePodiumPick, scoreWeeklyEntry, scoreWildcardPosition } from "../src/scoring.js";
 
 test("podium scoring matches the 2026 workbook rules", () => {
   assert.equal(scorePodiumPick(1, 1), 60);
@@ -31,4 +31,26 @@ test("weekly score combines podium and both wildcard sessions", () => {
     wildcardRacePoints: 5,
     totalPoints: 140,
   });
+});
+
+test("weekly standings count the best four scores in each fixed eight-round block", () => {
+  const scores = [1, 2, 3, 4, 5, 8, 9].map((round) => ({
+    manager_id: "1",
+    round,
+    total_points: round * 10,
+  }));
+  scores.push({ manager_id: "2", round: 1, total_points: 500 });
+
+  assert.deepEqual(buildWeeklyStandings(scores), [
+    { managerId: "2", points: 500, blockTotals: [{ block: 1, points: 500, countedRounds: [1] }], rank: 1 },
+    {
+      managerId: "1",
+      points: 290,
+      blockTotals: [
+        { block: 1, points: 200, countedRounds: [8, 5, 4, 3] },
+        { block: 2, points: 90, countedRounds: [9] },
+      ],
+      rank: 2,
+    },
+  ]);
 });

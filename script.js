@@ -683,6 +683,7 @@ let formulaOneAdminSelectedSession = "qualifying";
 let formulaOneReviewSelectedSession = "";
 let formulaOneAdminMode = "main";
 let formulaOneFactsEditing = false;
+const formulaOneWeeklyEditing = new Set();
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -13171,6 +13172,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
         <div class="formula-one-admin-toolbar">
           ${yearControl}${roundControl}
         </div>
+        <p><strong>Deadline:</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneAdminDate(selectedRound.deadline_at) : "Not set")}</p>
         <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
       </div>
       ${renderFormulaOneAdminPicks(data, selectedRound)}`;
@@ -13437,12 +13439,11 @@ function returnToFormulaOneManage() {
 }
 
 function renderFormulaOneAdminPicks(data, round) {
-  const driverOptions = (value) => {
+  const driverOptions = (value, disabled) => {
     const activeDrivers = (data.drivers || []).filter((driver) => driver.active !== 0 || driver.driver_id === value);
-    return `<option value="">Choose driver</option>${activeDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
+    return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${activeDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
   };
-  const deadline = round.deadline_at ? formatFormulaOneAdminDate(round.deadline_at) : "Not set";
-  const managerIds = new Set((siteData.managers || []).map((manager) => String(getManagerMeta(manager).id || "")).filter(Boolean));
+  const managerIds = new Set(getFormulaOneManagers().map((manager) => String(manager.id || "")).filter(Boolean));
   (data.entries || []).forEach((entry) => managerIds.add(String(entry.manager_id)));
   const managers = [...managerIds].map((managerId) => ({ managerId, manager: getManagerById(managerId) }))
     .sort((first, second) => (first.manager?.displayName || first.managerId).localeCompare(second.manager?.displayName || second.managerId));
@@ -13450,24 +13451,43 @@ function renderFormulaOneAdminPicks(data, round) {
     const entry = data.entries?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
     const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
     const managerName = manager?.displayName || `Manager ${managerId}`;
+    const editKey = `${data.year}:${round.round}:${managerId}`;
+    const submitted = entry?.entry_status === "submitted";
+    const locked = submitted && !formulaOneWeeklyEditing.has(editKey);
+    const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked).replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType, label)}</label>`;
     return `<form class="formula-one-admin-card" data-formula-one-admin-picks>
       <input type="hidden" name="managerId" value="${escapeHtml(managerId)}">
       <div class="formula-one-weekly-manager-heading">
         <strong>${renderManagerChip(manager || { name: managerName })}</strong>
-        <span>Deadline: ${escapeHtml(deadline)}${entry ? ` · ${escapeHtml(formatFormulaOneSessionStatus(entry.entry_status || "draft"))}` : " · No entry"}${score ? ` · ${escapeHtml(formatFormulaOnePointValue(score.total_points))} points` : ""}</span>
+        <span>${submitted ? "Submitted" : "Not submitted"}${score ? ` · ${escapeHtml(formatFormulaOnePointValue(score.total_points))} points` : ""}</span>
       </div>
       <div class="formula-one-admin-form-grid">
-        <label class="select-control"><span>P1</span><select name="p1DriverId">${driverOptions(entry?.p1_driver_id)}</select></label>
-        <label class="select-control"><span>P2</span><select name="p2DriverId">${driverOptions(entry?.p2_driver_id)}</select></label>
-        <label class="select-control"><span>P3</span><select name="p3DriverId">${driverOptions(entry?.p3_driver_id)}</select></label>
-        <label class="select-control"><span>Wildcard</span><select name="wildcardDriverId">${driverOptions(entry?.wildcard_driver_id)}</select></label>
+        ${choice("P1", "p1DriverId", entry?.p1_driver_id, "p1_points")}
+        ${choice("P2", "p2DriverId", entry?.p2_driver_id, "p2_points")}
+        ${choice("P3", "p3DriverId", entry?.p3_driver_id, "p3_points")}
+        ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, "wildcard", "wildcard")}
       </div>
-      <div class="formula-one-admin-actions">
-        <button class="footer-copy-link" type="submit" value="draft">Save draft</button>
-        <button class="action-button" type="submit" value="submit">Submit picks</button>
-      </div>
+      <div class="formula-one-admin-actions">${locked
+        ? `<button class="footer-copy-link" type="button" data-formula-one-weekly-edit="${escapeHtml(managerId)}">Edit choices</button>`
+        : `<button class="action-button" type="submit">${submitted ? "Save correction" : "Submit choices"}</button>`}</div>
     </form>`;
   }).join("")}</div>`;
+}
+
+function renderFormulaOneWeeklyChoiceResult(data, round, driverId, score, pointsKey, sessionType, label) {
+  if (!driverId) return `<small class="formula-one-choice-result">No choice · 0 points</small>`;
+  if (!score) return `<small class="formula-one-choice-result">Waiting for qualifying and race results</small>`;
+  const resultFor = (type) => data.results?.find((result) => Number(result.round) === Number(round) && result.session_type === type && result.driver_id === driverId);
+  if (sessionType === "wildcard") {
+    const qualifying = resultFor("qualifying");
+    const race = resultFor("race");
+    return `<small class="formula-one-choice-result">Qualifying ${escapeHtml(formatFormulaOnePosition(qualifying?.position))}: ${escapeHtml(formatFormulaOnePointValue(score.wildcard_qualifying_points))} · Race ${escapeHtml(formatFormulaOnePosition(race?.position))}: ${escapeHtml(formatFormulaOnePointValue(score.wildcard_race_points))}</small>`;
+  }
+  const result = resultFor("race");
+  const position = Number(result?.position);
+  const selectedPosition = Number(label.slice(1));
+  const reason = position === selectedPosition ? "exact position" : position >= 1 && position <= 3 ? "top 3, different position" : "outside top 3";
+  return `<small class="formula-one-choice-result">Finished ${escapeHtml(formatFormulaOnePosition(result?.position))} · ${escapeHtml(reason)} · ${escapeHtml(formatFormulaOnePointValue(score[pointsKey]))} points</small>`;
 }
 
 function renderFormulaOneAdminFacts(round, data, { review = false, feedback = {} } = {}) {
@@ -13569,17 +13589,19 @@ async function runFormulaOneAdminAction(action) {
   renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${safetyCarError}${unavailableMessage}` });
 }
 
-async function submitFormulaOneAdminForm(form, kind, options = {}) {
+async function submitFormulaOneAdminForm(form, kind) {
   const reviewingFacts = kind === "facts" && activePageName === "formula-1-2026-review";
   const body = Object.fromEntries(new FormData(form).entries());
   if (kind === "picks") {
-    body.submit = options.submit !== false;
+    body.submit = true;
     body.force = true;
+    body.allowPartial = true;
   }
   const managerId = kind === "picks" ? String(body.managerId || "me") : "";
   delete body.managerId;
   const path = `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}/${kind === "picks" ? `picks/${encodeURIComponent(managerId)}` : "facts"}`;
   await formulaOneAdminRequest(path, { method: "PUT", body });
+  if (kind === "picks") formulaOneWeeklyEditing.delete(`${formulaOneAdminSelectedYear}:${formulaOneAdminSelectedRound}:${managerId}`);
   await ensureFormulaOneAdminData({ force: true });
   if (reviewingFacts) {
     formulaOneFactsEditing = false;
@@ -13594,7 +13616,7 @@ async function submitFormulaOneAdminForm(form, kind, options = {}) {
     }
     return;
   }
-  renderFormulaOneAdminWeekly({ message: kind === "picks" ? (body.submit ? "Native picks submitted." : "Native picks draft saved.") : "Round facts saved." });
+  renderFormulaOneAdminWeekly({ message: kind === "picks" ? "Choices submitted." : "Round facts saved." });
 }
 
 function getFormulaOneAdminDriver(data, driverId) {
@@ -13603,8 +13625,12 @@ function getFormulaOneAdminDriver(data, driverId) {
 
 function getManagerById(managerId) {
   const id = String(managerId || "");
-  const source = (siteData.managers || []).find((manager) => String(getManagerMeta(manager).id || "") === id);
-  return source ? getManagerMeta(source) : null;
+  return getFormulaOneManagers().find((manager) => String(manager.id || "") === id) || null;
+}
+
+function getFormulaOneManagers() {
+  const sources = siteData.portalManagers?.length ? siteData.portalManagers : siteData.managers?.length ? siteData.managers : DEFAULT_PORTAL_MANAGERS;
+  return sources.map((manager) => getManagerMeta(manager));
 }
 
 function getFormulaOneAdminDriverName(data, driverId) {
@@ -15955,6 +15981,12 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
         openFormulaOneReview(sessionButton.dataset.formulaOneReviewSession);
         return;
       }
+      const editChoicesButton = event.target.closest("[data-formula-one-weekly-edit]");
+      if (editChoicesButton) {
+        formulaOneWeeklyEditing.add(`${formulaOneAdminSelectedYear}:${formulaOneAdminSelectedRound}:${editChoicesButton.dataset.formulaOneWeeklyEdit}`);
+        renderFormulaOneAdminWeekly();
+        return;
+      }
       const button = event.target.closest("[data-formula-one-admin-action]");
       if (!button || button.disabled) return;
       button.disabled = true;
@@ -15968,7 +16000,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       event.preventDefault();
       const kind = form.hasAttribute("data-formula-one-admin-picks") ? "picks" : "facts";
       form.querySelectorAll("button[type='submit']").forEach((button) => button.setAttribute("disabled", ""));
-      void submitFormulaOneAdminForm(form, kind, { submit: event.submitter?.value !== "draft" })
+      void submitFormulaOneAdminForm(form, kind)
         .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
     });
 
@@ -19496,6 +19528,25 @@ function ensureFormulaOneCalculatorData(year) {
 
 function ensureFormulaOneData(year, view = "questions") {
   const yearKey = String(year);
+  if (view === "weekly-results" && yearKey === "2026") {
+    const weeklyTask = ensureFormulaOneSource(
+      "formulaOne2026WeeklyResults",
+      async () => {
+        if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
+        const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/weekly`);
+        if (!response.ok) throw new Error(`Formula 1 weekly results returned ${response.status}.`);
+        return response.json();
+      },
+      (result) => {
+        siteData.formulaOne2026WeeklyResults = { races: result.races || [], standings: result.standings || [] };
+      }
+    );
+    return Promise.allSettled([weeklyTask]).then((results) => {
+      refreshFormulaOnePage(yearKey);
+      if (activePageName === "manager-hub") renderManagerHub();
+      return results;
+    });
+  }
   const sourceTasks = [ensureFormulaOneSource(
     `formulaOne${yearKey}`,
     () => loadSheetText(`formulaOne${yearKey}`),
@@ -19517,21 +19568,6 @@ function ensureFormulaOneData(year, view = "questions") {
         renderFormulaOneWeeklyPage(yearKey, data);
       },
       (error) => renderFormulaOneWeeklyError(yearKey, error)
-    ));
-  }
-
-  if (view === "weekly-results" && yearKey === "2026") {
-    sourceTasks.push(ensureFormulaOneSource(
-      "formulaOne2026WeeklyResults",
-      async () => {
-        if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
-        const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/2026/weekly`);
-        if (!response.ok) throw new Error(`Formula 1 weekly results returned ${response.status}.`);
-        return response.json();
-      },
-      (result) => {
-        siteData.formulaOne2026WeeklyResults = { races: result.races || [], standings: result.standings || [] };
-      }
     ));
   }
 

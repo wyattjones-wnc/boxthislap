@@ -400,7 +400,8 @@ async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId
   const picks = [body.p1DriverId, body.p2DriverId, body.p3DriverId, body.wildcardDriverId].map((value) => clean(value, 80));
   const answeredPicks = picks.filter(Boolean);
   const shouldSubmit = body.submit !== false;
-  if (shouldSubmit && answeredPicks.length !== 4) throw httpError(400, "P1, P2, P3, and wildcard picks are required to submit.");
+  if (shouldSubmit && answeredPicks.length !== 4 && !body.allowPartial) throw httpError(400, "P1, P2, P3, and wildcard picks are required to submit.");
+  if (shouldSubmit && !answeredPicks.length) throw httpError(400, "At least one choice is required to submit.");
   if (new Set(answeredPicks).size !== answeredPicks.length) throw httpError(400, "Choose a different driver for each answered pick.");
   if (answeredPicks.length) {
     const placeholders = answeredPicks.map(() => "?").join(", ");

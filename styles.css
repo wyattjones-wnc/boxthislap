@@ -7710,6 +7710,14 @@ main {
   font-size: 0.875rem;
 }
 
+.formula-one-choice-result {
+  color: var(--muted);
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  margin-top: 5px;
+}
+
 .formula-one-manage-tabs {
   margin-top: 0;
 }

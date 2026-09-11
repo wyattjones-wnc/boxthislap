@@ -13581,9 +13581,15 @@ function returnToFormulaOneManage() {
 }
 
 function renderFormulaOneAdminPicks(data, round) {
-  const driverOptions = (value, disabled) => {
-    const roundDriverIds = new Set((data.roundDrivers || []).filter((item) => Number(item.round) === Number(round.round)).map((item) => item.driver_id));
-    const availableDrivers = (data.drivers || []).filter((driver) => !roundDriverIds.size || roundDriverIds.has(driver.driver_id) || driver.driver_id === value);
+  const driverOptions = (value, disabled, wildcard = false) => {
+    const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(round.round));
+    const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
+    const roundDriverIds = new Set(roundRoster.map((item) => item.driver_id));
+    const availableDrivers = (data.drivers || []).filter((driver) => {
+      const availableForRound = hasAuthoritativeRoster ? roundDriverIds.has(driver.driver_id) : driver.active !== 0;
+      const allowedWildcard = !wildcard || !isFormulaOneTopFourTeam(getFormulaOneDriverTeamForRound(data, round.round, driver));
+      return driver.driver_id === value || (availableForRound && allowedWildcard);
+    });
     return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${availableDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
   };
   const managerIds = new Set(getFormulaOneManagers().map((manager) => String(manager.id || "")).filter(Boolean));
@@ -13601,7 +13607,7 @@ function renderFormulaOneAdminPicks(data, round) {
     const deadline = Date.parse(round.deadline_at || "");
     const compactEmpty = Number.isFinite(deadline) && Date.now() >= deadline && !hasChoices && !editing;
     const locked = submitted && !editing;
-    const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked).replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType)}</label>`;
+    const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked, sessionType === "wildcard").replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType)}</label>`;
     return `<form class="formula-one-admin-card${compactEmpty ? " formula-one-weekly-empty-card" : ""}" data-formula-one-admin-picks>
       <input type="hidden" name="managerId" value="${escapeHtml(managerId)}">
       <div class="formula-one-weekly-manager-heading">
@@ -13711,6 +13717,17 @@ async function ensureFormulaOneAdminData({ force = false, year = formulaOneAdmin
     .finally(() => { formulaOneAdminLoadPromises.delete(yearKey); });
   formulaOneAdminLoadPromises.set(yearKey, loadPromise);
   return loadPromise;
+}
+
+function getFormulaOneDriverTeamForRound(data, round, driver) {
+  const roundResult = (data.results || []).find((result) => Number(result.round) === Number(round)
+    && result.driver_id === driver.driver_id && result.constructor_name);
+  return roundResult?.constructor_name || driver.constructor_name || "";
+}
+
+function isFormulaOneTopFourTeam(teamName) {
+  const team = normalizeLookupName(teamName);
+  return team === "mclaren" || team === "mercedes" || team === "ferrari" || team === "red bull" || team === "red bull racing";
 }
 
 async function ensureFormulaOneRoundDrivers(year, round, { force = false } = {}) {

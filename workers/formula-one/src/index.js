@@ -415,7 +415,7 @@ export function deriveSafetyCarValue(messages = []) {
 }
 
 async function syncRoundDriverRoster(env, year, round, actorManagerId) {
-  const roundRow = await env.DB.prepare("SELECT race_date FROM f1_rounds WHERE year = ? AND round = ?").bind(year, round).first();
+  const roundRow = await env.DB.prepare("SELECT race_date, has_sprint FROM f1_rounds WHERE year = ? AND round = ?").bind(year, round).first();
   if (!roundRow) throw httpError(404, "Round not found.");
   const baseUrl = String(env.OPENF1_BASE_URL || "https://api.openf1.org/v1").replace(/\/$/, "");
   const sessions = await fetchOpenF1Json(`${baseUrl}/sessions?year=${encodeURIComponent(year)}`, "sessions");
@@ -426,20 +426,31 @@ async function syncRoundDriverRoster(env, year, round, actorManagerId) {
     if (!session.meeting_key || !Number.isFinite(timestamp) || !Number.isFinite(raceTimestamp)) continue;
     const distance = Math.abs(timestamp - raceTimestamp);
     const current = meetings.get(session.meeting_key);
-    if (!current || distance < current.distance) meetings.set(session.meeting_key, { distance, session });
+    if (!current || distance < current.distance) meetings.set(session.meeting_key, { distance, meetingKey: session.meeting_key });
   }
   const nearest = [...meetings.values()].sort((first, second) => first.distance - second.distance)[0];
   if (!nearest || nearest.distance > 4 * 24 * 60 * 60 * 1000) return { round, drivers: [], source: "season_fallback" };
 
-  const openF1Drivers = await fetchOpenF1Json(`${baseUrl}/drivers?meeting_key=${encodeURIComponent(nearest.session.meeting_key)}`, "drivers");
+  const requiredSessionName = roundRow.has_sprint ? "sprint qualifying" : "practice 2";
+  const requiredSession = findRoundRosterSession(sessions, nearest.meetingKey, Boolean(roundRow.has_sprint));
+  const clearLegacyRoster = () => env.DB.prepare("DELETE FROM f1_round_drivers WHERE year = ? AND round = ? AND source = 'openf1'").bind(year, round).run();
+  if (!requiredSession?.session_key) {
+    await clearLegacyRoster();
+    return { round, drivers: [], source: "season_fallback", waitingFor: requiredSessionName };
+  }
+
+  const openF1Drivers = await fetchOpenF1Json(`${baseUrl}/drivers?session_key=${encodeURIComponent(requiredSession.session_key)}`, "drivers");
   const uniqueDrivers = [...new Map((Array.isArray(openF1Drivers) ? openF1Drivers : [])
     .filter((driver) => driver?.driver_number && (driver.full_name || driver.broadcast_name))
     .map((driver) => [String(driver.driver_number), driver])).values()];
-  if (!uniqueDrivers.length) return { round, drivers: [], source: "season_fallback" };
+  if (!uniqueDrivers.length) {
+    await clearLegacyRoster();
+    return { round, drivers: [], source: "season_fallback", waitingFor: requiredSessionName };
+  }
 
   const existingQuery = await env.DB.prepare("SELECT driver_id, permanent_number, given_name, family_name, display_name FROM f1_drivers WHERE year = ?").bind(year).all();
   const driverByNumber = new Map((existingQuery.results || []).filter((driver) => driver.permanent_number).map((driver) => [String(driver.permanent_number), driver]));
-  const statements = [env.DB.prepare("DELETE FROM f1_round_drivers WHERE year = ? AND round = ? AND source = 'openf1'").bind(year, round)];
+  const statements = [env.DB.prepare("DELETE FROM f1_round_drivers WHERE year = ? AND round = ? AND source IN ('openf1', 'openf1_second_session')").bind(year, round)];
   const driverIds = [];
   for (const driver of uniqueDrivers) {
     const number = String(driver.driver_number);
@@ -447,11 +458,22 @@ async function syncRoundDriverRoster(env, year, round, actorManagerId) {
     const driverId = existingDriver?.driver_id || `openf1_${number}`;
     driverIds.push(driverId);
     statements.push(driverUpsert(env, year, normalizeOpenF1Driver(driver, driverId, existingDriver)));
-    statements.push(roundDriverUpsert(env, year, round, driverId, "openf1"));
+    statements.push(roundDriverUpsert(env, year, round, driverId, "openf1_second_session"));
   }
-  statements.push(auditInsert(env, year, round, actorManagerId, "round_drivers_fetched", { meetingKey: nearest.session.meeting_key, driverCount: driverIds.length }));
+  const latestAuthoritative = await env.DB.prepare("SELECT MAX(round) AS round FROM f1_round_drivers WHERE year = ? AND source IN ('session_result', 'openf1_second_session')").bind(year).first();
+  if (round >= Number(latestAuthoritative?.round || 0)) {
+    const placeholders = driverIds.map(() => "?").join(", ");
+    statements.push(env.DB.prepare(`UPDATE f1_drivers SET active = CASE WHEN driver_id IN (${placeholders}) THEN 1 ELSE 0 END, updated_at = CURRENT_TIMESTAMP WHERE year = ?`).bind(...driverIds, year));
+  }
+  statements.push(auditInsert(env, year, round, actorManagerId, "round_drivers_fetched", { meetingKey: nearest.meetingKey, sessionKey: requiredSession.session_key, sessionName: requiredSessionName, driverCount: driverIds.length }));
   await env.DB.batch(statements);
-  return { round, drivers: driverIds, source: "openf1" };
+  return { round, drivers: driverIds, source: "openf1_second_session", sessionName: requiredSessionName };
+}
+
+export function findRoundRosterSession(sessions, meetingKey, hasSprint) {
+  const requiredSessionName = hasSprint ? "sprint qualifying" : "practice 2";
+  return (Array.isArray(sessions) ? sessions : []).find((session) => Number(session.meeting_key) === Number(meetingKey)
+    && String(session.session_name || session.session_type || "").trim().toLowerCase() === requiredSessionName) || null;
 }
 
 function normalizeOpenF1Driver(driver, driverId, existingDriver = null) {
@@ -545,11 +567,22 @@ async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId
   if (new Set(answeredPicks).size !== answeredPicks.length) throw httpError(400, "Choose a different driver for each answered pick.");
   if (answeredPicks.length) {
     const placeholders = answeredPicks.map(() => "?").join(", ");
-    const rosterCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM f1_round_drivers WHERE year = ? AND round = ?").bind(year, round).first();
+    const rosterCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM f1_round_drivers WHERE year = ? AND round = ? AND source IN ('session_result', 'openf1_second_session')").bind(year, round).first();
     const knownDrivers = Number(rosterCount?.count)
       ? await env.DB.prepare(`SELECT driver_id FROM f1_round_drivers WHERE year = ? AND round = ? AND driver_id IN (${placeholders})`).bind(year, round, ...answeredPicks).all()
-      : await env.DB.prepare(`SELECT driver_id FROM f1_drivers WHERE year = ? AND driver_id IN (${placeholders})`).bind(year, ...answeredPicks).all();
+      : await env.DB.prepare(`SELECT driver_id FROM f1_drivers WHERE year = ? AND driver_id IN (${placeholders}) AND (active = 1 OR EXISTS (
+          SELECT 1 FROM f1_round_drivers roster WHERE roster.year = f1_drivers.year AND roster.round = ? AND roster.driver_id = f1_drivers.driver_id
+        ))`).bind(year, ...answeredPicks, round).all();
     if ((knownDrivers.results || []).length !== answeredPicks.length) throw httpError(400, "Every pick must be available for this round.");
+  }
+  if (picks[3]) {
+    const wildcardDriver = await env.DB.prepare(`SELECT COALESCE(NULLIF((
+      SELECT constructor_name FROM f1_session_results result
+      WHERE result.year = driver.year AND result.round = ? AND result.driver_id = driver.driver_id AND result.constructor_name <> ''
+      ORDER BY CASE result.session_type WHEN 'race' THEN 1 WHEN 'qualifying' THEN 2 ELSE 3 END LIMIT 1
+    ), ''), driver.constructor_name) AS constructor_name FROM f1_drivers driver WHERE driver.year = ? AND driver.driver_id = ?`)
+      .bind(round, year, picks[3]).first();
+    if (isTopFourConstructor(wildcardDriver?.constructor_name)) throw httpError(400, "Wildcard choices cannot be from McLaren, Mercedes, Ferrari, or Red Bull.");
   }
   const entryStatus = shouldSubmit ? "submitted" : "draft";
   const submittedAt = shouldSubmit ? new Date().toISOString() : "";
@@ -566,6 +599,11 @@ async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId
   ]);
   await recalculateRoundScores(env, year, round);
   return { entry: { year, round, manager_id: managerId, p1_driver_id: picks[0], p2_driver_id: picks[1], p3_driver_id: picks[2], wildcard_driver_id: picks[3], entry_status: entryStatus } };
+}
+
+export function isTopFourConstructor(teamName) {
+  const team = String(teamName || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return ["mclaren", "mercedes", "ferrari", "red bull", "red bull racing"].includes(team);
 }
 
 async function saveRoundFacts(env, year, round, body, actorManagerId) {

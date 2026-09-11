@@ -12493,7 +12493,9 @@ function renderFormulaOneWeeklyStandingDetails(data, standing, selectedGroup) {
     const counted = new Set((standing.countedRounds || []).map(Number));
     rounds = rounds.filter(({ race }) => counted.has(Number(race.id)));
   }
-  rounds.sort((first, second) => Number(first.race.id) - Number(second.race.id));
+  rounds.sort(selectedGroup === "all"
+    ? (first, second) => Number(first.race.id) - Number(second.race.id)
+    : (first, second) => (Number(second.entry?.total) || 0) - (Number(first.entry?.total) || 0) || Number(first.race.id) - Number(second.race.id));
   if (!rounds.length) return `<div class="standing-result-detail-panel"><p class="table-message">No completed rounds are available.</p></div>`;
 
   return `<div class="standing-result-detail-panel"><ul class="standing-result-detail-list formula-one-weekly-standing-rounds">${rounds.map(({ race, entry }) => {

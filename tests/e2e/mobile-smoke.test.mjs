@@ -84,3 +84,67 @@ test("secondary admin bundles stay off the initial mobile route", async ({
 
   expect(secondaryBundleRequests).toEqual([]);
 });
+
+test("authenticated YouTube route loads its deferred controller", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        managerId: "6",
+      }),
+    );
+    localStorage.setItem("boxThisLapYouTubeSession", "test-token");
+  });
+  await page.route("https://docs.google.com/**", async (route) => {
+    await route.fulfill({
+      body: [
+        "ID,Display Name,YouTube Channel ID,Priority,IsRemoved",
+        "1,Test Channel,test-channel,1,FALSE",
+        "Priority,Description,Filter,,",
+        "1,Priority 1,,1,",
+      ].join("\n"),
+      contentType: "text/csv",
+      status: 200,
+    });
+  });
+  await page.route(
+    "https://box-this-lap-youtube.boxthislap.workers.dev/**",
+    async (route) => {
+      const url = new URL(route.request().url());
+      const body = url.pathname.includes("playlists")
+        ? { playlists: [] }
+        : { lastSyncAt: "", videos: [] };
+      await route.fulfill({
+        body: JSON.stringify(body),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({ ok: true, teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/#youtube", { waitUntil: "networkidle" });
+
+  await expect(page.locator('[data-page="youtube"]')).toHaveClass(/is-active/);
+  await expect(page.locator(".youtube-toolbar")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "All caught up" }),
+  ).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});

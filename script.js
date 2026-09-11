@@ -775,7 +775,7 @@ const loadTrophyLogController = createLazyControllerLoader(async () => {
   });
 });
 const loadYouTubeInboxController = createLazyControllerLoader(async () => {
-  const { createYouTubeInboxController } = await import("./modules/youtubeInbox.js?v=202608300501");
+  const { createYouTubeInboxController } = await import("./modules/youtubeInbox.js?v=202609112010");
   return createYouTubeInboxController({
     endpoint: YOUTUBE_INBOX_ENDPOINT,
     loadSheet,

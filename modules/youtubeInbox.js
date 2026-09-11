@@ -10,6 +10,7 @@ const VIDEO_PAGE_SIZE = 100;
 
 export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop }) {
   const view = document.querySelector("#youtube-inbox-view");
+  let loadPromise = null;
   const state = {
     channel: "",
     channels: [],
@@ -43,12 +44,23 @@ export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop 
 
     render();
     if (!state.loading && !state.videos.length) {
-      load();
+      return load();
     }
+
+    return loadPromise || Promise.resolve();
   }
 
-  async function load() {
-    if (!view || state.loading) return;
+  function load() {
+    if (!view) return Promise.resolve();
+    if (loadPromise) return loadPromise;
+
+    loadPromise = performLoad().finally(() => {
+      loadPromise = null;
+    });
+    return loadPromise;
+  }
+
+  async function performLoad() {
     state.loading = true;
     render();
 

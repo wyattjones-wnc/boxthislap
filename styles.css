@@ -7729,6 +7729,10 @@ main {
   gap: 16px;
 }
 
+.formula-one-admin-card.formula-one-weekly-empty-card {
+  padding-block: 9px;
+}
+
 .formula-one-weekly-manager-heading {
   align-items: center;
   display: flex;

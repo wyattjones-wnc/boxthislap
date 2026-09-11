@@ -13488,26 +13488,30 @@ function renderFormulaOneAdminPicks(data, round) {
     const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
     const managerName = manager?.displayName || `Manager ${managerId}`;
     const editKey = `${data.year}:${round.round}:${managerId}`;
+    const editing = formulaOneWeeklyEditing.has(editKey);
     const submitted = entry?.entry_status === "submitted";
-    const locked = submitted && !formulaOneWeeklyEditing.has(editKey);
+    const hasChoices = Boolean(entry && [entry.p1_driver_id, entry.p2_driver_id, entry.p3_driver_id, entry.wildcard_driver_id].some(Boolean));
+    const deadline = Date.parse(round.deadline_at || "");
+    const compactEmpty = Number.isFinite(deadline) && Date.now() >= deadline && !hasChoices && !editing;
+    const locked = submitted && !editing;
     const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked).replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType)}</label>`;
-    return `<form class="formula-one-admin-card" data-formula-one-admin-picks>
+    return `<form class="formula-one-admin-card${compactEmpty ? " formula-one-weekly-empty-card" : ""}" data-formula-one-admin-picks>
       <input type="hidden" name="managerId" value="${escapeHtml(managerId)}">
       <div class="formula-one-weekly-manager-heading">
         <strong>${renderManagerChip(manager || { name: managerName })}</strong>
         <div class="formula-one-weekly-manager-meta">
-          ${submitted ? `<span class="formula-one-submitted-chip" title="Submitted" aria-label="Submitted">${renderTodoChipIcon("check")}</span>` : `<span>Not submitted</span>`}
-          ${score ? `<span>${escapeHtml(formatFormulaOnePointValue(score.total_points))} points</span>` : ""}
-          ${locked ? `<button class="footer-copy-link" type="button" data-formula-one-weekly-edit="${escapeHtml(managerId)}">Edit choices</button>` : ""}
+          ${submitted ? `<span class="formula-one-submitted-chip" title="Submitted" aria-label="Submitted">${renderTodoChipIcon("check")}</span>` : compactEmpty ? "" : `<span>Not submitted</span>`}
+          <span>${escapeHtml(formatFormulaOnePointValue(score?.total_points ?? 0))} points</span>
+          ${locked || compactEmpty ? `<button class="footer-copy-link" type="button" data-formula-one-weekly-edit="${escapeHtml(managerId)}">Edit choices</button>` : ""}
         </div>
       </div>
-      <div class="formula-one-admin-form-grid">
+      ${compactEmpty ? "" : `<div class="formula-one-admin-form-grid">
         ${choice("P1", "p1DriverId", entry?.p1_driver_id, "p1_points")}
         ${choice("P2", "p2DriverId", entry?.p2_driver_id, "p2_points")}
         ${choice("P3", "p3DriverId", entry?.p3_driver_id, "p3_points")}
         ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, "wildcard", "wildcard")}
       </div>
-      ${locked ? "" : `<div class="formula-one-admin-actions"><button class="action-button" type="submit">${submitted ? "Save correction" : "Submit choices"}</button></div>`}
+      ${locked ? "" : `<div class="formula-one-admin-actions"><button class="action-button" type="submit">${submitted ? "Save correction" : "Submit choices"}</button></div>`}`}
     </form>`;
   }).join("")}</div>`;
 }

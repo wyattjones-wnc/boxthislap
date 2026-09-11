@@ -19,6 +19,7 @@ export default [
       "playwright.config.js",
       "scripts/prepare-site-build.mjs",
       "scripts/run-mobile-smoke.mjs",
+      "scripts/verify-site-build.mjs",
       "tests/**/*.mjs",
     ],
     languageOptions: {

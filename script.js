@@ -447,13 +447,8 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260908151
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createGuidesController } from "./modules/guides.js?v=202608301830";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608301400";
-import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608301800";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
-import { createTrophyLogController } from "./modules/trophyLog.js?v=202609091449";
 import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609100137";
-import { createCollectiblesController } from "./modules/collectibles.js?v=202609050001";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -738,14 +733,6 @@ const guidesController = createGuidesController({
   loadData: loadGuideData,
   progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
 });
-const platinumsController = createPlatinumsController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
-const trophyStatsController = createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
-const trophyLogController = createTrophyLogController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
-const youtubeInboxController = createYouTubeInboxController({
-  endpoint: YOUTUBE_INBOX_ENDPOINT,
-  loadSheet,
-  scrollToTop: scrollToPageTop,
-});
 const draftListsController = createDraftListsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
@@ -769,11 +756,89 @@ const followedTeamsController = createFollowedTeamsController({
     }
   },
 });
-const collectiblesController = createCollectiblesController({
-  endpoint: COLLECTIBLES_ENDPOINT,
-  getAccessToken: ensureRankingAuthorization,
-  catalogPath: `data/collectibles-catalog.json?v=${encodeURIComponent(SITE_VERSION)}`,
+const loadPlatinumsController = createLazyControllerLoader(async () => {
+  const { createPlatinumsController } = await import("./modules/platinums.js?v=202608301400");
+  return createPlatinumsController({
+    endpoint: PSN_TROPHIES_ENDPOINT,
+    getAccessToken: ensureRankingAuthorization,
+  });
 });
+const loadTrophyStatsController = createLazyControllerLoader(async () => {
+  const { createTrophyStatsController } = await import("./modules/trophyStats.js?v=202608301800");
+  return createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
+});
+const loadTrophyLogController = createLazyControllerLoader(async () => {
+  const { createTrophyLogController } = await import("./modules/trophyLog.js?v=202609091449");
+  return createTrophyLogController({
+    endpoint: PSN_TROPHIES_ENDPOINT,
+    getAccessToken: ensureRankingAuthorization,
+  });
+});
+const loadYouTubeInboxController = createLazyControllerLoader(async () => {
+  const { createYouTubeInboxController } = await import("./modules/youtubeInbox.js?v=202608300501");
+  return createYouTubeInboxController({
+    endpoint: YOUTUBE_INBOX_ENDPOINT,
+    loadSheet,
+    scrollToTop: scrollToPageTop,
+  });
+});
+const loadCollectiblesController = createLazyControllerLoader(async () => {
+  const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609050001");
+  return createCollectiblesController({
+    endpoint: COLLECTIBLES_ENDPOINT,
+    getAccessToken: ensureRankingAuthorization,
+    catalogPath: `data/collectibles-catalog.json?v=${encodeURIComponent(SITE_VERSION)}`,
+  });
+});
+
+function createLazyControllerLoader(factory) {
+  let controllerPromise = null;
+
+  return () => {
+    if (!controllerPromise) {
+      controllerPromise = Promise.resolve()
+        .then(factory)
+        .catch((error) => {
+          controllerPromise = null;
+          throw error;
+        });
+    }
+
+    return controllerPromise;
+  };
+}
+
+async function renderPlatinumsPage() {
+  return (await loadPlatinumsController()).renderPage();
+}
+
+async function renderTrophyStatsPage() {
+  return (await loadTrophyStatsController()).renderPage();
+}
+
+async function loadTrophyStatsPage() {
+  return (await loadTrophyStatsController()).load();
+}
+
+async function renderTrophyLogPage() {
+  return (await loadTrophyLogController()).renderPage();
+}
+
+async function renderYouTubeInboxPage() {
+  return (await loadYouTubeInboxController()).renderPage();
+}
+
+async function loadYouTubeInboxPage() {
+  return (await loadYouTubeInboxController()).load();
+}
+
+async function renderCollectiblesPage() {
+  return (await loadCollectiblesController()).renderPage();
+}
+
+function startLazyPageRender(label, render) {
+  void render().catch((error) => recordDiagnostic(`${label} failed to render`, error));
+}
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -12575,7 +12640,7 @@ function renderActivePageContent(pageName = "") {
     return;
   }
   if (pageName === "the-monster-maniac") {
-    void platinumsController.renderPage();
+    startLazyPageRender("platinums", renderPlatinumsPage);
     return;
   }
   if (pageName === "footy") {
@@ -12651,22 +12716,22 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "youtube") {
-    youtubeInboxController.renderPage();
+    startLazyPageRender("YouTube inbox", renderYouTubeInboxPage);
     return;
   }
 
   if (pageName === "trophy-stats") {
-    trophyStatsController.renderPage();
+    startLazyPageRender("trophy stats", renderTrophyStatsPage);
     return;
   }
 
   if (pageName === "trophy-log") {
-    void trophyLogController.renderPage();
+    startLazyPageRender("trophy log", renderTrophyLogPage);
     return;
   }
 
   if (pageName === "collectibles") {
-    void collectiblesController.renderPage();
+    startLazyPageRender("collectibles", renderCollectiblesPage);
     return;
   }
 
@@ -19056,6 +19121,10 @@ function getPageDataScope(pageName = "") {
     return "trophy-log";
   }
 
+  if (page === "collectibles") {
+    return "collectibles";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -19184,19 +19253,23 @@ function loadPageData(scope) {
   }
 
   if (scope === "youtube") {
-    return youtubeInboxController.load();
+    return loadYouTubeInboxPage();
   }
 
   if (scope === "the-monster-maniac") {
-    return platinumsController.renderPage();
+    return renderPlatinumsPage();
   }
 
   if (scope === "trophy-stats") {
-    return trophyStatsController.load();
+    return loadTrophyStatsPage();
   }
 
   if (scope === "trophy-log") {
-    return trophyLogController.renderPage();
+    return renderTrophyLogPage();
+  }
+
+  if (scope === "collectibles") {
+    return renderCollectiblesPage();
   }
 
   if (scope === "rankings") {

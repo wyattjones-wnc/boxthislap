@@ -63,3 +63,24 @@ test("visible pointer targets meet the WCAG minimum size", async ({ page }) => {
 
   expect(undersizedTargets).toEqual([]);
 });
+
+test("secondary admin bundles stay off the initial mobile route", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const secondaryBundleRequests = [];
+  page.on("request", (request) => {
+    if (
+      /\/(?:collectibles|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
+        new URL(request.url()).pathname,
+      )
+    ) {
+      secondaryBundleRequests.push(request.url());
+    }
+  });
+
+  await page.goto("/#footy", { waitUntil: "networkidle" });
+  await expect(page.locator('[data-page="footy"]')).toHaveClass(/is-active/);
+
+  expect(secondaryBundleRequests).toEqual([]);
+});

@@ -47,6 +47,7 @@ export const footyMissingNotesMatchPeriod = document.querySelector("#footy-missi
 export const footyMissingNotesTeam = document.querySelector("#footy-missing-notes-team");
 export const footyMissingNotesSummary = document.querySelector("#footy-missing-notes-summary");
 export const footyMissingNotesList = document.querySelector("#footy-missing-notes-list");
+export const footyMissingNotesPagination = document.querySelector("#footy-missing-notes-pagination");
 export const managerSummaryList = document.querySelector("#manager-summary-list");
 export const managerSummaryYearSelect = document.querySelector("#manager-summary-year-select");
 export const managerAwardsList = document.querySelector("#manager-awards-list");
@@ -378,6 +379,8 @@ export const formulaOneViews = {
     questionFilter: document.querySelector("#formula-one-2025-question-filter"),
     questionList: document.querySelector("#formula-one-2025-question-list"),
     resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2025\"]"),
+    resultsWeeklyControls: document.querySelector("#formula-one-2025-results-weekly-controls"),
+    resultsWeeklyGroupSelect: document.querySelector("#formula-one-2025-results-weekly-group"),
     resultsRows: document.querySelector("#formula-one-2025-results-rows"),
     weeklyList: document.querySelector("#formula-one-2025-weekly-list"),
     weeklyRoundSelect: document.querySelector("#formula-one-2025-weekly-round-select"),
@@ -389,9 +392,13 @@ export const formulaOneViews = {
     questionSelect: document.querySelector("#formula-one-2026-question-select"),
     questionFilter: document.querySelector("#formula-one-2026-question-filter"),
     questionList: document.querySelector("#formula-one-2026-question-list"),
+    review: document.querySelector("#formula-one-2026-review-content"),
     resultsModeButtons: document.querySelectorAll("[data-formula-one-results-mode][data-formula-one-results-year=\"2026\"]"),
+    resultsWeeklyControls: document.querySelector("#formula-one-2026-results-weekly-controls"),
+    resultsWeeklyGroupSelect: document.querySelector("#formula-one-2026-results-weekly-group"),
     resultsRows: document.querySelector("#formula-one-2026-results-rows"),
     weeklyForm: document.querySelector("#formula-one-2026-weekly-form"),
+    weeklyAdmin: document.querySelector("#formula-one-2026-weekly-admin"),
     weeklyList: document.querySelector("#formula-one-2026-weekly-list"),
     weeklyManagers: document.querySelector("#formula-one-2026-weekly-managers"),
     weeklyRoundSelect: document.querySelector("#formula-one-2026-weekly-round-select"),

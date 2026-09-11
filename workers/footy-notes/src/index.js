@@ -407,7 +407,7 @@ async function syncRosters(env, body) {
     if (players.length > 200) throw httpError(400, "A roster has too many players.");
     const isActive = rosterValue?.active !== false;
     const seasonStatements = [];
-    if (isActive) seasonStatements.push(env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ?").bind(now, teamId));
+    if (isActive) seasonStatements.push(env.DB.prepare("UPDATE footy_roster_seasons SET is_active = 0, updated_at = ? WHERE team_id = ? AND season <> ? AND is_active <> 0").bind(now, teamId, season));
     seasonStatements.push(env.DB.prepare(`INSERT INTO footy_roster_seasons
       (team_id, season, is_active, provider, provider_team_id, last_synced_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(team_id, season) DO UPDATE SET
@@ -439,11 +439,23 @@ async function syncRosters(env, body) {
       const preserveManual = existing && Number(existing.manual) === 1 && existing.provider !== "legacy-sheet" && existing.provider !== "legacy-history";
       const manual = value?.manual || preserveManual ? 1 : 0;
       if (existing) {
-        await env.DB.prepare(`UPDATE footy_roster_players SET player_key = ?, provider = ?, provider_player_id = ?, provider_data = ?, overrides = ?,
-          status = CASE WHEN status = 'archived' THEN 'archived' ELSE 'active' END, manual = ?, source_seen_at = ?, updated_at = ? WHERE id = ?`)
-          .bind(playerKey, provider, providerPlayerId, JSON.stringify(providerData), JSON.stringify(mergedOverrides), manual, now, now, id).run();
-        existingRows = existingRows.map((row) => row.id === id ? { ...row, player_key: playerKey, provider, provider_player_id: providerPlayerId, provider_data: JSON.stringify(providerData), overrides: JSON.stringify(mergedOverrides), manual } : row);
-        updated += 1;
+        const storedProviderData = JSON.stringify(providerData);
+        const storedOverrides = JSON.stringify(mergedOverrides);
+        const nextStatus = existing.status === "archived" ? "archived" : "active";
+        const changed = existing.player_key !== playerKey
+          || existing.provider !== provider
+          || String(existing.provider_player_id || "") !== providerPlayerId
+          || String(existing.provider_data || "") !== storedProviderData
+          || String(existing.overrides || "") !== storedOverrides
+          || existing.status !== nextStatus
+          || Number(existing.manual) !== manual;
+        if (changed) {
+          await env.DB.prepare(`UPDATE footy_roster_players SET player_key = ?, provider = ?, provider_player_id = ?, provider_data = ?, overrides = ?,
+            status = ?, manual = ?, source_seen_at = ?, updated_at = ? WHERE id = ?`)
+            .bind(playerKey, provider, providerPlayerId, storedProviderData, storedOverrides, nextStatus, manual, now, now, id).run();
+          updated += 1;
+        }
+        existingRows = existingRows.map((row) => row.id === id ? { ...row, player_key: playerKey, provider, provider_player_id: providerPlayerId, provider_data: storedProviderData, overrides: storedOverrides, status: nextStatus, manual } : row);
       } else {
         await env.DB.prepare(`INSERT INTO footy_roster_players
           (id, team_id, season, player_key, provider, provider_player_id, provider_data, overrides, status, manual, source_seen_at, updated_at)
@@ -454,9 +466,8 @@ async function syncRosters(env, body) {
       }
       seenKeys.push(playerKey);
     }
-    const activeProviderRows = await env.DB.prepare("SELECT id, player_key, provider FROM footy_roster_players WHERE team_id = ? AND season = ? AND manual = 0 AND status = 'active'").bind(teamId, season).all();
     const seen = new Set(seenKeys);
-    for (const row of activeProviderRows.results || []) {
+    for (const row of existingRows.filter((value) => Number(value.manual) === 0 && value.status === "active")) {
       if (seen.has(row.player_key)) continue;
       if (refreshedProviders.size && !refreshedProviders.has(String(row.provider || ""))) continue;
       await env.DB.prepare("UPDATE footy_roster_players SET status = 'review_departure', updated_at = ? WHERE id = ?").bind(now, row.id).run();

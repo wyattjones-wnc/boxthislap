@@ -246,6 +246,24 @@ export async function setSyncCursor(env: PsnEnvironment, cursor: number): Promis
 }
 
 export async function getStoredGameUpdates(env: PsnEnvironment): Promise<Map<string, string>> {
+  const cached = await env.DB.prepare("SELECT value FROM sync_state WHERE key = 'title_updates'").first<{ value?: unknown }>();
+  if (cached?.value) {
+    try {
+      const entries = JSON.parse(String(cached.value));
+      if (Array.isArray(entries)) return new Map(entries.map(([id, timestamp]) => [String(id), String(timestamp || "")]));
+    } catch {
+      // Fall through once to rebuild the compact index from the games table.
+    }
+  }
   const result = await env.DB.prepare("SELECT id, source_updated_at FROM games").all<Record<string, unknown>>();
   return new Map((result.results || []).map((row) => [String(row.id), String(row.source_updated_at || "")]));
+}
+
+export async function setStoredGameUpdates(env: PsnEnvironment, updates: Map<string, string>): Promise<void> {
+  const value = JSON.stringify([...updates.entries()].sort(([first], [second]) => first.localeCompare(second)));
+  await env.DB.prepare(`
+    INSERT INTO sync_state (key, value, updated_at) VALUES ('title_updates', ?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    WHERE sync_state.value IS NOT excluded.value
+  `).bind(value, new Date().toISOString()).run();
 }

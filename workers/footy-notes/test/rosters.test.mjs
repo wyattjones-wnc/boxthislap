@@ -67,6 +67,19 @@ test("roster sync merges provider data, preserves overrides, and flags departure
   assert.equal(roster.players.find((player) => player.providerPlayerId === "10").useDefaultCardImage, true);
   assert.equal(roster.players.find((player) => player.providerPlayerId === "10").transferOutDate, "2026-07-01");
 
+  const unchanged = await sync(worker, [{
+    teamId: "1",
+    season: "2026-27",
+    provider: "TheSportsDB",
+    providerTeamId: "133604",
+    players: [
+      { playerKey: "provider:10", provider: "provider", providerPlayerId: "10", providerData: { name: "First Player", number: "9" }, seedOverrides: { number: "10", cardImage: "assets/custom.webp", useDefaultCardImage: true, transferOutDate: "2026-07-01" } },
+      { playerKey: "provider:11", provider: "provider", providerPlayerId: "11", providerData: { name: "Second Player", number: "11" } },
+      { playerKey: "legacy:12", provider: "legacy-sheet", providerPlayerId: "12", providerData: { name: "Manual Player" }, manual: true },
+    ],
+  }]);
+  assert.equal(unchanged.updated, 0);
+
   await sync(worker, [{ teamId: "1", season: "2026-27", players: [
     { playerKey: "provider:10", provider: "provider", providerPlayerId: "10", providerData: { name: "First Player", number: "12" } },
   ] }]);

@@ -1,5 +1,10 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import {
+  buildFormulaOneMainDatasets,
+  buildFormulaOneQualifyingComparisons,
+  summarizeFormulaOneQualifyingComparisons,
+} from "./modules/formulaOneQualifying.js?v=202609110445";
+import {
   buildFootyNextItemDefaults,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
@@ -17,6 +22,7 @@ import {
   NEXT_ITEMS_ENDPOINT,
   GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
+  FORMULA_ONE_ENDPOINT,
   PSN_TROPHIES_ENDPOINT,
   YOUTUBE_INBOX_ENDPOINT,
   COLLECTIBLES_ENDPOINT,
@@ -89,6 +95,7 @@ import {
   footyMissingNotesTeam,
   footyMissingNotesSummary,
   footyMissingNotesList,
+  footyMissingNotesPagination,
   managerSummaryList,
   managerSummaryYearSelect,
   managerAwardsList,
@@ -435,7 +442,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202609091415";
+} from "./modules/domRefs.js?v=202609110445";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
@@ -466,10 +473,15 @@ const formulaOneResultsMode = {
   2025: "yearly",
   2026: "yearly",
 };
+const formulaOneWeeklyResultsGroup = {
+  2025: "all",
+  2026: "all",
+};
 let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowFootyMissingNotesFilters = false;
+let activeFootyMissingNotesPage = 1;
 let shouldShowFootyCustomFilters = false;
 let isFootyCustomScheduleConfirmed = false;
 const selectedFootyCustomTeamKeys = new Set();
@@ -528,6 +540,7 @@ let pendingWantMoveItemId = "";
 let draggedWantItemId = "";
 let didMoveWantPointer = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
+const FOOTY_MISSING_NOTES_PAGE_SIZE = 20;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
 const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
@@ -669,6 +682,16 @@ const siteData = {};
 let guideLinksLoadPromise = null;
 let rankingAuthorizationPromise = null;
 let rankingAuthorizationRefreshTimer = 0;
+const formulaOneAdminLoadPromises = new Map();
+let formulaOneAdminSeasonsLoadPromise = null;
+let formulaOneAdminSelectedYear = "2026";
+let formulaOneAdminSelectedRound = "";
+let formulaOneAdminSelectedSession = "qualifying";
+let formulaOneReviewSelectedSession = "";
+let formulaOneAdminMode = "main";
+let formulaOneFactsEditing = false;
+const formulaOneWeeklyEditing = new Set();
+const formulaOneRoundDriverLoads = new Set();
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -692,6 +715,7 @@ const router = createRouter({
   shouldBlockPage: (pageName) =>
     (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
+    (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
     (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
@@ -922,22 +946,34 @@ function renderFootyMissingNotesPage() {
   const visibleFixtures = getFilteredFootyMissingNotesFixtures(missingFixtures)
     .sort(compareFootyFixturesDescending);
   const hasFilters = hasActiveFootyMissingNotesFilters();
+  const pageCount = Math.max(1, Math.ceil(visibleFixtures.length / FOOTY_MISSING_NOTES_PAGE_SIZE));
+  activeFootyMissingNotesPage = Math.min(Math.max(1, activeFootyMissingNotesPage), pageCount);
+  const pageStart = (activeFootyMissingNotesPage - 1) * FOOTY_MISSING_NOTES_PAGE_SIZE;
+  const pageFixtures = visibleFixtures.slice(pageStart, pageStart + FOOTY_MISSING_NOTES_PAGE_SIZE);
 
   footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
   footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
   if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
   if (footyMissingNotesSummary) {
-    footyMissingNotesSummary.textContent = missingFixtures.length
-      ? `Showing ${visibleFixtures.length} of ${missingFixtures.length} ${missingFixtures.length === 1 ? "match" : "matches"} needing notes.`
+    const pageEnd = Math.min(pageStart + pageFixtures.length, visibleFixtures.length);
+    footyMissingNotesSummary.textContent = visibleFixtures.length
+      ? `Showing ${pageStart + 1}-${pageEnd} of ${visibleFixtures.length} ${visibleFixtures.length === 1 ? "match" : "matches"} needing notes${hasFilters && visibleFixtures.length !== missingFixtures.length ? ` (${missingFixtures.length} total)` : ""}.`
       : "";
   }
 
   footyMissingNotesList.setAttribute("aria-busy", "false");
   footyMissingNotesList.innerHTML = visibleFixtures.length
-    ? `<div class="footy-list footy-list--calendar-weeks">${visibleFixtures.map(renderFootyFixture).join("")}</div>`
+    ? `<div class="footy-list footy-list--calendar-weeks">${pageFixtures.map(renderFootyFixture).join("")}</div>`
     : `<p class="table-message">${missingFixtures.length && hasFilters
       ? "No matches needing notes match the current filters."
       : "All past matches in your followed-team competitions have match notes."}</p>`;
+
+  if (footyMissingNotesPagination) {
+    footyMissingNotesPagination.hidden = visibleFixtures.length <= FOOTY_MISSING_NOTES_PAGE_SIZE;
+    footyMissingNotesPagination.innerHTML = visibleFixtures.length <= FOOTY_MISSING_NOTES_PAGE_SIZE
+      ? ""
+      : `<button type="button" data-footy-missing-notes-page="${activeFootyMissingNotesPage - 1}" ${activeFootyMissingNotesPage <= 1 ? "disabled" : ""}>Previous</button><span>Page ${activeFootyMissingNotesPage} of ${pageCount}</span><button type="button" data-footy-missing-notes-page="${activeFootyMissingNotesPage + 1}" ${activeFootyMissingNotesPage >= pageCount ? "disabled" : ""}>Next</button>`;
+  }
 }
 
 function getFootyMissingNotesFixtures(schedule = {}) {
@@ -4069,23 +4105,35 @@ function shouldRenderFootyNoteEditButton(fixture) {
   );
 }
 
-function toggleFootyFixtureExpansion(matchId) {
+function toggleFootyFixtureExpansion(matchId, card = null) {
   const normalizedId = String(matchId || "").trim();
 
   if (!normalizedId) {
     return;
   }
 
-  if (expandedFootyMatchIds.has(normalizedId)) {
+  const shouldExpand = !expandedFootyMatchIds.has(normalizedId);
+
+  if (!shouldExpand) {
     expandedFootyMatchIds.delete(normalizedId);
   } else {
     expandedFootyMatchIds.add(normalizedId);
   }
 
-  renderFootySchedule(siteData.footySchedule);
-  renderFootyMissingNotesPage();
-  renderFootyCustomSchedule();
-  renderFootyTeamPage();
+  if (card?.isConnected) {
+    card.classList.toggle("is-expanded", shouldExpand);
+    card.setAttribute("aria-expanded", String(shouldExpand));
+    card.querySelector(":scope > .footy-fixture-details")?.remove();
+
+    if (shouldExpand) {
+      const fixture = getFootyFixtureByMatchId(normalizedId);
+      if (fixture) card.insertAdjacentHTML("beforeend", renderFootyFixtureDetails(fixture));
+    }
+
+    return;
+  }
+
+  renderActivePageContent(activePageName);
 }
 
 function renderFootyFixtureDetails(fixture) {
@@ -4869,6 +4917,7 @@ function openFootyNoteDialog(matchId) {
 
   if (footyNoteMatchId) {
     footyNoteMatchId.textContent = activeFootyNoteMatchId ? `Match ID ${activeFootyNoteMatchId}` : "";
+    footyNoteMatchId.title = activeFootyNoteMatchId;
   }
 
   if (footyNoteTitle) {
@@ -4960,14 +5009,20 @@ function getFootyFixtureByMatchId(matchId) {
     return followedFixture;
   }
 
-  return getFootyCompetitionSchedules(siteData.footySchedule)
-    .flatMap((schedule) => Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
-    .map((fixture) => ({
-      ...fixture,
-      matchId: getFootyCompetitionFixtureMatchId(fixture),
-      isCompetitionFixture: true,
-    }))
-    .find((fixture) => fixture.matchId === normalizedId) || null;
+  for (const schedule of getFootyCompetitionSchedules(siteData.footySchedule)) {
+    const fixture = (Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
+      .find((entry) => getFootyCompetitionFixtureMatchId(entry) === normalizedId);
+
+    if (fixture) {
+      return {
+        ...fixture,
+        matchId: normalizedId,
+        isCompetitionFixture: true,
+      };
+    }
+  }
+
+  return null;
 }
 
 function normalizeFootyGoalAssistForNote(event) {
@@ -12337,12 +12392,17 @@ function renderFormulaOneResults(year) {
   renderFormulaOneAwards(year);
 
   const data = siteData[`formulaOne${year}`];
-  const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
+  const weeklyResultsData = siteData[`formulaOne${year}WeeklyResults`];
+  const weeklyPicksData = siteData[`formulaOne${year}Weekly`];
+  const weeklyData = weeklyResultsData
+    ? { ...weeklyPicksData, ...weeklyResultsData, races: weeklyResultsData.races?.length ? weeklyResultsData.races : weeklyPicksData?.races || [] }
+    : weeklyPicksData;
   const mode = formulaOneResultsMode[year] ?? "yearly";
   const activeSource = mode === "weekly" ? weeklyData : data;
   const standings = mode === "weekly"
-    ? weeklyData?.standings ?? []
+    ? getFormulaOneWeeklyGroupStandings(weeklyData, formulaOneWeeklyResultsGroup[year] ?? "all")
     : data?.standings ?? [];
+  renderFormulaOneWeeklyResultsGroupControl(year, weeklyData, mode);
 
   if (!activeSource) {
     const label = mode === "weekly" ? "weekly" : "yearly";
@@ -12357,14 +12417,16 @@ function renderFormulaOneResults(year) {
   }
 
   view.resultsRows.innerHTML = standings.map((entry, index) => {
-    const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+    const manager = getManagerById(entry.managerId || entry.manager_id) ?? getManagerByName(entry.manager) ?? { name: entry.manager || `Manager ${entry.managerId || entry.manager_id}` };
     const standingsKey = getFormulaOneAwardStandingsForMode(mode);
     const awards = entry.rank === 1
       ? getAwardsForManager(manager, { standings: standingsKey, year })
       : [];
 
+    const detailId = `formula-one-${year}-weekly-standing-${escapeHtml(String(entry.managerId || entry.manager_id || entry.manager || index))}`;
+    const expandable = mode === "weekly";
     return `
-      <tr>
+      <tr${expandable ? ` class="manager-result-row" data-formula-one-weekly-standing-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0"` : ""}>
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
         <td data-label="Manager">
           <span class="standing-manager-with-awards">
@@ -12374,8 +12436,87 @@ function renderFormulaOneResults(year) {
         </td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
+      ${expandable ? `<tr class="manager-detail-row formula-one-weekly-standing-detail" id="${detailId}" hidden><td colspan="3">${renderFormulaOneWeeklyStandingDetails(weeklyData, entry, formulaOneWeeklyResultsGroup[year] ?? "all")}</td></tr>` : ""}
     `;
   }).join("");
+}
+
+function renderFormulaOneWeeklyResultsGroupControl(year, data, mode) {
+  const view = formulaOneViews[year];
+  if (!view?.resultsWeeklyControls || !view.resultsWeeklyGroupSelect) return;
+  view.resultsWeeklyControls.hidden = mode !== "weekly";
+  if (mode !== "weekly") return;
+
+  const groups = [...new Set((data?.races || []).map((race) => Math.floor((Number(race.id) - 1) / 8) + 1).filter(Number.isInteger))].sort((a, b) => a - b);
+  const selected = groups.includes(Number(formulaOneWeeklyResultsGroup[year])) ? String(formulaOneWeeklyResultsGroup[year]) : "all";
+  formulaOneWeeklyResultsGroup[year] = selected;
+  view.resultsWeeklyGroupSelect.innerHTML = `<option value="all">All</option>${groups.map((group) => {
+    const start = (group - 1) * 8 + 1;
+    return `<option value="${group}">Rounds ${start}–${start + 7}</option>`;
+  }).join("")}`;
+  view.resultsWeeklyGroupSelect.value = selected;
+}
+
+function getFormulaOneWeeklyGroupStandings(data, selectedGroup) {
+  const standings = data?.standings || [];
+  if (selectedGroup === "all") return standings;
+  const group = Number(selectedGroup);
+  const rows = standings.map((entry) => {
+    const block = (entry.blockTotals || []).find((item) => Number(item.block) === group);
+    const fallbackScores = (data?.races || [])
+      .filter((race) => Math.floor((Number(race.id) - 1) / 8) + 1 === group)
+      .map((race) => ({
+        round: Number(race.id),
+        points: Number((race.entries || []).find((item) => getFormulaOneWeeklyManagerKey(item) === getFormulaOneWeeklyManagerKey(entry))?.total) || 0,
+      }))
+      .sort((first, second) => second.points - first.points || first.round - second.round)
+      .slice(0, 4);
+    return {
+      ...entry,
+      points: block ? Number(block.points) || 0 : fallbackScores.reduce((total, score) => total + score.points, 0),
+      countedRounds: block?.countedRounds || fallbackScores.map((score) => score.round),
+    };
+  }).sort((first, second) => second.points - first.points || getFormulaOneWeeklyManagerKey(first).localeCompare(getFormulaOneWeeklyManagerKey(second), undefined, { numeric: true }));
+  return rankRows(rows);
+}
+
+function getFormulaOneWeeklyManagerKey(entry) {
+  return String(entry?.managerId ?? entry?.manager_id ?? entry?.manager ?? "");
+}
+
+function renderFormulaOneWeeklyStandingDetails(data, standing, selectedGroup) {
+  const managerKey = getFormulaOneWeeklyManagerKey(standing);
+  let rounds = (data?.races || []).map((race) => ({
+    race,
+    entry: (race.entries || []).find((entry) => getFormulaOneWeeklyManagerKey(entry) === managerKey),
+  }));
+  if (selectedGroup !== "all") {
+    const counted = new Set((standing.countedRounds || []).map(Number));
+    rounds = rounds.filter(({ race }) => counted.has(Number(race.id)));
+  }
+  rounds.sort(selectedGroup === "all"
+    ? (first, second) => Number(first.race.id) - Number(second.race.id)
+    : (first, second) => (Number(second.entry?.total) || 0) - (Number(first.entry?.total) || 0) || Number(first.race.id) - Number(second.race.id));
+  if (!rounds.length) return `<div class="standing-result-detail-panel"><p class="table-message">No completed rounds are available.</p></div>`;
+
+  return `<div class="standing-result-detail-panel"><ul class="standing-result-detail-list formula-one-weekly-standing-rounds">${rounds.map(({ race, entry }) => {
+    const total = Number(entry?.total) || 0;
+    const breakdown = selectedGroup === "all" ? "" : renderFormulaOneWeeklyStandingBreakdown(entry);
+    const roundName = /^round\s+\d+/i.test(String(race.name || "")) ? race.name : `${race.id}. ${race.name || `Round ${race.id}`}`;
+    return `<li><div><strong>${escapeHtml(roundName)}</strong>${breakdown}</div><b>${escapeHtml(formatFormulaOnePointValue(total))} pts</b></li>`;
+  }).join("")}</ul></div>`;
+}
+
+function renderFormulaOneWeeklyStandingBreakdown(entry) {
+  if (!entry) return `<small>No choices · 0 pts</small>`;
+  const items = [
+    ["P1", entry.picks?.p1, entry.positions?.p1, entry.points?.p1],
+    ["P2", entry.picks?.p2, entry.positions?.p2, entry.points?.p2],
+    ["P3", entry.picks?.p3, entry.positions?.p3, entry.points?.p3],
+    ["Wildcard Q", entry.picks?.wildcard, entry.positions?.wildcardQualifying, entry.points?.wildcardQualifying],
+    ["Wildcard Race", entry.picks?.wildcard, entry.positions?.wildcardRace, entry.points?.wildcardRace],
+  ];
+  return `<small>${items.map(([label, pick, position, points]) => `${escapeHtml(label)}: ${escapeHtml(pick || "—")} ${escapeHtml(formatFormulaOnePosition(position))} · ${escapeHtml(formatFormulaOnePointValue(points))} pts`).join("<br>")}</small>`;
 }
 
 function renderFormulaOneAwards(year) {
@@ -12587,6 +12728,18 @@ function renderActivePageContent(pageName = "") {
   const formulaOneYear = getFormulaOneYearFromPage(pageName);
 
   if (formulaOneYear) {
+    if (pageName.endsWith("-review")) {
+      renderFormulaOneReview();
+      if (isCurrentManagerAdmin()) void ensureFormulaOneAdminData();
+      return;
+    }
+
+    if (pageName.endsWith("-manage")) {
+      renderFormulaOneAdminWeekly();
+      if (isCurrentManagerAdmin()) void ensureFormulaOneAdminData();
+      return;
+    }
+
     if (pageName.endsWith("-calculator")) {
       if (siteData[`formulaOne${formulaOneYear}Calculator`]) {
         renderFormulaOneCalculator(formulaOneYear);
@@ -13005,6 +13158,21 @@ function toggleFormulaOneWeeklyEntry(entry) {
   }
 }
 
+function toggleFormulaOneWeeklyStandingRow(container, row) {
+  const isExpanded = row.getAttribute("aria-expanded") === "true";
+  container.querySelectorAll("[data-formula-one-weekly-standing-row]").forEach((item) => {
+    item.setAttribute("aria-expanded", "false");
+    item.classList.remove("is-manager-expanded");
+    const detail = item.nextElementSibling;
+    if (detail?.classList.contains("formula-one-weekly-standing-detail")) detail.hidden = true;
+  });
+  if (isExpanded) return;
+  row.setAttribute("aria-expanded", "true");
+  row.classList.add("is-manager-expanded");
+  const detail = row.nextElementSibling;
+  if (detail?.classList.contains("formula-one-weekly-standing-detail")) detail.hidden = false;
+}
+
 function renderFormulaOneWeeklyPick(label, pick, position, points) {
   if (!pick) {
     return "";
@@ -13080,6 +13248,603 @@ function formatFormulaOnePosition(position) {
   }
 
   return `P${value}`;
+}
+
+function renderFormulaOneAdminWeekly(feedback = {}) {
+  const container = formulaOneViews[2026]?.weeklyAdmin;
+  if (!container || !isCurrentManagerAdmin()) return;
+
+  const tabs = `<div class="tabs formula-one-manage-tabs" role="tablist" aria-label="Formula 1 data type">
+    <button class="tab${formulaOneAdminMode === "main" ? " is-active" : ""}" type="button" role="tab" aria-selected="${String(formulaOneAdminMode === "main")}" data-formula-one-admin-mode="main">Main</button>
+    <button class="tab${formulaOneAdminMode === "weekly" ? " is-active" : ""}" type="button" role="tab" aria-selected="${String(formulaOneAdminMode === "weekly")}" data-formula-one-admin-mode="weekly">Weekly</button>
+  </div>`;
+  const notice = "";
+
+  if (!FORMULA_ONE_ENDPOINT) {
+    container.innerHTML = `${tabs}${notice}
+      <div class="formula-one-admin-card">
+        <strong>Backend setup required</strong>
+        <p>The admin interface is ready, but the Formula 1 Worker endpoint remains disabled until its D1 database, migrations, authentication, and export secret are provisioned.</p>
+      </div>`;
+    return;
+  }
+
+  const data = getFormulaOneAdminData();
+  if (!data) {
+    container.innerHTML = `${tabs}${notice}${feedback.error
+      ? `<div class="formula-one-admin-card"><p class="formula-one-admin-feedback" role="alert">${escapeHtml(feedback.error)}</p><button class="action-button" type="button" data-formula-one-admin-action="refresh">Try again</button></div>`
+      : renderLoadingMessage("Loading Formula 1 administration...")}`;
+    return;
+  }
+
+  const rounds = data.rounds || [];
+  if (!rounds.length) {
+    container.innerHTML = `${tabs}${notice}<div class="formula-one-admin-card"><strong>No rounds imported</strong><p>Import the ${escapeHtml(formulaOneAdminSelectedYear)} season, then refresh this page.</p><button class="action-button" type="button" data-formula-one-admin-action="refresh">Refresh</button></div>`;
+    return;
+  }
+
+  const selectedAll = formulaOneAdminMode === "main" && formulaOneAdminSelectedRound === "all";
+  const selectedRound = selectedAll ? null : rounds.find((round) => String(round.round) === formulaOneAdminSelectedRound) || rounds.find((round) => !round.is_complete) || rounds.at(-1);
+  if (!selectedAll) formulaOneAdminSelectedRound = String(selectedRound.round);
+  const exportControl = `<div class="formula-one-export-row"><button class="footer-copy-link" type="button" data-formula-one-admin-action="export"${data.capabilities?.googleSheetsExport ? "" : " disabled title=\"Google Sheets export is not connected yet.\""}>Export ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"}</button></div>`;
+  if (selectedAll) {
+    const seasonYears = [...new Set([...(siteData.formulaOneAdminSeasons || []).map((season) => String(season.year)), String(data.year)])]
+      .sort((a, b) => Number(b) - Number(a));
+    const yearControl = renderFormulaOneAdminYearControl(seasonYears);
+    const roundControl = renderFormulaOneAdminRoundControl(rounds, null, true);
+    container.innerHTML = `${exportControl}${tabs}
+      <div class="formula-one-admin-card"><div class="formula-one-admin-toolbar">${yearControl}${roundControl}</div></div>
+      ${renderFormulaOneCalculatedDetails(data, null, true)}`;
+    return;
+  }
+  const sessions = ["qualifying", ...(selectedRound.has_sprint ? ["sprint"] : []), "race"];
+  if (!sessions.includes(formulaOneAdminSelectedSession)) formulaOneAdminSelectedSession = sessions[0];
+  const roundSessions = sessions.map((sessionType) => data.sessions?.find((session) => Number(session.round) === Number(selectedRound.round) && session.session_type === sessionType)).filter(Boolean);
+  const canContinue = roundSessions.some((session) => session.status === "needs_review") || !selectedRound.facts_complete;
+  const seasonYears = [...new Set([...(siteData.formulaOneAdminSeasons || []).map((season) => String(season.year)), String(data.year)])]
+    .sort((a, b) => Number(b) - Number(a));
+  const yearControl = renderFormulaOneAdminYearControl(seasonYears);
+  const roundControl = renderFormulaOneAdminRoundControl(rounds, selectedRound, formulaOneAdminMode === "main");
+
+  if (formulaOneAdminMode === "weekly") {
+    container.innerHTML = `${exportControl}${tabs}${notice}
+      <div class="formula-one-admin-card">
+        <div class="formula-one-admin-toolbar">
+          ${yearControl}${roundControl}
+        </div>
+        <p><strong>Deadline:</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneAdminDate(selectedRound.deadline_at) : "Not set")}</p>
+        <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+      </div>
+      ${renderFormulaOneAdminPicks(data, selectedRound)}`;
+    return;
+  }
+
+  const hasApprovedData = roundSessions.some((session) => session.status === "approved");
+  container.innerHTML = `${exportControl}${tabs}
+    <div class="formula-one-admin-card">
+      <div class="formula-one-admin-toolbar">
+        ${yearControl}${roundControl}
+        <button class="action-button" type="button" data-formula-one-admin-action="fetch">Fetch round</button>
+      </div>
+      <div class="formula-one-admin-statuses">${sessions.map((session) => renderFormulaOneAdminStatus(data, selectedRound.round, session)).join("")}${renderFormulaOneFactsStatus(selectedRound)}</div>
+      <p><strong>Round status:</strong> ${selectedRound.is_complete ? "Complete" : "Waiting for required session approvals and round facts"}</p>
+      <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+      ${canContinue ? `<div class="formula-one-workflow-footer"><button class="action-button" type="button" data-formula-one-admin-action="continue">Continue</button></div>` : ""}
+    </div>
+    ${hasApprovedData ? renderFormulaOneCalculatedDetails(data, selectedRound) : ""}
+  `;
+}
+
+function renderFormulaOneAdminYearControl(years) {
+  return `<label class="select-control"><span>Year</span><select data-formula-one-admin-year>${years.map((year) => `<option value="${escapeHtml(year)}"${year === formulaOneAdminSelectedYear ? " selected" : ""}>${escapeHtml(year)}</option>`).join("")}</select></label>`;
+}
+
+function renderFormulaOneAdminRoundControl(rounds, selectedRound, includeAll = false) {
+  return `<label class="select-control"><span>Round</span><select data-formula-one-admin-round>${includeAll ? `<option value="all"${formulaOneAdminSelectedRound === "all" ? " selected" : ""}>All</option>` : ""}${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound?.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>`;
+}
+
+function renderFormulaOneAdminStatus(data, round, sessionType) {
+  const session = data.sessions?.find((item) => Number(item.round) === Number(round) && item.session_type === sessionType);
+  const status = session?.status || "planned";
+  const content = `<span>${escapeHtml(formatFormulaOneSessionName(sessionType))}</span><strong data-status="${escapeHtml(status)}">${escapeHtml(formatFormulaOneSessionStatus(status))}</strong>`;
+  return session ? `<button class="formula-one-admin-status" type="button" data-formula-one-review-session="${escapeHtml(sessionType)}">${content}</button>` : `<div class="formula-one-admin-status">${content}</div>`;
+}
+
+function renderFormulaOneFactsStatus(round) {
+  const status = round.facts_complete ? "approved" : "needs_review";
+  return `<button class="formula-one-admin-status" type="button" data-formula-one-review-session="facts"><span>Round facts</span><strong data-status="${status}">${round.facts_complete ? "Approved" : "Needs review"}</strong></button>`;
+}
+
+function renderFormulaOneCalculatedDetails(data, round = null, open = false) {
+  const approvedKeys = new Set((data.sessions || []).filter((session) => session.status === "approved")
+    .map((session) => `${session.round}:${session.session_type}`));
+  const approvedResults = (data.results || []).filter((result) => approvedKeys.has(`${result.round}:${result.session_type}`));
+  const detailResults = round ? approvedResults.filter((result) => Number(result.round) === Number(round.round)) : approvedResults;
+  const comparisons = buildFormulaOneQualifyingComparisons(detailResults, data.drivers || [])
+    .filter((comparison) => !round || comparison.round === Number(round.round));
+  const calculated = buildFormulaOneMainDatasets({
+    year: data.year,
+    rounds: round ? [round] : data.rounds || [],
+    drivers: data.drivers || [],
+    sessions: data.sessions || [],
+    results: detailResults,
+  });
+  return `<details class="formula-one-admin-card workflow-dropdown formula-one-more-details"${open ? " open" : ""}>
+    <summary class="manager-hub-card-heading workflow-summary"><strong>More Details</strong></summary>
+    <div class="formula-one-more-details-content">${round ? renderFormulaOneRoundComparisonTable(calculated.teammateComparisons) : `${renderFormulaOneAllComparisonTable(calculated.teammateComparisons)}${renderFormulaOneSeasonQualifyingSummary(comparisons)}`}${renderFormulaOneSprintDetails(calculated.sprintSummary)}</div>
+  </details>`;
+}
+
+function renderFormulaOneRoundComparisonTable(comparisons) {
+  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${comparisons.length ? comparisons.map((comparison) => `<tr><td>${escapeHtml(comparison.team)}</td><td>${escapeHtml(`${comparison.firstDriver} / ${comparison.secondDriver}`)}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.adjustedWinner, comparison.adjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.unadjustedWinner, comparison.unadjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.qualifyingPositionWinner, comparison.qualifyingPositionGap))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.racePositionWinner, comparison.racePositionGap))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="6">No approved teammate comparison is available.</td></tr>`}</tbody></table></div>`;
+}
+
+function formatFormulaOneComparisonResult(winner, gap) {
+  if (!winner) return "—";
+  if (winner === "Tie") return "Tie";
+  return `${winner}${gap === "" ? "" : ` by ${Number(gap).toFixed(3)}s`}`;
+}
+
+function formatFormulaOnePositionComparison(winner, gap) {
+  if (!winner) return "—";
+  if (winner === "Tie") return "Tie";
+  return `${winner}${gap === "" ? "" : ` by ${gap}`}`;
+}
+
+function renderFormulaOneAllComparisonTable(comparisons) {
+  const groups = new Map();
+  comparisons.forEach((comparison) => {
+    const key = `${comparison.team}:${[comparison.firstDriverId, comparison.secondDriverId].sort().join(":")}`;
+    if (!groups.has(key)) groups.set(key, { team: comparison.team, first: comparison.firstDriver, second: comparison.secondDriver, rounds: 0, adjusted: new Map(), unadjusted: new Map(), qualifying: new Map(), race: new Map() });
+    const group = groups.get(key);
+    group.rounds += 1;
+    [["adjusted", comparison.adjustedWinner], ["unadjusted", comparison.unadjustedWinner], ["qualifying", comparison.qualifyingPositionWinner], ["race", comparison.racePositionWinner]].forEach(([field, winner]) => {
+      if (winner) group[field].set(winner, (group[field].get(winner) || 0) + 1);
+    });
+  });
+  const record = (group, field) => group[field].size ? `${group.first} ${group[field].get(group.first) || 0}–${group[field].get(group.second) || 0} ${group.second}` : "—";
+  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Rounds</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${groups.size ? [...groups.values()].map((group) => `<tr><td>${escapeHtml(group.team)}</td><td>${escapeHtml(`${group.first} / ${group.second}`)}</td><td>${group.rounds}</td><td>${escapeHtml(record(group, "adjusted"))}</td><td>${escapeHtml(record(group, "unadjusted"))}</td><td>${escapeHtml(record(group, "qualifying"))}</td><td>${escapeHtml(record(group, "race"))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="7">No approved teammate comparisons are available.</td></tr>`}</tbody></table></div>`;
+}
+
+function renderFormulaOneSprintDetails(summaries) {
+  if (!summaries.some((summary) => summary.sprintWinner)) return "";
+  return `<section class="formula-one-detail-card"><strong>Sprint</strong><div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Round</th><th>Sprint winner</th><th>Race winner</th><th>Same winner</th></tr></thead><tbody>${summaries.filter((summary) => summary.sprintWinner).map((summary) => `<tr><td>${escapeHtml(`${summary.round}. ${summary.roundName}`)}</td><td>${escapeHtml(summary.sprintWinner)}</td><td>${escapeHtml(summary.raceWinner || "—")}</td><td>${escapeHtml(summary.sameRaceAndSprintWinner || "—")}</td></tr>`).join("")}</tbody></table></div></section>`;
+}
+
+function getFormulaOneAdminData(year = formulaOneAdminSelectedYear) {
+  return siteData.formulaOneAdminByYear?.[String(year)] || null;
+}
+
+function openFormulaOneReview(sessionType = "") {
+  const data = getFormulaOneAdminData();
+  const round = data?.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
+  const datasetTypes = round ? getFormulaOneRoundDatasetTypes(round) : [];
+  formulaOneFactsEditing = false;
+  formulaOneReviewSelectedSession = datasetTypes.includes(sessionType)
+    ? sessionType
+    : getFormulaOnePendingDatasets(data, round)[0] || datasetTypes[0] || "qualifying";
+  const target = "formula-1-2026-review";
+  if (window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
+  showPage(target, { scrollToTop: true });
+}
+
+function renderFormulaOneReview(feedback = {}) {
+  const container = formulaOneViews[2026]?.review;
+  if (!container || !isCurrentManagerAdmin()) return;
+  const data = getFormulaOneAdminData();
+  if (!data) {
+    container.innerHTML = feedback.error
+      ? `<div class="formula-one-admin-card"><p role="alert">${escapeHtml(feedback.error)}</p></div>`
+      : renderLoadingMessage("Loading Formula 1 data review...");
+    return;
+  }
+
+  const round = data.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound) || data.rounds?.find((item) => !item.is_complete) || data.rounds?.at(-1);
+  if (!round) {
+    container.innerHTML = `<div class="formula-one-admin-card"><p>No Formula 1 rounds are available to review.</p></div>`;
+    return;
+  }
+  formulaOneAdminSelectedRound = String(round.round);
+  const datasetTypes = getFormulaOneRoundDatasetTypes(round);
+  if (!datasetTypes.includes(formulaOneReviewSelectedSession)) {
+    formulaOneReviewSelectedSession = getFormulaOnePendingDatasets(data, round)[0] || datasetTypes[0];
+  }
+  if (formulaOneReviewSelectedSession === "facts") {
+    container.innerHTML = renderFormulaOneAdminFacts(round, data, { review: true, feedback });
+    return;
+  }
+  const sessionTypes = getFormulaOneRoundSessionTypes(round);
+  const session = getFormulaOneSession(data, round.round, formulaOneReviewSelectedSession);
+  const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === formulaOneReviewSelectedSession);
+  const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
+  const nextUnapprovedSession = getFormulaOnePendingDatasets(data, round).find((sessionType) => sessionType !== formulaOneReviewSelectedSession);
+  const isLastUnapproved = session?.status === "needs_review" && !nextUnapprovedSession;
+  const actionMarkup = session?.status === "needs_review"
+    ? `<button class="action-button" type="button" data-formula-one-review-action="approve">${isLastUnapproved ? "Finish" : "Approve and Continue"}</button>`
+    : session?.status === "approved"
+      ? `<button class="footer-copy-link" type="button" data-formula-one-review-action="reopen">Reopen</button>`
+      : "";
+
+  container.innerHTML = `
+    <div class="formula-one-admin-card">
+      <div class="formula-one-review-card-heading"><strong>${escapeHtml(`${round.round}. ${round.name} · ${formatFormulaOneSessionName(formulaOneReviewSelectedSession)}`)}</strong><a class="footer-copy-link" href="#formula-1-2026-manage" data-page-link="formula-1-2026-manage">Back</a></div>
+      <p>${session ? `${escapeHtml(formatFormulaOneSessionStatus(session.status))}${session.fetched_at ? ` · fetched ${escapeHtml(formatFormulaOneAdminDate(session.fetched_at))}` : ""}` : "No provider data has been fetched for this session."}</p>
+      ${formulaOneReviewSelectedSession === "qualifying"
+        ? renderFormulaOneQualifyingReviewTable(data, results, comparisons.filter((comparison) => comparison.round === Number(round.round)))
+        : renderFormulaOneSessionReviewTable(data, results)}
+      <p class="formula-one-admin-feedback" role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+      <div class="formula-one-review-actions">${actionMarkup}</div>
+    </div>
+  `;
+}
+
+function renderFormulaOneSessionReviewTable(data, results) {
+  const sortedResults = sortFormulaOneSessionResults(results, data);
+  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-admin-results"><thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Points</th><th>Laps</th><th>Status / time</th></tr></thead><tbody>${sortedResults.length
+    ? sortedResults.map((result) => `<tr><td>${escapeHtml(formatFormulaOneResultPosition(result))}</td><td>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</td><td>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</td><td>${escapeHtml(formatFormulaOnePointValue(result.points))}</td><td>${escapeHtml(result.laps ?? "—")}</td><td>${escapeHtml(result.time_text || result.status || "")}</td></tr>`).join("")
+    : `<tr><td class="table-message" colspan="6">No staged results for this session.</td></tr>`}</tbody></table></div>`;
+}
+
+function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
+  const sortedResults = sortFormulaOneSessionResults(results, data);
+  const comparisonsByDriver = new Map();
+  comparisons.forEach((comparison) => {
+    comparisonsByDriver.set(comparison.firstDriverId, { comparison, side: "first" });
+    comparisonsByDriver.set(comparison.secondDriverId, { comparison, side: "second" });
+  });
+  return `<div class="table-wrap formula-one-review-table-wrap"><table class="formula-one-qualifying-review-table"><thead><tr><th>Pos</th><th>Driver</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Unadjusted</th><th>Adjusted</th></tr></thead><tbody>${sortedResults.length
+    ? sortedResults.map((result) => {
+      const item = comparisonsByDriver.get(result.driver_id);
+      const unadjusted = item?.comparison.unadjusted;
+      const adjusted = item?.comparison.adjusted;
+      const unadjustedTime = unadjusted?.[item.side]?.time || "—";
+      const unadjustedGap = unadjusted ? getFormulaOneDriverGap(unadjusted.differenceSeconds, item.side) : null;
+      const adjustedTime = adjusted?.[item.side]?.time || "—";
+      const adjustedGap = adjusted ? getFormulaOneDriverGap(adjusted.differenceSeconds, item.side) : null;
+      return `<tr><td>${escapeHtml(formatFormulaOneResultPosition(result))}</td><td><strong>${escapeHtml(getFormulaOneAdminDriverName(data, result.driver_id))}</strong><small>${escapeHtml(result.constructor_name || getFormulaOneAdminDriver(data, result.driver_id)?.constructor_name || "")}</small></td><td>${escapeHtml(result.q1 || "—")}</td><td>${escapeHtml(result.q2 || "—")}</td><td>${escapeHtml(result.q3 || "—")}</td><td>${escapeHtml(unadjustedTime)}${unadjusted ? `<small>${escapeHtml(`${unadjusted[item.side].session.toUpperCase()} · ${formatFormulaOneGap(unadjustedGap)}`)}</small>` : ""}</td><td>${escapeHtml(adjustedTime)}${adjusted ? `<small>${escapeHtml(`${adjusted.session.toUpperCase()} · ${formatFormulaOneGap(adjustedGap)}`)}</small>` : ""}</td></tr>`;
+    }).join("")
+    : `<tr><td class="table-message" colspan="7">No staged qualifying times.</td></tr>`}</tbody></table></div>`;
+}
+
+function renderFormulaOneSeasonQualifyingSummary(comparisons) {
+  const summaries = summarizeFormulaOneQualifyingComparisons(comparisons);
+  return `<div class="formula-one-calculated-summary">
+    <strong>Season qualifying comparison</strong>
+    <p>Adjusted compares teammates in their latest shared qualifying session. Unadjusted compares each driver's last completed session.</p>
+    <div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted H2H</th><th>Adjusted average</th><th>Unadjusted average</th></tr></thead><tbody>${summaries.length ? summaries.map((summary) => `<tr><td>${escapeHtml(summary.constructorName)}</td><td>${escapeHtml(`${summary.firstDriverName} / ${summary.secondDriverName}`)}</td><td>${summary.adjusted ? escapeHtml(`${summary.firstDriverName} ${summary.adjusted.firstDriverWins}–${summary.adjusted.secondDriverWins} ${summary.secondDriverName}`) : "—"}</td><td>${escapeHtml(formatFormulaOneAverageDifference(summary, summary.adjusted))}</td><td>${escapeHtml(formatFormulaOneAverageDifference(summary, summary.unadjusted))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="5">Qualifying comparisons will appear after Q1/Q2/Q3 times are fetched.</td></tr>`}</tbody></table></div>
+  </div>`;
+}
+
+function getFormulaOneDriverGap(differenceSeconds, side) {
+  return side === "first" ? differenceSeconds : -differenceSeconds;
+}
+
+function formatFormulaOneGap(value) {
+  if (!Number.isFinite(value)) return "—";
+  if (Math.abs(value) < 0.0005) return "Equal";
+  return `${value > 0 ? "+" : "−"}${Math.abs(value).toFixed(3)}s`;
+}
+
+function formatFormulaOneAverageDifference(summary, comparison) {
+  if (!comparison) return "—";
+  const difference = comparison.averageDifferenceSeconds;
+  if (Math.abs(difference) < 0.0005) return `Equal over ${comparison.rounds}`;
+  const leader = difference < 0 ? summary.firstDriverName : summary.secondDriverName;
+  return `${leader} by ${Math.abs(difference).toFixed(3)}s (${comparison.rounds})`;
+}
+
+function getFormulaOneRoundSessionTypes(round) {
+  return ["qualifying", ...(round?.has_sprint ? ["sprint"] : []), "race"];
+}
+
+function getFormulaOneRoundDatasetTypes(round) {
+  return [...getFormulaOneRoundSessionTypes(round), "facts"];
+}
+
+function getFormulaOnePendingDatasets(data, round) {
+  if (!round) return [];
+  const pending = getFormulaOneRoundSessionTypes(round)
+    .filter((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review");
+  if (!round.facts_complete) pending.push("facts");
+  return pending;
+}
+
+function getFormulaOneSession(data, round, sessionType) {
+  return data?.sessions?.find((session) => Number(session.round) === Number(round) && session.session_type === sessionType);
+}
+
+async function runFormulaOneReviewAction(action) {
+  if (action === "back") {
+    returnToFormulaOneManage();
+    return;
+  }
+  const path = `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}/sessions/${encodeURIComponent(formulaOneReviewSelectedSession)}/${action}`;
+  renderFormulaOneReview({ message: action === "approve" ? "Approving session..." : "Reopening session..." });
+  await formulaOneAdminRequest(path, { method: "POST" });
+  await ensureFormulaOneAdminData({ force: true });
+  const data = getFormulaOneAdminData();
+  const round = data.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
+  const nextSession = getFormulaOnePendingDatasets(data, round)[0];
+  if (action === "approve" && !nextSession) {
+    returnToFormulaOneManage();
+    return;
+  }
+  if (nextSession) formulaOneReviewSelectedSession = nextSession;
+  renderFormulaOneReview({ message: action === "approve" ? (nextSession ? "Approved. Review the next session." : "Approved. Every available session has been reviewed.") : "Session reopened for review." });
+}
+
+function returnToFormulaOneManage() {
+  const target = "formula-1-2026-manage";
+  if (window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
+  showPage(target, { scrollToTop: true });
+  renderFormulaOneAdminWeekly();
+}
+
+function renderFormulaOneAdminPicks(data, round) {
+  const driverOptions = (value, disabled, wildcard = false) => {
+    const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(round.round));
+    const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
+    const roundDriverIds = new Set(roundRoster.map((item) => item.driver_id));
+    const availableDrivers = (data.drivers || []).filter((driver) => {
+      const availableForRound = hasAuthoritativeRoster ? roundDriverIds.has(driver.driver_id) : driver.active !== 0;
+      const allowedWildcard = !wildcard || !isFormulaOneTopFourTeam(getFormulaOneDriverTeamForRound(data, round.round, driver));
+      return driver.driver_id === value || (availableForRound && allowedWildcard);
+    });
+    return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${availableDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
+  };
+  const managerIds = new Set(getFormulaOneManagers().map((manager) => String(manager.id || "")).filter(Boolean));
+  (data.entries || []).forEach((entry) => managerIds.add(String(entry.manager_id)));
+  const managers = [...managerIds].map((managerId) => ({ managerId, manager: getManagerById(managerId) }))
+    .sort((first, second) => (first.manager?.displayName || first.managerId).localeCompare(second.manager?.displayName || second.managerId));
+  return `<div class="formula-one-weekly-admin-list">${managers.map(({ managerId, manager }) => {
+    const entry = data.entries?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
+    const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
+    const managerName = manager?.displayName || `Manager ${managerId}`;
+    const editKey = `${data.year}:${round.round}:${managerId}`;
+    const editing = formulaOneWeeklyEditing.has(editKey);
+    const submitted = entry?.entry_status === "submitted";
+    const hasChoices = Boolean(entry && [entry.p1_driver_id, entry.p2_driver_id, entry.p3_driver_id, entry.wildcard_driver_id].some(Boolean));
+    const deadline = Date.parse(round.deadline_at || "");
+    const compactEmpty = Number.isFinite(deadline) && Date.now() >= deadline && !hasChoices && !editing;
+    const locked = submitted && !editing;
+    const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked, sessionType === "wildcard").replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType)}</label>`;
+    return `<form class="formula-one-admin-card${compactEmpty ? " formula-one-weekly-empty-card" : ""}" data-formula-one-admin-picks>
+      <input type="hidden" name="managerId" value="${escapeHtml(managerId)}">
+      <div class="formula-one-weekly-manager-heading">
+        <strong>${renderManagerChip(manager || { name: managerName })}</strong>
+        <div class="formula-one-weekly-manager-meta">
+          ${submitted ? `<span class="formula-one-submitted-chip" title="Submitted" aria-label="Submitted">${renderTodoChipIcon("check")}</span>` : compactEmpty ? "" : `<span>Not submitted</span>`}
+          <span>${escapeHtml(formatFormulaOnePointValue(score?.total_points ?? 0))} points</span>
+          ${locked || compactEmpty ? `<button class="footer-copy-link" type="button" data-formula-one-weekly-edit="${escapeHtml(managerId)}">Edit choices</button>` : ""}
+        </div>
+      </div>
+      ${compactEmpty ? "" : `<div class="formula-one-admin-form-grid">
+        ${choice("P1", "p1DriverId", entry?.p1_driver_id, "p1_points")}
+        ${choice("P2", "p2DriverId", entry?.p2_driver_id, "p2_points")}
+        ${choice("P3", "p3DriverId", entry?.p3_driver_id, "p3_points")}
+        ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, "wildcard", "wildcard")}
+      </div>
+      ${locked ? "" : `<div class="formula-one-admin-actions"><button class="action-button" type="submit">${submitted ? "Save correction" : "Submit choices"}</button></div>`}`}
+    </form>`;
+  }).join("")}</div>`;
+}
+
+function formatFormulaOneResultPosition(result) {
+  return formatFormulaOnePosition(result?.position ?? result?.classified_position ?? result?.status);
+}
+
+function sortFormulaOneSessionResults(results, data) {
+  return [...results].sort((first, second) => {
+    const firstPosition = Number(first.position);
+    const secondPosition = Number(second.position);
+    const firstIsNumeric = first.position !== null && first.position !== "" && Number.isFinite(firstPosition) && firstPosition > 0;
+    const secondIsNumeric = second.position !== null && second.position !== "" && Number.isFinite(secondPosition) && secondPosition > 0;
+    if (firstIsNumeric !== secondIsNumeric) return firstIsNumeric ? -1 : 1;
+    if (firstIsNumeric && firstPosition !== secondPosition) return firstPosition - secondPosition;
+    return getFormulaOneAdminDriverName(data, first.driver_id).localeCompare(getFormulaOneAdminDriverName(data, second.driver_id));
+  });
+}
+
+function renderFormulaOneWeeklyChoiceResult(data, round, driverId, score, pointsKey, sessionType) {
+  if (!driverId) return `<small class="formula-one-choice-result">No choice · 0 points</small>`;
+  if (!score) return `<small class="formula-one-choice-result">Waiting for qualifying and race results</small>`;
+  const resultFor = (type) => data.results?.find((result) => Number(result.round) === Number(round) && result.session_type === type && result.driver_id === driverId);
+  if (sessionType === "wildcard") {
+    const qualifying = resultFor("qualifying");
+    const race = resultFor("race");
+    return `<small class="formula-one-choice-result formula-one-wildcard-result"><span>Qualifying ${escapeHtml(formatFormulaOnePosition(qualifying?.position))}</span><strong>${escapeHtml(formatFormulaOnePointValue(score.wildcard_qualifying_points))} points</strong><span>Race ${escapeHtml(formatFormulaOnePosition(race?.position))}</span><strong>${escapeHtml(formatFormulaOnePointValue(score.wildcard_race_points))} points</strong></small>`;
+  }
+  const result = resultFor("race");
+  return `<small class="formula-one-choice-result">${escapeHtml(formatFormulaOnePosition(result?.position))} · ${escapeHtml(formatFormulaOnePointValue(score[pointsKey]))} points</small>`;
+}
+
+function renderFormulaOneAdminFacts(round, data, { review = false, feedback = {} } = {}) {
+  const driverNames = [...new Set((data.drivers || []).map((driver) => driver.display_name).filter(Boolean))].sort();
+  const teamNames = [...new Set((data.drivers || []).map((driver) => driver.constructor_name).filter(Boolean))].sort();
+  const options = (items, selected, placeholder) => {
+    const values = selected && !items.includes(selected) ? [selected, ...items] : items;
+    return `<option value="">${escapeHtml(placeholder)}</option>${values.map((item) => `<option value="${escapeHtml(item)}"${item === selected ? " selected" : ""}>${escapeHtml(item)}</option>`).join("")}`;
+  };
+  const safetyCar = round.safety_car ? `${round.safety_car.charAt(0).toUpperCase()}${round.safety_car.slice(1).toLowerCase()}` : "";
+  const locked = review && Boolean(round.facts_complete) && !formulaOneFactsEditing;
+  const disabled = locked ? " disabled" : "";
+  const pendingAfterFacts = review ? getFormulaOnePendingDatasets(data, round).some((dataset) => dataset !== "facts") : false;
+  return `<form class="formula-one-admin-card" data-formula-one-admin-facts>
+    ${review ? `<div class="formula-one-review-card-heading"><strong>${escapeHtml(`${round.round}. ${round.name} · Round facts`)}</strong><a class="footer-copy-link" href="#formula-1-2026-manage" data-page-link="formula-1-2026-manage">Back</a></div>` : "<strong>Round facts</strong>"}
+    <div class="formula-one-admin-form-grid">
+      <label class="select-control"><span>Driver of the Day</span><select name="driverOfTheDay" required${disabled}>${options(driverNames, round.driver_of_the_day, "Choose driver")}</select></label>
+      <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}" required${disabled}></label>
+      <label class="select-control"><span>Fastest pit team</span><select name="fastestPitTeam" required${disabled}>${options(teamNames, round.fastest_pit_team, "Choose team")}</select></label>
+      <label class="select-control"><span>DNFs</span><input name="dnfCount" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(round.dnf_count || "")}" required${disabled}></label>
+      <label class="select-control"><span>Safety car</span><select name="safetyCar" required${disabled}>${options(["Yes", "No"], safetyCar, "Choose Yes or No")}</select></label>
+    </div>
+    <p class="formula-one-admin-feedback" role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+    <div class="formula-one-review-actions">${locked
+      ? `<button class="footer-copy-link" type="button" data-formula-one-review-action="edit-facts">Edit</button>`
+      : `<button class="action-button" type="submit">${review ? (pendingAfterFacts ? "Save and Continue" : "Finish") : "Save facts"}</button>`}</div>
+  </form>`;
+}
+
+async function ensureFormulaOneAdminData({ force = false, year = formulaOneAdminSelectedYear } = {}) {
+  if (!isCurrentManagerAdmin() || !FORMULA_ONE_ENDPOINT) return null;
+  const yearKey = String(year);
+  if (getFormulaOneAdminData(yearKey) && !force) return getFormulaOneAdminData(yearKey);
+  if (formulaOneAdminLoadPromises.has(yearKey) && !force) return formulaOneAdminLoadPromises.get(yearKey);
+  if (!formulaOneAdminSeasonsLoadPromise && !siteData.formulaOneAdminSeasons) {
+    formulaOneAdminSeasonsLoadPromise = formulaOneAdminRequest("/api/admin/seasons")
+      .then((result) => { siteData.formulaOneAdminSeasons = result.seasons || []; })
+      .finally(() => { formulaOneAdminSeasonsLoadPromise = null; });
+  }
+  const loadPromise = Promise.all([
+    formulaOneAdminRequest(`/api/admin/seasons/${encodeURIComponent(yearKey)}/weekly`),
+    formulaOneAdminSeasonsLoadPromise || Promise.resolve(),
+  ])
+    .then(([result]) => {
+      siteData.formulaOneAdminByYear ||= {};
+      siteData.formulaOneAdminByYear[yearKey] = result;
+      renderFormulaOneAdminWeekly();
+      renderFormulaOneReview();
+      if (activePageName === "manager-hub") renderManagerHub();
+      if (formulaOneAdminMode === "weekly" && formulaOneAdminSelectedRound && formulaOneAdminSelectedRound !== "all") {
+        void ensureFormulaOneRoundDrivers(yearKey, formulaOneAdminSelectedRound);
+      }
+      return result;
+    })
+    .catch((error) => {
+      renderFormulaOneAdminWeekly({ error: getErrorMessage(error) });
+      throw error;
+    })
+    .finally(() => { formulaOneAdminLoadPromises.delete(yearKey); });
+  formulaOneAdminLoadPromises.set(yearKey, loadPromise);
+  return loadPromise;
+}
+
+function getFormulaOneDriverTeamForRound(data, round, driver) {
+  const roundResult = (data.results || []).find((result) => Number(result.round) === Number(round)
+    && result.driver_id === driver.driver_id && result.constructor_name);
+  return roundResult?.constructor_name || driver.constructor_name || "";
+}
+
+function isFormulaOneTopFourTeam(teamName) {
+  const team = normalizeLookupName(teamName);
+  return team === "mclaren" || team === "mercedes" || team === "ferrari" || team === "red bull" || team === "red bull racing";
+}
+
+async function ensureFormulaOneRoundDrivers(year, round, { force = false } = {}) {
+  if (!isCurrentManagerAdmin() || !year || !round || round === "all") return null;
+  const key = `${year}:${round}`;
+  if (formulaOneRoundDriverLoads.has(key) && !force) return null;
+  formulaOneRoundDriverLoads.add(key);
+  try {
+    const result = await formulaOneAdminRequest(`/api/admin/seasons/${encodeURIComponent(year)}/rounds/${encodeURIComponent(round)}/drivers/fetch`, { method: "POST" });
+    await ensureFormulaOneAdminData({ force: true, year });
+    return result;
+  } catch (error) {
+    formulaOneRoundDriverLoads.delete(key);
+    throw error;
+  }
+}
+
+async function formulaOneAdminRequest(path, options = {}) {
+  if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
+  const token = await ensureRankingAuthorization();
+  if (!token) throw new Error("Sign in again to manage Formula 1 data.");
+  const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}${path}`, {
+    method: options.method || "GET",
+    headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false) throw new Error(result.error || "Formula 1 data could not be updated.");
+  return result;
+}
+
+async function runFormulaOneAdminAction(action) {
+  const pathBase = `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}`;
+  if (action === "continue") {
+    openFormulaOneReview();
+    return;
+  }
+  renderFormulaOneAdminWeekly({ message: action === "fetch" ? "Fetching all available round data..." : "Updating Formula 1 data..." });
+  if (action === "refresh") {
+    await ensureFormulaOneAdminData({ force: true });
+    return;
+  }
+  const path = action === "export"
+    ? `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/export/google-sheets?dataset=${encodeURIComponent(formulaOneAdminMode)}`
+    : action === "fetch"
+      ? `${pathBase}/fetch`
+      : `${pathBase}/sessions/${encodeURIComponent(formulaOneAdminSelectedSession)}/${action}`;
+  const result = await formulaOneAdminRequest(path, { method: "POST" });
+  if (action === "export" && result.spreadsheetUrl) window.open(result.spreadsheetUrl, "_blank", "noopener");
+  await ensureFormulaOneAdminData({ force: true });
+  const fetched = action === "fetch" ? Number(result.fetchedCount || 0) : 0;
+  const unavailable = action === "fetch" ? (result.sessions || []).filter((session) => session.status === "unavailable") : [];
+  const unavailableMessage = unavailable.length ? ` ${unavailable.map((session) => formatFormulaOneSessionName(session.sessionType)).join(", ")} ${unavailable.length === 1 ? "is" : "are"} not available from the provider yet.` : "";
+  const safetyCarMessage = action === "fetch" && result.safetyCar ? ` Safety Car: ${result.safetyCar.value} (${result.safetyCar.detail}).` : "";
+  const safetyCarError = action === "fetch" && result.safetyCarError ? ` Safety Car could not be determined automatically: ${result.safetyCarError}` : "";
+  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${safetyCarError}${unavailableMessage}` });
+}
+
+async function submitFormulaOneAdminForm(form, kind) {
+  const reviewingFacts = kind === "facts" && activePageName === "formula-1-2026-review";
+  const body = Object.fromEntries(new FormData(form).entries());
+  if (kind === "picks") {
+    body.submit = true;
+    body.force = true;
+    body.allowPartial = true;
+  }
+  const managerId = kind === "picks" ? String(body.managerId || "me") : "";
+  delete body.managerId;
+  const path = `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}/${kind === "picks" ? `picks/${encodeURIComponent(managerId)}` : "facts"}`;
+  await formulaOneAdminRequest(path, { method: "PUT", body });
+  if (kind === "picks") formulaOneWeeklyEditing.delete(`${formulaOneAdminSelectedYear}:${formulaOneAdminSelectedRound}:${managerId}`);
+  await ensureFormulaOneAdminData({ force: true });
+  if (reviewingFacts) {
+    formulaOneFactsEditing = false;
+    const data = getFormulaOneAdminData();
+    const round = data?.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
+    const nextDataset = getFormulaOnePendingDatasets(data, round)[0];
+    if (nextDataset) {
+      formulaOneReviewSelectedSession = nextDataset;
+      renderFormulaOneReview({ message: "Round facts saved. Review the next dataset." });
+    } else {
+      returnToFormulaOneManage();
+    }
+    return;
+  }
+  renderFormulaOneAdminWeekly({ message: kind === "picks" ? "Choices submitted." : "Round facts saved." });
+}
+
+function getFormulaOneAdminDriver(data, driverId) {
+  return data.drivers?.find((driver) => driver.driver_id === driverId);
+}
+
+function getManagerById(managerId) {
+  const id = String(managerId || "");
+  return getFormulaOneManagers().find((manager) => String(manager.id || "") === id) || null;
+}
+
+function getFormulaOneManagers() {
+  const sources = siteData.portalManagers?.length ? siteData.portalManagers : siteData.managers?.length ? siteData.managers : DEFAULT_PORTAL_MANAGERS;
+  return sources.map((manager) => getManagerMeta(manager));
+}
+
+function getFormulaOneAdminDriverName(data, driverId) {
+  return getFormulaOneAdminDriver(data, driverId)?.display_name || driverId;
+}
+
+function formatFormulaOneSessionName(value) {
+  return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : "Session";
+}
+
+function formatFormulaOneSessionStatus(value) {
+  return String(value || "planned").replace(/_/g, " ").replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function formatFormulaOneAdminDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? String(value || "") : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
 function renderFormulaOneError(year, error) {
@@ -13925,7 +14690,7 @@ function handleFootyFixtureListClick(event) {
     return;
   }
 
-  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"), card);
 }
 
 function handleFootyFixtureListKeydown(event) {
@@ -13940,7 +14705,7 @@ function handleFootyFixtureListKeydown(event) {
   }
 
   event.preventDefault();
-  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"), card);
 }
 
 [footyScheduleList, footyTeamContent, footyCustomScheduleList, footyMissingNotesList].forEach((container) => {
@@ -14372,8 +15137,19 @@ footyMissingNotesFilterToggle?.addEventListener("click", () => {
   footyMissingNotesMatchPeriod,
   footyMissingNotesTeam,
 ].forEach((control) => {
-  control?.addEventListener("input", renderFootyMissingNotesPage);
-  control?.addEventListener("change", renderFootyMissingNotesPage);
+  const renderFirstFootyMissingNotesPage = () => {
+    activeFootyMissingNotesPage = 1;
+    renderFootyMissingNotesPage();
+  };
+  control?.addEventListener(control === footyMissingNotesSearch ? "input" : "change", renderFirstFootyMissingNotesPage);
+});
+
+footyMissingNotesPagination?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-footy-missing-notes-page]");
+  if (!button || button.disabled) return;
+  activeFootyMissingNotesPage = Number(button.dataset.footyMissingNotesPage) || 1;
+  renderFootyMissingNotesPage();
+  scrollToPageTop();
 });
 
 footyCustomFilterToggle?.addEventListener("click", () => {
@@ -15342,6 +16118,21 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     });
   });
 
+  view.resultsWeeklyGroupSelect?.addEventListener("change", () => {
+    formulaOneWeeklyResultsGroup[year] = view.resultsWeeklyGroupSelect.value || "all";
+    renderFormulaOneResults(year);
+  });
+
+  const toggleWeeklyStanding = (event) => {
+    const row = event.target.closest("[data-formula-one-weekly-standing-row]");
+    if (!row || formulaOneResultsMode[year] !== "weekly") return;
+    if (event.type === "keydown" && !["Enter", " "].includes(event.key)) return;
+    if (event.type === "keydown") event.preventDefault();
+    toggleFormulaOneWeeklyStandingRow(view.resultsRows, row);
+  };
+  view.resultsRows?.addEventListener("click", toggleWeeklyStanding);
+  view.resultsRows?.addEventListener("keydown", toggleWeeklyStanding);
+
   view.weeklyRoundSelect?.addEventListener("change", () => {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
   });
@@ -15384,6 +16175,90 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     event.preventDefault();
     toggleFormulaOneWeeklyEntry(entry);
   });
+
+  if (String(year) === "2026") {
+    view.weeklyAdmin?.addEventListener("change", (event) => {
+      if (event.target.matches("[data-formula-one-admin-year]")) {
+        formulaOneAdminSelectedYear = event.target.value;
+        formulaOneAdminSelectedRound = "";
+        formulaOneAdminSelectedSession = "qualifying";
+        formulaOneReviewSelectedSession = "";
+        renderFormulaOneAdminWeekly();
+        void ensureFormulaOneAdminData({ year: formulaOneAdminSelectedYear })
+          .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+      } else if (event.target.matches("[data-formula-one-admin-round]")) {
+        formulaOneAdminSelectedRound = event.target.value;
+        renderFormulaOneAdminWeekly();
+        if (formulaOneAdminMode === "weekly") void ensureFormulaOneRoundDrivers(formulaOneAdminSelectedYear, formulaOneAdminSelectedRound)
+          .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+      }
+    });
+
+    view.weeklyAdmin?.addEventListener("click", (event) => {
+      const modeButton = event.target.closest("[data-formula-one-admin-mode]");
+      if (modeButton) {
+        formulaOneAdminMode = modeButton.dataset.formulaOneAdminMode;
+        renderFormulaOneAdminWeekly();
+        if (formulaOneAdminMode === "weekly") void ensureFormulaOneRoundDrivers(formulaOneAdminSelectedYear, formulaOneAdminSelectedRound)
+          .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+        return;
+      }
+      const sessionButton = event.target.closest("[data-formula-one-review-session]");
+      if (sessionButton) {
+        openFormulaOneReview(sessionButton.dataset.formulaOneReviewSession);
+        return;
+      }
+      const editChoicesButton = event.target.closest("[data-formula-one-weekly-edit]");
+      if (editChoicesButton) {
+        formulaOneWeeklyEditing.add(`${formulaOneAdminSelectedYear}:${formulaOneAdminSelectedRound}:${editChoicesButton.dataset.formulaOneWeeklyEdit}`);
+        renderFormulaOneAdminWeekly();
+        return;
+      }
+      const button = event.target.closest("[data-formula-one-admin-action]");
+      if (!button || button.disabled) return;
+      button.disabled = true;
+      void runFormulaOneAdminAction(button.dataset.formulaOneAdminAction)
+        .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+    });
+
+    view.weeklyAdmin?.addEventListener("submit", (event) => {
+      const form = event.target.closest("[data-formula-one-admin-picks], [data-formula-one-admin-facts]");
+      if (!form) return;
+      event.preventDefault();
+      const kind = form.hasAttribute("data-formula-one-admin-picks") ? "picks" : "facts";
+      form.querySelectorAll("button[type='submit']").forEach((button) => button.setAttribute("disabled", ""));
+      void submitFormulaOneAdminForm(form, kind)
+        .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
+    });
+
+    view.review?.addEventListener("click", (event) => {
+      const sessionButton = event.target.closest("[data-formula-one-review-session]");
+      if (sessionButton) {
+        formulaOneReviewSelectedSession = sessionButton.dataset.formulaOneReviewSession;
+        renderFormulaOneReview();
+        return;
+      }
+      const actionButton = event.target.closest("[data-formula-one-review-action]");
+      if (!actionButton || actionButton.disabled) return;
+      if (actionButton.dataset.formulaOneReviewAction === "edit-facts") {
+        formulaOneFactsEditing = true;
+        renderFormulaOneReview();
+        return;
+      }
+      actionButton.disabled = true;
+      void runFormulaOneReviewAction(actionButton.dataset.formulaOneReviewAction)
+        .catch((error) => renderFormulaOneReview({ error: getErrorMessage(error) }));
+    });
+
+    view.review?.addEventListener("submit", (event) => {
+      const form = event.target.closest("[data-formula-one-admin-facts]");
+      if (!form) return;
+      event.preventDefault();
+      form.querySelectorAll("button[type='submit']").forEach((button) => button.setAttribute("disabled", ""));
+      void submitFormulaOneAdminForm(form, "facts")
+        .catch((error) => renderFormulaOneReview({ error: getErrorMessage(error) }));
+    });
+  }
 });
 
 Object.entries(fantasyOfficeViews).forEach(([year, view]) => {
@@ -15765,6 +16640,11 @@ function renderLoginState() {
   loginOnlyElements.forEach((element) => {
     element.hidden = !managerMeta;
   });
+  if (managerMeta?.isAdmin && ["formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName)) {
+    renderFormulaOneAdminWeekly();
+    renderFormulaOneReview();
+    void ensureFormulaOneAdminData();
+  }
   syncFootyGoalAssistsButton();
   if (managerMeta?.isAdmin && siteData.footySchedule && !Array.isArray(siteData.footySeenMatches)) {
     ensureFootySeenMatches().catch((error) => recordDiagnostic("seen matches failed to load", error));
@@ -15774,7 +16654,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -16454,8 +17334,35 @@ function buildManagerWorkflowItems(managerId) {
     ...buildFootyTeamSelectionWorkflowItems(),
     ...buildDraftWorkflowItems(managerId),
     ...buildFantasyCriticWorkflowItems(managerId),
+    ...buildFormulaOneIncompleteDataWorkflowItems(),
     ...buildFormulaOneWeeklyWorkflowItems(managerId),
   ];
+}
+
+function buildFormulaOneIncompleteDataWorkflowItems() {
+  const data = getFormulaOneAdminData();
+  if (!isCurrentManagerAdmin() || !data?.rounds) return [];
+  const today = getEasternTodayDate().getTime();
+  return data.rounds
+    .filter((round) => round.race_date && Date.parse(`${round.race_date}T00:00:00Z`) < today && !round.is_complete)
+    .map((round) => {
+      const required = getFormulaOneRoundSessionTypes(round);
+      const incomplete = required.filter((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status !== "approved");
+      const missingParts = [...incomplete.map(formatFormulaOneSessionName), ...(round.facts_complete ? [] : ["round facts"])];
+      return {
+        actionLabel: "Enter data",
+        description: `${missingParts.join(", ")} ${missingParts.length === 1 ? "needs" : "need"} completion.`,
+        dueDate: round.race_date,
+        formulaOneRound: String(round.round),
+        formulaOneYear: String(data.year),
+        id: `formula-one-${data.year}-round-${round.round}-data`,
+        priority: "1",
+        status: "Race has passed",
+        target: "formula-1-2026-manage",
+        title: `${data.year} ${round.name} data is incomplete`,
+        url: "",
+      };
+    });
 }
 
 function buildFootyMissingNotesWorkflowItems() {
@@ -16664,6 +17571,8 @@ function renderWorkflowItem(item) {
     item.tab ? `data-workflow-tab="${escapeHtml(item.tab)}"` : "",
     item.weeklyFormId ? `data-workflow-form-id="${escapeHtml(item.weeklyFormId)}"` : "",
     item.year ? `data-workflow-year="${escapeHtml(item.year)}"` : "",
+    item.formulaOneYear ? `data-workflow-formula-one-year="${escapeHtml(item.formulaOneYear)}"` : "",
+    item.formulaOneRound ? `data-workflow-formula-one-round="${escapeHtml(item.formulaOneRound)}"` : "",
   ].filter(Boolean).join(" ");
 
   return `
@@ -16748,6 +17657,11 @@ function activateWorkflowItem(item) {
   const url = item.dataset.workflowUrl || "";
 
   if (target) {
+    if (item.dataset.workflowFormulaOneRound) {
+      if (item.dataset.workflowFormulaOneYear) formulaOneAdminSelectedYear = item.dataset.workflowFormulaOneYear;
+      formulaOneAdminSelectedRound = item.dataset.workflowFormulaOneRound;
+      formulaOneReviewSelectedSession = "";
+    }
     const nextHash = `#${target}`;
 
     if (window.location.hash !== nextHash) {
@@ -18183,7 +19097,7 @@ function getPageDataScope(pageName = "") {
     return `fantasy-critic-${fantasyCriticMatch[1]}`;
   }
 
-  const formulaOneMatch = page.match(/^formula-1-(2024|2025|2026)-(questions|weekly|calculator|results)$/);
+  const formulaOneMatch = page.match(/^formula-1-(2024|2025|2026)-(questions|weekly|calculator|results|manage|review)$/);
   if (formulaOneMatch) {
     const [, year, view] = formulaOneMatch;
     return `formula-one-${year}-${view}`;
@@ -18337,9 +19251,12 @@ function loadPageData(scope) {
     ]);
   }
 
-  const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|calculator|results)$/);
+  const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|calculator|results|manage|review)$/);
   if (formulaOneMatch) {
     const [, year, view] = formulaOneMatch;
+    if (year === "2026" && ["manage", "review"].includes(view)) {
+      return ensureFormulaOneAdminData();
+    }
     if (view === "calculator") {
       return ensureFormulaOneCalculatorData(year);
     }
@@ -18797,6 +19714,10 @@ function refreshFormulaOnePage(year) {
   } else if (page === `formula-1-${year}-weekly`) {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
     renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+  } else if (page === `formula-1-${year}-manage` && String(year) === "2026") {
+    renderFormulaOneAdminWeekly();
+  } else if (page === `formula-1-${year}-review` && String(year) === "2026") {
+    renderFormulaOneReview();
   } else if (page === `formula-1-${year}-results`) {
     renderFormulaOneResults(year);
   }
@@ -18834,6 +19755,25 @@ function ensureFormulaOneCalculatorData(year) {
 
 function ensureFormulaOneData(year, view = "questions") {
   const yearKey = String(year);
+  if (view === "weekly-results" && yearKey === "2026") {
+    const weeklyTask = ensureFormulaOneSource(
+      "formulaOne2026WeeklyResults",
+      async () => {
+        if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
+        const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/weekly`);
+        if (!response.ok) throw new Error(`Formula 1 weekly results returned ${response.status}.`);
+        return response.json();
+      },
+      (result) => {
+        siteData.formulaOne2026WeeklyResults = { races: result.races || [], standings: result.standings || [] };
+      }
+    );
+    return Promise.allSettled([weeklyTask]).then((results) => {
+      refreshFormulaOnePage(yearKey);
+      if (activePageName === "manager-hub") renderManagerHub();
+      return results;
+    });
+  }
   const sourceTasks = [ensureFormulaOneSource(
     `formulaOne${yearKey}`,
     () => loadSheetText(`formulaOne${yearKey}`),
@@ -18855,16 +19795,6 @@ function ensureFormulaOneData(year, view = "questions") {
         renderFormulaOneWeeklyPage(yearKey, data);
       },
       (error) => renderFormulaOneWeeklyError(yearKey, error)
-    ));
-  }
-
-  if (view === "weekly-results" && yearKey === "2026") {
-    sourceTasks.push(ensureFormulaOneSource(
-      "formulaOne2026WeeklyResults",
-      () => loadSheetText("formulaOne2026WeeklyResults"),
-      (csvText) => {
-        siteData.formulaOne2026WeeklyResults = parseFormulaOneWeeklyResultsSheet(csvText);
-      }
     ));
   }
 
@@ -18963,6 +19893,7 @@ function ensureManagerHubData() {
       ensureFormulaOneData(2026, "weekly-results"),
     ];
     if (isCurrentManagerAdmin()) loads.push(ensureFootyMissingNotesData());
+    if (isCurrentManagerAdmin()) loads.push(ensureFormulaOneAdminData());
     await Promise.allSettled(loads);
     renderManagerHub();
     return true;

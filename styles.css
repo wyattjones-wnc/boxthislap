@@ -1437,6 +1437,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .trophy-log-filters button,
 .trophy-log-pagination button,
+.footy-missing-notes-pagination button,
 .trophy-log-actions button {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -1452,6 +1453,7 @@ body.has-shell-stale-warning .stale-shell-alert {
 .trophy-log-filters button:hover,
 .trophy-log-filters button.is-active,
 .trophy-log-pagination button:hover:not(:disabled),
+.footy-missing-notes-pagination button:hover:not(:disabled),
 .trophy-log-actions button:hover:not(:disabled) {
   background: var(--track);
   border-color: var(--accent);
@@ -1619,7 +1621,8 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .trophy-log-actions button:disabled,
-.trophy-log-pagination button:disabled {
+.trophy-log-pagination button:disabled,
+.footy-missing-notes-pagination button:disabled {
   cursor: default;
   opacity: 0.48;
 }
@@ -2405,6 +2408,28 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .footy-missing-notes-summary:empty {
   display: none;
+}
+
+.footy-missing-notes-pagination {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto 1fr;
+  padding-top: 14px;
+}
+
+.footy-missing-notes-pagination button:first-child {
+  justify-self: start;
+}
+
+.footy-missing-notes-pagination button:last-child {
+  justify-self: end;
+}
+
+.footy-missing-notes-pagination span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .next-controls {
@@ -4839,6 +4864,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
+#footy-note-match-id {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .footy-note-form h2 {
   font-size: 1.25rem;
   line-height: 1.2;
@@ -7173,6 +7205,15 @@ main {
   margin: 4px 0 0;
 }
 
+.formula-one-question-manage-link {
+  justify-self: end;
+  margin-left: auto;
+}
+
+.formula-one-question-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .fantasy-critic-standings {
   display: grid;
   gap: 18px;
@@ -7677,6 +7718,297 @@ main {
   margin: 0;
 }
 
+.formula-one-admin {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.formula-one-weekly-admin-list {
+  display: grid;
+  gap: 16px;
+}
+
+.formula-one-admin-card.formula-one-weekly-empty-card {
+  padding-block: 9px;
+}
+
+.formula-one-weekly-manager-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+}
+
+.formula-one-weekly-manager-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.formula-one-weekly-manager-meta > span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.formula-one-submitted-chip {
+  align-items: center;
+  background: color-mix(in srgb, #27ae60 18%, var(--soft));
+  border: 1px solid color-mix(in srgb, #27ae60 50%, var(--line));
+  border-radius: 999px;
+  color: #27ae60 !important;
+  display: inline-flex;
+  height: 1.7rem;
+  justify-content: center;
+  width: 1.7rem;
+}
+
+.formula-one-submitted-chip svg {
+  fill: none;
+  height: 0.9rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+  width: 0.9rem;
+}
+
+.formula-one-choice-result {
+  color: var(--muted);
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  margin-top: 5px;
+}
+
+.formula-one-wildcard-result {
+  display: grid;
+  gap: 3px 10px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.formula-one-wildcard-result strong {
+  color: var(--ink);
+  font-size: inherit;
+  text-align: right;
+}
+
+.formula-one-manage-tabs {
+  margin-top: 0;
+}
+
+.formula-one-export-row,
+.formula-one-workflow-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.formula-one-admin-notice,
+.formula-one-admin-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px var(--shadow);
+  max-width: 100%;
+  min-width: 0;
+  padding: 16px;
+}
+
+.formula-one-admin-card .table-wrap {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.formula-one-admin-notice {
+  border-left: 4px solid var(--accent);
+}
+
+.formula-one-admin-notice p,
+.formula-one-admin-card p {
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.formula-one-admin-toolbar,
+.formula-one-admin-actions,
+.formula-one-admin-form-grid {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+}
+
+.formula-one-admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.formula-one-admin-toolbar .select-control:first-child {
+  flex: 0 1 140px;
+}
+
+.formula-one-admin-toolbar .select-control:nth-child(2) {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.formula-one-admin-toolbar > .action-button {
+  margin-left: auto;
+}
+
+.formula-one-admin-actions {
+  grid-template-columns: repeat(4, max-content);
+  justify-content: end;
+}
+
+.formula-one-admin-form-grid {
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  margin-top: 14px;
+}
+
+.formula-one-admin-form-grid .select-control select,
+.formula-one-admin-form-grid .select-control input {
+  min-width: 0;
+  width: 100%;
+}
+
+.formula-one-admin-statuses {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.formula-one-admin-status {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+}
+
+button.formula-one-admin-status {
+  cursor: pointer;
+}
+
+button.formula-one-admin-status:hover,
+button.formula-one-admin-status:focus-visible {
+  border-color: var(--accent);
+}
+
+.formula-one-admin-status span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.formula-one-admin-status strong[data-status="approved"] {
+  color: var(--success, #287a49);
+}
+
+.formula-one-admin-status strong[data-status="needs_review"] {
+  color: var(--accent-dark);
+}
+
+.formula-one-admin-feedback {
+  margin: 0;
+  min-height: 1.3em;
+}
+
+.formula-one-admin-results td:first-child,
+.formula-one-admin-results th:first-child {
+  text-align: right;
+  width: 52px;
+}
+
+.formula-one-review-progress,
+.formula-one-review-session-nav,
+.formula-one-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.formula-one-review-card-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.formula-one-review-progress {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.formula-one-review-progress .formula-one-admin-feedback {
+  flex-basis: 100%;
+}
+
+.formula-one-review-session-nav {
+  justify-content: flex-end;
+}
+
+.formula-one-review-session-nav .is-active {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.formula-one-review-actions,
+.formula-one-workflow-footer {
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.formula-one-more-details {
+  padding: 0;
+}
+
+.formula-one-more-details-content {
+  display: grid;
+  gap: 16px;
+  padding: 0 16px 16px;
+}
+
+.formula-one-calculated-summary {
+  min-width: 0;
+}
+
+.formula-one-detail-card {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.formula-one-review-table-wrap {
+  margin-top: 14px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.formula-one-qualifying-review-table {
+  min-width: 820px;
+}
+
+.formula-one-qualifying-review-table td small {
+  color: var(--muted);
+  display: block;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
 .formula-one-form-header {
   align-items: end;
   display: grid;
@@ -7806,6 +8138,35 @@ main {
 
 .formula-one-weekly-managers {
   display: grid;
+}
+
+.formula-one-results-weekly-controls {
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.formula-one-results-weekly-controls .select-control {
+  min-width: 150px;
+}
+
+.formula-one-weekly-standing-rounds li {
+  align-items: flex-start;
+}
+
+.formula-one-weekly-standing-rounds li > div {
+  display: grid;
+  gap: 4px;
+}
+
+.formula-one-weekly-standing-rounds small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.formula-one-weekly-standing-rounds li > b {
+  color: var(--accent-dark);
+  flex: 0 0 auto;
 }
 
 .formula-one-weekly-entry {
@@ -9862,6 +10223,17 @@ html.has-followed-teams-dialog body {
   .formula-one-form-header {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .formula-one-admin-toolbar,
+  .formula-one-admin-form-grid,
+  .formula-one-admin-statuses {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-one-admin-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
   }
 
   .formula-one-form-link {

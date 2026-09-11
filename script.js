@@ -682,6 +682,7 @@ let formulaOneAdminSelectedRound = "";
 let formulaOneAdminSelectedSession = "qualifying";
 let formulaOneReviewSelectedSession = "";
 let formulaOneAdminMode = "main";
+let formulaOneFactsEditing = false;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -13162,7 +13163,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
   const sessions = ["qualifying", ...(selectedRound.has_sprint ? ["sprint"] : []), "race"];
   if (!sessions.includes(formulaOneAdminSelectedSession)) formulaOneAdminSelectedSession = sessions[0];
   const roundSessions = sessions.map((sessionType) => data.sessions?.find((session) => Number(session.round) === Number(selectedRound.round) && session.session_type === sessionType)).filter(Boolean);
-  const canContinue = roundSessions.some((session) => session.status === "needs_review");
+  const canContinue = roundSessions.some((session) => session.status === "needs_review") || !selectedRound.facts_complete;
   const entry = data.entries?.find((item) => Number(item.round) === Number(selectedRound.round));
   const score = data.scores?.find((item) => Number(item.round) === Number(selectedRound.round));
   const seasonYears = [...new Set([...(siteData.formulaOneAdminSeasons || []).map((season) => String(season.year)), String(data.year)])]
@@ -13189,12 +13190,11 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
         ${yearControl}${roundControl}
         <button class="action-button" type="button" data-formula-one-admin-action="fetch">Fetch round</button>
       </div>
-      <div class="formula-one-admin-statuses">${sessions.map((session) => renderFormulaOneAdminStatus(data, selectedRound.round, session)).join("")}<div class="formula-one-admin-status"><span>Round facts</span><strong data-status="${selectedRound.facts_complete ? "approved" : "planned"}">${selectedRound.facts_complete ? "Complete" : "Needed"}</strong></div></div>
+      <div class="formula-one-admin-statuses">${sessions.map((session) => renderFormulaOneAdminStatus(data, selectedRound.round, session)).join("")}${renderFormulaOneFactsStatus(selectedRound)}</div>
       <p><strong>Round status:</strong> ${selectedRound.is_complete ? "Complete" : "Waiting for required session approvals and round facts"}</p>
       <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
       <div class="formula-one-workflow-footer"><button class="action-button" type="button" data-formula-one-admin-action="continue"${canContinue ? "" : " disabled"}>Continue</button></div>
     </div>
-    ${renderFormulaOneAdminFacts(selectedRound, data)}
     ${hasApprovedData ? renderFormulaOneCalculatedDetails(data, selectedRound) : ""}
   `;
 }
@@ -13214,34 +13214,39 @@ function renderFormulaOneAdminStatus(data, round, sessionType) {
   return session ? `<button class="formula-one-admin-status" type="button" data-formula-one-review-session="${escapeHtml(sessionType)}">${content}</button>` : `<div class="formula-one-admin-status">${content}</div>`;
 }
 
+function renderFormulaOneFactsStatus(round) {
+  const status = round.facts_complete ? "approved" : "needs_review";
+  return `<button class="formula-one-admin-status" type="button" data-formula-one-review-session="facts"><span>Round facts</span><strong data-status="${status}">${round.facts_complete ? "Approved" : "Needs review"}</strong></button>`;
+}
+
 function renderFormulaOneCalculatedDetails(data, round = null, open = false) {
   const approvedKeys = new Set((data.sessions || []).filter((session) => session.status === "approved")
     .map((session) => `${session.round}:${session.session_type}`));
   const approvedResults = (data.results || []).filter((result) => approvedKeys.has(`${result.round}:${result.session_type}`));
-  const comparisons = buildFormulaOneQualifyingComparisons(approvedResults, data.drivers || [])
+  const detailResults = round ? approvedResults.filter((result) => Number(result.round) === Number(round.round)) : approvedResults;
+  const comparisons = buildFormulaOneQualifyingComparisons(detailResults, data.drivers || [])
     .filter((comparison) => !round || comparison.round === Number(round.round));
   const calculated = buildFormulaOneMainDatasets({
     year: data.year,
     rounds: round ? [round] : data.rounds || [],
     drivers: data.drivers || [],
     sessions: data.sessions || [],
-    results: approvedResults,
+    results: detailResults,
   });
-  return `<details class="formula-one-admin-card formula-one-more-details"${open ? " open" : ""}>
-    <summary><strong>More Details</strong><span>${round ? `Calculated data for ${escapeHtml(round.name)}` : `Calculated data across approved ${escapeHtml(formulaOneAdminSelectedYear)} rounds`}</span></summary>
-    ${round ? renderFormulaOneRoundComparisonTable(calculated.teammateComparisons, calculated.sprintSummary) : `${renderFormulaOneAllComparisonTable(calculated.teammateComparisons)}${renderFormulaOneSeasonQualifyingSummary(comparisons)}`}
+  return `<details class="formula-one-admin-card workflow-dropdown formula-one-more-details"${open ? " open" : ""}>
+    <summary class="manager-hub-card-heading workflow-summary"><strong>More Details</strong></summary>
+    <div class="formula-one-more-details-content">${round ? renderFormulaOneRoundComparisonTable(calculated.teammateComparisons) : `${renderFormulaOneAllComparisonTable(calculated.teammateComparisons)}${renderFormulaOneSeasonQualifyingSummary(comparisons)}`}${renderFormulaOneSprintDetails(calculated.sprintSummary)}</div>
   </details>`;
 }
 
-function renderFormulaOneRoundComparisonTable(comparisons, sprintSummaries = []) {
-  const sprint = sprintSummaries[0];
-  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${comparisons.length ? comparisons.map((comparison) => `<tr><td>${escapeHtml(comparison.team)}</td><td>${escapeHtml(`${comparison.firstDriver} / ${comparison.secondDriver}`)}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.adjustedWinner, comparison.adjustedGapSeconds, comparison.adjustedSession))}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.unadjustedWinner, comparison.unadjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.qualifyingPositionWinner, comparison.qualifyingPositionGap))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.racePositionWinner, comparison.racePositionGap))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="6">No approved teammate comparison is available.</td></tr>`}</tbody></table></div>${sprint?.sprintWinner ? `<p><strong>Sprint winner:</strong> ${escapeHtml(sprint.sprintWinner)} · <strong>Race winner:</strong> ${escapeHtml(sprint.raceWinner || "—")} · <strong>Same winner:</strong> ${escapeHtml(sprint.sameRaceAndSprintWinner || "—")}</p>` : ""}`;
+function renderFormulaOneRoundComparisonTable(comparisons) {
+  return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${comparisons.length ? comparisons.map((comparison) => `<tr><td>${escapeHtml(comparison.team)}</td><td>${escapeHtml(`${comparison.firstDriver} / ${comparison.secondDriver}`)}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.adjustedWinner, comparison.adjustedGapSeconds, comparison.adjustedSession))}</td><td>${escapeHtml(formatFormulaOneComparisonResult(comparison.unadjustedWinner, comparison.unadjustedGapSeconds))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.qualifyingPositionWinner, comparison.qualifyingPositionGap))}</td><td>${escapeHtml(formatFormulaOnePositionComparison(comparison.racePositionWinner, comparison.racePositionGap))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="6">No approved teammate comparison is available.</td></tr>`}</tbody></table></div>`;
 }
 
 function formatFormulaOneComparisonResult(winner, gap, session = "") {
   if (!winner) return "—";
   if (winner === "Tie") return "Tie";
-  return `${winner}${gap === "" ? "" : ` by ${Number(gap).toFixed(3)}s`}${session ? ` (${session})` : ""}`;
+  return `${winner}${gap === "" ? "" : ` by ${Number(gap).toFixed(3)}s`}${session ? ` · ${session}` : ""}`;
 }
 
 function formatFormulaOnePositionComparison(winner, gap) {
@@ -13265,6 +13270,11 @@ function renderFormulaOneAllComparisonTable(comparisons) {
   return `<div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Team</th><th>Drivers</th><th>Rounds</th><th>Adjusted qualifying</th><th>Unadjusted qualifying</th><th>Qualifying position</th><th>Race position</th></tr></thead><tbody>${groups.size ? [...groups.values()].map((group) => `<tr><td>${escapeHtml(group.team)}</td><td>${escapeHtml(`${group.first} / ${group.second}`)}</td><td>${group.rounds}</td><td>${escapeHtml(record(group, "adjusted"))}</td><td>${escapeHtml(record(group, "unadjusted"))}</td><td>${escapeHtml(record(group, "qualifying"))}</td><td>${escapeHtml(record(group, "race"))}</td></tr>`).join("") : `<tr><td class="table-message" colspan="7">No approved teammate comparisons are available.</td></tr>`}</tbody></table></div>`;
 }
 
+function renderFormulaOneSprintDetails(summaries) {
+  if (!summaries.some((summary) => summary.sprintWinner)) return "";
+  return `<section class="formula-one-detail-card"><strong>Sprint</strong><div class="table-wrap formula-one-review-table-wrap"><table><thead><tr><th>Round</th><th>Sprint winner</th><th>Race winner</th><th>Same winner</th></tr></thead><tbody>${summaries.filter((summary) => summary.sprintWinner).map((summary) => `<tr><td>${escapeHtml(`${summary.round}. ${summary.roundName}`)}</td><td>${escapeHtml(summary.sprintWinner)}</td><td>${escapeHtml(summary.raceWinner || "—")}</td><td>${escapeHtml(summary.sameRaceAndSprintWinner || "—")}</td></tr>`).join("")}</tbody></table></div></section>`;
+}
+
 function getFormulaOneAdminData(year = formulaOneAdminSelectedYear) {
   return siteData.formulaOneAdminByYear?.[String(year)] || null;
 }
@@ -13272,10 +13282,11 @@ function getFormulaOneAdminData(year = formulaOneAdminSelectedYear) {
 function openFormulaOneReview(sessionType = "") {
   const data = getFormulaOneAdminData();
   const round = data?.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
-  const sessionTypes = round ? getFormulaOneRoundSessionTypes(round) : [];
-  formulaOneReviewSelectedSession = sessionTypes.includes(sessionType)
+  const datasetTypes = round ? getFormulaOneRoundDatasetTypes(round) : [];
+  formulaOneFactsEditing = false;
+  formulaOneReviewSelectedSession = datasetTypes.includes(sessionType)
     ? sessionType
-    : sessionTypes.find((item) => getFormulaOneSession(data, round.round, item)?.status === "needs_review") || sessionTypes[0] || "qualifying";
+    : getFormulaOnePendingDatasets(data, round)[0] || datasetTypes[0] || "qualifying";
   const target = "formula-1-2026-review";
   if (window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
   showPage(target, { scrollToTop: true });
@@ -13298,15 +13309,19 @@ function renderFormulaOneReview(feedback = {}) {
     return;
   }
   formulaOneAdminSelectedRound = String(round.round);
-  const sessionTypes = getFormulaOneRoundSessionTypes(round);
-  if (!sessionTypes.includes(formulaOneReviewSelectedSession)) {
-    formulaOneReviewSelectedSession = sessionTypes.find((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review") || sessionTypes[0];
+  const datasetTypes = getFormulaOneRoundDatasetTypes(round);
+  if (!datasetTypes.includes(formulaOneReviewSelectedSession)) {
+    formulaOneReviewSelectedSession = getFormulaOnePendingDatasets(data, round)[0] || datasetTypes[0];
   }
+  if (formulaOneReviewSelectedSession === "facts") {
+    container.innerHTML = renderFormulaOneAdminFacts(round, data, { review: true, feedback });
+    return;
+  }
+  const sessionTypes = getFormulaOneRoundSessionTypes(round);
   const session = getFormulaOneSession(data, round.round, formulaOneReviewSelectedSession);
   const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === formulaOneReviewSelectedSession);
   const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
-  const unapprovedSessions = sessionTypes.filter((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review");
-  const nextUnapprovedSession = unapprovedSessions.find((sessionType) => sessionType !== formulaOneReviewSelectedSession);
+  const nextUnapprovedSession = getFormulaOnePendingDatasets(data, round).find((sessionType) => sessionType !== formulaOneReviewSelectedSession);
   const isLastUnapproved = session?.status === "needs_review" && !nextUnapprovedSession;
   const actionMarkup = session?.status === "needs_review"
     ? `<button class="action-button" type="button" data-formula-one-review-action="approve">${isLastUnapproved ? "Finish" : "Approve and Continue"}</button>`
@@ -13384,6 +13399,18 @@ function getFormulaOneRoundSessionTypes(round) {
   return ["qualifying", ...(round?.has_sprint ? ["sprint"] : []), "race"];
 }
 
+function getFormulaOneRoundDatasetTypes(round) {
+  return [...getFormulaOneRoundSessionTypes(round), "facts"];
+}
+
+function getFormulaOnePendingDatasets(data, round) {
+  if (!round) return [];
+  const pending = getFormulaOneRoundSessionTypes(round)
+    .filter((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review");
+  if (!round.facts_complete) pending.push("facts");
+  return pending;
+}
+
 function getFormulaOneSession(data, round, sessionType) {
   return data?.sessions?.find((session) => Number(session.round) === Number(round) && session.session_type === sessionType);
 }
@@ -13399,7 +13426,7 @@ async function runFormulaOneReviewAction(action) {
   await ensureFormulaOneAdminData({ force: true });
   const data = getFormulaOneAdminData();
   const round = data.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
-  const nextSession = getFormulaOneRoundSessionTypes(round).find((sessionType) => getFormulaOneSession(data, round.round, sessionType)?.status === "needs_review");
+  const nextSession = getFormulaOnePendingDatasets(data, round)[0];
   if (action === "approve" && !nextSession) {
     returnToFormulaOneManage();
     return;
@@ -13437,7 +13464,7 @@ function renderFormulaOneAdminPicks(data, round, entry, score) {
   </form>`;
 }
 
-function renderFormulaOneAdminFacts(round, data) {
+function renderFormulaOneAdminFacts(round, data, { review = false, feedback = {} } = {}) {
   const driverNames = [...new Set((data.drivers || []).map((driver) => driver.display_name).filter(Boolean))].sort();
   const teamNames = [...new Set((data.drivers || []).map((driver) => driver.constructor_name).filter(Boolean))].sort();
   const options = (items, selected, placeholder) => {
@@ -13445,17 +13472,23 @@ function renderFormulaOneAdminFacts(round, data) {
     return `<option value="">${escapeHtml(placeholder)}</option>${values.map((item) => `<option value="${escapeHtml(item)}"${item === selected ? " selected" : ""}>${escapeHtml(item)}</option>`).join("")}`;
   };
   const safetyCar = round.safety_car ? `${round.safety_car.charAt(0).toUpperCase()}${round.safety_car.slice(1).toLowerCase()}` : "";
+  const locked = review && Boolean(round.facts_complete) && !formulaOneFactsEditing;
+  const disabled = locked ? " disabled" : "";
+  const pendingAfterFacts = review ? getFormulaOnePendingDatasets(data, round).some((dataset) => dataset !== "facts") : false;
   return `<form class="formula-one-admin-card" data-formula-one-admin-facts>
-    <strong>Round facts</strong>
+    <strong>${review ? escapeHtml(`${round.round}. ${round.name} · Round facts`) : "Round facts"}</strong>
     <p>Review automatically filled facts, including Safety Car, and complete the facts that still require a manual source.</p>
     <div class="formula-one-admin-form-grid">
-      <label class="select-control"><span>Driver of the Day</span><select name="driverOfTheDay">${options(driverNames, round.driver_of_the_day, "Choose driver")}</select></label>
-      <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}"></label>
-      <label class="select-control"><span>Fastest pit team</span><select name="fastestPitTeam">${options(teamNames, round.fastest_pit_team, "Choose team")}</select></label>
-      <label class="select-control"><span>DNFs</span><input name="dnfCount" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(round.dnf_count || "")}"></label>
-      <label class="select-control"><span>Safety car</span><select name="safetyCar">${options(["Yes", "No"], safetyCar, "Choose Yes or No")}</select></label>
+      <label class="select-control"><span>Driver of the Day</span><select name="driverOfTheDay" required${disabled}>${options(driverNames, round.driver_of_the_day, "Choose driver")}</select></label>
+      <label class="select-control"><span>Fastest pit</span><input name="fastestPitTime" value="${escapeHtml(round.fastest_pit_time || "")}" required${disabled}></label>
+      <label class="select-control"><span>Fastest pit team</span><select name="fastestPitTeam" required${disabled}>${options(teamNames, round.fastest_pit_team, "Choose team")}</select></label>
+      <label class="select-control"><span>DNFs</span><input name="dnfCount" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(round.dnf_count || "")}" required${disabled}></label>
+      <label class="select-control"><span>Safety car</span><select name="safetyCar" required${disabled}>${options(["Yes", "No"], safetyCar, "Choose Yes or No")}</select></label>
     </div>
-    <button class="action-button" type="submit">Save facts</button>
+    <p class="formula-one-admin-feedback" role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
+    <div class="formula-one-review-actions">${locked
+      ? `<button class="footer-copy-link" type="button" data-formula-one-review-action="edit-facts">Edit</button>`
+      : `<button class="action-button" type="submit">${review ? (pendingAfterFacts ? "Save and Continue" : "Finish") : "Save facts"}</button>`}</div>
   </form>`;
 }
 
@@ -13531,11 +13564,25 @@ async function runFormulaOneAdminAction(action) {
 }
 
 async function submitFormulaOneAdminForm(form, kind, options = {}) {
+  const reviewingFacts = kind === "facts" && activePageName === "formula-1-2026-review";
   const body = Object.fromEntries(new FormData(form).entries());
   if (kind === "picks") body.submit = options.submit !== false;
   const path = `/api/admin/seasons/${encodeURIComponent(formulaOneAdminSelectedYear)}/rounds/${encodeURIComponent(formulaOneAdminSelectedRound)}/${kind === "picks" ? "picks/me" : "facts"}`;
   await formulaOneAdminRequest(path, { method: "PUT", body });
   await ensureFormulaOneAdminData({ force: true });
+  if (reviewingFacts) {
+    formulaOneFactsEditing = false;
+    const data = getFormulaOneAdminData();
+    const round = data?.rounds?.find((item) => String(item.round) === formulaOneAdminSelectedRound);
+    const nextDataset = getFormulaOnePendingDatasets(data, round)[0];
+    if (nextDataset) {
+      formulaOneReviewSelectedSession = nextDataset;
+      renderFormulaOneReview({ message: "Round facts saved. Review the next dataset." });
+    } else {
+      returnToFormulaOneManage();
+    }
+    return;
+  }
   renderFormulaOneAdminWeekly({ message: kind === "picks" ? (body.submit ? "Native picks submitted." : "Native picks draft saved.") : "Round facts saved." });
 }
 
@@ -15917,8 +15964,22 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       }
       const actionButton = event.target.closest("[data-formula-one-review-action]");
       if (!actionButton || actionButton.disabled) return;
+      if (actionButton.dataset.formulaOneReviewAction === "edit-facts") {
+        formulaOneFactsEditing = true;
+        renderFormulaOneReview();
+        return;
+      }
       actionButton.disabled = true;
       void runFormulaOneReviewAction(actionButton.dataset.formulaOneReviewAction)
+        .catch((error) => renderFormulaOneReview({ error: getErrorMessage(error) }));
+    });
+
+    view.review?.addEventListener("submit", (event) => {
+      const form = event.target.closest("[data-formula-one-admin-facts]");
+      if (!form) return;
+      event.preventDefault();
+      form.querySelectorAll("button[type='submit']").forEach((button) => button.setAttribute("disabled", ""));
+      void submitFormulaOneAdminForm(form, "facts")
         .catch((error) => renderFormulaOneReview({ error: getErrorMessage(error) }));
     });
   }

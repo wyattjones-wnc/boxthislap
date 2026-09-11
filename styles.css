@@ -7844,25 +7844,26 @@ button.formula-one-admin-status:focus-visible {
   margin-top: 16px;
 }
 
-.formula-one-more-details summary {
-  cursor: pointer;
+.formula-one-more-details {
+  padding: 0;
+}
+
+.formula-one-more-details-content {
   display: grid;
-  gap: 4px;
-}
-
-.formula-one-more-details summary span {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.formula-one-more-details[open] summary {
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  gap: 16px;
+  padding: 0 16px 16px;
 }
 
 .formula-one-calculated-summary {
   min-width: 0;
+}
+
+.formula-one-detail-card {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 14px;
 }
 
 .formula-one-review-table-wrap {

@@ -473,6 +473,10 @@ const formulaOneResultsMode = {
   2025: "yearly",
   2026: "yearly",
 };
+const formulaOneWeeklyResultsGroup = {
+  2025: "all",
+  2026: "all",
+};
 let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
@@ -12387,12 +12391,17 @@ function renderFormulaOneResults(year) {
   renderFormulaOneAwards(year);
 
   const data = siteData[`formulaOne${year}`];
-  const weeklyData = siteData[`formulaOne${year}WeeklyResults`] ?? siteData[`formulaOne${year}Weekly`];
+  const weeklyResultsData = siteData[`formulaOne${year}WeeklyResults`];
+  const weeklyPicksData = siteData[`formulaOne${year}Weekly`];
+  const weeklyData = weeklyResultsData
+    ? { ...weeklyPicksData, ...weeklyResultsData, races: weeklyResultsData.races?.length ? weeklyResultsData.races : weeklyPicksData?.races || [] }
+    : weeklyPicksData;
   const mode = formulaOneResultsMode[year] ?? "yearly";
   const activeSource = mode === "weekly" ? weeklyData : data;
   const standings = mode === "weekly"
-    ? weeklyData?.standings ?? []
+    ? getFormulaOneWeeklyGroupStandings(weeklyData, formulaOneWeeklyResultsGroup[year] ?? "all")
     : data?.standings ?? [];
+  renderFormulaOneWeeklyResultsGroupControl(year, weeklyData, mode);
 
   if (!activeSource) {
     const label = mode === "weekly" ? "weekly" : "yearly";
@@ -12413,8 +12422,10 @@ function renderFormulaOneResults(year) {
       ? getAwardsForManager(manager, { standings: standingsKey, year })
       : [];
 
+    const detailId = `formula-one-${year}-weekly-standing-${escapeHtml(String(entry.managerId || entry.manager_id || entry.manager || index))}`;
+    const expandable = mode === "weekly";
     return `
-      <tr>
+      <tr${expandable ? ` class="manager-result-row" data-formula-one-weekly-standing-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0"` : ""}>
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
         <td data-label="Manager">
           <span class="standing-manager-with-awards">
@@ -12424,8 +12435,85 @@ function renderFormulaOneResults(year) {
         </td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
+      ${expandable ? `<tr class="manager-detail-row formula-one-weekly-standing-detail" id="${detailId}" hidden><td colspan="3">${renderFormulaOneWeeklyStandingDetails(weeklyData, entry, formulaOneWeeklyResultsGroup[year] ?? "all")}</td></tr>` : ""}
     `;
   }).join("");
+}
+
+function renderFormulaOneWeeklyResultsGroupControl(year, data, mode) {
+  const view = formulaOneViews[year];
+  if (!view?.resultsWeeklyControls || !view.resultsWeeklyGroupSelect) return;
+  view.resultsWeeklyControls.hidden = mode !== "weekly";
+  if (mode !== "weekly") return;
+
+  const groups = [...new Set((data?.races || []).map((race) => Math.floor((Number(race.id) - 1) / 8) + 1).filter(Number.isInteger))].sort((a, b) => a - b);
+  const selected = groups.includes(Number(formulaOneWeeklyResultsGroup[year])) ? String(formulaOneWeeklyResultsGroup[year]) : "all";
+  formulaOneWeeklyResultsGroup[year] = selected;
+  view.resultsWeeklyGroupSelect.innerHTML = `<option value="all">All</option>${groups.map((group) => {
+    const start = (group - 1) * 8 + 1;
+    return `<option value="${group}">Rounds ${start}–${start + 7}</option>`;
+  }).join("")}`;
+  view.resultsWeeklyGroupSelect.value = selected;
+}
+
+function getFormulaOneWeeklyGroupStandings(data, selectedGroup) {
+  const standings = data?.standings || [];
+  if (selectedGroup === "all") return standings;
+  const group = Number(selectedGroup);
+  const rows = standings.map((entry) => {
+    const block = (entry.blockTotals || []).find((item) => Number(item.block) === group);
+    const fallbackScores = (data?.races || [])
+      .filter((race) => Math.floor((Number(race.id) - 1) / 8) + 1 === group)
+      .map((race) => ({
+        round: Number(race.id),
+        points: Number((race.entries || []).find((item) => getFormulaOneWeeklyManagerKey(item) === getFormulaOneWeeklyManagerKey(entry))?.total) || 0,
+      }))
+      .sort((first, second) => second.points - first.points || first.round - second.round)
+      .slice(0, 4);
+    return {
+      ...entry,
+      points: block ? Number(block.points) || 0 : fallbackScores.reduce((total, score) => total + score.points, 0),
+      countedRounds: block?.countedRounds || fallbackScores.map((score) => score.round),
+    };
+  }).sort((first, second) => second.points - first.points || getFormulaOneWeeklyManagerKey(first).localeCompare(getFormulaOneWeeklyManagerKey(second), undefined, { numeric: true }));
+  return rankRows(rows);
+}
+
+function getFormulaOneWeeklyManagerKey(entry) {
+  return String(entry?.managerId ?? entry?.manager_id ?? entry?.manager ?? "");
+}
+
+function renderFormulaOneWeeklyStandingDetails(data, standing, selectedGroup) {
+  const managerKey = getFormulaOneWeeklyManagerKey(standing);
+  let rounds = (data?.races || []).map((race) => ({
+    race,
+    entry: (race.entries || []).find((entry) => getFormulaOneWeeklyManagerKey(entry) === managerKey),
+  }));
+  if (selectedGroup !== "all") {
+    const counted = new Set((standing.countedRounds || []).map(Number));
+    rounds = rounds.filter(({ race }) => counted.has(Number(race.id)));
+  }
+  rounds.sort((first, second) => Number(first.race.id) - Number(second.race.id));
+  if (!rounds.length) return `<div class="standing-result-detail-panel"><p class="table-message">No completed rounds are available.</p></div>`;
+
+  return `<div class="standing-result-detail-panel"><ul class="standing-result-detail-list formula-one-weekly-standing-rounds">${rounds.map(({ race, entry }) => {
+    const total = Number(entry?.total) || 0;
+    const breakdown = selectedGroup === "all" ? "" : renderFormulaOneWeeklyStandingBreakdown(entry);
+    const roundName = /^round\s+\d+/i.test(String(race.name || "")) ? race.name : `${race.id}. ${race.name || `Round ${race.id}`}`;
+    return `<li><div><strong>${escapeHtml(roundName)}</strong>${breakdown}</div><b>${escapeHtml(formatFormulaOnePointValue(total))} pts</b></li>`;
+  }).join("")}</ul></div>`;
+}
+
+function renderFormulaOneWeeklyStandingBreakdown(entry) {
+  if (!entry) return `<small>No choices · 0 pts</small>`;
+  const items = [
+    ["P1", entry.picks?.p1, entry.positions?.p1, entry.points?.p1],
+    ["P2", entry.picks?.p2, entry.positions?.p2, entry.points?.p2],
+    ["P3", entry.picks?.p3, entry.positions?.p3, entry.points?.p3],
+    ["Wildcard Q", entry.picks?.wildcard, entry.positions?.wildcardQualifying, entry.points?.wildcardQualifying],
+    ["Wildcard Race", entry.picks?.wildcard, entry.positions?.wildcardRace, entry.points?.wildcardRace],
+  ];
+  return `<small>${items.map(([label, pick, position, points]) => `${escapeHtml(label)}: ${escapeHtml(pick || "—")} ${escapeHtml(formatFormulaOnePosition(position))} · ${escapeHtml(formatFormulaOnePointValue(points))} pts`).join("<br>")}</small>`;
 }
 
 function renderFormulaOneAwards(year) {
@@ -13065,6 +13153,21 @@ function toggleFormulaOneWeeklyEntry(entry) {
   if (details) {
     details.hidden = false;
   }
+}
+
+function toggleFormulaOneWeeklyStandingRow(container, row) {
+  const isExpanded = row.getAttribute("aria-expanded") === "true";
+  container.querySelectorAll("[data-formula-one-weekly-standing-row]").forEach((item) => {
+    item.setAttribute("aria-expanded", "false");
+    item.classList.remove("is-manager-expanded");
+    const detail = item.nextElementSibling;
+    if (detail?.classList.contains("formula-one-weekly-standing-detail")) detail.hidden = true;
+  });
+  if (isExpanded) return;
+  row.setAttribute("aria-expanded", "true");
+  row.classList.add("is-manager-expanded");
+  const detail = row.nextElementSibling;
+  if (detail?.classList.contains("formula-one-weekly-standing-detail")) detail.hidden = false;
 }
 
 function renderFormulaOneWeeklyPick(label, pick, position, points) {
@@ -15975,6 +16078,21 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       setFormulaOneResultsMode(year, button.getAttribute("data-formula-one-results-mode"));
     });
   });
+
+  view.resultsWeeklyGroupSelect?.addEventListener("change", () => {
+    formulaOneWeeklyResultsGroup[year] = view.resultsWeeklyGroupSelect.value || "all";
+    renderFormulaOneResults(year);
+  });
+
+  const toggleWeeklyStanding = (event) => {
+    const row = event.target.closest("[data-formula-one-weekly-standing-row]");
+    if (!row || formulaOneResultsMode[year] !== "weekly") return;
+    if (event.type === "keydown" && !["Enter", " "].includes(event.key)) return;
+    if (event.type === "keydown") event.preventDefault();
+    toggleFormulaOneWeeklyStandingRow(view.resultsRows, row);
+  };
+  view.resultsRows?.addEventListener("click", toggleWeeklyStanding);
+  view.resultsRows?.addEventListener("keydown", toggleWeeklyStanding);
 
   view.weeklyRoundSelect?.addEventListener("change", () => {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);

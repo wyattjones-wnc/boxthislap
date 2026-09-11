@@ -159,12 +159,19 @@ async function readAdminWeekly(env, year) {
 }
 
 async function readPublicWeekly(env, year) {
-  const [roundQuery, entryQuery, scoreQuery] = await Promise.all([
+  const [roundQuery, entryQuery, scoreQuery, driverQuery, resultQuery] = await Promise.all([
     env.DB.prepare("SELECT round, name FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? AND entry_status = 'submitted' AND EXISTS (SELECT 1 FROM f1_weekly_scores scores WHERE scores.year = f1_weekly_entries.year AND scores.round = f1_weekly_entries.round AND scores.manager_id = f1_weekly_entries.manager_id) ORDER BY round, manager_id").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_scores WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
+    env.DB.prepare("SELECT driver_id, display_name FROM f1_drivers WHERE year = ?").bind(year).all(),
+    env.DB.prepare("SELECT round, session_type, driver_id, position, classified_position FROM f1_session_results WHERE year = ? AND session_type IN ('qualifying', 'race')").bind(year).all(),
   ]);
   const roundsById = new Map((roundQuery.results || []).map((round) => [Number(round.round), round]));
+  const driverNames = new Map((driverQuery.results || []).map((driver) => [String(driver.driver_id), driver.display_name]));
+  const positions = new Map((resultQuery.results || []).map((result) => [
+    `${result.round}:${result.session_type}:${result.driver_id}`,
+    result.position ?? result.classified_position ?? "",
+  ]));
   const scores = scoreQuery.results || [];
   const scoreByEntry = new Map(scores.map((score) => [`${score.round}:${score.manager_id}`, score]));
   const races = [];
@@ -176,9 +183,18 @@ async function readPublicWeekly(env, year) {
       races.push(race);
     }
     const score = scoreByEntry.get(`${round}:${entry.manager_id}`) || {};
+    const driverName = (driverId) => driverNames.get(String(driverId)) || String(driverId || "");
+    const resultPosition = (sessionType, driverId) => positions.get(`${round}:${sessionType}:${driverId}`) ?? "";
     race.entries.push({
       managerId: String(entry.manager_id),
-      picks: { p1: entry.p1_driver_id, p2: entry.p2_driver_id, p3: entry.p3_driver_id, wildcard: entry.wildcard_driver_id },
+      picks: { p1: driverName(entry.p1_driver_id), p2: driverName(entry.p2_driver_id), p3: driverName(entry.p3_driver_id), wildcard: driverName(entry.wildcard_driver_id) },
+      positions: {
+        p1: resultPosition("race", entry.p1_driver_id),
+        p2: resultPosition("race", entry.p2_driver_id),
+        p3: resultPosition("race", entry.p3_driver_id),
+        wildcardQualifying: resultPosition("qualifying", entry.wildcard_driver_id),
+        wildcardRace: resultPosition("race", entry.wildcard_driver_id),
+      },
       points: { p1: score.p1_points, p2: score.p2_points, p3: score.p3_points, wildcardQualifying: score.wildcard_qualifying_points, wildcardRace: score.wildcard_race_points },
       total: Number(score.total_points) || 0,
     });

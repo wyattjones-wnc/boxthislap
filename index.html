@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.11.15.16";
+      window.BOX_THIS_LAP_VERSION = "2026.09.11.15.34";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609111516">
+    <link rel="stylesheet" href="styles.css?v=202609111534">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -2591,6 +2591,13 @@
           <div class="standings-awards-list" id="formula-one-2025-awards-list"></div>
         </section>
 
+        <div class="formula-one-controls formula-one-results-weekly-controls" id="formula-one-2025-results-weekly-controls" hidden>
+          <label class="select-control">
+            <span>Rounds</span>
+            <select id="formula-one-2025-results-weekly-group"><option value="all">All</option></select>
+          </label>
+        </div>
+
         <div class="table-wrap standings-table">
           <table>
             <thead>
@@ -2679,6 +2686,13 @@
           </div>
           <div class="standings-awards-list" id="formula-one-2026-awards-list"></div>
         </section>
+
+        <div class="formula-one-controls formula-one-results-weekly-controls" id="formula-one-2026-results-weekly-controls" hidden>
+          <label class="select-control">
+            <span>Rounds</span>
+            <select id="formula-one-2026-results-weekly-group"><option value="all">All</option></select>
+          </label>
+        </div>
 
         <div class="table-wrap standings-table">
           <table>
@@ -2885,6 +2899,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609111516"></script>
+    <script type="module" src="script.js?v=202609111534"></script>
   </body>
 </html>

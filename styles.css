@@ -8140,6 +8140,35 @@ button.formula-one-admin-status:focus-visible {
   display: grid;
 }
 
+.formula-one-results-weekly-controls {
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.formula-one-results-weekly-controls .select-control {
+  min-width: 150px;
+}
+
+.formula-one-weekly-standing-rounds li {
+  align-items: flex-start;
+}
+
+.formula-one-weekly-standing-rounds li > div {
+  display: grid;
+  gap: 4px;
+}
+
+.formula-one-weekly-standing-rounds small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.formula-one-weekly-standing-rounds li > b {
+  color: var(--accent-dark);
+  flex: 0 0 auto;
+}
+
 .formula-one-weekly-entry {
   border-bottom: 1px solid var(--line);
   cursor: pointer;

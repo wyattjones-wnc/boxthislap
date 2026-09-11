@@ -28,7 +28,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
   view?.addEventListener("keydown", handleKeydown);
 
   function renderPage() {
-    if (!view) return;
+    if (!view) return Promise.resolve();
 
     const routeGuideId = new URL(window.location.href).searchParams.get("guide") || "";
     if (routeGuideId !== selectedGuideId) {
@@ -37,10 +37,10 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     }
 
     if (selectedGuideId) {
-      renderGuideDetail();
-    } else {
-      renderGuideIndex();
+      return renderGuideDetail();
     }
+
+    return renderGuideIndex();
   }
 
   function isItemDone(item) {
@@ -142,8 +142,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
   function renderGuideIndex() {
     if (!guides) {
       view.innerHTML = renderIndexLoading();
-      ensureDataLoaded().then(renderPage).catch((error) => renderError("guides", error));
-      return;
+      return ensureDataLoaded().then(renderPage).catch((error) => renderError("guides", error));
     }
 
     const visibleGuides = guides.filter(canViewGuide);
@@ -159,13 +158,13 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
         ${visibleGuides.length ? visibleGuides.map(renderGuideCard).join("") : `<p class="table-message">No guides are available yet.</p>`}
       </div>
     `;
+    return Promise.resolve();
   }
 
   function renderGuideDetail() {
     if (!guides) {
       view.innerHTML = renderDetailLoading();
-      ensureDataLoaded().then(renderPage).catch((error) => renderError("guide", error));
-      return;
+      return ensureDataLoaded().then(renderPage).catch((error) => renderError("guide", error));
     }
 
     const guide = guides.find((entry) => entry.id === selectedGuideId && canViewGuide(entry));
@@ -174,15 +173,14 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
         <a class="guides-back-link" href="${escapeAttribute(getGuidesUrl())}" data-guides-back>&larr; All Guides</a>
         <div class="guides-empty-state"><h1>Guide not found</h1><p>This guide may have been removed or its ID may have changed.</p></div>
       `;
-      return;
+      return Promise.resolve();
     }
 
     if (!checklist || !progressPromise || progressManagerId !== String(getManagerId?.() || "").trim()) {
       view.innerHTML = renderDetailLoading(guide.name);
-      Promise.all([ensureDataLoaded(), ensureProgressLoaded()])
+      return Promise.all([ensureDataLoaded(), ensureProgressLoaded()])
         .then(renderPage)
         .catch((error) => renderError("guide progress", error));
-      return;
     }
 
     const allItems = checklist.filter((item) => item.guideId === guide.id);
@@ -236,6 +234,7 @@ export function createGuidesController({ getManagerId, getIsAdmin, loadData, pro
     `;
     syncParentCheckboxes();
     setupStepObserver();
+    return Promise.resolve();
   }
 
   function renderGuideCard(guide) {

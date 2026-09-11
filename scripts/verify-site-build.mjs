@@ -26,8 +26,8 @@ const mainScript = await readFile(
 );
 const mainScriptBytes = mainScript.byteLength;
 const mainScriptGzipBytes = gzipSync(mainScript).byteLength;
-const maximumMainScriptBytes = 525_000;
-const maximumMainScriptGzipBytes = 145_000;
+const maximumMainScriptBytes = 480_000;
+const maximumMainScriptGzipBytes = 132_000;
 
 if (mainScriptBytes > maximumMainScriptBytes) {
   throw new Error(
@@ -44,6 +44,8 @@ if (mainScriptGzipBytes > maximumMainScriptGzipBytes) {
 const buildFiles = await readdir(buildDirectory);
 const expectedLazyChunks = [
   "collectibles-",
+  "draftLists-",
+  "guides-",
   "platinums-",
   "trophyLog-",
   "trophyStats-",

@@ -71,7 +71,7 @@ test("secondary admin bundles stay off the initial mobile route", async ({
   const secondaryBundleRequests = [];
   page.on("request", (request) => {
     if (
-      /\/(?:collectibles|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -91,6 +91,37 @@ test("authenticated YouTube route loads its deferred controller", async ({
   /** @type {string[]} */
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  await prepareAuthenticatedSecondaryRoutes(page);
+
+  await page.goto("/#youtube", { waitUntil: "networkidle" });
+
+  await expect(page.locator('[data-page="youtube"]')).toHaveClass(/is-active/);
+  await expect(page.locator(".youtube-toolbar")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "All caught up" }),
+  ).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test("authenticated Guides and Draft List load their deferred controllers", async ({
+  page,
+}) => {
+  await prepareAuthenticatedSecondaryRoutes(page);
+
+  await page.goto("/#guides", { waitUntil: "networkidle" });
+  await expect(page.locator('[data-page="guides"]')).toHaveClass(/is-active/);
+  await expect(page.locator(".guides-grid")).toBeVisible();
+
+  await page.goto("/#draft-list", { waitUntil: "networkidle" });
+  await expect(page.locator('[data-page="draft-list"]')).toHaveClass(
+    /is-active/,
+  );
+  await expect(page.getByRole("heading", { name: "Draft List" })).toBeVisible();
+  await expect(page.locator("#draft-list-items")).toBeVisible();
+});
+
+/** @param {import("@playwright/test").Page} page */
+async function prepareAuthenticatedSecondaryRoutes(page) {
   await page.addInitScript(() => {
     localStorage.setItem(
       "boxThisLapManagerSession",
@@ -132,19 +163,10 @@ test("authenticated YouTube route loads its deferred controller", async ({
     "https://box-this-lap-rankings.boxthislap.workers.dev/**",
     async (route) => {
       await route.fulfill({
-        body: JSON.stringify({ ok: true, teams: [] }),
+        body: JSON.stringify({ items: [], ok: true, sheets: [], teams: [] }),
         contentType: "application/json",
         status: 200,
       });
     },
   );
-
-  await page.goto("/#youtube", { waitUntil: "networkidle" });
-
-  await expect(page.locator('[data-page="youtube"]')).toHaveClass(/is-active/);
-  await expect(page.locator(".youtube-toolbar")).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "All caught up" }),
-  ).toBeVisible();
-  expect(pageErrors).toEqual([]);
-});
+}

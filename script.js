@@ -446,8 +446,6 @@ import {
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
-import { createGuidesController } from "./modules/guides.js?v=202608301830";
-import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609100137";
 import {
   formatUpdatedTime,
@@ -727,16 +725,6 @@ const loadGuideData = createGuideDataLoader({
   loadJson: (path) => loadJson(path, { cache: "force-cache" }),
   path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
 });
-const guidesController = createGuidesController({
-  getManagerId: getCurrentManagerId,
-  getIsAdmin: isCurrentManagerAdmin,
-  loadData: loadGuideData,
-  progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
-});
-const draftListsController = createDraftListsController({
-  getManagerId: getCurrentManagerId,
-  request: rankingApiRequest,
-});
 const followedTeamsController = createFollowedTeamsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
@@ -755,6 +743,24 @@ const followedTeamsController = createFollowedTeamsController({
       renderFootyTeamPage();
     }
   },
+});
+let activeDraftListsController = null;
+const loadGuidesController = createLazyControllerLoader(async () => {
+  const { createGuidesController } = await import("./modules/guides.js?v=202609112020");
+  return createGuidesController({
+    getManagerId: getCurrentManagerId,
+    getIsAdmin: isCurrentManagerAdmin,
+    loadData: loadGuideData,
+    progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
+  });
+});
+const loadDraftListsController = createLazyControllerLoader(async () => {
+  const { createDraftListsController } = await import("./modules/draftLists.js?v=202609112020");
+  activeDraftListsController = createDraftListsController({
+    getManagerId: getCurrentManagerId,
+    request: rankingApiRequest,
+  });
+  return activeDraftListsController;
 });
 const loadPlatinumsController = createLazyControllerLoader(async () => {
   const { createPlatinumsController } = await import("./modules/platinums.js?v=202608301400");
@@ -810,6 +816,22 @@ function createLazyControllerLoader(factory) {
 
 async function renderPlatinumsPage() {
   return (await loadPlatinumsController()).renderPage();
+}
+
+async function renderGuidesPage() {
+  return (await loadGuidesController()).renderPage();
+}
+
+async function renderDraftListsPage() {
+  return (await loadDraftListsController()).renderPage();
+}
+
+async function loadDraftListsPage() {
+  return (await loadDraftListsController()).load();
+}
+
+function resetDraftListsPage() {
+  activeDraftListsController?.reset();
 }
 
 async function renderTrophyStatsPage() {
@@ -12702,7 +12724,7 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "guides") {
-    guidesController.renderPage();
+    startLazyPageRender("guides", renderGuidesPage);
     return;
   }
 
@@ -12741,7 +12763,7 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "draft-list") {
-    draftListsController.renderPage();
+    startLazyPageRender("draft lists", renderDraftListsPage);
     return;
   }
 
@@ -16593,7 +16615,7 @@ function saveManagerSession(session) {
   siteData.managerSession = session;
   activeRankingManagerId = String(session?.managerId || "");
   resetRankingManagerData();
-  draftListsController.reset();
+  resetDraftListsPage();
   followedTeamsController.reset();
   resetFootyMatchNotifications();
 
@@ -16622,7 +16644,7 @@ function signOutManager() {
   siteData.managerSession = null;
   activeRankingManagerId = "";
   resetRankingManagerData();
-  draftListsController.reset();
+  resetDraftListsPage();
   followedTeamsController.reset();
   resetFootyMatchNotifications();
 
@@ -19248,8 +19270,7 @@ function loadPageData(scope) {
   }
 
   if (scope === "guides") {
-    guidesController.renderPage();
-    return Promise.resolve();
+    return renderGuidesPage();
   }
 
   if (scope === "youtube") {
@@ -19280,7 +19301,7 @@ function loadPageData(scope) {
   }
 
   if (scope === "draft-list") {
-    return draftListsController.load();
+    return loadDraftListsPage();
   }
 
   if (scope === "login") {

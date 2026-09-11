@@ -4912,6 +4912,7 @@ function openFootyNoteDialog(matchId) {
 
   if (footyNoteMatchId) {
     footyNoteMatchId.textContent = activeFootyNoteMatchId ? `Match ID ${activeFootyNoteMatchId}` : "";
+    footyNoteMatchId.title = activeFootyNoteMatchId;
   }
 
   if (footyNoteTitle) {

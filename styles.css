@@ -4864,6 +4864,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   text-transform: uppercase;
 }
 
+#footy-note-match-id {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .footy-note-form h2 {
   font-size: 1.25rem;
   line-height: 1.2;

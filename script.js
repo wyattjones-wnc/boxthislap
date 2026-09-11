@@ -691,6 +691,7 @@ let formulaOneReviewSelectedSession = "";
 let formulaOneAdminMode = "main";
 let formulaOneFactsEditing = false;
 const formulaOneWeeklyEditing = new Set();
+const formulaOneRoundDriverLoads = new Set();
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -13581,8 +13582,9 @@ function returnToFormulaOneManage() {
 
 function renderFormulaOneAdminPicks(data, round) {
   const driverOptions = (value, disabled) => {
-    const activeDrivers = (data.drivers || []).filter((driver) => driver.active !== 0 || driver.driver_id === value);
-    return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${activeDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
+    const roundDriverIds = new Set((data.roundDrivers || []).filter((item) => Number(item.round) === Number(round.round)).map((item) => item.driver_id));
+    const availableDrivers = (data.drivers || []).filter((driver) => !roundDriverIds.size || roundDriverIds.has(driver.driver_id) || driver.driver_id === value);
+    return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${availableDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
   };
   const managerIds = new Set(getFormulaOneManagers().map((manager) => String(manager.id || "")).filter(Boolean));
   (data.entries || []).forEach((entry) => managerIds.add(String(entry.manager_id)));
@@ -13697,6 +13699,9 @@ async function ensureFormulaOneAdminData({ force = false, year = formulaOneAdmin
       renderFormulaOneAdminWeekly();
       renderFormulaOneReview();
       if (activePageName === "manager-hub") renderManagerHub();
+      if (formulaOneAdminMode === "weekly" && formulaOneAdminSelectedRound && formulaOneAdminSelectedRound !== "all") {
+        void ensureFormulaOneRoundDrivers(yearKey, formulaOneAdminSelectedRound);
+      }
       return result;
     })
     .catch((error) => {
@@ -13706,6 +13711,21 @@ async function ensureFormulaOneAdminData({ force = false, year = formulaOneAdmin
     .finally(() => { formulaOneAdminLoadPromises.delete(yearKey); });
   formulaOneAdminLoadPromises.set(yearKey, loadPromise);
   return loadPromise;
+}
+
+async function ensureFormulaOneRoundDrivers(year, round, { force = false } = {}) {
+  if (!isCurrentManagerAdmin() || !year || !round || round === "all") return null;
+  const key = `${year}:${round}`;
+  if (formulaOneRoundDriverLoads.has(key) && !force) return null;
+  formulaOneRoundDriverLoads.add(key);
+  try {
+    const result = await formulaOneAdminRequest(`/api/admin/seasons/${encodeURIComponent(year)}/rounds/${encodeURIComponent(round)}/drivers/fetch`, { method: "POST" });
+    await ensureFormulaOneAdminData({ force: true, year });
+    return result;
+  } catch (error) {
+    formulaOneRoundDriverLoads.delete(key);
+    throw error;
+  }
 }
 
 async function formulaOneAdminRequest(path, options = {}) {
@@ -16152,6 +16172,8 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       } else if (event.target.matches("[data-formula-one-admin-round]")) {
         formulaOneAdminSelectedRound = event.target.value;
         renderFormulaOneAdminWeekly();
+        if (formulaOneAdminMode === "weekly") void ensureFormulaOneRoundDrivers(formulaOneAdminSelectedYear, formulaOneAdminSelectedRound)
+          .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
       }
     });
 
@@ -16160,6 +16182,8 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
       if (modeButton) {
         formulaOneAdminMode = modeButton.dataset.formulaOneAdminMode;
         renderFormulaOneAdminWeekly();
+        if (formulaOneAdminMode === "weekly") void ensureFormulaOneRoundDrivers(formulaOneAdminSelectedYear, formulaOneAdminSelectedRound)
+          .catch((error) => renderFormulaOneAdminWeekly({ error: getErrorMessage(error) }));
         return;
       }
       const sessionButton = event.target.closest("[data-formula-one-review-session]");

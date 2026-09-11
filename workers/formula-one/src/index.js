@@ -40,6 +40,12 @@ export default {
         return json({ ok: true, ...(await fetchRound(env, parseYear(roundFetchMatch[1]), parseRound(roundFetchMatch[2]), admin.managerId)) }, 200, cors);
       }
 
+      const roundDriversMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/drivers\/fetch$/);
+      if (roundDriversMatch && request.method === "POST") {
+        const admin = await requireAdmin(request, env);
+        return json({ ok: true, ...(await syncRoundDriverRoster(env, parseYear(roundDriversMatch[1]), parseRound(roundDriversMatch[2]), admin.managerId)) }, 200, cors);
+      }
+
       const sessionMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/rounds\/(\d+)\/sessions\/(qualifying|sprint|race)\/(fetch|approve|reopen)$/);
       if (sessionMatch && request.method === "POST") {
         const admin = await requireAdmin(request, env);
@@ -128,9 +134,10 @@ async function requireAdmin(request, env) {
 }
 
 async function readAdminWeekly(env, year) {
-  const [roundQuery, driverQuery, sessionQuery, resultQuery, entryQuery, scoreQuery] = await Promise.all([
+  const [roundQuery, driverQuery, roundDriverQuery, sessionQuery, resultQuery, entryQuery, scoreQuery] = await Promise.all([
     env.DB.prepare("SELECT * FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
+    env.DB.prepare("SELECT * FROM f1_round_drivers WHERE year = ? ORDER BY round, driver_id").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_sessions WHERE year = ? ORDER BY round, CASE session_type WHEN 'qualifying' THEN 1 WHEN 'sprint' THEN 2 ELSE 3 END").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_session_results WHERE year = ? ORDER BY round, session_type, position IS NULL, position, driver_id").bind(year).all(),
     env.DB.prepare("SELECT * FROM f1_weekly_entries WHERE year = ? ORDER BY round, manager_id").bind(year).all(),
@@ -151,6 +158,7 @@ async function readAdminWeekly(env, year) {
     capabilities: { googleSheetsExport: Boolean(String(env.GOOGLE_SHEETS_EXPORT_ENDPOINT || "").trim() && String(env.GOOGLE_SHEETS_EXPORT_KEY || "").trim()) },
     rounds,
     drivers: driverQuery.results || [],
+    roundDrivers: roundDriverQuery.results || [],
     sessions,
     results: resultQuery.results || [],
     entries: entryQuery.results || [],
@@ -223,6 +231,7 @@ async function fetchSession(env, year, round, sessionType, actorManagerId, optio
       : race.Results;
   if (!Array.isArray(sourceResults) || !sourceResults.length) throw httpError(404, "No provider results are available for this session yet.");
   const results = sourceResults.map((result) => normalizeProviderResult(result));
+  await resolveKnownDriverIds(env, year, results);
   if (sessionType === "qualifying") enrichProviderQualifyingTimes(results);
   const fetchedAt = new Date().toISOString();
   const hasSprint = Boolean(race.Sprint || sessionType === "sprint");
@@ -243,6 +252,7 @@ async function fetchSession(env, year, round, sessionType, actorManagerId, optio
   for (const result of results) {
     statements.push(driverUpsert(env, year, result));
     statements.push(resultInsert(env, year, round, sessionType, result));
+    statements.push(roundDriverUpsert(env, year, round, result.driverId, "session_result"));
   }
   statements.push(auditInsert(env, year, round, actorManagerId, reconcileApproved ? "session_reconciled" : "session_fetched", { sessionType, sourceUrl, resultCount: results.length }));
   await env.DB.batch(statements);
@@ -274,7 +284,6 @@ async function fetchRound(env, year, round, actorManagerId) {
     }
   }
 
-  await syncActiveDriversForRound(env, year, round);
   let safetyCarError = "";
   const safetyCar = await fetchRoundSafetyCar(env, year, round).catch((error) => {
     console.warn("OpenF1 race-control data could not be fetched.", error);
@@ -405,14 +414,69 @@ export function deriveSafetyCarValue(messages = []) {
   };
 }
 
-async function syncActiveDriversForRound(env, year, round) {
-  const resultCount = await env.DB.prepare("SELECT COUNT(DISTINCT driver_id) AS count FROM f1_session_results WHERE year = ? AND round = ?")
-    .bind(year, round).first();
-  if (!Number(resultCount?.count)) return;
-  await env.DB.prepare(`UPDATE f1_drivers SET active = CASE WHEN driver_id IN (
-      SELECT DISTINCT driver_id FROM f1_session_results WHERE year = ? AND round = ?
-    ) THEN 1 ELSE 0 END, updated_at = CURRENT_TIMESTAMP WHERE year = ?`)
-    .bind(year, round, year).run();
+async function syncRoundDriverRoster(env, year, round, actorManagerId) {
+  const roundRow = await env.DB.prepare("SELECT race_date FROM f1_rounds WHERE year = ? AND round = ?").bind(year, round).first();
+  if (!roundRow) throw httpError(404, "Round not found.");
+  const baseUrl = String(env.OPENF1_BASE_URL || "https://api.openf1.org/v1").replace(/\/$/, "");
+  const sessions = await fetchOpenF1Json(`${baseUrl}/sessions?year=${encodeURIComponent(year)}`, "sessions");
+  const raceTimestamp = Date.parse(`${roundRow.race_date}T12:00:00Z`);
+  const meetings = new Map();
+  for (const session of Array.isArray(sessions) ? sessions : []) {
+    const timestamp = Date.parse(session.date_start);
+    if (!session.meeting_key || !Number.isFinite(timestamp) || !Number.isFinite(raceTimestamp)) continue;
+    const distance = Math.abs(timestamp - raceTimestamp);
+    const current = meetings.get(session.meeting_key);
+    if (!current || distance < current.distance) meetings.set(session.meeting_key, { distance, session });
+  }
+  const nearest = [...meetings.values()].sort((first, second) => first.distance - second.distance)[0];
+  if (!nearest || nearest.distance > 4 * 24 * 60 * 60 * 1000) return { round, drivers: [], source: "season_fallback" };
+
+  const openF1Drivers = await fetchOpenF1Json(`${baseUrl}/drivers?meeting_key=${encodeURIComponent(nearest.session.meeting_key)}`, "drivers");
+  const uniqueDrivers = [...new Map((Array.isArray(openF1Drivers) ? openF1Drivers : [])
+    .filter((driver) => driver?.driver_number && (driver.full_name || driver.broadcast_name))
+    .map((driver) => [String(driver.driver_number), driver])).values()];
+  if (!uniqueDrivers.length) return { round, drivers: [], source: "season_fallback" };
+
+  const existingQuery = await env.DB.prepare("SELECT driver_id, permanent_number FROM f1_drivers WHERE year = ?").bind(year).all();
+  const driverIdByNumber = new Map((existingQuery.results || []).filter((driver) => driver.permanent_number).map((driver) => [String(driver.permanent_number), driver.driver_id]));
+  const statements = [env.DB.prepare("DELETE FROM f1_round_drivers WHERE year = ? AND round = ? AND source = 'openf1'").bind(year, round)];
+  const driverIds = [];
+  for (const driver of uniqueDrivers) {
+    const number = String(driver.driver_number);
+    const driverId = driverIdByNumber.get(number) || `openf1_${number}`;
+    driverIds.push(driverId);
+    statements.push(driverUpsert(env, year, normalizeOpenF1Driver(driver, driverId)));
+    statements.push(roundDriverUpsert(env, year, round, driverId, "openf1"));
+  }
+  statements.push(auditInsert(env, year, round, actorManagerId, "round_drivers_fetched", { meetingKey: nearest.session.meeting_key, driverCount: driverIds.length }));
+  await env.DB.batch(statements);
+  return { round, drivers: driverIds, source: "openf1" };
+}
+
+function normalizeOpenF1Driver(driver, driverId) {
+  const displayName = String(driver.full_name || driver.broadcast_name || driverId).trim().replace(/\s+/g, " ");
+  const names = displayName.toLowerCase() === displayName ? displayName.split(" ").map((part) => part ? `${part[0].toUpperCase()}${part.slice(1)}` : "") : displayName.split(" ");
+  return {
+    driverId,
+    permanentNumber: String(driver.driver_number || ""),
+    code: String(driver.name_acronym || ""),
+    givenName: String(driver.first_name || names.slice(0, -1).join(" ")),
+    familyName: String(driver.last_name || names.at(-1) || ""),
+    displayName: String(driver.full_name || names.join(" ")),
+    constructorId: "",
+    constructorName: String(driver.team_name || ""),
+  };
+}
+
+async function resolveKnownDriverIds(env, year, results) {
+  const numberedResults = results.filter((result) => result.permanentNumber);
+  if (!numberedResults.length) return;
+  const query = await env.DB.prepare("SELECT driver_id, permanent_number FROM f1_drivers WHERE year = ? AND permanent_number <> ''").bind(year).all();
+  const idsByNumber = new Map((query.results || []).map((driver) => [String(driver.permanent_number), driver.driver_id]));
+  for (const result of numberedResults) {
+    const existingId = idsByNumber.get(String(result.permanentNumber));
+    if (existingId) result.driverId = existingId;
+  }
 }
 
 async function saveSessionDraft(env, year, round, sessionType, body, actorManagerId) {
@@ -433,6 +497,7 @@ async function saveSessionDraft(env, year, round, sessionType, body, actorManage
   for (const result of results) {
     statements.push(driverUpsert(env, year, result));
     statements.push(resultInsert(env, year, round, sessionType, result));
+    statements.push(roundDriverUpsert(env, year, round, result.driverId, "session_result"));
   }
   statements.push(auditInsert(env, year, round, actorManagerId, "session_draft_saved", { sessionType, resultCount: results.length }));
   await env.DB.batch(statements);
@@ -477,9 +542,11 @@ async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId
   if (new Set(answeredPicks).size !== answeredPicks.length) throw httpError(400, "Choose a different driver for each answered pick.");
   if (answeredPicks.length) {
     const placeholders = answeredPicks.map(() => "?").join(", ");
-    const knownDrivers = await env.DB.prepare(`SELECT driver_id FROM f1_drivers WHERE year = ? AND driver_id IN (${placeholders})`)
-      .bind(year, ...answeredPicks).all();
-    if ((knownDrivers.results || []).length !== answeredPicks.length) throw httpError(400, "Every pick must be an active driver in this season.");
+    const rosterCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM f1_round_drivers WHERE year = ? AND round = ?").bind(year, round).first();
+    const knownDrivers = Number(rosterCount?.count)
+      ? await env.DB.prepare(`SELECT driver_id FROM f1_round_drivers WHERE year = ? AND round = ? AND driver_id IN (${placeholders})`).bind(year, round, ...answeredPicks).all()
+      : await env.DB.prepare(`SELECT driver_id FROM f1_drivers WHERE year = ? AND driver_id IN (${placeholders})`).bind(year, ...answeredPicks).all();
+    if ((knownDrivers.results || []).length !== answeredPicks.length) throw httpError(400, "Every pick must be available for this round.");
   }
   const entryStatus = shouldSubmit ? "submitted" : "draft";
   const submittedAt = shouldSubmit ? new Date().toISOString() : "";
@@ -492,6 +559,7 @@ async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId
         submitted_at = excluded.submitted_at, updated_at = CURRENT_TIMESTAMP`)
       .bind(year, round, managerId, ...picks, entryStatus, submittedAt),
     auditInsert(env, year, round, actorManagerId, "weekly_picks_saved", { forced: Boolean(body.force), entryStatus, managerId }),
+    ...answeredPicks.map((driverId) => roundDriverUpsert(env, year, round, driverId, "weekly_entry")),
   ]);
   await recalculateRoundScores(env, year, round);
   return { entry: { year, round, manager_id: managerId, p1_driver_id: picks[0], p2_driver_id: picks[1], p3_driver_id: picks[2], wildcard_driver_id: picks[3], entry_status: entryStatus } };
@@ -554,7 +622,9 @@ async function importSeason(env, year, body, actorManagerId) {
   }
   for (const item of results) {
     const normalized = normalizeDraftResult(item);
-    statements.push(resultInsert(env, year, parseRound(item.round), parseSessionType(item.sessionType || item.session_type), normalized));
+    const round = parseRound(item.round);
+    statements.push(resultInsert(env, year, round, parseSessionType(item.sessionType || item.session_type), normalized));
+    statements.push(roundDriverUpsert(env, year, round, normalized.driverId, "session_result"));
   }
   for (const item of entries) {
     const picks = [clean(item.p1DriverId, 80), clean(item.p2DriverId, 80), clean(item.p3DriverId, 80), clean(item.wildcardDriverId, 80)];
@@ -566,6 +636,7 @@ async function importSeason(env, year, body, actorManagerId) {
         entry_status = excluded.entry_status, submitted_at = excluded.submitted_at, updated_at = CURRENT_TIMESTAMP`)
       .bind(year, parseRound(item.round), clean(item.managerId, 80), ...picks, entryStatus,
         entryStatus === "submitted" ? clean(item.submittedAt, 40) || new Date().toISOString() : ""));
+    for (const driverId of picks.filter(Boolean)) statements.push(roundDriverUpsert(env, year, parseRound(item.round), driverId, "weekly_entry"));
   }
   statements.push(auditInsert(env, year, null, actorManagerId, "season_imported", { rounds: rounds.length, drivers: drivers.length, entries: entries.length, sessions: sessions.length, results: results.length }));
   await runBatches(env.DB, statements);
@@ -762,6 +833,14 @@ function driverUpsert(env, year, result) {
       constructor_name = CASE WHEN excluded.constructor_name <> '' THEN excluded.constructor_name ELSE f1_drivers.constructor_name END,
       active = 1, updated_at = CURRENT_TIMESTAMP`)
     .bind(year, result.driverId, result.permanentNumber, result.code, result.givenName, result.familyName, displayName, result.constructorId, result.constructorName);
+}
+
+function roundDriverUpsert(env, year, round, driverId, source) {
+  return env.DB.prepare(`INSERT INTO f1_round_drivers (year, round, driver_id, source, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(year, round, driver_id) DO UPDATE SET
+      source = CASE WHEN f1_round_drivers.source IN ('session_result', 'weekly_entry') THEN f1_round_drivers.source ELSE excluded.source END,
+      updated_at = CURRENT_TIMESTAMP`).bind(year, round, driverId, source);
 }
 
 function resultInsert(env, year, round, sessionType, result) {

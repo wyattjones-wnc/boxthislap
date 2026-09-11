@@ -4100,23 +4100,35 @@ function shouldRenderFootyNoteEditButton(fixture) {
   );
 }
 
-function toggleFootyFixtureExpansion(matchId) {
+function toggleFootyFixtureExpansion(matchId, card = null) {
   const normalizedId = String(matchId || "").trim();
 
   if (!normalizedId) {
     return;
   }
 
-  if (expandedFootyMatchIds.has(normalizedId)) {
+  const shouldExpand = !expandedFootyMatchIds.has(normalizedId);
+
+  if (!shouldExpand) {
     expandedFootyMatchIds.delete(normalizedId);
   } else {
     expandedFootyMatchIds.add(normalizedId);
   }
 
-  renderFootySchedule(siteData.footySchedule);
-  renderFootyMissingNotesPage();
-  renderFootyCustomSchedule();
-  renderFootyTeamPage();
+  if (card?.isConnected) {
+    card.classList.toggle("is-expanded", shouldExpand);
+    card.setAttribute("aria-expanded", String(shouldExpand));
+    card.querySelector(":scope > .footy-fixture-details")?.remove();
+
+    if (shouldExpand) {
+      const fixture = getFootyFixtureByMatchId(normalizedId);
+      if (fixture) card.insertAdjacentHTML("beforeend", renderFootyFixtureDetails(fixture));
+    }
+
+    return;
+  }
+
+  renderActivePageContent(activePageName);
 }
 
 function renderFootyFixtureDetails(fixture) {
@@ -4991,14 +5003,20 @@ function getFootyFixtureByMatchId(matchId) {
     return followedFixture;
   }
 
-  return getFootyCompetitionSchedules(siteData.footySchedule)
-    .flatMap((schedule) => Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
-    .map((fixture) => ({
-      ...fixture,
-      matchId: getFootyCompetitionFixtureMatchId(fixture),
-      isCompetitionFixture: true,
-    }))
-    .find((fixture) => fixture.matchId === normalizedId) || null;
+  for (const schedule of getFootyCompetitionSchedules(siteData.footySchedule)) {
+    const fixture = (Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
+      .find((entry) => getFootyCompetitionFixtureMatchId(entry) === normalizedId);
+
+    if (fixture) {
+      return {
+        ...fixture,
+        matchId: normalizedId,
+        isCompetitionFixture: true,
+      };
+    }
+  }
+
+  return null;
 }
 
 function normalizeFootyGoalAssistForNote(event) {
@@ -14525,7 +14543,7 @@ function handleFootyFixtureListClick(event) {
     return;
   }
 
-  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"), card);
 }
 
 function handleFootyFixtureListKeydown(event) {
@@ -14540,7 +14558,7 @@ function handleFootyFixtureListKeydown(event) {
   }
 
   event.preventDefault();
-  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"));
+  toggleFootyFixtureExpansion(card.getAttribute("data-footy-match-id"), card);
 }
 
 [footyScheduleList, footyTeamContent, footyCustomScheduleList, footyMissingNotesList].forEach((container) => {

@@ -1,12 +1,36 @@
 # Box This Lap
 
-A self-contained static website for World Cup result images and score tables on GitHub Pages.
+A mobile-first personal dashboard for followed football teams, shared leagues,
+rankings, gaming collections, and manager workflows. The static frontend is
+hosted on GitHub Pages and uses Cloudflare Workers for authenticated and
+persistent features.
 
-## Local Files
+## Frontend development
 
-- `index.html` contains the Tomorrow tab, World Cup result image page, Player Scores table, and Manager Scores table.
-- `styles.css` contains the responsive layout and visual styling.
-- `script.js` handles hash-based tab navigation.
+The existing application is built with Vite without changing its current
+hash-based routes or runtime behavior.
+
+```powershell
+npm install
+npm run build
+npm run preview
+```
+
+Run the complete local quality gate with `npm run check`. Mobile browser smoke
+tests are available with `npm run test:e2e` after installing Playwright's
+Chromium and WebKit browsers.
+
+The quality tooling currently covers the build configuration and new browser
+tests. Legacy application files will move under type checking and linting as
+features are migrated out of `script.js`.
+
+## Application files
+
+- `index.html` contains the shared shell and existing page markup.
+- `styles.css` contains the current responsive layout and visual styling.
+- `script.js` coordinates legacy page rendering and application state.
+- `modules/` contains extracted frontend features and utilities.
+- `workers/` contains the Cloudflare Worker APIs.
 
 ## GitHub Pages
 

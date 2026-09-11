@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "include": [
+    "eslint.config.js",
+    "vite.config.js",
+    "playwright.config.js",
+    "scripts/prepare-site-build.mjs",
+    "scripts/run-mobile-smoke.mjs",
+    "tests/**/*.mjs"
+  ]
+}

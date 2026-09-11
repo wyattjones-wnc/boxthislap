@@ -7705,9 +7705,39 @@ main {
   justify-content: space-between;
 }
 
-.formula-one-weekly-manager-heading > span {
+.formula-one-weekly-manager-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.formula-one-weekly-manager-meta > span {
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+.formula-one-submitted-chip {
+  align-items: center;
+  background: color-mix(in srgb, #27ae60 18%, var(--soft));
+  border: 1px solid color-mix(in srgb, #27ae60 50%, var(--line));
+  border-radius: 999px;
+  color: #27ae60 !important;
+  display: inline-flex;
+  height: 1.7rem;
+  justify-content: center;
+  width: 1.7rem;
+}
+
+.formula-one-submitted-chip svg {
+  fill: none;
+  height: 0.9rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+  width: 0.9rem;
 }
 
 .formula-one-choice-result {
@@ -7716,6 +7746,18 @@ main {
   font-size: 0.75rem;
   line-height: 1.35;
   margin-top: 5px;
+}
+
+.formula-one-wildcard-result {
+  display: grid;
+  gap: 3px 10px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.formula-one-wildcard-result strong {
+  color: var(--ink);
+  font-size: inherit;
+  text-align: right;
 }
 
 .formula-one-manage-tabs {

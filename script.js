@@ -13454,12 +13454,16 @@ function renderFormulaOneAdminPicks(data, round) {
     const editKey = `${data.year}:${round.round}:${managerId}`;
     const submitted = entry?.entry_status === "submitted";
     const locked = submitted && !formulaOneWeeklyEditing.has(editKey);
-    const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked).replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType, label)}</label>`;
+    const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked).replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType)}</label>`;
     return `<form class="formula-one-admin-card" data-formula-one-admin-picks>
       <input type="hidden" name="managerId" value="${escapeHtml(managerId)}">
       <div class="formula-one-weekly-manager-heading">
         <strong>${renderManagerChip(manager || { name: managerName })}</strong>
-        <span>${submitted ? "Submitted" : "Not submitted"}${score ? ` · ${escapeHtml(formatFormulaOnePointValue(score.total_points))} points` : ""}</span>
+        <div class="formula-one-weekly-manager-meta">
+          ${submitted ? `<span class="formula-one-submitted-chip" title="Submitted" aria-label="Submitted">${renderTodoChipIcon("check")}</span>` : `<span>Not submitted</span>`}
+          ${score ? `<span>${escapeHtml(formatFormulaOnePointValue(score.total_points))} points</span>` : ""}
+          ${locked ? `<button class="footer-copy-link" type="button" data-formula-one-weekly-edit="${escapeHtml(managerId)}">Edit choices</button>` : ""}
+        </div>
       </div>
       <div class="formula-one-admin-form-grid">
         ${choice("P1", "p1DriverId", entry?.p1_driver_id, "p1_points")}
@@ -13467,27 +13471,22 @@ function renderFormulaOneAdminPicks(data, round) {
         ${choice("P3", "p3DriverId", entry?.p3_driver_id, "p3_points")}
         ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, "wildcard", "wildcard")}
       </div>
-      <div class="formula-one-admin-actions">${locked
-        ? `<button class="footer-copy-link" type="button" data-formula-one-weekly-edit="${escapeHtml(managerId)}">Edit choices</button>`
-        : `<button class="action-button" type="submit">${submitted ? "Save correction" : "Submit choices"}</button>`}</div>
+      ${locked ? "" : `<div class="formula-one-admin-actions"><button class="action-button" type="submit">${submitted ? "Save correction" : "Submit choices"}</button></div>`}
     </form>`;
   }).join("")}</div>`;
 }
 
-function renderFormulaOneWeeklyChoiceResult(data, round, driverId, score, pointsKey, sessionType, label) {
+function renderFormulaOneWeeklyChoiceResult(data, round, driverId, score, pointsKey, sessionType) {
   if (!driverId) return `<small class="formula-one-choice-result">No choice · 0 points</small>`;
   if (!score) return `<small class="formula-one-choice-result">Waiting for qualifying and race results</small>`;
   const resultFor = (type) => data.results?.find((result) => Number(result.round) === Number(round) && result.session_type === type && result.driver_id === driverId);
   if (sessionType === "wildcard") {
     const qualifying = resultFor("qualifying");
     const race = resultFor("race");
-    return `<small class="formula-one-choice-result">Qualifying ${escapeHtml(formatFormulaOnePosition(qualifying?.position))}: ${escapeHtml(formatFormulaOnePointValue(score.wildcard_qualifying_points))} · Race ${escapeHtml(formatFormulaOnePosition(race?.position))}: ${escapeHtml(formatFormulaOnePointValue(score.wildcard_race_points))}</small>`;
+    return `<small class="formula-one-choice-result formula-one-wildcard-result"><span>Qualifying ${escapeHtml(formatFormulaOnePosition(qualifying?.position))}</span><strong>${escapeHtml(formatFormulaOnePointValue(score.wildcard_qualifying_points))} points</strong><span>Race ${escapeHtml(formatFormulaOnePosition(race?.position))}</span><strong>${escapeHtml(formatFormulaOnePointValue(score.wildcard_race_points))} points</strong></small>`;
   }
   const result = resultFor("race");
-  const position = Number(result?.position);
-  const selectedPosition = Number(label.slice(1));
-  const reason = position === selectedPosition ? "exact position" : position >= 1 && position <= 3 ? "top 3, different position" : "outside top 3";
-  return `<small class="formula-one-choice-result">Finished ${escapeHtml(formatFormulaOnePosition(result?.position))} · ${escapeHtml(reason)} · ${escapeHtml(formatFormulaOnePointValue(score[pointsKey]))} points</small>`;
+  return `<small class="formula-one-choice-result">${escapeHtml(formatFormulaOnePosition(result?.position))} · ${escapeHtml(formatFormulaOnePointValue(score[pointsKey]))} points</small>`;
 }
 
 function renderFormulaOneAdminFacts(round, data, { review = false, feedback = {} } = {}) {

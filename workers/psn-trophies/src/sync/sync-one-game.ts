@@ -7,7 +7,7 @@ import {
   getUserTrophiesEarnedForTitle,
   type TrophyTitle,
 } from "psn-api";
-import { finishSyncRun, getStoredGameUpdates, getSyncCursor, saveGame, setSyncCursor, startSyncRun } from "../db/repository";
+import { finishSyncRun, getStoredGameUpdates, getSyncCursor, saveGame, setStoredGameUpdates, setSyncCursor, startSyncRun } from "../db/repository";
 import { normalizeProofGame } from "../psn/normalize";
 import { getPsnNpsso } from "../psn/stored-auth";
 import type { PsnEnvironment } from "../types";
@@ -46,7 +46,8 @@ export async function syncTrophyBatch(
     const accountId = env.PSN_ACCOUNT_ID?.trim() || "me";
     const titles = await getAllTitlePages(auth, accountId);
     const batch = getTitleBatch(titles, requestedOffset, TITLE_BATCH_LIMIT);
-    const priorityTitles = options.prioritizeChanges ? await getChangedTitles(env, titles) : [];
+    const storedUpdates = options.prioritizeChanges ? await getStoredGameUpdates(env) : null;
+    const priorityTitles = storedUpdates ? getChangedTitles(storedUpdates, titles) : [];
     const selectedTitles = uniqueTitles([...priorityTitles.slice(0, PRIORITY_BATCH_LIMIT), ...batch.titles]);
     const failures: TrophySyncBatchResult["failedTitles"] = [];
     let titlesAdded = 0;
@@ -68,11 +69,13 @@ export async function syncTrophyBatch(
         titlesAdded += Number(saved.added);
         titlesSynced += 1;
         trophiesUpdated += saved.trophiesWritten;
+        storedUpdates?.set(summary.npCommunicationId, normalizeTimestamp(summary.lastUpdatedDateTime));
       } catch (error) {
         failures.push({ gameId: summary.npCommunicationId, error: safeErrorMessage(error) });
       }
     }
 
+    if (storedUpdates) await setStoredGameUpdates(env, storedUpdates);
     await finishSyncRun(env, runId, failures.length ? "partial" : "success", {
       titlesSeen: titles.length,
       titlesChanged: titlesSynced,
@@ -110,8 +113,7 @@ export async function syncScheduledTrophyBatch(env: PsnEnvironment): Promise<Tro
   return result;
 }
 
-async function getChangedTitles(env: PsnEnvironment, titles: TrophyTitle[]): Promise<TrophyTitle[]> {
-  const stored = await getStoredGameUpdates(env);
+function getChangedTitles(stored: Map<string, string>, titles: TrophyTitle[]): TrophyTitle[] {
   return titles.filter((title) => stored.get(title.npCommunicationId) !== normalizeTimestamp(title.lastUpdatedDateTime));
 }
 

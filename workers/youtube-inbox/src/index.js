@@ -259,10 +259,12 @@ async function syncYouTube(request, env) {
   } catch (error) {
     warnings.push(`Video durations: ${error.message || "Refresh failed."}`);
   }
-  try {
-    await refreshPlaylists(env, accessToken);
-  } catch (error) {
-    warnings.push(`Playlists: ${error.message || "Refresh failed."}`);
+  if (requestedStart === 0) {
+    try {
+      await refreshPlaylists(env, accessToken);
+    } catch (error) {
+      warnings.push(`Playlists: ${error.message || "Refresh failed."}`);
+    }
   }
 
   const nextCursor = start + batch.length;
@@ -296,10 +298,17 @@ async function markOldNewVideosSeen(env, days) {
 }
 
 async function getStoredChannels(env, channelIds) {
-  const result = await env.DB.prepare(`
-    SELECT youtube_channel_id, name, uploads_playlist_id
-    FROM channels ORDER BY youtube_channel_id
-  `).all();
+  const result = channelIds.length
+    ? await env.DB.prepare(`
+      SELECT youtube_channel_id, name, uploads_playlist_id
+      FROM channels
+      WHERE youtube_channel_id IN (SELECT value FROM json_each(?))
+      ORDER BY youtube_channel_id
+    `).bind(JSON.stringify(channelIds)).all()
+    : await env.DB.prepare(`
+      SELECT youtube_channel_id, name, uploads_playlist_id
+      FROM channels ORDER BY youtube_channel_id
+    `).all();
   const channels = (result.results || []).map((row) => ({
     name: row.name,
     uploadsPlaylistId: row.uploads_playlist_id,
@@ -341,6 +350,8 @@ async function refreshSubscriptions(env, accessToken, configuredChannelIds = new
           name = excluded.name,
           uploads_playlist_id = excluded.uploads_playlist_id,
           updated_at = CURRENT_TIMESTAMP
+        WHERE channels.name IS NOT excluded.name
+          OR channels.uploads_playlist_id IS NOT excluded.uploads_playlist_id
       `).bind(channel.youtubeChannelId, channel.name, channel.uploadsPlaylistId).run();
       channels.push(channel);
     }
@@ -399,10 +410,16 @@ async function syncChannel(channel, env, accessToken) {
     insertedItems.push(...group.filter((_, index) => Number(insertResults[index]?.meta?.changes) > 0));
   }
 
+  const checkedAt = new Date().toISOString();
+  const staleCheck = new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString();
   await env.DB.prepare(`
     UPDATE channels SET latest_known_video_id = COALESCE(?, latest_known_video_id),
-      last_checked_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).bind(newestId, new Date().toISOString(), stored.id).run();
+      last_checked_at = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND (
+      latest_known_video_id IS NOT COALESCE(?, latest_known_video_id)
+      OR last_checked_at IS NULL OR last_checked_at < ?
+    )
+  `).bind(newestId, checkedAt, stored.id, newestId, staleCheck).run();
   return insertedItems;
 }
 
@@ -443,6 +460,7 @@ async function refreshPlaylists(env, accessToken) {
       INSERT INTO playlists (youtube_playlist_id, name, updated_at)
       VALUES (?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(youtube_playlist_id) DO UPDATE SET name = excluded.name, updated_at = CURRENT_TIMESTAMP
+      WHERE playlists.name IS NOT excluded.name
     `).bind(playlist.id, playlist.name)));
   }
 }
@@ -625,6 +643,7 @@ async function setSetting(env, key, value) {
   await env.DB.prepare(`
     INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    WHERE settings.value IS NOT excluded.value
   `).bind(key, value).run();
 }
 

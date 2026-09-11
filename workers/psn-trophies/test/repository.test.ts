@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { saveGame } from "../src/db/repository.ts";
+import { getStoredGameUpdates, saveGame } from "../src/db/repository.ts";
+
+test("reads the compact title update index without scanning every game", async () => {
+  let gameScans = 0;
+  const env = {
+    DB: {
+      prepare: (sql: string) => ({
+        first: async () => ({ value: '[["NPWR1_00","2026-09-09T00:00:00.000Z"]]' }),
+        all: async () => { gameScans += Number(sql.includes("FROM games")); return { results: [] }; },
+      }),
+    },
+  } as any;
+
+  const updates = await getStoredGameUpdates(env);
+
+  assert.equal(updates.get("NPWR1_00"), "2026-09-09T00:00:00.000Z");
+  assert.equal(gameScans, 0);
+});
 
 test("does not rewrite unchanged game, group, or trophy rows", async () => {
   let batches = 0;

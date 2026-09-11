@@ -437,15 +437,16 @@ async function syncRoundDriverRoster(env, year, round, actorManagerId) {
     .map((driver) => [String(driver.driver_number), driver])).values()];
   if (!uniqueDrivers.length) return { round, drivers: [], source: "season_fallback" };
 
-  const existingQuery = await env.DB.prepare("SELECT driver_id, permanent_number FROM f1_drivers WHERE year = ?").bind(year).all();
-  const driverIdByNumber = new Map((existingQuery.results || []).filter((driver) => driver.permanent_number).map((driver) => [String(driver.permanent_number), driver.driver_id]));
+  const existingQuery = await env.DB.prepare("SELECT driver_id, permanent_number, given_name, family_name, display_name FROM f1_drivers WHERE year = ?").bind(year).all();
+  const driverByNumber = new Map((existingQuery.results || []).filter((driver) => driver.permanent_number).map((driver) => [String(driver.permanent_number), driver]));
   const statements = [env.DB.prepare("DELETE FROM f1_round_drivers WHERE year = ? AND round = ? AND source = 'openf1'").bind(year, round)];
   const driverIds = [];
   for (const driver of uniqueDrivers) {
     const number = String(driver.driver_number);
-    const driverId = driverIdByNumber.get(number) || `openf1_${number}`;
+    const existingDriver = driverByNumber.get(number);
+    const driverId = existingDriver?.driver_id || `openf1_${number}`;
     driverIds.push(driverId);
-    statements.push(driverUpsert(env, year, normalizeOpenF1Driver(driver, driverId)));
+    statements.push(driverUpsert(env, year, normalizeOpenF1Driver(driver, driverId, existingDriver)));
     statements.push(roundDriverUpsert(env, year, round, driverId, "openf1"));
   }
   statements.push(auditInsert(env, year, round, actorManagerId, "round_drivers_fetched", { meetingKey: nearest.session.meeting_key, driverCount: driverIds.length }));
@@ -453,16 +454,18 @@ async function syncRoundDriverRoster(env, year, round, actorManagerId) {
   return { round, drivers: driverIds, source: "openf1" };
 }
 
-function normalizeOpenF1Driver(driver, driverId) {
-  const displayName = String(driver.full_name || driver.broadcast_name || driverId).trim().replace(/\s+/g, " ");
-  const names = displayName.toLowerCase() === displayName ? displayName.split(" ").map((part) => part ? `${part[0].toUpperCase()}${part.slice(1)}` : "") : displayName.split(" ");
+function normalizeOpenF1Driver(driver, driverId, existingDriver = null) {
+  const givenName = String(existingDriver?.given_name || driver.first_name || "").trim();
+  const familyName = String(existingDriver?.family_name || driver.last_name || "").trim();
+  const referencedName = String(existingDriver?.display_name || "").trim();
+  const displayName = referencedName || [givenName, familyName].filter(Boolean).join(" ") || String(driver.full_name || driver.broadcast_name || driverId).trim().replace(/\s+/g, " ");
   return {
     driverId,
     permanentNumber: String(driver.driver_number || ""),
     code: String(driver.name_acronym || ""),
-    givenName: String(driver.first_name || names.slice(0, -1).join(" ")),
-    familyName: String(driver.last_name || names.at(-1) || ""),
-    displayName: String(driver.full_name || names.join(" ")),
+    givenName,
+    familyName,
+    displayName,
     constructorId: "",
     constructorName: String(driver.team_name || ""),
   };

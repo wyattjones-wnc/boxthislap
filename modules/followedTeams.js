@@ -276,7 +276,7 @@ export function createFollowedTeamsController({
     if (dialogController) return dialogController;
     if (!dialogControllerPromise) {
       dialogControllerPromise =
-        import("./dialogs/followedTeamsDialog.jsx?v=202609121804")
+        import("./dialogs/followedTeamsDialog.jsx?v=202609122320")
           .then(({ createFollowedTeamsDialog }) => {
             dialogController = createFollowedTeamsDialog({
               mount: dialogMount,

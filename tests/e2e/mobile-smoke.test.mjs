@@ -212,9 +212,7 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Close team picker" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.locator("html")).not.toHaveClass(
-    /has-followed-teams-dialog/,
-  );
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 });
 
 /** @param {import("@playwright/test").Page} page */

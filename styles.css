@@ -9404,17 +9404,17 @@ tr:last-child td {
   width: calc(100% - 28px);
 }
 
-html.has-followed-teams-dialog,
-html.has-followed-teams-dialog body {
+html.has-contained-dialog,
+html.has-contained-dialog body {
   overflow: hidden;
   overscroll-behavior: none;
 }
 
-html.has-followed-teams-dialog body {
+html.has-contained-dialog body {
   left: 0;
   position: fixed;
   right: 0;
-  top: var(--followed-teams-scroll-offset, 0);
+  top: var(--contained-dialog-scroll-offset, 0);
   width: 100%;
 }
 

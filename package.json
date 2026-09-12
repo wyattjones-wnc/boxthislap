@@ -1,6 +1,7 @@
 {
   "name": "boxthislap",
   "private": true,
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
     "build": "node scripts/prepare-site-build.mjs && vite build --emptyOutDir false && node scripts/verify-site-build.mjs",

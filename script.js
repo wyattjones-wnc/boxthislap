@@ -622,6 +622,7 @@ const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
 };
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const SITE_RELEASE = window.BOX_THIS_LAP_RELEASE || "2.5";
 const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
 const MANAGER_AUTH_REFRESH_LEEWAY_MS = 2 * 60 * 1000;
@@ -16584,7 +16585,7 @@ function syncSiteVersionDisplay() {
     return;
   }
 
-  siteVersion.textContent = `v${SITE_VERSION}`;
+  siteVersion.textContent = `v${SITE_RELEASE} · build ${SITE_VERSION}`;
   siteVersion.hidden = false;
 }
 

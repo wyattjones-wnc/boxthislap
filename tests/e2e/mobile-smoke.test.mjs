@@ -105,6 +105,7 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
   await page.goto("/#account-settings", { waitUntil: "networkidle" });
 
   expect(dialogBundleRequests).toEqual([]);
+  await expect(page.locator("#site-version")).toContainText("v2.5 · build ");
   const addTeams = page.locator("#followed-teams-add");
   await expect(addTeams).toBeVisible();
   await expect(addTeams).toBeEnabled();

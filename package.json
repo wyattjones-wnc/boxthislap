@@ -1,23 +1,44 @@
 {
+  "name": "boxthislap",
+  "private": true,
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
+    "build": "node scripts/prepare-site-build.mjs && vite build --emptyOutDir false && node scripts/verify-site-build.mjs",
+    "preview": "vite preview",
+    "check": "npm run check:types && npm run lint && npm run format:check && npm run test:unit && npm run build",
+    "check:types": "tsc --project tsconfig.tooling.json",
     "check:psn": "tsc --project workers/psn-trophies/tsconfig.json && wrangler deploy --dry-run --config workers/psn-trophies/wrangler.toml --outdir .tmp/psn-trophies-dry-run",
+    "lint": "eslint eslint.config.js vite.config.js playwright.config.js modules/dialogs scripts/prepare-site-build.mjs scripts/run-mobile-smoke.mjs scripts/verify-site-build.mjs tests",
+    "format:check": "prettier --check package.json eslint.config.js vite.config.js playwright.config.js tsconfig.tooling.json modules/dialogs scripts/prepare-site-build.mjs scripts/run-mobile-smoke.mjs scripts/verify-site-build.mjs tests .github/workflows/quality.yml .github/workflows/pages.yml",
     "collectibles:sync": "node scripts/collectibles/sync.mjs",
     "refresh:psn-auth": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-psn-auth.ps1",
     "test:collectibles": "node --test scripts/collectibles/*.test.mjs",
-    "test:footy-following": "node --test modules/followedTeams.test.mjs modules/footyMatchActions.test.mjs scripts/footy-club-names.test.mjs scripts/footy-roster-providers.test.mjs scripts/footy-team-catalog.test.mjs workers/rankings/test/followed-teams.test.mjs workers/footy-push/test/followed-teams.test.mjs",
+    "test:footy-following": "node --test modules/followedTeams.test.mjs modules/footyFixtures.test.mjs modules/footyMatchActions.test.mjs scripts/footy-club-names.test.mjs scripts/footy-roster-providers.test.mjs scripts/footy-team-catalog.test.mjs workers/rankings/test/followed-teams.test.mjs workers/footy-push/test/followed-teams.test.mjs",
     "footy:rosters:dry-run": "node scripts/update-footy-rosters.mjs --dry-run --seed-legacy",
     "test:footy-rosters": "node --test workers/footy-notes/test/rosters.test.mjs",
     "test:formula-one": "node --test modules/formulaOneQualifying.test.mjs workers/formula-one/test/*.test.mjs",
+    "test:unit": "npm run test:collectibles && npm run test:footy-following && npm run test:footy-rosters && npm run test:formula-one && npm run test:psn",
+    "test:e2e": "npm run build && npm run test:e2e:run",
+    "test:e2e:run": "node scripts/run-mobile-smoke.mjs",
     "formula-one:migrate:2026": "node scripts/migrate-formula-one-2026.mjs",
     "formula-one:seed-sql": "node scripts/build-formula-one-seed-sql.mjs",
     "test:psn": "node --experimental-strip-types --test workers/psn-trophies/test/*.test.ts"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.2",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.6",
     "typescript": "^5.9.2",
+    "vite": "^8.3.0",
     "wrangler": "^4.119.0"
   },
   "dependencies": {
-    "psn-api": "^2.18.1"
+    "psn-api": "^2.18.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

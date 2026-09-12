@@ -1,4 +1,8 @@
-export function createFollowedTeamsController({ getManagerId, onChanged = () => {}, request }) {
+export function createFollowedTeamsController({
+  getManagerId,
+  onChanged = () => {},
+  request,
+}) {
   const root = document.querySelector("#followed-teams-settings");
   const count = document.querySelector("#followed-teams-count");
   const list = document.querySelector("#followed-teams-list");
@@ -10,17 +14,7 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   const topResetButton = document.querySelector("#footy-reset-teams");
   const choiceActions = document.querySelector("#footy-team-choice-actions");
   const footyFilters = document.querySelector("#footy-filters");
-  const dialog = document.querySelector("#followed-teams-dialog");
-  const dialogClose = document.querySelector("#followed-teams-dialog-close");
-  const dialogDone = document.querySelector("#followed-teams-dialog-done");
-  const dialogStatus = document.querySelector("#followed-teams-dialog-status");
-  const search = document.querySelector("#followed-teams-search");
-  const leagueFilter = document.querySelector("#followed-teams-league");
-  const picker = document.querySelector("#followed-teams-picker");
-  const pagination = document.querySelector("#followed-teams-pagination");
-  const pagePrevious = document.querySelector("#followed-teams-page-previous");
-  const pageNext = document.querySelector("#followed-teams-page-next");
-  const pageStatus = document.querySelector("#followed-teams-page-status");
+  const dialogMount = document.querySelector("#followed-teams-dialog-root");
   const state = {
     catalog: [],
     defaultIds: [],
@@ -30,7 +24,6 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     loadedManagerId: "",
     loading: false,
     pendingIds: [],
-    pickerPage: 1,
     revision: 0,
     savedIds: [],
     savedNotificationIds: [],
@@ -38,34 +31,30 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     saving: false,
     usingDefault: true,
   };
+  let dialogController = null;
+  let dialogControllerPromise = null;
+  let dialogMessage = "";
+  let dialogMessageIsError = false;
+  let dialogOpen = false;
   let draggedId = "";
-  let lockedScrollY = 0;
 
   root?.addEventListener("click", handleRootClick);
   chooseButton?.addEventListener("click", openPicker);
-  topResetButton?.addEventListener("click", () => { void resetToDefault(); });
+  topResetButton?.addEventListener("click", () => {
+    void resetToDefault();
+  });
   list?.addEventListener("dragstart", handleDragStart);
-  list?.addEventListener("dragover", (event) => draggedId && event.preventDefault());
+  list?.addEventListener(
+    "dragover",
+    (event) => draggedId && event.preventDefault(),
+  );
   list?.addEventListener("drop", handleDrop);
-  list?.addEventListener("dragend", () => { draggedId = ""; });
-  picker?.addEventListener("change", handlePickerChange);
-  search?.addEventListener("input", resetPickerPage);
-  leagueFilter?.addEventListener("change", resetPickerPage);
-  pagePrevious?.addEventListener("click", () => changePickerPage(-1));
-  pageNext?.addEventListener("click", () => changePickerPage(1));
-  dialogClose?.addEventListener("click", closePicker);
-  dialogDone?.addEventListener("click", () => { void save({ closeDialog: true }); });
-  dialog?.addEventListener("click", (event) => { if (event.target === dialog) closePicker(); });
-  dialog?.addEventListener("close", unlockPageScroll);
-  window.addEventListener("resize", () => {
-    if (!dialog?.open) return;
-    state.pickerPage = 1;
-    renderPicker();
+  list?.addEventListener("dragend", () => {
+    draggedId = "";
   });
 
   function reset() {
-    if (dialog?.open) dialog.close();
-    unlockPageScroll();
+    closePicker();
     state.catalog = [];
     state.defaultIds = [];
     state.error = "";
@@ -74,13 +63,14 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.loadedManagerId = "";
     state.loading = false;
     state.pendingIds = [];
-    state.pickerPage = 1;
     state.revision = 0;
     state.savedIds = [];
     state.savedNotificationIds = [];
     state.savedPersonalIds = [];
     state.saving = false;
     state.usingDefault = true;
+    dialogMessage = "";
+    dialogMessageIsError = false;
     render();
     onChanged([]);
   }
@@ -89,7 +79,11 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     const managerId = String(getManagerId() || "").trim();
     const loadKey = managerId || "anonymous";
     if (!root) return;
-    if (!options.force && state.loadedManagerId === loadKey && state.catalog.length) {
+    if (
+      !options.force &&
+      state.loadedManagerId === loadKey &&
+      state.catalog.length
+    ) {
       render();
       return;
     }
@@ -100,26 +94,32 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.loadPromise = Promise.all([
       request("/api/teams?includeLeagues=true&active=true", { auth: false }),
       managerId ? request("/api/me/followed-teams") : Promise.resolve(null),
-    ]).then(([catalog, preferences]) => {
-      state.catalog = normalizeCatalog(catalog);
-      state.leagues = normalizeLeagues(catalog, state.catalog);
-      state.defaultIds = (catalog.defaultTeamIds || []).map(String);
-      state.revision = Number(preferences?.revision || 0);
-      state.usingDefault = !managerId || Boolean(preferences?.usingDefault);
-      state.savedIds = effectiveTeamIds(state.defaultIds, preferences);
-      state.savedNotificationIds = notificationTeamIds(preferences);
-      state.savedPersonalIds = personalTeamIds(state.savedIds, state.usingDefault);
-      state.pendingIds = [...state.savedPersonalIds];
-      state.loadedManagerId = loadKey;
-      onChanged(getFollowedTeams());
-    }).catch((error) => {
-      state.error = error.message || "Followed teams could not be loaded.";
-      throw error;
-    }).finally(() => {
-      state.loading = false;
-      state.loadPromise = null;
-      render();
-    });
+    ])
+      .then(([catalog, preferences]) => {
+        state.catalog = normalizeCatalog(catalog);
+        state.leagues = normalizeLeagues(catalog, state.catalog);
+        state.defaultIds = (catalog.defaultTeamIds || []).map(String);
+        state.revision = Number(preferences?.revision || 0);
+        state.usingDefault = !managerId || Boolean(preferences?.usingDefault);
+        state.savedIds = effectiveTeamIds(state.defaultIds, preferences);
+        state.savedNotificationIds = notificationTeamIds(preferences);
+        state.savedPersonalIds = personalTeamIds(
+          state.savedIds,
+          state.usingDefault,
+        );
+        state.pendingIds = [...state.savedPersonalIds];
+        state.loadedManagerId = loadKey;
+        onChanged(getFollowedTeams());
+      })
+      .catch((error) => {
+        state.error = error.message || "Followed teams could not be loaded.";
+        throw error;
+      })
+      .finally(() => {
+        state.loading = false;
+        state.loadPromise = null;
+        render();
+      });
     return state.loadPromise;
   }
 
@@ -130,7 +130,13 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function getFollowedTeams() {
     const teams = new Map(state.catalog.map((team) => [team.id, team]));
     return state.savedIds.map((id, index) => ({
-      ...(teams.get(id) || { active: false, badge: "", id, leagues: [], name: `Unavailable team (${id})` }),
+      ...(teams.get(id) || {
+        active: false,
+        badge: "",
+        id,
+        leagues: [],
+        name: `Unavailable team (${id})`,
+      }),
       priority: index + 1,
     }));
   }
@@ -146,14 +152,19 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
   function getSelectionState() {
     const managerId = String(getManagerId() || "").trim();
     return {
-      hasPersonalSelection: Boolean(managerId) && state.loadedManagerId === managerId && !state.usingDefault && state.savedIds.length > 0,
+      hasPersonalSelection:
+        Boolean(managerId) &&
+        state.loadedManagerId === managerId &&
+        !state.usingDefault &&
+        state.savedIds.length > 0,
       loaded: Boolean(managerId) && state.loadedManagerId === managerId,
     };
   }
 
   function render() {
     const managerId = String(getManagerId() || "").trim();
-    const canReset = Boolean(managerId) && (!state.usingDefault || hasChanges());
+    const canReset =
+      Boolean(managerId) && (!state.usingDefault || hasChanges());
     if (choiceActions) {
       if (state.usingDefault) {
         footyFilters?.insertAdjacentElement("afterend", choiceActions);
@@ -165,8 +176,11 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     }
     if (chooseButton) {
       chooseButton.hidden = !managerId;
-      chooseButton.disabled = state.loading || state.saving || !state.catalog.length;
-      chooseButton.textContent = state.usingDefault ? "Add Teams" : "Choose teams";
+      chooseButton.disabled =
+        state.loading || state.saving || !state.catalog.length;
+      chooseButton.textContent = state.usingDefault
+        ? "Add Teams"
+        : "Choose teams";
     }
     if (topResetButton) {
       topResetButton.hidden = !managerId || state.usingDefault;
@@ -175,9 +189,10 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     if (!root) return;
     root.hidden = !managerId;
     if (!managerId) return;
-    count.textContent = state.usingDefault && !hasChanges()
-      ? `${state.savedIds.length} default team${state.savedIds.length === 1 ? "" : "s"}`
-      : `${state.pendingIds.length} team${state.pendingIds.length === 1 ? "" : "s"}`;
+    count.textContent =
+      state.usingDefault && !hasChanges()
+        ? `${state.savedIds.length} default team${state.savedIds.length === 1 ? "" : "s"}`
+        : `${state.pendingIds.length} team${state.pendingIds.length === 1 ? "" : "s"}`;
     addButton.disabled = state.loading || state.saving;
     if (resetButton) {
       resetButton.hidden = !canReset;
@@ -201,14 +216,22 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       list.innerHTML = state.pendingIds.map(renderSelectedTeam).join("");
     }
     if (!state.saving && !state.error) {
-      setStatus(hasChanges() ? "You have unsaved changes." : state.usingDefault ? "Using the admin’s default teams." : "");
+      setStatus(
+        hasChanges()
+          ? "You have unsaved changes."
+          : state.usingDefault
+            ? "Using the admin’s default teams."
+            : "",
+      );
     }
+    syncDialog();
   }
 
   function renderSelectedTeam(id, index) {
     const team = state.catalog.find((entry) => entry.id === id);
     const name = team?.name || `Unavailable team (${id})`;
-    const league = selectableLeagueNames(team?.leagues).join(", ") || "Other competitions";
+    const league =
+      selectableLeagueNames(team?.leagues).join(", ") || "Other competitions";
     return `
       <article class="followed-team-row${team ? "" : " is-unavailable"}" draggable="true" data-followed-team-id="${escapeAttribute(id)}">
         <button class="followed-team-drag" type="button" aria-label="Drag ${escapeAttribute(name)} to reorder" title="Drag to reorder">⋮⋮</button>
@@ -224,91 +247,89 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     `;
   }
 
-  function openPicker() {
-    if (!getManagerId() || !dialog || state.loading || !state.catalog.length) return;
-    search.value = "";
-    leagueFilter.value = "";
-    state.pickerPage = 1;
+  async function openPicker() {
+    if (
+      !getManagerId() ||
+      !dialogMount ||
+      state.loading ||
+      !state.catalog.length
+    )
+      return;
     setDialogStatus("");
-    renderPicker();
-    dialog.showModal();
-    lockedScrollY = window.scrollY;
-    document.documentElement.style.setProperty("--followed-teams-scroll-offset", `${-lockedScrollY}px`);
-    document.documentElement.classList.add("has-followed-teams-dialog");
-    window.setTimeout(() => search.focus(), 0);
+    dialogOpen = true;
+    try {
+      const controller = await ensureDialogController();
+      if (dialogOpen) controller.open(getDialogProps());
+    } catch (error) {
+      dialogOpen = false;
+      setStatus(error.message || "The team picker could not be opened.", true);
+    }
   }
 
   function closePicker() {
-    if (dialog?.open) dialog.close();
-    unlockPageScroll();
+    dialogOpen = false;
+    dialogController?.close();
     render();
   }
 
-  function unlockPageScroll() {
-    const wasLocked = document.documentElement.classList.contains("has-followed-teams-dialog");
-    document.documentElement.classList.remove("has-followed-teams-dialog");
-    document.documentElement.style.removeProperty("--followed-teams-scroll-offset");
-    if (wasLocked) window.scrollTo(0, lockedScrollY);
+  async function ensureDialogController() {
+    if (dialogController) return dialogController;
+    if (!dialogControllerPromise) {
+      dialogControllerPromise =
+        import("./dialogs/followedTeamsDialog.jsx?v=202609121804")
+          .then(({ createFollowedTeamsDialog }) => {
+            dialogController = createFollowedTeamsDialog({
+              mount: dialogMount,
+              onClose: closePicker,
+              onDone: () => {
+                void save({ closeDialog: true });
+              },
+              onSelectionChange: handleDialogSelectionChange,
+            });
+            return dialogController;
+          })
+          .finally(() => {
+            dialogControllerPromise = null;
+          });
+    }
+    return dialogControllerPromise;
   }
 
-  function renderPicker() {
-    if (!picker) return;
-    const query = normalize(search?.value);
-    const leagueId = leagueFilter?.value || "";
-    const visible = state.catalog.filter((team) => {
-      const matchesText = !query || normalize(`${team.name} ${team.prettyName}`).includes(query);
-      const matchesLeague = !leagueId || team.leagues.some((league) => normalizeSelectableLeague(league.name)?.id === leagueId);
-      return team.active && matchesText && matchesLeague;
-    });
-    leagueFilter.innerHTML = [`<option value="">All competitions</option>`, ...state.leagues.map((league) => `<option value="${escapeAttribute(league.id)}"${league.id === leagueId ? " selected" : ""}>${escapeHtml(league.name)}</option>`)].join("");
-    const page = paginatePickerTeams(visible, state.defaultIds, state.pickerPage, pickerPageSizeForViewport({
-      height: window.innerHeight,
-      width: window.innerWidth,
-    }));
-    state.pickerPage = page.page;
-    const renderTeam = (team) => {
-      const selected = state.pendingIds.includes(team.id);
-      const league = selectableLeagueNames(team.leagues).join(", ") || "Other competitions";
-      return `
-        <label class="followed-team-picker-row${selected ? " is-selected" : ""}">
-          <input type="checkbox" value="${escapeAttribute(team.id)}"${selected ? " checked" : ""}>
-          ${team.badge ? `<img src="${escapeAttribute(team.badge)}" alt="" loading="lazy" decoding="async">` : `<span class="followed-team-fallback" aria-hidden="true">${escapeHtml(team.name.charAt(0))}</span>`}
-          <span><strong>${escapeHtml(team.name)}</strong><small>${escapeHtml(league)}</small></span>
-        </label>
-      `;
+  function getDialogProps() {
+    return {
+      defaultIds: state.defaultIds,
+      leagues: state.leagues,
+      message: dialogMessage,
+      messageIsError: dialogMessageIsError,
+      savedIds: state.savedPersonalIds,
+      saving: state.saving,
+      selectedIds: state.pendingIds,
+      teams: state.catalog.map((team) => ({
+        ...team,
+        leagueIds: (team.leagues || [])
+          .map((league) => normalizeSelectableLeague(league.name)?.id)
+          .filter(Boolean),
+        leagueLabel:
+          selectableLeagueNames(team.leagues).join(", ") ||
+          "Other competitions",
+      })),
     };
-    picker.innerHTML = visible.length ? [
-      page.defaults.length ? `<div class="followed-team-picker-group-label">Default teams</div>${page.defaults.map(renderTeam).join("")}` : "",
-      page.defaults.length && page.others.length ? `<div class="followed-team-picker-divider" role="separator"><span>Other teams</span></div>` : "",
-      !page.defaults.length && page.others.length ? `<div class="followed-team-picker-group-label">Other teams</div>` : "",
-      page.others.map(renderTeam).join(""),
-    ].join("") : `<p class="table-message">No teams match those filters.</p>`;
-    if (pagination) pagination.hidden = page.pageCount <= 1;
-    if (pagePrevious) pagePrevious.disabled = page.page <= 1;
-    if (pageNext) pageNext.disabled = page.page >= page.pageCount;
-    if (pageStatus) pageStatus.textContent = `Page ${page.page} of ${page.pageCount}`;
-    syncDialogAction();
   }
 
-  function resetPickerPage() {
-    state.pickerPage = 1;
-    renderPicker();
+  function syncDialog() {
+    if (dialogOpen && dialogController) {
+      dialogController.update(getDialogProps());
+    }
   }
 
-  function changePickerPage(offset) {
-    state.pickerPage += offset;
-    renderPicker();
-    picker?.scrollTo({ top: 0 });
-  }
-
-  function handlePickerChange(event) {
-    const input = event.target.closest("input[type='checkbox']");
-    if (!input) return;
-    const id = input.value;
-    if (input.checked && !state.pendingIds.includes(id)) state.pendingIds.push(id);
-    if (!input.checked) state.pendingIds = state.pendingIds.filter((entry) => entry !== id);
-    renderPicker();
-    announce(input.checked ? `${teamName(id)} added. Save teams to apply.` : `${teamName(id)} removed. Save teams to apply.`);
+  function handleDialogSelectionChange(nextIds, id, checked) {
+    state.pendingIds = nextIds;
+    syncDialog();
+    announce(
+      checked
+        ? `${teamName(id)} added. Save teams to apply.`
+        : `${teamName(id)} removed. Save teams to apply.`,
+    );
   }
 
   async function save(options = {}) {
@@ -327,7 +348,10 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     try {
       const previousIds = new Set(state.savedIds);
       const response = await request("/api/me/followed-teams", {
-        body: JSON.stringify({ revision: state.revision, teamIds: state.pendingIds }),
+        body: JSON.stringify({
+          revision: state.revision,
+          teamIds: state.pendingIds,
+        }),
         method: "PUT",
       });
       applyPreference(response);
@@ -341,8 +365,14 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
       if (options.closeDialog) closePicker();
     } catch (error) {
       state.error = error.message || "Followed teams could not be saved.";
-      setStatus(`${state.error} Your unsaved selection is still here for retry.`, true);
-      setDialogStatus(`${state.error} Your selection is still here for retry.`, true);
+      setStatus(
+        `${state.error} Your unsaved selection is still here for retry.`,
+        true,
+      );
+      setDialogStatus(
+        `${state.error} Your selection is still here for retry.`,
+        true,
+      );
     } finally {
       state.saving = false;
       render();
@@ -353,14 +383,18 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
 
   function handleRootClick(event) {
     if (event.target.closest("#followed-teams-add")) return openPicker();
-    if (event.target.closest("#followed-teams-reset")) return void resetToDefault();
+    if (event.target.closest("#followed-teams-reset"))
+      return void resetToDefault();
     if (event.target.closest("#followed-teams-save")) return void save();
-    if (event.target.closest("[data-followed-teams-retry]")) return void load({ force: true }).catch(() => undefined);
+    if (event.target.closest("[data-followed-teams-retry]"))
+      return void load({ force: true }).catch(() => undefined);
     const remove = event.target.closest("[data-followed-team-remove]");
     if (remove) {
       const id = remove.dataset.followedTeamRemove;
       state.pendingIds = state.pendingIds.filter((entry) => entry !== id);
-      announce(`${teamName(id)} removed. Notifications will stop after you save.`);
+      announce(
+        `${teamName(id)} removed. Notifications will stop after you save.`,
+      );
       return render();
     }
     const up = event.target.closest("[data-followed-team-up]");
@@ -403,7 +437,10 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     state.savedNotificationIds = notificationTeamIds(response);
     state.revision = Number(response.revision ?? state.revision + 1);
     state.usingDefault = Boolean(response.usingDefault);
-    state.savedPersonalIds = personalTeamIds(state.savedIds, state.usingDefault);
+    state.savedPersonalIds = personalTeamIds(
+      state.savedIds,
+      state.usingDefault,
+    );
     state.pendingIds = [...state.savedPersonalIds];
   }
 
@@ -411,14 +448,18 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     const from = state.pendingIds.indexOf(id);
     const to = from + offset;
     if (from < 0 || to < 0 || to >= state.pendingIds.length) return;
-    [state.pendingIds[from], state.pendingIds[to]] = [state.pendingIds[to], state.pendingIds[from]];
+    [state.pendingIds[from], state.pendingIds[to]] = [
+      state.pendingIds[to],
+      state.pendingIds[from],
+    ];
     announce(`${teamName(id)} moved to priority ${to + 1}.`);
     render();
   }
 
   function handleDragStart(event) {
     const row = event.target.closest("[data-followed-team-id]");
-    if (!row || !event.target.closest(".followed-team-drag")) return event.preventDefault();
+    if (!row || !event.target.closest(".followed-team-drag"))
+      return event.preventDefault();
     draggedId = row.dataset.followedTeamId;
     event.dataTransfer?.setData("text/plain", draggedId);
   }
@@ -438,14 +479,41 @@ export function createFollowedTeamsController({ getManagerId, onChanged = () => 
     draggedId = "";
   }
 
-  function hasChanges() { return state.pendingIds.join("\u0000") !== state.savedPersonalIds.join("\u0000"); }
-  function teamName(id) { return state.catalog.find((team) => team.id === id)?.name || "Team"; }
-  function announce(message) { setStatus(message); }
-  function setStatus(message, error = false) { status.textContent = message || ""; status.classList.toggle("is-error", error); }
-  function setDialogStatus(message, error = false) { if (dialogStatus) { dialogStatus.textContent = message || ""; dialogStatus.classList.toggle("is-error", error); } }
-  function syncDialogAction() { if (dialogDone) { dialogDone.disabled = state.saving; dialogDone.textContent = state.saving ? "Saving…" : hasChanges() ? "Save teams" : "Done"; } }
+  function hasChanges() {
+    return (
+      state.pendingIds.join("\u0000") !== state.savedPersonalIds.join("\u0000")
+    );
+  }
+  function teamName(id) {
+    return state.catalog.find((team) => team.id === id)?.name || "Team";
+  }
+  function announce(message) {
+    setStatus(message);
+  }
+  function setStatus(message, error = false) {
+    status.textContent = message || "";
+    status.classList.toggle("is-error", error);
+  }
+  function setDialogStatus(message, error = false) {
+    dialogMessage = message || "";
+    dialogMessageIsError = error;
+    syncDialog();
+  }
+  function syncDialogAction() {
+    syncDialog();
+  }
 
-  return { getFollowedTeamIds, getFollowedTeams, getNotificationSelectionState, getSelectionState, load, openPicker, render, reset, resetToDefault };
+  return {
+    getFollowedTeamIds,
+    getFollowedTeams,
+    getNotificationSelectionState,
+    getSelectionState,
+    load,
+    openPicker,
+    render,
+    reset,
+    resetToDefault,
+  };
 }
 
 function preferenceTeamIds(preferences = {}) {
@@ -463,21 +531,45 @@ function notificationTeamIds(preferences = {}) {
 
 function normalizeCatalog(response = {}) {
   const fromTopLevel = Array.isArray(response.teams) ? response.teams : [];
-  const fromLeagues = (response.leagues || []).flatMap((league) => (league.teams || []).map((team) => ({ ...team, leagues: [{ id: league.id, name: league.name }] })));
+  const fromLeagues = (response.leagues || []).flatMap((league) =>
+    (league.teams || []).map((team) => ({
+      ...team,
+      leagues: [{ id: league.id, name: league.name }],
+    })),
+  );
   const teams = new Map();
   for (const source of [...fromTopLevel, ...fromLeagues]) {
     const id = String(source.id || "").trim();
     if (!id) continue;
-    const existing = teams.get(id) || { active: source.active !== false, badge: followedTeamBadge(source), id, leagues: [], name: source.name || id, prettyName: source.prettyName || source.name || id, providerTeamIds: { ...(source.providerTeamIds || {}) } };
-    existing.providerTeamIds = { ...existing.providerTeamIds, ...(source.providerTeamIds || {}) };
-    for (const league of source.leagues || []) if (!existing.leagues.some((entry) => entry.id === String(league.id))) existing.leagues.push({ id: String(league.id), name: String(league.name || "Competition") });
+    const existing = teams.get(id) || {
+      active: source.active !== false,
+      badge: followedTeamBadge(source),
+      id,
+      leagues: [],
+      name: source.name || id,
+      prettyName: source.prettyName || source.name || id,
+      providerTeamIds: { ...(source.providerTeamIds || {}) },
+    };
+    existing.providerTeamIds = {
+      ...existing.providerTeamIds,
+      ...(source.providerTeamIds || {}),
+    };
+    for (const league of source.leagues || [])
+      if (!existing.leagues.some((entry) => entry.id === String(league.id)))
+        existing.leagues.push({
+          id: String(league.id),
+          name: String(league.name || "Competition"),
+        });
     teams.set(id, existing);
   }
-  return [...teams.values()].sort((left, right) => left.name.localeCompare(right.name));
+  return [...teams.values()].sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
 }
 
 export function effectiveTeamIds(defaultIds = [], preferences = null) {
-  if (!preferences || preferences.usingDefault) return [...defaultIds].map(String);
+  if (!preferences || preferences.usingDefault)
+    return [...defaultIds].map(String);
   return preferenceTeamIds(preferences);
 }
 
@@ -500,7 +592,9 @@ export function normalizeLeagues(response = {}, catalog = []) {
     const league = normalizeSelectableLeague(source.name);
     if (league) leagues.set(league.id, league);
   }
-  return [...leagues.values()].sort((left, right) => left.name.localeCompare(right.name));
+  return [...leagues.values()].sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
 }
 
 export function personalTeamIds(effectiveIds = [], usingDefault = false) {
@@ -509,43 +603,60 @@ export function personalTeamIds(effectiveIds = [], usingDefault = false) {
 
 export function partitionPickerTeams(teams = [], defaultIds = []) {
   const defaults = new Set(defaultIds.map(String));
-  const defaultOrder = new Map(defaultIds.map((id, index) => [String(id), index]));
+  const defaultOrder = new Map(
+    defaultIds.map((id, index) => [String(id), index]),
+  );
   return {
-    defaults: teams.filter((team) => defaults.has(String(team.id))).sort((left, right) => defaultOrder.get(String(left.id)) - defaultOrder.get(String(right.id))),
+    defaults: teams
+      .filter((team) => defaults.has(String(team.id)))
+      .sort(
+        (left, right) =>
+          defaultOrder.get(String(left.id)) -
+          defaultOrder.get(String(right.id)),
+      ),
     others: teams.filter((team) => !defaults.has(String(team.id))),
   };
 }
 
-export function paginatePickerTeams(teams = [], defaultIds = [], requestedPage = 1, pageSize = 5) {
-  const groups = partitionPickerTeams(teams, defaultIds);
-  const defaults = new Set(groups.defaults.map((team) => String(team.id)));
-  const ordered = [...groups.defaults, ...groups.others];
-  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
-  const page = Math.min(pageCount, Math.max(1, Number(requestedPage) || 1));
-  const items = ordered.slice((page - 1) * pageSize, page * pageSize);
-  return {
-    defaults: items.filter((team) => defaults.has(String(team.id))),
-    others: items.filter((team) => !defaults.has(String(team.id))),
-    page,
-    pageCount,
-  };
-}
-
-export function pickerPageSizeForViewport({ height = 800, width = 1024 } = {}) {
-  if (Number(height) < 580) return 2;
-  if (Number(height) < 760 || Number(width) <= 620) return 3;
-  return 5;
-}
-
 export function normalizeSelectableLeague(value) {
   const name = String(value || "").trim();
-  const key = normalize(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
-  if (!key || /\b(cup|copa|supercopa|coppa|coupe|pokal|trophy|shield|friendlies|friendly|preseason|summer series|international|champions league|europa league|conference league|nations league|playoffs?)\b/.test(key)) return null;
-  if (key === "premier league" || key === "english premier league") return { id: "premier-league", name: "Premier League" };
-  if (key === "la liga" || key === "primera division" || key.startsWith("laliga season ")) return { id: "la-liga", name: "La Liga" };
-  if (key === "mls" || key === "major league soccer" || key.startsWith("mls regular season")) return { id: "mls", name: "MLS" };
-  const displayName = name.replace(/\s+season\s+\d{4}(?:\s*[-–]\s*\d{4})?$/i, "").trim();
-  return { id: normalize(displayName).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), name: displayName };
+  const key = normalize(name)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  if (
+    !key ||
+    /\b(cup|copa|supercopa|coppa|coupe|pokal|trophy|shield|friendlies|friendly|preseason|summer series|international|champions league|europa league|conference league|nations league|playoffs?)\b/.test(
+      key,
+    )
+  )
+    return null;
+  if (key === "premier league" || key === "english premier league")
+    return { id: "premier-league", name: "Premier League" };
+  if (
+    key === "la liga" ||
+    key === "primera division" ||
+    key.startsWith("laliga season ")
+  )
+    return { id: "la-liga", name: "La Liga" };
+  if (
+    key === "mls" ||
+    key === "major league soccer" ||
+    key.startsWith("mls regular season")
+  )
+    return { id: "mls", name: "MLS" };
+  const displayName = name
+    .replace(/\s+season\s+\d{4}(?:\s*[-–]\s*\d{4})?$/i, "")
+    .trim();
+  return {
+    id: normalize(displayName)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, ""),
+    name: displayName,
+  };
 }
 
 function selectableLeagueNames(leagues = []) {
@@ -557,7 +668,22 @@ function selectableLeagueNames(leagues = []) {
   return [...names.values()].sort((left, right) => left.localeCompare(right));
 }
 
-function normalize(value) { return String(value || "").trim().toLowerCase(); }
-function loadingMarkup(message) { return `<p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>${escapeHtml(message)}</span></p>`; }
-function escapeAttribute(value) { return escapeHtml(value); }
-function escapeHtml(value) { return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
+function normalize(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+function loadingMarkup(message) {
+  return `<p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>${escapeHtml(message)}</span></p>`;
+}
+function escapeAttribute(value) {
+  return escapeHtml(value);
+}
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}

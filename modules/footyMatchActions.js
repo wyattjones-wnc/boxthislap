@@ -3,12 +3,45 @@ export function getFootyNotificationFixtures(schedule = {}) {
     ...(schedule.teamSchedules || []).flatMap((entry) => entry.fixtures || []),
     ...(schedule.competitionSchedules || []).flatMap((entry) => entry.fixtures || []),
   ];
-  const unique = new Map();
+  const unique = [];
+  const recordsByIdentity = new Map();
   fixtures.forEach((fixture) => {
-    const key = getFixtureIdentity(fixture);
-    if (key && !unique.has(key)) unique.set(key, fixture);
+    const identities = getFootyFixtureIdentities(fixture);
+    const existing = identities.map((identity) => recordsByIdentity.get(identity)).find(Boolean);
+    const record = existing || { fixture };
+    if (!existing) unique.push(record);
+    identities.forEach((identity) => recordsByIdentity.set(identity, record));
   });
-  return [...unique.values()];
+  return unique.map((record) => record.fixture);
+}
+
+export function getFootyFixtureSourceIdentities(fixture = {}) {
+  const sourceIds = fixture.sourceIds && typeof fixture.sourceIds === "object" && !Array.isArray(fixture.sourceIds)
+    ? fixture.sourceIds
+    : {};
+  const identities = Object.entries(sourceIds)
+    .map(([source, id]) => `${normalizeIdentityPart(source)}:${normalizeIdentityPart(id)}`)
+    .filter((identity) => !identity.startsWith(":") && !identity.endsWith(":"));
+
+  if (!identities.length && fixture.source && fixture.id) {
+    const source = normalizeIdentityPart(fixture.source);
+    const rawId = normalizeIdentityPart(fixture.id);
+    const id = rawId.startsWith(`${source}:`) ? rawId.slice(source.length + 1) : rawId;
+    identities.push(`${source}:${id}`);
+  }
+
+  return [...new Set(identities)].sort();
+}
+
+export function findFootyFixtureBySharedIdentity(fixtures = [], target = {}) {
+  const targetMatchId = String(target.matchId || target.id || "").trim();
+  const targetSources = new Set(getFootyFixtureSourceIdentities(target));
+
+  return fixtures.find((fixture) => {
+    const matchId = String(fixture.matchId || fixture.id || "").trim();
+    return Boolean(targetMatchId && matchId === targetMatchId) ||
+      getFootyFixtureSourceIdentities(fixture).some((identity) => targetSources.has(identity));
+  }) || null;
 }
 
 export function isFootyFixtureFollowed(fixture = {}, followedTeamIds = []) {
@@ -58,6 +91,17 @@ function getFixtureIdentity(fixture = {}) {
     String(fixture.home || "").trim().toLowerCase(),
     String(fixture.away || "").trim().toLowerCase(),
   ].filter(Boolean).join("|");
+}
+
+function getFootyFixtureIdentities(fixture = {}) {
+  return [...new Set([
+    ...getFootyFixtureSourceIdentities(fixture).map((identity) => `source:${identity}`),
+    `fixture:${getFixtureIdentity(fixture)}`,
+  ].filter((identity) => !identity.endsWith(":")))];
+}
+
+function normalizeIdentityPart(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function normalizeTime(value) {

@@ -1,5 +1,9 @@
 .cache/
+.playwright/
 .tmp/
+dist/
+playwright-report/
+test-results/
 node_modules/
 .wrangler-config/
 .wrangler/

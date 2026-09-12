@@ -1,15 +1,33 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
-import {
-  buildFormulaOneMainDatasets,
-  buildFormulaOneQualifyingComparisons,
-  summarizeFormulaOneQualifyingComparisons,
-} from "./modules/formulaOneQualifying.js?v=202609110445";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202609120245";
 import {
   buildFootyNextItemDefaults,
+  findFootyFixtureBySharedIdentity,
+  getFootyFixtureSourceIdentities,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
   shouldOfferFootyMatchNotification,
-} from "./modules/footyMatchActions.js?v=202609080422";
+} from "./modules/footyMatchActions.js?v=202609120141";
+import {
+  compareFootyFixturesAscending,
+  compareFootyFixturesDescending,
+  getDefaultFootyTeams,
+  getFootyFilterTeams,
+  getFootyFixtureComparableTime,
+  getFootyFixtureDateKey,
+  getFootyFixtureSearchText,
+  getFootyFixtureTimingLabel,
+  getFootyTeamFilterKey,
+  groupFootyFixturesByCalendarWeek,
+  hasFootyMatchNoteData,
+  isFootyFixtureInDateRange,
+  isFootyFixturePast,
+  isFootyFixtureStarted,
+  isFootyFriendlyFixture,
+  normalizeFootyClubName,
+  normalizeFootyDateRange,
+  normalizeFootyPriority,
+} from "./modules/footyFixtures.js?v=202609120300";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -446,14 +464,7 @@ import {
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
-import { createGuidesController } from "./modules/guides.js?v=202608301830";
-import { createPlatinumsController } from "./modules/platinums.js?v=202608301400";
-import { createTrophyStatsController } from "./modules/trophyStats.js?v=202608301800";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202608300501";
-import { createTrophyLogController } from "./modules/trophyLog.js?v=202609091449";
-import { createDraftListsController } from "./modules/draftLists.js?v=202609042225";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609100137";
-import { createCollectiblesController } from "./modules/collectibles.js?v=202609050001";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -611,6 +622,7 @@ const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
 };
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const SITE_RELEASE = window.BOX_THIS_LAP_RELEASE || "2.5";
 const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
 const MANAGER_AUTH_REFRESH_LEEWAY_MS = 2 * 60 * 1000;
@@ -684,6 +696,7 @@ let rankingAuthorizationPromise = null;
 let rankingAuthorizationRefreshTimer = 0;
 const formulaOneAdminLoadPromises = new Map();
 let formulaOneAdminSeasonsLoadPromise = null;
+let formulaOneCalculations = null;
 let formulaOneAdminSelectedYear = "2026";
 let formulaOneAdminSelectedRound = "";
 let formulaOneAdminSelectedSession = "qualifying";
@@ -732,24 +745,6 @@ const loadGuideData = createGuideDataLoader({
   loadJson: (path) => loadJson(path, { cache: "force-cache" }),
   path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
 });
-const guidesController = createGuidesController({
-  getManagerId: getCurrentManagerId,
-  getIsAdmin: isCurrentManagerAdmin,
-  loadData: loadGuideData,
-  progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
-});
-const platinumsController = createPlatinumsController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
-const trophyStatsController = createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
-const trophyLogController = createTrophyLogController({ endpoint: PSN_TROPHIES_ENDPOINT, getAccessToken: ensureRankingAuthorization });
-const youtubeInboxController = createYouTubeInboxController({
-  endpoint: YOUTUBE_INBOX_ENDPOINT,
-  loadSheet,
-  scrollToTop: scrollToPageTop,
-});
-const draftListsController = createDraftListsController({
-  getManagerId: getCurrentManagerId,
-  request: rankingApiRequest,
-});
 const followedTeamsController = createFollowedTeamsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
@@ -769,11 +764,124 @@ const followedTeamsController = createFollowedTeamsController({
     }
   },
 });
-const collectiblesController = createCollectiblesController({
-  endpoint: COLLECTIBLES_ENDPOINT,
-  getAccessToken: ensureRankingAuthorization,
-  catalogPath: `data/collectibles-catalog.json?v=${encodeURIComponent(SITE_VERSION)}`,
+let activeDraftListsController = null;
+const loadGuidesController = createLazyControllerLoader(async () => {
+  const { createGuidesController } = await import("./modules/guides.js?v=202609112020");
+  return createGuidesController({
+    getManagerId: getCurrentManagerId,
+    getIsAdmin: isCurrentManagerAdmin,
+    loadData: loadGuideData,
+    progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
+  });
 });
+const loadDraftListsController = createLazyControllerLoader(async () => {
+  const { createDraftListsController } = await import("./modules/draftLists.js?v=202609112020");
+  activeDraftListsController = createDraftListsController({
+    getManagerId: getCurrentManagerId,
+    request: rankingApiRequest,
+  });
+  return activeDraftListsController;
+});
+const loadPlatinumsController = createLazyControllerLoader(async () => {
+  const { createPlatinumsController } = await import("./modules/platinums.js?v=202608301400");
+  return createPlatinumsController({
+    endpoint: PSN_TROPHIES_ENDPOINT,
+    getAccessToken: ensureRankingAuthorization,
+  });
+});
+const loadTrophyStatsController = createLazyControllerLoader(async () => {
+  const { createTrophyStatsController } = await import("./modules/trophyStats.js?v=202608301800");
+  return createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
+});
+const loadTrophyLogController = createLazyControllerLoader(async () => {
+  const { createTrophyLogController } = await import("./modules/trophyLog.js?v=202609091449");
+  return createTrophyLogController({
+    endpoint: PSN_TROPHIES_ENDPOINT,
+    getAccessToken: ensureRankingAuthorization,
+  });
+});
+const youtubeInboxController = createYouTubeInboxController({
+  endpoint: YOUTUBE_INBOX_ENDPOINT,
+  loadSheet,
+  scrollToTop: scrollToPageTop,
+});
+const loadCollectiblesController = createLazyControllerLoader(async () => {
+  const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609050001");
+  return createCollectiblesController({
+    endpoint: COLLECTIBLES_ENDPOINT,
+    getAccessToken: ensureRankingAuthorization,
+    catalogPath: `data/collectibles-catalog.json?v=${encodeURIComponent(SITE_VERSION)}`,
+  });
+});
+const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
+  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609112230");
+  return formulaOneCalculations;
+});
+
+function createLazyControllerLoader(factory) {
+  let controllerPromise = null;
+
+  return () => {
+    if (!controllerPromise) {
+      controllerPromise = Promise.resolve()
+        .then(factory)
+        .catch((error) => {
+          controllerPromise = null;
+          throw error;
+        });
+    }
+
+    return controllerPromise;
+  };
+}
+
+async function renderPlatinumsPage() {
+  return (await loadPlatinumsController()).renderPage();
+}
+
+async function renderGuidesPage() {
+  return (await loadGuidesController()).renderPage();
+}
+
+async function renderDraftListsPage() {
+  return (await loadDraftListsController()).renderPage();
+}
+
+async function loadDraftListsPage() {
+  return (await loadDraftListsController()).load();
+}
+
+function resetDraftListsPage() {
+  activeDraftListsController?.reset();
+}
+
+async function renderTrophyStatsPage() {
+  return (await loadTrophyStatsController()).renderPage();
+}
+
+async function loadTrophyStatsPage() {
+  return (await loadTrophyStatsController()).load();
+}
+
+async function renderTrophyLogPage() {
+  return (await loadTrophyLogController()).renderPage();
+}
+
+async function renderYouTubeInboxPage() {
+  return youtubeInboxController.renderPage();
+}
+
+async function loadYouTubeInboxPage() {
+  return youtubeInboxController.load();
+}
+
+async function renderCollectiblesPage() {
+  return (await loadCollectiblesController()).renderPage();
+}
+
+function startLazyPageRender(label, render) {
+  void render().catch((error) => recordDiagnostic(`${label} failed to render`, error));
+}
 
 function renderLeagueList(year) {
   if (!leagueList) {
@@ -2362,12 +2470,24 @@ function getFootyScheduleFixtures(schedule) {
       });
     })
   );
-  const fixtureMap = new Map();
+  const fixtureRecords = [];
+  const fixtureRecordsByIdentity = new Map();
   [...trackedFixtures, ...competitionFixtures].forEach((fixture) => {
-    const key = `${fixture.matchId || fixture.id}|${fixture.teamId}`;
-    if (!fixtureMap.has(key)) fixtureMap.set(key, fixture);
+    const identities = getFootyFixtureMergeIdentities(fixture);
+    const existingRecord = identities
+      .map((identity) => fixtureRecordsByIdentity.get(identity))
+      .find(Boolean);
+    const record = existingRecord || { fixture };
+
+    if (existingRecord) {
+      record.fixture = mergeFootyScheduleFixtures(record.fixture, fixture);
+    } else {
+      fixtureRecords.push(record);
+    }
+
+    identities.forEach((identity) => fixtureRecordsByIdentity.set(identity, record));
   });
-  const fixtures = [...fixtureMap.values()];
+  const fixtures = fixtureRecords.map((record) => record.fixture);
   const teamBadges = getFootyTeamBadgeMap(fixtures);
 
   return fixtures
@@ -2380,6 +2500,40 @@ function getFootyScheduleFixtures(schedule) {
         String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
         String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
     });
+}
+
+function getFootyFixtureMergeIdentities(fixture = {}) {
+  const teamId = String(fixture.teamId || "").trim();
+  const sourceIdentities = getFootyFixtureSourceIdentities(fixture)
+    .map((identity) => `source:${identity}|team:${teamId}`);
+  const eventIdentity = [
+    getFootyFixtureDateKey(fixture),
+    normalizeFootyClubName(fixture.home),
+    normalizeFootyClubName(fixture.away),
+    getFootyCanonicalCompetition(fixture.league).key,
+    teamId,
+  ].join("|");
+
+  return [...new Set([...sourceIdentities, `event:${eventIdentity}`])].filter(Boolean);
+}
+
+function mergeFootyScheduleFixtures(existing = {}, fixture = {}) {
+  const preferred = hasFootyMatchNoteData(existing) || !hasFootyMatchNoteData(fixture) ? existing : fixture;
+  const secondary = preferred === existing ? fixture : existing;
+
+  return {
+    ...secondary,
+    ...preferred,
+    isCompetitionFixture: Boolean(preferred.isCompetitionFixture),
+    sourceIds: { ...(secondary.sourceIds || {}), ...(preferred.sourceIds || {}) },
+    followedTeamNames: [...new Set([
+      ...(existing.followedTeamNames || [existing.teamName]),
+      ...(fixture.followedTeamNames || [fixture.teamName]),
+    ].filter(Boolean))],
+    homeBadge: preferred.homeBadge || secondary.homeBadge || "",
+    awayBadge: preferred.awayBadge || secondary.awayBadge || "",
+    teamBadge: preferred.teamBadge || secondary.teamBadge || "",
+  };
 }
 
 function getFootyTeamBadgeMap(fixtures = []) {
@@ -2644,8 +2798,10 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
     const followedBadges = getFootyFollowedTeamBadgeMap(fixtures);
 
     return (Array.isArray(fullSchedule.fixtures) ? fullSchedule.fixtures : []).map((fixture) => {
-      const matchId = getFootyCompetitionFixtureMatchId(fixture);
-      const followedFixture = followedByMatchId.get(matchId);
+      const competitionMatchId = getFootyCompetitionFixtureMatchId(fixture);
+      const followedFixture = followedByMatchId.get(competitionMatchId) ||
+        findFootyFixtureBySharedIdentity(fixtures, fixture);
+      const matchId = followedFixture?.matchId || competitionMatchId;
       const matchNote = followedFixture?.matchNote || getFootyMatchNoteById(matchId);
 
       return {
@@ -2806,30 +2962,6 @@ function getFilteredFootyFixtures(fixtures) {
   });
 }
 
-function isFootyFriendlyFixture(fixture = {}) {
-  if (typeof fixture.isFriendly === "boolean") {
-    return fixture.isFriendly;
-  }
-
-  const friendlyCompetitionIds = new Set([
-    "4nidzmunvpvxk1ir9b6m8mpay",
-    "4569",
-    "bfbepcvvs13v9didqrb12rh05",
-  ]);
-  const friendlyCompetitionNames = new Set([
-    "club friendlies",
-    "club friendly",
-    "emirates cup",
-    "english premier league summer series",
-    "friendly",
-    "friendlies",
-    "trofeo joan gamper",
-  ]);
-
-  return friendlyCompetitionIds.has(String(fixture.leagueId || "").trim()) ||
-    friendlyCompetitionNames.has(normalizeLookupName(fixture.league));
-}
-
 function hasActiveFootyFilters() {
   return Boolean(
     String(footySearchInput?.value || "").trim() ||
@@ -2845,27 +2977,7 @@ function hasActiveFootyFilters() {
 function getFootyDateFilterRange() {
   const rawStart = String(footyDateFromFilter?.value || "").trim();
   const rawEnd = String(footyDateToFilter?.value || "").trim();
-
-  if (!rawStart && !rawEnd) {
-    return null;
-  }
-
-  const start = rawStart || rawEnd;
-  const end = rawEnd || rawStart;
-
-  return start <= end
-    ? { start, end }
-    : { start: end, end: start };
-}
-
-function isFootyFixtureInDateRange(fixture, dateRange) {
-  const fixtureDate = getFootyFixtureDateKey(fixture);
-
-  return Boolean(
-    fixtureDate &&
-    fixtureDate >= dateRange.start &&
-    fixtureDate <= dateRange.end
-  );
+  return normalizeFootyDateRange(rawStart, rawEnd);
 }
 
 function getSelectedFootyTeams() {
@@ -2890,38 +3002,6 @@ function getDefaultFootyPrioritySet() {
     : ["1"];
 
   return new Set(priorities.map(normalizeFootyPriority).filter(Boolean));
-}
-
-function normalizeFootyPriority(priority) {
-  return String(priority || "").trim();
-}
-
-function getFootyFixtureSearchText(fixture) {
-  return normalizeLookupName([
-    fixture.home,
-    fixture.away,
-    fixture.league,
-    fixture.opponent,
-    fixture.teamName,
-    fixture.venue,
-  ].filter(Boolean).join(" "));
-}
-
-function getFootyFixtureDateKey(fixture) {
-  const date = String(fixture?.date || "").trim();
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return date;
-  }
-
-  const timestamp = String(fixture?.timestamp || "").trim();
-  const parsedDate = timestamp ? parseFootyDate(timestamp) : null;
-
-  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
-    return "";
-  }
-
-  return parsedDate.toISOString().slice(0, 10);
 }
 
 function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
@@ -2997,45 +3077,6 @@ function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
     }).join("");
 }
 
-function getDefaultFootyTeams(fixtures = [], defaultPrioritySet = getDefaultFootyPrioritySet()) {
-  if (defaultPrioritySet.size === 0) {
-    return new Set();
-  }
-
-  return new Set(
-    fixtures
-      .filter((fixture) => defaultPrioritySet.has(normalizeFootyPriority(fixture.priority)))
-      .map((fixture) => getFootyTeamFilterKey(fixture.teamName))
-      .filter(Boolean)
-  );
-}
-
-function getFootyFilterTeams(fixtures = []) {
-  const teamsByKey = new Map();
-
-  fixtures.forEach((fixture) => {
-    const teamName = String(fixture?.teamName || "").trim();
-    const teamKey = getFootyTeamFilterKey(teamName);
-
-    if (!teamName || !teamKey) {
-      return;
-    }
-
-    const existingTeamName = teamsByKey.get(teamKey);
-
-    if (!existingTeamName || teamName.length > existingTeamName.length) {
-      teamsByKey.set(teamKey, teamName);
-    }
-  });
-
-  return [...teamsByKey.values()]
-    .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
-}
-
-function getFootyTeamFilterKey(teamName) {
-  return normalizeFootyClubName(teamName) || normalizeLookupName(teamName);
-}
-
 function getVisibleFootyFixtures(fixtures) {
   return fixtures.filter((fixture) => {
     const isPast = isFootyFixturePast(fixture);
@@ -3048,130 +3089,6 @@ function compareVisibleFootyFixtures(firstFixture, secondFixture) {
   return activeFootyScheduleMode !== "competitions" && shouldShowPastFootyFixtures
     ? compareFootyFixturesDescending(firstFixture, secondFixture)
     : compareFootyFixturesAscending(firstFixture, secondFixture);
-}
-
-function compareFootyFixturesAscending(firstFixture, secondFixture) {
-  return getFootyFixtureSortTime(firstFixture) - getFootyFixtureSortTime(secondFixture) ||
-    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
-    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
-}
-
-function compareFootyFixturesDescending(firstFixture, secondFixture) {
-  return getFootyFixtureSortTime(secondFixture) - getFootyFixtureSortTime(firstFixture) ||
-    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
-    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
-}
-
-function getFootyFixtureSortTime(fixture) {
-  const comparableTime = getFootyFixtureComparableTime(fixture);
-  return Number.isFinite(comparableTime) ? comparableTime : Number.MAX_SAFE_INTEGER;
-}
-
-function isFootyFixturePast(fixture) {
-  if (hasFootyMatchNoteData(fixture)) {
-    return true;
-  }
-
-  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
-
-  return Number.isFinite(pastCutoffTime) && pastCutoffTime < Date.now();
-}
-
-function isFootyFixtureStarted(fixture) {
-  const fixtureTime = getFootyFixtureComparableTime(fixture);
-
-  return Number.isFinite(fixtureTime) && fixtureTime < Date.now();
-}
-
-function hasFootyMatchNoteData(fixture) {
-  const note = fixture?.matchNote;
-
-  if (!note) {
-    return false;
-  }
-
-  return Boolean(
-    String(note.homeScore ?? "").trim() ||
-    String(note.awayScore ?? "").trim() ||
-    String(note.note ?? "").trim() ||
-    String(note.highlightLink ?? "").trim() ||
-    (Array.isArray(note.followGoalAssists) && note.followGoalAssists.length > 0) ||
-    (Array.isArray(note.opponentGoalAssists) && note.opponentGoalAssists.length > 0)
-  );
-}
-
-function getFootyFixturePastCutoffTime(fixture) {
-  const matchTime = getFootyFixtureComparableTime(fixture);
-
-  if (!Number.isFinite(matchTime)) {
-    return Number.NaN;
-  }
-
-  const matchDate = new Date(matchTime);
-  const endOfDay = new Date(matchDate);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const nextDayStart = new Date(matchDate);
-  nextDayStart.setHours(24, 0, 0, 0);
-
-  const twelveHoursAfterMatch = matchTime + 12 * 60 * 60 * 1000;
-  const lessThanTwelveHoursToEndOfDay = endOfDay.getTime() - matchTime < 12 * 60 * 60 * 1000;
-
-  return lessThanTwelveHoursToEndOfDay ? twelveHoursAfterMatch : nextDayStart.getTime();
-}
-
-function getFootyFixtureComparableTime(fixture) {
-  const timestamp = String(fixture?.timestamp || "").trim();
-  const date = String(fixture?.date || "").trim();
-  const time = String(fixture?.time || "").trim();
-  const parsedTimestamp = timestamp ? getFootyDateTimeValue(timestamp) : Number.NaN;
-
-  if (time && Number.isFinite(parsedTimestamp)) {
-    return parsedTimestamp;
-  }
-
-  if (date) {
-    return Date.parse(`${date}T23:59:59`);
-  }
-
-  return parsedTimestamp;
-}
-
-function isFootyFixtureWithinNextDay(fixture) {
-  const fixtureTime = getFootyFixtureComparableTime(fixture);
-  const now = Date.now();
-
-  return Number.isFinite(fixtureTime) &&
-    fixtureTime >= now &&
-    fixtureTime <= now + 24 * 60 * 60 * 1000;
-}
-
-function isFootyFixtureToday(fixture) {
-  return getFootyFixtureDateKey(fixture) === getDateKey(0);
-}
-
-function getFootyFixtureTimingLabel(fixture) {
-  if (isFootyFixtureCurrent(fixture)) {
-    return "Today";
-  }
-
-  if (isFootyFixtureWithinNextDay(fixture)) {
-    return "Next 24h";
-  }
-
-  return "";
-}
-
-function isFootyFixtureCurrent(fixture) {
-  const fixtureTime = getFootyFixtureComparableTime(fixture);
-  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
-  const now = Date.now();
-
-  if (!Number.isFinite(fixtureTime) || !Number.isFinite(pastCutoffTime)) {
-    return isFootyFixtureToday(fixture);
-  }
-
-  return fixtureTime <= now && now <= pastCutoffTime;
 }
 
 function syncFootyPastToggle(fixtures = [], isCompetitionMode = activeFootyScheduleMode === "competitions") {
@@ -3876,58 +3793,6 @@ function syncExpandedFootyPastWeekKeys() {
       expandedFootyPastWeekKeys.add(key);
     }
   });
-}
-
-function groupFootyFixturesByCalendarWeek(fixtures = []) {
-  const groups = [];
-
-  fixtures.forEach((fixture) => {
-    const week = getFootyCalendarWeek(fixture);
-    let group = groups.find((record) => record.key === week.key);
-
-    if (!group) {
-      group = { ...week, fixtures: [] };
-      groups.push(group);
-    }
-
-    group.fixtures.push(fixture);
-  });
-
-  return groups;
-}
-
-function getFootyCalendarWeek(fixture = {}) {
-  const dateKey = getFootyFixtureDateKey(fixture);
-
-  if (!dateKey) {
-    return { key: "date-tbc", label: "Date TBC" };
-  }
-
-  const fixtureDate = new Date(`${dateKey}T12:00:00`);
-
-  if (Number.isNaN(fixtureDate.getTime())) {
-    return { key: "date-tbc", label: "Date TBC" };
-  }
-
-  const weekStart = new Date(fixtureDate);
-  const daysSinceMonday = (weekStart.getDay() + 6) % 7;
-  weekStart.setDate(weekStart.getDate() - daysSinceMonday);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  const startLabel = weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const endLabel = weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-
-  return {
-    key: formatLocalDateKey(weekStart),
-    label: `${startLabel} – ${endLabel}`,
-  };
-}
-
-function formatLocalDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function closeProfileDropdown() {
@@ -4892,13 +4757,6 @@ function isSameFootyTeamName(firstName, secondName) {
   const second = normalizeFootyClubName(secondName);
 
   return Boolean(first && second && first === second);
-}
-
-function normalizeFootyClubName(name) {
-  return normalizeLookupName(name)
-    .replace(/\b(afc|cf|fc|sc)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function openFootyNoteDialog(matchId) {
@@ -12575,7 +12433,7 @@ function renderActivePageContent(pageName = "") {
     return;
   }
   if (pageName === "the-monster-maniac") {
-    void platinumsController.renderPage();
+    startLazyPageRender("platinums", renderPlatinumsPage);
     return;
   }
   if (pageName === "footy") {
@@ -12637,7 +12495,7 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "guides") {
-    guidesController.renderPage();
+    startLazyPageRender("guides", renderGuidesPage);
     return;
   }
 
@@ -12651,22 +12509,22 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "youtube") {
-    youtubeInboxController.renderPage();
+    startLazyPageRender("YouTube inbox", renderYouTubeInboxPage);
     return;
   }
 
   if (pageName === "trophy-stats") {
-    trophyStatsController.renderPage();
+    startLazyPageRender("trophy stats", renderTrophyStatsPage);
     return;
   }
 
   if (pageName === "trophy-log") {
-    void trophyLogController.renderPage();
+    startLazyPageRender("trophy log", renderTrophyLogPage);
     return;
   }
 
   if (pageName === "collectibles") {
-    void collectiblesController.renderPage();
+    startLazyPageRender("collectibles", renderCollectiblesPage);
     return;
   }
 
@@ -12676,7 +12534,7 @@ function renderActivePageContent(pageName = "") {
   }
 
   if (pageName === "draft-list") {
-    draftListsController.renderPage();
+    startLazyPageRender("draft lists", renderDraftListsPage);
     return;
   }
 
@@ -13360,9 +13218,9 @@ function renderFormulaOneCalculatedDetails(data, round = null, open = false) {
     .map((session) => `${session.round}:${session.session_type}`));
   const approvedResults = (data.results || []).filter((result) => approvedKeys.has(`${result.round}:${result.session_type}`));
   const detailResults = round ? approvedResults.filter((result) => Number(result.round) === Number(round.round)) : approvedResults;
-  const comparisons = buildFormulaOneQualifyingComparisons(detailResults, data.drivers || [])
+  const comparisons = formulaOneCalculations.buildFormulaOneQualifyingComparisons(detailResults, data.drivers || [])
     .filter((comparison) => !round || comparison.round === Number(round.round));
-  const calculated = buildFormulaOneMainDatasets({
+  const calculated = formulaOneCalculations.buildFormulaOneMainDatasets({
     year: data.year,
     rounds: round ? [round] : data.rounds || [],
     drivers: data.drivers || [],
@@ -13456,7 +13314,7 @@ function renderFormulaOneReview(feedback = {}) {
   const sessionTypes = getFormulaOneRoundSessionTypes(round);
   const session = getFormulaOneSession(data, round.round, formulaOneReviewSelectedSession);
   const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === formulaOneReviewSelectedSession);
-  const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
+  const comparisons = formulaOneCalculations.buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
   const nextUnapprovedSession = getFormulaOnePendingDatasets(data, round).find((sessionType) => sessionType !== formulaOneReviewSelectedSession);
   const isLastUnapproved = session?.status === "needs_review" && !nextUnapprovedSession;
   const actionMarkup = session?.status === "needs_review"
@@ -13507,7 +13365,7 @@ function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
 }
 
 function renderFormulaOneSeasonQualifyingSummary(comparisons) {
-  const summaries = summarizeFormulaOneQualifyingComparisons(comparisons);
+  const summaries = formulaOneCalculations.summarizeFormulaOneQualifyingComparisons(comparisons);
   return `<div class="formula-one-calculated-summary">
     <strong>Season qualifying comparison</strong>
     <p>Adjusted compares teammates in their latest shared qualifying session. Unadjusted compares each driver's last completed session.</p>
@@ -13696,10 +13554,11 @@ async function ensureFormulaOneAdminData({ force = false, year = formulaOneAdmin
       .finally(() => { formulaOneAdminSeasonsLoadPromise = null; });
   }
   const loadPromise = Promise.all([
+    loadFormulaOneCalculations(),
     formulaOneAdminRequest(`/api/admin/seasons/${encodeURIComponent(yearKey)}/weekly`),
     formulaOneAdminSeasonsLoadPromise || Promise.resolve(),
   ])
-    .then(([result]) => {
+    .then(([, result]) => {
       siteData.formulaOneAdminByYear ||= {};
       siteData.formulaOneAdminByYear[yearKey] = result;
       renderFormulaOneAdminWeekly();
@@ -16528,7 +16387,7 @@ function saveManagerSession(session) {
   siteData.managerSession = session;
   activeRankingManagerId = String(session?.managerId || "");
   resetRankingManagerData();
-  draftListsController.reset();
+  resetDraftListsPage();
   followedTeamsController.reset();
   resetFootyMatchNotifications();
 
@@ -16557,7 +16416,7 @@ function signOutManager() {
   siteData.managerSession = null;
   activeRankingManagerId = "";
   resetRankingManagerData();
-  draftListsController.reset();
+  resetDraftListsPage();
   followedTeamsController.reset();
   resetFootyMatchNotifications();
 
@@ -16726,7 +16585,7 @@ function syncSiteVersionDisplay() {
     return;
   }
 
-  siteVersion.textContent = `v${SITE_VERSION}`;
+  siteVersion.textContent = `v${SITE_RELEASE} · build ${SITE_VERSION}`;
   siteVersion.hidden = false;
 }
 
@@ -19056,6 +18915,10 @@ function getPageDataScope(pageName = "") {
     return "trophy-log";
   }
 
+  if (page === "collectibles") {
+    return "collectibles";
+  }
+
   if (page === "rankings") {
     return "rankings";
   }
@@ -19179,24 +19042,27 @@ function loadPageData(scope) {
   }
 
   if (scope === "guides") {
-    guidesController.renderPage();
-    return Promise.resolve();
+    return renderGuidesPage();
   }
 
   if (scope === "youtube") {
-    return youtubeInboxController.load();
+    return loadYouTubeInboxPage();
   }
 
   if (scope === "the-monster-maniac") {
-    return platinumsController.renderPage();
+    return renderPlatinumsPage();
   }
 
   if (scope === "trophy-stats") {
-    return trophyStatsController.load();
+    return loadTrophyStatsPage();
   }
 
   if (scope === "trophy-log") {
-    return trophyLogController.renderPage();
+    return renderTrophyLogPage();
+  }
+
+  if (scope === "collectibles") {
+    return renderCollectiblesPage();
   }
 
   if (scope === "rankings") {
@@ -19207,7 +19073,7 @@ function loadPageData(scope) {
   }
 
   if (scope === "draft-list") {
-    return draftListsController.load();
+    return loadDraftListsPage();
   }
 
   if (scope === "login") {
@@ -19281,6 +19147,10 @@ function loadPageData(scope) {
 function renderPageDataError(scope, error) {
   const message = getErrorMessage(error);
 
+  if (scope === "youtube") {
+    renderYouTubeInboxLoadError(message);
+  }
+
   if (scope === "footy" && !siteData.footySchedule && footyScheduleList) {
     renderFootyScheduleError(error);
   }
@@ -19314,6 +19184,24 @@ function renderPageDataError(scope, error) {
   if (formulaOneCalculatorMatch) {
     renderFormulaOneCalculatorError(formulaOneCalculatorMatch[1], error);
   }
+}
+
+function renderYouTubeInboxLoadError(message) {
+  const view = document.querySelector("#youtube-inbox-view");
+  if (!view) return;
+  view.innerHTML = `
+    <div class="youtube-state youtube-error-state">
+      <span aria-hidden="true">!</span>
+      <h2>Inbox unavailable</h2>
+      <p>${escapeHtml(message || "Unable to load the YouTube inbox.")}</p>
+      <button class="action-button" type="button" data-youtube-module-retry>Try Again</button>
+    </div>
+  `;
+  view.querySelector("[data-youtube-module-retry]")?.addEventListener("click", () => {
+    view.innerHTML = renderLoadingMessage("Loading YouTube inbox...");
+    pageDataPromises.delete("youtube");
+    void ensurePageData("youtube");
+  }, { once: true });
 }
 
 function getSettledLog(result) {

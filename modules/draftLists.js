@@ -92,7 +92,7 @@ export function createDraftListsController({ getManagerId, request }) {
 
     if (!managerId) {
       renderSignedOut();
-      return;
+      return Promise.resolve();
     }
 
     if (state.loadedManagerId && state.loadedManagerId !== managerId) {
@@ -100,7 +100,8 @@ export function createDraftListsController({ getManagerId, request }) {
     }
 
     render();
-    if (!state.loading && state.loadedManagerId !== managerId) void load().catch(() => undefined);
+    if (!state.loading && state.loadedManagerId !== managerId) return load();
+    return state.loadPromise || Promise.resolve();
   }
 
   async function load(options = {}) {

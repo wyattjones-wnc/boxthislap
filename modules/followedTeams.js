@@ -276,7 +276,7 @@ export function createFollowedTeamsController({
     if (dialogController) return dialogController;
     if (!dialogControllerPromise) {
       dialogControllerPromise =
-        import("./dialogs/followedTeamsDialog.jsx?v=202609120300")
+        import("./dialogs/followedTeamsDialog.jsx?v=202609121804")
           .then(({ createFollowedTeamsDialog }) => {
             dialogController = createFollowedTeamsDialog({
               mount: dialogMount,
@@ -616,32 +616,6 @@ export function partitionPickerTeams(teams = [], defaultIds = []) {
       ),
     others: teams.filter((team) => !defaults.has(String(team.id))),
   };
-}
-
-export function paginatePickerTeams(
-  teams = [],
-  defaultIds = [],
-  requestedPage = 1,
-  pageSize = 5,
-) {
-  const groups = partitionPickerTeams(teams, defaultIds);
-  const defaults = new Set(groups.defaults.map((team) => String(team.id)));
-  const ordered = [...groups.defaults, ...groups.others];
-  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
-  const page = Math.min(pageCount, Math.max(1, Number(requestedPage) || 1));
-  const items = ordered.slice((page - 1) * pageSize, page * pageSize);
-  return {
-    defaults: items.filter((team) => defaults.has(String(team.id))),
-    others: items.filter((team) => !defaults.has(String(team.id))),
-    page,
-    pageCount,
-  };
-}
-
-export function pickerPageSizeForViewport({ height = 800, width = 1024 } = {}) {
-  if (Number(height) < 580) return 2;
-  if (Number(height) < 760 || Number(width) <= 620) return 3;
-  return 5;
 }
 
 export function normalizeSelectableLeague(value) {

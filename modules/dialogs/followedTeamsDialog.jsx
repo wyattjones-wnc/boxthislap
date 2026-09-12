@@ -68,27 +68,14 @@ function FollowedTeamsDialog({
   const scrollRef = useRef(null);
   const searchRef = useRef(null);
   const [leagueId, setLeagueId] = useState("");
-  const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
-  const [viewport, setViewport] = useState(getViewport);
 
   useEffect(() => {
     if (!open) return undefined;
     setLeagueId("");
-    setPage(1);
     setQuery("");
     return undefined;
   }, [open, openKey]);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const handleResize = () => {
-      setViewport(getViewport());
-      setPage(1);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [open]);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
@@ -122,6 +109,23 @@ function FollowedTeamsDialog({
       }
       lastTouchY = touchY;
     };
+    const containWheel = (event) => {
+      if (!scrollArea?.contains(event.target)) {
+        event.preventDefault();
+        return;
+      }
+      const atTop = scrollArea.scrollTop <= 0;
+      const atBottom =
+        Math.ceil(scrollArea.scrollTop + scrollArea.clientHeight) >=
+        scrollArea.scrollHeight;
+      if (
+        scrollArea.scrollHeight <= scrollArea.clientHeight ||
+        (atTop && event.deltaY < 0) ||
+        (atBottom && event.deltaY > 0)
+      ) {
+        event.preventDefault();
+      }
+    };
     document.documentElement.style.setProperty(
       "--followed-teams-scroll-offset",
       `${-scrollY}px`,
@@ -129,11 +133,13 @@ function FollowedTeamsDialog({
     document.documentElement.classList.add("has-followed-teams-dialog");
     dialog.addEventListener("touchstart", rememberTouch, { passive: true });
     dialog.addEventListener("touchmove", containTouch, { passive: false });
+    dialog.addEventListener("wheel", containWheel, { passive: false });
     dialog.showModal();
     window.requestAnimationFrame(() => searchRef.current?.focus());
     return () => {
       dialog.removeEventListener("touchstart", rememberTouch);
       dialog.removeEventListener("touchmove", containTouch);
+      dialog.removeEventListener("wheel", containWheel);
       if (dialog.open) dialog.close();
       document.documentElement.classList.remove("has-followed-teams-dialog");
       document.documentElement.style.removeProperty(
@@ -155,16 +161,10 @@ function FollowedTeamsDialog({
         (!leagueId || team.leagueIds.includes(leagueId)),
     );
   }, [leagueId, query, teams]);
-  const pageState = paginateTeams(
-    visibleTeams,
-    defaultIds,
-    page,
-    pageSizeForViewport(viewport),
+  const groups = useMemo(
+    () => partitionTeams(visibleTeams, defaultIds),
+    [defaultIds, visibleTeams],
   );
-
-  useEffect(() => {
-    if (page !== pageState.page) setPage(pageState.page);
-  }, [page, pageState.page]);
 
   const selected = new Set(selectedIds.map(String));
   const hasChanges = selectedIds.join("\u0000") !== savedIds.join("\u0000");
@@ -202,96 +202,69 @@ function FollowedTeamsDialog({
           ×
         </button>
       </div>
-      <div className="followed-teams-dialog-scroll" ref={scrollRef}>
-        <div className="followed-teams-picker-filters">
-          <label>
-            <span>Search teams</span>
-            <input
-              autoComplete="off"
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by team name"
-              ref={searchRef}
-              type="search"
-              value={query}
-            />
-          </label>
-          <label>
-            <span>Competition</span>
-            <select
-              onChange={(event) => {
-                setLeagueId(event.target.value);
-                setPage(1);
-              }}
-              value={leagueId}
-            >
-              <option value="">All competitions</option>
-              {leagues.map((league) => (
-                <option key={league.id} value={league.id}>
-                  {league.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="followed-teams-picker">
-          {visibleTeams.length ? (
-            <>
-              {pageState.defaults.length ? (
-                <>
-                  <div className="followed-team-picker-group-label">
-                    Default teams
-                  </div>
-                  {pageState.defaults.map((team) =>
-                    renderTeam(team, selected, updateSelection),
-                  )}
-                </>
-              ) : null}
-              {pageState.defaults.length && pageState.others.length ? (
-                <div className="followed-team-picker-divider" role="separator">
-                  <span>Other teams</span>
-                </div>
-              ) : null}
-              {!pageState.defaults.length && pageState.others.length ? (
+      <div className="followed-teams-picker-filters">
+        <label>
+          <span>Search teams</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by team name"
+            ref={searchRef}
+            type="search"
+            value={query}
+          />
+        </label>
+        <label>
+          <span>Competition</span>
+          <select
+            onChange={(event) => setLeagueId(event.target.value)}
+            value={leagueId}
+          >
+            <option value="">All competitions</option>
+            {leagues.map((league) => (
+              <option key={league.id} value={league.id}>
+                {league.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div
+        aria-label="Teams"
+        className="followed-teams-picker"
+        ref={scrollRef}
+        role="region"
+        tabIndex={0}
+      >
+        {visibleTeams.length ? (
+          <>
+            {groups.defaults.length ? (
+              <>
                 <div className="followed-team-picker-group-label">
-                  Other teams
+                  Default teams
                 </div>
-              ) : null}
-              {pageState.others.map((team) =>
-                renderTeam(team, selected, updateSelection),
-              )}
-            </>
-          ) : (
-            <p className="table-message">No teams match those filters.</p>
-          )}
-        </div>
-        <nav
-          aria-label="Team picker pages"
-          className="followed-teams-pagination"
-          hidden={pageState.pageCount <= 1}
-        >
-          <button
-            className="footer-copy-link"
-            disabled={pageState.page <= 1}
-            onClick={() => setPage((value) => value - 1)}
-            type="button"
-          >
-            Previous
-          </button>
-          <span aria-live="polite">
-            Page {pageState.page} of {pageState.pageCount}
-          </span>
-          <button
-            className="footer-copy-link"
-            disabled={pageState.page >= pageState.pageCount}
-            onClick={() => setPage((value) => value + 1)}
-            type="button"
-          >
-            Next
-          </button>
-        </nav>
+                {groups.defaults.map((team) =>
+                  renderTeam(team, selected, updateSelection),
+                )}
+              </>
+            ) : null}
+            {groups.defaults.length && groups.others.length ? (
+              <div className="followed-team-picker-divider" role="separator">
+                <span>Other teams</span>
+              </div>
+            ) : null}
+            {!groups.defaults.length && groups.others.length ? (
+              <div className="followed-team-picker-group-label">
+                Other teams
+              </div>
+            ) : null}
+            {groups.others.map((team) =>
+              renderTeam(team, selected, updateSelection),
+            )}
+          </>
+        ) : (
+          <p className="table-message">No teams match those filters.</p>
+        )}
       </div>
       <div className="followed-teams-dialog-actions">
         <p
@@ -342,7 +315,7 @@ function renderTeam(team, selected, onSelectionChange) {
   );
 }
 
-function paginateTeams(teams, defaultIds, requestedPage, pageSize) {
+function partitionTeams(teams, defaultIds) {
   const defaults = new Set(defaultIds.map(String));
   const defaultOrder = new Map(
     defaultIds.map((id, index) => [String(id), index]),
@@ -353,26 +326,10 @@ function paginateTeams(teams, defaultIds, requestedPage, pageSize) {
       (left, right) => defaultOrder.get(left.id) - defaultOrder.get(right.id),
     );
   const otherTeams = teams.filter((team) => !defaults.has(team.id));
-  const ordered = [...defaultTeams, ...otherTeams];
-  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
-  const page = Math.min(pageCount, Math.max(1, Number(requestedPage) || 1));
-  const items = ordered.slice((page - 1) * pageSize, page * pageSize);
   return {
-    defaults: items.filter((team) => defaults.has(team.id)),
-    others: items.filter((team) => !defaults.has(team.id)),
-    page,
-    pageCount,
+    defaults: defaultTeams,
+    others: otherTeams,
   };
-}
-
-function pageSizeForViewport({ height, width }) {
-  if (height < 580) return 2;
-  if (height < 760 || width <= 620) return 3;
-  return 5;
-}
-
-function getViewport() {
-  return { height: window.innerHeight, width: window.innerWidth };
 }
 
 function normalize(value) {

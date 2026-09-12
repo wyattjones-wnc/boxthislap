@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { effectiveTeamIds, followedTeamBadge, normalizeLeagues, normalizeSelectableLeague, paginatePickerTeams, partitionPickerTeams, personalTeamIds, pickerPageSizeForViewport } from "./followedTeams.js";
+import {
+  effectiveTeamIds,
+  followedTeamBadge,
+  normalizeLeagues,
+  normalizeSelectableLeague,
+  partitionPickerTeams,
+  personalTeamIds,
+} from "./followedTeams.js";
 
 test("team picker shows unique canonical domestic leagues", () => {
   const response = {
@@ -23,7 +30,15 @@ test("team picker shows unique canonical domestic leagues", () => {
 });
 
 test("team picker excludes friendlies and cup competitions", () => {
-  for (const name of ["Club Friendlies", "MLS Preseason Friendlies", "EFL Cup", "Community Shield", "UEFA Champions League", "Supercopa de España", "International"]) {
+  for (const name of [
+    "Club Friendlies",
+    "MLS Preseason Friendlies",
+    "EFL Cup",
+    "Community Shield",
+    "UEFA Champions League",
+    "Supercopa de España",
+    "International",
+  ]) {
     assert.equal(normalizeSelectableLeague(name), null, name);
   }
 });
@@ -42,37 +57,41 @@ test("default teams are listed before all other picker teams", () => {
 });
 
 test("known followed teams use their canonical local badges", () => {
-  assert.equal(followedTeamBadge({ badge: "assets/teams/usmnt.svg", id: "4" }), "assets/teams/4/badge.svg");
-  assert.equal(followedTeamBadge({ badge: "assets/teams/uswnt.svg", id: "5" }), "assets/teams/5/badge.svg");
-  assert.equal(followedTeamBadge({ badge: "assets/teams/charlotte-fc.svg", id: "6" }), "assets/teams/6/badge.svg");
-  assert.equal(followedTeamBadge({ badge: "assets/teams/inter-miami-cf.webp", id: "7" }), "assets/teams/7/badge.svg");
-  assert.equal(followedTeamBadge({ badge: "https://example.com/team.png", id: "team:other" }), "https://example.com/team.png");
+  assert.equal(
+    followedTeamBadge({ badge: "assets/teams/usmnt.svg", id: "4" }),
+    "assets/teams/4/badge.svg",
+  );
+  assert.equal(
+    followedTeamBadge({ badge: "assets/teams/uswnt.svg", id: "5" }),
+    "assets/teams/5/badge.svg",
+  );
+  assert.equal(
+    followedTeamBadge({ badge: "assets/teams/charlotte-fc.svg", id: "6" }),
+    "assets/teams/6/badge.svg",
+  );
+  assert.equal(
+    followedTeamBadge({ badge: "assets/teams/inter-miami-cf.webp", id: "7" }),
+    "assets/teams/7/badge.svg",
+  );
+  assert.equal(
+    followedTeamBadge({
+      badge: "https://example.com/team.png",
+      id: "team:other",
+    }),
+    "https://example.com/team.png",
+  );
 });
 
 test("inherited preferences always resolve to the public site defaults", () => {
-  assert.deepEqual(effectiveTeamIds(["1", "2"], { teams: [], usingDefault: true }), ["1", "2"]);
-  assert.deepEqual(effectiveTeamIds(["1", "2"], { teams: [{ priority: 1, teamId: "7" }], usingDefault: false }), ["7"]);
-});
-
-test("team picker paginates the ordered default-first catalog", () => {
-  const teams = Array.from({ length: 12 }, (_, index) => ({ id: String(index + 1) }));
-  assert.deepEqual(paginatePickerTeams(teams, ["7", "2"], 1), {
-    defaults: [{ id: "7" }, { id: "2" }],
-    others: [{ id: "1" }, { id: "3" }, { id: "4" }],
-    page: 1,
-    pageCount: 3,
-  });
-  assert.deepEqual(paginatePickerTeams(teams, ["7", "2"], 99), {
-    defaults: [],
-    others: [{ id: "11" }, { id: "12" }],
-    page: 3,
-    pageCount: 3,
-  });
-});
-
-test("team picker uses smaller pages instead of scrolling on compact viewports", () => {
-  assert.equal(pickerPageSizeForViewport({ height: 900, width: 1200 }), 5);
-  assert.equal(pickerPageSizeForViewport({ height: 700, width: 1200 }), 3);
-  assert.equal(pickerPageSizeForViewport({ height: 900, width: 600 }), 3);
-  assert.equal(pickerPageSizeForViewport({ height: 540, width: 400 }), 2);
+  assert.deepEqual(
+    effectiveTeamIds(["1", "2"], { teams: [], usingDefault: true }),
+    ["1", "2"],
+  );
+  assert.deepEqual(
+    effectiveTeamIds(["1", "2"], {
+      teams: [{ priority: 1, teamId: "7" }],
+      usingDefault: false,
+    }),
+    ["7"],
+  );
 });

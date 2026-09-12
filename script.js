@@ -464,7 +464,7 @@ import {
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609100137";
+import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
 import {
   formatUpdatedTime,
   normalizeLookupName,

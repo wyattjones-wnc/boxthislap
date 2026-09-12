@@ -89,7 +89,7 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
-test("followed-team picker loads on demand and preserves mobile input state", async ({
+test("followed-team picker loads on demand with a contained mobile scroll list", async ({
   page,
 }) => {
   /** @type {string[]} */
@@ -120,9 +120,22 @@ test("followed-team picker loads on demand and preserves mobile input state", as
       Number.parseFloat(getComputedStyle(input).fontSize),
     ),
   ).toBeGreaterThanOrEqual(16);
+  expect(
+    await search.evaluate((input) => input.getBoundingClientRect().height),
+  ).toBeGreaterThanOrEqual(48);
   await expect(page.locator("body")).toHaveCSS("position", "fixed");
+  const teamList = dialog.getByRole("region", { name: "Teams" });
+  await expect(
+    dialog.getByRole("navigation", { name: "Team picker pages" }),
+  ).toHaveCount(0);
+  await expect(dialog.getByRole("checkbox")).toHaveCount(26);
+  expect(
+    await teamList.evaluate(
+      (list) => list.scrollHeight > list.clientHeight && list.clientHeight > 0,
+    ),
+  ).toBe(true);
   const boundaryTouchWasContained = await dialog
-    .locator(".followed-teams-dialog-scroll")
+    .locator(".followed-teams-picker")
     .evaluate((scrollArea) => {
       const event = new Event("touchmove", {
         bubbles: true,
@@ -134,6 +147,16 @@ test("followed-team picker loads on demand and preserves mobile input state", as
       return !scrollArea.dispatchEvent(event);
     });
   expect(boundaryTouchWasContained).toBe(true);
+  const boundaryWheelWasContained = await teamList.evaluate((scrollArea) => {
+    scrollArea.scrollTop = scrollArea.scrollHeight;
+    const event = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY: 100,
+    });
+    return !scrollArea.dispatchEvent(event);
+  });
+  expect(boundaryWheelWasContained).toBe(true);
 
   await search.fill("Barcelona");
   await expect(dialog.getByText("Barcelona", { exact: true })).toBeVisible();
@@ -270,6 +293,13 @@ async function prepareAuthenticatedFollowedTeams(page) {
         return route.fulfill({ headers: corsHeaders, status: 204 });
       }
       if (url.pathname === "/api/teams") {
+        const extraTeams = Array.from({ length: 24 }, (_, index) => ({
+          active: true,
+          id: String(index + 3),
+          leagues: [{ id: "test-league", name: "Test League" }],
+          name: `Test Team ${String(index + 1).padStart(2, "0")}`,
+          prettyName: `Test Team ${String(index + 1).padStart(2, "0")}`,
+        }));
         return route.fulfill({
           body: JSON.stringify({
             defaultTeamIds: ["1"],
@@ -290,6 +320,7 @@ async function prepareAuthenticatedFollowedTeams(page) {
                 name: "Barcelona",
                 prettyName: "FC Barcelona",
               },
+              ...extraTeams,
             ],
           }),
           contentType: "application/json",

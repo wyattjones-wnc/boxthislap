@@ -8,8 +8,8 @@
     "check": "npm run check:types && npm run lint && npm run format:check && npm run test:unit && npm run build",
     "check:types": "tsc --project tsconfig.tooling.json",
     "check:psn": "tsc --project workers/psn-trophies/tsconfig.json && wrangler deploy --dry-run --config workers/psn-trophies/wrangler.toml --outdir .tmp/psn-trophies-dry-run",
-    "lint": "eslint eslint.config.js vite.config.js playwright.config.js scripts/prepare-site-build.mjs scripts/run-mobile-smoke.mjs scripts/verify-site-build.mjs tests",
-    "format:check": "prettier --check package.json eslint.config.js vite.config.js playwright.config.js tsconfig.tooling.json scripts/prepare-site-build.mjs scripts/run-mobile-smoke.mjs scripts/verify-site-build.mjs tests .github/workflows/quality.yml .github/workflows/pages.yml",
+    "lint": "eslint eslint.config.js vite.config.js playwright.config.js modules/dialogs scripts/prepare-site-build.mjs scripts/run-mobile-smoke.mjs scripts/verify-site-build.mjs tests",
+    "format:check": "prettier --check package.json eslint.config.js vite.config.js playwright.config.js tsconfig.tooling.json modules/dialogs scripts/prepare-site-build.mjs scripts/run-mobile-smoke.mjs scripts/verify-site-build.mjs tests .github/workflows/quality.yml .github/workflows/pages.yml",
     "collectibles:sync": "node scripts/collectibles/sync.mjs",
     "refresh:psn-auth": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-psn-auth.ps1",
     "test:collectibles": "node --test scripts/collectibles/*.test.mjs",
@@ -36,6 +36,8 @@
     "wrangler": "^4.119.0"
   },
   "dependencies": {
-    "psn-api": "^2.18.1"
+    "psn-api": "^2.18.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

@@ -179,7 +179,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.12.02.38";
+      window.BOX_THIS_LAP_VERSION = "2026.09.12.03.05";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +193,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609120238">
+    <link rel="stylesheet" href="styles.css?v=202609120305">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -462,26 +462,7 @@
         </div>
       </section>
 
-      <dialog class="followed-teams-dialog" id="followed-teams-dialog" aria-labelledby="followed-teams-dialog-title">
-        <div class="followed-teams-dialog-heading">
-          <h2 id="followed-teams-dialog-title">Add teams</h2>
-          <button class="dialog-close" id="followed-teams-dialog-close" type="button" aria-label="Close team picker">×</button>
-        </div>
-        <div class="followed-teams-picker-filters">
-          <label><span>Search teams</span><input id="followed-teams-search" type="search" autocomplete="off" placeholder="Search by team name"></label>
-          <label><span>Competition</span><select id="followed-teams-league"><option value="">All competitions</option></select></label>
-        </div>
-        <div class="followed-teams-picker" id="followed-teams-picker"></div>
-        <nav class="followed-teams-pagination" id="followed-teams-pagination" aria-label="Team picker pages" hidden>
-          <button class="footer-copy-link" id="followed-teams-page-previous" type="button">Previous</button>
-          <span id="followed-teams-page-status" aria-live="polite"></span>
-          <button class="footer-copy-link" id="followed-teams-page-next" type="button">Next</button>
-        </nav>
-        <div class="followed-teams-dialog-actions">
-          <p class="followed-teams-dialog-status" id="followed-teams-dialog-status" role="status" aria-live="polite"></p>
-          <button class="action-button" id="followed-teams-dialog-done" type="button">Done</button>
-        </div>
-      </dialog>
+      <div id="followed-teams-dialog-root"></div>
 
       <section class="page admin-hub-page" id="the-monster-maniac" data-page="the-monster-maniac" data-admin-only hidden>
         <div class="section-heading page-heading-with-action admin-home-heading">
@@ -2899,6 +2880,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609120238"></script>
+    <script type="module" src="script.js?v=202609120305"></script>
   </body>
 </html>

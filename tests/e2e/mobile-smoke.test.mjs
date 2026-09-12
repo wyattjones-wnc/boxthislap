@@ -89,6 +89,55 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
+test("followed-team picker loads on demand and preserves mobile input state", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const dialogBundleRequests = [];
+  page.on("request", (request) => {
+    if (
+      /\/followedTeamsDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)
+    ) {
+      dialogBundleRequests.push(request.url());
+    }
+  });
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.goto("/#account-settings", { waitUntil: "networkidle" });
+
+  expect(dialogBundleRequests).toEqual([]);
+  const addTeams = page.locator("#followed-teams-add");
+  await expect(addTeams).toBeVisible();
+  await expect(addTeams).toBeEnabled();
+  await addTeams.click();
+
+  const dialog = page.getByRole("dialog", { name: "Add teams" });
+  const search = dialog.getByRole("searchbox", { name: "Search teams" });
+  await expect(dialog).toBeVisible();
+  await expect(search).toBeFocused();
+  expect(dialogBundleRequests).toHaveLength(1);
+
+  await search.fill("Barcelona");
+  await expect(dialog.getByText("Barcelona", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Arsenal", { exact: true })).toHaveCount(0);
+  await search.fill("");
+  await dialog.getByRole("checkbox", { name: /Barcelona/ }).check();
+  await expect(
+    dialog.getByRole("button", { name: "Save teams" }),
+  ).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await addTeams.click();
+  await expect(
+    dialog.getByRole("checkbox", { name: /Barcelona/ }),
+  ).toBeChecked();
+  await dialog.getByRole("button", { name: "Close team picker" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("html")).not.toHaveClass(
+    /has-followed-teams-dialog/,
+  );
+});
+
 /** @param {import("@playwright/test").Page} page */
 async function prepareFootyFixture(page) {
   await page.route("**/data/footy-schedule.json*", async (route) => {
@@ -161,6 +210,85 @@ async function prepareFootyFixture(page) {
           ],
         }),
         contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+}
+
+/** @param {import("@playwright/test").Page} page */
+async function prepareAuthenticatedFollowedTeams(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        managerId: "6",
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00.000Z",
+          accessToken: "test-access-token",
+        },
+      }),
+    );
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const corsHeaders = {
+        "access-control-allow-headers":
+          "authorization,content-type,x-box-this-lap-channel",
+        "access-control-allow-methods": "GET,PUT,OPTIONS",
+        "access-control-allow-origin": "*",
+      };
+      if (request.method() === "OPTIONS") {
+        return route.fulfill({ headers: corsHeaders, status: 204 });
+      }
+      if (url.pathname === "/api/teams") {
+        return route.fulfill({
+          body: JSON.stringify({
+            defaultTeamIds: ["1"],
+            leagues: [],
+            ok: true,
+            teams: [
+              {
+                active: true,
+                id: "1",
+                leagues: [{ id: "premier-league", name: "Premier League" }],
+                name: "Arsenal",
+                prettyName: "Arsenal",
+              },
+              {
+                active: true,
+                id: "2",
+                leagues: [{ id: "la-liga", name: "La Liga" }],
+                name: "Barcelona",
+                prettyName: "FC Barcelona",
+              },
+            ],
+          }),
+          contentType: "application/json",
+          headers: corsHeaders,
+          status: 200,
+        });
+      }
+
+      const selectedIds = request.method() === "PUT" ? ["1", "2"] : ["1"];
+      return route.fulfill({
+        body: JSON.stringify({
+          ok: true,
+          revision: request.method() === "PUT" ? 2 : 1,
+          teams: selectedIds.map((teamId, index) => ({
+            notificationsEnabled: true,
+            priority: index + 1,
+            teamId,
+          })),
+          usingDefault: false,
+        }),
+        contentType: "application/json",
+        headers: corsHeaders,
         status: 200,
       });
     },

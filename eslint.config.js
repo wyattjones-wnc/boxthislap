@@ -34,4 +34,16 @@ export default [
       ...js.configs.recommended.rules,
     },
   },
+  {
+    files: ["modules/dialogs/**/*.jsx"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      sourceType: "module",
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+    },
+  },
 ];

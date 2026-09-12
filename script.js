@@ -1,10 +1,5 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import {
-  buildFormulaOneMainDatasets,
-  buildFormulaOneQualifyingComparisons,
-  summarizeFormulaOneQualifyingComparisons,
-} from "./modules/formulaOneQualifying.js?v=202609110445";
-import {
   buildFootyNextItemDefaults,
   findFootyFixtureBySharedIdentity,
   getFootyFixtureSourceIdentities,
@@ -679,6 +674,7 @@ let rankingAuthorizationPromise = null;
 let rankingAuthorizationRefreshTimer = 0;
 const formulaOneAdminLoadPromises = new Map();
 let formulaOneAdminSeasonsLoadPromise = null;
+let formulaOneCalculations = null;
 let formulaOneAdminSelectedYear = "2026";
 let formulaOneAdminSelectedRound = "";
 let formulaOneAdminSelectedSession = "qualifying";
@@ -797,6 +793,10 @@ const loadCollectiblesController = createLazyControllerLoader(async () => {
     getAccessToken: ensureRankingAuthorization,
     catalogPath: `data/collectibles-catalog.json?v=${encodeURIComponent(SITE_VERSION)}`,
   });
+});
+const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
+  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609112230");
+  return formulaOneCalculations;
 });
 
 function createLazyControllerLoader(factory) {
@@ -13497,9 +13497,9 @@ function renderFormulaOneCalculatedDetails(data, round = null, open = false) {
     .map((session) => `${session.round}:${session.session_type}`));
   const approvedResults = (data.results || []).filter((result) => approvedKeys.has(`${result.round}:${result.session_type}`));
   const detailResults = round ? approvedResults.filter((result) => Number(result.round) === Number(round.round)) : approvedResults;
-  const comparisons = buildFormulaOneQualifyingComparisons(detailResults, data.drivers || [])
+  const comparisons = formulaOneCalculations.buildFormulaOneQualifyingComparisons(detailResults, data.drivers || [])
     .filter((comparison) => !round || comparison.round === Number(round.round));
-  const calculated = buildFormulaOneMainDatasets({
+  const calculated = formulaOneCalculations.buildFormulaOneMainDatasets({
     year: data.year,
     rounds: round ? [round] : data.rounds || [],
     drivers: data.drivers || [],
@@ -13593,7 +13593,7 @@ function renderFormulaOneReview(feedback = {}) {
   const sessionTypes = getFormulaOneRoundSessionTypes(round);
   const session = getFormulaOneSession(data, round.round, formulaOneReviewSelectedSession);
   const results = (data.results || []).filter((result) => Number(result.round) === Number(round.round) && result.session_type === formulaOneReviewSelectedSession);
-  const comparisons = buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
+  const comparisons = formulaOneCalculations.buildFormulaOneQualifyingComparisons(data.results || [], data.drivers || []);
   const nextUnapprovedSession = getFormulaOnePendingDatasets(data, round).find((sessionType) => sessionType !== formulaOneReviewSelectedSession);
   const isLastUnapproved = session?.status === "needs_review" && !nextUnapprovedSession;
   const actionMarkup = session?.status === "needs_review"
@@ -13644,7 +13644,7 @@ function renderFormulaOneQualifyingReviewTable(data, results, comparisons) {
 }
 
 function renderFormulaOneSeasonQualifyingSummary(comparisons) {
-  const summaries = summarizeFormulaOneQualifyingComparisons(comparisons);
+  const summaries = formulaOneCalculations.summarizeFormulaOneQualifyingComparisons(comparisons);
   return `<div class="formula-one-calculated-summary">
     <strong>Season qualifying comparison</strong>
     <p>Adjusted compares teammates in their latest shared qualifying session. Unadjusted compares each driver's last completed session.</p>
@@ -13833,10 +13833,11 @@ async function ensureFormulaOneAdminData({ force = false, year = formulaOneAdmin
       .finally(() => { formulaOneAdminSeasonsLoadPromise = null; });
   }
   const loadPromise = Promise.all([
+    loadFormulaOneCalculations(),
     formulaOneAdminRequest(`/api/admin/seasons/${encodeURIComponent(yearKey)}/weekly`),
     formulaOneAdminSeasonsLoadPromise || Promise.resolve(),
   ])
-    .then(([result]) => {
+    .then(([, result]) => {
       siteData.formulaOneAdminByYear ||= {};
       siteData.formulaOneAdminByYear[yearKey] = result;
       renderFormulaOneAdminWeekly();

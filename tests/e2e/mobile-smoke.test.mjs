@@ -115,6 +115,25 @@ test("followed-team picker loads on demand and preserves mobile input state", as
   await expect(dialog).toBeVisible();
   await expect(search).toBeFocused();
   expect(dialogBundleRequests).toHaveLength(1);
+  expect(
+    await search.evaluate((input) =>
+      Number.parseFloat(getComputedStyle(input).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(16);
+  await expect(page.locator("body")).toHaveCSS("position", "fixed");
+  const boundaryTouchWasContained = await dialog
+    .locator(".followed-teams-dialog-scroll")
+    .evaluate((scrollArea) => {
+      const event = new Event("touchmove", {
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(event, "touches", {
+        value: [{ clientY: 100 }],
+      });
+      return !scrollArea.dispatchEvent(event);
+    });
+  expect(boundaryTouchWasContained).toBe(true);
 
   await search.fill("Barcelona");
   await expect(dialog.getByText("Barcelona", { exact: true })).toBeVisible();
@@ -125,12 +144,16 @@ test("followed-team picker loads on demand and preserves mobile input state", as
     dialog.getByRole("button", { name: "Save teams" }),
   ).toBeVisible();
 
-  await page.keyboard.press("Escape");
+  await dialog.getByRole("button", { name: "Close team picker" }).click();
   await expect(dialog).toBeHidden();
   await addTeams.click();
   await expect(
     dialog.getByRole("checkbox", { name: /Barcelona/ }),
   ).toBeChecked();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await addTeams.click();
+  await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Close team picker" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator("html")).not.toHaveClass(

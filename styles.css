@@ -9399,6 +9399,7 @@ tr:last-child td {
   max-height: min(680px, calc(100dvh - 24px));
   max-width: 680px;
   overflow: hidden;
+  overscroll-behavior: contain;
   padding: 20px;
   width: calc(100% - 28px);
 }
@@ -9419,7 +9420,7 @@ html.has-followed-teams-dialog body {
 
 .followed-teams-dialog[open] {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .followed-teams-dialog::backdrop {
@@ -9429,6 +9430,13 @@ html.has-followed-teams-dialog body {
 .followed-teams-dialog h2,
 .followed-teams-dialog p {
   margin: 0;
+}
+
+.followed-teams-dialog-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .followed-teams-dialog p {
@@ -9464,8 +9472,7 @@ html.has-followed-teams-dialog body {
 
 .followed-teams-picker {
   min-height: 0;
-  overflow: hidden;
-  touch-action: none;
+  overflow: visible;
 }
 
 .followed-team-picker-group-label {
@@ -11258,5 +11265,15 @@ html.has-followed-teams-dialog body {
 
   .draft-list-dialog-checks {
     grid-template-columns: 1fr;
+  }
+}
+
+/* iOS zooms focused form controls below 16px. Keep this final so later
+   component font shorthands cannot override the mobile input safeguard. */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }

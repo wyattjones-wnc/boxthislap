@@ -6,10 +6,12 @@ import {
 } from "./modules/formulaOneQualifying.js?v=202609110445";
 import {
   buildFootyNextItemDefaults,
+  findFootyFixtureBySharedIdentity,
+  getFootyFixtureSourceIdentities,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
   shouldOfferFootyMatchNotification,
-} from "./modules/footyMatchActions.js?v=202609080422";
+} from "./modules/footyMatchActions.js?v=202609120141";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -2449,12 +2451,24 @@ function getFootyScheduleFixtures(schedule) {
       });
     })
   );
-  const fixtureMap = new Map();
+  const fixtureRecords = [];
+  const fixtureRecordsByIdentity = new Map();
   [...trackedFixtures, ...competitionFixtures].forEach((fixture) => {
-    const key = `${fixture.matchId || fixture.id}|${fixture.teamId}`;
-    if (!fixtureMap.has(key)) fixtureMap.set(key, fixture);
+    const identities = getFootyFixtureMergeIdentities(fixture);
+    const existingRecord = identities
+      .map((identity) => fixtureRecordsByIdentity.get(identity))
+      .find(Boolean);
+    const record = existingRecord || { fixture };
+
+    if (existingRecord) {
+      record.fixture = mergeFootyScheduleFixtures(record.fixture, fixture);
+    } else {
+      fixtureRecords.push(record);
+    }
+
+    identities.forEach((identity) => fixtureRecordsByIdentity.set(identity, record));
   });
-  const fixtures = [...fixtureMap.values()];
+  const fixtures = fixtureRecords.map((record) => record.fixture);
   const teamBadges = getFootyTeamBadgeMap(fixtures);
 
   return fixtures
@@ -2467,6 +2481,40 @@ function getFootyScheduleFixtures(schedule) {
         String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
         String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
     });
+}
+
+function getFootyFixtureMergeIdentities(fixture = {}) {
+  const teamId = String(fixture.teamId || "").trim();
+  const sourceIdentities = getFootyFixtureSourceIdentities(fixture)
+    .map((identity) => `source:${identity}|team:${teamId}`);
+  const eventIdentity = [
+    getFootyFixtureDateKey(fixture),
+    normalizeFootyClubName(fixture.home),
+    normalizeFootyClubName(fixture.away),
+    getFootyCanonicalCompetition(fixture.league).key,
+    teamId,
+  ].join("|");
+
+  return [...new Set([...sourceIdentities, `event:${eventIdentity}`])].filter(Boolean);
+}
+
+function mergeFootyScheduleFixtures(existing = {}, fixture = {}) {
+  const preferred = hasFootyMatchNoteData(existing) || !hasFootyMatchNoteData(fixture) ? existing : fixture;
+  const secondary = preferred === existing ? fixture : existing;
+
+  return {
+    ...secondary,
+    ...preferred,
+    isCompetitionFixture: Boolean(preferred.isCompetitionFixture),
+    sourceIds: { ...(secondary.sourceIds || {}), ...(preferred.sourceIds || {}) },
+    followedTeamNames: [...new Set([
+      ...(existing.followedTeamNames || [existing.teamName]),
+      ...(fixture.followedTeamNames || [fixture.teamName]),
+    ].filter(Boolean))],
+    homeBadge: preferred.homeBadge || secondary.homeBadge || "",
+    awayBadge: preferred.awayBadge || secondary.awayBadge || "",
+    teamBadge: preferred.teamBadge || secondary.teamBadge || "",
+  };
 }
 
 function getFootyTeamBadgeMap(fixtures = []) {
@@ -2731,8 +2779,10 @@ function getFootyCompetitionFixtures(fixtures = [], competitionKey = "", competi
     const followedBadges = getFootyFollowedTeamBadgeMap(fixtures);
 
     return (Array.isArray(fullSchedule.fixtures) ? fullSchedule.fixtures : []).map((fixture) => {
-      const matchId = getFootyCompetitionFixtureMatchId(fixture);
-      const followedFixture = followedByMatchId.get(matchId);
+      const competitionMatchId = getFootyCompetitionFixtureMatchId(fixture);
+      const followedFixture = followedByMatchId.get(competitionMatchId) ||
+        findFootyFixtureBySharedIdentity(fixtures, fixture);
+      const matchId = followedFixture?.matchId || competitionMatchId;
       const matchNote = followedFixture?.matchNote || getFootyMatchNoteById(matchId);
 
       return {

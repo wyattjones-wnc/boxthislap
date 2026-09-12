@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildFootyNextItemDefaults,
+  findFootyFixtureBySharedIdentity,
+  getFootyFixtureSourceIdentities,
   getFootyNotificationFixtures,
   isFootyFixtureFollowed,
   shouldOfferFootyMatchNotification,
@@ -14,6 +16,29 @@ test("notification fixtures include and deduplicate full competition matches", (
     competitionSchedules: [{ fixtures: [shared, extra] }],
     teamSchedules: [{ fixtures: [shared] }],
   }).map((fixture) => fixture.matchId), ["match-1", "match-2"]);
+});
+
+test("shared provider IDs reconcile fixtures with different generated match IDs", () => {
+  const followed = {
+    away: "Inter Miami CF",
+    home: "Chicago Fire FC",
+    matchId: "footy_c0fb8d3eca3c",
+    matchNote: { awayScore: "2", homeScore: "1" },
+    sourceIds: { iCalendar: "MLS-MAT-0009KR" },
+  };
+  const competition = {
+    away: "Inter Miami CF",
+    home: "Chicago Fire FC",
+    matchId: "footy_comp_icalendar_mls_mat_0009kr",
+    sourceIds: { iCalendar: "MLS-MAT-0009KR" },
+  };
+
+  assert.deepEqual(getFootyFixtureSourceIdentities(competition), ["icalendar:mls-mat-0009kr"]);
+  assert.equal(findFootyFixtureBySharedIdentity([followed], competition), followed);
+  assert.deepEqual(getFootyNotificationFixtures({
+    teamSchedules: [{ fixtures: [followed] }],
+    competitionSchedules: [{ fixtures: [competition] }],
+  }), [followed]);
 });
 
 test("a fixture is followed when any canonical side is selected", () => {

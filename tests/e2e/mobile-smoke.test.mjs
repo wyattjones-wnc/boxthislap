@@ -147,6 +147,38 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
       return !scrollArea.dispatchEvent(event);
     });
   expect(boundaryTouchWasContained).toBe(true);
+  const pullRefreshWasSuppressed = await teamList.evaluate((scrollArea) => {
+    /**
+     * @param {string} type
+     * @param {number} clientY
+     */
+    const dispatchTouch = (type, clientY) => {
+      const event = new Event(type, {
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(event, "touches", {
+        value: type === "touchend" ? [] : [{ clientY }],
+      });
+      scrollArea.dispatchEvent(event);
+    };
+    scrollArea.scrollTop = scrollArea.scrollHeight;
+    dispatchTouch("touchstart", 100);
+    dispatchTouch("touchmove", 300);
+    const wasPulling = document.body.classList.contains("is-pulling-refresh");
+    dispatchTouch("touchend", 300);
+    return {
+      pullDistance: getComputedStyle(document.documentElement)
+        .getPropertyValue("--pull-refresh-distance")
+        .trim(),
+      wasPulling,
+    };
+  });
+  expect(pullRefreshWasSuppressed).toEqual({
+    pullDistance: "0px",
+    wasPulling: false,
+  });
+  expect(new URL(page.url()).searchParams.has("refresh")).toBe(false);
   const boundaryWheelWasContained = await teamList.evaluate((scrollArea) => {
     scrollArea.scrollTop = scrollArea.scrollHeight;
     const event = new WheelEvent("wheel", {

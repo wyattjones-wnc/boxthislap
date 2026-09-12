@@ -72,6 +72,15 @@
           document.body?.classList.toggle("is-pull-ready", pullDistance >= refreshThreshold);
         }
 
+        function stopTrackingPull() {
+          isTrackingPull = false;
+          setPullDistance(0);
+        }
+
+        function hasOpenDialog() {
+          return Boolean(document.querySelector("dialog[open]"));
+        }
+
         window.boxThisLapHardRefresh = hardRefresh;
         window.boxThisLapMarkReady = () => {
           isShellReady = true;
@@ -133,8 +142,8 @@
           document.querySelector("[data-hard-refresh]")?.addEventListener("click", hardRefresh);
 
           document.addEventListener("touchstart", (event) => {
-            if (event.touches.length !== 1 || window.scrollY > 0) {
-              isTrackingPull = false;
+            if (hasOpenDialog() || event.touches.length !== 1 || window.scrollY > 0) {
+              stopTrackingPull();
               return;
             }
 
@@ -143,6 +152,11 @@
           }, { passive: true });
 
           document.addEventListener("touchmove", (event) => {
+            if (hasOpenDialog()) {
+              stopTrackingPull();
+              return;
+            }
+
             if (!isTrackingPull || event.touches.length !== 1) {
               return;
             }
@@ -162,6 +176,11 @@
           }, { passive: false });
 
           document.addEventListener("touchend", () => {
+            if (hasOpenDialog()) {
+              stopTrackingPull();
+              return;
+            }
+
             if (!isTrackingPull) {
               return;
             }
@@ -179,7 +198,7 @@
       })();
     </script>
     <script>
-      window.BOX_THIS_LAP_VERSION = "2026.09.12.18.04";
+      window.BOX_THIS_LAP_VERSION = "2026.09.12.21.44";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -193,7 +212,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609121804">
+    <link rel="stylesheet" href="styles.css?v=202609122144">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -2880,6 +2899,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609121804"></script>
+    <script type="module" src="script.js?v=202609122144"></script>
   </body>
 </html>

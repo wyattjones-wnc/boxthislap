@@ -46,8 +46,8 @@ jobs:
           mkdir -p _site
 
           if node -e "const pkg=require('./main-site/package.json'); process.exit(pkg.scripts?.build ? 0 : 1)"; then
-            npm ci --prefix main-site
-            npm run --prefix main-site build
+            npm --prefix main-site ci
+            npm --prefix main-site run build
             rsync -a main-site/dist/ _site/
           else
             rsync -a --exclude='.git' --exclude='.github' main-site/ _site/
@@ -56,12 +56,20 @@ jobs:
           mkdir -p _site/dev
 
           if node -e "const pkg=require('./dev-site/package.json'); process.exit(pkg.scripts?.build ? 0 : 1)"; then
-            npm ci --prefix dev-site
-            npm run --prefix dev-site build
+            npm --prefix dev-site ci
+            npm --prefix dev-site run build
             rsync -a dev-site/dist/ _site/dev/
           else
             rsync -a --exclude='.git' --exclude='.github' dev-site/ _site/dev/
           fi
+
+          node <<'NODE'
+          const { readFileSync } = require("node:fs");
+          const html = readFileSync("_site/dev/index.html", "utf8");
+          if (!/\.\/build\/index-[^"']+\.js/.test(html)) {
+            throw new Error("The dev Pages artifact does not reference the compiled Vite entrypoint.");
+          }
+          NODE
 
           VERSION="$(date -u +'%Y.%m.%d').${GITHUB_RUN_NUMBER}"
           CACHE_VERSION="$(echo "$VERSION" | tr -cd '0-9')"

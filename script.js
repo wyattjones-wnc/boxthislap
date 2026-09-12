@@ -9,6 +9,26 @@ import {
   shouldOfferFootyMatchNotification,
 } from "./modules/footyMatchActions.js?v=202609120141";
 import {
+  compareFootyFixturesAscending,
+  compareFootyFixturesDescending,
+  getDefaultFootyTeams,
+  getFootyFilterTeams,
+  getFootyFixtureComparableTime,
+  getFootyFixtureDateKey,
+  getFootyFixtureSearchText,
+  getFootyFixtureTimingLabel,
+  getFootyTeamFilterKey,
+  groupFootyFixturesByCalendarWeek,
+  hasFootyMatchNoteData,
+  isFootyFixtureInDateRange,
+  isFootyFixturePast,
+  isFootyFixtureStarted,
+  isFootyFriendlyFixture,
+  normalizeFootyClubName,
+  normalizeFootyDateRange,
+  normalizeFootyPriority,
+} from "./modules/footyFixtures.js?v=202609120300";
+import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
   MANAGER_SESSION_STORAGE_KEY,
@@ -2941,30 +2961,6 @@ function getFilteredFootyFixtures(fixtures) {
   });
 }
 
-function isFootyFriendlyFixture(fixture = {}) {
-  if (typeof fixture.isFriendly === "boolean") {
-    return fixture.isFriendly;
-  }
-
-  const friendlyCompetitionIds = new Set([
-    "4nidzmunvpvxk1ir9b6m8mpay",
-    "4569",
-    "bfbepcvvs13v9didqrb12rh05",
-  ]);
-  const friendlyCompetitionNames = new Set([
-    "club friendlies",
-    "club friendly",
-    "emirates cup",
-    "english premier league summer series",
-    "friendly",
-    "friendlies",
-    "trofeo joan gamper",
-  ]);
-
-  return friendlyCompetitionIds.has(String(fixture.leagueId || "").trim()) ||
-    friendlyCompetitionNames.has(normalizeLookupName(fixture.league));
-}
-
 function hasActiveFootyFilters() {
   return Boolean(
     String(footySearchInput?.value || "").trim() ||
@@ -2980,27 +2976,7 @@ function hasActiveFootyFilters() {
 function getFootyDateFilterRange() {
   const rawStart = String(footyDateFromFilter?.value || "").trim();
   const rawEnd = String(footyDateToFilter?.value || "").trim();
-
-  if (!rawStart && !rawEnd) {
-    return null;
-  }
-
-  const start = rawStart || rawEnd;
-  const end = rawEnd || rawStart;
-
-  return start <= end
-    ? { start, end }
-    : { start: end, end: start };
-}
-
-function isFootyFixtureInDateRange(fixture, dateRange) {
-  const fixtureDate = getFootyFixtureDateKey(fixture);
-
-  return Boolean(
-    fixtureDate &&
-    fixtureDate >= dateRange.start &&
-    fixtureDate <= dateRange.end
-  );
+  return normalizeFootyDateRange(rawStart, rawEnd);
 }
 
 function getSelectedFootyTeams() {
@@ -3025,38 +3001,6 @@ function getDefaultFootyPrioritySet() {
     : ["1"];
 
   return new Set(priorities.map(normalizeFootyPriority).filter(Boolean));
-}
-
-function normalizeFootyPriority(priority) {
-  return String(priority || "").trim();
-}
-
-function getFootyFixtureSearchText(fixture) {
-  return normalizeLookupName([
-    fixture.home,
-    fixture.away,
-    fixture.league,
-    fixture.opponent,
-    fixture.teamName,
-    fixture.venue,
-  ].filter(Boolean).join(" "));
-}
-
-function getFootyFixtureDateKey(fixture) {
-  const date = String(fixture?.date || "").trim();
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return date;
-  }
-
-  const timestamp = String(fixture?.timestamp || "").trim();
-  const parsedDate = timestamp ? parseFootyDate(timestamp) : null;
-
-  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
-    return "";
-  }
-
-  return parsedDate.toISOString().slice(0, 10);
 }
 
 function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
@@ -3132,45 +3076,6 @@ function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
     }).join("");
 }
 
-function getDefaultFootyTeams(fixtures = [], defaultPrioritySet = getDefaultFootyPrioritySet()) {
-  if (defaultPrioritySet.size === 0) {
-    return new Set();
-  }
-
-  return new Set(
-    fixtures
-      .filter((fixture) => defaultPrioritySet.has(normalizeFootyPriority(fixture.priority)))
-      .map((fixture) => getFootyTeamFilterKey(fixture.teamName))
-      .filter(Boolean)
-  );
-}
-
-function getFootyFilterTeams(fixtures = []) {
-  const teamsByKey = new Map();
-
-  fixtures.forEach((fixture) => {
-    const teamName = String(fixture?.teamName || "").trim();
-    const teamKey = getFootyTeamFilterKey(teamName);
-
-    if (!teamName || !teamKey) {
-      return;
-    }
-
-    const existingTeamName = teamsByKey.get(teamKey);
-
-    if (!existingTeamName || teamName.length > existingTeamName.length) {
-      teamsByKey.set(teamKey, teamName);
-    }
-  });
-
-  return [...teamsByKey.values()]
-    .sort((firstTeam, secondTeam) => firstTeam.localeCompare(secondTeam));
-}
-
-function getFootyTeamFilterKey(teamName) {
-  return normalizeFootyClubName(teamName) || normalizeLookupName(teamName);
-}
-
 function getVisibleFootyFixtures(fixtures) {
   return fixtures.filter((fixture) => {
     const isPast = isFootyFixturePast(fixture);
@@ -3183,130 +3088,6 @@ function compareVisibleFootyFixtures(firstFixture, secondFixture) {
   return activeFootyScheduleMode !== "competitions" && shouldShowPastFootyFixtures
     ? compareFootyFixturesDescending(firstFixture, secondFixture)
     : compareFootyFixturesAscending(firstFixture, secondFixture);
-}
-
-function compareFootyFixturesAscending(firstFixture, secondFixture) {
-  return getFootyFixtureSortTime(firstFixture) - getFootyFixtureSortTime(secondFixture) ||
-    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
-    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
-}
-
-function compareFootyFixturesDescending(firstFixture, secondFixture) {
-  return getFootyFixtureSortTime(secondFixture) - getFootyFixtureSortTime(firstFixture) ||
-    String(firstFixture.teamId || "").localeCompare(String(secondFixture.teamId || "")) ||
-    String(firstFixture.teamName || "").localeCompare(String(secondFixture.teamName || ""));
-}
-
-function getFootyFixtureSortTime(fixture) {
-  const comparableTime = getFootyFixtureComparableTime(fixture);
-  return Number.isFinite(comparableTime) ? comparableTime : Number.MAX_SAFE_INTEGER;
-}
-
-function isFootyFixturePast(fixture) {
-  if (hasFootyMatchNoteData(fixture)) {
-    return true;
-  }
-
-  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
-
-  return Number.isFinite(pastCutoffTime) && pastCutoffTime < Date.now();
-}
-
-function isFootyFixtureStarted(fixture) {
-  const fixtureTime = getFootyFixtureComparableTime(fixture);
-
-  return Number.isFinite(fixtureTime) && fixtureTime < Date.now();
-}
-
-function hasFootyMatchNoteData(fixture) {
-  const note = fixture?.matchNote;
-
-  if (!note) {
-    return false;
-  }
-
-  return Boolean(
-    String(note.homeScore ?? "").trim() ||
-    String(note.awayScore ?? "").trim() ||
-    String(note.note ?? "").trim() ||
-    String(note.highlightLink ?? "").trim() ||
-    (Array.isArray(note.followGoalAssists) && note.followGoalAssists.length > 0) ||
-    (Array.isArray(note.opponentGoalAssists) && note.opponentGoalAssists.length > 0)
-  );
-}
-
-function getFootyFixturePastCutoffTime(fixture) {
-  const matchTime = getFootyFixtureComparableTime(fixture);
-
-  if (!Number.isFinite(matchTime)) {
-    return Number.NaN;
-  }
-
-  const matchDate = new Date(matchTime);
-  const endOfDay = new Date(matchDate);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const nextDayStart = new Date(matchDate);
-  nextDayStart.setHours(24, 0, 0, 0);
-
-  const twelveHoursAfterMatch = matchTime + 12 * 60 * 60 * 1000;
-  const lessThanTwelveHoursToEndOfDay = endOfDay.getTime() - matchTime < 12 * 60 * 60 * 1000;
-
-  return lessThanTwelveHoursToEndOfDay ? twelveHoursAfterMatch : nextDayStart.getTime();
-}
-
-function getFootyFixtureComparableTime(fixture) {
-  const timestamp = String(fixture?.timestamp || "").trim();
-  const date = String(fixture?.date || "").trim();
-  const time = String(fixture?.time || "").trim();
-  const parsedTimestamp = timestamp ? getFootyDateTimeValue(timestamp) : Number.NaN;
-
-  if (time && Number.isFinite(parsedTimestamp)) {
-    return parsedTimestamp;
-  }
-
-  if (date) {
-    return Date.parse(`${date}T23:59:59`);
-  }
-
-  return parsedTimestamp;
-}
-
-function isFootyFixtureWithinNextDay(fixture) {
-  const fixtureTime = getFootyFixtureComparableTime(fixture);
-  const now = Date.now();
-
-  return Number.isFinite(fixtureTime) &&
-    fixtureTime >= now &&
-    fixtureTime <= now + 24 * 60 * 60 * 1000;
-}
-
-function isFootyFixtureToday(fixture) {
-  return getFootyFixtureDateKey(fixture) === getDateKey(0);
-}
-
-function getFootyFixtureTimingLabel(fixture) {
-  if (isFootyFixtureCurrent(fixture)) {
-    return "Today";
-  }
-
-  if (isFootyFixtureWithinNextDay(fixture)) {
-    return "Next 24h";
-  }
-
-  return "";
-}
-
-function isFootyFixtureCurrent(fixture) {
-  const fixtureTime = getFootyFixtureComparableTime(fixture);
-  const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
-  const now = Date.now();
-
-  if (!Number.isFinite(fixtureTime) || !Number.isFinite(pastCutoffTime)) {
-    return isFootyFixtureToday(fixture);
-  }
-
-  return fixtureTime <= now && now <= pastCutoffTime;
 }
 
 function syncFootyPastToggle(fixtures = [], isCompetitionMode = activeFootyScheduleMode === "competitions") {
@@ -4011,58 +3792,6 @@ function syncExpandedFootyPastWeekKeys() {
       expandedFootyPastWeekKeys.add(key);
     }
   });
-}
-
-function groupFootyFixturesByCalendarWeek(fixtures = []) {
-  const groups = [];
-
-  fixtures.forEach((fixture) => {
-    const week = getFootyCalendarWeek(fixture);
-    let group = groups.find((record) => record.key === week.key);
-
-    if (!group) {
-      group = { ...week, fixtures: [] };
-      groups.push(group);
-    }
-
-    group.fixtures.push(fixture);
-  });
-
-  return groups;
-}
-
-function getFootyCalendarWeek(fixture = {}) {
-  const dateKey = getFootyFixtureDateKey(fixture);
-
-  if (!dateKey) {
-    return { key: "date-tbc", label: "Date TBC" };
-  }
-
-  const fixtureDate = new Date(`${dateKey}T12:00:00`);
-
-  if (Number.isNaN(fixtureDate.getTime())) {
-    return { key: "date-tbc", label: "Date TBC" };
-  }
-
-  const weekStart = new Date(fixtureDate);
-  const daysSinceMonday = (weekStart.getDay() + 6) % 7;
-  weekStart.setDate(weekStart.getDate() - daysSinceMonday);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  const startLabel = weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const endLabel = weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-
-  return {
-    key: formatLocalDateKey(weekStart),
-    label: `${startLabel} – ${endLabel}`,
-  };
-}
-
-function formatLocalDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function closeProfileDropdown() {
@@ -5027,13 +4756,6 @@ function isSameFootyTeamName(firstName, secondName) {
   const second = normalizeFootyClubName(secondName);
 
   return Boolean(first && second && first === second);
-}
-
-function normalizeFootyClubName(name) {
-  return normalizeLookupName(name)
-    .replace(/\b(afc|cf|fc|sc)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function openFootyNoteDialog(matchId) {

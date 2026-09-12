@@ -64,6 +64,109 @@ test("visible pointer targets meet the WCAG minimum size", async ({ page }) => {
   expect(undersizedTargets).toEqual([]);
 });
 
+test("Footy filters and fixture expansion remain interactive", async ({
+  page,
+}) => {
+  await prepareFootyFixture(page);
+  await page.goto("/#footy", { waitUntil: "networkidle" });
+  const fixture = page.locator("[data-footy-match-id][role=button]").first();
+  await expect(fixture).toBeVisible();
+
+  await page.locator("#footy-filter-toggle").click();
+  await expect(page.locator("#footy-filters")).toBeVisible();
+  await page.locator("#footy-search").fill("__no_such_footy_fixture__");
+  await expect(
+    page.getByText("No matches found for the current filters."),
+  ).toBeVisible();
+
+  await page.locator("#footy-search").fill("");
+  const restoredFixture = page
+    .locator("[data-footy-match-id][role=button]")
+    .first();
+  await expect(restoredFixture).toBeVisible();
+  await restoredFixture.click();
+  await expect(restoredFixture).toHaveAttribute("aria-expanded", "true");
+  await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
+});
+
+/** @param {import("@playwright/test").Page} page */
+async function prepareFootyFixture(page) {
+  await page.route("**/data/footy-schedule.json*", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        competitionSchedules: [],
+        generatedAt: "2098-12-31T00:00:00.000Z",
+        prioritySets: [{ priorities: ["1"], set: "1" }],
+        schemaVersion: 4,
+        teamCatalog: [
+          {
+            active: true,
+            badge: "",
+            id: "1",
+            league: "Premier League",
+            name: "Arsenal",
+            prettyName: "Arsenal",
+            priority: "1",
+          },
+        ],
+        teamSchedules: [
+          {
+            fixtures: [
+              {
+                away: "Chelsea",
+                date: "2099-01-01",
+                home: "Arsenal",
+                isHome: true,
+                league: "Premier League",
+                matchId: "test-footy-match",
+                opponent: "Chelsea",
+                priority: "1",
+                teamId: "1",
+                teamName: "Arsenal",
+                time: "10:00",
+                timestamp: "2099-01-01T15:00:00.000Z",
+                venue: "Test Ground",
+              },
+            ],
+            team: {
+              badge: "",
+              id: "1",
+              league: "Premier League",
+              name: "Arsenal",
+              priority: "1",
+            },
+          },
+        ],
+      }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/api/teams*",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          defaultTeamIds: ["1"],
+          leagues: [],
+          ok: true,
+          teams: [
+            {
+              active: true,
+              badge: "",
+              id: "1",
+              name: "Arsenal",
+              prettyName: "Arsenal",
+            },
+          ],
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+}
+
 test("secondary admin bundles stay off public mobile routes", async ({
   page,
 }) => {

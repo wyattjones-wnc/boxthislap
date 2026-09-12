@@ -1,4 +1,5 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
+import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202609120245";
 import {
   buildFootyNextItemDefaults,
   findFootyFixtureBySharedIdentity,
@@ -778,13 +779,10 @@ const loadTrophyLogController = createLazyControllerLoader(async () => {
     getAccessToken: ensureRankingAuthorization,
   });
 });
-const loadYouTubeInboxController = createLazyControllerLoader(async () => {
-  const { createYouTubeInboxController } = await import("./modules/youtubeInbox.js?v=202609112010");
-  return createYouTubeInboxController({
-    endpoint: YOUTUBE_INBOX_ENDPOINT,
-    loadSheet,
-    scrollToTop: scrollToPageTop,
-  });
+const youtubeInboxController = createYouTubeInboxController({
+  endpoint: YOUTUBE_INBOX_ENDPOINT,
+  loadSheet,
+  scrollToTop: scrollToPageTop,
 });
 const loadCollectiblesController = createLazyControllerLoader(async () => {
   const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609050001");
@@ -849,11 +847,11 @@ async function renderTrophyLogPage() {
 }
 
 async function renderYouTubeInboxPage() {
-  return (await loadYouTubeInboxController()).renderPage();
+  return youtubeInboxController.renderPage();
 }
 
 async function loadYouTubeInboxPage() {
-  return (await loadYouTubeInboxController()).load();
+  return youtubeInboxController.load();
 }
 
 async function renderCollectiblesPage() {
@@ -19426,6 +19424,10 @@ function loadPageData(scope) {
 function renderPageDataError(scope, error) {
   const message = getErrorMessage(error);
 
+  if (scope === "youtube") {
+    renderYouTubeInboxLoadError(message);
+  }
+
   if (scope === "footy" && !siteData.footySchedule && footyScheduleList) {
     renderFootyScheduleError(error);
   }
@@ -19459,6 +19461,24 @@ function renderPageDataError(scope, error) {
   if (formulaOneCalculatorMatch) {
     renderFormulaOneCalculatorError(formulaOneCalculatorMatch[1], error);
   }
+}
+
+function renderYouTubeInboxLoadError(message) {
+  const view = document.querySelector("#youtube-inbox-view");
+  if (!view) return;
+  view.innerHTML = `
+    <div class="youtube-state youtube-error-state">
+      <span aria-hidden="true">!</span>
+      <h2>Inbox unavailable</h2>
+      <p>${escapeHtml(message || "Unable to load the YouTube inbox.")}</p>
+      <button class="action-button" type="button" data-youtube-module-retry>Try Again</button>
+    </div>
+  `;
+  view.querySelector("[data-youtube-module-retry]")?.addEventListener("click", () => {
+    view.innerHTML = renderLoadingMessage("Loading YouTube inbox...");
+    pageDataPromises.delete("youtube");
+    void ensurePageData("youtube");
+  }, { once: true });
 }
 
 function getSettledLog(result) {

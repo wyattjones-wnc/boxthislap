@@ -26,8 +26,8 @@ const mainScript = await readFile(
 );
 const mainScriptBytes = mainScript.byteLength;
 const mainScriptGzipBytes = gzipSync(mainScript).byteLength;
-const maximumMainScriptBytes = 465_000;
-const maximumMainScriptGzipBytes = 128_000;
+const maximumMainScriptBytes = 475_000;
+const maximumMainScriptGzipBytes = 132_000;
 
 if (mainScriptBytes > maximumMainScriptBytes) {
   throw new Error(
@@ -50,7 +50,6 @@ const expectedLazyChunks = [
   "platinums-",
   "trophyLog-",
   "trophyStats-",
-  "youtubeInbox-",
 ];
 const missingLazyChunks = expectedLazyChunks.filter(
   (prefix) =>
@@ -60,6 +59,16 @@ const missingLazyChunks = expectedLazyChunks.filter(
 if (missingLazyChunks.length) {
   throw new Error(
     `Missing route-level chunks: ${missingLazyChunks.join(", ")}`,
+  );
+}
+
+if (
+  buildFiles.some(
+    (file) => file.startsWith("youtubeInbox-") && file.endsWith(".js"),
+  )
+) {
+  throw new Error(
+    "The YouTube controller must remain in the stable main bundle.",
   );
 }
 

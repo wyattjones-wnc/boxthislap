@@ -8,7 +8,7 @@ const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
 const SNAPSHOT_STORAGE_PREFIX = "boxThisLapYouTubeSnapshotV1:";
 const VIDEO_PAGE_SIZE = 100;
 
-export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop }) {
+export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeoutMs = 15000, scrollToTop }) {
   const view = document.querySelector("#youtube-inbox-view");
   let loadPromise = null;
   const state = {
@@ -495,16 +495,27 @@ export function createYouTubeInboxController({ endpoint, loadSheet, scrollToTop 
     const token = localStorage.getItem(SESSION_STORAGE_KEY);
     const headers = { ...(options.headers || {}) };
     if (token) headers.Authorization = `Bearer ${token}`;
-    const response = await fetch(`${endpoint}${path}`, { ...options, headers });
-    const contentType = response.headers.get("content-type") || "";
-    const data = contentType.includes("application/json") ? await response.json() : null;
-    if (!response.ok) {
-      const error = new Error(data?.error || `YouTube API request failed (${response.status}).`);
-      error.status = response.status;
-      if (response.status === 401) localStorage.removeItem(SESSION_STORAGE_KEY);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), requestTimeoutMs);
+    try {
+      const response = await fetch(`${endpoint}${path}`, { ...options, headers, signal: controller.signal });
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        const error = new Error(data?.error || `YouTube API request failed (${response.status}).`);
+        error.status = response.status;
+        if (response.status === 401) localStorage.removeItem(SESSION_STORAGE_KEY);
+        throw error;
+      }
+      return data || {};
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("The YouTube inbox took too long to respond. Try again.");
+      }
       throw error;
+    } finally {
+      window.clearTimeout(timeout);
     }
-    return data || {};
   }
 
   return { load, renderPage };

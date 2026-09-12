@@ -71,7 +71,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   const secondaryBundleRequests = [];
   page.on("request", (request) => {
     if (
-      /\/(?:collectibles|draftLists|formulaOneQualifying|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|formulaOneQualifying|guides|platinums|trophyLog|trophyStats)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -92,7 +92,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   expect(secondaryBundleRequests).toEqual([]);
 });
 
-test("authenticated YouTube route loads its deferred controller", async ({
+test("authenticated YouTube route loads its stable controller", async ({
   page,
 }) => {
   /** @type {string[]} */

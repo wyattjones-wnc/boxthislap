@@ -342,19 +342,48 @@ function getScheduleFixtures(schedule, followedTeamIds = null) {
   }
 
   const selectedIds = Array.isArray(followedTeamIds) ? new Set(followedTeamIds.map(String)) : null;
-
-  return schedule.teamSchedules
+  const trackedFixtures = schedule.teamSchedules
     .filter((teamSchedule) => !selectedIds || selectedIds.has(String(teamSchedule && teamSchedule.team && teamSchedule.team.id || "")))
     .flatMap((teamSchedule) => {
-    const team = teamSchedule && teamSchedule.team ? teamSchedule.team : {};
-    const fixtures = Array.isArray(teamSchedule && teamSchedule.fixtures) ? teamSchedule.fixtures : [];
+      const team = teamSchedule && teamSchedule.team ? teamSchedule.team : {};
+      const fixtures = Array.isArray(teamSchedule && teamSchedule.fixtures) ? teamSchedule.fixtures : [];
 
-    return fixtures.map((fixture) => ({
-      ...fixture,
-      teamBadge: String(fixture.teamBadge || team.badge || "").trim(),
-      teamName: String(fixture.teamName || team.name || "").trim(),
-    }));
-  }).filter((fixture) => Number.isFinite(getFixtureTime(fixture)));
+      return fixtures.map((fixture) => ({
+        ...fixture,
+        teamBadge: String(fixture.teamBadge || team.badge || "").trim(),
+        teamId: String(fixture.teamId || team.id || "").trim(),
+        teamName: String(fixture.teamName || team.name || "").trim(),
+      }));
+    });
+
+  if (!selectedIds) {
+    return trackedFixtures.filter((fixture) => Number.isFinite(getFixtureTime(fixture)));
+  }
+
+  const catalogTeams = new Map((schedule.teamCatalog || []).map((team) => [String(team && team.id || ""), team || {}]));
+  const competitionFixtures = (schedule.competitionSchedules || []).flatMap((competitionSchedule) =>
+    (competitionSchedule.fixtures || []).flatMap((fixture) => {
+      const matchedSides = [
+        { id: String(fixture.homeTeamId || ""), isHome: true },
+        { id: String(fixture.awayTeamId || ""), isHome: false },
+      ].filter((side) => selectedIds.has(side.id));
+
+      return matchedSides.map(({ id, isHome }) => {
+        const team = catalogTeams.get(id) || {};
+        return {
+          ...fixture,
+          isHome,
+          opponent: isHome ? fixture.away : fixture.home,
+          teamBadge: String(team.badge || (isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim(),
+          teamId: id,
+          teamName: String(team.prettyName || team.name || (isHome ? fixture.home : fixture.away) || "").trim(),
+        };
+      });
+    })
+  );
+
+  return [...trackedFixtures, ...competitionFixtures]
+    .filter((fixture) => Number.isFinite(getFixtureTime(fixture)));
 }
 
 function getUniqueFixtures(fixtures) {

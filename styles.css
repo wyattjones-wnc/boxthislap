@@ -2052,9 +2052,28 @@ body.has-shell-stale-warning .stale-shell-alert {
   flex-wrap: nowrap;
 }
 
-.footy-heading--actions-only {
+.footy-manager-selector {
+  align-items: center;
   display: flex;
-  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+
+.footy-manager-selector span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.footy-manager-selector select {
+  margin: 0;
+  max-width: 180px;
+  min-height: 44px;
+  min-width: 0;
+  padding-block: 8px;
+  width: auto;
 }
 
 .footy-team-choice-actions {

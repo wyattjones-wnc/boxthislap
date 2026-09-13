@@ -122,6 +122,7 @@ import {
   standingsAwardsList,
   leagueYearSelect,
   leagueList,
+  footyManagerSelect,
   footyPastToggle,
   footyCompetitionToggle,
   footyCompetitionControls,
@@ -417,7 +418,7 @@ import {
   rulesNationSelect,
   rulesNationBreakdown,
   testingPlayerRows,
-} from "./modules/domRefs.js?v=202609110445";
+} from "./modules/domRefs.js?v=202609132032";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
@@ -595,6 +596,7 @@ const FOOTY_DISPLAY_TEAM_NAMES = {
   uswmt: "USWNT",
 };
 const MANAGER_AUTH_STATUS_STORAGE_KEY = "boxthislap-manager-auth-status";
+const FOOTY_MANAGER_STORAGE_KEY = "boxthislap-footy-manager";
 const SITE_RELEASE = window.BOX_THIS_LAP_RELEASE || "2.5";
 const SITE_VERSION = window.BOX_THIS_LAP_VERSION || "dev";
 const MANAGER_AUTH_STATUS_CACHE_MS = 5 * 60 * 1000;
@@ -649,6 +651,7 @@ const WANT_RANKING_CONFIG = {
 const expandedFootyMatchIds = new Set();
 const expandedFootyPastWeekKeys = new Set();
 const footyGoalAssistEntries = [];
+let selectedFootyManagerId = readStoredFootyManagerId();
 let activeFootyNoteMatchId = "";
 let activeNextSourceMatchId = "";
 let activeAutocompleteInput = null;
@@ -715,8 +718,8 @@ const { syncThemeToggle } = createThemeController({
 });
 
 const followedTeamsController = createFollowedTeamsController({
-  getManagerId: getCurrentManagerId,
-  request: rankingApiRequest,
+  getManagerId: getFootyViewerManagerId,
+  request: followedTeamsApiRequest,
   onChanged: (teams, change = {}) => {
     siteData.followedTeams = teams;
     if (change.source === "save" && change.addedTeamIds?.length) {
@@ -733,6 +736,43 @@ const followedTeamsController = createFollowedTeamsController({
     }
   },
 });
+
+function followedTeamsApiRequest(path, options = {}) {
+  const managerId = getFootyViewerManagerId();
+  const publicPath = path === "/api/me/followed-teams" && managerId
+    ? `/api/managers/${encodeURIComponent(managerId)}/followed-teams`
+    : path;
+  return rankingApiRequest(publicPath, { ...options, auth: false });
+}
+
+function readStoredFootyManagerId() {
+  try {
+    return localStorage.getItem(FOOTY_MANAGER_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function getFootyViewerManagerId() {
+  return String(selectedFootyManagerId ?? getCurrentManagerId()).trim();
+}
+
+function syncFootyManagerSelect() {
+  if (!footyManagerSelect) return;
+  const managers = DEFAULT_PORTAL_MANAGERS
+    .filter((manager) => !manager.IsActive || isTruthy(manager.IsActive));
+  const selectedId = getFootyViewerManagerId();
+  footyManagerSelect.innerHTML = [
+    '<option value="">Default</option>',
+    ...managers.map((manager) => {
+      const meta = getManagerMeta(manager);
+      return `<option value="${escapeHtml(meta.id)}">${escapeHtml(meta.displayName)}</option>`;
+    }),
+  ].join("");
+  footyManagerSelect.value = managers.some((manager) => String(getManagerMeta(manager).id) === selectedId)
+    ? selectedId
+    : "";
+}
 let activeDraftListsController = null;
 const loadGuideDataLoader = createLazyControllerLoader(async () => {
   const { createGuideDataLoader } = await import(
@@ -14767,6 +14807,18 @@ footyFilterToggle?.addEventListener("click", () => {
   renderFootySchedule(siteData.footySchedule);
 });
 
+footyManagerSelect?.addEventListener("change", () => {
+  selectedFootyManagerId = footyManagerSelect.value;
+  try {
+    localStorage.setItem(FOOTY_MANAGER_STORAGE_KEY, selectedFootyManagerId);
+  } catch {
+    // The selection still applies for this visit when storage is unavailable.
+  }
+  followedTeamsController.reset();
+  void followedTeamsController.load({ force: true })
+    .catch((error) => recordDiagnostic("manager Footy schedule failed to load", error));
+});
+
 footyMissingNotesFilterToggle?.addEventListener("click", () => {
   shouldShowFootyMissingNotesFilters = !shouldShowFootyMissingNotesFilters;
   renderFootyMissingNotesPage();
@@ -16095,6 +16147,7 @@ function hideLoginPanel() {
 
 function hydrateManagerSession() {
   hydrateStoredManagerSession();
+  syncFootyManagerSelect();
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
@@ -16127,6 +16180,7 @@ function saveManagerSession(session) {
   }
 
   renderLoginState();
+  syncFootyManagerSelect();
   renderManagerHub();
   syncFootyNotificationToggle();
   scheduleRankingAuthorizationRefresh();
@@ -16158,6 +16212,7 @@ function signOutManager() {
 
   closeProfileDropdown();
   renderLoginState();
+  syncFootyManagerSelect();
   renderManagerHub();
   syncFootyNotificationToggle();
   void followedTeamsController.load().catch((error) => recordDiagnostic("default followed teams failed to load", error));

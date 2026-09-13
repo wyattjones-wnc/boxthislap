@@ -48,6 +48,15 @@ export default {
         return json({ ok: true, ...result }, 200, cors);
       }
 
+      const publicFollowedTeamsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/followed-teams$/);
+      if (publicFollowedTeamsMatch && ["GET", "PUT"].includes(request.method)) {
+        const managerId = parseId(publicFollowedTeamsMatch[1], "manager ID");
+        const result = request.method === "GET"
+          ? await readFollowedTeams(env, managerId)
+          : await replaceFollowedTeams(env, managerId, await readBody(request), getCatalogChannel(request));
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
       if (url.pathname === "/api/me/match-notifications" && ["GET", "PUT"].includes(request.method)) {
         const manager = await requireManager(request, env);
         const result = request.method === "GET"

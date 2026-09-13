@@ -802,7 +802,7 @@ const loadCollectiblesController = createLazyControllerLoader(async () => {
   });
 });
 const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
-  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609112230");
+  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609131601");
   return formulaOneCalculations;
 });
 
@@ -11304,184 +11304,13 @@ function parseFormulaOneRoundForms(rows) {
 }
 
 function parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv }) {
-  const optionsRows = parseCsvMatrix(optionsCsv);
-  const pointTables = findFormulaOneCalculatorPointTables(optionsRows);
-  const raceOptions = pointTables.find((table) => table.some((option) => option.position === "<10"));
-  const sprintOptions = pointTables.find((table) => table.some((option) => option.position === "<8"));
-  const driversToWatch = findFormulaOneDriversToWatch(optionsRows, pointTables);
-
-  if (!raceOptions?.length || !sprintOptions?.length || !driversToWatch.length) {
-    throw new Error("Formula 1 calculator options did not include RacePoints, SprintPoints, and DriversToWatch data.");
-  }
-
-  const raceData = parseFormulaOneCalculatorRoundTable(driversCsv);
-  const sprintData = parseFormulaOneCalculatorRoundTable(sprintsCsv);
-  const currentTotals = parseFormulaOneCalculatorSummary(summaryCsv);
-
-  if (!raceData.rounds.length) {
-    throw new Error("Formula 1 Drivers data did not include round columns.");
-  }
-
-  return {
-    currentTotals,
-    driversToWatch,
-    raceOptions,
-    rounds: raceData.rounds,
-    sprintOptions,
-    sprintRounds: sprintData.rounds,
-  };
-}
-
-function findFormulaOneCalculatorPointTables(rows) {
-  const tables = [];
-
-  rows.forEach((row, rowIndex) => {
-    row.forEach((value, columnIndex) => {
-      if (normalizeLookupName(value) !== "position" || normalizeLookupName(row[columnIndex + 1]) !== "points") {
-        return;
-      }
-
-      const options = [];
-
-      for (const optionRow of rows.slice(rowIndex + 1)) {
-        const position = String(optionRow[columnIndex] ?? "").trim();
-        const pointsText = String(optionRow[columnIndex + 1] ?? "").trim();
-
-        if (!position && !pointsText) {
-          break;
-        }
-
-        const points = Number(pointsText.replace(/,/g, ""));
-        if (!position || !Number.isFinite(points)) {
-          break;
-        }
-
-        options.push({ points, position });
-      }
-
-      if (options.some((option) => option.position.startsWith("<"))) {
-        tables.push({ headerRowIndex: rowIndex, options });
-      }
-    });
+  return formulaOneCalculations.parseFormulaOneCalculatorData({
+    driversCsv,
+    optionsCsv,
+    sprintsCsv,
+    summaryCsv,
   });
-
-  return tables.map((table) => table.options);
 }
-
-function findFormulaOneDriversToWatch(rows, pointTables) {
-  const terminalTokens = new Set(pointTables.flat()
-    .map((option) => option.position)
-    .filter((position) => position.startsWith("<")));
-  let passedPointTables = false;
-
-  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
-    const row = rows[rowIndex] ?? [];
-    if (row.some((value) => terminalTokens.has(String(value ?? "").trim()))) {
-      passedPointTables = true;
-      continue;
-    }
-
-    if (!passedPointTables) {
-      continue;
-    }
-
-    const driverColumn = row.findIndex((value) => normalizeLookupName(value) === "driver");
-    if (driverColumn < 0) {
-      continue;
-    }
-
-    const drivers = [];
-    for (const driverRow of rows.slice(rowIndex + 1)) {
-      const driver = String(driverRow[driverColumn] ?? "").trim();
-      if (!driver) {
-        break;
-      }
-      drivers.push(driver);
-    }
-    return drivers;
-  }
-
-  return [];
-}
-
-function parseFormulaOneCalculatorRoundTable(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerIndex = rows.findIndex((row) => {
-    return normalizeLookupName(row[0]) === "driver" && row.some((value) => /^round\s+\d+/i.test(String(value ?? "").trim()));
-  });
-
-  if (headerIndex < 0) {
-    return { rounds: [] };
-  }
-
-  const headers = rows[headerIndex];
-  const prettyHeaders = rows[headerIndex - 1] ?? [];
-  const totalColumn = headers.findIndex((value) => normalizeLookupName(value) === "total");
-  const roundColumns = headers
-    .map((header, columnIndex) => {
-      const match = String(header ?? "").trim().match(/^Round\s+(\d+)/i);
-      if (!match || (totalColumn >= 0 && columnIndex >= totalColumn)) {
-        return null;
-      }
-
-      const prettyName = String(prettyHeaders[columnIndex] ?? "").trim();
-      const headerName = String(header ?? "").trim();
-      return {
-        columnIndex,
-        id: Number(match[1]),
-        name: /^Round\s+\d+/i.test(prettyName) ? prettyName : headerName,
-        pointsByDriver: new Map(),
-      };
-    })
-    .filter(Boolean);
-
-  for (const row of rows.slice(headerIndex + 1)) {
-    const driver = String(row[0] ?? "").trim();
-    if (!driver || normalizeLookupName(driver) === "count") {
-      break;
-    }
-
-    roundColumns.forEach((round) => {
-      const value = String(row[round.columnIndex] ?? "").trim();
-      round.pointsByDriver.set(normalizeLookupName(driver), value);
-    });
-  }
-
-  roundColumns.forEach((round) => {
-    round.complete = [...round.pointsByDriver.values()].some((value) => value !== "");
-  });
-
-  return { rounds: roundColumns };
-}
-
-function parseFormulaOneCalculatorSummary(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerIndex = rows.findIndex((row) => {
-    return normalizeLookupName(row[0]) === "driver" && row.some((value) => normalizeLookupName(value) === "total");
-  });
-  const currentTotals = new Map();
-
-  if (headerIndex < 0) {
-    return currentTotals;
-  }
-
-  const totalColumn = rows[headerIndex].findIndex((value) => normalizeLookupName(value) === "total");
-  for (const row of rows.slice(headerIndex + 1)) {
-    const driver = String(row[0] ?? "").trim();
-    if (!driver) {
-      break;
-    }
-    currentTotals.set(normalizeLookupName(driver), getFormulaOneCalculatorPointNumber(row[totalColumn]));
-  }
-
-  return currentTotals;
-}
-
-function getFormulaOneCalculatorPointNumber(value) {
-  const number = Number(String(value ?? "").trim().replace(/,/g, ""));
-  return Number.isFinite(number) ? number : 0;
-}
-
 function getFormulaOneCalculatorState(year, data) {
   const yearKey = String(year);
   const existingState = formulaOneCalculatorStates.get(yearKey);
@@ -19521,7 +19350,8 @@ function ensureFormulaOneCalculatorData(year) {
   return ensureFormulaOneSource(
     `formulaOne${yearKey}Calculator`,
     async () => {
-      const [driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+      const [, driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+        loadFormulaOneCalculations(),
         loadSheetText(config.driversSource),
         loadSheetText(config.optionsSource),
         loadSheetText(config.sprintsSource),

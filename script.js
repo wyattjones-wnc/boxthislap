@@ -3105,8 +3105,8 @@ function syncFootyNotificationToggle() {
   const enabled = isFootyNotificationEnabled();
   const managerReady = Boolean(getCurrentManagerId());
 
-  footyNotificationToggle.hidden = !supported;
-  footyNotificationToggle.disabled = !supported || !managerReady || isFootyNotificationBusy;
+  footyNotificationToggle.hidden = !managerReady;
+  footyNotificationToggle.disabled = !managerReady || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
   footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
   footyNotificationToggle.setAttribute("aria-pressed", String(enabled));
@@ -3154,7 +3154,10 @@ async function toggleFootyNotifications() {
   const supportsLocal = isFootyNotificationSupported();
 
   if (!supportsPush && !supportsLocal) {
-    setFootyNotificationStatus("This browser cannot show site notifications here.", "error");
+    setFootyNotificationStatus(
+      "Notifications are unavailable here. On iPhone or iPad, add Box This Lap to the Home Screen, then open it from there.",
+      "error",
+    );
     syncFootyNotificationToggle();
     return;
   }
@@ -16094,6 +16097,7 @@ function hydrateManagerSession() {
   hydrateStoredManagerSession();
   renderLoginState();
   renderManagerHub();
+  syncFootyNotificationToggle();
   refreshManagerAuthorizationInBackground();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
@@ -16124,6 +16128,7 @@ function saveManagerSession(session) {
 
   renderLoginState();
   renderManagerHub();
+  syncFootyNotificationToggle();
   scheduleRankingAuthorizationRefresh();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
@@ -16154,6 +16159,7 @@ function signOutManager() {
   closeProfileDropdown();
   renderLoginState();
   renderManagerHub();
+  syncFootyNotificationToggle();
   void followedTeamsController.load().catch((error) => recordDiagnostic("default followed teams failed to load", error));
   showPage("footy", { scrollToTop: true });
   window.location.hash = "footy";

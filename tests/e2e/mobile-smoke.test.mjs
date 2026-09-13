@@ -89,6 +89,23 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
+test("signed-in managers can find notification setup in unsupported browser contexts", async ({
+  page,
+}) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, "Notification");
+  });
+  await page.goto("/#footy", { waitUntil: "networkidle" });
+
+  const notificationToggle = page.locator("#footy-notification-toggle");
+  await expect(notificationToggle).toBeVisible();
+  await notificationToggle.click();
+  await expect(page.locator("#footy-notification-status")).toContainText(
+    "add Box This Lap to the Home Screen",
+  );
+});
+
 test("followed-team picker loads on demand with a contained mobile scroll list", async ({
   page,
 }) => {

@@ -49,11 +49,9 @@ export default {
       }
 
       const publicFollowedTeamsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/followed-teams$/);
-      if (publicFollowedTeamsMatch && ["GET", "PUT"].includes(request.method)) {
+      if (publicFollowedTeamsMatch && request.method === "GET") {
         const managerId = parseId(publicFollowedTeamsMatch[1], "manager ID");
-        const result = request.method === "GET"
-          ? await readFollowedTeams(env, managerId)
-          : await replaceFollowedTeams(env, managerId, await readBody(request), getCatalogChannel(request));
+        const result = await readFollowedTeams(env, managerId);
         return json({ ok: true, ...result }, 200, cors);
       }
 

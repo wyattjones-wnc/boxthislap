@@ -51,13 +51,19 @@ Both widgets continue to request automatic background refreshes. iOS decides whe
 
 ## Footy
 
-Footy shows the next three matches in a medium widget or the next eight matches in a large widget. Its optional widget parameter is:
+Footy shows the next three matches in a medium widget or the next eight matches in a large widget. Set the widget parameter to a manager's first name or manager ID to show only that manager's followed teams:
 
 ```text
-dev
+Wyatt
 ```
 
-Leave the parameter blank for production data. Use `dev` to read the development schedule.
+Manager IDs `1`–`6` and `manager:6` are also accepted. Leave the parameter blank to keep the shared default schedule.
+
+Add `dev` before or after the manager to read the development schedule and preferences:
+
+```text
+dev Wyatt
+```
 
 ## Next
 

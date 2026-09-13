@@ -56,7 +56,6 @@ export const standingsAwards = document.querySelector("#standings-awards");
 export const standingsAwardsList = document.querySelector("#standings-awards-list");
 export const leagueYearSelect = document.querySelector("#league-year-select");
 export const leagueList = document.querySelector("#league-list");
-export const footyManagerSelect = document.querySelector("#footy-manager-select");
 export const footyPastToggle = document.querySelector("#footy-past-toggle");
 export const footyCompetitionToggle = document.querySelector("#footy-competition-toggle");
 export const footyCompetitionControls = document.querySelector("#footy-competition-controls");

@@ -478,6 +478,61 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+test("Footy entry dialogs contain mobile scrolling", async ({ page }) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.route(
+    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          ok: true,
+          performances: [],
+          seenMatches: [],
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  for (const entry of [
+    {
+      addName: "Add a 10 out of 10 performance",
+      closeName: "Close 10 out of 10 performance editor",
+      dialogName: "Add 10/10 Performance",
+      pageName: "footy-perfect",
+    },
+    {
+      addName: "Add a seen match",
+      closeName: "Close seen match editor",
+      dialogName: "Add Seen Match",
+      pageName: "footy-seen",
+    },
+  ]) {
+    await page.goto(`/#${entry.pageName}`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: entry.addName }).click();
+    const dialog = page.getByRole("dialog", { name: entry.dialogName });
+    const scrollArea = dialog.locator(".legacy-dialog-scroll");
+    await expect(dialog).toBeVisible();
+    await expect(page.locator("body")).toHaveCSS("position", "fixed");
+    expect(
+      await scrollArea.evaluate((element) => {
+        const event = new Event("touchmove", {
+          bubbles: true,
+          cancelable: true,
+        });
+        Object.defineProperty(event, "touches", {
+          value: [{ clientY: 100 }],
+        });
+        return !element.dispatchEvent(event);
+      }),
+    ).toBe(true);
+    await dialog.getByRole("button", { name: entry.closeName }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+  }
+});
+
 /** @param {import("@playwright/test").Page} page */
 async function prepareFootyFixture(page) {
   await page.route("**/data/footy-schedule.json*", async (route) => {

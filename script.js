@@ -1,5 +1,6 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202609120245";
+import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130448";
 import {
   buildFootyNextItemDefaults,
   findFootyFixtureBySharedIdentity,
@@ -544,6 +545,8 @@ const pendingFootyMatchNotificationIds = new Set();
 let footyMatchNotesLoadPromise = null;
 let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
+let releaseFootyPerfectDialog = null;
+let releaseFootySeenDialog = null;
 let shouldShowFootyPerfectFilters = false;
 let shouldShowFootyPerfectEditMode = false;
 let shouldShowFootySeenFilters = false;
@@ -4263,8 +4266,12 @@ function openFootyPerfectDialog(matchId = "", performance = null) {
   footyPerfectStatus.textContent = "";
   footyPerfectStatus.classList.remove("is-error");
   footyPerfectSave.disabled = false;
-  footyPerfectDialog.showModal();
-  window.setTimeout(() => footyPerfectPlayer?.focus(), 0);
+  releaseFootyPerfectDialog?.();
+  releaseFootyPerfectDialog = openContainedDialog({
+    dialog: footyPerfectDialog,
+    initialFocus: footyPerfectPlayer,
+    scrollArea: footyPerfectForm.querySelector(".legacy-dialog-scroll"),
+  });
 }
 
 function syncFootyPerfectTeamSideOptions() {
@@ -4281,9 +4288,8 @@ function syncFootyPerfectTeamSideOptions() {
 }
 
 function closeFootyPerfectDialog() {
-  if (footyPerfectDialog?.open) {
-    footyPerfectDialog.close();
-  }
+  releaseFootyPerfectDialog?.();
+  releaseFootyPerfectDialog = null;
 }
 
 function setFootyPerfectStatus(message = "", isError = false) {
@@ -4563,12 +4569,17 @@ function openFootySeenDialog({ fixture = null, seenMatch = null, manual = false 
   footySeenStatus.textContent = "";
   footySeenStatus.classList.remove("is-error");
   footySeenSave.disabled = false;
-  footySeenDialog.showModal();
-  window.setTimeout(() => (isTracked ? footySeenSportsBar : footySeenHome)?.focus(), 0);
+  releaseFootySeenDialog?.();
+  releaseFootySeenDialog = openContainedDialog({
+    dialog: footySeenDialog,
+    initialFocus: isTracked ? footySeenSportsBar : footySeenHome,
+    scrollArea: footySeenForm.querySelector(".legacy-dialog-scroll"),
+  });
 }
 
 function closeFootySeenDialog() {
-  if (footySeenDialog?.open) footySeenDialog.close();
+  releaseFootySeenDialog?.();
+  releaseFootySeenDialog = null;
 }
 
 function setFootySeenStatus(message = "", isError = false) {

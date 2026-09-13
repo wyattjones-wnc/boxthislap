@@ -199,7 +199,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.09.13.04.24";
+      window.BOX_THIS_LAP_VERSION = "2026.09.13.04.48";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -213,7 +213,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609130424">
+    <link rel="stylesheet" href="styles.css?v=202609130448">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1358,7 +1358,7 @@
         </details>
       </section>
 
-      <dialog class="footy-note-dialog" id="footy-perfect-dialog">
+      <dialog class="footy-note-dialog legacy-contained-dialog" id="footy-perfect-dialog" aria-labelledby="footy-perfect-dialog-title">
         <form class="footy-note-form" id="footy-perfect-form" method="dialog">
           <header>
             <div>
@@ -1369,6 +1369,7 @@
           </header>
           <input id="footy-perfect-entry-id" type="hidden">
           <input id="footy-perfect-match-id" type="hidden">
+          <div class="legacy-dialog-scroll">
           <div class="footy-note-grid">
             <label class="footy-note-wide">
               <span>Player</span>
@@ -1407,6 +1408,7 @@
               <textarea id="footy-perfect-note" rows="3" placeholder="Optional context about the performance"></textarea>
             </label>
           </div>
+          </div>
           <p class="footy-note-status" id="footy-perfect-status" aria-live="polite"></p>
           <footer>
             <button class="action-button" id="footy-perfect-cancel" type="button">Cancel</button>
@@ -1415,7 +1417,7 @@
         </form>
       </dialog>
 
-      <dialog class="footy-note-dialog" id="footy-seen-dialog">
+      <dialog class="footy-note-dialog legacy-contained-dialog" id="footy-seen-dialog" aria-labelledby="footy-seen-dialog-title">
         <form class="footy-note-form" id="footy-seen-form" method="dialog">
           <header>
             <div>
@@ -1426,6 +1428,7 @@
           </header>
           <input id="footy-seen-entry-id" type="hidden">
           <input id="footy-seen-match-id" type="hidden">
+          <div class="legacy-dialog-scroll">
           <div class="footy-seen-manual-fields" id="footy-seen-manual-fields">
             <div class="footy-note-grid">
               <label>
@@ -1458,6 +1461,7 @@
             <input id="footy-seen-sports-bar" type="checkbox">
             <span>Saw it in Sports Bar</span>
           </label>
+          </div>
           <p class="footy-note-status" id="footy-seen-status" aria-live="polite"></p>
           <footer>
             <button class="action-button" id="footy-seen-cancel" type="button">Cancel</button>
@@ -2748,6 +2752,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609130424"></script>
+    <script type="module" src="script.js?v=202609130448"></script>
   </body>
 </html>

@@ -722,7 +722,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   const secondaryBundleRequests = [];
   page.on("request", (request) => {
     if (
-      /\/(?:collectibles|draftLists|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|formulaOneCalculator|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -839,6 +839,105 @@ test("Formula One admin loads its deferred calculation engine", async ({
     /is-active/,
   );
   expect(calculationBundleRequests).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
+});
+
+test("Formula One calculator loads its complete deferred controller", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const controllerRequests = [];
+  /** @type {string[]} */
+  const pageErrors = [];
+  page.on("request", (request) => {
+    if (
+      /\/formulaOneCalculator-[^/]+\.js$/.test(new URL(request.url()).pathname)
+    ) {
+      controllerRequests.push(request.url());
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("https://docs.google.com/**", async (route) => {
+    const gid = new URL(route.request().url()).searchParams.get("gid");
+    const sources = new Map([
+      [
+        "0",
+        [
+          ",Round 1,Round 2,",
+          "Driver,Round 1,Round 2,Total",
+          "Alex A,25,,25",
+          "Blake B,18,,18",
+        ].join("\n"),
+      ],
+      [
+        "108234327",
+        [
+          "Position,Points",
+          "1,25",
+          "2,18",
+          "<10,0",
+          ",",
+          "Position,Points",
+          "1,8",
+          "2,7",
+          "<8,0",
+          ",",
+          "Driver",
+          "Alex A",
+          "Blake B",
+        ].join("\n"),
+      ],
+      [
+        "1932990040",
+        [",Round 2,", "Driver,Round 2,Total", "Alex A,,0", "Blake B,,0"].join(
+          "\n",
+        ),
+      ],
+      ["3933362", ["Driver,Total", "Alex A,25", "Blake B,18"].join("\n")],
+    ]);
+    await route.fulfill({
+      body: sources.get(String(gid)) || "",
+      contentType: "text/csv",
+      status: 200,
+    });
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#formula-1-2026-calculator", { waitUntil: "networkidle" });
+  await expect(
+    page.locator('[data-page="formula-1-2026-calculator"]'),
+  ).toHaveClass(/is-active/);
+  await expect(
+    page.getByRole("heading", { name: "Points calculator" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Expanded" }).click();
+  const position = page
+    .locator('[data-formula-one-calculator-position][data-event-type="race"]')
+    .first();
+  await position.selectOption("1");
+  await expect(
+    page.locator(".formula-one-calculator-projected").first(),
+  ).toContainText("50");
+  await page.getByRole("button", { name: "Simple" }).click();
+  await page.getByRole("button", { name: "Expanded" }).click();
+  await expect(
+    page
+      .locator('[data-formula-one-calculator-position][data-event-type="race"]')
+      .first(),
+  ).toHaveValue("1");
+  const storedState = await page.evaluate(() =>
+    localStorage.getItem("boxthislap-formula-one-calculator-2026"),
+  );
+  expect(storedState).toContain('"race:2:Alex A":"1"');
+  expect(controllerRequests).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });
 

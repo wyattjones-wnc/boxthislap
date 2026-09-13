@@ -42,6 +42,17 @@ if (mainScriptGzipBytes > maximumMainScriptGzipBytes) {
 }
 
 const buildFiles = await readdir(buildDirectory);
+
+if (!indexHtml.includes('href="manifest.webmanifest?')) {
+  throw new Error("The production page does not reference the root app manifest.");
+}
+
+if (buildFiles.some((file) => file.endsWith(".webmanifest"))) {
+  throw new Error(
+    "The app manifest was bundled into the build directory, which changes its relative start URL.",
+  );
+}
+
 const expectedLazyChunks = [
   "collectibles-",
   "draftLists-",

@@ -1,6 +1,6 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202609120245";
-import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130448";
+import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
   buildFootyNextItemDefaults,
   findFootyFixtureBySharedIdentity,
@@ -750,7 +750,7 @@ const loadGuidesController = createLazyControllerLoader(async () => {
   });
 });
 const loadDraftListsController = createLazyControllerLoader(async () => {
-  const { createDraftListsController } = await import("./modules/draftLists.js?v=202609112020");
+  const { createDraftListsController } = await import("./modules/draftLists.js?v=202609130510");
   activeDraftListsController = createDraftListsController({
     getManagerId: getCurrentManagerId,
     request: rankingApiRequest,
@@ -781,7 +781,7 @@ const youtubeInboxController = createYouTubeInboxController({
   scrollToTop: scrollToPageTop,
 });
 const loadCollectiblesController = createLazyControllerLoader(async () => {
-  const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609050001");
+  const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609130510");
   return createCollectiblesController({
     endpoint: COLLECTIBLES_ENDPOINT,
     getAccessToken: ensureRankingAuthorization,
@@ -1773,7 +1773,7 @@ function openFootyTradingCard(player, team) {
     </div>
   `;
 
-  footyTradingCardDialog.showModal();
+  openContainedDialog({ dialog: footyTradingCardDialog });
 }
 
 function renderFootyTradingCardBack(player, team, badgeMarkup) {
@@ -4800,11 +4800,7 @@ function openFootyNoteDialog(matchId) {
   setFootyNoteStatus("");
   footyNoteSave && (footyNoteSave.disabled = false);
 
-  if (typeof footyNoteDialog.showModal === "function") {
-    footyNoteDialog.showModal();
-  } else {
-    footyNoteDialog.setAttribute("open", "");
-  }
+  openContainedDialog({ dialog: footyNoteDialog, initialFocus: footyNoteText });
 }
 
 function syncFootyNoteGoalAssistLabels(fixture) {
@@ -5716,7 +5712,7 @@ function openFootyRosterEditor(team, player) {
   footyRosterEditorKeep.checked = false;
   footyRosterEditorSource.textContent = player?.provider ? `Roster source: ${player.provider}${player.reviewDeparture ? " • Missing from latest sync" : ""}` : "Manual roster entry";
   footyRosterEditorStatus.textContent = "";
-  footyRosterEditorDialog.showModal();
+  openContainedDialog({ dialog: footyRosterEditorDialog, initialFocus: footyRosterEditorName });
   void showFootyRosterMediaUsage();
 }
 
@@ -5770,7 +5766,7 @@ async function openTradingCardImageEditor(file) {
   renderTradingCardImageEditorOverlay();
   renderTradingCardImageEditorCanvas();
   tradingCardImageEditorStatus.textContent = "";
-  tradingCardImageEditorDialog.showModal();
+  openContainedDialog({ dialog: tradingCardImageEditorDialog });
 }
 
 function renderTradingCardImageEditorOverlay() {
@@ -7625,7 +7621,7 @@ function openWantMoveDialog(itemId) {
   pendingWantMoveItemId = item.id;
   if (wantMoveName) wantMoveName.textContent = item.name;
   if (wantMoveStatus) wantMoveStatus.textContent = "";
-  typeof wantMoveDialog.showModal === "function" ? wantMoveDialog.showModal() : wantMoveDialog.setAttribute("open", "");
+  openContainedDialog({ dialog: wantMoveDialog });
 }
 
 function closeWantMoveDialog() {
@@ -7685,7 +7681,7 @@ function ensureWantRankingDataLoaded() {
 function openWantRandomDialog() {
   if (!wantRandomDialog) return;
   renderRandomWantItem();
-  typeof wantRandomDialog.showModal === "function" ? wantRandomDialog.showModal() : wantRandomDialog.setAttribute("open", "");
+  openContainedDialog({ dialog: wantRandomDialog });
 }
 
 function closeWantRandomDialog() {
@@ -7819,8 +7815,7 @@ function ensureTodoRankingDataLoaded() {
 function openTodoRandomDialog() {
   if (!todoRandomDialog) return;
   renderRandomTodoItem();
-  if (typeof todoRandomDialog.showModal === "function") todoRandomDialog.showModal();
-  else todoRandomDialog.setAttribute("open", "");
+  openContainedDialog({ dialog: todoRandomDialog });
 }
 
 function closeTodoRandomDialog() {
@@ -9823,13 +9818,7 @@ function openRankingItemDialog(kind = activeRankingKind, itemId = "") {
 
   setRankingItemStatus("");
 
-  if (typeof rankingItemDialog.showModal === "function") {
-    rankingItemDialog.showModal();
-  } else {
-    rankingItemDialog.setAttribute("open", "");
-  }
-
-  rankingItemName?.focus();
+  openContainedDialog({ dialog: rankingItemDialog, initialFocus: rankingItemName });
 }
 
 function closeRankingItemDialog() {
@@ -9857,11 +9846,7 @@ function openRankingNormalizeDialog(kind = activeRankingKind) {
 
   setRankingNormalizeStatus("");
 
-  if (typeof rankingNormalizeDialog.showModal === "function") {
-    rankingNormalizeDialog.showModal();
-  } else {
-    rankingNormalizeDialog.setAttribute("open", "");
-  }
+  openContainedDialog({ dialog: rankingNormalizeDialog, initialFocus: rankingNormalizeReason });
 }
 
 function closeRankingNormalizeDialog() {
@@ -10186,11 +10171,7 @@ async function openRankingBattleDialog(kind = activeRankingKind) {
   }
   renderNextRankingBattle(kind);
 
-  if (typeof rankingBattleDialog.showModal === "function") {
-    rankingBattleDialog.showModal();
-  } else {
-    rankingBattleDialog.setAttribute("open", "");
-  }
+  openContainedDialog({ dialog: rankingBattleDialog });
 }
 
 function closeRankingBattleDialog() {

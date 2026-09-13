@@ -4829,6 +4829,13 @@ body.has-shell-stale-warning .stale-shell-alert {
   background: rgba(0, 0, 0, 0.58);
 }
 
+.footy-note-dialog,
+.collectible-detail-dialog {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
 .legacy-contained-dialog {
   height: min(680px, calc(100dvh - 24px));
   overflow: hidden;

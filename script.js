@@ -421,7 +421,6 @@ import {
 } from "./modules/domRefs.js?v=202609110445";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
 import {
   formatUpdatedTime,
@@ -716,10 +715,6 @@ const { syncThemeToggle } = createThemeController({
   toggle: themeToggle,
 });
 
-const loadGuideData = createGuideDataLoader({
-  loadJson: (path) => loadJson(path, { cache: "force-cache" }),
-  path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
-});
 const followedTeamsController = createFollowedTeamsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
@@ -740,8 +735,22 @@ const followedTeamsController = createFollowedTeamsController({
   },
 });
 let activeDraftListsController = null;
+const loadGuideDataLoader = createLazyControllerLoader(async () => {
+  const { createGuideDataLoader } = await import(
+    "./modules/guideData.js?v=202608200001"
+  );
+  return createGuideDataLoader({
+    loadJson: (path) => loadJson(path, { cache: "force-cache" }),
+    path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
+  });
+});
+async function loadGuideData() {
+  return (await loadGuideDataLoader())();
+}
 const loadGuidesController = createLazyControllerLoader(async () => {
-  const { createGuidesController } = await import("./modules/guides.js?v=202609112020");
+  const { createGuidesController } = await import(
+    "./modules/guides.js?v=202609112020"
+  );
   return createGuidesController({
     getManagerId: getCurrentManagerId,
     getIsAdmin: isCurrentManagerAdmin,

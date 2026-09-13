@@ -705,7 +705,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   const secondaryBundleRequests = [];
   page.on("request", (request) => {
     if (
-      /\/(?:collectibles|draftLists|formulaOneQualifying|guides|platinums|trophyLog|trophyStats)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -747,11 +747,19 @@ test("authenticated YouTube route loads its stable controller", async ({
 test("authenticated Guides and Draft List load their deferred controllers", async ({
   page,
 }) => {
+  /** @type {string[]} */
+  const guideDataBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/guideData-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      guideDataBundleRequests.push(request.url());
+    }
+  });
   await prepareAuthenticatedSecondaryRoutes(page);
 
   await page.goto("/#guides", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="guides"]')).toHaveClass(/is-active/);
   await expect(page.locator(".guides-grid")).toBeVisible();
+  expect(guideDataBundleRequests).toHaveLength(1);
 
   await page.goto("/#draft-list", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="draft-list"]')).toHaveClass(

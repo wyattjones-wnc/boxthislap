@@ -44,7 +44,9 @@ if (mainScriptGzipBytes > maximumMainScriptGzipBytes) {
 const buildFiles = await readdir(buildDirectory);
 
 if (!indexHtml.includes('href="manifest.webmanifest?')) {
-  throw new Error("The production page does not reference the root app manifest.");
+  throw new Error(
+    "The production page does not reference the root app manifest.",
+  );
 }
 
 if (buildFiles.some((file) => file.endsWith(".webmanifest"))) {

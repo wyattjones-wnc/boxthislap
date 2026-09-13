@@ -56,6 +56,7 @@ const expectedLazyChunks = [
   "trophyLog-",
   "trophyStats-",
   "wantItemDialog-",
+  "youtubeInbox-",
 ];
 const missingLazyChunks = expectedLazyChunks.filter(
   (prefix) =>
@@ -65,16 +66,6 @@ const missingLazyChunks = expectedLazyChunks.filter(
 if (missingLazyChunks.length) {
   throw new Error(
     `Missing route-level chunks: ${missingLazyChunks.join(", ")}`,
-  );
-}
-
-if (
-  buildFiles.some(
-    (file) => file.startsWith("youtubeInbox-") && file.endsWith(".js"),
-  )
-) {
-  throw new Error(
-    "The YouTube controller must remain in the stable main bundle.",
   );
 }
 

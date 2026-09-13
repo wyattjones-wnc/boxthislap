@@ -1,5 +1,4 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202609120245";
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
   buildFootyNextItemDefaults,
@@ -784,10 +783,15 @@ const loadTrophyLogController = createLazyControllerLoader(async () => {
     getAccessToken: ensureRankingAuthorization,
   });
 });
-const youtubeInboxController = createYouTubeInboxController({
-  endpoint: YOUTUBE_INBOX_ENDPOINT,
-  loadSheet,
-  scrollToTop: scrollToPageTop,
+const loadYouTubeInboxController = createLazyControllerLoader(async () => {
+  const { createYouTubeInboxController } = await import(
+    "./modules/youtubeInbox.js?v=202609120245"
+  );
+  return createYouTubeInboxController({
+    endpoint: YOUTUBE_INBOX_ENDPOINT,
+    loadSheet,
+    scrollToTop: scrollToPageTop,
+  });
 });
 const loadCollectiblesController = createLazyControllerLoader(async () => {
   const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609130510");
@@ -852,11 +856,11 @@ async function renderTrophyLogPage() {
 }
 
 async function renderYouTubeInboxPage() {
-  return youtubeInboxController.renderPage();
+  return (await loadYouTubeInboxController()).renderPage();
 }
 
 async function loadYouTubeInboxPage() {
-  return youtubeInboxController.load();
+  return (await loadYouTubeInboxController()).load();
 }
 
 async function renderCollectiblesPage() {

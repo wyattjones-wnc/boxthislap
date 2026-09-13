@@ -705,7 +705,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   const secondaryBundleRequests = [];
   page.on("request", (request) => {
     if (
-      /\/(?:collectibles|draftLists|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -726,11 +726,18 @@ test("secondary admin bundles stay off public mobile routes", async ({
   expect(secondaryBundleRequests).toEqual([]);
 });
 
-test("authenticated YouTube route loads its stable controller", async ({
+test("authenticated YouTube route loads its deferred controller", async ({
   page,
 }) => {
   /** @type {string[]} */
+  const controllerRequests = [];
+  /** @type {string[]} */
   const pageErrors = [];
+  page.on("request", (request) => {
+    if (/\/youtubeInbox-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      controllerRequests.push(request.url());
+    }
+  });
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await prepareAuthenticatedSecondaryRoutes(page);
 
@@ -741,6 +748,7 @@ test("authenticated YouTube route loads its stable controller", async ({
   await expect(
     page.getByRole("heading", { name: "All caught up" }),
   ).toBeVisible();
+  expect(controllerRequests).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });
 

@@ -125,27 +125,37 @@ async function loadFollowedTeamIds() {
     return null;
   }
 
-  const followedTeamsUrl = `https://box-this-lap-rankings.boxthislap.workers.dev/api/managers/${encodeURIComponent(WIDGET_OPTIONS.managerId)}/followed-teams`;
-  const cacheFile = `box-this-lap-footy-teams-${SITE_CHANNEL}-${WIDGET_OPTIONS.managerId}.json`;
+  return getPreferenceTeamIds(await loadManagerPreferences(WIDGET_OPTIONS.managerId));
+}
+
+async function loadManagerPreferences(managerId) {
+  const followedTeamsUrl = `https://box-this-lap-rankings.boxthislap.workers.dev/api/managers/${encodeURIComponent(managerId)}/followed-teams`;
+  const cacheFile = `box-this-lap-footy-teams-${SITE_CHANNEL}-${managerId}.json`;
 
   try {
     const request = new Request(`${followedTeamsUrl}?nonce=${Date.now()}`);
     request.headers = { "X-Box-This-Lap-Channel": SITE_CHANNEL };
     request.timeoutInterval = 20;
     const preferences = await request.loadJSON();
-    const teamIds = getPreferenceTeamIds(preferences);
-    writeJsonCache(cacheFile, { teamIds });
-    return teamIds;
-  } catch (error) {
-    const cached = readJsonCache(cacheFile);
-    const teamIds = getPreferenceTeamIds(cached);
 
-    if (Array.isArray(cached && cached.teamIds)) {
-      console.warn(`Unable to refresh followed teams; using the saved cache: ${error}`);
-      return teamIds;
+    if (!preferences || preferences.ok !== true || !Array.isArray(preferences.teams)) {
+      throw new Error("The followed-team endpoint returned invalid data.");
     }
 
-    throw new Error(`Unable to load ${WIDGET_OPTIONS.managerName}'s followed teams.`);
+    writeJsonCache(cacheFile, {
+      teams: preferences.teams,
+      usingDefault: preferences.usingDefault === true,
+    });
+    return preferences;
+  } catch (error) {
+    const cached = readJsonCache(cacheFile);
+
+    if (Array.isArray(cached && cached.teams) || Array.isArray(cached && cached.teamIds)) {
+      console.warn(`Unable to refresh followed teams; using the saved cache: ${error}`);
+      return cached;
+    }
+
+    throw new Error("Unable to load followed teams.");
   }
 }
 
@@ -201,9 +211,20 @@ async function chooseWidgetManager() {
   let managers;
 
   try {
-    managers = (await loadManagers())
+    const activeManagers = (await loadManagers())
       .filter((manager) => manager.active)
       .sort((first, second) => (first.displayName || first.name).localeCompare(second.displayName || second.name));
+    const managerPreferences = await Promise.all(activeManagers.map(async (manager) => {
+      try {
+        return { manager, preferences: await loadManagerPreferences(manager.id) };
+      } catch (error) {
+        console.warn(`Unable to check followed teams for ${manager.displayName || manager.name}: ${error}`);
+        return null;
+      }
+    }));
+    managers = managerPreferences
+      .filter((entry) => entry && entry.preferences.usingDefault === false && getPreferenceTeamIds(entry.preferences).length > 0)
+      .map((entry) => entry.manager);
   } catch (error) {
     console.warn(`Unable to open the manager picker: ${error}`);
     applySavedManager();
@@ -212,16 +233,16 @@ async function chooseWidgetManager() {
 
   const alert = new Alert();
   alert.title = "Choose Footy Manager";
-  alert.message = "The Home Screen widget will show matches for this manager's followed teams. Run this script again whenever you want to change managers.";
+  alert.message = "Choose the shared default or a manager who has saved followed teams. Run this script again whenever you want to change schedules.";
+  alert.addAction("Shared default schedule");
   managers.forEach((manager) => alert.addAction(manager.displayName || manager.name));
-  alert.addDestructiveAction("Use shared default schedule");
   alert.addCancelAction("Cancel");
   const index = await alert.presentSheet();
 
-  if (index >= 0 && index < managers.length) {
-    saveWidgetManager(managers[index]);
-  } else if (index === managers.length) {
+  if (index === 0) {
     clearSavedManager();
+  } else if (index > 0 && index <= managers.length) {
+    saveWidgetManager(managers[index - 1]);
   } else {
     applySavedManager();
   }

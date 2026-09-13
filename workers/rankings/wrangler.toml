@@ -16,3 +16,4 @@ FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/data/footy-sch
 FOOTY_DEV_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json"
 DEFAULT_FOOTY_MANAGER_ID = "6"
 MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec"
+MANAGER_CATALOG_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub?gid=0&single=true&output=csv"

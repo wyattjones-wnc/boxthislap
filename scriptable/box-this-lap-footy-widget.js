@@ -11,7 +11,7 @@ const SITE_ROOT = SITE_CHANNEL === "dev"
   ? "https://wyattjones-wnc.github.io/boxthislap/dev/"
   : "https://wyattjones-wnc.github.io/boxthislap/";
 const SCHEDULE_URL = `${SITE_ROOT}data/footy-schedule.json`;
-const MANAGERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub?gid=0&single=true&output=csv";
+const MANAGERS_URL = "https://box-this-lap-rankings.boxthislap.workers.dev/api/managers";
 const SITE_ASSET_BASE_URL = SITE_ROOT;
 const MATCH_LIMIT = config.widgetFamily === "large" ? 8 : 3;
 const SCHEDULE_CACHE_FILE = `box-this-lap-footy-schedule-${SITE_CHANNEL}.json`;
@@ -189,9 +189,14 @@ async function loadManagers() {
   let managers;
 
   try {
-    const request = new Request(`${MANAGERS_URL}&nonce=${Date.now()}`);
+    const request = new Request(`${MANAGERS_URL}?nonce=${Date.now()}`);
     request.timeoutInterval = 20;
-    managers = parseManagersCsv(await request.loadString());
+    const response = await request.loadJSON();
+    managers = response && response.ok === true && Array.isArray(response.managers) ? response.managers : null;
+
+    if (!managers) {
+      throw new Error("The manager endpoint returned invalid data.");
+    }
     writeJsonCache(MANAGERS_CACHE_FILE, { managers });
   } catch (error) {
     managers = readJsonCache(MANAGERS_CACHE_FILE)?.managers;
@@ -227,6 +232,11 @@ async function chooseWidgetManager() {
       .map((entry) => entry.manager);
   } catch (error) {
     console.warn(`Unable to open the manager picker: ${error}`);
+    const alert = new Alert();
+    alert.title = "Manager Picker Unavailable";
+    alert.message = String(error && error.message ? error.message : error);
+    alert.addAction("Continue");
+    await alert.presentAlert();
     applySavedManager();
     return;
   }
@@ -276,60 +286,6 @@ function clearSavedManager() {
   WIDGET_OPTIONS.managerId = "";
   WIDGET_OPTIONS.managerName = "";
   WIDGET_OPTIONS.managerValue = "";
-}
-
-function parseManagersCsv(text) {
-  const rows = String(text || "")
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .filter((line) => line.trim())
-    .map(parseCsvLine);
-  const headers = rows.shift() || [];
-  const column = (name) => headers.findIndex((header) => header.trim().toLowerCase() === name.toLowerCase());
-  const idColumn = column("Manager ID");
-  const nameColumn = column("Name");
-  const displayNameColumn = column("Display Name");
-  const activeColumn = column("IsActive");
-
-  if (idColumn < 0 || nameColumn < 0) {
-    throw new Error("The manager list is missing required columns.");
-  }
-
-  return rows
-    .map((row) => ({
-      active: activeColumn < 0 || /^(true|yes|1)$/i.test(String(row[activeColumn] || "").trim()),
-      displayName: String(row[displayNameColumn] || "").trim(),
-      id: String(row[idColumn] || "").trim(),
-      name: String(row[nameColumn] || "").trim(),
-    }))
-    .filter((manager) => manager.id && manager.name);
-}
-
-function parseCsvLine(line) {
-  const values = [];
-  let value = "";
-  let quoted = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const character = line[index];
-
-    if (character === '"') {
-      if (quoted && line[index + 1] === '"') {
-        value += '"';
-        index += 1;
-      } else {
-        quoted = !quoted;
-      }
-    } else if (character === "," && !quoted) {
-      values.push(value);
-      value = "";
-    } else {
-      value += character;
-    }
-  }
-
-  values.push(value);
-  return values;
 }
 
 function normalizeManagerName(value) {

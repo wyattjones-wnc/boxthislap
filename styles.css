@@ -4940,6 +4940,72 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: none;
 }
 
+.react-form-dialog {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  height: min(680px, calc(100dvh - 24px));
+  max-width: 680px;
+  overflow: hidden;
+  padding: 0;
+  width: calc(100% - 28px);
+}
+
+.react-form-dialog::backdrop {
+  background: rgb(0 0 0 / 0.62);
+}
+
+.react-form-dialog-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 46px var(--shadow);
+  display: grid;
+  gap: 14px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  padding: 18px;
+}
+
+.react-form-dialog-panel > header,
+.react-form-dialog-panel > footer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.react-form-dialog-panel > header {
+  justify-content: space-between;
+}
+
+.react-form-dialog-panel > header h2,
+.react-form-dialog-panel > footer p {
+  margin: 0;
+}
+
+.react-form-dialog-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 3px 8px;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.react-form-dialog-panel .next-item-fields input:not([type="checkbox"]),
+.react-form-dialog-panel .next-item-fields select {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.react-form-dialog-panel > footer .footy-note-status {
+  flex: 1 1 auto;
+}
+
+.react-form-dialog-panel > footer button {
+  flex: 0 0 auto;
+}
+
 .footy-note-ga-builder {
   background: var(--soft);
   border: 1px solid var(--line);
@@ -9404,17 +9470,17 @@ tr:last-child td {
   width: calc(100% - 28px);
 }
 
-html.has-followed-teams-dialog,
-html.has-followed-teams-dialog body {
+html.has-contained-dialog,
+html.has-contained-dialog body {
   overflow: hidden;
   overscroll-behavior: none;
 }
 
-html.has-followed-teams-dialog body {
+html.has-contained-dialog body {
   left: 0;
   position: fixed;
   right: 0;
-  top: var(--followed-teams-scroll-offset, 0);
+  top: var(--contained-dialog-scroll-offset, 0);
   width: 100%;
 }
 
@@ -9550,6 +9616,18 @@ html.has-followed-teams-dialog body {
 }
 
 @media (max-width: 620px) {
+  .react-form-dialog-panel {
+    padding: 14px;
+  }
+
+  .react-form-dialog-panel > footer {
+    flex-wrap: wrap;
+  }
+
+  .react-form-dialog-panel > footer .footy-note-status {
+    flex-basis: 100%;
+  }
+
   .followed-team-row {
     align-items: start;
     display: grid;

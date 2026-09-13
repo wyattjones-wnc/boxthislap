@@ -298,21 +298,7 @@ import {
   nextPriorityMaxValue,
   nextList,
   nextAddButton,
-  nextItemDialog,
-  nextItemForm,
-  nextItemDialogTitle,
-  nextItemId,
-  nextThingInput,
-  nextImageUrlInput,
-  nextStartDateInput,
-  nextEndDateInput,
-  nextTimeInput,
-  nextPriorityInput,
-  nextItemCompletedInput,
-  nextItemNonAdminInput,
-  nextItemStatus,
-  nextItemClose,
-  nextItemCancel,
+  nextItemDialogRoot,
   todoList,
   todoRandomButton,
   todoRandomDialog,
@@ -331,24 +317,7 @@ import {
   todoEditToggle,
   todoStatusFilters,
   todoAddButton,
-  todoItemDialog,
-  todoItemForm,
-  todoItemId,
-  todoNameInput,
-  todoOrderInput,
-  todoLowHourInput,
-  todoHighHourInput,
-  todoParentInput,
-  todoParentIdInput,
-  todoImageUrlInput,
-  todoStartedInput,
-  todoArchivedInput,
-  todoPlatinumCleanupInput,
-  todoCompletedInput,
-  todoUnpurchasedInput,
-  todoItemStatus,
-  todoItemClose,
-  todoItemCancel,
+  todoItemDialogRoot,
   wantList,
   wantRandomButton,
   wantRandomDialog,
@@ -366,19 +335,7 @@ import {
   wantEditToggle,
   wantStatusFilters,
   wantAddButton,
-  wantItemDialog,
-  wantItemForm,
-  wantItemDialogTitle,
-  wantItemId,
-  wantNameInput,
-  wantOrderInput,
-  wantPriceInput,
-  wantImageUrlInput,
-  wantArchivedInput,
-  wantCompletedInput,
-  wantItemStatus,
-  wantItemClose,
-  wantItemCancel,
+  wantItemDialogRoot,
   wantMoveDialog,
   wantMoveName,
   wantMoveStatus,
@@ -508,6 +465,11 @@ let shouldShowNextFilters = false;
 let activeNextItemId = "";
 const nextCardElementCache = new Map();
 let isSavingNextItem = false;
+let isNextItemDialogOpen = false;
+let nextItemDialogController = null;
+let nextItemDialogControllerPromise = null;
+let nextItemDialogMessage = "";
+let nextItemDialogMessageIsError = false;
 let shouldShowTodoFilters = false;
 let shouldShowTodoMoreData = false;
 let shouldShowTodoEditMode = false;
@@ -517,6 +479,11 @@ let activeTodoCompareSnapshotId = "";
 let activeTodoStatusFilter = "";
 let activeTodoItemId = "";
 let draggedTodoItemId = "";
+let isTodoItemDialogOpen = false;
+let todoItemDialogController = null;
+let todoItemDialogControllerPromise = null;
+let todoItemDialogMessage = "";
+let todoItemDialogMessageIsError = false;
 let didMoveTodoPointer = false;
 let activeTradingCardExportUrls = [];
 let activeRankingKind = "games";
@@ -550,6 +517,11 @@ let activeWantItemId = "";
 let pendingWantMoveItemId = "";
 let draggedWantItemId = "";
 let didMoveWantPointer = false;
+let isWantItemDialogOpen = false;
+let wantItemDialogController = null;
+let wantItemDialogControllerPromise = null;
+let wantItemDialogMessage = "";
+let wantItemDialogMessageIsError = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const FOOTY_MISSING_NOTES_PAGE_SIZE = 20;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
@@ -7007,8 +6979,8 @@ function isNextDateSpanPast(dateKey, endDateKey = "") {
   return Boolean(lastDateKey && lastDateKey < getDateKey(0));
 }
 
-function openNextItemDialog(itemId = "", options = {}) {
-  if (!isCurrentManagerAdmin() || !nextItemDialog) {
+async function openNextItemDialog(itemId = "", options = {}) {
+  if (!isCurrentManagerAdmin() || !nextItemDialogRoot) {
     return;
   }
 
@@ -7016,70 +6988,66 @@ function openNextItemDialog(itemId = "", options = {}) {
   const fixtureDefaults = options.fixture ? buildFootyNextItemDefaults(options.fixture) : null;
   activeNextItemId = String(itemId || "").trim();
   activeNextSourceMatchId = item?.sourceMatchId || fixtureDefaults?.sourceMatchId || "";
-
-  if (nextItemDialogTitle) {
-    nextItemDialogTitle.textContent = item ? "Edit Next Item" : fixtureDefaults ? "Export Match to Next" : "Add Next Item";
-  }
-
-  if (nextItemId) {
-    nextItemId.value = item?.id || "";
-  }
-
-  if (nextThingInput) {
-    nextThingInput.value = item?.thing || fixtureDefaults?.thing || "";
-  }
-
-  if (nextImageUrlInput) {
-    nextImageUrlInput.value = item?.imageUrl || "";
-  }
-
-  if (nextStartDateInput) {
-    nextStartDateInput.value = item?.dateKey || fixtureDefaults?.date || "";
-  }
-
-  if (nextEndDateInput) {
-    nextEndDateInput.value = item?.endDateKey || "";
-  }
-
-  if (nextTimeInput) {
-    nextTimeInput.value = item ? formatNextTimeInputValue(item.raw?.Time || "") : fixtureDefaults?.time || "";
-  }
-
-  if (nextPriorityInput) {
-    nextPriorityInput.value = String(item?.priority ?? 5);
-  }
-
-  if (nextItemCompletedInput) {
-    nextItemCompletedInput.checked = Boolean(item?.completed);
-  }
-
-  if (nextItemNonAdminInput) {
-    nextItemNonAdminInput.checked = Boolean(item?.nonAdmin);
-  }
-
   setNextItemStatus("");
-  updateNextCompletedControlAvailability();
-
-  if (typeof nextItemDialog.showModal === "function") {
-    nextItemDialog.showModal();
-  } else {
-    nextItemDialog.setAttribute("open", "");
+  isNextItemDialogOpen = true;
+  try {
+    const controller = await ensureNextItemDialogController();
+    if (!isNextItemDialogOpen) return;
+    controller.open({
+      initialValues: {
+        completed: Boolean(item?.completed),
+        date: item?.dateKey || fixtureDefaults?.date || "",
+        endDate: item?.endDateKey || "",
+        id: item?.id || "",
+        imageUrl: item?.imageUrl || "",
+        nonAdmin: Boolean(item?.nonAdmin),
+        priority: item?.priority ?? 5,
+        thing: item?.thing || fixtureDefaults?.thing || "",
+        time: item
+          ? formatNextTimeInputValue(item.raw?.Time || "")
+          : fixtureDefaults?.time || "",
+      },
+      message: nextItemDialogMessage,
+      messageIsError: nextItemDialogMessageIsError,
+      saving: isSavingNextItem,
+      title: item
+        ? "Edit Next Item"
+        : fixtureDefaults
+          ? "Export Match to Next"
+          : "Add Next Item",
+    });
+  } catch (error) {
+    isNextItemDialogOpen = false;
+    recordDiagnostic("Next item dialog failed to open", error);
+    renderNextListError(error);
   }
-
-  nextThingInput?.focus();
 }
 
 function closeNextItemDialog() {
-  if (!nextItemDialog) {
-    return;
-  }
-
-  if (typeof nextItemDialog.close === "function") {
-    nextItemDialog.close();
-  } else {
-    nextItemDialog.removeAttribute("open");
-  }
+  isNextItemDialogOpen = false;
+  nextItemDialogController?.close();
   activeNextSourceMatchId = "";
+}
+
+async function ensureNextItemDialogController() {
+  if (nextItemDialogController) return nextItemDialogController;
+  if (!nextItemDialogControllerPromise) {
+    nextItemDialogControllerPromise = import(
+      "./modules/dialogs/nextItemDialog.jsx?v=202609130410"
+    )
+      .then(({ createNextItemDialog }) => {
+        nextItemDialogController = createNextItemDialog({
+          mount: nextItemDialogRoot,
+          onClose: closeNextItemDialog,
+          onSubmit: saveNextItemFromForm,
+        });
+        return nextItemDialogController;
+      })
+      .finally(() => {
+        nextItemDialogControllerPromise = null;
+      });
+  }
+  return nextItemDialogControllerPromise;
 }
 
 function getNextItemById(itemId) {
@@ -7095,55 +7063,30 @@ function getNextItemById(itemId) {
     .find((item) => item.id === normalizedId) || null;
 }
 
-function buildNextItemPayloadFromForm() {
-  const existingId = String(nextItemId?.value || "").trim();
-  const thing = String(nextThingInput?.value || "").trim();
-  const imageUrl = String(nextImageUrlInput?.value || "").trim();
-  const date = String(nextStartDateInput?.value || "").trim();
-  const endDate = String(nextEndDateInput?.value || "").trim();
-  const time = String(nextTimeInput?.value || "").trim();
-  const priority = clampNextPriority(nextPriorityInput?.value ?? 5);
+function buildNextItemPayloadFromForm(values = {}) {
+  const existingId = String(values.id || "").trim();
+  const thing = String(values.thing || "").trim();
+  const imageUrl = String(values.imageUrl || "").trim();
+  const date = String(values.date || "").trim();
+  const endDate = String(values.endDate || "").trim();
+  const time = String(values.time || "").trim();
+  const priority = clampNextPriority(values.priority ?? 5);
 
   const existing = existingId ? getNextItemById(existingId) : null;
 
   return {
-    completed: Boolean(nextItemCompletedInput?.checked),
+    completed: Boolean(values.completed),
     date,
     endDate,
     id: existingId,
     imageUrl,
-    nonAdmin: Boolean(nextItemNonAdminInput?.checked),
+    nonAdmin: Boolean(values.nonAdmin),
     priority,
     revision: Number(existing?.revision || 0),
     sourceMatchId: existing?.sourceMatchId || activeNextSourceMatchId,
     thing,
     time: time ? formatNextTimeForSheet(time) : "",
   };
-}
-
-function updateNextCompletedControlAvailability() {
-  if (!nextItemCompletedInput) {
-    return;
-  }
-
-  nextItemCompletedInput.disabled = false;
-  nextItemCompletedInput.closest("label")?.classList.remove("is-disabled");
-}
-
-function populateNextTimeOptions() {
-  if (!nextTimeInput) {
-    return;
-  }
-
-  for (let totalMinutes = 0; totalMinutes < 24 * 60; totalMinutes += 15) {
-    const hour = Math.floor(totalMinutes / 60);
-    const minute = totalMinutes % 60;
-    const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = formatNextTimeForSheet(value);
-    nextTimeInput.append(option);
-  }
 }
 
 function formatNextTimeForSheet(value) {
@@ -7178,12 +7121,12 @@ function formatNextTimeInputValue(value) {
   return `${String(normalizedHour).padStart(2, "0")}:${minute}`;
 }
 
-async function saveNextItemFromForm() {
+async function saveNextItemFromForm(values) {
   if (isSavingNextItem) {
     return;
   }
 
-  const item = buildNextItemPayloadFromForm();
+  const item = buildNextItemPayloadFromForm(values);
 
   if (!item.thing) {
     setNextItemStatus("Thing is required.", true);
@@ -7219,12 +7162,7 @@ async function saveNextItemFromForm() {
 }
 
 function setNextItemFormSavingState(isSaving) {
-  const submitButton = nextItemForm?.querySelector("button[type=\"submit\"]");
-
-  if (submitButton) {
-    submitButton.disabled = isSaving;
-    submitButton.textContent = isSaving ? "Saving..." : "Save";
-  }
+  nextItemDialogController?.update({ saving: isSaving });
 }
 
 function upsertNextItemLocally(item) {
@@ -7325,12 +7263,12 @@ function submitAppsScriptPayload(payload, options = {}) {
 }
 
 function setNextItemStatus(message, isError = false) {
-  if (!nextItemStatus) {
-    return;
-  }
-
-  nextItemStatus.textContent = message;
-  nextItemStatus.classList.toggle("is-error", isError);
+  nextItemDialogMessage = message || "";
+  nextItemDialogMessageIsError = isError;
+  nextItemDialogController?.update({
+    message: nextItemDialogMessage,
+    messageIsError: nextItemDialogMessageIsError,
+  });
 }
 
 function renderNextListError(error) {
@@ -7540,45 +7478,77 @@ function syncWantControls() {
   wantStatusFilters?.forEach((input) => { input.checked = input.dataset.wantStatusFilter === activeWantStatusFilter; });
 }
 
-function openWantItemDialog(itemId = "") {
-  if (!isCurrentManagerAdmin() || !wantItemDialog) return;
+async function openWantItemDialog(itemId = "") {
+  if (!isCurrentManagerAdmin() || !wantItemDialogRoot) return;
   const item = itemId ? getWantItems().map(normalizeWantItem).filter(Boolean).find((entry) => entry.id === String(itemId)) : null;
   const orderItems = getWantOrderItems();
-  if (wantItemDialogTitle) wantItemDialogTitle.textContent = item ? "Edit Want Item" : "Add Want Item";
-  if (wantItemId) wantItemId.value = item?.id || "";
-  if (wantNameInput) wantNameInput.value = item?.name || "";
-  if (wantOrderInput) {
-    wantOrderInput.value = String(item?.order && item.order !== Number.MAX_SAFE_INTEGER ? item.order : orderItems.length + 1);
-    wantOrderInput.max = String(item ? Math.max(orderItems.length, 1) : orderItems.length + 1);
-  }
-  if (wantPriceInput) wantPriceInput.value = item?.price ?? "";
-  if (wantImageUrlInput) wantImageUrlInput.value = item?.imageUrl || "";
-  if (wantArchivedInput) wantArchivedInput.checked = Boolean(item?.archived);
-  if (wantCompletedInput) wantCompletedInput.checked = Boolean(item?.completed);
   setWantItemStatus("");
-  typeof wantItemDialog.showModal === "function" ? wantItemDialog.showModal() : wantItemDialog.setAttribute("open", "");
-  wantNameInput?.focus();
+  isWantItemDialogOpen = true;
+  try {
+    const controller = await ensureWantItemDialogController();
+    if (!isWantItemDialogOpen) return;
+    controller.open({
+      initialValues: {
+        archived: Boolean(item?.archived),
+        completed: Boolean(item?.completed),
+        id: item?.id || "",
+        imageUrl: item?.imageUrl || "",
+        maxOrder: item ? Math.max(orderItems.length, 1) : orderItems.length + 1,
+        name: item?.name || "",
+        order: item?.order && item.order !== Number.MAX_SAFE_INTEGER ? item.order : orderItems.length + 1,
+        price: item?.price ?? "",
+      },
+      message: wantItemDialogMessage,
+      messageIsError: wantItemDialogMessageIsError,
+      title: item ? "Edit Want Item" : "Add Want Item",
+    });
+  } catch (error) {
+    isWantItemDialogOpen = false;
+    recordDiagnostic("Want item dialog failed to open", error);
+    renderWantListError(error);
+  }
 }
 
 function closeWantItemDialog() {
-  if (!wantItemDialog) return;
-  typeof wantItemDialog.close === "function" ? wantItemDialog.close() : wantItemDialog.removeAttribute("open");
+  isWantItemDialogOpen = false;
+  wantItemDialogController?.close();
 }
 
-function saveWantItemFromForm() {
-  const name = String(wantNameInput?.value || "").trim();
+async function ensureWantItemDialogController() {
+  if (wantItemDialogController) return wantItemDialogController;
+  if (!wantItemDialogControllerPromise) {
+    wantItemDialogControllerPromise = import(
+      "./modules/dialogs/wantItemDialog.jsx?v=202609130410"
+    )
+      .then(({ createWantItemDialog }) => {
+        wantItemDialogController = createWantItemDialog({
+          mount: wantItemDialogRoot,
+          onClose: closeWantItemDialog,
+          onSubmit: saveWantItemFromForm,
+        });
+        return wantItemDialogController;
+      })
+      .finally(() => {
+        wantItemDialogControllerPromise = null;
+      });
+  }
+  return wantItemDialogControllerPromise;
+}
+
+function saveWantItemFromForm(values = {}) {
+  const name = String(values.name || "").trim();
   if (!name) return setWantItemStatus("Name is required.", true);
-  const existingId = String(wantItemId?.value || "").trim();
+  const existingId = String(values.id || "").trim();
   const existing = existingId ? getWantItems().find((row) => String(row.ID || row.id || "") === existingId) : null;
   const item = {
     ID: existingId || createWantItemId(),
-    Order: String(clampTodoOrder(wantOrderInput?.value, getWantOrderItems().length + 1)),
+    Order: String(clampTodoOrder(values.order, getWantOrderItems().length + 1)),
     Name: name,
-    Price: String(wantPriceInput?.value || "").trim(),
-    Archived: wantArchivedInput?.checked ? "TRUE" : "FALSE",
-    Completed: wantCompletedInput?.checked ? "TRUE" : "FALSE",
+    Price: String(values.price ?? "").trim(),
+    Archived: values.archived ? "TRUE" : "FALSE",
+    Completed: values.completed ? "TRUE" : "FALSE",
     IsDeleted: existing?.IsDeleted || existing?.isDeleted || "FALSE",
-    "Image URL": String(wantImageUrlInput?.value || "").trim(),
+    "Image URL": String(values.imageUrl || "").trim(),
   };
   upsertWantItemLocally(item);
   normalizeWantOrdersLocally(item.ID, Number(item.Order));
@@ -7668,9 +7638,12 @@ function confirmWantMove() {
 }
 
 function setWantItemStatus(message, isError = false) {
-  if (!wantItemStatus) return;
-  wantItemStatus.textContent = message;
-  wantItemStatus.classList.toggle("is-error", isError);
+  wantItemDialogMessage = message || "";
+  wantItemDialogMessageIsError = isError;
+  wantItemDialogController?.update({
+    message: wantItemDialogMessage,
+    messageIsError: wantItemDialogMessageIsError,
+  });
 }
 
 function renderWantListError(error) {
@@ -8146,15 +8119,15 @@ function formatTodoHour(value) {
 }
 
 function openTodoItemDialog() {
-  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+  if (!isCurrentManagerAdmin() || !todoItemDialogRoot) {
     return;
   }
 
   openTodoItemDialogForItem(null);
 }
 
-function openTodoItemDialogForItem(itemId) {
-  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+async function openTodoItemDialogForItem(itemId) {
+  if (!isCurrentManagerAdmin() || !todoItemDialogRoot) {
     return;
   }
 
@@ -8166,72 +8139,68 @@ function openTodoItemDialogForItem(itemId) {
   const defaultOrderRows = getTodoDefaultOrderItems(normalizedRows);
   const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : defaultOrderRows.length + 1;
   const maxOrder = editingItem ? Math.max(defaultOrderRows.length, 1) : defaultOrderRows.length + 1;
-
-  if (todoItemId) {
-    todoItemId.value = editingItem?.id || "";
-  }
-  if (todoNameInput) {
-    todoNameInput.value = editingItem?.name || "";
-  }
-  if (todoOrderInput) {
-    todoOrderInput.value = String(nextOrder);
-    todoOrderInput.max = String(maxOrder);
-  }
-  if (todoLowHourInput) {
-    todoLowHourInput.value = editingItem?.raw["Low Hour"] || "";
-  }
-  if (todoHighHourInput) {
-    todoHighHourInput.value = editingItem?.raw["High Hour"] || "";
-  }
-  if (todoParentIdInput) {
-    todoParentIdInput.value = editingItem?.parentId || "";
-  }
-  if (todoParentInput) {
-    todoParentInput.value = getTodoParentLabel(editingItem?.parentId) || "";
-  }
-  if (todoImageUrlInput) {
-    todoImageUrlInput.value = editingItem?.imageUrl || "";
-  }
-  if (todoStartedInput) {
-    todoStartedInput.checked = Boolean(editingItem?.started);
-  }
-  if (todoArchivedInput) {
-    todoArchivedInput.checked = Boolean(editingItem?.archived);
-  }
-  if (todoPlatinumCleanupInput) {
-    todoPlatinumCleanupInput.checked = Boolean(editingItem?.platinumCleanup);
-  }
-  if (todoCompletedInput) {
-    todoCompletedInput.checked = Boolean(editingItem?.completed);
-  }
-  if (todoUnpurchasedInput) {
-    todoUnpurchasedInput.checked = Boolean(editingItem?.unpurchased);
-  }
-
   setTodoItemStatus("");
-
-  if (typeof todoItemDialog.showModal === "function") {
-    todoItemDialog.showModal();
-  } else {
-    todoItemDialog.setAttribute("open", "");
+  isTodoItemDialogOpen = true;
+  try {
+    const controller = await ensureTodoItemDialogController();
+    if (!isTodoItemDialogOpen) return;
+    controller.open({
+      initialValues: {
+        archived: Boolean(editingItem?.archived),
+        completed: Boolean(editingItem?.completed),
+        highHour: editingItem?.raw["High Hour"] || "",
+        id: editingItem?.id || "",
+        imageUrl: editingItem?.imageUrl || "",
+        lowHour: editingItem?.raw["Low Hour"] || "",
+        maxOrder,
+        name: editingItem?.name || "",
+        order: nextOrder,
+        parentId: editingItem?.parentId || "",
+        parentLabel: getTodoParentLabel(editingItem?.parentId) || "",
+        platinumCleanup: Boolean(editingItem?.platinumCleanup),
+        started: Boolean(editingItem?.started),
+        unpurchased: Boolean(editingItem?.unpurchased),
+      },
+      message: todoItemDialogMessage,
+      messageIsError: todoItemDialogMessageIsError,
+      parentOptions: getTodoParentOptions(editingItem?.id || ""),
+      title: editingItem ? "Edit To Do Item" : "Add To Do Item",
+    });
+  } catch (error) {
+    isTodoItemDialogOpen = false;
+    recordDiagnostic("To Do item dialog failed to open", error);
+    renderTodoListError(error);
   }
-
 }
 
 function closeTodoItemDialog() {
-  if (!todoItemDialog) {
-    return;
-  }
-
-  if (typeof todoItemDialog.close === "function") {
-    todoItemDialog.close();
-  } else {
-    todoItemDialog.removeAttribute("open");
-  }
+  isTodoItemDialogOpen = false;
+  todoItemDialogController?.close();
 }
 
-function saveTodoItemFromForm() {
-  const name = String(todoNameInput?.value || "").trim();
+async function ensureTodoItemDialogController() {
+  if (todoItemDialogController) return todoItemDialogController;
+  if (!todoItemDialogControllerPromise) {
+    todoItemDialogControllerPromise = import(
+      "./modules/dialogs/todoItemDialog.jsx?v=202609130410"
+    )
+      .then(({ createTodoItemDialog }) => {
+        todoItemDialogController = createTodoItemDialog({
+          mount: todoItemDialogRoot,
+          onClose: closeTodoItemDialog,
+          onSubmit: saveTodoItemFromForm,
+        });
+        return todoItemDialogController;
+      })
+      .finally(() => {
+        todoItemDialogControllerPromise = null;
+      });
+  }
+  return todoItemDialogControllerPromise;
+}
+
+function saveTodoItemFromForm(values = {}) {
+  const name = String(values.name || "").trim();
 
   if (!name) {
     setTodoItemStatus("Name is required.", true);
@@ -8239,7 +8208,7 @@ function saveTodoItemFromForm() {
   }
 
   const rows = getTodoItems();
-  const parentResolution = resolveTodoParentIdFromInput();
+  const parentResolution = resolveTodoParentIdFromValues(values);
 
   if (parentResolution.error) {
     setTodoItemStatus(parentResolution.error, true);
@@ -8247,24 +8216,25 @@ function saveTodoItemFromForm() {
   }
 
   const parentId = parentResolution.id;
-  const existingItem = String(todoItemId?.value || "").trim()
-    ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === String(todoItemId?.value || "").trim())
+  const itemId = String(values.id || "").trim();
+  const existingItem = itemId
+    ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === itemId)
     : null;
-  const requestedOrder = clampTodoOrder(todoOrderInput?.value, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
+  const requestedOrder = clampTodoOrder(values.order, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
   const item = {
-    ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
+    ID: itemId || createTodoItemId(),
     Order: String(requestedOrder),
     Name: name,
-    "Low Hour": String(todoLowHourInput?.value ?? "").trim(),
-    "High Hour": String(todoHighHourInput?.value ?? "").trim(),
+    "Low Hour": String(values.lowHour ?? "").trim(),
+    "High Hour": String(values.highHour ?? "").trim(),
     "Parent ID": parentId,
-    Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
-    Archived: todoArchivedInput?.checked ? "TRUE" : "FALSE",
-    "Platinum Cleanup": todoPlatinumCleanupInput?.checked ? "TRUE" : "FALSE",
-    Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
+    Started: values.started ? "TRUE" : "FALSE",
+    Archived: values.archived ? "TRUE" : "FALSE",
+    "Platinum Cleanup": values.platinumCleanup ? "TRUE" : "FALSE",
+    Completed: values.completed ? "TRUE" : "FALSE",
     IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
-    Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
-    "Image URL": String(todoImageUrlInput?.value || "").trim(),
+    Unpurchased: values.unpurchased ? "TRUE" : "FALSE",
+    "Image URL": String(values.imageUrl || "").trim(),
   };
 
   if (item["Parent ID"] === item.ID) {
@@ -8501,7 +8471,7 @@ function getTodoStatusFilterLabel(filter) {
   return labels[filter] || "";
 }
 
-function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()) {
+function getTodoParentOptions(excludeId = "") {
   const excludedIds = getTodoExcludedParentIds(excludeId);
 
   return getTodoItems()
@@ -8555,15 +8525,15 @@ function getTodoParentLabel(parentId) {
   return item ? item.name : "";
 }
 
-function resolveTodoParentIdFromInput() {
-  const typedValue = String(todoParentInput?.value || "").trim();
-  const currentId = String(todoParentIdInput?.value || "").trim();
+function resolveTodoParentIdFromValues(values = {}) {
+  const typedValue = String(values.parentLabel || "").trim();
+  const currentId = String(values.parentId || "").trim();
 
   if (!typedValue) {
     return { id: "" };
   }
 
-  const options = getTodoParentOptions();
+  const options = getTodoParentOptions(values.id);
   const normalizedTypedValue = normalizeLookupName(typedValue);
   const option = options.find((entry) =>
     normalizeLookupName(entry.label) === normalizeLookupName(typedValue) ||
@@ -8592,40 +8562,17 @@ function resolveTodoParentIdFromInput() {
   };
 }
 
-function renderTodoParentAutocomplete() {
-  if (!todoParentInput) {
-    return;
-  }
-
-  activeAutocompleteInput = todoParentInput;
-  renderAutocompleteDropdown(todoParentInput, getTodoParentOptions(), "No To Do matches");
-}
-
-function selectTodoParentOption(value) {
-  const option = getTodoParentOptions().find((entry) => entry.id === String(value));
-
-  if (todoParentInput) {
-    todoParentInput.value = option ? option.label : value;
-  }
-
-  if (todoParentIdInput) {
-    todoParentIdInput.value = option?.id || "";
-  }
-
-  closeAutocompleteDropdown();
-}
-
 function getTodoItemElement(itemId) {
   return todoList?.querySelector(`[data-todo-id="${CSS.escape(String(itemId || ""))}"]`) || null;
 }
 
 function setTodoItemStatus(message, isError = false) {
-  if (!todoItemStatus) {
-    return;
-  }
-
-  todoItemStatus.textContent = message;
-  todoItemStatus.classList.toggle("is-error", isError);
+  todoItemDialogMessage = message || "";
+  todoItemDialogMessageIsError = isError;
+  todoItemDialogController?.update({
+    message: todoItemDialogMessage,
+    messageIsError: todoItemDialogMessageIsError,
+  });
 }
 
 function renderTodoListError(error) {
@@ -15184,20 +15131,6 @@ nextAddButton?.addEventListener("click", () => {
   openNextItemDialog();
 });
 
-nextItemForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  saveNextItemFromForm();
-});
-
-[nextItemClose, nextItemCancel].forEach((button) => {
-  button?.addEventListener("click", closeNextItemDialog);
-});
-
-[nextStartDateInput, nextEndDateInput].forEach((control) => {
-  control?.addEventListener("input", updateNextCompletedControlAvailability);
-  control?.addEventListener("change", updateNextCompletedControlAvailability);
-});
-
 todoAddButton?.addEventListener("click", () => {
   openTodoItemDialog();
 });
@@ -15302,46 +15235,6 @@ todoList?.addEventListener("keydown", (event) => {
   renderTodoList();
 });
 
-todoItemForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  saveTodoItemFromForm();
-});
-
-[todoItemClose, todoItemCancel].forEach((button) => {
-  button?.addEventListener("click", closeTodoItemDialog);
-});
-
-todoItemForm?.addEventListener("pointerdown", (event) => {
-  const optionButton = event.target.closest("[data-autocomplete-value]");
-
-  if (!optionButton) {
-    if (event.target !== todoParentInput && !event.target.closest(".autocomplete-dropdown")) {
-      closeAutocompleteDropdown();
-    }
-
-    return;
-  }
-
-  event.preventDefault();
-  selectTodoParentOption(optionButton.getAttribute("data-autocomplete-value") || "");
-});
-
-todoParentInput?.addEventListener("focus", renderTodoParentAutocomplete);
-todoParentInput?.addEventListener("input", () => {
-  if (!todoParentInput.value.trim() && todoParentIdInput) {
-    todoParentIdInput.value = "";
-  }
-
-  renderTodoParentAutocomplete();
-});
-
-todoParentInput?.addEventListener("change", () => {
-  if (todoParentIdInput) {
-    const parentResolution = resolveTodoParentIdFromInput();
-    todoParentIdInput.value = parentResolution.id || "";
-  }
-});
-
 wantAddButton?.addEventListener("click", () => openWantItemDialog());
 wantFilterToggle?.addEventListener("click", () => {
   shouldShowWantFilters = !shouldShowWantFilters;
@@ -15403,8 +15296,6 @@ wantList?.addEventListener("keydown", (event) => {
   activeWantItemId = activeWantItemId === card.getAttribute("data-want-id") ? "" : card.getAttribute("data-want-id") || "";
   renderWantList();
 });
-wantItemForm?.addEventListener("submit", (event) => { event.preventDefault(); saveWantItemFromForm(); });
-[wantItemClose, wantItemCancel].forEach((button) => button?.addEventListener("click", closeWantItemDialog));
 [wantMoveClose, wantMoveCancel].forEach((button) => button?.addEventListener("click", closeWantMoveDialog));
 wantMoveConfirm?.addEventListener("click", confirmWantMove);
 
@@ -19799,7 +19690,6 @@ async function ensureFootyMissingNotesData() {
   return getFootyMissingNotesFixtures(siteData.footySchedule);
 }
 
-populateNextTimeOptions();
 syncTestScoringUi();
 syncThemeToggle();
 initializeImageCache();

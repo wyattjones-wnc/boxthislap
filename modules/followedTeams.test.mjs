@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   effectiveTeamIds,
+  filterPickerTeams,
   followedTeamBadge,
   normalizeLeagues,
   normalizeSelectableLeague,
@@ -54,6 +55,21 @@ test("default teams are listed before all other picker teams", () => {
     defaults: [{ id: "1" }, { id: "2" }],
     others: [{ id: "3" }],
   });
+});
+
+test("team picker excludes ancillary teams unless they are defaults", () => {
+  const teams = [
+    { id: "1", leagues: [{ name: "Club Friendlies" }] },
+    { id: "2", leagues: [{ name: "FA Cup" }] },
+    { id: "3", leagues: [{ name: "Premier League" }] },
+    { id: "4", leagues: [] },
+  ];
+
+  assert.deepEqual(filterPickerTeams(teams, ["1", "4"]), [
+    teams[0],
+    teams[2],
+    teams[3],
+  ]);
 });
 
 test("known followed teams use their canonical local badges", () => {

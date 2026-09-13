@@ -212,9 +212,270 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Close team picker" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.locator("html")).not.toHaveClass(
-    /has-followed-teams-dialog/,
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+});
+
+test("Next item form loads as a contained React dialog and saves", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const dialogBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/nextItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      dialogBundleRequests.push(request.url());
+    }
+  });
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    const originalFetch = window.fetch.bind(window);
+    Reflect.set(window, "__nextDialogSavedItem", null);
+    window.fetch = async (input, init = {}) => {
+      const url = new URL(
+        input instanceof Request ? input.url : String(input),
+        window.location.href,
+      );
+
+      if (url.hostname !== "box-this-lap-next.boxthislap.workers.dev") {
+        return originalFetch(input, init);
+      }
+
+      const method = String(init.method || "GET").toUpperCase();
+      if (method === "GET") {
+        return new Response(JSON.stringify({ items: [], ok: true }), {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        });
+      }
+
+      const item = JSON.parse(String(init.body || "{}"));
+      Reflect.set(window, "__nextDialogSavedItem", item);
+      return new Response(
+        JSON.stringify({
+          item: { ...item, id: "next-test-1", revision: 1 },
+          ok: true,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+  });
+  await page.goto("/#next", { waitUntil: "networkidle" });
+
+  expect(dialogBundleRequests).toEqual([]);
+  await page.getByRole("button", { name: "Add Next item" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add Next Item" });
+  const thing = dialog.getByRole("textbox", { name: "Thing" });
+  await expect(dialog).toBeVisible();
+  await expect(thing).toBeFocused();
+  expect(dialogBundleRequests).toHaveLength(1);
+  expect(
+    await thing.evaluate((input) =>
+      Number.parseFloat(getComputedStyle(input).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(16);
+  expect(
+    await thing.evaluate((input) => input.getBoundingClientRect().height),
+  ).toBeGreaterThanOrEqual(48);
+  await expect(page.locator("body")).toHaveCSS("position", "fixed");
+
+  await thing.fill("React migration check");
+  await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
+  await dialog.getByLabel("Priority", { exact: true }).fill("8");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toBeHidden();
+  expect(
+    await page.evaluate(() => Reflect.get(window, "__nextDialogSavedItem")),
+  ).toMatchObject({
+    date: "2099-01-02",
+    priority: 8,
+    thing: "React migration check",
+  });
+  await expect(
+    page.getByText("React migration check", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+
+  await page.getByRole("button", { name: "Add Next item" }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+});
+
+test("To Do form uses the shared contained React dialog", async ({ page }) => {
+  /** @type {string[]} */
+  const dialogBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/todoItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      dialogBundleRequests.push(request.url());
+    }
+  });
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "sendBeacon", {
+      configurable: true,
+      value: () => true,
+    });
+  });
+  await page.route("https://script.google.com/macros/s/**", async (route) => {
+    const url = new URL(route.request().url());
+    const callback = url.searchParams.get("callback");
+    const callbackId = url.searchParams.get("callbackId");
+    const action = url.searchParams.get("action");
+    const items =
+      action === "listTodoItems"
+        ? [
+            { ID: "1", Name: "Parent task", Order: "1" },
+            { ID: "2", Name: "Existing task", Order: "2" },
+          ]
+        : [];
+    await route.fulfill({
+      body: `${callback}(${JSON.stringify({
+        callbackId,
+        items,
+        ok: true,
+        source: "boxthislap-next-data",
+      })});`,
+      contentType: "application/javascript",
+      status: 200,
+    });
+  });
+  await page.goto("/#todo", { waitUntil: "networkidle" });
+
+  expect(dialogBundleRequests).toEqual([]);
+  await page.getByRole("button", { name: "Add To Do item" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add To Do Item" });
+  const name = dialog.getByRole("textbox", { name: "Name" });
+  await expect(dialog).toBeVisible();
+  await expect(name).toBeFocused();
+  expect(dialogBundleRequests).toHaveLength(1);
+  await expect(page.locator("body")).toHaveCSS("position", "fixed");
+  expect(
+    await name.evaluate((input) =>
+      Number.parseFloat(getComputedStyle(input).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(16);
+
+  await name.fill("React To Do check");
+  const parent = dialog.getByRole("combobox", { name: "Parent" });
+  await parent.fill("Parent");
+  await dialog.getByRole("option", { name: /Parent task/ }).click();
+  await expect(parent).toHaveValue("Parent task");
+  await dialog.getByRole("checkbox", { name: "Started" }).check();
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByText("React To Do check", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+
+  await page.getByRole("button", { name: "Show To Do filters" }).click();
+  await page.getByRole("checkbox", { name: "Edit", exact: true }).check();
+  await page
+    .locator("[data-todo-child-id]", { hasText: "React To Do check" })
+    .getByRole("button", { name: "Edit" })
+    .click();
+  const editDialog = page.getByRole("dialog", { name: "Edit To Do Item" });
+  await expect(editDialog).toBeVisible();
+  await expect(editDialog.getByRole("textbox", { name: "Name" })).toHaveValue(
+    "React To Do check",
   );
+  await expect(
+    editDialog.getByRole("combobox", { name: "Parent" }),
+  ).toHaveValue("Parent task");
+  await editDialog.getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "Add To Do item" }).click();
+  await expect(dialog).toBeVisible();
+  await expect(name).toHaveValue("");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+});
+
+test("Want form uses the shared contained React dialog", async ({ page }) => {
+  /** @type {string[]} */
+  const dialogBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/wantItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      dialogBundleRequests.push(request.url());
+    }
+  });
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "sendBeacon", {
+      configurable: true,
+      value: () => true,
+    });
+  });
+  await page.route("https://script.google.com/macros/s/**", async (route) => {
+    const url = new URL(route.request().url());
+    const callback = url.searchParams.get("callback");
+    const callbackId = url.searchParams.get("callbackId");
+    const action = url.searchParams.get("action");
+    const items =
+      action === "listWantItems"
+        ? [{ ID: "1", Name: "Existing want", Order: "1", Price: "15" }]
+        : [];
+    await route.fulfill({
+      body: `${callback}(${JSON.stringify({
+        callbackId,
+        items,
+        ok: true,
+        source: "boxthislap-next-data",
+      })});`,
+      contentType: "application/javascript",
+      status: 200,
+    });
+  });
+  await page.goto("/#want", { waitUntil: "networkidle" });
+
+  expect(dialogBundleRequests).toEqual([]);
+  await page.getByRole("button", { name: "Add Want item" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add Want Item" });
+  const name = dialog.getByRole("textbox", { name: "Name" });
+  await expect(dialog).toBeVisible();
+  await expect(name).toBeFocused();
+  expect(dialogBundleRequests).toHaveLength(1);
+  await expect(page.locator("body")).toHaveCSS("position", "fixed");
+  expect(
+    await name.evaluate((input) =>
+      Number.parseFloat(getComputedStyle(input).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(16);
+
+  await name.fill("React Want check");
+  await dialog.getByRole("spinbutton", { name: "Price" }).fill("24.99");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByText("React Want check", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+
+  await page.getByRole("button", { name: "Show Want filters" }).click();
+  await page.locator("#want-edit-toggle").check();
+  const wantCard = page.locator("[data-want-id]", {
+    hasText: "React Want check",
+  });
+  await wantCard.click();
+  await expect(wantCard).toHaveClass(/is-actions-open/);
+  await wantCard.getByRole("button", { name: "Edit" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Edit Want Item" });
+  await expect(editDialog).toBeVisible();
+  await expect(editDialog.getByRole("textbox", { name: "Name" })).toHaveValue(
+    "React Want check",
+  );
+  await expect(
+    editDialog.getByRole("spinbutton", { name: "Price" }),
+  ).toHaveValue("24.99");
+  await editDialog.getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "Add Want item" }).click();
+  await expect(dialog).toBeVisible();
+  await expect(name).toHaveValue("");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
 });
 
 /** @param {import("@playwright/test").Page} page */

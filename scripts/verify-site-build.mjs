@@ -45,12 +45,16 @@ const buildFiles = await readdir(buildDirectory);
 const expectedLazyChunks = [
   "collectibles-",
   "draftLists-",
+  "formDialog-",
   "formulaOneQualifying-",
   "followedTeamsDialog-",
   "guides-",
+  "nextItemDialog-",
   "platinums-",
+  "todoItemDialog-",
   "trophyLog-",
   "trophyStats-",
+  "wantItemDialog-",
 ];
 const missingLazyChunks = expectedLazyChunks.filter(
   (prefix) =>

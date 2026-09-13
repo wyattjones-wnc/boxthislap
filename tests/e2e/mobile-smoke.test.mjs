@@ -215,6 +215,94 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
   await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 });
 
+test("Next item form loads as a contained React dialog and saves", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const dialogBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/nextItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      dialogBundleRequests.push(request.url());
+    }
+  });
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    const originalFetch = window.fetch.bind(window);
+    Reflect.set(window, "__nextDialogSavedItem", null);
+    window.fetch = async (input, init = {}) => {
+      const url = new URL(
+        input instanceof Request ? input.url : String(input),
+        window.location.href,
+      );
+
+      if (url.hostname !== "box-this-lap-next.boxthislap.workers.dev") {
+        return originalFetch(input, init);
+      }
+
+      const method = String(init.method || "GET").toUpperCase();
+      if (method === "GET") {
+        return new Response(JSON.stringify({ items: [], ok: true }), {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        });
+      }
+
+      const item = JSON.parse(String(init.body || "{}"));
+      Reflect.set(window, "__nextDialogSavedItem", item);
+      return new Response(
+        JSON.stringify({
+          item: { ...item, id: "next-test-1", revision: 1 },
+          ok: true,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+  });
+  await page.goto("/#next", { waitUntil: "networkidle" });
+
+  expect(dialogBundleRequests).toEqual([]);
+  await page.getByRole("button", { name: "Add Next item" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add Next Item" });
+  const thing = dialog.getByRole("textbox", { name: "Thing" });
+  await expect(dialog).toBeVisible();
+  await expect(thing).toBeFocused();
+  expect(dialogBundleRequests).toHaveLength(1);
+  expect(
+    await thing.evaluate((input) =>
+      Number.parseFloat(getComputedStyle(input).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(16);
+  expect(
+    await thing.evaluate((input) => input.getBoundingClientRect().height),
+  ).toBeGreaterThanOrEqual(48);
+  await expect(page.locator("body")).toHaveCSS("position", "fixed");
+
+  await thing.fill("React migration check");
+  await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
+  await dialog.getByLabel("Priority", { exact: true }).fill("8");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toBeHidden();
+  expect(
+    await page.evaluate(() => Reflect.get(window, "__nextDialogSavedItem")),
+  ).toMatchObject({
+    date: "2099-01-02",
+    priority: 8,
+    thing: "React migration check",
+  });
+  await expect(
+    page.getByText("React migration check", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+
+  await page.getByRole("button", { name: "Add Next item" }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+});
+
 /** @param {import("@playwright/test").Page} page */
 async function prepareFootyFixture(page) {
   await page.route("**/data/footy-schedule.json*", async (route) => {

@@ -298,21 +298,7 @@ import {
   nextPriorityMaxValue,
   nextList,
   nextAddButton,
-  nextItemDialog,
-  nextItemForm,
-  nextItemDialogTitle,
-  nextItemId,
-  nextThingInput,
-  nextImageUrlInput,
-  nextStartDateInput,
-  nextEndDateInput,
-  nextTimeInput,
-  nextPriorityInput,
-  nextItemCompletedInput,
-  nextItemNonAdminInput,
-  nextItemStatus,
-  nextItemClose,
-  nextItemCancel,
+  nextItemDialogRoot,
   todoList,
   todoRandomButton,
   todoRandomDialog,
@@ -508,6 +494,11 @@ let shouldShowNextFilters = false;
 let activeNextItemId = "";
 const nextCardElementCache = new Map();
 let isSavingNextItem = false;
+let isNextItemDialogOpen = false;
+let nextItemDialogController = null;
+let nextItemDialogControllerPromise = null;
+let nextItemDialogMessage = "";
+let nextItemDialogMessageIsError = false;
 let shouldShowTodoFilters = false;
 let shouldShowTodoMoreData = false;
 let shouldShowTodoEditMode = false;
@@ -7007,8 +6998,8 @@ function isNextDateSpanPast(dateKey, endDateKey = "") {
   return Boolean(lastDateKey && lastDateKey < getDateKey(0));
 }
 
-function openNextItemDialog(itemId = "", options = {}) {
-  if (!isCurrentManagerAdmin() || !nextItemDialog) {
+async function openNextItemDialog(itemId = "", options = {}) {
+  if (!isCurrentManagerAdmin() || !nextItemDialogRoot) {
     return;
   }
 
@@ -7016,70 +7007,66 @@ function openNextItemDialog(itemId = "", options = {}) {
   const fixtureDefaults = options.fixture ? buildFootyNextItemDefaults(options.fixture) : null;
   activeNextItemId = String(itemId || "").trim();
   activeNextSourceMatchId = item?.sourceMatchId || fixtureDefaults?.sourceMatchId || "";
-
-  if (nextItemDialogTitle) {
-    nextItemDialogTitle.textContent = item ? "Edit Next Item" : fixtureDefaults ? "Export Match to Next" : "Add Next Item";
-  }
-
-  if (nextItemId) {
-    nextItemId.value = item?.id || "";
-  }
-
-  if (nextThingInput) {
-    nextThingInput.value = item?.thing || fixtureDefaults?.thing || "";
-  }
-
-  if (nextImageUrlInput) {
-    nextImageUrlInput.value = item?.imageUrl || "";
-  }
-
-  if (nextStartDateInput) {
-    nextStartDateInput.value = item?.dateKey || fixtureDefaults?.date || "";
-  }
-
-  if (nextEndDateInput) {
-    nextEndDateInput.value = item?.endDateKey || "";
-  }
-
-  if (nextTimeInput) {
-    nextTimeInput.value = item ? formatNextTimeInputValue(item.raw?.Time || "") : fixtureDefaults?.time || "";
-  }
-
-  if (nextPriorityInput) {
-    nextPriorityInput.value = String(item?.priority ?? 5);
-  }
-
-  if (nextItemCompletedInput) {
-    nextItemCompletedInput.checked = Boolean(item?.completed);
-  }
-
-  if (nextItemNonAdminInput) {
-    nextItemNonAdminInput.checked = Boolean(item?.nonAdmin);
-  }
-
   setNextItemStatus("");
-  updateNextCompletedControlAvailability();
-
-  if (typeof nextItemDialog.showModal === "function") {
-    nextItemDialog.showModal();
-  } else {
-    nextItemDialog.setAttribute("open", "");
+  isNextItemDialogOpen = true;
+  try {
+    const controller = await ensureNextItemDialogController();
+    if (!isNextItemDialogOpen) return;
+    controller.open({
+      initialValues: {
+        completed: Boolean(item?.completed),
+        date: item?.dateKey || fixtureDefaults?.date || "",
+        endDate: item?.endDateKey || "",
+        id: item?.id || "",
+        imageUrl: item?.imageUrl || "",
+        nonAdmin: Boolean(item?.nonAdmin),
+        priority: item?.priority ?? 5,
+        thing: item?.thing || fixtureDefaults?.thing || "",
+        time: item
+          ? formatNextTimeInputValue(item.raw?.Time || "")
+          : fixtureDefaults?.time || "",
+      },
+      message: nextItemDialogMessage,
+      messageIsError: nextItemDialogMessageIsError,
+      saving: isSavingNextItem,
+      title: item
+        ? "Edit Next Item"
+        : fixtureDefaults
+          ? "Export Match to Next"
+          : "Add Next Item",
+    });
+  } catch (error) {
+    isNextItemDialogOpen = false;
+    recordDiagnostic("Next item dialog failed to open", error);
+    renderNextListError(error);
   }
-
-  nextThingInput?.focus();
 }
 
 function closeNextItemDialog() {
-  if (!nextItemDialog) {
-    return;
-  }
-
-  if (typeof nextItemDialog.close === "function") {
-    nextItemDialog.close();
-  } else {
-    nextItemDialog.removeAttribute("open");
-  }
+  isNextItemDialogOpen = false;
+  nextItemDialogController?.close();
   activeNextSourceMatchId = "";
+}
+
+async function ensureNextItemDialogController() {
+  if (nextItemDialogController) return nextItemDialogController;
+  if (!nextItemDialogControllerPromise) {
+    nextItemDialogControllerPromise = import(
+      "./modules/dialogs/nextItemDialog.jsx?v=202609130119"
+    )
+      .then(({ createNextItemDialog }) => {
+        nextItemDialogController = createNextItemDialog({
+          mount: nextItemDialogRoot,
+          onClose: closeNextItemDialog,
+          onSubmit: saveNextItemFromForm,
+        });
+        return nextItemDialogController;
+      })
+      .finally(() => {
+        nextItemDialogControllerPromise = null;
+      });
+  }
+  return nextItemDialogControllerPromise;
 }
 
 function getNextItemById(itemId) {
@@ -7095,55 +7082,30 @@ function getNextItemById(itemId) {
     .find((item) => item.id === normalizedId) || null;
 }
 
-function buildNextItemPayloadFromForm() {
-  const existingId = String(nextItemId?.value || "").trim();
-  const thing = String(nextThingInput?.value || "").trim();
-  const imageUrl = String(nextImageUrlInput?.value || "").trim();
-  const date = String(nextStartDateInput?.value || "").trim();
-  const endDate = String(nextEndDateInput?.value || "").trim();
-  const time = String(nextTimeInput?.value || "").trim();
-  const priority = clampNextPriority(nextPriorityInput?.value ?? 5);
+function buildNextItemPayloadFromForm(values = {}) {
+  const existingId = String(values.id || "").trim();
+  const thing = String(values.thing || "").trim();
+  const imageUrl = String(values.imageUrl || "").trim();
+  const date = String(values.date || "").trim();
+  const endDate = String(values.endDate || "").trim();
+  const time = String(values.time || "").trim();
+  const priority = clampNextPriority(values.priority ?? 5);
 
   const existing = existingId ? getNextItemById(existingId) : null;
 
   return {
-    completed: Boolean(nextItemCompletedInput?.checked),
+    completed: Boolean(values.completed),
     date,
     endDate,
     id: existingId,
     imageUrl,
-    nonAdmin: Boolean(nextItemNonAdminInput?.checked),
+    nonAdmin: Boolean(values.nonAdmin),
     priority,
     revision: Number(existing?.revision || 0),
     sourceMatchId: existing?.sourceMatchId || activeNextSourceMatchId,
     thing,
     time: time ? formatNextTimeForSheet(time) : "",
   };
-}
-
-function updateNextCompletedControlAvailability() {
-  if (!nextItemCompletedInput) {
-    return;
-  }
-
-  nextItemCompletedInput.disabled = false;
-  nextItemCompletedInput.closest("label")?.classList.remove("is-disabled");
-}
-
-function populateNextTimeOptions() {
-  if (!nextTimeInput) {
-    return;
-  }
-
-  for (let totalMinutes = 0; totalMinutes < 24 * 60; totalMinutes += 15) {
-    const hour = Math.floor(totalMinutes / 60);
-    const minute = totalMinutes % 60;
-    const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = formatNextTimeForSheet(value);
-    nextTimeInput.append(option);
-  }
 }
 
 function formatNextTimeForSheet(value) {
@@ -7178,12 +7140,12 @@ function formatNextTimeInputValue(value) {
   return `${String(normalizedHour).padStart(2, "0")}:${minute}`;
 }
 
-async function saveNextItemFromForm() {
+async function saveNextItemFromForm(values) {
   if (isSavingNextItem) {
     return;
   }
 
-  const item = buildNextItemPayloadFromForm();
+  const item = buildNextItemPayloadFromForm(values);
 
   if (!item.thing) {
     setNextItemStatus("Thing is required.", true);
@@ -7219,12 +7181,7 @@ async function saveNextItemFromForm() {
 }
 
 function setNextItemFormSavingState(isSaving) {
-  const submitButton = nextItemForm?.querySelector("button[type=\"submit\"]");
-
-  if (submitButton) {
-    submitButton.disabled = isSaving;
-    submitButton.textContent = isSaving ? "Saving..." : "Save";
-  }
+  nextItemDialogController?.update({ saving: isSaving });
 }
 
 function upsertNextItemLocally(item) {
@@ -7325,12 +7282,12 @@ function submitAppsScriptPayload(payload, options = {}) {
 }
 
 function setNextItemStatus(message, isError = false) {
-  if (!nextItemStatus) {
-    return;
-  }
-
-  nextItemStatus.textContent = message;
-  nextItemStatus.classList.toggle("is-error", isError);
+  nextItemDialogMessage = message || "";
+  nextItemDialogMessageIsError = isError;
+  nextItemDialogController?.update({
+    message: nextItemDialogMessage,
+    messageIsError: nextItemDialogMessageIsError,
+  });
 }
 
 function renderNextListError(error) {
@@ -15184,20 +15141,6 @@ nextAddButton?.addEventListener("click", () => {
   openNextItemDialog();
 });
 
-nextItemForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  saveNextItemFromForm();
-});
-
-[nextItemClose, nextItemCancel].forEach((button) => {
-  button?.addEventListener("click", closeNextItemDialog);
-});
-
-[nextStartDateInput, nextEndDateInput].forEach((control) => {
-  control?.addEventListener("input", updateNextCompletedControlAvailability);
-  control?.addEventListener("change", updateNextCompletedControlAvailability);
-});
-
 todoAddButton?.addEventListener("click", () => {
   openTodoItemDialog();
 });
@@ -19799,7 +19742,6 @@ async function ensureFootyMissingNotesData() {
   return getFootyMissingNotesFixtures(siteData.footySchedule);
 }
 
-populateNextTimeOptions();
 syncTestScoringUi();
 syncThemeToggle();
 initializeImageCache();

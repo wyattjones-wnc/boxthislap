@@ -4940,6 +4940,72 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: none;
 }
 
+.next-react-dialog {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  height: min(680px, calc(100dvh - 24px));
+  max-width: 680px;
+  overflow: hidden;
+  padding: 0;
+  width: calc(100% - 28px);
+}
+
+.next-react-dialog::backdrop {
+  background: rgb(0 0 0 / 0.62);
+}
+
+.next-react-dialog-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 46px var(--shadow);
+  display: grid;
+  gap: 14px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  padding: 18px;
+}
+
+.next-react-dialog-panel > header,
+.next-react-dialog-panel > footer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.next-react-dialog-panel > header {
+  justify-content: space-between;
+}
+
+.next-react-dialog-panel > header h2,
+.next-react-dialog-panel > footer p {
+  margin: 0;
+}
+
+.next-react-dialog-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 3px 8px;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+.next-react-dialog-panel .next-item-fields input:not([type="checkbox"]),
+.next-react-dialog-panel .next-item-fields select {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.next-react-dialog-panel > footer .footy-note-status {
+  flex: 1 1 auto;
+}
+
+.next-react-dialog-panel > footer button {
+  flex: 0 0 auto;
+}
+
 .footy-note-ga-builder {
   background: var(--soft);
   border: 1px solid var(--line);
@@ -9550,6 +9616,18 @@ html.has-contained-dialog body {
 }
 
 @media (max-width: 620px) {
+  .next-react-dialog-panel {
+    padding: 14px;
+  }
+
+  .next-react-dialog-panel > footer {
+    flex-wrap: wrap;
+  }
+
+  .next-react-dialog-panel > footer .footy-note-status {
+    flex-basis: 100%;
+  }
+
   .followed-team-row {
     align-items: start;
     display: grid;

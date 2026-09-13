@@ -199,7 +199,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.09.12.23.20";
+      window.BOX_THIS_LAP_VERSION = "2026.09.13.01.19";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -213,7 +213,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609122320">
+    <link rel="stylesheet" href="styles.css?v=202609130119">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1527,66 +1527,7 @@
           <p class="table-message">Next items will load here.</p>
         </div>
 
-        <dialog class="footy-note-dialog next-item-dialog" id="next-item-dialog">
-          <form class="footy-note-form next-item-form" id="next-item-form" method="dialog">
-            <header>
-              <div>
-                <h2 id="next-item-dialog-title">Add Next Item</h2>
-              </div>
-              <button class="icon-action-button footy-note-close" id="next-item-close" type="button" aria-label="Close Next item dialog">
-                &times;
-              </button>
-            </header>
-            <input id="next-item-id" type="hidden">
-            <div class="next-item-fields">
-              <label class="next-item-wide">
-                <span>Thing</span>
-                <input id="next-thing" type="text" autocomplete="off" required>
-              </label>
-              <label class="next-item-wide">
-                <span>Image URL</span>
-                <input id="next-image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg">
-              </label>
-              <label>
-                <span>Date</span>
-                <input id="next-start-date" type="date" required>
-              </label>
-              <label>
-                <span>End Date</span>
-                <input id="next-end-date" type="date">
-              </label>
-              <label>
-                <span>Time</span>
-                <select id="next-time">
-                  <option value="">No time</option>
-                </select>
-              </label>
-              <label>
-                <span>Priority</span>
-                <input id="next-priority" type="number" min="0" max="10" step="1" value="5">
-              </label>
-              <div class="next-dialog-checks">
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="next-item-completed" type="checkbox">
-                  <span>Completed</span>
-                </label>
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="next-item-non-admin" type="checkbox">
-                  <span>Show to non-admin</span>
-                </label>
-              </div>
-            </div>
-            <p class="footy-note-status" id="next-item-status" aria-live="polite"></p>
-            <footer>
-              <button class="action-button" id="next-item-cancel" type="button">
-                Cancel
-              </button>
-              <button class="action-button" type="submit">
-                Save
-              </button>
-            </footer>
-          </form>
-        </dialog>
+        <div id="next-item-dialog-root"></div>
       </section>
 
       <section class="page" id="todo" data-page="todo">
@@ -2900,6 +2841,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609122320"></script>
+    <script type="module" src="script.js?v=202609130119"></script>
   </body>
 </html>

@@ -57,7 +57,7 @@ Footy shows the next three matches in a medium widget or the next eight matches 
 Wyatt
 ```
 
-Manager IDs `1`–`6` and `manager:6` are also accepted. Leave the parameter blank to keep the shared default schedule.
+The widget resolves names and IDs from the live active-manager list, so new managers do not require a script update. Full names and values such as `manager:9` are also accepted. Leave the parameter blank to keep the shared default schedule.
 
 Add `dev` before or after the manager to read the development schedule and preferences:
 

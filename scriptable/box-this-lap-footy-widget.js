@@ -5,27 +5,17 @@
 // Future matches inside 24 hours are highlighted; a started match stays visible
 // for one hour and is highlighted red.
 
-const MANAGERS = [
-  { id: "1", name: "Jonathan" },
-  { id: "2", name: "Jordan" },
-  { id: "3", name: "Luisa" },
-  { id: "4", name: "Michael" },
-  { id: "5", name: "Sean" },
-  { id: "6", name: "Wyatt" },
-];
 const WIDGET_OPTIONS = parseWidgetParameter(args.widgetParameter);
 const SITE_CHANNEL = WIDGET_OPTIONS.channel;
 const SITE_ROOT = SITE_CHANNEL === "dev"
   ? "https://wyattjones-wnc.github.io/boxthislap/dev/"
   : "https://wyattjones-wnc.github.io/boxthislap/";
 const SCHEDULE_URL = `${SITE_ROOT}data/footy-schedule.json`;
-const FOLLOWED_TEAMS_URL = WIDGET_OPTIONS.managerId
-  ? `https://box-this-lap-rankings.boxthislap.workers.dev/api/managers/${encodeURIComponent(WIDGET_OPTIONS.managerId)}/followed-teams`
-  : "";
+const MANAGERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQnBDCv-KRIucQp-UsH_yb8MsrskZyuDHOC0ACgDKbmKB8SA3JGWORwr-pPxvkXwEJv5S2dCvcvf2n/pub?gid=0&single=true&output=csv";
 const SITE_ASSET_BASE_URL = SITE_ROOT;
 const MATCH_LIMIT = config.widgetFamily === "large" ? 8 : 3;
 const SCHEDULE_CACHE_FILE = `box-this-lap-footy-schedule-${SITE_CHANNEL}.json`;
-const FOLLOWED_TEAMS_CACHE_FILE = `box-this-lap-footy-teams-${SITE_CHANNEL}-${WIDGET_OPTIONS.managerId || "default"}.json`;
+const MANAGERS_CACHE_FILE = "box-this-lap-footy-managers.json";
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
 const WIDGET_LOCAL_BADGE_PATHS = {
   "4": "assets/teams/4/badge.png",
@@ -96,15 +86,8 @@ async function loadFixtures() {
     }
   }
 
-  if (WIDGET_OPTIONS.error) {
-    return {
-      ok: false,
-      fixtures: [],
-      error: WIDGET_OPTIONS.error,
-    };
-  }
-
   try {
+    await resolveWidgetManager();
     const followedTeamIds = await loadFollowedTeamIds();
     return { ok: true, fixtures: getUpcomingFixtures(schedule, followedTeamIds) };
   } catch (error) {
@@ -128,20 +111,23 @@ function getUpcomingFixtures(schedule, followedTeamIds = null) {
 }
 
 async function loadFollowedTeamIds() {
-  if (!FOLLOWED_TEAMS_URL) {
+  if (!WIDGET_OPTIONS.managerId) {
     return null;
   }
 
+  const followedTeamsUrl = `https://box-this-lap-rankings.boxthislap.workers.dev/api/managers/${encodeURIComponent(WIDGET_OPTIONS.managerId)}/followed-teams`;
+  const cacheFile = `box-this-lap-footy-teams-${SITE_CHANNEL}-${WIDGET_OPTIONS.managerId}.json`;
+
   try {
-    const request = new Request(`${FOLLOWED_TEAMS_URL}?nonce=${Date.now()}`);
+    const request = new Request(`${followedTeamsUrl}?nonce=${Date.now()}`);
     request.headers = { "X-Box-This-Lap-Channel": SITE_CHANNEL };
     request.timeoutInterval = 20;
     const preferences = await request.loadJSON();
     const teamIds = getPreferenceTeamIds(preferences);
-    writeJsonCache(FOLLOWED_TEAMS_CACHE_FILE, { teamIds });
+    writeJsonCache(cacheFile, { teamIds });
     return teamIds;
   } catch (error) {
-    const cached = readJsonCache(FOLLOWED_TEAMS_CACHE_FILE);
+    const cached = readJsonCache(cacheFile);
     const teamIds = getPreferenceTeamIds(cached);
 
     if (Array.isArray(cached && cached.teamIds)) {
@@ -151,6 +137,102 @@ async function loadFollowedTeamIds() {
 
     throw new Error(`Unable to load ${WIDGET_OPTIONS.managerName}'s followed teams.`);
   }
+}
+
+async function resolveWidgetManager() {
+  if (!WIDGET_OPTIONS.managerValue) {
+    return;
+  }
+
+  let managers;
+
+  try {
+    const request = new Request(`${MANAGERS_URL}&nonce=${Date.now()}`);
+    request.timeoutInterval = 20;
+    managers = parseManagersCsv(await request.loadString());
+    writeJsonCache(MANAGERS_CACHE_FILE, { managers });
+  } catch (error) {
+    managers = readJsonCache(MANAGERS_CACHE_FILE)?.managers;
+
+    if (!Array.isArray(managers)) {
+      throw new Error("Unable to load the manager list.");
+    }
+
+    console.warn(`Unable to refresh managers; using the saved cache: ${error}`);
+  }
+
+  const lookup = normalizeManagerName(WIDGET_OPTIONS.managerValue);
+  const manager = managers.find((entry) =>
+    entry.active && (
+      String(entry.id) === WIDGET_OPTIONS.managerValue ||
+      normalizeManagerName(entry.name) === lookup ||
+      normalizeManagerName(entry.displayName) === lookup
+    ));
+
+  if (!manager) {
+    throw new Error(`Unknown or inactive manager: ${WIDGET_OPTIONS.managerValue}`);
+  }
+
+  WIDGET_OPTIONS.managerId = manager.id;
+  WIDGET_OPTIONS.managerName = manager.displayName || manager.name;
+}
+
+function parseManagersCsv(text) {
+  const rows = String(text || "")
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .map(parseCsvLine);
+  const headers = rows.shift() || [];
+  const column = (name) => headers.findIndex((header) => header.trim().toLowerCase() === name.toLowerCase());
+  const idColumn = column("Manager ID");
+  const nameColumn = column("Name");
+  const displayNameColumn = column("Display Name");
+  const activeColumn = column("IsActive");
+
+  if (idColumn < 0 || nameColumn < 0) {
+    throw new Error("The manager list is missing required columns.");
+  }
+
+  return rows
+    .map((row) => ({
+      active: activeColumn < 0 || /^(true|yes|1)$/i.test(String(row[activeColumn] || "").trim()),
+      displayName: String(row[displayNameColumn] || "").trim(),
+      id: String(row[idColumn] || "").trim(),
+      name: String(row[nameColumn] || "").trim(),
+    }))
+    .filter((manager) => manager.id && manager.name);
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let value = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        value += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      values.push(value);
+      value = "";
+    } else {
+      value += character;
+    }
+  }
+
+  values.push(value);
+  return values;
+}
+
+function normalizeManagerName(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 function getPreferenceTeamIds(preferences) {
@@ -518,13 +600,8 @@ function parseWidgetParameter(value) {
   const managerValue = tokens.join(" ").replace(/^manager:/i, "").trim();
 
   if (!managerValue) {
-    return { channel, error: "", managerId: "", managerName: "" };
+    return { channel, managerId: "", managerName: "", managerValue: "" };
   }
 
-  const normalized = managerValue.toLowerCase();
-  const manager = MANAGERS.find((entry) => entry.id === managerValue || entry.name.toLowerCase() === normalized);
-
-  return manager
-    ? { channel, error: "", managerId: manager.id, managerName: manager.name }
-    : { channel, error: `Unknown manager: ${managerValue}`, managerId: "", managerName: "" };
+  return { channel, managerId: "", managerName: "", managerValue };
 }

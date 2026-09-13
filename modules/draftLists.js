@@ -1,3 +1,5 @@
+import { openContainedDialog } from "./dialogs/containDialog.js?v=202609130510";
+
 const DEFAULT_SHEET_ID = "fantasy-critic";
 
 export function createDraftListsController({ getManagerId, request }) {
@@ -455,16 +457,14 @@ export function createDraftListsController({ getManagerId, request }) {
     itemDialogTitle.textContent = `${item ? "Edit" : "Add"} ${sheet.name} Item`;
     itemDelete.hidden = !item;
     setStatus(itemStatus, "");
-    itemDialog.showModal();
-    window.setTimeout(() => itemNameInput.focus(), 0);
+    openContainedDialog({ dialog: itemDialog, initialFocus: itemNameInput });
   }
 
   function openSheetDialog() {
     if (!sheetDialog || !sheetForm) return;
     sheetForm.reset();
     setStatus(sheetStatus, "");
-    sheetDialog.showModal();
-    window.setTimeout(() => sheetNameInput.focus(), 0);
+    openContainedDialog({ dialog: sheetDialog, initialFocus: sheetNameInput });
   }
 
   async function handleItemSubmit(event) {

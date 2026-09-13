@@ -1,5 +1,5 @@
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
-import { createYouTubeInboxController } from "./modules/youtubeInbox.js?v=202609120245";
+import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
   buildFootyNextItemDefaults,
   findFootyFixtureBySharedIdentity,
@@ -420,7 +420,6 @@ import {
 } from "./modules/domRefs.js?v=202609110445";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createGuideDataLoader } from "./modules/guideData.js?v=202608200001";
 import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
 import {
   formatUpdatedTime,
@@ -544,6 +543,8 @@ const pendingFootyMatchNotificationIds = new Set();
 let footyMatchNotesLoadPromise = null;
 let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
+let releaseFootyPerfectDialog = null;
+let releaseFootySeenDialog = null;
 let shouldShowFootyPerfectFilters = false;
 let shouldShowFootyPerfectEditMode = false;
 let shouldShowFootySeenFilters = false;
@@ -713,10 +714,6 @@ const { syncThemeToggle } = createThemeController({
   toggle: themeToggle,
 });
 
-const loadGuideData = createGuideDataLoader({
-  loadJson: (path) => loadJson(path, { cache: "force-cache" }),
-  path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
-});
 const followedTeamsController = createFollowedTeamsController({
   getManagerId: getCurrentManagerId,
   request: rankingApiRequest,
@@ -737,8 +734,22 @@ const followedTeamsController = createFollowedTeamsController({
   },
 });
 let activeDraftListsController = null;
+const loadGuideDataLoader = createLazyControllerLoader(async () => {
+  const { createGuideDataLoader } = await import(
+    "./modules/guideData.js?v=202608200001"
+  );
+  return createGuideDataLoader({
+    loadJson: (path) => loadJson(path, { cache: "force-cache" }),
+    path: `data/guides.json?v=${encodeURIComponent(SITE_VERSION)}`,
+  });
+});
+async function loadGuideData() {
+  return (await loadGuideDataLoader())();
+}
 const loadGuidesController = createLazyControllerLoader(async () => {
-  const { createGuidesController } = await import("./modules/guides.js?v=202609112020");
+  const { createGuidesController } = await import(
+    "./modules/guides.js?v=202609112020"
+  );
   return createGuidesController({
     getManagerId: getCurrentManagerId,
     getIsAdmin: isCurrentManagerAdmin,
@@ -747,7 +758,7 @@ const loadGuidesController = createLazyControllerLoader(async () => {
   });
 });
 const loadDraftListsController = createLazyControllerLoader(async () => {
-  const { createDraftListsController } = await import("./modules/draftLists.js?v=202609112020");
+  const { createDraftListsController } = await import("./modules/draftLists.js?v=202609130510");
   activeDraftListsController = createDraftListsController({
     getManagerId: getCurrentManagerId,
     request: rankingApiRequest,
@@ -772,13 +783,18 @@ const loadTrophyLogController = createLazyControllerLoader(async () => {
     getAccessToken: ensureRankingAuthorization,
   });
 });
-const youtubeInboxController = createYouTubeInboxController({
-  endpoint: YOUTUBE_INBOX_ENDPOINT,
-  loadSheet,
-  scrollToTop: scrollToPageTop,
+const loadYouTubeInboxController = createLazyControllerLoader(async () => {
+  const { createYouTubeInboxController } = await import(
+    "./modules/youtubeInbox.js?v=202609120245"
+  );
+  return createYouTubeInboxController({
+    endpoint: YOUTUBE_INBOX_ENDPOINT,
+    loadSheet,
+    scrollToTop: scrollToPageTop,
+  });
 });
 const loadCollectiblesController = createLazyControllerLoader(async () => {
-  const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609050001");
+  const { createCollectiblesController } = await import("./modules/collectibles.js?v=202609130510");
   return createCollectiblesController({
     endpoint: COLLECTIBLES_ENDPOINT,
     getAccessToken: ensureRankingAuthorization,
@@ -786,7 +802,7 @@ const loadCollectiblesController = createLazyControllerLoader(async () => {
   });
 });
 const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
-  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609112230");
+  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609131601");
   return formulaOneCalculations;
 });
 
@@ -840,11 +856,11 @@ async function renderTrophyLogPage() {
 }
 
 async function renderYouTubeInboxPage() {
-  return youtubeInboxController.renderPage();
+  return (await loadYouTubeInboxController()).renderPage();
 }
 
 async function loadYouTubeInboxPage() {
-  return youtubeInboxController.load();
+  return (await loadYouTubeInboxController()).load();
 }
 
 async function renderCollectiblesPage() {
@@ -1770,7 +1786,7 @@ function openFootyTradingCard(player, team) {
     </div>
   `;
 
-  footyTradingCardDialog.showModal();
+  openContainedDialog({ dialog: footyTradingCardDialog });
 }
 
 function renderFootyTradingCardBack(player, team, badgeMarkup) {
@@ -3089,8 +3105,8 @@ function syncFootyNotificationToggle() {
   const enabled = isFootyNotificationEnabled();
   const managerReady = Boolean(getCurrentManagerId());
 
-  footyNotificationToggle.hidden = !supported;
-  footyNotificationToggle.disabled = !supported || !managerReady || isFootyNotificationBusy;
+  footyNotificationToggle.hidden = !managerReady;
+  footyNotificationToggle.disabled = !managerReady || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
   footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
   footyNotificationToggle.setAttribute("aria-pressed", String(enabled));
@@ -3138,7 +3154,10 @@ async function toggleFootyNotifications() {
   const supportsLocal = isFootyNotificationSupported();
 
   if (!supportsPush && !supportsLocal) {
-    setFootyNotificationStatus("This browser cannot show site notifications here.", "error");
+    setFootyNotificationStatus(
+      "Notifications are unavailable here. On iPhone or iPad, add Box This Lap to the Home Screen, then open it from there.",
+      "error",
+    );
     syncFootyNotificationToggle();
     return;
   }
@@ -4263,8 +4282,12 @@ function openFootyPerfectDialog(matchId = "", performance = null) {
   footyPerfectStatus.textContent = "";
   footyPerfectStatus.classList.remove("is-error");
   footyPerfectSave.disabled = false;
-  footyPerfectDialog.showModal();
-  window.setTimeout(() => footyPerfectPlayer?.focus(), 0);
+  releaseFootyPerfectDialog?.();
+  releaseFootyPerfectDialog = openContainedDialog({
+    dialog: footyPerfectDialog,
+    initialFocus: footyPerfectPlayer,
+    scrollArea: footyPerfectForm.querySelector(".legacy-dialog-scroll"),
+  });
 }
 
 function syncFootyPerfectTeamSideOptions() {
@@ -4281,9 +4304,8 @@ function syncFootyPerfectTeamSideOptions() {
 }
 
 function closeFootyPerfectDialog() {
-  if (footyPerfectDialog?.open) {
-    footyPerfectDialog.close();
-  }
+  releaseFootyPerfectDialog?.();
+  releaseFootyPerfectDialog = null;
 }
 
 function setFootyPerfectStatus(message = "", isError = false) {
@@ -4563,12 +4585,17 @@ function openFootySeenDialog({ fixture = null, seenMatch = null, manual = false 
   footySeenStatus.textContent = "";
   footySeenStatus.classList.remove("is-error");
   footySeenSave.disabled = false;
-  footySeenDialog.showModal();
-  window.setTimeout(() => (isTracked ? footySeenSportsBar : footySeenHome)?.focus(), 0);
+  releaseFootySeenDialog?.();
+  releaseFootySeenDialog = openContainedDialog({
+    dialog: footySeenDialog,
+    initialFocus: isTracked ? footySeenSportsBar : footySeenHome,
+    scrollArea: footySeenForm.querySelector(".legacy-dialog-scroll"),
+  });
 }
 
 function closeFootySeenDialog() {
-  if (footySeenDialog?.open) footySeenDialog.close();
+  releaseFootySeenDialog?.();
+  releaseFootySeenDialog = null;
 }
 
 function setFootySeenStatus(message = "", isError = false) {
@@ -4789,11 +4816,7 @@ function openFootyNoteDialog(matchId) {
   setFootyNoteStatus("");
   footyNoteSave && (footyNoteSave.disabled = false);
 
-  if (typeof footyNoteDialog.showModal === "function") {
-    footyNoteDialog.showModal();
-  } else {
-    footyNoteDialog.setAttribute("open", "");
-  }
+  openContainedDialog({ dialog: footyNoteDialog, initialFocus: footyNoteText });
 }
 
 function syncFootyNoteGoalAssistLabels(fixture) {
@@ -5705,7 +5728,7 @@ function openFootyRosterEditor(team, player) {
   footyRosterEditorKeep.checked = false;
   footyRosterEditorSource.textContent = player?.provider ? `Roster source: ${player.provider}${player.reviewDeparture ? " • Missing from latest sync" : ""}` : "Manual roster entry";
   footyRosterEditorStatus.textContent = "";
-  footyRosterEditorDialog.showModal();
+  openContainedDialog({ dialog: footyRosterEditorDialog, initialFocus: footyRosterEditorName });
   void showFootyRosterMediaUsage();
 }
 
@@ -5759,7 +5782,7 @@ async function openTradingCardImageEditor(file) {
   renderTradingCardImageEditorOverlay();
   renderTradingCardImageEditorCanvas();
   tradingCardImageEditorStatus.textContent = "";
-  tradingCardImageEditorDialog.showModal();
+  openContainedDialog({ dialog: tradingCardImageEditorDialog });
 }
 
 function renderTradingCardImageEditorOverlay() {
@@ -7614,7 +7637,7 @@ function openWantMoveDialog(itemId) {
   pendingWantMoveItemId = item.id;
   if (wantMoveName) wantMoveName.textContent = item.name;
   if (wantMoveStatus) wantMoveStatus.textContent = "";
-  typeof wantMoveDialog.showModal === "function" ? wantMoveDialog.showModal() : wantMoveDialog.setAttribute("open", "");
+  openContainedDialog({ dialog: wantMoveDialog });
 }
 
 function closeWantMoveDialog() {
@@ -7674,7 +7697,7 @@ function ensureWantRankingDataLoaded() {
 function openWantRandomDialog() {
   if (!wantRandomDialog) return;
   renderRandomWantItem();
-  typeof wantRandomDialog.showModal === "function" ? wantRandomDialog.showModal() : wantRandomDialog.setAttribute("open", "");
+  openContainedDialog({ dialog: wantRandomDialog });
 }
 
 function closeWantRandomDialog() {
@@ -7808,8 +7831,7 @@ function ensureTodoRankingDataLoaded() {
 function openTodoRandomDialog() {
   if (!todoRandomDialog) return;
   renderRandomTodoItem();
-  if (typeof todoRandomDialog.showModal === "function") todoRandomDialog.showModal();
-  else todoRandomDialog.setAttribute("open", "");
+  openContainedDialog({ dialog: todoRandomDialog });
 }
 
 function closeTodoRandomDialog() {
@@ -9812,13 +9834,7 @@ function openRankingItemDialog(kind = activeRankingKind, itemId = "") {
 
   setRankingItemStatus("");
 
-  if (typeof rankingItemDialog.showModal === "function") {
-    rankingItemDialog.showModal();
-  } else {
-    rankingItemDialog.setAttribute("open", "");
-  }
-
-  rankingItemName?.focus();
+  openContainedDialog({ dialog: rankingItemDialog, initialFocus: rankingItemName });
 }
 
 function closeRankingItemDialog() {
@@ -9846,11 +9862,7 @@ function openRankingNormalizeDialog(kind = activeRankingKind) {
 
   setRankingNormalizeStatus("");
 
-  if (typeof rankingNormalizeDialog.showModal === "function") {
-    rankingNormalizeDialog.showModal();
-  } else {
-    rankingNormalizeDialog.setAttribute("open", "");
-  }
+  openContainedDialog({ dialog: rankingNormalizeDialog, initialFocus: rankingNormalizeReason });
 }
 
 function closeRankingNormalizeDialog() {
@@ -10175,11 +10187,7 @@ async function openRankingBattleDialog(kind = activeRankingKind) {
   }
   renderNextRankingBattle(kind);
 
-  if (typeof rankingBattleDialog.showModal === "function") {
-    rankingBattleDialog.showModal();
-  } else {
-    rankingBattleDialog.setAttribute("open", "");
-  }
+  openContainedDialog({ dialog: rankingBattleDialog });
 }
 
 function closeRankingBattleDialog() {
@@ -11299,184 +11307,13 @@ function parseFormulaOneRoundForms(rows) {
 }
 
 function parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv }) {
-  const optionsRows = parseCsvMatrix(optionsCsv);
-  const pointTables = findFormulaOneCalculatorPointTables(optionsRows);
-  const raceOptions = pointTables.find((table) => table.some((option) => option.position === "<10"));
-  const sprintOptions = pointTables.find((table) => table.some((option) => option.position === "<8"));
-  const driversToWatch = findFormulaOneDriversToWatch(optionsRows, pointTables);
-
-  if (!raceOptions?.length || !sprintOptions?.length || !driversToWatch.length) {
-    throw new Error("Formula 1 calculator options did not include RacePoints, SprintPoints, and DriversToWatch data.");
-  }
-
-  const raceData = parseFormulaOneCalculatorRoundTable(driversCsv);
-  const sprintData = parseFormulaOneCalculatorRoundTable(sprintsCsv);
-  const currentTotals = parseFormulaOneCalculatorSummary(summaryCsv);
-
-  if (!raceData.rounds.length) {
-    throw new Error("Formula 1 Drivers data did not include round columns.");
-  }
-
-  return {
-    currentTotals,
-    driversToWatch,
-    raceOptions,
-    rounds: raceData.rounds,
-    sprintOptions,
-    sprintRounds: sprintData.rounds,
-  };
-}
-
-function findFormulaOneCalculatorPointTables(rows) {
-  const tables = [];
-
-  rows.forEach((row, rowIndex) => {
-    row.forEach((value, columnIndex) => {
-      if (normalizeLookupName(value) !== "position" || normalizeLookupName(row[columnIndex + 1]) !== "points") {
-        return;
-      }
-
-      const options = [];
-
-      for (const optionRow of rows.slice(rowIndex + 1)) {
-        const position = String(optionRow[columnIndex] ?? "").trim();
-        const pointsText = String(optionRow[columnIndex + 1] ?? "").trim();
-
-        if (!position && !pointsText) {
-          break;
-        }
-
-        const points = Number(pointsText.replace(/,/g, ""));
-        if (!position || !Number.isFinite(points)) {
-          break;
-        }
-
-        options.push({ points, position });
-      }
-
-      if (options.some((option) => option.position.startsWith("<"))) {
-        tables.push({ headerRowIndex: rowIndex, options });
-      }
-    });
+  return formulaOneCalculations.parseFormulaOneCalculatorData({
+    driversCsv,
+    optionsCsv,
+    sprintsCsv,
+    summaryCsv,
   });
-
-  return tables.map((table) => table.options);
 }
-
-function findFormulaOneDriversToWatch(rows, pointTables) {
-  const terminalTokens = new Set(pointTables.flat()
-    .map((option) => option.position)
-    .filter((position) => position.startsWith("<")));
-  let passedPointTables = false;
-
-  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
-    const row = rows[rowIndex] ?? [];
-    if (row.some((value) => terminalTokens.has(String(value ?? "").trim()))) {
-      passedPointTables = true;
-      continue;
-    }
-
-    if (!passedPointTables) {
-      continue;
-    }
-
-    const driverColumn = row.findIndex((value) => normalizeLookupName(value) === "driver");
-    if (driverColumn < 0) {
-      continue;
-    }
-
-    const drivers = [];
-    for (const driverRow of rows.slice(rowIndex + 1)) {
-      const driver = String(driverRow[driverColumn] ?? "").trim();
-      if (!driver) {
-        break;
-      }
-      drivers.push(driver);
-    }
-    return drivers;
-  }
-
-  return [];
-}
-
-function parseFormulaOneCalculatorRoundTable(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerIndex = rows.findIndex((row) => {
-    return normalizeLookupName(row[0]) === "driver" && row.some((value) => /^round\s+\d+/i.test(String(value ?? "").trim()));
-  });
-
-  if (headerIndex < 0) {
-    return { rounds: [] };
-  }
-
-  const headers = rows[headerIndex];
-  const prettyHeaders = rows[headerIndex - 1] ?? [];
-  const totalColumn = headers.findIndex((value) => normalizeLookupName(value) === "total");
-  const roundColumns = headers
-    .map((header, columnIndex) => {
-      const match = String(header ?? "").trim().match(/^Round\s+(\d+)/i);
-      if (!match || (totalColumn >= 0 && columnIndex >= totalColumn)) {
-        return null;
-      }
-
-      const prettyName = String(prettyHeaders[columnIndex] ?? "").trim();
-      const headerName = String(header ?? "").trim();
-      return {
-        columnIndex,
-        id: Number(match[1]),
-        name: /^Round\s+\d+/i.test(prettyName) ? prettyName : headerName,
-        pointsByDriver: new Map(),
-      };
-    })
-    .filter(Boolean);
-
-  for (const row of rows.slice(headerIndex + 1)) {
-    const driver = String(row[0] ?? "").trim();
-    if (!driver || normalizeLookupName(driver) === "count") {
-      break;
-    }
-
-    roundColumns.forEach((round) => {
-      const value = String(row[round.columnIndex] ?? "").trim();
-      round.pointsByDriver.set(normalizeLookupName(driver), value);
-    });
-  }
-
-  roundColumns.forEach((round) => {
-    round.complete = [...round.pointsByDriver.values()].some((value) => value !== "");
-  });
-
-  return { rounds: roundColumns };
-}
-
-function parseFormulaOneCalculatorSummary(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const headerIndex = rows.findIndex((row) => {
-    return normalizeLookupName(row[0]) === "driver" && row.some((value) => normalizeLookupName(value) === "total");
-  });
-  const currentTotals = new Map();
-
-  if (headerIndex < 0) {
-    return currentTotals;
-  }
-
-  const totalColumn = rows[headerIndex].findIndex((value) => normalizeLookupName(value) === "total");
-  for (const row of rows.slice(headerIndex + 1)) {
-    const driver = String(row[0] ?? "").trim();
-    if (!driver) {
-      break;
-    }
-    currentTotals.set(normalizeLookupName(driver), getFormulaOneCalculatorPointNumber(row[totalColumn]));
-  }
-
-  return currentTotals;
-}
-
-function getFormulaOneCalculatorPointNumber(value) {
-  const number = Number(String(value ?? "").trim().replace(/,/g, ""));
-  return Number.isFinite(number) ? number : 0;
-}
-
 function getFormulaOneCalculatorState(year, data) {
   const yearKey = String(year);
   const existingState = formulaOneCalculatorStates.get(yearKey);
@@ -16260,6 +16097,7 @@ function hydrateManagerSession() {
   hydrateStoredManagerSession();
   renderLoginState();
   renderManagerHub();
+  syncFootyNotificationToggle();
   refreshManagerAuthorizationInBackground();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
@@ -16290,6 +16128,7 @@ function saveManagerSession(session) {
 
   renderLoginState();
   renderManagerHub();
+  syncFootyNotificationToggle();
   scheduleRankingAuthorizationRefresh();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
@@ -16320,6 +16159,7 @@ function signOutManager() {
   closeProfileDropdown();
   renderLoginState();
   renderManagerHub();
+  syncFootyNotificationToggle();
   void followedTeamsController.load().catch((error) => recordDiagnostic("default followed teams failed to load", error));
   showPage("footy", { scrollToTop: true });
   window.location.hash = "footy";
@@ -19516,7 +19356,8 @@ function ensureFormulaOneCalculatorData(year) {
   return ensureFormulaOneSource(
     `formulaOne${yearKey}Calculator`,
     async () => {
-      const [driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+      const [, driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+        loadFormulaOneCalculations(),
         loadSheetText(config.driversSource),
         loadSheetText(config.optionsSource),
         loadSheetText(config.sprintsSource),

@@ -89,6 +89,23 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
+test("signed-in managers can find notification setup in unsupported browser contexts", async ({
+  page,
+}) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, "Notification");
+  });
+  await page.goto("/#footy", { waitUntil: "networkidle" });
+
+  const notificationToggle = page.locator("#footy-notification-toggle");
+  await expect(notificationToggle).toBeVisible();
+  await notificationToggle.click();
+  await expect(page.locator("#footy-notification-status")).toContainText(
+    "add Box This Lap to the Home Screen",
+  );
+});
+
 test("followed-team picker loads on demand with a contained mobile scroll list", async ({
   page,
 }) => {
@@ -478,6 +495,61 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+test("Footy entry dialogs contain mobile scrolling", async ({ page }) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.route(
+    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          ok: true,
+          performances: [],
+          seenMatches: [],
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  for (const entry of [
+    {
+      addName: "Add a 10 out of 10 performance",
+      closeName: "Close 10 out of 10 performance editor",
+      dialogName: "Add 10/10 Performance",
+      pageName: "footy-perfect",
+    },
+    {
+      addName: "Add a seen match",
+      closeName: "Close seen match editor",
+      dialogName: "Add Seen Match",
+      pageName: "footy-seen",
+    },
+  ]) {
+    await page.goto(`/#${entry.pageName}`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: entry.addName }).click();
+    const dialog = page.getByRole("dialog", { name: entry.dialogName });
+    const scrollArea = dialog.locator(".legacy-dialog-scroll");
+    await expect(dialog).toBeVisible();
+    await expect(page.locator("body")).toHaveCSS("position", "fixed");
+    expect(
+      await scrollArea.evaluate((element) => {
+        const event = new Event("touchmove", {
+          bubbles: true,
+          cancelable: true,
+        });
+        Object.defineProperty(event, "touches", {
+          value: [{ clientY: 100 }],
+        });
+        return !element.dispatchEvent(event);
+      }),
+    ).toBe(true);
+    await dialog.getByRole("button", { name: entry.closeName }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+  }
+});
+
 /** @param {import("@playwright/test").Page} page */
 async function prepareFootyFixture(page) {
   await page.route("**/data/footy-schedule.json*", async (route) => {
@@ -650,7 +722,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   const secondaryBundleRequests = [];
   page.on("request", (request) => {
     if (
-      /\/(?:collectibles|draftLists|formulaOneQualifying|guides|platinums|trophyLog|trophyStats)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -671,11 +743,18 @@ test("secondary admin bundles stay off public mobile routes", async ({
   expect(secondaryBundleRequests).toEqual([]);
 });
 
-test("authenticated YouTube route loads its stable controller", async ({
+test("authenticated YouTube route loads its deferred controller", async ({
   page,
 }) => {
   /** @type {string[]} */
+  const controllerRequests = [];
+  /** @type {string[]} */
   const pageErrors = [];
+  page.on("request", (request) => {
+    if (/\/youtubeInbox-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      controllerRequests.push(request.url());
+    }
+  });
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await prepareAuthenticatedSecondaryRoutes(page);
 
@@ -686,17 +765,26 @@ test("authenticated YouTube route loads its stable controller", async ({
   await expect(
     page.getByRole("heading", { name: "All caught up" }),
   ).toBeVisible();
+  expect(controllerRequests).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });
 
 test("authenticated Guides and Draft List load their deferred controllers", async ({
   page,
 }) => {
+  /** @type {string[]} */
+  const guideDataBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/guideData-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      guideDataBundleRequests.push(request.url());
+    }
+  });
   await prepareAuthenticatedSecondaryRoutes(page);
 
   await page.goto("/#guides", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="guides"]')).toHaveClass(/is-active/);
   await expect(page.locator(".guides-grid")).toBeVisible();
+  expect(guideDataBundleRequests).toHaveLength(1);
 
   await page.goto("/#draft-list", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="draft-list"]')).toHaveClass(

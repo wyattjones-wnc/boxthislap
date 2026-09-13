@@ -1,4 +1,5 @@
 import { buildCollectibleOptions, queryCollectibles } from "./collectiblesCatalog.js?v=202609011540";
+import { openContainedDialog } from "./dialogs/containDialog.js?v=202609130510";
 
 const DEFAULT_FILTERS = { status: "", search: "", manufacturer: "", year: "", scale: "", category: "", sort: "source", scope: "active", page: 1 };
 const COLLECTION_STATE_CACHE_KEY = "boxThisLapCollectionStateV1";
@@ -277,7 +278,7 @@ export function createCollectiblesController({ endpoint, getAccessToken, catalog
   }
 
   async function openDetail(id) {
-    dialog.showModal(); detail.innerHTML = loading("Loading collectible details...");
+    openContainedDialog({ dialog }); detail.innerHTML = loading("Loading collectible details...");
     const fallback = state.catalog?.items?.find((entry) => entry.id === id);
     const catalogItem = fallback ? queryCollectibles({ categories: state.catalog.categories, items: [fallback] }, state.overlay, { scope: "all", status: "", sort: "source", page: 1 }).items[0] : null;
     try {

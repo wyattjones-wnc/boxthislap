@@ -51,7 +51,9 @@ Both widgets continue to request automatic background refreshes. iOS decides whe
 
 ## Footy
 
-Footy shows the next three matches in a medium widget or the next eight matches in a large widget. Set the widget parameter to a manager's first name or manager ID to show only that manager's followed teams:
+Footy shows the next three matches in a medium widget or the next eight matches in a large widget. Run the Footy script inside Scriptable to choose a manager. The choice is saved on the phone and Home Screen refreshes then show only that manager's followed teams. Run the script again to change managers or return to the shared default schedule.
+
+An optional widget parameter overrides the saved choice. Use a manager's first name or manager ID:
 
 ```text
 Wyatt

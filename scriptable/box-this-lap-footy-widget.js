@@ -16,6 +16,7 @@ const SITE_ASSET_BASE_URL = SITE_ROOT;
 const MATCH_LIMIT = config.widgetFamily === "large" ? 8 : 3;
 const SCHEDULE_CACHE_FILE = `box-this-lap-footy-schedule-${SITE_CHANNEL}.json`;
 const MANAGERS_CACHE_FILE = "box-this-lap-footy-managers.json";
+const SAVED_MANAGER_FILE = `box-this-lap-footy-manager-${SITE_CHANNEL}.json`;
 const STARTED_MATCH_WINDOW_MS = 60 * 60 * 1000;
 const WIDGET_LOCAL_BADGE_PATHS = {
   "4": "assets/teams/4/badge.png",
@@ -47,6 +48,15 @@ const COLORS = {
   nearMatchText: new Color("#201633"),
   nearMatchMuted: new Color("#574d68"),
 };
+let loadedManagers = null;
+
+if (!WIDGET_OPTIONS.managerValue) {
+  if (config.runsInWidget) {
+    applySavedManager();
+  } else {
+    await chooseWidgetManager();
+  }
+}
 
 const result = await loadFixtures();
 const widget = await createWidget(result);
@@ -144,6 +154,28 @@ async function resolveWidgetManager() {
     return;
   }
 
+  const managers = await loadManagers();
+  const lookup = normalizeManagerName(WIDGET_OPTIONS.managerValue);
+  const manager = managers.find((entry) =>
+    entry.active && (
+      String(entry.id) === WIDGET_OPTIONS.managerValue ||
+      normalizeManagerName(entry.name) === lookup ||
+      normalizeManagerName(entry.displayName) === lookup
+    ));
+
+  if (!manager) {
+    throw new Error(`Unknown or inactive manager: ${WIDGET_OPTIONS.managerValue}`);
+  }
+
+  WIDGET_OPTIONS.managerId = manager.id;
+  WIDGET_OPTIONS.managerName = manager.displayName || manager.name;
+}
+
+async function loadManagers() {
+  if (loadedManagers) {
+    return loadedManagers;
+  }
+
   let managers;
 
   try {
@@ -161,20 +193,68 @@ async function resolveWidgetManager() {
     console.warn(`Unable to refresh managers; using the saved cache: ${error}`);
   }
 
-  const lookup = normalizeManagerName(WIDGET_OPTIONS.managerValue);
-  const manager = managers.find((entry) =>
-    entry.active && (
-      String(entry.id) === WIDGET_OPTIONS.managerValue ||
-      normalizeManagerName(entry.name) === lookup ||
-      normalizeManagerName(entry.displayName) === lookup
-    ));
+  loadedManagers = managers;
+  return loadedManagers;
+}
 
-  if (!manager) {
-    throw new Error(`Unknown or inactive manager: ${WIDGET_OPTIONS.managerValue}`);
+async function chooseWidgetManager() {
+  let managers;
+
+  try {
+    managers = (await loadManagers())
+      .filter((manager) => manager.active)
+      .sort((first, second) => (first.displayName || first.name).localeCompare(second.displayName || second.name));
+  } catch (error) {
+    console.warn(`Unable to open the manager picker: ${error}`);
+    applySavedManager();
+    return;
   }
 
-  WIDGET_OPTIONS.managerId = manager.id;
-  WIDGET_OPTIONS.managerName = manager.displayName || manager.name;
+  const alert = new Alert();
+  alert.title = "Choose Footy Manager";
+  alert.message = "The Home Screen widget will show matches for this manager's followed teams. Run this script again whenever you want to change managers.";
+  managers.forEach((manager) => alert.addAction(manager.displayName || manager.name));
+  alert.addDestructiveAction("Use shared default schedule");
+  alert.addCancelAction("Cancel");
+  const index = await alert.presentSheet();
+
+  if (index >= 0 && index < managers.length) {
+    saveWidgetManager(managers[index]);
+  } else if (index === managers.length) {
+    clearSavedManager();
+  } else {
+    applySavedManager();
+  }
+}
+
+function saveWidgetManager(manager) {
+  writeJsonCache(SAVED_MANAGER_FILE, {
+    managerId: String(manager.id),
+    managerName: manager.displayName || manager.name,
+  });
+  WIDGET_OPTIONS.managerValue = String(manager.id);
+}
+
+function applySavedManager() {
+  const saved = readJsonCache(SAVED_MANAGER_FILE);
+  const managerId = String(saved && saved.managerId || "").trim();
+
+  if (managerId) {
+    WIDGET_OPTIONS.managerValue = managerId;
+  }
+}
+
+function clearSavedManager() {
+  const fileManager = FileManager.local();
+  const path = fileManager.joinPath(fileManager.documentsDirectory(), SAVED_MANAGER_FILE);
+
+  if (fileManager.fileExists(path)) {
+    fileManager.remove(path);
+  }
+
+  WIDGET_OPTIONS.managerId = "";
+  WIDGET_OPTIONS.managerName = "";
+  WIDGET_OPTIONS.managerValue = "";
 }
 
 function parseManagersCsv(text) {

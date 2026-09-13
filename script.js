@@ -335,19 +335,7 @@ import {
   wantEditToggle,
   wantStatusFilters,
   wantAddButton,
-  wantItemDialog,
-  wantItemForm,
-  wantItemDialogTitle,
-  wantItemId,
-  wantNameInput,
-  wantOrderInput,
-  wantPriceInput,
-  wantImageUrlInput,
-  wantArchivedInput,
-  wantCompletedInput,
-  wantItemStatus,
-  wantItemClose,
-  wantItemCancel,
+  wantItemDialogRoot,
   wantMoveDialog,
   wantMoveName,
   wantMoveStatus,
@@ -529,6 +517,11 @@ let activeWantItemId = "";
 let pendingWantMoveItemId = "";
 let draggedWantItemId = "";
 let didMoveWantPointer = false;
+let isWantItemDialogOpen = false;
+let wantItemDialogController = null;
+let wantItemDialogControllerPromise = null;
+let wantItemDialogMessage = "";
+let wantItemDialogMessageIsError = false;
 const FOOTY_INITIAL_FIXTURE_LIMIT = 5;
 const FOOTY_MISSING_NOTES_PAGE_SIZE = 20;
 const FOOTY_ROSTER_JSONP_TIMEOUT_MS = 45000;
@@ -7040,7 +7033,7 @@ async function ensureNextItemDialogController() {
   if (nextItemDialogController) return nextItemDialogController;
   if (!nextItemDialogControllerPromise) {
     nextItemDialogControllerPromise = import(
-      "./modules/dialogs/nextItemDialog.jsx?v=202609130137"
+      "./modules/dialogs/nextItemDialog.jsx?v=202609130410"
     )
       .then(({ createNextItemDialog }) => {
         nextItemDialogController = createNextItemDialog({
@@ -7485,45 +7478,77 @@ function syncWantControls() {
   wantStatusFilters?.forEach((input) => { input.checked = input.dataset.wantStatusFilter === activeWantStatusFilter; });
 }
 
-function openWantItemDialog(itemId = "") {
-  if (!isCurrentManagerAdmin() || !wantItemDialog) return;
+async function openWantItemDialog(itemId = "") {
+  if (!isCurrentManagerAdmin() || !wantItemDialogRoot) return;
   const item = itemId ? getWantItems().map(normalizeWantItem).filter(Boolean).find((entry) => entry.id === String(itemId)) : null;
   const orderItems = getWantOrderItems();
-  if (wantItemDialogTitle) wantItemDialogTitle.textContent = item ? "Edit Want Item" : "Add Want Item";
-  if (wantItemId) wantItemId.value = item?.id || "";
-  if (wantNameInput) wantNameInput.value = item?.name || "";
-  if (wantOrderInput) {
-    wantOrderInput.value = String(item?.order && item.order !== Number.MAX_SAFE_INTEGER ? item.order : orderItems.length + 1);
-    wantOrderInput.max = String(item ? Math.max(orderItems.length, 1) : orderItems.length + 1);
-  }
-  if (wantPriceInput) wantPriceInput.value = item?.price ?? "";
-  if (wantImageUrlInput) wantImageUrlInput.value = item?.imageUrl || "";
-  if (wantArchivedInput) wantArchivedInput.checked = Boolean(item?.archived);
-  if (wantCompletedInput) wantCompletedInput.checked = Boolean(item?.completed);
   setWantItemStatus("");
-  typeof wantItemDialog.showModal === "function" ? wantItemDialog.showModal() : wantItemDialog.setAttribute("open", "");
-  wantNameInput?.focus();
+  isWantItemDialogOpen = true;
+  try {
+    const controller = await ensureWantItemDialogController();
+    if (!isWantItemDialogOpen) return;
+    controller.open({
+      initialValues: {
+        archived: Boolean(item?.archived),
+        completed: Boolean(item?.completed),
+        id: item?.id || "",
+        imageUrl: item?.imageUrl || "",
+        maxOrder: item ? Math.max(orderItems.length, 1) : orderItems.length + 1,
+        name: item?.name || "",
+        order: item?.order && item.order !== Number.MAX_SAFE_INTEGER ? item.order : orderItems.length + 1,
+        price: item?.price ?? "",
+      },
+      message: wantItemDialogMessage,
+      messageIsError: wantItemDialogMessageIsError,
+      title: item ? "Edit Want Item" : "Add Want Item",
+    });
+  } catch (error) {
+    isWantItemDialogOpen = false;
+    recordDiagnostic("Want item dialog failed to open", error);
+    renderWantListError(error);
+  }
 }
 
 function closeWantItemDialog() {
-  if (!wantItemDialog) return;
-  typeof wantItemDialog.close === "function" ? wantItemDialog.close() : wantItemDialog.removeAttribute("open");
+  isWantItemDialogOpen = false;
+  wantItemDialogController?.close();
 }
 
-function saveWantItemFromForm() {
-  const name = String(wantNameInput?.value || "").trim();
+async function ensureWantItemDialogController() {
+  if (wantItemDialogController) return wantItemDialogController;
+  if (!wantItemDialogControllerPromise) {
+    wantItemDialogControllerPromise = import(
+      "./modules/dialogs/wantItemDialog.jsx?v=202609130410"
+    )
+      .then(({ createWantItemDialog }) => {
+        wantItemDialogController = createWantItemDialog({
+          mount: wantItemDialogRoot,
+          onClose: closeWantItemDialog,
+          onSubmit: saveWantItemFromForm,
+        });
+        return wantItemDialogController;
+      })
+      .finally(() => {
+        wantItemDialogControllerPromise = null;
+      });
+  }
+  return wantItemDialogControllerPromise;
+}
+
+function saveWantItemFromForm(values = {}) {
+  const name = String(values.name || "").trim();
   if (!name) return setWantItemStatus("Name is required.", true);
-  const existingId = String(wantItemId?.value || "").trim();
+  const existingId = String(values.id || "").trim();
   const existing = existingId ? getWantItems().find((row) => String(row.ID || row.id || "") === existingId) : null;
   const item = {
     ID: existingId || createWantItemId(),
-    Order: String(clampTodoOrder(wantOrderInput?.value, getWantOrderItems().length + 1)),
+    Order: String(clampTodoOrder(values.order, getWantOrderItems().length + 1)),
     Name: name,
-    Price: String(wantPriceInput?.value || "").trim(),
-    Archived: wantArchivedInput?.checked ? "TRUE" : "FALSE",
-    Completed: wantCompletedInput?.checked ? "TRUE" : "FALSE",
+    Price: String(values.price ?? "").trim(),
+    Archived: values.archived ? "TRUE" : "FALSE",
+    Completed: values.completed ? "TRUE" : "FALSE",
     IsDeleted: existing?.IsDeleted || existing?.isDeleted || "FALSE",
-    "Image URL": String(wantImageUrlInput?.value || "").trim(),
+    "Image URL": String(values.imageUrl || "").trim(),
   };
   upsertWantItemLocally(item);
   normalizeWantOrdersLocally(item.ID, Number(item.Order));
@@ -7613,9 +7638,12 @@ function confirmWantMove() {
 }
 
 function setWantItemStatus(message, isError = false) {
-  if (!wantItemStatus) return;
-  wantItemStatus.textContent = message;
-  wantItemStatus.classList.toggle("is-error", isError);
+  wantItemDialogMessage = message || "";
+  wantItemDialogMessageIsError = isError;
+  wantItemDialogController?.update({
+    message: wantItemDialogMessage,
+    messageIsError: wantItemDialogMessageIsError,
+  });
 }
 
 function renderWantListError(error) {
@@ -8154,7 +8182,7 @@ async function ensureTodoItemDialogController() {
   if (todoItemDialogController) return todoItemDialogController;
   if (!todoItemDialogControllerPromise) {
     todoItemDialogControllerPromise = import(
-      "./modules/dialogs/todoItemDialog.jsx?v=202609130137"
+      "./modules/dialogs/todoItemDialog.jsx?v=202609130410"
     )
       .then(({ createTodoItemDialog }) => {
         todoItemDialogController = createTodoItemDialog({
@@ -15268,8 +15296,6 @@ wantList?.addEventListener("keydown", (event) => {
   activeWantItemId = activeWantItemId === card.getAttribute("data-want-id") ? "" : card.getAttribute("data-want-id") || "";
   renderWantList();
 });
-wantItemForm?.addEventListener("submit", (event) => { event.preventDefault(); saveWantItemFromForm(); });
-[wantItemClose, wantItemCancel].forEach((button) => button?.addEventListener("click", closeWantItemDialog));
 [wantMoveClose, wantMoveCancel].forEach((button) => button?.addEventListener("click", closeWantMoveDialog));
 wantMoveConfirm?.addEventListener("click", confirmWantMove);
 

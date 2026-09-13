@@ -393,6 +393,91 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+test("Want form uses the shared contained React dialog", async ({ page }) => {
+  /** @type {string[]} */
+  const dialogBundleRequests = [];
+  page.on("request", (request) => {
+    if (/\/wantItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      dialogBundleRequests.push(request.url());
+    }
+  });
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "sendBeacon", {
+      configurable: true,
+      value: () => true,
+    });
+  });
+  await page.route("https://script.google.com/macros/s/**", async (route) => {
+    const url = new URL(route.request().url());
+    const callback = url.searchParams.get("callback");
+    const callbackId = url.searchParams.get("callbackId");
+    const action = url.searchParams.get("action");
+    const items =
+      action === "listWantItems"
+        ? [{ ID: "1", Name: "Existing want", Order: "1", Price: "15" }]
+        : [];
+    await route.fulfill({
+      body: `${callback}(${JSON.stringify({
+        callbackId,
+        items,
+        ok: true,
+        source: "boxthislap-next-data",
+      })});`,
+      contentType: "application/javascript",
+      status: 200,
+    });
+  });
+  await page.goto("/#want", { waitUntil: "networkidle" });
+
+  expect(dialogBundleRequests).toEqual([]);
+  await page.getByRole("button", { name: "Add Want item" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add Want Item" });
+  const name = dialog.getByRole("textbox", { name: "Name" });
+  await expect(dialog).toBeVisible();
+  await expect(name).toBeFocused();
+  expect(dialogBundleRequests).toHaveLength(1);
+  await expect(page.locator("body")).toHaveCSS("position", "fixed");
+  expect(
+    await name.evaluate((input) =>
+      Number.parseFloat(getComputedStyle(input).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(16);
+
+  await name.fill("React Want check");
+  await dialog.getByRole("spinbutton", { name: "Price" }).fill("24.99");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByText("React Want check", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
+
+  await page.getByRole("button", { name: "Show Want filters" }).click();
+  await page.locator("#want-edit-toggle").check();
+  const wantCard = page.locator("[data-want-id]", {
+    hasText: "React Want check",
+  });
+  await wantCard.click();
+  await expect(wantCard).toHaveClass(/is-actions-open/);
+  await wantCard.getByRole("button", { name: "Edit" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Edit Want Item" });
+  await expect(editDialog).toBeVisible();
+  await expect(editDialog.getByRole("textbox", { name: "Name" })).toHaveValue(
+    "React Want check",
+  );
+  await expect(
+    editDialog.getByRole("spinbutton", { name: "Price" }),
+  ).toHaveValue("24.99");
+  await editDialog.getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "Add Want item" }).click();
+  await expect(dialog).toBeVisible();
+  await expect(name).toHaveValue("");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+});
+
 /** @param {import("@playwright/test").Page} page */
 async function prepareFootyFixture(page) {
   await page.route("**/data/footy-schedule.json*", async (route) => {

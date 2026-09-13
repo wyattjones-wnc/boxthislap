@@ -199,7 +199,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.09.13.01.37";
+      window.BOX_THIS_LAP_VERSION = "2026.09.13.04.10";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -213,7 +213,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609130137">
+    <link rel="stylesheet" href="styles.css?v=202609130410">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1659,30 +1659,7 @@
         </div>
         <div class="content-shell" id="want-list"><p class="table-message">Want items will load here.</p></div>
 
-        <dialog class="footy-note-dialog next-item-dialog" id="want-item-dialog">
-          <form class="footy-note-form next-item-form" id="want-item-form" method="dialog">
-            <header>
-              <div><h2 id="want-item-dialog-title">Add Want Item</h2></div>
-              <button class="icon-action-button footy-note-close" id="want-item-close" type="button" aria-label="Close Want item dialog">X</button>
-            </header>
-            <input id="want-item-id" type="hidden">
-            <div class="next-item-fields">
-              <label class="next-item-wide"><span>Name</span><input id="want-name" type="text" autocomplete="off" required></label>
-              <label><span>Order</span><input id="want-order" type="number" min="1" step="1" value="1"></label>
-              <label><span>Price</span><input id="want-price" type="number" min="0" step="0.01" inputmode="decimal"></label>
-              <label class="next-item-wide"><span>Image URL</span><input id="want-image-url" type="url" autocomplete="url"></label>
-              <div class="next-dialog-checks">
-                <label class="next-checkbox-control next-dialog-checkbox"><input id="want-archived" type="checkbox"><span>Archived</span></label>
-                <label class="next-checkbox-control next-dialog-checkbox"><input id="want-completed" type="checkbox"><span>Completed</span></label>
-              </div>
-            </div>
-            <p class="footy-note-status" id="want-item-status" aria-live="polite"></p>
-            <footer>
-              <button class="action-button" id="want-item-cancel" type="button">Cancel</button>
-              <button class="action-button" type="submit">Save</button>
-            </footer>
-          </form>
-        </dialog>
+        <div id="want-item-dialog-root"></div>
 
         <dialog class="footy-note-dialog todo-random-dialog" id="want-random-dialog">
           <form class="footy-note-form ranking-battle-form" method="dialog">
@@ -2771,6 +2748,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609130137"></script>
+    <script type="module" src="script.js?v=202609130410"></script>
   </body>
 </html>

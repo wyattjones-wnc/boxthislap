@@ -54,6 +54,7 @@ const expectedLazyChunks = [
   "todoItemDialog-",
   "trophyLog-",
   "trophyStats-",
+  "wantItemDialog-",
 ];
 const missingLazyChunks = expectedLazyChunks.filter(
   (prefix) =>

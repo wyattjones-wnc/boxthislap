@@ -296,6 +296,7 @@ export function createFollowedTeamsController({
   }
 
   function getDialogProps() {
+    const pickerTeams = filterPickerTeams(state.catalog, state.defaultIds);
     return {
       defaultIds: state.defaultIds,
       leagues: state.leagues,
@@ -304,7 +305,7 @@ export function createFollowedTeamsController({
       savedIds: state.savedPersonalIds,
       saving: state.saving,
       selectedIds: state.pendingIds,
-      teams: state.catalog.map((team) => ({
+      teams: pickerTeams.map((team) => ({
         ...team,
         leagueIds: (team.leagues || [])
           .map((league) => normalizeSelectableLeague(league.name)?.id)
@@ -616,6 +617,15 @@ export function partitionPickerTeams(teams = [], defaultIds = []) {
       ),
     others: teams.filter((team) => !defaults.has(String(team.id))),
   };
+}
+
+export function filterPickerTeams(teams = [], defaultIds = []) {
+  const defaults = new Set(defaultIds.map(String));
+  return teams.filter(
+    (team) =>
+      defaults.has(String(team.id)) ||
+      selectableLeagueNames(team.leagues).length > 0,
+  );
 }
 
 export function normalizeSelectableLeague(value) {

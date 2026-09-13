@@ -199,7 +199,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.09.13.01.19";
+      window.BOX_THIS_LAP_VERSION = "2026.09.13.01.37";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -213,7 +213,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609130119">
+    <link rel="stylesheet" href="styles.css?v=202609130137">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -1604,77 +1604,7 @@
         <div class="content-shell" id="todo-list">
           <p class="table-message">To Do items will load here.</p>
         </div>
-        <dialog class="footy-note-dialog next-item-dialog" id="todo-item-dialog">
-          <form class="footy-note-form next-item-form" id="todo-item-form" method="dialog">
-            <header>
-              <div>
-                <h2>Add To Do Item</h2>
-              </div>
-              <button class="icon-action-button footy-note-close" id="todo-item-close" type="button" aria-label="Close To Do item dialog">
-                X
-              </button>
-            </header>
-            <input id="todo-item-id" type="hidden">
-            <div class="next-item-fields">
-              <label class="next-item-wide">
-                <span>Name</span>
-                <input id="todo-name" type="text" autocomplete="off" required>
-              </label>
-              <label>
-                <span>Order</span>
-                <input id="todo-order" type="number" min="1" step="1" value="1">
-              </label>
-              <label>
-                <span>Low Hour</span>
-                <input id="todo-low-hour" type="number" min="0" step="0.25">
-              </label>
-              <label>
-                <span>High Hour</span>
-                <input id="todo-high-hour" type="number" min="0" step="0.25">
-              </label>
-              <label class="next-item-wide autocomplete-field">
-                <span>Parent</span>
-                <input id="todo-parent" type="text" autocomplete="off" data-todo-parent-input>
-                <input id="todo-parent-id" type="hidden">
-              </label>
-              <label class="next-item-wide">
-                <span>Image URL</span>
-                <input id="todo-image-url" type="url" autocomplete="url">
-              </label>
-              <div class="next-dialog-checks">
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="todo-started" type="checkbox">
-                  <span>Started</span>
-                </label>
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="todo-archived" type="checkbox">
-                  <span>Archived</span>
-                </label>
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="todo-platinum-cleanup" type="checkbox">
-                  <span>Platinum Cleanup</span>
-                </label>
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="todo-completed" type="checkbox">
-                  <span>Completed</span>
-                </label>
-                <label class="next-checkbox-control next-dialog-checkbox">
-                  <input id="todo-unpurchased" type="checkbox">
-                  <span>Unpurchased</span>
-                </label>
-              </div>
-            </div>
-            <p class="footy-note-status" id="todo-item-status" aria-live="polite"></p>
-            <footer>
-              <button class="action-button" id="todo-item-cancel" type="button">
-                Cancel
-              </button>
-              <button class="action-button" type="submit">
-                Save
-              </button>
-            </footer>
-          </form>
-        </dialog>
+        <div id="todo-item-dialog-root"></div>
         <dialog class="footy-note-dialog todo-random-dialog" id="todo-random-dialog">
           <form class="footy-note-form ranking-battle-form" method="dialog">
             <header>
@@ -2841,6 +2771,6 @@
       </button>
     </footer>
 
-    <script type="module" src="script.js?v=202609130119"></script>
+    <script type="module" src="script.js?v=202609130137"></script>
   </body>
 </html>

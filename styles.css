@@ -4940,7 +4940,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: none;
 }
 
-.next-react-dialog {
+.react-form-dialog {
   background: transparent;
   border: 0;
   color: var(--ink);
@@ -4951,11 +4951,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: calc(100% - 28px);
 }
 
-.next-react-dialog::backdrop {
+.react-form-dialog::backdrop {
   background: rgb(0 0 0 / 0.62);
 }
 
-.next-react-dialog-panel {
+.react-form-dialog-panel {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -4967,23 +4967,23 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 18px;
 }
 
-.next-react-dialog-panel > header,
-.next-react-dialog-panel > footer {
+.react-form-dialog-panel > header,
+.react-form-dialog-panel > footer {
   align-items: center;
   display: flex;
   gap: 10px;
 }
 
-.next-react-dialog-panel > header {
+.react-form-dialog-panel > header {
   justify-content: space-between;
 }
 
-.next-react-dialog-panel > header h2,
-.next-react-dialog-panel > footer p {
+.react-form-dialog-panel > header h2,
+.react-form-dialog-panel > footer p {
   margin: 0;
 }
 
-.next-react-dialog-scroll {
+.react-form-dialog-scroll {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -4992,17 +4992,17 @@ body.has-shell-stale-warning .stale-shell-alert {
   -webkit-overflow-scrolling: touch;
 }
 
-.next-react-dialog-panel .next-item-fields input:not([type="checkbox"]),
-.next-react-dialog-panel .next-item-fields select {
+.react-form-dialog-panel .next-item-fields input:not([type="checkbox"]),
+.react-form-dialog-panel .next-item-fields select {
   min-height: 48px;
   padding: 10px 12px;
 }
 
-.next-react-dialog-panel > footer .footy-note-status {
+.react-form-dialog-panel > footer .footy-note-status {
   flex: 1 1 auto;
 }
 
-.next-react-dialog-panel > footer button {
+.react-form-dialog-panel > footer button {
   flex: 0 0 auto;
 }
 
@@ -9616,15 +9616,15 @@ html.has-contained-dialog body {
 }
 
 @media (max-width: 620px) {
-  .next-react-dialog-panel {
+  .react-form-dialog-panel {
     padding: 14px;
   }
 
-  .next-react-dialog-panel > footer {
+  .react-form-dialog-panel > footer {
     flex-wrap: wrap;
   }
 
-  .next-react-dialog-panel > footer .footy-note-status {
+  .react-form-dialog-panel > footer .footy-note-status {
     flex-basis: 100%;
   }
 

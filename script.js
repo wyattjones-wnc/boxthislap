@@ -317,24 +317,7 @@ import {
   todoEditToggle,
   todoStatusFilters,
   todoAddButton,
-  todoItemDialog,
-  todoItemForm,
-  todoItemId,
-  todoNameInput,
-  todoOrderInput,
-  todoLowHourInput,
-  todoHighHourInput,
-  todoParentInput,
-  todoParentIdInput,
-  todoImageUrlInput,
-  todoStartedInput,
-  todoArchivedInput,
-  todoPlatinumCleanupInput,
-  todoCompletedInput,
-  todoUnpurchasedInput,
-  todoItemStatus,
-  todoItemClose,
-  todoItemCancel,
+  todoItemDialogRoot,
   wantList,
   wantRandomButton,
   wantRandomDialog,
@@ -508,6 +491,11 @@ let activeTodoCompareSnapshotId = "";
 let activeTodoStatusFilter = "";
 let activeTodoItemId = "";
 let draggedTodoItemId = "";
+let isTodoItemDialogOpen = false;
+let todoItemDialogController = null;
+let todoItemDialogControllerPromise = null;
+let todoItemDialogMessage = "";
+let todoItemDialogMessageIsError = false;
 let didMoveTodoPointer = false;
 let activeTradingCardExportUrls = [];
 let activeRankingKind = "games";
@@ -7052,7 +7040,7 @@ async function ensureNextItemDialogController() {
   if (nextItemDialogController) return nextItemDialogController;
   if (!nextItemDialogControllerPromise) {
     nextItemDialogControllerPromise = import(
-      "./modules/dialogs/nextItemDialog.jsx?v=202609130119"
+      "./modules/dialogs/nextItemDialog.jsx?v=202609130137"
     )
       .then(({ createNextItemDialog }) => {
         nextItemDialogController = createNextItemDialog({
@@ -8103,15 +8091,15 @@ function formatTodoHour(value) {
 }
 
 function openTodoItemDialog() {
-  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+  if (!isCurrentManagerAdmin() || !todoItemDialogRoot) {
     return;
   }
 
   openTodoItemDialogForItem(null);
 }
 
-function openTodoItemDialogForItem(itemId) {
-  if (!isCurrentManagerAdmin() || !todoItemDialog) {
+async function openTodoItemDialogForItem(itemId) {
+  if (!isCurrentManagerAdmin() || !todoItemDialogRoot) {
     return;
   }
 
@@ -8123,72 +8111,68 @@ function openTodoItemDialogForItem(itemId) {
   const defaultOrderRows = getTodoDefaultOrderItems(normalizedRows);
   const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : defaultOrderRows.length + 1;
   const maxOrder = editingItem ? Math.max(defaultOrderRows.length, 1) : defaultOrderRows.length + 1;
-
-  if (todoItemId) {
-    todoItemId.value = editingItem?.id || "";
-  }
-  if (todoNameInput) {
-    todoNameInput.value = editingItem?.name || "";
-  }
-  if (todoOrderInput) {
-    todoOrderInput.value = String(nextOrder);
-    todoOrderInput.max = String(maxOrder);
-  }
-  if (todoLowHourInput) {
-    todoLowHourInput.value = editingItem?.raw["Low Hour"] || "";
-  }
-  if (todoHighHourInput) {
-    todoHighHourInput.value = editingItem?.raw["High Hour"] || "";
-  }
-  if (todoParentIdInput) {
-    todoParentIdInput.value = editingItem?.parentId || "";
-  }
-  if (todoParentInput) {
-    todoParentInput.value = getTodoParentLabel(editingItem?.parentId) || "";
-  }
-  if (todoImageUrlInput) {
-    todoImageUrlInput.value = editingItem?.imageUrl || "";
-  }
-  if (todoStartedInput) {
-    todoStartedInput.checked = Boolean(editingItem?.started);
-  }
-  if (todoArchivedInput) {
-    todoArchivedInput.checked = Boolean(editingItem?.archived);
-  }
-  if (todoPlatinumCleanupInput) {
-    todoPlatinumCleanupInput.checked = Boolean(editingItem?.platinumCleanup);
-  }
-  if (todoCompletedInput) {
-    todoCompletedInput.checked = Boolean(editingItem?.completed);
-  }
-  if (todoUnpurchasedInput) {
-    todoUnpurchasedInput.checked = Boolean(editingItem?.unpurchased);
-  }
-
   setTodoItemStatus("");
-
-  if (typeof todoItemDialog.showModal === "function") {
-    todoItemDialog.showModal();
-  } else {
-    todoItemDialog.setAttribute("open", "");
+  isTodoItemDialogOpen = true;
+  try {
+    const controller = await ensureTodoItemDialogController();
+    if (!isTodoItemDialogOpen) return;
+    controller.open({
+      initialValues: {
+        archived: Boolean(editingItem?.archived),
+        completed: Boolean(editingItem?.completed),
+        highHour: editingItem?.raw["High Hour"] || "",
+        id: editingItem?.id || "",
+        imageUrl: editingItem?.imageUrl || "",
+        lowHour: editingItem?.raw["Low Hour"] || "",
+        maxOrder,
+        name: editingItem?.name || "",
+        order: nextOrder,
+        parentId: editingItem?.parentId || "",
+        parentLabel: getTodoParentLabel(editingItem?.parentId) || "",
+        platinumCleanup: Boolean(editingItem?.platinumCleanup),
+        started: Boolean(editingItem?.started),
+        unpurchased: Boolean(editingItem?.unpurchased),
+      },
+      message: todoItemDialogMessage,
+      messageIsError: todoItemDialogMessageIsError,
+      parentOptions: getTodoParentOptions(editingItem?.id || ""),
+      title: editingItem ? "Edit To Do Item" : "Add To Do Item",
+    });
+  } catch (error) {
+    isTodoItemDialogOpen = false;
+    recordDiagnostic("To Do item dialog failed to open", error);
+    renderTodoListError(error);
   }
-
 }
 
 function closeTodoItemDialog() {
-  if (!todoItemDialog) {
-    return;
-  }
-
-  if (typeof todoItemDialog.close === "function") {
-    todoItemDialog.close();
-  } else {
-    todoItemDialog.removeAttribute("open");
-  }
+  isTodoItemDialogOpen = false;
+  todoItemDialogController?.close();
 }
 
-function saveTodoItemFromForm() {
-  const name = String(todoNameInput?.value || "").trim();
+async function ensureTodoItemDialogController() {
+  if (todoItemDialogController) return todoItemDialogController;
+  if (!todoItemDialogControllerPromise) {
+    todoItemDialogControllerPromise = import(
+      "./modules/dialogs/todoItemDialog.jsx?v=202609130137"
+    )
+      .then(({ createTodoItemDialog }) => {
+        todoItemDialogController = createTodoItemDialog({
+          mount: todoItemDialogRoot,
+          onClose: closeTodoItemDialog,
+          onSubmit: saveTodoItemFromForm,
+        });
+        return todoItemDialogController;
+      })
+      .finally(() => {
+        todoItemDialogControllerPromise = null;
+      });
+  }
+  return todoItemDialogControllerPromise;
+}
+
+function saveTodoItemFromForm(values = {}) {
+  const name = String(values.name || "").trim();
 
   if (!name) {
     setTodoItemStatus("Name is required.", true);
@@ -8196,7 +8180,7 @@ function saveTodoItemFromForm() {
   }
 
   const rows = getTodoItems();
-  const parentResolution = resolveTodoParentIdFromInput();
+  const parentResolution = resolveTodoParentIdFromValues(values);
 
   if (parentResolution.error) {
     setTodoItemStatus(parentResolution.error, true);
@@ -8204,24 +8188,25 @@ function saveTodoItemFromForm() {
   }
 
   const parentId = parentResolution.id;
-  const existingItem = String(todoItemId?.value || "").trim()
-    ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === String(todoItemId?.value || "").trim())
+  const itemId = String(values.id || "").trim();
+  const existingItem = itemId
+    ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === itemId)
     : null;
-  const requestedOrder = clampTodoOrder(todoOrderInput?.value, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
+  const requestedOrder = clampTodoOrder(values.order, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
   const item = {
-    ID: String(todoItemId?.value || "").trim() || createTodoItemId(),
+    ID: itemId || createTodoItemId(),
     Order: String(requestedOrder),
     Name: name,
-    "Low Hour": String(todoLowHourInput?.value ?? "").trim(),
-    "High Hour": String(todoHighHourInput?.value ?? "").trim(),
+    "Low Hour": String(values.lowHour ?? "").trim(),
+    "High Hour": String(values.highHour ?? "").trim(),
     "Parent ID": parentId,
-    Started: todoStartedInput?.checked ? "TRUE" : "FALSE",
-    Archived: todoArchivedInput?.checked ? "TRUE" : "FALSE",
-    "Platinum Cleanup": todoPlatinumCleanupInput?.checked ? "TRUE" : "FALSE",
-    Completed: todoCompletedInput?.checked ? "TRUE" : "FALSE",
+    Started: values.started ? "TRUE" : "FALSE",
+    Archived: values.archived ? "TRUE" : "FALSE",
+    "Platinum Cleanup": values.platinumCleanup ? "TRUE" : "FALSE",
+    Completed: values.completed ? "TRUE" : "FALSE",
     IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
-    Unpurchased: todoUnpurchasedInput?.checked ? "TRUE" : "FALSE",
-    "Image URL": String(todoImageUrlInput?.value || "").trim(),
+    Unpurchased: values.unpurchased ? "TRUE" : "FALSE",
+    "Image URL": String(values.imageUrl || "").trim(),
   };
 
   if (item["Parent ID"] === item.ID) {
@@ -8458,7 +8443,7 @@ function getTodoStatusFilterLabel(filter) {
   return labels[filter] || "";
 }
 
-function getTodoParentOptions(excludeId = String(todoItemId?.value || "").trim()) {
+function getTodoParentOptions(excludeId = "") {
   const excludedIds = getTodoExcludedParentIds(excludeId);
 
   return getTodoItems()
@@ -8512,15 +8497,15 @@ function getTodoParentLabel(parentId) {
   return item ? item.name : "";
 }
 
-function resolveTodoParentIdFromInput() {
-  const typedValue = String(todoParentInput?.value || "").trim();
-  const currentId = String(todoParentIdInput?.value || "").trim();
+function resolveTodoParentIdFromValues(values = {}) {
+  const typedValue = String(values.parentLabel || "").trim();
+  const currentId = String(values.parentId || "").trim();
 
   if (!typedValue) {
     return { id: "" };
   }
 
-  const options = getTodoParentOptions();
+  const options = getTodoParentOptions(values.id);
   const normalizedTypedValue = normalizeLookupName(typedValue);
   const option = options.find((entry) =>
     normalizeLookupName(entry.label) === normalizeLookupName(typedValue) ||
@@ -8549,40 +8534,17 @@ function resolveTodoParentIdFromInput() {
   };
 }
 
-function renderTodoParentAutocomplete() {
-  if (!todoParentInput) {
-    return;
-  }
-
-  activeAutocompleteInput = todoParentInput;
-  renderAutocompleteDropdown(todoParentInput, getTodoParentOptions(), "No To Do matches");
-}
-
-function selectTodoParentOption(value) {
-  const option = getTodoParentOptions().find((entry) => entry.id === String(value));
-
-  if (todoParentInput) {
-    todoParentInput.value = option ? option.label : value;
-  }
-
-  if (todoParentIdInput) {
-    todoParentIdInput.value = option?.id || "";
-  }
-
-  closeAutocompleteDropdown();
-}
-
 function getTodoItemElement(itemId) {
   return todoList?.querySelector(`[data-todo-id="${CSS.escape(String(itemId || ""))}"]`) || null;
 }
 
 function setTodoItemStatus(message, isError = false) {
-  if (!todoItemStatus) {
-    return;
-  }
-
-  todoItemStatus.textContent = message;
-  todoItemStatus.classList.toggle("is-error", isError);
+  todoItemDialogMessage = message || "";
+  todoItemDialogMessageIsError = isError;
+  todoItemDialogController?.update({
+    message: todoItemDialogMessage,
+    messageIsError: todoItemDialogMessageIsError,
+  });
 }
 
 function renderTodoListError(error) {
@@ -15243,46 +15205,6 @@ todoList?.addEventListener("keydown", (event) => {
     ? ""
     : card.getAttribute("data-todo-id") || "";
   renderTodoList();
-});
-
-todoItemForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  saveTodoItemFromForm();
-});
-
-[todoItemClose, todoItemCancel].forEach((button) => {
-  button?.addEventListener("click", closeTodoItemDialog);
-});
-
-todoItemForm?.addEventListener("pointerdown", (event) => {
-  const optionButton = event.target.closest("[data-autocomplete-value]");
-
-  if (!optionButton) {
-    if (event.target !== todoParentInput && !event.target.closest(".autocomplete-dropdown")) {
-      closeAutocompleteDropdown();
-    }
-
-    return;
-  }
-
-  event.preventDefault();
-  selectTodoParentOption(optionButton.getAttribute("data-autocomplete-value") || "");
-});
-
-todoParentInput?.addEventListener("focus", renderTodoParentAutocomplete);
-todoParentInput?.addEventListener("input", () => {
-  if (!todoParentInput.value.trim() && todoParentIdInput) {
-    todoParentIdInput.value = "";
-  }
-
-  renderTodoParentAutocomplete();
-});
-
-todoParentInput?.addEventListener("change", () => {
-  if (todoParentIdInput) {
-    const parentResolution = resolveTodoParentIdFromInput();
-    todoParentIdInput.value = parentResolution.id || "";
-  }
 });
 
 wantAddButton?.addEventListener("click", () => openWantItemDialog());

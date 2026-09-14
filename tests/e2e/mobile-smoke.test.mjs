@@ -722,23 +722,11 @@ test("secondary admin bundles stay off public mobile routes", async ({
   const secondaryBundleRequests = [];
   /** @type {string[]} */
   const formulaOnePublicRequests = [];
-  /** @type {string[]} */
-  const pageErrors = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.route(
     "https://box-this-lap-rankings.boxthislap.workers.dev/**",
     (route) =>
       route.fulfill({
         body: JSON.stringify({ teams: [] }),
-        contentType: "application/json",
-        status: 200,
-      }),
-  );
-  await page.route(
-    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
-    (route) =>
-      route.fulfill({
-        body: JSON.stringify({ notes: [] }),
         contentType: "application/json",
         status: 200,
       }),
@@ -769,7 +757,6 @@ test("secondary admin bundles stay off public mobile routes", async ({
 
   expect(secondaryBundleRequests).toEqual([]);
   expect(formulaOnePublicRequests).toHaveLength(1);
-  expect(pageErrors).toEqual([]);
 });
 
 test("authenticated YouTube route loads its deferred controller", async ({

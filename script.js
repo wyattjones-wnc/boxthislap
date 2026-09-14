@@ -668,6 +668,7 @@ const formulaOneManagerWeeklyEditing = new Set();
 const formulaOneManagerRoundDriverLoads = new Set();
 let formulaOneManagerWeeklyLoadPromise = null;
 let formulaOneManagerWeeklySelectedRound = "";
+let managerHubActivationSequence = 0;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -11152,6 +11153,12 @@ function renderPageContext(pageName = "") {
   const previousPageName = activePageName;
   activePageName = pageName;
 
+  if (pageName === "manager-hub") {
+    syncFollowedTeamShortcutsVisibility(pageName);
+    deferManagerHubActivation(previousPageName);
+    return;
+  }
+
   if (previousPageName && previousPageName !== pageName) {
     disposePageResources(previousPageName);
   }
@@ -11167,6 +11174,18 @@ function renderPageContext(pageName = "") {
   }
 
   void ensurePageData(pageName);
+}
+
+function deferManagerHubActivation(previousPageName) {
+  const sequence = ++managerHubActivationSequence;
+  window.requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      if (sequence !== managerHubActivationSequence || activePageName !== "manager-hub") return;
+      if (previousPageName && previousPageName !== "manager-hub") disposePageResources(previousPageName);
+      renderManagerHub();
+      void ensurePageData("manager-hub");
+    }, 0);
+  });
 }
 
 function shouldRenderPageSection(pageName) {
@@ -12995,6 +13014,11 @@ followedTeamShortcuts?.addEventListener("click", (event) => {
 });
 
 workflowList?.addEventListener("click", (event) => {
+  const renderRetryButton = event.target.closest("[data-manager-hub-render-retry]");
+  if (renderRetryButton) {
+    renderManagerHubCard(renderRetryButton.dataset.managerHubRenderRetry);
+    return;
+  }
   const retryButton = event.target.closest("[data-manager-hub-retry]");
   if (retryButton) {
     retryManagerHubCard(retryButton.dataset.managerHubRetry);
@@ -13008,6 +13032,11 @@ workflowList?.addEventListener("click", (event) => {
 });
 
 [managerAwardsList, managerSummaryList].forEach((list) => list?.addEventListener("click", (event) => {
+  const renderRetryButton = event.target.closest("[data-manager-hub-render-retry]");
+  if (renderRetryButton) {
+    renderManagerHubCard(renderRetryButton.dataset.managerHubRenderRetry);
+    return;
+  }
   const retryButton = event.target.closest("[data-manager-hub-retry]");
   if (retryButton) retryManagerHubCard(retryButton.dataset.managerHubRetry);
 }));
@@ -15591,6 +15620,8 @@ function submitManagerPortalPayloadWithForm(payload) {
 function renderManagerHub() {
   const session = siteData.managerSession;
 
+  if (activePageName && activePageName !== "manager-hub") return;
+
   if (!session) {
     if (managerHubSubtitle) {
       managerHubSubtitle.textContent = "";
@@ -15621,9 +15652,9 @@ function renderManagerHub() {
     managerHubSubtitle.hidden = true;
   }
 
-  renderManagerWorkflow(session.managerId);
-  renderManagerSummary(session.managerId);
-  renderManagerAwards(session.managerId);
+  renderManagerHubCard("notifications");
+  renderManagerHubCard("awards");
+  renderManagerHubCard("results");
 }
 
 function createManagerHubCardLoadState() {
@@ -15654,11 +15685,24 @@ function getManagerHubCardLoadState(card) {
 }
 
 function renderManagerHubCard(card) {
+  if (activePageName && activePageName !== "manager-hub") return;
   const managerId = getCurrentManagerId();
   if (!managerId) return;
-  if (card === "notifications") renderManagerWorkflow(managerId);
-  if (card === "awards") renderManagerAwards(managerId);
-  if (card === "results") renderManagerSummary(managerId);
+  try {
+    if (card === "notifications") renderManagerWorkflow(managerId);
+    if (card === "awards") renderManagerAwards(managerId);
+    if (card === "results") renderManagerSummary(managerId);
+  } catch (error) {
+    recordDiagnostic(`Manager Hub ${card} card failed to render`, error);
+    const container = card === "notifications"
+      ? workflowList
+      : card === "awards"
+        ? managerAwardsList
+        : managerSummaryList;
+    if (container) {
+      container.innerHTML = `<article class="workflow-item manager-hub-load-status"><p class="table-message">This card could not be displayed.</p><button class="footer-copy-link" type="button" data-manager-hub-render-retry="${escapeHtml(card)}">Retry</button></article>`;
+    }
+  }
 }
 
 function trackManagerHubCardLoad(card, key, loader) {
@@ -17158,6 +17202,7 @@ async function loadFantasyCriticLeague(year) {
     renderFantasyCriticPage();
     renderManagerHub();
     console.error(`Box This Lap Fantasy Critic ${yearKey} data failed to load`, error);
+    throw error;
   }
 }
 
@@ -17990,6 +18035,8 @@ function ensurePortalData() {
     runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
     runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
     runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
+    if (awardsResult.status === "rejected") throw awardsResult.reason;
+    if (logsResult.status === "rejected") throw logsResult.reason;
     return siteData.portalDrafts;
   });
 }
@@ -18377,7 +18424,10 @@ function ensureFantasyCriticData(year) {
     return existingPromise;
   }
 
-  const promise = loadFantasyCriticLeague(yearKey);
+  const promise = loadFantasyCriticLeague(yearKey).catch((error) => {
+    fantasyCriticLoadPromises.delete(yearKey);
+    throw error;
+  });
   fantasyCriticLoadPromises.set(yearKey, promise);
   return promise;
 }
@@ -18430,19 +18480,28 @@ function ensureManagerHubData() {
     trackManagerHubCardLoad("awards", "portal-awards", ensurePortalAwardsData);
     trackManagerHubCardLoad("notifications", "portal", ensurePortalData);
     trackManagerHubCardLoad("notifications", "followed-teams", () => followedTeamsController.load());
-    trackManagerHubCardLoad("notifications", "fantasy-critic-2025", () => ensureFantasyCriticData(2025));
-    trackManagerHubCardLoad("notifications", "fantasy-critic-2026", () => ensureFantasyCriticData(2026));
     trackManagerHubCardLoad("notifications", "formula-one-weekly", ensureFormulaOneManagerWeeklyData);
     if (isCurrentManagerAdmin()) {
       trackManagerHubCardLoad("notifications", "formula-one-admin", ensureFormulaOneAdminData);
-      window.setTimeout(() => {
-        trackManagerHubCardLoad("notifications", "footy-match-notes", ensureFootyMissingNotesData);
-      }, 0);
+      trackManagerHubCardLoad("notifications", "footy-match-notes", () => deferManagerHubLoad(ensureFootyMissingNotesData, 400));
     }
 
-    ensureManagerHubResultsForYear(getManagerSummarySelectedYear());
+    trackManagerHubCardLoad("notifications", "fantasy-critic-2025", () => deferManagerHubLoad(() => ensureFantasyCriticData(2025), 250));
+    trackManagerHubCardLoad("notifications", "fantasy-critic-2026", () => deferManagerHubLoad(() => ensureFantasyCriticData(2026), 250));
+    const managerId = String(getCurrentManagerId() || "");
+    window.setTimeout(() => {
+      if (String(getCurrentManagerId() || "") === managerId) ensureManagerHubResultsForYear(getManagerSummarySelectedYear());
+    }, 100);
     renderManagerHub();
     return true;
+  });
+}
+
+function deferManagerHubLoad(loader, delay) {
+  const managerId = String(getCurrentManagerId() || "");
+  return wait(delay).then(() => {
+    if (!managerId || String(getCurrentManagerId() || "") !== managerId) return null;
+    return loader();
   });
 }
 

@@ -43,6 +43,21 @@ test("admin Manager Hub cards load independently of slow portal sheets", async (
     if (message.type() === "error") pageErrors.push(message.text());
   });
   await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (
+        url.includes("docs.google.com/") &&
+        ["121360226", "1819817720"].includes(
+          String(new URL(url).searchParams.get("gid") || ""),
+        )
+      ) {
+        const stalledResponse = new Response("", { status: 200 });
+        stalledResponse.text = () => new Promise(() => {});
+        return Promise.resolve(stalledResponse);
+      }
+      return nativeFetch(input, init);
+    };
     localStorage.setItem(
       "boxThisLapManagerSession",
       JSON.stringify({
@@ -72,85 +87,104 @@ test("admin Manager Hub cards load independently of slow portal sheets", async (
       }),
     );
   });
-  await page.route("https://docs.google.com/**", async (route) => {
+  await page.route("https://docs.google.com/**", (route) => {
     const url = route.request().url();
     const gid = new URL(url).searchParams.get("gid");
-    if (
-      url.includes("2PACX-1vTQnBD") &&
-      ["121360226", "1819817720"].includes(String(gid || ""))
-    ) {
-      await new Promise(() => {});
-      return;
-    }
     const body =
       url.includes("2PACX-1vTQnBD") && gid === "0"
         ? "ID,Display Name,Is Admin\n6,Wyatt,TRUE"
         : "";
-    await route.fulfill({ body, contentType: "text/csv", status: 200 });
+    return route.fulfill({ body, contentType: "text/csv", status: 200 });
   });
-  await page.route(
-    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
-    (route) =>
+  await page.route("https://script.google.com/**", (route) =>
+    route.fulfill({ body: "", contentType: "text/javascript", status: 200 }),
+  );
+  await page
+    .context()
+    .route("https://box-this-lap-rankings.boxthislap.workers.dev/**", (route) =>
       route.fulfill({
         body: JSON.stringify({ defaultTeamIds: [], ok: true, teams: [] }),
         contentType: "application/json",
         status: 200,
       }),
-  );
-  await page.route(
-    "https://box-this-lap-formula-one.boxthislap.workers.dev/**",
-    (route) => {
-      const request = route.request();
-      const corsHeaders = {
-        "access-control-allow-headers": "authorization,content-type",
-        "access-control-allow-methods": "GET,OPTIONS",
-        "access-control-allow-origin": "*",
-      };
-      if (request.method() === "OPTIONS") {
-        return route.fulfill({ headers: corsHeaders, status: 204 });
-      }
-      const path = new URL(request.url()).pathname;
-      formulaOnePaths.push(path);
-      const body = path.endsWith("/api/admin/seasons/2026/weekly")
-        ? {
-            ok: true,
-            rounds: [
-              {
-                facts_complete: 0,
-                has_sprint: 0,
-                is_complete: 0,
-                name: "Australian Grand Prix",
-                race_date: "2020-03-08",
-                round: 1,
-              },
-            ],
-            sessions: [],
-            year: 2026,
-          }
-        : path.endsWith("/api/admin/seasons")
-          ? { ok: true, seasons: [{ year: 2026 }] }
-          : { entries: [], ok: true, roundDrivers: [], rounds: [], year: 2026 };
-      return route.fulfill({
-        body: JSON.stringify(body),
-        contentType: "application/json",
-        headers: corsHeaders,
-        status: 200,
-      });
-    },
-  );
-  await page.route(
-    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
-    (route) =>
-      route.fulfill({
-        body: JSON.stringify({ notes: [], ok: true }),
-        contentType: "application/json",
-        status: 200,
-      }),
-  );
+    );
+  await page
+    .context()
+    .route(
+      "https://box-this-lap-formula-one.boxthislap.workers.dev/**",
+      (route) => {
+        const request = route.request();
+        const corsHeaders = {
+          "access-control-allow-headers": "authorization,content-type",
+          "access-control-allow-methods": "GET,OPTIONS",
+          "access-control-allow-origin": "*",
+        };
+        if (request.method() === "OPTIONS") {
+          return route.fulfill({ headers: corsHeaders, status: 204 });
+        }
+        const path = new URL(request.url()).pathname;
+        formulaOnePaths.push(path);
+        const body = path.endsWith("/api/admin/seasons/2026/weekly")
+          ? {
+              ok: true,
+              rounds: [
+                {
+                  facts_complete: 0,
+                  has_sprint: 0,
+                  is_complete: 0,
+                  name: "Australian Grand Prix",
+                  race_date: "2020-03-08",
+                  round: 1,
+                },
+              ],
+              sessions: [],
+              year: 2026,
+            }
+          : path.endsWith("/api/admin/seasons")
+            ? { ok: true, seasons: [{ year: 2026 }] }
+            : {
+                entries: [],
+                ok: true,
+                roundDrivers: [],
+                rounds: [],
+                year: 2026,
+              };
+        return route.fulfill({
+          body: JSON.stringify(body),
+          contentType: "application/json",
+          headers: corsHeaders,
+          status: 200,
+        });
+      },
+    );
+  await page
+    .context()
+    .route(
+      "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+      (route) =>
+        route.fulfill({
+          body: JSON.stringify({ notes: [], ok: true }),
+          contentType: "application/json",
+          status: 200,
+        }),
+    );
 
-  await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
+  await page.goto("/#fantasy-critic-2026", { waitUntil: "domcontentloaded" });
+  await page.locator("#fantasy-critic-2026-content").evaluate((container) => {
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 5000; index += 1) {
+      fragment.append(document.createElement("article"));
+    }
+    container.replaceChildren(fragment);
+  });
+  await page.locator("#profile-menu-button").click();
+  await page
+    .locator("#profile-dropdown")
+    .getByText("Manager Hub", { exact: true })
+    .click();
   const hub = page.locator('[data-page="manager-hub"]');
-  await expect(hub).toHaveClass(/is-active/);
+  await expect(hub).toHaveClass(/is-active/, { timeout: 1000 });
+  await expect(page.locator("#profile-dropdown")).toBeHidden();
   await expect(
     hub.getByRole("heading", { name: "2025 Fantasy Critic Winner" }),
   ).toBeVisible();

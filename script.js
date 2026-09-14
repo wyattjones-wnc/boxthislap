@@ -11536,7 +11536,7 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
     return `<option value="">Choose driver</option>${available.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
   };
   const choice = (label, name, value, wildcard = false) => `<label class="select-control"><span>${label}</span><select name="${name}" required${locked ? " disabled" : ""}>${options(value, wildcard)}</select></label>`;
-  const deadlineLabel = selectedRound.deadline_at ? formatFormulaOneAdminDate(selectedRound.deadline_at) : "To be announced";
+  const deadlineLabel = selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "To be announced";
   const status = feedback.error || feedback.message || (!open
     ? (submitted ? `Submitted ${entry.submitted_at ? formatFormulaOneAdminDate(entry.submitted_at) : ""}`.trim() : "The deadline has passed without a submission.")
     : submitted ? "Choices submitted." : "Submit before qualifying starts.");
@@ -11544,7 +11544,7 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
     <form data-formula-one-manager-picks>
       <div class="formula-one-form-header formula-one-manager-bet-header">
         <label class="select-control"><span>Round</span><select data-formula-one-manager-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>
-        <div class="formula-one-manager-deadline"><span>Deadline</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
+        <div class="formula-one-manager-deadline"><span>Deadline (Eastern Time)</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
         ${submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
       </div>
       <div class="formula-one-admin-form-grid">
@@ -11777,7 +11777,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
         <div class="formula-one-admin-toolbar">
           ${yearControl}${roundControl}
         </div>
-        <p><strong>Deadline:</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneAdminDate(selectedRound.deadline_at) : "Not set")}</p>
+        <p><strong>Deadline (Eastern Time):</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "Not set")}</p>
         <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
       </div>
       ${renderFormulaOneAdminPicks(data, selectedRound)}`;
@@ -12311,6 +12311,19 @@ function formatFormulaOneSessionStatus(value) {
 function formatFormulaOneAdminDate(value) {
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? String(value || "") : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
+function formatFormulaOneDeadline(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? String(value || "") : date.toLocaleString("en-US", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+    year: "numeric",
+  });
 }
 
 function renderFormulaOneError(year, error) {
@@ -15796,7 +15809,7 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
   return [{
     actionLabel: "Open",
     description: "Make your P1, P2, P3, and wildcard choices",
-    dueDate: nextRound.deadline_at ? formatFormulaOneAdminDate(nextRound.deadline_at) : "",
+    dueDate: nextRound.deadline_at ? formatFormulaOneDeadline(nextRound.deadline_at) : "",
     id: `formula-one-2026-weekly-${nextRound.round}`,
     priority: "1",
     status: "Not submitted",

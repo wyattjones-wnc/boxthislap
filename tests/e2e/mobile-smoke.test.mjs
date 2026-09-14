@@ -1072,6 +1072,10 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue(
     "2",
   );
+  await expect(form.getByText("Deadline (Eastern Time)")).toBeVisible();
+  await expect(form.locator(".formula-one-manager-deadline strong")).toHaveText(
+    /E[DS]T$/,
+  );
   await expect(
     form.locator('select[name="wildcardDriverId"] option'),
   ).toHaveText(["Choose driver", "Carlos Sainz"]);

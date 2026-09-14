@@ -1237,7 +1237,7 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
     },
   );
 
-  await page.goto("/#manager-hub", { waitUntil: "networkidle" });
+  await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
   await page.getByText("Notifications", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Australian Grand Prix weekly choices" }),

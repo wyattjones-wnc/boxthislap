@@ -1060,6 +1060,12 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
     },
   );
 
+  await page.goto("/#manager-hub", { waitUntil: "networkidle" });
+  await page.getByText("Notifications", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Australian Grand Prix weekly choices" }),
+  ).toBeVisible();
+
   await page.goto("/#formula-1-2026-weekly", { waitUntil: "networkidle" });
   const form = page.locator("[data-formula-one-manager-picks]");
   await expect(form).toBeVisible();

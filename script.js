@@ -15788,10 +15788,8 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
   const data = siteData.formulaOne2026ManagerWeekly;
   if (!data?.rounds || String(siteData.managerSession?.managerId || "") !== String(managerId || "")) return [];
   const entries = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
-  const lookaheadEnd = Date.now() + WORKFLOW_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000;
   const nextRound = getNextFormulaOneManagerRound(data.rounds);
-  const deadline = Date.parse(nextRound?.deadline_at || "");
-  if (!nextRound || deadline > lookaheadEnd || entries.get(Number(nextRound.round))?.entry_status === "submitted") return [];
+  if (!nextRound || entries.get(Number(nextRound.round))?.entry_status === "submitted") return [];
 
   return [{
     actionLabel: "Open",

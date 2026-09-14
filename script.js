@@ -535,6 +535,8 @@ let isFootyNotificationBusy = false;
 let footyMatchNotificationsLoadPromise = null;
 const pendingFootyMatchNotificationIds = new Set();
 let footyMatchNotesLoadPromise = null;
+let managerHubFootyNotesLoadPromise = null;
+let managerHubFootyNotesRefreshScheduled = false;
 let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
 let releaseFootyPerfectDialog = null;
@@ -18260,6 +18262,8 @@ function ensureManagerHubData() {
   }
 
   return ensureSharedData("manager-hub", async () => {
+    renderManagerHub();
+    deferManagerHubFootyMissingNotesRefresh();
     const loads = [
       ensurePortalData(),
       ensureWorldCupStandingsData(),
@@ -18274,12 +18278,39 @@ function ensureManagerHubData() {
       ensureFormulaOneData(2026, "weekly-results"),
       ensureFormulaOneManagerWeeklyData(),
     ];
-    if (isCurrentManagerAdmin()) loads.push(ensureFootyMissingNotesData());
     if (isCurrentManagerAdmin()) loads.push(ensureFormulaOneAdminData());
     await Promise.allSettled(loads);
     renderManagerHub();
     return true;
   });
+}
+
+function deferManagerHubFootyMissingNotesRefresh() {
+  if (
+    !isCurrentManagerAdmin()
+    || managerHubFootyNotesRefreshScheduled
+    || managerHubFootyNotesLoadPromise
+  ) {
+    return;
+  }
+
+  const managerId = getCurrentManagerId();
+  managerHubFootyNotesRefreshScheduled = true;
+  window.setTimeout(() => {
+    managerHubFootyNotesRefreshScheduled = false;
+    if (!managerId || getCurrentManagerId() !== managerId || !isCurrentManagerAdmin()) return;
+
+    managerHubFootyNotesLoadPromise = ensureFootyMissingNotesData()
+      .then(() => {
+        if (getCurrentManagerId() === managerId) renderManagerWorkflow(managerId);
+      })
+      .catch((error) => {
+        recordDiagnostic("Manager Hub match notes notification failed to load", error);
+      })
+      .finally(() => {
+        managerHubFootyNotesLoadPromise = null;
+      });
+  }, 0);
 }
 
 async function ensureFootyMissingNotesData() {

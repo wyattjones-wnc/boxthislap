@@ -734,6 +734,15 @@ test("secondary admin bundles stay off public mobile routes", async ({
         status: 200,
       }),
   );
+  await page.route(
+    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ notes: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
   page.on("request", (request) => {
     if (/\/formulaOnePublic-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       formulaOnePublicRequests.push(request.url());

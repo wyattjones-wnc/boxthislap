@@ -28,6 +28,25 @@ export default {
         return json({ ok: true, ...(await readPublicWeekly(env, parseYear(publicWeeklyMatch[1]))) }, 200, cors);
       }
 
+      const managerWeeklyMatch = url.pathname.match(/^\/api\/seasons\/(\d{4})\/weekly\/me$/);
+      if (managerWeeklyMatch && request.method === "GET") {
+        const manager = await requireManager(request, env);
+        return json({ ok: true, ...(await readManagerWeekly(env, parseYear(managerWeeklyMatch[1]), manager.managerId)) }, 200, cors);
+      }
+
+      const managerRoundDriversMatch = url.pathname.match(/^\/api\/seasons\/(\d{4})\/rounds\/(\d+)\/drivers\/refresh$/);
+      if (managerRoundDriversMatch && request.method === "POST") {
+        const manager = await requireManager(request, env);
+        return json({ ok: true, ...(await syncRoundDriverRoster(env, parseYear(managerRoundDriversMatch[1]), parseRound(managerRoundDriversMatch[2]), manager.managerId)) }, 200, cors);
+      }
+
+      const managerPicksOwnMatch = url.pathname.match(/^\/api\/seasons\/(\d{4})\/rounds\/(\d+)\/picks\/me$/);
+      if (managerPicksOwnMatch && request.method === "PUT") {
+        const manager = await requireManager(request, env);
+        const body = normalizeManagerWeeklyPicksBody(await readBody(request));
+        return json({ ok: true, ...(await saveWeeklyPicks(env, parseYear(managerPicksOwnMatch[1]), parseRound(managerPicksOwnMatch[2]), manager.managerId, body)) }, 200, cors);
+      }
+
       const overviewMatch = url.pathname.match(/^\/api\/admin\/seasons\/(\d{4})\/weekly$/);
       if (overviewMatch && request.method === "GET") {
         await requireAdmin(request, env);
@@ -117,6 +136,13 @@ async function readAdminSeasons(env) {
 }
 
 async function requireAdmin(request, env) {
+  const manager = await requireManager(request, env);
+  const adminIds = new Set(String(env.ADMIN_MANAGER_IDS || "").split(",").map((value) => value.trim()).filter(Boolean));
+  if (!adminIds.has(manager.managerId)) throw httpError(403, "Formula 1 administration is restricted to admins.");
+  return manager;
+}
+
+async function requireManager(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   if (!authorization.startsWith("Bearer ")) throw httpError(401, "Sign in is required.");
   const verifyRequest = new Request(String(env.AUTH_VERIFY_URL || "https://box-this-lap-rankings.internal/api/auth/verify"), {
@@ -128,9 +154,28 @@ async function requireAdmin(request, env) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.ok || !result.managerId) throw httpError(401, "Your session has expired. Sign in again.");
   const managerId = String(result.managerId);
-  const adminIds = new Set(String(env.ADMIN_MANAGER_IDS || "").split(",").map((value) => value.trim()).filter(Boolean));
-  if (!adminIds.has(managerId)) throw httpError(403, "Formula 1 administration is restricted to admins.");
   return { managerId };
+}
+
+async function readManagerWeekly(env, year, managerId) {
+  const [roundQuery, driverQuery, roundDriverQuery, entryQuery] = await Promise.all([
+    env.DB.prepare("SELECT year, round, name, race_date, deadline_at, has_sprint FROM f1_rounds WHERE year = ? ORDER BY round").bind(year).all(),
+    env.DB.prepare("SELECT year, driver_id, display_name, constructor_name, active FROM f1_drivers WHERE year = ? ORDER BY display_name").bind(year).all(),
+    env.DB.prepare("SELECT year, round, driver_id, source FROM f1_round_drivers WHERE year = ? ORDER BY round, driver_id").bind(year).all(),
+    env.DB.prepare("SELECT year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at FROM f1_weekly_entries WHERE year = ? AND manager_id = ? ORDER BY round").bind(year, managerId).all(),
+  ]);
+  const rounds = roundQuery.results || [];
+  await backfillMissingQualifyingDeadlines(env, year, rounds);
+  return {
+    year,
+    rounds: rounds.map((round) => ({
+      ...round,
+      is_open: !round.deadline_at || Date.now() < Date.parse(round.deadline_at) ? 1 : 0,
+    })),
+    drivers: driverQuery.results || [],
+    roundDrivers: roundDriverQuery.results || [],
+    entries: entryQuery.results || [],
+  };
 }
 
 async function readAdminWeekly(env, year) {
@@ -599,6 +644,15 @@ async function saveWeeklyPicks(env, year, round, managerId, body, actorManagerId
   ]);
   await recalculateRoundScores(env, year, round);
   return { entry: { year, round, manager_id: managerId, p1_driver_id: picks[0], p2_driver_id: picks[1], p3_driver_id: picks[2], wildcard_driver_id: picks[3], entry_status: entryStatus } };
+}
+
+export function normalizeManagerWeeklyPicksBody(body = {}) {
+  return {
+    ...body,
+    allowPartial: false,
+    force: false,
+    submit: true,
+  };
 }
 
 export function isTopFourConstructor(teamName) {

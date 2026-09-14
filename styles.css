@@ -8117,6 +8117,51 @@ button.formula-one-admin-status:focus-visible {
   width: 100%;
 }
 
+.formula-one-manager-bet-header {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.formula-one-manager-bet-header .select-control {
+  flex: 1 1 230px;
+  max-width: 340px;
+}
+
+.formula-one-manager-deadline {
+  display: grid;
+  gap: 4px;
+}
+
+.formula-one-manager-deadline span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.formula-one-manager-bet-header > .footer-copy-link {
+  margin-left: auto;
+}
+
+.formula-one-manager-bet-footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.formula-one-manager-bet-footer .formula-one-admin-feedback {
+  flex: 1 1 220px;
+}
+
+.formula-one-admin-feedback.is-error {
+  color: var(--danger, #c0392b);
+}
+
 .formula-one-form-link {
   min-height: 38px;
 }
@@ -10323,6 +10368,15 @@ html.has-contained-dialog body {
   .formula-one-form-header {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .formula-one-manager-bet-header {
+    align-items: end;
+    display: flex;
+  }
+
+  .formula-one-manager-bet-header .select-control {
+    max-width: none;
   }
 
   .formula-one-admin-toolbar,

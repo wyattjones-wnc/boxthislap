@@ -924,6 +924,138 @@ test("Formula One admin loads its deferred calculation engine", async ({
   expect(pageErrors).toEqual([]);
 });
 
+test("signed-in managers submit Formula One weekly choices on-site", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: false,
+        manager: { id: "2", displayName: "Test Manager", isAdmin: false },
+        managerId: "2",
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00.000Z",
+          accessToken: "test-access-token",
+        },
+      }),
+    );
+  });
+  let entry = null;
+  let submittedBody = null;
+  const weeklyData = () => ({
+    drivers: [
+      {
+        active: 1,
+        constructor_name: "McLaren",
+        display_name: "Lando Norris",
+        driver_id: "norris",
+      },
+      {
+        active: 1,
+        constructor_name: "Mercedes",
+        display_name: "George Russell",
+        driver_id: "russell",
+      },
+      {
+        active: 1,
+        constructor_name: "Ferrari",
+        display_name: "Charles Leclerc",
+        driver_id: "leclerc",
+      },
+      {
+        active: 1,
+        constructor_name: "Williams",
+        display_name: "Carlos Sainz",
+        driver_id: "sainz",
+      },
+    ],
+    entries: entry ? [entry] : [],
+    ok: true,
+    roundDrivers: [],
+    rounds: [
+      {
+        deadline_at: "2099-03-07T05:00:00.000Z",
+        is_open: 1,
+        name: "Australian Grand Prix",
+        round: 1,
+        year: 2026,
+      },
+    ],
+    year: 2026,
+  });
+  await page.route("https://docs.google.com/**", (route) =>
+    route.fulfill({ body: "", contentType: "text/csv", status: 200 }),
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ ok: true, teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+  await page.route(
+    "https://box-this-lap-formula-one.boxthislap.workers.dev/**",
+    async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (request.method() === "PUT" && url.pathname.endsWith("/picks/me")) {
+        submittedBody = request.postDataJSON();
+        entry = {
+          entry_status: "submitted",
+          manager_id: "2",
+          p1_driver_id: submittedBody.p1DriverId,
+          p2_driver_id: submittedBody.p2DriverId,
+          p3_driver_id: submittedBody.p3DriverId,
+          round: 1,
+          submitted_at: "2099-03-01T12:00:00.000Z",
+          wildcard_driver_id: submittedBody.wildcardDriverId,
+          year: 2026,
+        };
+        return route.fulfill({
+          body: JSON.stringify({ entry, ok: true }),
+          contentType: "application/json",
+          status: 200,
+        });
+      }
+      const body = url.pathname.endsWith("/weekly/me")
+        ? weeklyData()
+        : { drivers: [], ok: true };
+      return route.fulfill({
+        body: JSON.stringify(body),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/#formula-1-2026-weekly", { waitUntil: "networkidle" });
+  const form = page.locator("[data-formula-one-manager-picks]");
+  await expect(form).toBeVisible();
+  await expect(
+    form.locator('select[name="wildcardDriverId"] option'),
+  ).toHaveText(["Choose driver", "Carlos Sainz"]);
+  await form.locator('select[name="p1DriverId"]').selectOption("norris");
+  await form.locator('select[name="p2DriverId"]').selectOption("russell");
+  await form.locator('select[name="p3DriverId"]').selectOption("leclerc");
+  await form.locator('select[name="wildcardDriverId"]').selectOption("sainz");
+  await form.getByRole("button", { name: "Submit choices" }).click();
+
+  await expect(form.getByText("Choices submitted.")).toBeVisible();
+  await expect(
+    form.getByRole("button", { name: "Edit choices" }),
+  ).toBeVisible();
+  expect(submittedBody).toEqual({
+    p1DriverId: "norris",
+    p2DriverId: "russell",
+    p3DriverId: "leclerc",
+    submit: true,
+    wildcardDriverId: "sainz",
+  });
+});
+
 test("Formula One calculator loads its complete deferred controller", async ({
   page,
 }) => {

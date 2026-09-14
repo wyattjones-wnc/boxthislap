@@ -661,6 +661,10 @@ let formulaOneAdminMode = "main";
 let formulaOneFactsEditing = false;
 const formulaOneWeeklyEditing = new Set();
 const formulaOneRoundDriverLoads = new Set();
+const formulaOneManagerWeeklyEditing = new Set();
+const formulaOneManagerRoundDriverLoads = new Set();
+let formulaOneManagerWeeklyLoadPromise = null;
+let formulaOneManagerWeeklySelectedRound = "";
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -11361,8 +11365,12 @@ function renderActivePageContent(pageName = "") {
       } else if (formulaOneViews[formulaOneYear]?.weeklyList) {
         formulaOneViews[formulaOneYear].weeklyList.innerHTML = renderLoadingMessage("Loading Formula 1 weekly picks...");
       }
-      if (formulaOneYear === "2026" && !siteData.formulaOne2026RoundForms && formulaOneViews[2026]?.weeklyForm) {
-        formulaOneViews[2026].weeklyForm.innerHTML = renderLoadingMessage("Loading Formula 1 bet forms...");
+      if (formulaOneYear === "2026") {
+        renderFormulaOneManagerWeeklyEntry();
+        void ensureFormulaOneManagerWeeklyData().then((data) => {
+          const selected = data?.rounds?.find((round) => String(round.round) === formulaOneManagerWeeklySelectedRound);
+          if (selected?.is_open) void refreshFormulaOneManagerRoundDrivers(selected.round);
+        }).catch(() => {});
       } else {
         renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
       }
@@ -11473,11 +11481,137 @@ function disposeInactiveHeavyMarkup() {
 }
 
 function renderFormulaOneWeeklyForm(...args) {
+  if (String(args[0]) === "2026") {
+    renderFormulaOneManagerWeeklyEntry();
+    return;
+  }
   return formulaOnePublicController?.renderWeeklyForm(...args);
 }
 
 function loadVisibleFormulaOneFormIframes(...args) {
   return formulaOnePublicController?.loadVisibleFormIframes(...args);
+}
+
+function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
+  const view = formulaOneViews[2026];
+  if (!view?.weeklyForm) return;
+  if (!siteData.managerSession?.managerId) {
+    view.weeklyForm.innerHTML = `<p class="table-message">Sign in to make your weekly choices.</p>`;
+    return;
+  }
+  const data = siteData.formulaOne2026ManagerWeekly;
+  if (!data) {
+    view.weeklyForm.innerHTML = feedback.error
+      ? `<p class="table-message">Unable to load your Formula 1 choices: ${escapeHtml(feedback.error)}</p>`
+      : renderLoadingMessage("Loading your Formula 1 weekly choices...");
+    return;
+  }
+  const rounds = data.rounds || [];
+  if (!rounds.length) {
+    view.weeklyForm.innerHTML = `<p class="table-message">No Formula 1 rounds are available yet.</p>`;
+    return;
+  }
+  const entriesByRound = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
+  const defaultRound = rounds.find((round) => round.is_open && entriesByRound.get(Number(round.round))?.entry_status !== "submitted")
+    || rounds.find((round) => round.is_open)
+    || [...rounds].reverse().find((round) => entriesByRound.has(Number(round.round)))
+    || rounds[0];
+  const selectedRound = rounds.find((round) => String(round.round) === formulaOneManagerWeeklySelectedRound) || defaultRound;
+  formulaOneManagerWeeklySelectedRound = String(selectedRound.round);
+  const entry = entriesByRound.get(Number(selectedRound.round));
+  const editKey = `${data.year}:${selectedRound.round}`;
+  const editing = formulaOneManagerWeeklyEditing.has(editKey);
+  const submitted = entry?.entry_status === "submitted";
+  const open = Boolean(selectedRound.is_open);
+  const locked = !open || (submitted && !editing);
+  const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(selectedRound.round));
+  const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
+  const roundDriverIds = new Set(roundRoster.map((item) => item.driver_id));
+  const drivers = (data.drivers || []).filter((driver) => hasAuthoritativeRoster ? roundDriverIds.has(driver.driver_id) : driver.active !== 0);
+  const options = (value, wildcard = false) => {
+    const available = drivers.filter((driver) => driver.driver_id === value || !wildcard || !isFormulaOneTopFourTeam(driver.constructor_name));
+    return `<option value="">Choose driver</option>${available.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
+  };
+  const choice = (label, name, value, wildcard = false) => `<label class="select-control"><span>${label}</span><select name="${name}" required${locked ? " disabled" : ""}>${options(value, wildcard)}</select></label>`;
+  const deadlineLabel = selectedRound.deadline_at ? formatFormulaOneAdminDate(selectedRound.deadline_at) : "To be announced";
+  const status = feedback.error || feedback.message || (!open
+    ? (submitted ? `Submitted ${entry.submitted_at ? formatFormulaOneAdminDate(entry.submitted_at) : ""}`.trim() : "The deadline has passed without a submission.")
+    : submitted ? "Choices submitted." : "Submit before qualifying starts.");
+  view.weeklyForm.innerHTML = `
+    <form data-formula-one-manager-picks>
+      <div class="formula-one-form-header formula-one-manager-bet-header">
+        <label class="select-control"><span>Round</span><select data-formula-one-manager-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>
+        <div class="formula-one-manager-deadline"><span>Deadline</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
+        ${submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
+      </div>
+      <div class="formula-one-admin-form-grid">
+        ${choice("P1", "p1DriverId", entry?.p1_driver_id)}
+        ${choice("P2", "p2DriverId", entry?.p2_driver_id)}
+        ${choice("P3", "p3DriverId", entry?.p3_driver_id)}
+        ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, true)}
+      </div>
+      <div class="formula-one-manager-bet-footer">
+        <p class="formula-one-admin-feedback${feedback.error ? " is-error" : ""}" role="status">${escapeHtml(status)}</p>
+        ${locked ? "" : `<button class="action-button" type="submit">${submitted ? "Update choices" : "Submit choices"}</button>`}
+      </div>
+    </form>`;
+}
+
+async function formulaOneManagerRequest(path, options = {}) {
+  if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
+  const token = await ensureRankingAuthorization();
+  if (!token) throw new Error("Sign in again to make Formula 1 choices.");
+  const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}${path}`, {
+    method: options.method || "GET",
+    headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false) throw new Error(result.error || "Your Formula 1 choices could not be updated.");
+  return result;
+}
+
+async function ensureFormulaOneManagerWeeklyData({ force = false } = {}) {
+  if (!siteData.managerSession?.managerId || !FORMULA_ONE_ENDPOINT) {
+    renderFormulaOneManagerWeeklyEntry();
+    return null;
+  }
+  if (siteData.formulaOne2026ManagerWeekly && !force) return siteData.formulaOne2026ManagerWeekly;
+  if (formulaOneManagerWeeklyLoadPromise && !force) return formulaOneManagerWeeklyLoadPromise;
+  formulaOneManagerWeeklyLoadPromise = formulaOneManagerRequest("/api/seasons/2026/weekly/me")
+    .then((result) => {
+      siteData.formulaOne2026ManagerWeekly = result;
+      renderFormulaOneManagerWeeklyEntry();
+      if (activePageName === "manager-hub") renderManagerHub();
+      return result;
+    })
+    .catch((error) => {
+      renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) });
+      throw error;
+    })
+    .finally(() => { formulaOneManagerWeeklyLoadPromise = null; });
+  return formulaOneManagerWeeklyLoadPromise;
+}
+
+async function refreshFormulaOneManagerRoundDrivers(round) {
+  const key = `2026:${round}`;
+  if (!round || formulaOneManagerRoundDriverLoads.has(key)) return;
+  formulaOneManagerRoundDriverLoads.add(key);
+  try {
+    await formulaOneManagerRequest(`/api/seasons/2026/rounds/${encodeURIComponent(round)}/drivers/refresh`, { method: "POST" });
+    await ensureFormulaOneManagerWeeklyData({ force: true });
+  } catch (error) {
+    recordDiagnostic("Formula 1 manager round drivers failed to refresh", error);
+  }
+}
+
+async function submitFormulaOneManagerPicks(form) {
+  const body = Object.fromEntries(new FormData(form).entries());
+  body.submit = true;
+  await formulaOneManagerRequest(`/api/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/me`, { method: "PUT", body });
+  formulaOneManagerWeeklyEditing.delete(`2026:${formulaOneManagerWeeklySelectedRound}`);
+  await ensureFormulaOneManagerWeeklyData({ force: true });
+  renderFormulaOneManagerWeeklyEntry({ message: "Choices submitted." });
 }
 
 function renderFormulaOneWeeklyPage(...args) {
@@ -14315,11 +14449,33 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   });
 
   view.weeklyForm?.addEventListener("change", (event) => {
-    if (!event.target.matches("[data-formula-one-form-select]")) {
+    if (event.target.matches("[data-formula-one-manager-round]")) {
+      formulaOneManagerWeeklySelectedRound = event.target.value;
+      renderFormulaOneManagerWeeklyEntry();
+      const round = siteData.formulaOne2026ManagerWeekly?.rounds?.find((item) => String(item.round) === formulaOneManagerWeeklySelectedRound);
+      if (round?.is_open) void refreshFormulaOneManagerRoundDrivers(formulaOneManagerWeeklySelectedRound);
       return;
     }
+    if (event.target.matches("[data-formula-one-form-select]")) {
+      renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+    }
+  });
 
-    renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+  view.weeklyForm?.addEventListener("click", (event) => {
+    const editButton = event.target.closest("[data-formula-one-manager-edit]");
+    if (!editButton) return;
+    formulaOneManagerWeeklyEditing.add(`2026:${formulaOneManagerWeeklySelectedRound}`);
+    renderFormulaOneManagerWeeklyEntry();
+  });
+
+  view.weeklyForm?.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-formula-one-manager-picks]");
+    if (!form) return;
+    event.preventDefault();
+    const submitButton = form.querySelector("button[type='submit']");
+    if (submitButton) submitButton.disabled = true;
+    void submitFormulaOneManagerPicks(form)
+      .catch((error) => renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) }));
   });
 
   view.weeklyForm?.addEventListener("toggle", (event) => {
@@ -14704,6 +14860,9 @@ function hydrateStoredManagerSession() {
 
 function saveManagerSession(session) {
   siteData.managerSession = session;
+  delete siteData.formulaOne2026ManagerWeekly;
+  formulaOneManagerWeeklySelectedRound = "";
+  formulaOneManagerWeeklyEditing.clear();
   activeRankingManagerId = String(session?.managerId || "");
   resetRankingManagerData();
   resetDraftListsPage();
@@ -14734,6 +14893,9 @@ function signOutManager() {
   window.clearTimeout(rankingAuthorizationRefreshTimer);
   rankingAuthorizationRefreshTimer = 0;
   siteData.managerSession = null;
+  delete siteData.formulaOne2026ManagerWeekly;
+  formulaOneManagerWeeklySelectedRound = "";
+  formulaOneManagerWeeklyEditing.clear();
   activeRankingManagerId = "";
   resetRankingManagerData();
   resetDraftListsPage();
@@ -15612,38 +15774,29 @@ function buildDraftWorkflowItems(managerId) {
 }
 
 function buildFormulaOneWeeklyWorkflowItems(managerId) {
-  const forms = siteData.formulaOne2026RoundForms || [];
-  const logs = siteData.portalLogs || [];
-  const nextForm = getUpcomingFormulaOneForm(forms);
-
-  if (!nextForm || isWorkflowLeagueCompleted({ league: "Formula 1", terms: ["weekly"], year: "2026" })) {
-    return [];
-  }
-
-  const completionIds = [
-    `formula-one-2026-weekly-${nextForm.id}`,
-    `f1-2026-weekly-${nextForm.id}`,
-    `2026-f1-weekly-${nextForm.id}`,
-    nextForm.id,
-  ];
-
-  if (completionIds.some((id) => hasManagerCompletedDraft(logs, managerId, id))) {
-    return [];
-  }
+  const data = siteData.formulaOne2026ManagerWeekly;
+  if (!data?.rounds || String(siteData.managerSession?.managerId || "") !== String(managerId || "")) return [];
+  const entries = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
+  const lookaheadEnd = Date.now() + WORKFLOW_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000;
+  const nextRound = data.rounds.find((round) => {
+    const deadline = Date.parse(round.deadline_at || "");
+    return round.is_open && entries.get(Number(round.round))?.entry_status !== "submitted"
+      && (!Number.isFinite(deadline) || deadline <= lookaheadEnd);
+  });
+  if (!nextRound) return [];
 
   return [{
     actionLabel: "Open",
-    description: "2026 Formula 1 weekly bet",
-    dueDate: formatWorkflowDue(nextForm),
-    id: `formula-one-2026-weekly-${nextForm.id}`,
-    priority: nextForm.Priority || nextForm.priority || "1",
-    status: "Upcoming race",
+    description: "Make your P1, P2, P3, and wildcard choices",
+    dueDate: nextRound.deadline_at ? formatFormulaOneAdminDate(nextRound.deadline_at) : "",
+    id: `formula-one-2026-weekly-${nextRound.round}`,
+    priority: "1",
+    status: "Not submitted",
     tab: "formula-one-2026-weekly-bet",
     target: "formula-1-2026-weekly",
-    title: nextForm.name,
+    title: `${nextRound.name} weekly choices`,
     url: "",
-    weeklyFormId: nextForm.id,
-    year: "2026",
+    formulaOneBetRound: String(nextRound.round),
   }];
 }
 
@@ -15753,6 +15906,7 @@ function renderWorkflowItem(item) {
     item.year ? `data-workflow-year="${escapeHtml(item.year)}"` : "",
     item.formulaOneYear ? `data-workflow-formula-one-year="${escapeHtml(item.formulaOneYear)}"` : "",
     item.formulaOneRound ? `data-workflow-formula-one-round="${escapeHtml(item.formulaOneRound)}"` : "",
+    item.formulaOneBetRound ? `data-workflow-formula-one-bet-round="${escapeHtml(item.formulaOneBetRound)}"` : "",
   ].filter(Boolean).join(" ");
 
   return `
@@ -15852,6 +16006,11 @@ function activateWorkflowItem(item) {
 
     if (item.dataset.workflowTab) {
       showTab(item.dataset.workflowTab);
+    }
+
+    if (item.dataset.workflowFormulaOneBetRound) {
+      formulaOneManagerWeeklySelectedRound = item.dataset.workflowFormulaOneBetRound;
+      renderFormulaOneManagerWeeklyEntry();
     }
 
     if (item.dataset.workflowFormId && item.dataset.workflowYear) {
@@ -18027,27 +18186,8 @@ function ensureFormulaOneData(year, view = "questions") {
     ));
   }
 
-  if ((view === "weekly" || view === "weekly-results") && yearKey === "2026") {
-    sourceTasks.push(ensureFormulaOneSource(
-      "formulaOne2026RoundForms",
-      async () => {
-        const [, rows] = await Promise.all([
-          controllerTask,
-          loadSheet("formulaOne2026RoundForms"),
-        ]);
-        return rows;
-      },
-      (rows) => {
-        siteData.formulaOne2026RoundForms = parseFormulaOneRoundForms(rows);
-        renderFormulaOneWeeklyForm(yearKey, siteData.formulaOne2026RoundForms);
-      },
-      (error) => {
-        const form = formulaOneViews[2026]?.weeklyForm;
-        if (form) {
-          form.innerHTML = `<p class="table-message">Unable to load Formula 1 bet forms: ${escapeHtml(getErrorMessage(error))}</p>`;
-        }
-      }
-    ));
+  if ((view === "weekly" || view === "weekly-results") && yearKey === "2026" && siteData.managerSession) {
+    sourceTasks.push(ensureFormulaOneManagerWeeklyData());
   }
 
   return Promise.allSettled(sourceTasks).then((results) => {
@@ -18126,6 +18266,7 @@ function ensureManagerHubData() {
       ensureFormulaOneData(2026, "questions"),
       ensureFormulaOneData(2025, "weekly-results"),
       ensureFormulaOneData(2026, "weekly-results"),
+      ensureFormulaOneManagerWeeklyData(),
     ];
     if (isCurrentManagerAdmin()) loads.push(ensureFootyMissingNotesData());
     if (isCurrentManagerAdmin()) loads.push(ensureFormulaOneAdminData());

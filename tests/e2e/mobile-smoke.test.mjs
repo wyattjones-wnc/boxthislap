@@ -720,7 +720,24 @@ test("secondary admin bundles stay off public mobile routes", async ({
 }) => {
   /** @type {string[]} */
   const secondaryBundleRequests = [];
+  /** @type {string[]} */
+  const formulaOnePublicRequests = [];
+  /** @type {string[]} */
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
   page.on("request", (request) => {
+    if (/\/formulaOnePublic-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      formulaOnePublicRequests.push(request.url());
+    }
     if (
       /\/(?:collectibles|draftLists|formulaOneCalculator|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
@@ -734,6 +751,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   await expect(page.locator('[data-page="footy"]')).toHaveClass(/is-active/);
 
   expect(secondaryBundleRequests).toEqual([]);
+  expect(formulaOnePublicRequests).toEqual([]);
 
   await page.goto("/#formula-1-2026-results", { waitUntil: "networkidle" });
   await expect(
@@ -741,6 +759,8 @@ test("secondary admin bundles stay off public mobile routes", async ({
   ).toHaveClass(/is-active/);
 
   expect(secondaryBundleRequests).toEqual([]);
+  expect(formulaOnePublicRequests).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
 });
 
 test("authenticated YouTube route loads its deferred controller", async ({

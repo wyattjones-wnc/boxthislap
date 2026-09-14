@@ -11360,6 +11360,7 @@ function renderActivePageContent(pageName = "") {
     }
 
     if (pageName.endsWith("-weekly")) {
+      if (formulaOneYear === "2026") formulaOneManagerWeeklySelectedRound = "";
       if (siteData[`formulaOne${formulaOneYear}Weekly`]) {
         renderFormulaOneWeeklyPage(formulaOneYear, siteData[`formulaOne${formulaOneYear}Weekly`]);
       } else if (formulaOneViews[formulaOneYear]?.weeklyList) {
@@ -11512,7 +11513,7 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
     return;
   }
   const entriesByRound = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
-  const defaultRound = rounds.find((round) => round.is_open && entriesByRound.get(Number(round.round))?.entry_status !== "submitted")
+  const defaultRound = getNextFormulaOneManagerRound(rounds)
     || rounds.find((round) => round.is_open)
     || [...rounds].reverse().find((round) => entriesByRound.has(Number(round.round)))
     || rounds[0];
@@ -11555,6 +11556,16 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
         ${locked ? "" : `<button class="action-button" type="submit">${submitted ? "Update choices" : "Submit choices"}</button>`}
       </div>
     </form>`;
+}
+
+function getNextFormulaOneManagerRound(rounds, now = Date.now()) {
+  return [...(rounds || [])]
+    .filter((round) => {
+      const deadline = Date.parse(round.deadline_at || "");
+      return Number.isFinite(deadline) && deadline > now;
+    })
+    .sort((first, second) => Date.parse(first.deadline_at) - Date.parse(second.deadline_at)
+      || Number(first.round) - Number(second.round))[0] || null;
 }
 
 async function formulaOneManagerRequest(path, options = {}) {
@@ -15778,12 +15789,9 @@ function buildFormulaOneWeeklyWorkflowItems(managerId) {
   if (!data?.rounds || String(siteData.managerSession?.managerId || "") !== String(managerId || "")) return [];
   const entries = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
   const lookaheadEnd = Date.now() + WORKFLOW_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000;
-  const nextRound = data.rounds.find((round) => {
-    const deadline = Date.parse(round.deadline_at || "");
-    return round.is_open && entries.get(Number(round.round))?.entry_status !== "submitted"
-      && (!Number.isFinite(deadline) || deadline <= lookaheadEnd);
-  });
-  if (!nextRound) return [];
+  const nextRound = getNextFormulaOneManagerRound(data.rounds);
+  const deadline = Date.parse(nextRound?.deadline_at || "");
+  if (!nextRound || deadline > lookaheadEnd || entries.get(Number(nextRound.round))?.entry_status === "submitted") return [];
 
   return [{
     actionLabel: "Open",

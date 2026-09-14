@@ -977,10 +977,17 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
     roundDrivers: [],
     rounds: [
       {
+        deadline_at: "2099-04-01T05:00:00.000Z",
+        is_open: 1,
+        name: "Japanese Grand Prix",
+        round: 1,
+        year: 2026,
+      },
+      {
         deadline_at: "2099-03-07T05:00:00.000Z",
         is_open: 1,
         name: "Australian Grand Prix",
-        round: 1,
+        round: 2,
         year: 2026,
       },
     ],
@@ -1030,7 +1037,7 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
           p1_driver_id: "norris",
           p2_driver_id: "russell",
           p3_driver_id: "leclerc",
-          round: 1,
+          round: 2,
           submitted_at: "2099-03-01T12:00:00.000Z",
           wildcard_driver_id: "sainz",
           year: 2026,
@@ -1056,6 +1063,7 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await page.goto("/#formula-1-2026-weekly", { waitUntil: "networkidle" });
   const form = page.locator("[data-formula-one-manager-picks]");
   await expect(form).toBeVisible();
+  await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue("2");
   await expect(
     form.locator('select[name="wildcardDriverId"] option'),
   ).toHaveText(["Choose driver", "Carlos Sainz"]);

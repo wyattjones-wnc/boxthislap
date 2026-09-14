@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findRoundRosterSession, getQualifyingDeadline, isTopFourConstructor } from "../src/index.js";
+import { findRoundRosterSession, getQualifyingDeadline, isTopFourConstructor, normalizeManagerWeeklyPicksBody } from "../src/index.js";
 
 test("qualifying start is used as the weekly deadline", () => {
   assert.equal(getQualifyingDeadline({
@@ -30,4 +30,18 @@ test("wildcards exclude the top four constructors", () => {
   for (const team of ["McLaren", "Mercedes", "Ferrari", "Red Bull Racing"]) assert.equal(isTopFourConstructor(team), true);
   assert.equal(isTopFourConstructor("Racing Bulls"), false);
   assert.equal(isTopFourConstructor("Williams"), false);
+});
+
+test("manager submissions cannot enable admin deadline or partial-entry overrides", () => {
+  assert.deepEqual(normalizeManagerWeeklyPicksBody({
+    p1DriverId: "driver-1",
+    allowPartial: true,
+    force: true,
+    submit: false,
+  }), {
+    p1DriverId: "driver-1",
+    allowPartial: false,
+    force: false,
+    submit: true,
+  });
 });

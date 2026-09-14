@@ -1063,7 +1063,9 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await page.goto("/#formula-1-2026-weekly", { waitUntil: "networkidle" });
   const form = page.locator("[data-formula-one-manager-picks]");
   await expect(form).toBeVisible();
-  await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue("2");
+  await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue(
+    "2",
+  );
   await expect(
     form.locator('select[name="wildcardDriverId"] option'),
   ).toHaveText(["Choose driver", "Carlos Sainz"]);

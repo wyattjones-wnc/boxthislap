@@ -32,6 +32,149 @@ test("signed-out manager hub keeps private data closed", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("admin Manager Hub cards load independently of slow portal sheets", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const formulaOnePaths = [];
+  /** @type {string[]} */
+  const pageErrors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") pageErrors.push(message.text());
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        managerId: "6",
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00.000Z",
+          accessToken: "test-access-token",
+        },
+      }),
+    );
+    localStorage.setItem(
+      "boxthislap-manager-hub-drafts",
+      JSON.stringify({
+        cachedAt: new Date().toISOString(),
+        drafts: [
+          {
+            ID: "fantasy-critic-2025",
+            "Is Completed": "TRUE",
+            League: "Fantasy Critic",
+            Name: "2025 Fantasy Critic",
+            "Winner Manager ID": "6",
+            Year: "2025",
+          },
+        ],
+      }),
+    );
+  });
+  await page.route("https://docs.google.com/**", async (route) => {
+    const url = route.request().url();
+    const gid = new URL(url).searchParams.get("gid");
+    if (
+      url.includes("2PACX-1vTQnBD") &&
+      ["121360226", "1819817720"].includes(String(gid || ""))
+    ) {
+      await new Promise(() => {});
+      return;
+    }
+    const body =
+      url.includes("2PACX-1vTQnBD") && gid === "0"
+        ? "ID,Display Name,Is Admin\n6,Wyatt,TRUE"
+        : "";
+    await route.fulfill({ body, contentType: "text/csv", status: 200 });
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ defaultTeamIds: [], ok: true, teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+  await page.route(
+    "https://box-this-lap-formula-one.boxthislap.workers.dev/**",
+    (route) => {
+      const request = route.request();
+      const corsHeaders = {
+        "access-control-allow-headers": "authorization,content-type",
+        "access-control-allow-methods": "GET,OPTIONS",
+        "access-control-allow-origin": "*",
+      };
+      if (request.method() === "OPTIONS") {
+        return route.fulfill({ headers: corsHeaders, status: 204 });
+      }
+      const path = new URL(request.url()).pathname;
+      formulaOnePaths.push(path);
+      const body = path.endsWith("/api/admin/seasons/2026/weekly")
+        ? {
+            ok: true,
+            rounds: [
+              {
+                facts_complete: 0,
+                has_sprint: 0,
+                is_complete: 0,
+                name: "Australian Grand Prix",
+                race_date: "2020-03-08",
+                round: 1,
+              },
+            ],
+            sessions: [],
+            year: 2026,
+          }
+        : path.endsWith("/api/admin/seasons")
+          ? { ok: true, seasons: [{ year: 2026 }] }
+          : { entries: [], ok: true, roundDrivers: [], rounds: [], year: 2026 };
+      return route.fulfill({
+        body: JSON.stringify(body),
+        contentType: "application/json",
+        headers: corsHeaders,
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ notes: [], ok: true }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
+  const hub = page.locator('[data-page="manager-hub"]');
+  await expect(hub).toHaveClass(/is-active/);
+  await expect(
+    hub.getByRole("heading", { name: "2025 Fantasy Critic Winner" }),
+  ).toBeVisible();
+  await hub.getByText("Notifications", { exact: true }).click();
+  await expect
+    .poll(() => formulaOnePaths)
+    .toContain("/api/admin/seasons/2026/weekly");
+  await expect
+    .poll(() =>
+      pageErrors.filter((message) =>
+        message.includes("Manager Hub notifications source formula-one-admin"),
+      ),
+    )
+    .toEqual([]);
+  await expect(
+    hub.getByRole("heading", {
+      name: "2026 Australian Grand Prix data is incomplete",
+    }),
+  ).toBeVisible();
+  await expect(
+    hub.getByText("Checking remaining notifications..."),
+  ).toBeVisible();
+});
+
 test("visible pointer targets meet the WCAG minimum size", async ({ page }) => {
   await page.goto("/#footy", { waitUntil: "domcontentloaded" });
   await expect(page.locator('[data-page="footy"]')).toHaveClass(/is-active/);

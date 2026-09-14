@@ -524,6 +524,8 @@ const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notification
 const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
 const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
 const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
+const MANAGER_HUB_DRAFTS_CACHE_KEY = "boxthislap-manager-hub-drafts";
+const MANAGER_HUB_DRAFTS_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const IMAGE_CACHE_STORAGE_KEY = "boxthislap-image-cache-enabled";
 const FOOTY_NOTIFICATION_OFFSETS = [
   { key: "2h", label: "in 2 hours", minutes: 120 },
@@ -535,8 +537,7 @@ let isFootyNotificationBusy = false;
 let footyMatchNotificationsLoadPromise = null;
 const pendingFootyMatchNotificationIds = new Set();
 let footyMatchNotesLoadPromise = null;
-let managerHubFootyNotesLoadPromise = null;
-let managerHubFootyNotesRefreshScheduled = false;
+let managerHubLoadState = null;
 let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
 let releaseFootyPerfectDialog = null;
@@ -12994,12 +12995,22 @@ followedTeamShortcuts?.addEventListener("click", (event) => {
 });
 
 workflowList?.addEventListener("click", (event) => {
+  const retryButton = event.target.closest("[data-manager-hub-retry]");
+  if (retryButton) {
+    retryManagerHubCard(retryButton.dataset.managerHubRetry);
+    return;
+  }
   const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
 
   if (item) {
     activateWorkflowItem(item);
   }
 });
+
+[managerAwardsList, managerSummaryList].forEach((list) => list?.addEventListener("click", (event) => {
+  const retryButton = event.target.closest("[data-manager-hub-retry]");
+  if (retryButton) retryManagerHubCard(retryButton.dataset.managerHubRetry);
+}));
 
 workflowList?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {
@@ -14783,6 +14794,7 @@ managerSummaryYearSelect?.addEventListener("change", () => {
   const session = siteData.managerSession;
 
   if (session) {
+    ensureManagerHubResultsForYear(getManagerSummarySelectedYear());
     renderManagerSummary(session.managerId);
   }
 });
@@ -14867,6 +14879,7 @@ function hideLoginPanel() {
 
 function hydrateManagerSession() {
   hydrateStoredManagerSession();
+  hydrateManagerHubDraftsCache();
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
@@ -14886,6 +14899,8 @@ function hydrateStoredManagerSession() {
 
 function saveManagerSession(session) {
   siteData.managerSession = session;
+  managerHubLoadState = null;
+  hydrateManagerHubDraftsCache();
   delete siteData.formulaOne2026ManagerWeekly;
   formulaOneManagerWeeklySelectedRound = "";
   formulaOneManagerWeeklyEditing.clear();
@@ -14919,6 +14934,7 @@ function signOutManager() {
   window.clearTimeout(rankingAuthorizationRefreshTimer);
   rankingAuthorizationRefreshTimer = 0;
   siteData.managerSession = null;
+  managerHubLoadState = null;
   delete siteData.formulaOne2026ManagerWeekly;
   formulaOneManagerWeeklySelectedRound = "";
   formulaOneManagerWeeklyEditing.clear();
@@ -15610,6 +15626,91 @@ function renderManagerHub() {
   renderManagerAwards(session.managerId);
 }
 
+function createManagerHubCardLoadState() {
+  return {
+    completed: new Set(),
+    failed: new Map(),
+    loaders: new Map(),
+    pending: new Set(),
+  };
+}
+
+function initializeManagerHubLoadState(managerId) {
+  const normalizedManagerId = String(managerId || "");
+  if (managerHubLoadState?.managerId === normalizedManagerId) return managerHubLoadState;
+  managerHubLoadState = {
+    awards: createManagerHubCardLoadState(),
+    managerId: normalizedManagerId,
+    notifications: createManagerHubCardLoadState(),
+    results: createManagerHubCardLoadState(),
+  };
+  return managerHubLoadState;
+}
+
+function getManagerHubCardLoadState(card) {
+  const managerId = String(getCurrentManagerId() || "");
+  if (!managerId || managerHubLoadState?.managerId !== managerId) return null;
+  return managerHubLoadState[card] || null;
+}
+
+function renderManagerHubCard(card) {
+  const managerId = getCurrentManagerId();
+  if (!managerId) return;
+  if (card === "notifications") renderManagerWorkflow(managerId);
+  if (card === "awards") renderManagerAwards(managerId);
+  if (card === "results") renderManagerSummary(managerId);
+}
+
+function trackManagerHubCardLoad(card, key, loader) {
+  const managerId = String(getCurrentManagerId() || "");
+  const cardState = initializeManagerHubLoadState(managerId)?.[card];
+  if (!managerId || !cardState || cardState.pending.has(key) || cardState.completed.has(key)) return;
+
+  cardState.loaders.set(key, loader);
+  cardState.failed.delete(key);
+  cardState.pending.add(key);
+  renderManagerHubCard(card);
+
+  Promise.resolve()
+    .then(loader)
+    .then(() => {
+      if (managerHubLoadState?.managerId === managerId) cardState.completed.add(key);
+    })
+    .catch((error) => {
+      if (managerHubLoadState?.managerId !== managerId) return;
+      cardState.failed.set(key, error);
+      recordDiagnostic(`Manager Hub ${card} source ${key} failed to load`, error);
+    })
+    .finally(() => {
+      if (managerHubLoadState?.managerId !== managerId) return;
+      cardState.pending.delete(key);
+      renderManagerHubCard(card);
+    });
+}
+
+function retryManagerHubCard(card) {
+  const cardState = getManagerHubCardLoadState(card);
+  if (!cardState) return;
+  const retries = [...cardState.failed.keys()]
+    .map((key) => [key, cardState.loaders.get(key)])
+    .filter(([, loader]) => typeof loader === "function");
+  cardState.failed.clear();
+  retries.forEach(([key, loader]) => trackManagerHubCardLoad(card, key, loader));
+  renderManagerHubCard(card);
+}
+
+function renderManagerHubCardStatus(card, loadingLabel) {
+  const cardState = getManagerHubCardLoadState(card);
+  if (!cardState) return "";
+  if (cardState.pending.size) {
+    return `<article class="workflow-item manager-hub-load-status"><p class="table-message"><span class="loading-spinner" aria-hidden="true"></span>${escapeHtml(loadingLabel)}</p></article>`;
+  }
+  if (cardState.failed.size) {
+    return `<article class="workflow-item manager-hub-load-status"><p class="table-message">Some data could not be loaded.</p><button class="footer-copy-link" type="button" data-manager-hub-retry="${escapeHtml(card)}">Retry</button></article>`;
+  }
+  return "";
+}
+
 function renderManagerWorkflowLegacy(managerId) {
   if (!workflowList) {
     return;
@@ -15675,9 +15776,10 @@ function renderManagerWorkflow(managerId) {
     return;
   }
 
-  const drafts = siteData.portalDrafts;
+  const loadStatus = renderManagerHubCardStatus("notifications", "Checking remaining notifications...");
+  const hasStartedLoading = Boolean(getManagerHubCardLoadState("notifications"));
 
-  if (!Array.isArray(drafts)) {
+  if (!hasStartedLoading && !Array.isArray(siteData.portalDrafts)) {
     workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading notifications...</p></article>`;
     return;
   }
@@ -15685,15 +15787,16 @@ function renderManagerWorkflow(managerId) {
   const openItems = buildManagerWorkflowItems(managerId).sort(compareWorkflowItems);
 
   if (workflowCount) {
-    workflowCount.textContent = formatNotificationCount(openItems.length);
+    const checking = getManagerHubCardLoadState("notifications")?.pending.size ? " · checking" : "";
+    workflowCount.textContent = `${formatNotificationCount(openItems.length)}${checking}`;
   }
 
   if (!openItems.length) {
-    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">No notifications need attention.</p></article>`;
+    workflowList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">No notifications need attention.</p></article>`;
     return;
   }
 
-  workflowList.innerHTML = openItems.map(renderWorkflowItem).join("");
+  workflowList.innerHTML = `${openItems.map(renderWorkflowItem).join("")}${loadStatus}`;
 }
 
 function buildManagerWorkflowItems(managerId) {
@@ -15956,6 +16059,17 @@ function formatWorkflowDate(date) {
   }).format(date);
 }
 
+function getEasternTodayDate() {
+  const dateParts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(dateParts.map((part) => [part.type, part.value]));
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
+}
+
 function formatWorkflowDue(form) {
   const dueEst = String(form?.dueEst ?? "").trim();
 
@@ -16069,9 +16183,10 @@ function renderManagerSummary(managerId) {
   }
 
   const source = siteData.managerResultsSource;
+  const loadStatus = renderManagerHubCardStatus("results", "Loading remaining results...");
 
   if (!source && !hasManagerHubResultData()) {
-    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
+    managerSummaryList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
     return;
   }
 
@@ -16088,11 +16203,11 @@ function renderManagerSummary(managerId) {
   ].filter(Boolean);
 
   if (!resultCards.length) {
-    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No ${escapeHtml(selectedYear === "all" ? "" : `${selectedYear} `)}result summary found for this manager yet.</p></article>`;
+    managerSummaryList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">No ${escapeHtml(selectedYear === "all" ? "" : `${selectedYear} `)}result summary found for this manager yet.</p></article>`;
     return;
   }
 
-  managerSummaryList.innerHTML = resultCards.join("");
+  managerSummaryList.innerHTML = `${resultCards.join("")}${loadStatus}`;
 }
 
 function renderManagerAwards(managerId) {
@@ -16100,8 +16215,10 @@ function renderManagerAwards(managerId) {
     return;
   }
 
+  const loadStatus = renderManagerHubCardStatus("awards", "Loading awards...");
+
   if (!siteData.portalDrafts) {
-    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
+    managerAwardsList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
     return;
   }
 
@@ -16110,11 +16227,11 @@ function renderManagerAwards(managerId) {
   });
 
   if (!awards.length) {
-    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`;
+    managerAwardsList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`;
     return;
   }
 
-  managerAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "manager")).join("");
+  managerAwardsList.innerHTML = `${awards.map((award) => renderAwardCard(award, "manager")).join("")}${loadStatus}`;
 }
 
 function renderLeagueAwards() {
@@ -17877,23 +17994,56 @@ function ensurePortalData() {
   });
 }
 
+function hydrateManagerHubDraftsCache() {
+  if (Array.isArray(siteData.portalDrafts)) return;
+  try {
+    const cached = JSON.parse(localStorage.getItem(MANAGER_HUB_DRAFTS_CACHE_KEY) || "null");
+    const cachedAt = Date.parse(cached?.cachedAt || "");
+    if (
+      Array.isArray(cached?.drafts)
+      && Number.isFinite(cachedAt)
+      && Date.now() - cachedAt <= MANAGER_HUB_DRAFTS_CACHE_MAX_AGE_MS
+    ) {
+      siteData.portalDrafts = cached.drafts;
+    }
+  } catch {
+    // A fresh published-sheet request below replaces an unreadable cache.
+  }
+}
+
+function cacheManagerHubDrafts(drafts) {
+  try {
+    localStorage.setItem(MANAGER_HUB_DRAFTS_CACHE_KEY, JSON.stringify({
+      cachedAt: new Date().toISOString(),
+      drafts,
+    }));
+  } catch {
+    // Awards still work for this visit when browser storage is unavailable.
+  }
+}
+
 function ensurePortalAwardsData() {
   return ensureSharedData("portal-awards", async () => {
-    const [managersResult, draftsResult] = await Promise.allSettled([
-      ensurePortalManagersData(),
-      loadSheet("portalDrafts"),
-    ]);
-
-    if (managersResult.status === "fulfilled") {
-      siteData.portalManagers = managersResult.value;
+    const managersPromise = ensurePortalManagersData();
+    try {
+      siteData.portalDrafts = await loadSheet("portalDrafts");
+      cacheManagerHubDrafts(siteData.portalDrafts);
+    } catch (error) {
+      siteData.portalDrafts = [];
+      recordDiagnostic("portal drafts failed to load", error);
+      throw error;
+    } finally {
+      if (siteData.managerSession?.managerId) {
+        renderManagerAwards(siteData.managerSession.managerId);
+        renderManagerWorkflow(siteData.managerSession.managerId);
+      }
+      runPortalRender("league awards", renderLeagueAwards);
+      runPortalRender("standings awards", renderStandingsAwards);
     }
+
+    await managersPromise;
     siteData.portalManagers ||= [...DEFAULT_PORTAL_MANAGERS];
-    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
-
-    if (draftsResult.status === "rejected") {
-      recordDiagnostic("portal drafts failed to load", draftsResult.reason);
-    }
-
+    if (siteData.managerSession?.managerId) renderManagerAwards(siteData.managerSession.managerId);
     runPortalRender("league awards", renderLeagueAwards);
     runPortalRender("standings awards", renderStandingsAwards);
     return siteData.portalDrafts;
@@ -18274,56 +18424,43 @@ function ensureManagerHubData() {
     return ensurePortalManagersData();
   }
 
-  return ensureSharedData("manager-hub", async () => {
-    renderManagerHub();
-    deferManagerHubFootyMissingNotesRefresh();
-    const loads = [
-      ensurePortalData(),
-      ensureWorldCupStandingsData(),
-      ensureFantasyCriticData(2025),
-      ensureFantasyCriticData(2026),
-      ensureFantasyOfficeData(2025, "results"),
-      ensureFantasyOfficeData(2026, "results"),
-      ensureFormulaOneData(2024, "questions"),
-      ensureFormulaOneData(2025, "questions"),
-      ensureFormulaOneData(2026, "questions"),
-      ensureFormulaOneData(2025, "weekly-results"),
-      ensureFormulaOneData(2026, "weekly-results"),
-      ensureFormulaOneManagerWeeklyData(),
-    ];
-    if (isCurrentManagerAdmin()) loads.push(ensureFormulaOneAdminData());
-    await Promise.allSettled(loads);
+  return ensureSharedData("manager-hub", () => {
+    initializeManagerHubLoadState(getCurrentManagerId());
+
+    trackManagerHubCardLoad("awards", "portal-awards", ensurePortalAwardsData);
+    trackManagerHubCardLoad("notifications", "portal", ensurePortalData);
+    trackManagerHubCardLoad("notifications", "followed-teams", () => followedTeamsController.load());
+    trackManagerHubCardLoad("notifications", "fantasy-critic-2025", () => ensureFantasyCriticData(2025));
+    trackManagerHubCardLoad("notifications", "fantasy-critic-2026", () => ensureFantasyCriticData(2026));
+    trackManagerHubCardLoad("notifications", "formula-one-weekly", ensureFormulaOneManagerWeeklyData);
+    if (isCurrentManagerAdmin()) {
+      trackManagerHubCardLoad("notifications", "formula-one-admin", ensureFormulaOneAdminData);
+      window.setTimeout(() => {
+        trackManagerHubCardLoad("notifications", "footy-match-notes", ensureFootyMissingNotesData);
+      }, 0);
+    }
+
+    ensureManagerHubResultsForYear(getManagerSummarySelectedYear());
     renderManagerHub();
     return true;
   });
 }
 
-function deferManagerHubFootyMissingNotesRefresh() {
-  if (
-    !isCurrentManagerAdmin()
-    || managerHubFootyNotesRefreshScheduled
-    || managerHubFootyNotesLoadPromise
-  ) {
-    return;
+function ensureManagerHubResultsForYear(year) {
+  const years = year === "all" ? ["2024", "2025", "2026"] : [String(year || "2026")];
+  if (years.includes("2026")) {
+    trackManagerHubCardLoad("results", "world-cup-2026", ensureWorldCupStandingsData);
   }
-
-  const managerId = getCurrentManagerId();
-  managerHubFootyNotesRefreshScheduled = true;
-  window.setTimeout(() => {
-    managerHubFootyNotesRefreshScheduled = false;
-    if (!managerId || getCurrentManagerId() !== managerId || !isCurrentManagerAdmin()) return;
-
-    managerHubFootyNotesLoadPromise = ensureFootyMissingNotesData()
-      .then(() => {
-        if (getCurrentManagerId() === managerId) renderManagerWorkflow(managerId);
-      })
-      .catch((error) => {
-        recordDiagnostic("Manager Hub match notes notification failed to load", error);
-      })
-      .finally(() => {
-        managerHubFootyNotesLoadPromise = null;
-      });
-  }, 0);
+  years.forEach((yearKey) => {
+    if (["2025", "2026"].includes(yearKey)) {
+      trackManagerHubCardLoad("results", `fantasy-critic-${yearKey}`, () => ensureFantasyCriticData(yearKey));
+      trackManagerHubCardLoad("results", `fantasy-office-${yearKey}`, () => ensureFantasyOfficeData(yearKey, "results"));
+    }
+    trackManagerHubCardLoad("results", `formula-one-${yearKey}`, () => ensureFormulaOneData(yearKey, "questions"));
+    if (["2025", "2026"].includes(yearKey)) {
+      trackManagerHubCardLoad("results", `formula-one-weekly-${yearKey}`, () => ensureFormulaOneData(yearKey, "weekly-results"));
+    }
+  });
 }
 
 async function ensureFootyMissingNotesData() {

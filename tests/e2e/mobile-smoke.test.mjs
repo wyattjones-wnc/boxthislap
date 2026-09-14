@@ -759,6 +759,72 @@ test("secondary admin bundles stay off public mobile routes", async ({
   expect(formulaOnePublicRequests).toHaveLength(1);
 });
 
+test("2025 Formula One pages load while their deferred controller downloads", async ({
+  page,
+}) => {
+  let controllerFinished = false;
+  let dataStartedBeforeControllerFinished = false;
+  const mainSheet = [
+    ",,Wyatt,",
+    "Question,Answer,Wyatt,Points",
+    "Who wins the championship?,Oscar,Lando,10",
+  ].join("\n");
+  const weeklySheet = [
+    "Person,P1,P2,P3,Wildcard,,Person,P1,P2,P3,Wildcard Qualifying,Wildcard Race,,Person,P1,P2,P3,Wildcard Qualifying,Wildcard Race,Total",
+    "Wyatt,Lando,Oscar,George,Charles,,Wyatt,1,2,3,4,5,,Wyatt,25,18,15,10,8,76",
+  ].join("\n");
+
+  await page.route("**/formulaOnePublic-*.js", async (route) => {
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.fulfill({ response });
+    controllerFinished = true;
+  });
+  await page.route("https://docs.google.com/**", async (route) => {
+    const url = route.request().url();
+    if (url.includes("2PACX-1vRrushAAc96VpAzSRiZsRK0198bbc")) {
+      dataStartedBeforeControllerFinished ||= !controllerFinished;
+      await route.fulfill({ body: mainSheet, contentType: "text/csv" });
+      return;
+    }
+    if (url.includes("2PACX-1vR4JBp8m58prqFPqifgHB0xS7y")) {
+      await route.fulfill({ body: weeklySheet, contentType: "text/csv" });
+      return;
+    }
+    await route.fulfill({ body: "", contentType: "text/csv" });
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#formula-1-2025-questions", { waitUntil: "networkidle" });
+  await expect(page.getByText("Who wins the championship?")).toBeVisible();
+  expect(dataStartedBeforeControllerFinished).toBe(true);
+
+  await page.evaluate(() => {
+    window.location.hash = "formula-1-2025-weekly";
+  });
+  await expect(
+    page.locator("#formula-one-2025-weekly-round-select"),
+  ).toBeVisible();
+  await expect(page.locator("#formula-one-2025-weekly-list")).not.toContainText(
+    "Loading",
+  );
+
+  await page.evaluate(() => {
+    window.location.hash = "formula-1-2025-results";
+  });
+  await expect(page.locator("#formula-one-2025-results-rows")).toContainText(
+    "Wyatt",
+  );
+});
+
 test("authenticated YouTube route loads its deferred controller", async ({
   page,
 }) => {

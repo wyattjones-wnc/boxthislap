@@ -798,7 +798,7 @@ const loadFormulaOneCalculatorController = createLazyControllerLoader(async () =
   return formulaOneCalculatorController;
 });
 const loadFormulaOnePublicController = createLazyControllerLoader(async () => {
-  const module = await import("./modules/formulaOnePublic.js?v=202609140322");
+  const module = await import("./modules/formulaOnePublic.js?v=202609140351");
   formulaOnePublicController = module.createFormulaOnePublicController({
     escapeHtml,
     formatPoints,
@@ -17964,16 +17964,20 @@ function ensureFormulaOneCalculatorData(year) {
 }
 
 function ensureFormulaOneData(year, view = "questions") {
-  if (!formulaOnePublicController) {
-    return loadFormulaOnePublicController().then(() => ensureFormulaOneData(year, view));
-  }
+  // Start the deferred UI controller and the requested data at the same time.
+  // Waiting for the controller before beginning the network request made archived
+  // seasons appear stuck on "Loading" on slower mobile connections.
+  const controllerTask = loadFormulaOnePublicController();
   const yearKey = String(year);
   if (view === "weekly-results" && yearKey === "2026") {
     const weeklyTask = ensureFormulaOneSource(
       "formulaOne2026WeeklyResults",
       async () => {
         if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
-        const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/weekly`);
+        const [, response] = await Promise.all([
+          controllerTask,
+          fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/weekly`),
+        ]);
         if (!response.ok) throw new Error(`Formula 1 weekly results returned ${response.status}.`);
         return response.json();
       },
@@ -17989,7 +17993,13 @@ function ensureFormulaOneData(year, view = "questions") {
   }
   const sourceTasks = [ensureFormulaOneSource(
     `formulaOne${yearKey}`,
-    () => loadSheetText(`formulaOne${yearKey}`),
+    async () => {
+      const [, csvText] = await Promise.all([
+        controllerTask,
+        loadSheetText(`formulaOne${yearKey}`),
+      ]);
+      return csvText;
+    },
     (csvText) => {
       const data = parseFormulaOneSheet(csvText);
       siteData[`formulaOne${yearKey}`] = data;
@@ -18001,7 +18011,13 @@ function ensureFormulaOneData(year, view = "questions") {
   if ((view === "weekly" || view === "weekly-results") && ["2025", "2026"].includes(yearKey)) {
     sourceTasks.push(ensureFormulaOneSource(
       `formulaOne${yearKey}Weekly`,
-      () => loadSheetText(`formulaOne${yearKey}Weekly`),
+      async () => {
+        const [, csvText] = await Promise.all([
+          controllerTask,
+          loadSheetText(`formulaOne${yearKey}Weekly`),
+        ]);
+        return csvText;
+      },
       (csvText) => {
         const data = parseFormulaOneWeeklySheet(csvText);
         siteData[`formulaOne${yearKey}Weekly`] = data;
@@ -18014,7 +18030,13 @@ function ensureFormulaOneData(year, view = "questions") {
   if ((view === "weekly" || view === "weekly-results") && yearKey === "2026") {
     sourceTasks.push(ensureFormulaOneSource(
       "formulaOne2026RoundForms",
-      () => loadSheet("formulaOne2026RoundForms"),
+      async () => {
+        const [, rows] = await Promise.all([
+          controllerTask,
+          loadSheet("formulaOne2026RoundForms"),
+        ]);
+        return rows;
+      },
       (rows) => {
         siteData.formulaOne2026RoundForms = parseFormulaOneRoundForms(rows);
         renderFormulaOneWeeklyForm(yearKey, siteData.formulaOne2026RoundForms);

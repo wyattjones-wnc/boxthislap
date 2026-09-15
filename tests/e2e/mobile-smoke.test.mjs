@@ -266,6 +266,37 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
+test("Missing Match Notes prepares once and toggles filters without rebuilding", async ({
+  page,
+}) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.route(
+    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ notes: [], ok: true }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#footy-missing-notes", { waitUntil: "domcontentloaded" });
+  const list = page.locator("#footy-missing-notes-list");
+  await expect(list).toHaveAttribute("aria-busy", "false");
+  const renderedList = await list.innerHTML();
+
+  const filterToggle = page.locator("#footy-missing-notes-filter-toggle");
+  await filterToggle.click();
+  await expect(page.locator("#footy-missing-notes-filters")).toBeVisible();
+  await expect(filterToggle).toHaveAttribute("aria-expanded", "true");
+  expect(await list.innerHTML()).toBe(renderedList);
+
+  await filterToggle.click();
+  await expect(page.locator("#footy-missing-notes-filters")).toBeHidden();
+  await expect(filterToggle).toHaveAttribute("aria-expanded", "false");
+  expect(await list.innerHTML()).toBe(renderedList);
+});
+
 test("signed-in managers can find notification setup in unsupported browser contexts", async ({
   page,
 }) => {

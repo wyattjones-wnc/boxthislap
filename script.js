@@ -536,6 +536,12 @@ let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
 let footyMatchNotificationsLoadPromise = null;
 const pendingFootyMatchNotificationIds = new Set();
+let footyMissingNotesFixturesCache = null;
+let footyMissingNotesFixturesPromise = null;
+let footyMissingNotesGeneration = 0;
+let footyMissingNotesFilterSource = null;
+let footyScheduleFixtureIndex = null;
+let footyScheduleFixtureIndexSource = null;
 let footyMatchNotesLoadPromise = null;
 let managerHubLoadState = null;
 let footyPerfectPerformancesLoadPromise = null;
@@ -710,6 +716,7 @@ const followedTeamsController = createFollowedTeamsController({
   request: rankingApiRequest,
   onChanged: (teams, change = {}) => {
     siteData.followedTeams = teams;
+    invalidateFootyMissingNotesFixtures();
     if (change.source === "save" && change.addedTeamIds?.length) {
       void initializeNewlyFollowedRosters(teams, change.addedTeamIds);
     }
@@ -1067,7 +1074,22 @@ function renderFootyMissingNotesPage() {
     return;
   }
 
-  const missingFixtures = getFootyMissingNotesFixtures(siteData.footySchedule);
+  if (!footyMissingNotesFixturesCache) {
+    footyMissingNotesList.setAttribute("aria-busy", "true");
+    footyMissingNotesList.innerHTML = renderLoadingMessage("Preparing missing match notes...");
+    void ensureFootyMissingNotesFixtures()
+      .then(() => {
+        renderFootyMissingNotesPage();
+        if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
+      })
+      .catch((error) => {
+        footyMissingNotesList.setAttribute("aria-busy", "false");
+        footyMissingNotesList.innerHTML = `<p class="table-message">Unable to prepare missing match notes: ${escapeHtml(error.message)}</p>`;
+      });
+    return;
+  }
+
+  const missingFixtures = footyMissingNotesFixturesCache;
   syncFootyMissingNotesFilters(missingFixtures);
   const visibleFixtures = getFilteredFootyMissingNotesFixtures(missingFixtures)
     .sort(compareFootyFixturesDescending);
@@ -1077,9 +1099,7 @@ function renderFootyMissingNotesPage() {
   const pageStart = (activeFootyMissingNotesPage - 1) * FOOTY_MISSING_NOTES_PAGE_SIZE;
   const pageFixtures = visibleFixtures.slice(pageStart, pageStart + FOOTY_MISSING_NOTES_PAGE_SIZE);
 
-  footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
-  footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
-  if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
+  syncFootyMissingNotesFilterVisibility();
   if (footyMissingNotesSummary) {
     const pageEnd = Math.min(pageStart + pageFixtures.length, visibleFixtures.length);
     footyMissingNotesSummary.textContent = visibleFixtures.length
@@ -1129,10 +1149,11 @@ function getFootyMissingNotesFixtures(schedule = {}) {
   });
 
   const fixturesByMatch = new Map();
+  const decorationContext = createFootyMissingNotesDecorationContext(schedule);
   fixtures.forEach((fixture) => {
     const matchId = String(fixture.matchId || "").trim();
     if (!matchId) return;
-    const normalizedFixture = decorateFootyMissingNotesFixture(fixture, schedule);
+    const normalizedFixture = decorateFootyMissingNotesFixture(fixture, decorationContext);
     const existing = fixturesByMatch.get(matchId);
     fixturesByMatch.set(matchId, existing
       ? mergeFootyCompetitionFixtures(existing, normalizedFixture)
@@ -1149,9 +1170,16 @@ function getFootyMissingNotesFixtures(schedule = {}) {
     ));
 }
 
-function decorateFootyMissingNotesFixture(fixture = {}, schedule = {}) {
-  const followedIds = new Set(followedTeamsController.getFollowedTeamIds().map(String));
-  const teams = new Map(getAllFootyScheduleTeams(schedule).map((team) => [String(team.id), team]));
+function createFootyMissingNotesDecorationContext(schedule = {}) {
+  return {
+    followedIds: new Set(followedTeamsController.getFollowedTeamIds().map(String)),
+    teams: new Map(getAllFootyScheduleTeams(schedule).map((team) => [String(team.id), team])),
+  };
+}
+
+function decorateFootyMissingNotesFixture(fixture = {}, context = {}) {
+  const followedIds = context.followedIds || new Set();
+  const teams = context.teams || new Map();
   const sides = [
     { id: String(fixture.homeTeamId || ""), isHome: true, name: fixture.home },
     { id: String(fixture.awayTeamId || ""), isHome: false, name: fixture.away },
@@ -1171,11 +1199,59 @@ function decorateFootyMissingNotesFixture(fixture = {}, schedule = {}) {
   };
 }
 
+function invalidateFootyMissingNotesFixtures() {
+  footyMissingNotesGeneration += 1;
+  footyMissingNotesFixturesCache = null;
+  footyMissingNotesFixturesPromise = null;
+  footyMissingNotesFilterSource = null;
+}
+
+function ensureFootyMissingNotesFixtures() {
+  if (footyMissingNotesFixturesCache) return Promise.resolve(footyMissingNotesFixturesCache);
+  if (footyMissingNotesFixturesPromise) return footyMissingNotesFixturesPromise;
+
+  const generation = footyMissingNotesGeneration;
+  const promise = waitForBrowserRender()
+    .then(() => getFootyMissingNotesFixtures(siteData.footySchedule))
+    .then((fixtures) => {
+      if (generation === footyMissingNotesGeneration) {
+        footyMissingNotesFixturesCache = fixtures;
+      }
+      return fixtures;
+    })
+    .finally(() => {
+      if (footyMissingNotesFixturesPromise === promise) {
+        footyMissingNotesFixturesPromise = null;
+      }
+    });
+
+  footyMissingNotesFixturesPromise = promise;
+  return promise;
+}
+
+function waitForBrowserRender() {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => window.setTimeout(resolve, 0));
+  });
+}
+
+function syncFootyMissingNotesFilterVisibility() {
+  footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
+  footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
+  footyMissingNotesFilterToggle?.setAttribute(
+    "aria-label",
+    shouldShowFootyMissingNotesFilters ? "Hide missing match note filters" : "Show missing match note filters",
+  );
+  if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
+}
+
 function teamNameForFootyMissingNotesSide(side, teams) {
   return getFootyDisplayTeamName(teams.get(side.id)?.name || side.name || "");
 }
 
 function syncFootyMissingNotesFilters(fixtures = []) {
+  if (footyMissingNotesFilterSource === fixtures) return;
+  footyMissingNotesFilterSource = fixtures;
   const competitions = [...new Set(fixtures.map((fixture) => getFootyCanonicalCompetition(fixture.league).name).filter(Boolean))]
     .sort((first, second) => first.localeCompare(second));
   const teams = [...new Set(fixtures.flatMap((fixture) => [fixture.home, fixture.away]).map(getFootyDisplayTeamName).filter(Boolean))]
@@ -2899,8 +2975,8 @@ function getFootyMatchNoteById(matchId) {
     return null;
   }
 
-  return (Array.isArray(siteData.footyMatchNotes) ? siteData.footyMatchNotes : [])
-    .find((note) => normalizeFootyMatchId(note?.matchId) === normalizedId) || null;
+  siteData.footyMatchNotesById ||= createFootyMatchNotesById(siteData.footyMatchNotes || []);
+  return siteData.footyMatchNotesById.get(normalizedId) || null;
 }
 
 function mergeFootyCompetitionFixtures(existing = {}, fixture = {}) {
@@ -5172,10 +5248,12 @@ function ensureFootyMatchNotes({ force = false } = {}) {
   footyMatchNotesLoadPromise = loadFootyMatchNotesWithRetry()
     .then((notes) => {
       siteData.footyMatchNotes = notes;
+      siteData.footyMatchNotesById = createFootyMatchNotesById(notes);
       siteData.footyMatchNotesLoadedAt = new Date().toISOString();
       siteData.footyMatchNotesError = null;
       clearFootyScheduleMatchNotes(siteData.footySchedule);
       mergeFootyMatchNotes(notes);
+      invalidateFootyMissingNotesFixtures();
       return notes;
     })
     .finally(() => {
@@ -6092,7 +6170,8 @@ function getFootyFixtureOpponentRosterName(fixture) {
 }
 
 function mergeFootyMatchNotes(notes = []) {
-  notes.forEach((note) => updateFootyFixtureMatchNote(note));
+  const fixturesByMatchId = getFootyScheduleFixtureIndex();
+  notes.forEach((note) => applyFootyMatchNoteToFixtures(note, fixturesByMatchId));
 }
 
 function upsertFootyMatchNote(note) {
@@ -6114,7 +6193,16 @@ function upsertFootyMatchNote(note) {
   }
 
   siteData.footyMatchNotes = notes;
+  siteData.footyMatchNotesById ||= createFootyMatchNotesById(notes);
+  siteData.footyMatchNotesById.set(normalizedId, note);
   siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+  invalidateFootyMissingNotesFixtures();
+}
+
+function createFootyMatchNotesById(notes = []) {
+  return new Map(notes
+    .map((note) => [normalizeFootyMatchId(note?.matchId), note])
+    .filter(([matchId]) => Boolean(matchId)));
 }
 
 async function saveFootyMatchNote(note, retried = false) {
@@ -6167,9 +6255,20 @@ function updateFootyFixtureMatchNote(note) {
     return;
   }
 
+  applyFootyMatchNoteToFixtures(note, getFootyScheduleFixtureIndex());
+}
+
+function getFootyScheduleFixtureIndex() {
+  const schedule = siteData.footySchedule;
+  if (!schedule) return new Map();
+  if (footyScheduleFixtureIndex && footyScheduleFixtureIndexSource === schedule) {
+    return footyScheduleFixtureIndex;
+  }
+
+  const fixturesByMatchId = new Map();
   [
-    ...(siteData.footySchedule.teamSchedules || []),
-    ...(siteData.footySchedule.competitionSchedules || []),
+    ...(schedule.teamSchedules || []),
+    ...(schedule.competitionSchedules || []),
   ].forEach((fixtureGroup) => {
     const fixtures = Array.isArray(fixtureGroup?.fixtures) ? fixtureGroup.fixtures : [];
 
@@ -6177,21 +6276,34 @@ function updateFootyFixtureMatchNote(note) {
       const fixtureMatchId = fixture.isCompetitionFixture
         ? getFootyCompetitionFixtureMatchId(fixture)
         : fixture.matchId;
-
-      if (normalizeFootyMatchId(fixtureMatchId) === normalizedId) {
-        fixture.matchId = fixtureMatchId;
-        fixture.matchNote = {
-          awayScore: note.awayScore,
-          followGoalAssists: note.followGoalAssists,
-          highlightLink: note.highlightLink,
-          homeScore: note.homeScore,
-          note: note.note,
-          opponentGoalAssists: note.opponentGoalAssists,
-          revision: Number(note.revision || 0),
-          updatedAt: note.updatedAt || "",
-        };
-      }
+      const normalizedId = normalizeFootyMatchId(fixtureMatchId);
+      if (!normalizedId) return;
+      fixture.matchId = fixtureMatchId;
+      const indexedFixtures = fixturesByMatchId.get(normalizedId) || [];
+      indexedFixtures.push(fixture);
+      fixturesByMatchId.set(normalizedId, indexedFixtures);
     });
+  });
+
+  footyScheduleFixtureIndex = fixturesByMatchId;
+  footyScheduleFixtureIndexSource = schedule;
+  return fixturesByMatchId;
+}
+
+function applyFootyMatchNoteToFixtures(note, fixturesByMatchId) {
+  const normalizedId = normalizeFootyMatchId(note?.matchId);
+  if (!normalizedId) return;
+  (fixturesByMatchId.get(normalizedId) || []).forEach((fixture) => {
+    fixture.matchNote = {
+      awayScore: note.awayScore,
+      followGoalAssists: note.followGoalAssists,
+      highlightLink: note.highlightLink,
+      homeScore: note.homeScore,
+      note: note.note,
+      opponentGoalAssists: note.opponentGoalAssists,
+      revision: Number(note.revision || 0),
+      updatedAt: note.updatedAt || "",
+    };
   });
 }
 
@@ -13645,7 +13757,7 @@ footyFilterToggle?.addEventListener("click", () => {
 
 footyMissingNotesFilterToggle?.addEventListener("click", () => {
   shouldShowFootyMissingNotesFilters = !shouldShowFootyMissingNotesFilters;
-  renderFootyMissingNotesPage();
+  syncFootyMissingNotesFilterVisibility();
 });
 
 [
@@ -15887,7 +15999,8 @@ function buildFootyMissingNotesWorkflowItems() {
     return [];
   }
 
-  const fixtures = getFootyMissingNotesFixtures(siteData.footySchedule);
+  const fixtures = footyMissingNotesFixturesCache;
+  if (!fixtures) return [];
   if (!fixtures.length) return [];
   const competitionCount = new Set(fixtures
     .map((fixture) => getFootyCanonicalCompetition(fixture.league).key)
@@ -17912,6 +18025,9 @@ function ensureFootyData() {
     const schedule = await loadJson("data/footy-schedule.json");
     clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
+    footyScheduleFixtureIndex = null;
+    footyScheduleFixtureIndexSource = null;
+    invalidateFootyMissingNotesFixtures();
     renderFollowedTeamShortcuts(schedule);
     renderFootySchedule(schedule);
     renderFootyCustomSchedule();
@@ -18529,8 +18645,9 @@ async function ensureFootyMissingNotesData() {
     ensureFootyData(),
   ]);
   await ensureFootyMatchNotes({ force: shouldRefreshFootyMatchNotes() });
+  const fixtures = await ensureFootyMissingNotesFixtures();
   renderFootyMissingNotesPage();
-  return getFootyMissingNotesFixtures(siteData.footySchedule);
+  return fixtures;
 }
 
 syncTestScoringUi();

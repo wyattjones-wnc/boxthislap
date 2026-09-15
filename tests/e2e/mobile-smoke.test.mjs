@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = ["footy", "next", "leagues", "formula-1-2026-results"];
 
+test.beforeEach(async ({ page }) => {
+  await page.route("https://visitor-badge.laobi.icu/**", (route) =>
+    route.abort(),
+  );
+});
+
 for (const route of publicRoutes) {
   test(`${route} renders without horizontal overflow`, async ({ page }) => {
     await page.goto(`/#${route}`, { waitUntil: "domcontentloaded" });

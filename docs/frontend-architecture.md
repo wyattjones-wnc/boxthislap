@@ -16,7 +16,9 @@ The target architecture uses:
 
 ## Migration boundary
 
-`src/main.tsx` renders the shared application shell before loading the legacy controller. Login, Account Settings, navigation, header artwork, and the footer are the first React-owned surfaces. The remaining page sections stay available to the legacy router until their feature milestone replaces them.
+`src/main.tsx` renders the shared application shell before loading the legacy controller. React now owns Login, Account Settings, navigation, header artwork, the footer, and the operational page structures for Footy, Next, To Do, Want, Guides, Draft Lists, Manager Hub, and manager awards. The duplicated static markup for those routes has been removed from `index.html`.
+
+During the operational migration, existing service and mutation controllers continue to target compatibility IDs rendered by React. Next is the first operational list whose normalized data crosses a small event bridge and whose cards, status, and empty states render entirely in React. Apply that pattern feature-by-feature; compatibility controllers must not replace children inside a React-owned dynamic list.
 
 Do not add new application behavior to the monolithic legacy controller when the same work can be implemented in the owning React feature. Temporary bridges must preserve existing element IDs and events only long enough for unmigrated features to keep working.
 

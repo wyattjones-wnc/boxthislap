@@ -6639,6 +6639,31 @@ function renderNextList(items = siteData.nextItems || []) {
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
   const renderedItems = [...visibleItems, ...previousTailItems];
+  if (nextList.dataset.reactList === "next") {
+    const toView = (item, showPassedStatus = false) => ({
+      completed: item.completed,
+      dateLabel: formatNextDateRange(item),
+      id: item.id,
+      imageUrl: item.imageUrl,
+      isPast: isNextItemPast(item, getDateKey(0)),
+      passed: Boolean(showPassedStatus && hasNextItemTimePassed(item)),
+      thing: item.thing,
+      timeLabel: item.timeLabel,
+    });
+    const detail = {
+        activeItemId: activeNextItemId,
+        editMode: isNextEditModeEnabled(),
+        emptyLabel: hasActiveNextFilters()
+          ? "No Next items match those filters."
+          : "No upcoming Next items found.",
+        items: visibleItems.map((item) => toView(item, showDefaultPassedStatus)),
+        previousItems: previousTailItems.map((item) => toView(item)),
+    };
+    window.__boxThisLapNextListView = detail;
+    window.__boxThisLapSetNextListView?.(detail);
+    window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
+    return;
+  }
   pruneNextCardElementCache(normalizedItems);
 
   if (!renderedItems.length) {
@@ -7438,6 +7463,20 @@ function setNextItemStatus(message, isError = false) {
 
 function renderNextListError(error) {
   if (!nextList) {
+    return;
+  }
+
+  if (nextList.dataset.reactList === "next") {
+    const detail = {
+      activeItemId: "",
+      editMode: false,
+      emptyLabel: `Unable to load Next items: ${error.message}`,
+      items: [],
+      previousItems: [],
+    };
+    window.__boxThisLapNextListView = detail;
+    window.__boxThisLapSetNextListView?.(detail);
+    window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
     return;
   }
 
@@ -11357,7 +11396,20 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.nextItems)) {
       renderNextList();
     } else if (nextList) {
-      nextList.innerHTML = renderLoadingMessage("Loading Next items...");
+      if (nextList.dataset.reactList === "next") {
+        const detail = {
+          activeItemId: "",
+          editMode: false,
+          emptyLabel: "Loading Next items...",
+          items: [],
+          previousItems: [],
+        };
+        window.__boxThisLapNextListView = detail;
+        window.__boxThisLapSetNextListView?.(detail);
+        window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
+      } else {
+        nextList.innerHTML = renderLoadingMessage("Loading Next items...");
+      }
     }
     return;
   }

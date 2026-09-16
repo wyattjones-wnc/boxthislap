@@ -16,9 +16,11 @@ The target architecture uses:
 
 ## Migration boundary
 
-`src/main.tsx` renders the shared application shell before loading the legacy controller. React now owns Login, Account Settings, navigation, header artwork, the footer, and the operational page structures for Footy, Next, To Do, Want, Guides, Draft Lists, Manager Hub, and manager awards. The duplicated static markup for those routes has been removed from `index.html`.
+`src/main.tsx` renders the shared application shell before loading the legacy controller. React now owns Login, Account Settings, navigation, header artwork, the footer, and the operational page structures for Footy, Next, To Do, Want, Rankings, Guides, Draft Lists, Manager Hub, and manager awards. The duplicated static markup for those routes has been removed from `index.html`.
 
-During the operational migration, existing service and mutation controllers continue to target compatibility IDs rendered by React. Next is the first operational list whose normalized data crosses a small event bridge and whose cards, status, and empty states render entirely in React. Apply that pattern feature-by-feature; compatibility controllers must not replace children inside a React-owned dynamic list.
+Next, To Do, Want, Rankings, and Draft Lists pass normalized view models across small typed event bridges; their cards, tabs, status, and empty states render in React. Guides owns its query, progress mutations, filters, and checklist lifecycle directly through TanStack Query. Footy's route surfaces and dialogs render in React while its fixture and roster services remain compatibility adapters. Compatibility controllers must not replace children inside a React-owned dynamic list.
+
+Manager Hub and the Footy adapters are the remaining operational service boundaries. They may update only the compatibility IDs provided by their React route components. Their removal belongs with the later service-extraction cleanup, after the competition pages that share those data sources have moved.
 
 Do not add new application behavior to the monolithic legacy controller when the same work can be implemented in the owning React feature. Temporary bridges must preserve existing element IDs and events only long enough for unmigrated features to keep working.
 

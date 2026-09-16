@@ -7,9 +7,17 @@ import {
   ChevronRight,
   Dices,
   Eye,
+  ExternalLink,
+  Film,
   Filter,
+  Folder,
+  Gamepad2,
+  GripVertical,
   History,
+  Link2,
   ListPlus,
+  Notebook,
+  Pencil,
   Plus,
   Star,
   Trash2,
@@ -18,6 +26,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
+import { GuidesFeature } from "./GuidesFeature";
 
 export function NextPage() {
   return (
@@ -586,6 +595,363 @@ function GoalAssistBuilder({
   );
 }
 
+interface OperationalGuideLink {
+  href: string;
+  label: string;
+}
+
+interface OperationalStatusChip {
+  icon: string;
+  key: string;
+  label: string;
+}
+
+interface TodoItemView {
+  children: TodoItemView[];
+  deleted: boolean;
+  draggable: boolean;
+  expanded: boolean;
+  guideLinks: OperationalGuideLink[];
+  hourLabel: string;
+  id: string;
+  meta: string[];
+  name: string;
+  orderLabel: string;
+  started: boolean;
+  statusChips: OperationalStatusChip[];
+}
+
+interface TodoListView {
+  emptyLabel: string;
+  items: TodoItemView[];
+}
+
+interface WantItemView {
+  archived: boolean;
+  completed: boolean;
+  deleted: boolean;
+  draggable: boolean;
+  expanded: boolean;
+  id: string;
+  meta: string[];
+  name: string;
+  orderLabel: string;
+  priceLabel: string;
+}
+
+interface WantListView {
+  emptyLabel: string;
+  items: WantItemView[];
+}
+
+declare global {
+  interface Window {
+    __boxThisLapTodoListView?: TodoListView;
+    __boxThisLapWantListView?: WantListView;
+  }
+}
+
+function useOperationalListView<T>(
+  eventName: string,
+  initialView: T,
+  currentView: T | undefined,
+) {
+  const [view, setView] = useState(currentView ?? initialView);
+
+  useEffect(() => {
+    const update = (event: Event) => setView((event as CustomEvent<T>).detail);
+    window.addEventListener(eventName, update);
+    return () => window.removeEventListener(eventName, update);
+  }, [eventName]);
+
+  return view;
+}
+
+const emptyTodoList: TodoListView = {
+  emptyLabel: "To Do items will load here.",
+  items: [],
+};
+
+function TodoItems() {
+  const view = useOperationalListView(
+    "boxthislap:todo-list",
+    emptyTodoList,
+    window.__boxThisLapTodoListView,
+  );
+
+  if (!view.items.length) {
+    return <p className="table-message">{view.emptyLabel}</p>;
+  }
+
+  return (
+    <div className="next-list todo-list">
+      {view.items.map((item) => (
+        <TodoCard item={item} key={item.id || item.name} />
+      ))}
+    </div>
+  );
+}
+
+function TodoCard({
+  item,
+  child = false,
+}: {
+  item: TodoItemView;
+  child?: boolean;
+}) {
+  if (child) {
+    return (
+      <article className="todo-child-card" data-todo-child-id={item.id}>
+        <div>
+          <OperationalItemHeading item={item} level={3} />
+          {item.hourLabel ? (
+            <p className="next-card-date">{item.hourLabel}</p>
+          ) : null}
+          <StatusChips chips={item.statusChips} />
+          {item.meta.length ? (
+            <p className="todo-more-data">{item.meta.join(" | ")}</p>
+          ) : null}
+        </div>
+        {item.draggable ? (
+          <button
+            className="ranking-inline-action"
+            type="button"
+            data-todo-edit={item.id}
+          >
+            Edit
+          </button>
+        ) : null}
+      </article>
+    );
+  }
+
+  const classes = [
+    "next-card todo-card",
+    item.started && "todo-card--started",
+    item.deleted && "todo-card--deleted",
+    item.expanded && "is-actions-open",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <article
+      className={classes}
+      draggable={item.draggable}
+      tabIndex={0}
+      role="button"
+      data-todo-id={item.id}
+      aria-label={`${item.draggable ? "Edit" : "View"} ${item.name}`}
+    >
+      <div className="next-card-main">
+        <span className="todo-order-number">{item.orderLabel}</span>
+        <div>
+          <OperationalItemHeading item={item} level={2} />
+          {item.hourLabel ? (
+            <p className="next-card-date">{item.hourLabel}</p>
+          ) : null}
+          <StatusChips chips={item.statusChips} />
+          {item.meta.length ? (
+            <p className="todo-more-data">{item.meta.join(" | ")}</p>
+          ) : null}
+        </div>
+        {item.draggable ? (
+          <GripVertical
+            className="ranking-drag-handle todo-drag-handle"
+            aria-label="Drag to reorder"
+          />
+        ) : null}
+      </div>
+      {item.draggable ? (
+        <div className="todo-card-actions">
+          <button
+            className="ranking-inline-action"
+            type="button"
+            data-todo-edit={item.id}
+          >
+            Edit
+          </button>
+          <button
+            className="ranking-inline-action"
+            type="button"
+            data-todo-delete={item.id}
+          >
+            Delete
+          </button>
+        </div>
+      ) : null}
+      {item.children.length ? (
+        <div className="todo-child-list">
+          {item.children.map((entry) => (
+            <TodoCard child item={entry} key={entry.id || entry.name} />
+          ))}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function OperationalItemHeading({
+  item,
+  level,
+}: {
+  item: TodoItemView;
+  level: 2 | 3;
+}) {
+  const Heading = level === 2 ? "h2" : "h3";
+  return (
+    <div className="guide-linked-heading">
+      <Heading>{item.name}</Heading>
+      {item.guideLinks.length ? (
+        <span className="guide-entry-links">
+          {item.guideLinks.map((link) => (
+            <a
+              className="guide-entry-link"
+              href={link.href}
+              aria-label={link.label}
+              title={link.label}
+              key={link.href}
+            >
+              <Link2 aria-hidden="true" />
+            </a>
+          ))}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function StatusChips({ chips }: { chips: OperationalStatusChip[] }) {
+  if (!chips.length) return null;
+  return (
+    <div className="todo-chip-list">
+      {chips.map((chip) => (
+        <span
+          className={`todo-status-chip todo-status-chip--${chip.key}`}
+          key={chip.key}
+        >
+          <span aria-hidden="true">
+            {chip.icon === "check" ? (
+              <CheckIcon />
+            ) : chip.icon === "folder" ? (
+              <Folder />
+            ) : (
+              chip.icon
+            )}
+          </span>
+          {chip.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const emptyWantList: WantListView = {
+  emptyLabel: "Want items will load here.",
+  items: [],
+};
+
+function WantItems() {
+  const view = useOperationalListView(
+    "boxthislap:want-list",
+    emptyWantList,
+    window.__boxThisLapWantListView,
+  );
+
+  if (!view.items.length)
+    return <p className="table-message">{view.emptyLabel}</p>;
+
+  return (
+    <div className="next-list todo-list">
+      {view.items.map((item) => (
+        <WantCard item={item} key={item.id || item.name} />
+      ))}
+    </div>
+  );
+}
+
+function WantCard({ item }: { item: WantItemView }) {
+  const classes = [
+    "next-card todo-card",
+    item.deleted && "todo-card--deleted",
+    item.expanded && "is-actions-open",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const chips = [
+    item.archived && { key: "archived", label: "Archived" },
+    item.completed && { key: "completed", label: "Completed" },
+    item.deleted && { key: "deleted", label: "Deleted" },
+  ].filter(Boolean) as Array<{ key: string; label: string }>;
+
+  return (
+    <article
+      className={classes}
+      draggable={item.draggable}
+      tabIndex={0}
+      role="button"
+      data-want-id={item.id}
+      aria-label={`${item.draggable ? "Edit" : "View"} ${item.name}`}
+    >
+      <div className="next-card-main">
+        <span className="todo-order-number">{item.orderLabel}</span>
+        <div>
+          <h2>{item.name}</h2>
+          {item.priceLabel ? (
+            <p className="next-card-date">{item.priceLabel}</p>
+          ) : null}
+          {chips.length ? (
+            <div className="todo-chip-list">
+              {chips.map((chip) => (
+                <span
+                  className={`todo-status-chip todo-status-chip--${chip.key}`}
+                  key={chip.key}
+                >
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {item.meta.length ? (
+            <p className="todo-more-data">{item.meta.join(" | ")}</p>
+          ) : null}
+        </div>
+        {item.draggable ? (
+          <GripVertical
+            className="ranking-drag-handle want-drag-handle"
+            aria-label="Drag to reorder"
+          />
+        ) : null}
+      </div>
+      {item.draggable ? (
+        <div className="todo-card-actions">
+          <button
+            className="ranking-inline-action"
+            type="button"
+            data-want-edit={item.id}
+          >
+            Edit
+          </button>
+          <button
+            className="ranking-inline-action"
+            type="button"
+            data-want-move={item.id}
+          >
+            Move to To Do
+          </button>
+          <button
+            className="ranking-inline-action"
+            type="button"
+            data-want-delete={item.id}
+          >
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 export function TodoPage() {
   return (
     <>
@@ -621,7 +987,9 @@ export function TodoPage() {
         />
       </PageHeading>
       <RankingFilters kind="todo" includeMoreData />
-      <LoadingList id="todo-list" label="To Do items will load here." />
+      <div className="content-shell" id="todo-list" data-react-list="todo">
+        <TodoItems />
+      </div>
       <RandomDialog kind="todo" title="Random To Do" />
     </>
   );
@@ -662,7 +1030,9 @@ export function WantPage() {
         />
       </PageHeading>
       <RankingFilters kind="want" />
-      <LoadingList id="want-list" label="Want items will load here." />
+      <div className="content-shell" id="want-list" data-react-list="want">
+        <WantItems />
+      </div>
       <RandomDialog kind="want" title="Random Want" />
       <dialog className="footy-note-dialog" id="want-move-dialog">
         <form className="footy-note-form" method="dialog">
@@ -708,22 +1078,521 @@ export function WantPage() {
   );
 }
 
-export function GuidesPage() {
+type RankingKind = "games" | "mcu" | "movies" | "tv";
+
+interface RankingItemView {
+  archived: boolean;
+  canEdit: boolean;
+  canExclude: boolean;
+  draggable: boolean;
+  excluded: boolean;
+  exclusionLabel: string;
+  guideLinks: OperationalGuideLink[];
+  id: string;
+  meta: string[];
+  movement: string;
+  name: string;
+  rankLabel: string;
+}
+
+interface RankingListView {
+  canAdd: boolean;
+  emptyLabel: string;
+  itemLabel: string;
+  loading: boolean;
+  messages: string[];
+  rows: RankingItemView[];
+}
+
+declare global {
+  interface Window {
+    __boxThisLapRankingListViews?: Partial<
+      Record<RankingKind, RankingListView>
+    >;
+  }
+}
+
+export function RankingsPage() {
   return (
-    <div id="guides-view">
-      <div className="section-heading page-heading-with-action footy-heading">
-        <div>
-          <p className="guides-eyebrow">Walkthroughs</p>
-          <h1>Guides</h1>
+    <>
+      <PageHeading title="Rankings">
+        <button
+          className="action-button ranking-compare-button"
+          id="ranking-compare-button"
+          type="button"
+        >
+          Compare
+        </button>
+        <IconButton
+          className="icon-action-button ranking-filter-toggle"
+          icon={<Filter />}
+          id="ranking-filter-toggle"
+          label="Show filters"
+          aria-controls="ranking-filters"
+          aria-expanded="false"
+        />
+        <IconButton
+          className="icon-action-button ranking-add-button"
+          icon={<Plus />}
+          id="ranking-add-button"
+          label="Add ranking item"
+          hidden
+        />
+      </PageHeading>
+      <div className="ranking-filters" id="ranking-filters" hidden>
+        <label className="ranking-select-control">
+          <span>Manager</span>
+          <select id="ranking-manager-select" />
+        </label>
+        <span className="ranking-read-only" id="ranking-read-only" hidden>
+          Read only
+        </span>
+        <Check id="ranking-more-data-toggle" label="More Data" />
+        <Check id="ranking-show-excluded-toggle" label="Show Excluded" />
+        <label
+          className="ranking-checkbox-control"
+          id="ranking-show-archived-control"
+        >
+          <input id="ranking-show-archived-toggle" type="checkbox" />
+          <span>Show Archived</span>
+        </label>
+        <div
+          className="segmented-control ranking-mode-toggle"
+          role="group"
+          aria-label="Ranking view"
+        >
+          <button
+            className="is-active"
+            type="button"
+            data-ranking-view-mode="manual"
+            aria-pressed="true"
+          >
+            Manual
+          </button>
+          <button
+            type="button"
+            data-ranking-view-mode="calculated"
+            aria-pressed="false"
+          >
+            Calculated
+          </button>
         </div>
+        <label
+          className="ranking-select-control"
+          data-ranking-owner-only
+          hidden
+        >
+          <span>Snapshot</span>
+          <select id="ranking-snapshot-select">
+            <option value="current">Current</option>
+          </select>
+        </label>
+        <label
+          className="ranking-select-control"
+          data-ranking-owner-only
+          hidden
+        >
+          <span>Compare</span>
+          <select id="ranking-compare-select">
+            <option value="">None</option>
+          </select>
+        </label>
+        <button
+          className="action-button ranking-normalize-button"
+          id="ranking-normalize-button"
+          type="button"
+          data-ranking-owner-only
+          hidden
+        >
+          Normalize
+        </button>
+        <button
+          className="action-button"
+          id="ranking-elo-to-manual-button"
+          type="button"
+          data-ranking-owner-only
+          hidden
+        >
+          Set Manual from Elo
+        </button>
+        <span
+          className="ranking-filter-status"
+          id="ranking-elo-to-manual-status"
+          aria-live="polite"
+        />
       </div>
-      <div className="guides-loading-grid" aria-label="Loading guides">
-        <span className="guides-skeleton-card" />
-        <span className="guides-skeleton-card" />
-        <span className="guides-skeleton-card" />
+      <div
+        className="tabs ranking-tabs"
+        role="tablist"
+        aria-label="Ranking lists"
+      >
+        {(["games", "mcu", "movies", "tv"] as RankingKind[]).map(
+          (kind, index) => (
+            <button
+              className={`tab${index === 0 ? " is-active" : ""}`}
+              type="button"
+              data-ranking-tab={kind}
+              aria-selected={index === 0}
+              role="tab"
+              key={kind}
+            >
+              {kind === "mcu" ? "MCU" : kind[0].toUpperCase() + kind.slice(1)}
+            </button>
+          ),
+        )}
       </div>
-    </div>
+      <div className="content-shell ranking-shell">
+        {(["games", "mcu", "movies", "tv"] as RankingKind[]).map(
+          (kind, index) => (
+            <section
+              className={`ranking-panel${index === 0 ? " is-active" : ""}`}
+              data-ranking-panel={kind}
+              role="tabpanel"
+              key={kind}
+            >
+              <div
+                className="ranking-list"
+                id={`ranking-list-${kind}`}
+                data-react-list="ranking"
+              >
+                <RankingItems kind={kind} />
+              </div>
+            </section>
+          ),
+        )}
+      </div>
+      <RankingItemDialog />
+      <RankingBattleDialog />
+      <RankingNormalizeDialog />
+    </>
   );
+}
+
+const rankingLabels: Record<RankingKind, string> = {
+  games: "game",
+  mcu: "MCU",
+  movies: "movie",
+  tv: "TV",
+};
+
+function RankingItems({ kind }: { kind: RankingKind }) {
+  const initial: RankingListView = {
+    canAdd: false,
+    emptyLabel: `Loading ${rankingLabels[kind]} rankings...`,
+    itemLabel: rankingLabels[kind],
+    loading: true,
+    messages: [],
+    rows: [],
+  };
+  const view = useOperationalListView(
+    `boxthislap:ranking-list:${kind}`,
+    initial,
+    window.__boxThisLapRankingListViews?.[kind],
+  );
+
+  return (
+    <>
+      {view.messages.length ? (
+        <p className="table-message ranking-warning">
+          {view.messages.map((message) => (
+            <span key={message}>
+              {message}
+              <br />
+            </span>
+          ))}
+        </p>
+      ) : null}
+      {view.loading ? (
+        <p className="table-message loading-message">
+          <span className="loading-spinner" aria-hidden="true" />
+          <span>{view.emptyLabel}</span>
+        </p>
+      ) : null}
+      {!view.loading && !view.rows.length ? (
+        <div className="table-message ranking-empty-state">
+          <span>{view.emptyLabel}</span>
+          {view.canAdd ? (
+            <button
+              className="action-button ranking-empty-add"
+              type="button"
+              data-ranking-empty-add={kind}
+            >
+              Add One
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {view.rows.map((item) => (
+        <RankingCard item={item} kind={kind} key={item.id || item.name} />
+      ))}
+    </>
+  );
+}
+
+function RankingCard({
+  item,
+  kind,
+}: {
+  item: RankingItemView;
+  kind: RankingKind;
+}) {
+  return (
+    <article
+      className={`ranking-item${item.excluded ? " is-excluded" : ""}`}
+      data-ranking-kind={kind}
+      data-ranking-id={item.id}
+      draggable={item.draggable}
+    >
+      <span className="ranking-rank">{item.rankLabel}</span>
+      <span className="ranking-item-main">
+        <span className="guide-linked-heading">
+          <strong>{item.name}</strong>
+          {item.guideLinks.length ? (
+            <span className="guide-entry-links">
+              {item.guideLinks.map((link) => (
+                <a
+                  className="guide-entry-link"
+                  href={link.href}
+                  aria-label={link.label}
+                  title={link.label}
+                  key={link.href}
+                >
+                  <Link2 aria-hidden="true" />
+                </a>
+              ))}
+            </span>
+          ) : null}
+        </span>
+        {item.excluded ? (
+          <small className="ranking-excluded-label">Excluded</small>
+        ) : null}
+        {item.movement ? <small>{item.movement}</small> : null}
+        {item.meta.length ? (
+          <span className="ranking-item-meta">
+            {item.meta.map((part) => (
+              <span key={part}>{part}</span>
+            ))}
+          </span>
+        ) : null}
+      </span>
+      {item.draggable ? (
+        <GripVertical
+          className="ranking-drag-handle"
+          aria-label="Drag to reorder"
+        />
+      ) : (
+        <span className="ranking-spacer" aria-hidden="true" />
+      )}
+      {item.canExclude || item.canEdit ? (
+        <span className="ranking-item-actions">
+          {item.canExclude ? (
+            <button
+              className="ranking-inline-action"
+              type="button"
+              data-ranking-exclusion-toggle={item.id}
+              data-ranking-kind={kind}
+            >
+              {item.exclusionLabel}
+            </button>
+          ) : null}
+          {item.canEdit ? (
+            <button
+              className="ranking-inline-action"
+              type="button"
+              data-ranking-edit={item.id}
+              data-ranking-kind={kind}
+            >
+              Edit
+            </button>
+          ) : null}
+          {item.canEdit ? (
+            <button
+              className="ranking-inline-action"
+              type="button"
+              data-ranking-archive={item.id}
+              data-ranking-kind={kind}
+            >
+              {item.archived ? "Restore" : "Archive"}
+            </button>
+          ) : null}
+        </span>
+      ) : null}
+    </article>
+  );
+}
+
+function RankingItemDialog() {
+  return (
+    <dialog
+      className="footy-note-dialog ranking-item-dialog"
+      id="ranking-item-dialog"
+    >
+      <form
+        className="footy-note-form ranking-item-form"
+        id="ranking-item-form"
+        method="dialog"
+      >
+        <header>
+          <div>
+            <h2 id="ranking-item-dialog-title">Add Ranking Item</h2>
+          </div>
+          <IconButton
+            className="icon-action-button footy-note-close"
+            icon={<X />}
+            id="ranking-item-close"
+            label="Close ranking item dialog"
+          />
+        </header>
+        <input id="ranking-item-kind" type="hidden" />
+        <input id="ranking-item-id" type="hidden" />
+        <div className="next-item-fields">
+          <label className="next-item-wide">
+            <span>Name</span>
+            <input
+              id="ranking-item-name"
+              type="text"
+              autoComplete="off"
+              required
+            />
+          </label>
+          <label>
+            <span>Rank</span>
+            <input
+              id="ranking-item-rank"
+              type="number"
+              min="1"
+              step="1"
+              required
+            />
+          </label>
+        </div>
+        <p
+          className="footy-note-status"
+          id="ranking-item-status"
+          aria-live="polite"
+        />
+        <footer>
+          <button
+            className="action-button"
+            id="ranking-item-cancel"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button className="action-button" type="submit">
+            Save
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  );
+}
+
+function RankingBattleDialog() {
+  return (
+    <dialog
+      className="footy-note-dialog ranking-battle-dialog"
+      id="ranking-battle-dialog"
+    >
+      <form className="footy-note-form ranking-battle-form" method="dialog">
+        <header>
+          <div>
+            <h2 id="ranking-battle-title">Compare Rankings</h2>
+            <p
+              id="ranking-battle-status"
+              className="footy-note-status"
+              aria-live="polite"
+            />
+          </div>
+          <IconButton
+            className="icon-action-button footy-note-close"
+            icon={<X />}
+            id="ranking-battle-close"
+            label="Close comparison dialog"
+          />
+        </header>
+        <div className="ranking-battle-options" id="ranking-battle-options" />
+        <footer>
+          <button
+            className="action-button"
+            id="ranking-battle-skip"
+            type="button"
+          >
+            Skip
+          </button>
+          <button
+            className="action-button"
+            id="ranking-battle-done"
+            type="button"
+          >
+            Done
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  );
+}
+
+function RankingNormalizeDialog() {
+  return (
+    <dialog
+      className="footy-note-dialog ranking-normalize-dialog"
+      id="ranking-normalize-dialog"
+    >
+      <form className="footy-note-form ranking-battle-form" method="dialog">
+        <header>
+          <div>
+            <h2>Normalize Rankings</h2>
+            <p
+              id="ranking-normalize-status"
+              className="footy-note-status"
+              aria-live="polite"
+            />
+          </div>
+          <IconButton
+            className="icon-action-button footy-note-close"
+            icon={<X />}
+            id="ranking-normalize-close"
+            label="Close normalize dialog"
+          />
+        </header>
+        <p className="body-copy">
+          This saves the current calculated order as a snapshot, compresses Elo
+          ratings into closer gaps, and clears old choices for this ranking
+          list.
+        </p>
+        <label className="next-item-wide">
+          <span>Reason</span>
+          <input
+            id="ranking-normalize-reason"
+            type="text"
+            defaultValue="Normalized calculated rankings"
+            autoComplete="off"
+          />
+        </label>
+        <footer>
+          <button
+            className="action-button"
+            id="ranking-normalize-cancel"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="action-button"
+            id="ranking-normalize-confirm"
+            type="button"
+          >
+            Save Snapshot &amp; Normalize
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  );
+}
+
+export function GuidesPage() {
+  return <GuidesFeature />;
 }
 
 export function ManagerHubPage() {
@@ -832,6 +1701,214 @@ export function ManagerAwardsPage() {
   );
 }
 
+interface DraftListSheetView {
+  icon: string;
+  id: string;
+  isSystem: boolean;
+  name: string;
+  position: number;
+  revision: number;
+}
+
+interface DraftListItemView {
+  archived: boolean;
+  dataUrl: string;
+  drafted: boolean;
+  id: string;
+  imageUrl: string;
+  name: string;
+  rank: number;
+  releaseLabel: string;
+  sheetId: string;
+  unavailable: boolean;
+}
+
+interface DraftListView {
+  activeSheetId: string;
+  emptyAction: "" | "add" | "clear" | "filters" | "retry";
+  emptyLabel: string;
+  items: DraftListItemView[];
+  loading: boolean;
+  sheets: DraftListSheetView[];
+}
+
+declare global {
+  interface Window {
+    __boxThisLapDraftListView?: DraftListView;
+  }
+}
+
+const emptyDraftList: DraftListView = {
+  activeSheetId: "",
+  emptyAction: "",
+  emptyLabel: "Loading Draft List...",
+  items: [],
+  loading: true,
+  sheets: [],
+};
+
+function useDraftListView() {
+  return useOperationalListView(
+    "boxthislap:draft-list",
+    emptyDraftList,
+    window.__boxThisLapDraftListView,
+  );
+}
+
+function DraftListTabs() {
+  const view = useDraftListView();
+  if (view.loading && !view.sheets.length) {
+    return (
+      <button
+        className="tab is-active"
+        type="button"
+        role="tab"
+        aria-selected="true"
+      >
+        Loading sheets...
+      </button>
+    );
+  }
+  return view.sheets.map((sheet) => {
+    const active = sheet.id === view.activeSheetId;
+    return (
+      <button
+        className={`tab${active ? " is-active" : ""}`}
+        type="button"
+        data-draft-list-tab={sheet.id}
+        aria-selected={active}
+        role="tab"
+        key={sheet.id}
+      >
+        <span className="draft-list-tab-icon" aria-hidden="true">
+          {sheet.icon === "gamepad" ? (
+            <Gamepad2 />
+          ) : sheet.icon === "film" ? (
+            <Film />
+          ) : (
+            <Notebook />
+          )}
+        </span>
+        <span>{sheet.name}</span>
+      </button>
+    );
+  });
+}
+
+function DraftListItems() {
+  const view = useDraftListView();
+  if (view.loading) {
+    return (
+      <p className="table-message loading-message">
+        <span className="loading-spinner" aria-hidden="true" />
+        <span>Loading Draft List...</span>
+      </p>
+    );
+  }
+  if (view.items.length) {
+    return view.items.map((item) => (
+      <DraftListCard item={item} key={item.id} />
+    ));
+  }
+  return (
+    <div className="draft-list-empty">
+      <p className="table-message">{view.emptyLabel}</p>
+      {view.emptyAction ? (
+        <button
+          className="action-button"
+          type="button"
+          data-draft-list-retry={view.emptyAction === "retry" || undefined}
+          data-draft-list-clear-filter={
+            view.emptyAction === "clear" || undefined
+          }
+          data-draft-list-show-filters={
+            view.emptyAction === "filters" || undefined
+          }
+          data-draft-list-add-empty={view.emptyAction === "add" || undefined}
+        >
+          {view.emptyAction === "retry"
+            ? "Try Again"
+            : view.emptyAction === "clear"
+              ? "Clear Filter"
+              : view.emptyAction === "filters"
+                ? "Show Filters"
+                : "Add Item"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function DraftListCard({ item }: { item: DraftListItemView }) {
+  const [showImage, setShowImage] = useState(Boolean(item.imageUrl));
+  const flags = [
+    item.archived && "Archived",
+    item.drafted && "Drafted",
+    item.unavailable && "Unavailable",
+  ].filter(Boolean) as string[];
+  return (
+    <article
+      className={`draft-list-item${showImage ? " has-image" : ""}`}
+      draggable
+      data-draft-list-item-id={item.id}
+      data-draft-list-sheet-id={item.sheetId}
+    >
+      {showImage ? (
+        <div className="draft-list-item-image">
+          <img
+            src={item.imageUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            data-draft-list-image
+            onError={() => setShowImage(false)}
+          />
+        </div>
+      ) : null}
+      <span className="draft-list-rank">{item.rank}</span>
+      <div className="draft-list-item-main">
+        <h2>{item.name}</h2>
+        <p className="draft-list-item-date">{item.releaseLabel}</p>
+        {flags.length ? (
+          <div className="draft-list-item-flags">
+            {flags.map((flag) => (
+              <span key={flag}>{flag}</span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <div className="draft-list-item-actions">
+        {item.dataUrl ? (
+          <a
+            className="icon-action-button draft-list-item-action"
+            href={item.dataUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open data page for ${item.name}`}
+            title="Open data page"
+          >
+            <ExternalLink aria-hidden="true" />
+          </a>
+        ) : null}
+        <button
+          className="icon-action-button draft-list-item-action"
+          type="button"
+          data-draft-list-edit={item.id}
+          aria-label={`Edit ${item.name}`}
+          title="Edit item"
+        >
+          <Pencil aria-hidden="true" />
+        </button>
+      </div>
+      <span
+        className="draft-list-drag-handle"
+        aria-hidden="true"
+        title="Drag to reorder"
+      />
+    </article>
+  );
+}
+
 export function DraftListPage() {
   return (
     <>
@@ -912,22 +1989,7 @@ export function DraftListPage() {
           role="tablist"
           aria-label="Draft List sheets"
         >
-          <button
-            className="tab is-active"
-            type="button"
-            aria-selected="true"
-            role="tab"
-          >
-            Fantasy Critic
-          </button>
-          <button
-            className="tab"
-            type="button"
-            aria-selected="false"
-            role="tab"
-          >
-            Fantasy Office
-          </button>
+          <DraftListTabs />
         </div>
         <IconButton
           className="draft-list-tab-scroll"
@@ -948,10 +2010,7 @@ export function DraftListPage() {
         aria-live="polite"
         aria-busy="true"
       >
-        <p className="table-message loading-message">
-          <span className="loading-spinner" aria-hidden="true" />
-          <span>Loading Draft List...</span>
-        </p>
+        <DraftListItems />
       </div>
       <DraftListItemDialog />
       <DraftListSheetDialog />
@@ -1168,14 +2227,6 @@ function Check({
       <input id={id} type="checkbox" />
       <span>{label}</span>
     </label>
-  );
-}
-
-function LoadingList({ id, label }: { id: string; label: string }) {
-  return (
-    <div className="content-shell" id={id}>
-      <p className="table-message">{label}</p>
-    </div>
   );
 }
 

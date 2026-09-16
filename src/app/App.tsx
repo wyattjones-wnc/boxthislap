@@ -10,17 +10,35 @@ import {
   ManagerAwardsPage,
   ManagerHubPage,
   NextPage,
+  RankingsPage,
   TodoPage,
   WantPage,
 } from "../features/operational/OperationalPages";
+import {
+  FootyCustomSchedulePage,
+  FootyGoalAssistsPage,
+  FootyMissingNotesPage,
+  FootyOperationalDialogs,
+  FootyPerfectPage,
+  FootySeenPage,
+  FootyTeamPage,
+} from "../features/operational/FootyOperationalPages";
 
 export interface OperationalRoots {
   draftList: Element;
   footy: Element;
+  footyCustomSchedule: Element;
+  footyDialogs: Element;
+  footyGoalAssists: Element;
+  footyMissingNotes: Element;
+  footyPerfect: Element;
+  footySeen: Element;
+  footyTeam: Element;
   guides: Element;
   managerAwards: Element;
   managerHub: Element;
   next: Element;
+  rankings: Element;
   todo: Element;
   want: Element;
 }
@@ -45,11 +63,31 @@ export function App({
         {createPortal(<LoginPage />, loginRoot)}
         {createPortal(<AccountSettingsPage />, accountRoot)}
         {createPortal(<NextPage />, operationalRoots.next)}
+        {createPortal(<RankingsPage />, operationalRoots.rankings)}
         {createPortal(<TodoPage />, operationalRoots.todo)}
         {createPortal(<WantPage />, operationalRoots.want)}
         {createPortal(<GuidesPage />, operationalRoots.guides)}
         {createPortal(<DraftListPage />, operationalRoots.draftList)}
         {createPortal(<FootyPage />, operationalRoots.footy)}
+        {createPortal(
+          <FootyCustomSchedulePage />,
+          operationalRoots.footyCustomSchedule,
+        )}
+        {createPortal(
+          <FootyGoalAssistsPage />,
+          operationalRoots.footyGoalAssists,
+        )}
+        {createPortal(
+          <FootyMissingNotesPage />,
+          operationalRoots.footyMissingNotes,
+        )}
+        {createPortal(<FootyPerfectPage />, operationalRoots.footyPerfect)}
+        {createPortal(<FootySeenPage />, operationalRoots.footySeen)}
+        {createPortal(<FootyTeamPage />, operationalRoots.footyTeam)}
+        {createPortal(
+          <FootyOperationalDialogs />,
+          operationalRoots.footyDialogs,
+        )}
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
         {createPortal(<SiteFooter />, footerRoot)}

@@ -38,7 +38,6 @@ import {
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   NEXT_ITEMS_ENDPOINT,
-  GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
   FORMULA_ONE_ENDPOINT,
   PSN_TROPHIES_ENDPOINT,
@@ -456,7 +455,6 @@ const footyTeamFixtureLimits = new Map();
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
-const nextCardElementCache = new Map();
 let isSavingNextItem = false;
 let isNextItemDialogOpen = false;
 let nextItemDialogController = null;
@@ -744,17 +742,6 @@ const loadGuideDataLoader = createLazyControllerLoader(async () => {
 async function loadGuideData() {
   return (await loadGuideDataLoader())();
 }
-const loadGuidesController = createLazyControllerLoader(async () => {
-  const { createGuidesController } = await import(
-    "./modules/guides.js?v=202609112020"
-  );
-  return createGuidesController({
-    getManagerId: getCurrentManagerId,
-    getIsAdmin: isCurrentManagerAdmin,
-    loadData: loadGuideData,
-    progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
-  });
-});
 const loadDraftListsController = createLazyControllerLoader(async () => {
   const { createDraftListsController } = await import("./modules/draftLists.js?v=202609130510");
   activeDraftListsController = createDraftListsController({
@@ -865,7 +852,7 @@ async function renderPlatinumsPage() {
 }
 
 async function renderGuidesPage() {
-  return (await loadGuidesController()).renderPage();
+  return Promise.resolve();
 }
 
 async function renderDraftListsPage() {
@@ -6638,91 +6625,28 @@ function renderNextList(items = siteData.nextItems || []) {
   const previousTailItems = shouldRenderDefaultNextPreviousTail()
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
-  const renderedItems = [...visibleItems, ...previousTailItems];
-  if (nextList.dataset.reactList === "next") {
-    const toView = (item, showPassedStatus = false) => ({
-      completed: item.completed,
-      dateLabel: formatNextDateRange(item),
-      id: item.id,
-      imageUrl: item.imageUrl,
-      isPast: isNextItemPast(item, getDateKey(0)),
-      passed: Boolean(showPassedStatus && hasNextItemTimePassed(item)),
-      thing: item.thing,
-      timeLabel: item.timeLabel,
-    });
-    const detail = {
-        activeItemId: activeNextItemId,
-        editMode: isNextEditModeEnabled(),
-        emptyLabel: hasActiveNextFilters()
-          ? "No Next items match those filters."
-          : "No upcoming Next items found.",
-        items: visibleItems.map((item) => toView(item, showDefaultPassedStatus)),
-        previousItems: previousTailItems.map((item) => toView(item)),
-    };
-    window.__boxThisLapNextListView = detail;
-    window.__boxThisLapSetNextListView?.(detail);
-    window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
-    return;
-  }
-  pruneNextCardElementCache(normalizedItems);
-
-  if (!renderedItems.length) {
-    nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
-    return;
-  }
-
-  const list = document.createElement("div");
-  list.className = "next-list";
-  visibleItems.forEach((item) => {
-    list.append(getNextCardElement(item, { showPassedStatus: showDefaultPassedStatus }));
+  const toView = (item, showPassedStatus = false) => ({
+    completed: item.completed,
+    dateLabel: formatNextDateRange(item),
+    id: item.id,
+    imageUrl: item.imageUrl,
+    isPast: isNextItemPast(item, getDateKey(0)),
+    passed: Boolean(showPassedStatus && hasNextItemTimePassed(item)),
+    thing: item.thing,
+    timeLabel: item.timeLabel,
   });
-
-  if (previousTailItems.length) {
-    const divider = document.createElement("div");
-    divider.className = "next-previous-divider";
-    divider.setAttribute("role", "separator");
-    divider.setAttribute("aria-label", "Previous items");
-    divider.innerHTML = "<span>Previous</span>";
-    list.append(divider);
-    previousTailItems.forEach((item) => list.append(getNextCardElement(item)));
-  }
-
-  nextList.replaceChildren(list);
-}
-
-function pruneNextCardElementCache(items = []) {
-  const currentIds = new Set(items.map((item) => item.id).filter(Boolean));
-
-  nextCardElementCache.forEach((_entry, id) => {
-    if (!currentIds.has(id)) {
-      nextCardElementCache.delete(id);
-    }
-  });
-}
-
-function getNextCardElement(item, options = {}) {
-  const markup = renderNextItem(item, options).trim();
-  const cached = item.id ? nextCardElementCache.get(item.id) : null;
-
-  if (cached?.markup === markup) {
-    return cached.element;
-  }
-
-  const template = document.createElement("template");
-  template.innerHTML = markup;
-  const element = template.content.firstElementChild;
-  const cachedImage = cached?.element.querySelector("[data-next-card-image]");
-  const nextImage = element?.querySelector("[data-next-card-image]");
-
-  if (cachedImage && nextImage && cachedImage.getAttribute("src") === nextImage.getAttribute("src")) {
-    nextImage.replaceWith(cachedImage);
-  }
-
-  if (item.id && element) {
-    nextCardElementCache.set(item.id, { element, markup });
-  }
-
-  return element;
+  const detail = {
+    activeItemId: activeNextItemId,
+    editMode: isNextEditModeEnabled(),
+    emptyLabel: hasActiveNextFilters()
+      ? "No Next items match those filters."
+      : "No upcoming Next items found.",
+    items: visibleItems.map((item) => toView(item, showDefaultPassedStatus)),
+    previousItems: previousTailItems.map((item) => toView(item)),
+  };
+  window.__boxThisLapNextListView = detail;
+  window.__boxThisLapSetNextListView?.(detail);
+  window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
 }
 
 function normalizeNextItem(row) {
@@ -6884,56 +6808,6 @@ function comparePreviousNextItems(first, second) {
   }
 
   return first.thing.localeCompare(second.thing);
-}
-
-function renderNextItem(item, options = {}) {
-  const isAdmin = isCurrentManagerAdmin();
-  const isPast = isNextItemPast(item, getDateKey(0));
-  const dateLabel = formatNextDateRange(item);
-  const timeMarkup = item.timeLabel
-    ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
-    : "";
-  const completedIcon = isAdmin && item.completed
-    ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
-    : "";
-  const passedStatus = options.showPassedStatus && hasNextItemTimePassed(item) && !item.completed
-    ? `<span class="next-passed-status" aria-label="Event time has passed" title="Event time has passed">&#10003;</span>`
-    : "";
-  const classNames = [
-    "next-card",
-    item.completed ? "next-card--completed" : "",
-    isNextEditModeEnabled() ? "next-card--editable" : "",
-    activeNextItemId === item.id ? "is-expanded" : "",
-    isPast ? "next-card--past" : "",
-  ].filter(Boolean).join(" ");
-  const editButton = isNextEditModeEnabled() && activeNextItemId === item.id
-    ? `<button class="action-button next-edit-button" type="button" data-next-edit="${escapeHtml(item.id)}">Edit</button>`
-    : "";
-  const interactionAttributes = isNextEditModeEnabled() && item.id
-    ? ` role="button" tabindex="0" aria-expanded="${String(activeNextItemId === item.id)}" data-next-item-id="${escapeHtml(item.id)}"`
-    : "";
-  const imageMarkup = item.imageUrl
-    ? `<img class="next-card-image" src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-next-card-image>`
-    : "";
-  const imageClass = imageMarkup ? " next-card--with-image" : "";
-
-  return `
-    <article class="${classNames}${imageClass}"${interactionAttributes}>
-      ${imageMarkup}
-      <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
-        ${completedIcon}
-        <div>
-          ${passedStatus}
-          <h2>${escapeHtml(item.thing)}</h2>
-          <p class="next-card-date">
-            <span>${escapeHtml(dateLabel)}</span>
-            ${timeMarkup}
-          </p>
-        </div>
-      </div>
-      ${editButton}
-    </article>
-  `;
 }
 
 function isNextEditModeEnabled() {
@@ -7466,21 +7340,16 @@ function renderNextListError(error) {
     return;
   }
 
-  if (nextList.dataset.reactList === "next") {
-    const detail = {
-      activeItemId: "",
-      editMode: false,
-      emptyLabel: `Unable to load Next items: ${error.message}`,
-      items: [],
-      previousItems: [],
-    };
-    window.__boxThisLapNextListView = detail;
-    window.__boxThisLapSetNextListView?.(detail);
-    window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
-    return;
-  }
-
-  nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
+  const detail = {
+    activeItemId: "",
+    editMode: false,
+    emptyLabel: `Unable to load Next items: ${error.message}`,
+    items: [],
+    previousItems: [],
+  };
+  window.__boxThisLapNextListView = detail;
+  window.__boxThisLapSetNextListView?.(detail);
+  window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
 }
 
 function ensureGuideLinksLoaded() {
@@ -7539,10 +7408,33 @@ function getGuideEntryUrl(guideId) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+function getGuideEntryLinkViews(kind, itemId) {
+  if (!isCurrentManagerAdmin() || !itemId) return [];
+  const idKey = kind === "todo" ? "todoId" : "rankingId";
+  return (siteData.guideLinks || [])
+    .filter((guide) => guide[idKey] === String(itemId))
+    .map((guide) => ({
+      href: getGuideEntryUrl(guide.id),
+      label: `Open ${guide.name} guide`,
+    }));
+}
+
+function publishOperationalListView(kind, detail) {
+  const globalKey = kind === "todo" ? "__boxThisLapTodoListView" : "__boxThisLapWantListView";
+  window[globalKey] = detail;
+  window.dispatchEvent(new CustomEvent(`boxthislap:${kind}-list`, { detail }));
+}
+
+function publishRankingListView(kind, detail) {
+  window.__boxThisLapRankingListViews = window.__boxThisLapRankingListViews || {};
+  window.__boxThisLapRankingListViews[kind] = detail;
+  window.dispatchEvent(new CustomEvent(`boxthislap:ranking-list:${kind}`, { detail }));
+}
+
 function renderWantList(items = siteData.wantItems || []) {
   if (!wantList || !shouldRenderPageSection("want")) return;
   if (!isCurrentManagerAdmin()) {
-    wantList.innerHTML = `<p class="table-message">Want is available to admin users.</p>`;
+    publishOperationalListView("want", { emptyLabel: "Want is available to admin users.", items: [] });
     return;
   }
 
@@ -7560,51 +7452,53 @@ function renderWantList(items = siteData.wantItems || []) {
     const rows = activeWantSnapshotId === "current"
       ? currentRows
       : getRankingSnapshotRows("want", activeWantSnapshotId).filter((item) => visibleIds.has(String(item.id)));
-    wantList.innerHTML = rows.length
-      ? `<div class="next-list todo-list">${rows.map((item, index) => renderWantCalculatedItem(item, index + 1, currentRows)).join("")}</div>`
-      : `<p class="table-message">No Want items found.</p>`;
+    const compareRows = activeWantCompareSnapshotId === "current"
+      ? currentRows
+      : activeWantCompareSnapshotId ? getRankingSnapshotRows("want", activeWantCompareSnapshotId) : [];
+    publishOperationalListView("want", {
+      emptyLabel: "No Want items found.",
+      items: rows.map((item, index) => {
+        const rank = index + 1;
+        const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+        const movement = compareRank ? compareRank - rank : 0;
+        return {
+          archived: false,
+          completed: false,
+          deleted: false,
+          draggable: false,
+          expanded: false,
+          id: String(item.id || ""),
+          meta: [
+            `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+            `${item.wins || 0}-${item.losses || 0}`,
+            Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+            `Manual #${formatWantOrder(item)}`,
+            compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getWantSnapshotLabel(activeWantCompareSnapshotId)}` : "",
+          ].filter(Boolean),
+          name: item.name,
+          orderLabel: String(rank),
+          priceLabel: item.price !== null && item.price !== undefined ? formatWantPrice(item.price) : "",
+        };
+      }),
+    });
     return;
   }
 
-  wantList.innerHTML = visibleItems.length
-    ? `<div class="next-list todo-list">${visibleItems.map(renderWantItem).join("")}</div>`
-    : `<p class="table-message">No Want items found.</p>`;
-}
-
-function renderWantCalculatedItem(item, rank, currentRows) {
-  const compareRows = activeWantCompareSnapshotId === "current"
-    ? currentRows
-    : activeWantCompareSnapshotId ? getRankingSnapshotRows("want", activeWantCompareSnapshotId) : [];
-  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
-  const movement = compareRank ? compareRank - rank : 0;
-  const meta = [
-    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
-    `${item.wins || 0}-${item.losses || 0}`,
-    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
-    `Manual #${formatWantOrder(item)}`,
-    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getWantSnapshotLabel(activeWantCompareSnapshotId)}` : "",
-  ].filter(Boolean);
-  return `<article class="next-card todo-card"><div class="next-card-main"><span class="todo-order-number">${rank}</span><div><h2>${escapeHtml(item.name)}</h2>${item.price !== null && item.price !== undefined ? `<p class="next-card-date">${escapeHtml(formatWantPrice(item.price))}</p>` : ""}<p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p></div></div></article>`;
-}
-
-function renderWantItem(item) {
-  const expandedClass = shouldShowWantEditMode && activeWantItemId === item.id ? " is-actions-open" : "";
-  const deletedClass = item.deleted ? " todo-card--deleted" : "";
-  const draggable = shouldShowWantEditMode ? ` draggable="true"` : "";
-  const chips = [
-    item.archived ? { key: "archived", label: "Archived" } : null,
-    item.completed ? { key: "completed", label: "Completed" } : null,
-    item.deleted ? { key: "deleted", label: "Deleted" } : null,
-  ].filter(Boolean);
-  return `
-    <article class="next-card todo-card${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-want-id="${escapeHtml(item.id)}" aria-label="${shouldShowWantEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
-      <div class="next-card-main">
-        <span class="todo-order-number">${escapeHtml(formatWantOrder(item))}</span>
-        <div><h2>${escapeHtml(item.name)}</h2>${item.price !== null ? `<p class="next-card-date">${escapeHtml(formatWantPrice(item.price))}</p>` : ""}${chips.length ? `<div class="todo-chip-list">${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${chip.key}">${escapeHtml(chip.label)}</span>`).join("")}</div>` : ""}</div>
-        ${shouldShowWantEditMode ? `<span class="ranking-drag-handle want-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
-      </div>
-      ${shouldShowWantEditMode ? `<div class="todo-card-actions"><button class="ranking-inline-action" type="button" data-want-edit="${escapeHtml(item.id)}">Edit</button><button class="ranking-inline-action" type="button" data-want-move="${escapeHtml(item.id)}">Move to To Do</button><button class="ranking-inline-action" type="button" data-want-delete="${escapeHtml(item.id)}">Delete</button></div>` : ""}
-    </article>`;
+  publishOperationalListView("want", {
+    emptyLabel: "No Want items found.",
+    items: visibleItems.map((item) => ({
+      archived: item.archived,
+      completed: item.completed,
+      deleted: item.deleted,
+      draggable: shouldShowWantEditMode,
+      expanded: shouldShowWantEditMode && activeWantItemId === item.id,
+      id: item.id,
+      meta: [],
+      name: item.name,
+      orderLabel: formatWantOrder(item),
+      priceLabel: item.price !== null ? formatWantPrice(item.price) : "",
+    })),
+  });
 }
 
 function normalizeWantItem(row) {
@@ -7851,7 +7745,7 @@ function setWantItemStatus(message, isError = false) {
 }
 
 function renderWantListError(error) {
-  if (wantList) wantList.innerHTML = `<p class="table-message">Unable to load Want items: ${escapeHtml(error.message)}</p>`;
+  if (wantList) publishOperationalListView("want", { emptyLabel: `Unable to load Want items: ${error.message}`, items: [] });
 }
 
 function ensureWantRankingDataLoaded() {
@@ -7906,7 +7800,7 @@ function renderTodoList(items = siteData.todoItems || []) {
   }
 
   if (!isCurrentManagerAdmin()) {
-    todoList.innerHTML = `<p class="table-message">To Do is available to admin users.</p>`;
+    publishOperationalListView("todo", { emptyLabel: "To Do is available to admin users.", items: [] });
     return;
   }
 
@@ -7929,56 +7823,61 @@ function renderTodoList(items = siteData.todoItems || []) {
       ? currentCalculatedItems
       : getRankingSnapshotRows("todo", activeTodoSnapshotId).filter((item) => visibleIds.has(String(item.id)));
 
-    if (!calculatedItems.length) {
-      todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
-      return;
-    }
-
-    todoList.innerHTML = `<div class="next-list todo-list">${calculatedItems.map((item, index) =>
-      renderTodoCalculatedItem(item, index + 1, currentCalculatedItems)
-    ).join("")}</div>`;
+    const compareRows = activeTodoCompareSnapshotId === "current"
+      ? currentCalculatedItems
+      : activeTodoCompareSnapshotId ? getRankingSnapshotRows("todo", activeTodoCompareSnapshotId) : [];
+    publishOperationalListView("todo", {
+      emptyLabel: "No To Do items found.",
+      items: calculatedItems.map((item, index) => {
+        const rank = index + 1;
+        const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+        const movement = compareRank ? compareRank - rank : 0;
+        return {
+          children: [],
+          deleted: Boolean(item.deleted),
+          draggable: false,
+          expanded: false,
+          guideLinks: getGuideEntryLinkViews("todo", item.id),
+          hourLabel: "",
+          id: String(item.id || ""),
+          meta: [
+            `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+            `${item.wins || 0}-${item.losses || 0}`,
+            Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+            `Manual #${formatTodoOrderNumber(item)}`,
+            compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getTodoSnapshotLabel(activeTodoCompareSnapshotId)}` : "",
+            ...(shouldShowTodoMoreData && item.parentId ? [`Parent: ${getTodoParentLabel(item.parentId) || item.parentId}`] : []),
+          ].filter(Boolean),
+          name: item.name,
+          orderLabel: String(rank),
+          started: Boolean(item.started),
+          statusChips: getTodoStatusChips(item),
+        };
+      }),
+    });
     return;
   }
   const groupedItems = groupTodoItems(visibleItems, normalizedItems);
-
-  if (!groupedItems.length) {
-    todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
-    return;
-  }
-
-  todoList.innerHTML = `
-    <div class="next-list todo-list">
-      ${groupedItems.map((entry) => renderTodoItem(entry.item, entry.children)).join("")}
-    </div>
-  `;
-}
-
-function renderTodoCalculatedItem(item, rank, currentRows = []) {
-  const compareRows = activeTodoCompareSnapshotId === "current"
-    ? currentRows
-    : activeTodoCompareSnapshotId ? getRankingSnapshotRows("todo", activeTodoCompareSnapshotId) : [];
-  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
-  const movement = compareRank ? compareRank - rank : 0;
-  const meta = [
-    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
-    `${item.wins || 0}-${item.losses || 0}`,
-    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
-    `Manual #${formatTodoOrderNumber(item)}`,
-    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getTodoSnapshotLabel(activeTodoCompareSnapshotId)}` : "",
-  ].filter(Boolean);
-
-  return `
-    <article class="next-card todo-card">
-      <div class="next-card-main">
-        <span class="todo-order-number">${rank}</span>
-        <div>
-          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
-          <p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p>
-          ${renderTodoStatusChips(item)}
-          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
-        </div>
-      </div>
-    </article>`;
+  const toView = (item, children = []) => ({
+    children: children.map((child) => toView(child)),
+    deleted: item.deleted,
+    draggable: shouldShowTodoEditMode,
+    expanded: shouldShowTodoEditMode && activeTodoItemId === item.id,
+    guideLinks: getGuideEntryLinkViews("todo", item.id),
+    hourLabel: formatTodoHourRange(item),
+    id: item.id,
+    meta: shouldShowTodoMoreData && item.parentId
+      ? [`Parent: ${getTodoParentLabel(item.parentId) || item.parentId}`]
+      : [],
+    name: item.name,
+    orderLabel: formatTodoOrderNumber(item),
+    started: item.started,
+    statusChips: getTodoStatusChips(item),
+  });
+  publishOperationalListView("todo", {
+    emptyLabel: "No To Do items found.",
+    items: groupedItems.map((entry) => toView(entry.item, entry.children)),
+  });
 }
 
 function ensureTodoRankingDataLoaded() {
@@ -8187,58 +8086,6 @@ function groupTodoItems(visibleItems, allItems) {
       children: (childrenByParentId.get(item.id) || []).sort(compareTodoItems),
       item,
     }));
-}
-
-function renderTodoItem(item, children = []) {
-  const hourLabel = formatTodoHourRange(item);
-  const startedClass = item.started ? " todo-card--started" : "";
-  const deletedClass = item.deleted ? " todo-card--deleted" : "";
-  const expandedClass = shouldShowTodoEditMode && activeTodoItemId === item.id ? " is-actions-open" : "";
-  const chips = renderTodoStatusChips(item);
-  const draggable = shouldShowTodoEditMode ? ` draggable="true"` : "";
-  const controls = shouldShowTodoEditMode ? `
-    <div class="todo-card-actions">
-      <button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>
-      <button class="ranking-inline-action" type="button" data-todo-delete="${escapeHtml(item.id)}">Delete</button>
-    </div>
-  ` : "";
-  const childMarkup = children.length
-    ? `<div class="todo-child-list">${children.map(renderTodoChildItem).join("")}</div>`
-    : "";
-
-  return `
-    <article class="next-card todo-card${startedClass}${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="${shouldShowTodoEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
-      <div class="next-card-main">
-        <span class="todo-order-number">${escapeHtml(formatTodoOrderNumber(item))}</span>
-        <div>
-          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
-          ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
-          ${chips}
-          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
-        </div>
-        ${shouldShowTodoEditMode ? `<span class="ranking-drag-handle todo-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
-      </div>
-      ${controls}
-      ${childMarkup}
-    </article>
-  `;
-}
-
-function renderTodoChildItem(item) {
-  const hourLabel = formatTodoHourRange(item);
-  const chips = renderTodoStatusChips(item);
-
-  return `
-    <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
-      <div>
-        <div class="guide-linked-heading"><h3>${escapeHtml(item.name)}</h3>${renderGuideEntryLinks("todo", item.id)}</div>
-        ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
-        ${chips}
-        ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
-      </div>
-      ${shouldShowTodoEditMode ? `<button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>` : ""}
-    </article>
-  `;
 }
 
 function renderTodoStatusChips(item) {
@@ -8780,7 +8627,7 @@ function setTodoItemStatus(message, isError = false) {
 
 function renderTodoListError(error) {
   if (todoList) {
-    todoList.innerHTML = `<p class="table-message">Unable to load To Do items: ${escapeHtml(error.message)}</p>`;
+    publishOperationalListView("todo", { emptyLabel: `Unable to load To Do items: ${error.message}`, items: [] });
   }
 }
 
@@ -9385,29 +9232,51 @@ function renderRankingList(kind) {
 
   const rows = getDisplayedRankingRows(kind);
 
-  if (siteData.rankingLoading?.[kind]) {
-    list.innerHTML = renderLoadingMessage(`Loading ${config.itemLabel.toLowerCase()} rankings...`);
-    return;
-  }
-
   const messages = [
     ...(siteData.rankingErrorsByKind?.[kind] ? [siteData.rankingErrorsByKind[kind]] : []),
     ...(kind === activeRankingKind ? siteData.rankingErrors || [] : []),
   ];
-  const errorMarkup = messages.length
-    ? `<p class="table-message ranking-warning">${messages.map(escapeHtml).join("<br>")}</p>`
-    : "";
 
-  if (!rows.length) {
-    const action = canEditActiveRankingManager() && kind !== "mcu"
-      ? `<button class="action-button ranking-empty-add" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add One</button>`
-      : "";
-    list.innerHTML = `${errorMarkup}<div class="table-message ranking-empty-state"><span>You have not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.</span>${action}</div>`;
-    return;
-  }
-
-  list.innerHTML = rows.map((item) => renderRankingItem(kind, item)).join("");
-  list.insertAdjacentHTML("afterbegin", errorMarkup);
+  const isOwner = canEditActiveRankingManager();
+  const isSnapshotView = isOwner && activeRankingSnapshotId !== "current";
+  const isManualView = isOwner && activeRankingViewMode === "manual" && !isSnapshotView;
+  const detail = {
+      canAdd: isOwner && kind !== "mcu",
+      emptyLabel: siteData.rankingLoading?.[kind]
+        ? `Loading ${config.itemLabel.toLowerCase()} rankings...`
+        : `You have not added any ${config.itemLabel.toLowerCase()} rankings yet.`,
+      itemLabel: config.itemLabel,
+      loading: Boolean(siteData.rankingLoading?.[kind]),
+      messages,
+      rows: rows.map((item) => {
+        const excluded = isRankingItemExcluded(kind, item.id);
+        let movement = "";
+        if (isOwner && activeRankingCompareSnapshotId) {
+          const compareRank = getRankingCompareRank(kind, item.id);
+          if (!compareRank) movement = "New since comparison";
+          else {
+            const delta = compareRank - Number(item.displayRank || item.rank || 0);
+            const label = delta > 0 ? `Up ${delta}` : delta < 0 ? `Down ${Math.abs(delta)}` : "No change";
+            movement = `${label} from ${getRankingCompareLabel()}`;
+          }
+        }
+        return {
+          archived: Boolean(item.archived),
+          canEdit: isOwner && kind !== "mcu" && !isSnapshotView,
+          canExclude: isOwner && activeRankingSnapshotId === "current",
+          draggable: isManualView,
+          excluded,
+          exclusionLabel: excluded ? "Include" : "Exclude",
+          guideLinks: kind === "games" ? getGuideEntryLinkViews("ranking", item.id) : [],
+          id: item.id,
+          meta: shouldShowRankingMoreData ? getRankingItemMetaParts(item) : [],
+          movement,
+          name: item.name,
+          rankLabel: String(item.displayRank || item.rank),
+        };
+      }),
+  };
+  publishRankingListView(kind, detail);
 }
 
 function renderLoadingMessage(message = "Loading...") {
@@ -9417,64 +9286,6 @@ function renderLoadingMessage(message = "Loading...") {
       <span>${escapeHtml(message)}</span>
     </p>
   `;
-}
-
-function renderRankingItem(kind, item) {
-  const isOwner = canEditActiveRankingManager();
-  const isSnapshotView = isOwner && activeRankingSnapshotId !== "current";
-  const isManualView = isOwner && activeRankingViewMode === "manual" && !isSnapshotView;
-  const draggable = isManualView ? ` draggable="true"` : "";
-  const isExcluded = isRankingItemExcluded(kind, item.id);
-  const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
-  const movement = renderRankingMovement(kind, item);
-  const exclusionAction = renderRankingExclusionAction(kind, item);
-
-  return `
-    <article class="ranking-item${isExcluded ? " is-excluded" : ""}" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
-      <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
-      <span class="ranking-item-main">
-        <span class="guide-linked-heading"><strong>${escapeHtml(item.name)}</strong>${kind === "games" ? renderGuideEntryLinks("ranking", item.id) : ""}</span>
-        ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
-        ${movement}
-        ${meta}
-      </span>
-      ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
-      ${(exclusionAction || (isOwner && kind !== "mcu" && !isSnapshotView)) ? `<span class="ranking-item-actions">${exclusionAction}${isOwner && kind !== "mcu" && !isSnapshotView ? `<button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button>` : ""}</span>` : ""}
-    </article>
-  `;
-}
-
-function renderRankingExclusionAction(kind, item) {
-  if (!canEditActiveRankingManager() || activeRankingSnapshotId !== "current") {
-    return "";
-  }
-
-  const isExcluded = isRankingItemExcluded(kind, item.id);
-  const label = isExcluded ? "Include" : "Exclude";
-
-  return `<button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${escapeHtml(label)}</button>`;
-}
-
-function renderRankingMovement(kind, item) {
-  if (!canEditActiveRankingManager() || !activeRankingCompareSnapshotId) {
-    return "";
-  }
-
-  const compareRank = getRankingCompareRank(kind, item.id);
-
-  if (!compareRank) {
-    return `<small>New since comparison</small>`;
-  }
-
-  const currentRank = Number(item.displayRank || item.rank || 0);
-  const movement = compareRank - currentRank;
-  const label = movement > 0
-    ? `Up ${movement}`
-    : movement < 0
-      ? `Down ${Math.abs(movement)}`
-      : "No change";
-
-  return `<small>${escapeHtml(label)} from ${escapeHtml(getRankingCompareLabel())}</small>`;
 }
 
 function normalizeRankingRows(rows = []) {
@@ -9802,20 +9613,6 @@ function getStandaloneImplicitSeedRating(kind, itemId) {
   const rows = getRankingRows(kind);
   const index = rows.findIndex((row) => String(row.id) === String(itemId));
   return calculateNormalizedRating(index >= 0 ? index + 1 : rows.length + 1, Math.max(rows.length, 1));
-}
-
-function renderRankingItemMeta(item) {
-  const parts = getRankingItemMetaParts(item);
-
-  if (!parts.length) {
-    return "";
-  }
-
-  return `
-    <span class="ranking-item-meta">
-      ${parts.map((part) => `<span>${escapeHtml(part)}</span>`).join("")}
-    </span>
-  `;
 }
 
 function getRankingItemMetaParts(item) {
@@ -11396,20 +11193,16 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.nextItems)) {
       renderNextList();
     } else if (nextList) {
-      if (nextList.dataset.reactList === "next") {
-        const detail = {
-          activeItemId: "",
-          editMode: false,
-          emptyLabel: "Loading Next items...",
-          items: [],
-          previousItems: [],
-        };
-        window.__boxThisLapNextListView = detail;
-        window.__boxThisLapSetNextListView?.(detail);
-        window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
-      } else {
-        nextList.innerHTML = renderLoadingMessage("Loading Next items...");
-      }
+      const detail = {
+        activeItemId: "",
+        editMode: false,
+        emptyLabel: "Loading Next items...",
+        items: [],
+        previousItems: [],
+      };
+      window.__boxThisLapNextListView = detail;
+      window.__boxThisLapSetNextListView?.(detail);
+      window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
     }
     return;
   }
@@ -11418,7 +11211,7 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.todoItems)) {
       renderTodoList();
     } else if (todoList) {
-      todoList.innerHTML = renderLoadingMessage("Loading To Do items...");
+      publishOperationalListView("todo", { emptyLabel: "Loading To Do items...", items: [] });
     }
     return;
   }
@@ -11432,7 +11225,7 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.wantItems)) {
       renderWantList();
     } else if (wantList) {
-      wantList.innerHTML = renderLoadingMessage("Loading Want items...");
+      publishOperationalListView("want", { emptyLabel: "Loading Want items...", items: [] });
     }
     return;
   }

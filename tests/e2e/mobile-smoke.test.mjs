@@ -1099,22 +1099,15 @@ test("authenticated YouTube route loads its deferred controller", async ({
   expect(pageErrors).toEqual([]);
 });
 
-test("authenticated Guides and Draft List load their deferred controllers", async ({
+test("authenticated Guides render in React and Draft List loads its deferred controller", async ({
   page,
 }) => {
-  /** @type {string[]} */
-  const guideDataBundleRequests = [];
-  page.on("request", (request) => {
-    if (/\/guideData-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
-      guideDataBundleRequests.push(request.url());
-    }
-  });
   await prepareAuthenticatedSecondaryRoutes(page);
 
   await page.goto("/#guides", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="guides"]')).toHaveClass(/is-active/);
   await expect(page.locator(".guides-grid")).toBeVisible();
-  expect(guideDataBundleRequests).toHaveLength(1);
+  await expect(page.getByRole("heading", { name: "Guides" })).toBeVisible();
 
   await page.goto("/#draft-list", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="draft-list"]')).toHaveClass(

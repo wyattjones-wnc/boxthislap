@@ -62,7 +62,6 @@ const expectedLazyChunks = [
   "formulaOneQualifying-",
   "followedTeamsDialog-",
   "guideData-",
-  "guides-",
   "nextItemDialog-",
   "platinums-",
   "todoItemDialog-",

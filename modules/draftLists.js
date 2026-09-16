@@ -169,17 +169,65 @@ export function createDraftListsController({ getManagerId, request }) {
   function render() {
     if (!page) return;
     syncControls();
-    renderTabs();
-    renderItems();
+    publishView();
   }
 
   function renderSignedOut() {
-    if (tabs) tabs.innerHTML = "";
-    if (itemsView) {
-      itemsView.setAttribute("aria-busy", "false");
-      itemsView.innerHTML = `<p class="table-message">Sign in to open your Draft List.</p>`;
-    }
+    publishView({ signedOut: true });
     setPageStatus("");
+  }
+
+  function publishView({ signedOut = false } = {}) {
+    const sheet = signedOut ? null : getActiveSheet();
+    const allItems = getSheetItems(sheet?.id);
+    const items = allItems.filter((item) => {
+      if (state.entryAfter && getEntryDateKey(item.entryDate) <= state.entryAfter) return false;
+      const isMarked = item.archived || item.drafted || item.unavailable;
+      if (!isMarked) return true;
+      return (item.archived && state.showArchived)
+        || (item.drafted && state.showDrafted)
+        || (item.unavailable && state.showUnavailable);
+    });
+    const hasFilters = hasActiveFilters();
+    const detail = {
+      activeSheetId: state.activeSheetId,
+      emptyAction: state.error && !state.loadedManagerId
+        ? "retry"
+        : !sheet
+          ? ""
+          : items.length
+            ? ""
+            : hasFilters && allItems.length
+              ? "clear"
+              : allItems.length
+                ? "filters"
+                : "add",
+      emptyLabel: signedOut
+        ? "Sign in to open your Draft List."
+        : state.error && !state.loadedManagerId
+          ? state.error
+          : !sheet
+            ? "Create a sheet to begin your Draft List."
+            : items.length
+              ? ""
+              : hasFilters && allItems.length
+                ? "No entries match the current filters."
+                : allItems.length
+                  ? "No active entries. Use filters to show marked entries."
+                  : `No items have been added to ${sheet.name} yet.`,
+      items: signedOut ? [] : items.map((item) => ({
+        ...item,
+        releaseLabel: item.releaseDate ? formatDate(item.releaseDate) : "Date TBD",
+      })),
+      loading: !signedOut && state.loading && !state.loadedManagerId,
+      sheets: signedOut ? [] : state.sheets,
+    };
+    window.__boxThisLapDraftListView = detail;
+    window.dispatchEvent(new CustomEvent("boxthislap:draft-list", { detail }));
+    window.requestAnimationFrame(() => {
+      keepActiveTabInView();
+      updateTabPagination();
+    });
   }
 
   function syncControls() {
@@ -203,30 +251,6 @@ export function createDraftListsController({ getManagerId, request }) {
       deleteSheetButton.disabled = state.loading;
     }
     setPageStatus(state.error || state.message, Boolean(state.error));
-  }
-
-  function renderTabs() {
-    if (!tabs) return;
-    if (state.loading && !state.sheets.length) {
-      tabs.innerHTML = `<button class="tab is-active" type="button" role="tab" aria-selected="true">Loading sheets...</button>`;
-      window.requestAnimationFrame(updateTabPagination);
-      return;
-    }
-    const previousScrollLeft = tabs.scrollLeft;
-    tabs.innerHTML = state.sheets.map((sheet) => {
-      const active = sheet.id === state.activeSheetId;
-      return `
-        <button class="tab${active ? " is-active" : ""}" type="button" data-draft-list-tab="${escapeAttribute(sheet.id)}" aria-selected="${String(active)}" role="tab">
-          <span class="draft-list-tab-icon" aria-hidden="true">${renderSheetIcon(sheet.icon)}</span>
-          <span>${escapeHtml(sheet.name)}</span>
-        </button>
-      `;
-    }).join("");
-    tabs.scrollLeft = previousScrollLeft;
-    window.requestAnimationFrame(() => {
-      keepActiveTabInView();
-      updateTabPagination();
-    });
   }
 
   function updateTabPagination() {
@@ -257,98 +281,6 @@ export function createDraftListsController({ getManagerId, request }) {
     } else if (tabBounds.right > stripBounds.right - padding) {
       tabs.scrollLeft = Math.min(tabs.scrollWidth - tabs.clientWidth, tabs.scrollLeft + tabBounds.right - stripBounds.right + padding);
     }
-  }
-
-  function renderItems() {
-    if (!itemsView) return;
-    itemsView.setAttribute("aria-busy", String(state.loading));
-    if (state.loading && !state.loadedManagerId) {
-      itemsView.innerHTML = renderLoading("Loading Draft List...");
-      return;
-    }
-    if (state.error && !state.loadedManagerId) {
-      itemsView.innerHTML = `
-        <div class="draft-list-empty">
-          <p class="table-message">${escapeHtml(state.error)}</p>
-          <button class="action-button" type="button" data-draft-list-retry>Try Again</button>
-        </div>
-      `;
-      return;
-    }
-
-    const sheet = getActiveSheet();
-    if (!sheet) {
-      itemsView.innerHTML = `<p class="table-message">Create a sheet to begin your Draft List.</p>`;
-      return;
-    }
-
-    const allItems = getSheetItems(sheet.id);
-    const visibleItems = allItems.filter((item) => {
-      if (state.entryAfter && getEntryDateKey(item.entryDate) <= state.entryAfter) return false;
-      const isMarked = item.archived || item.drafted || item.unavailable;
-      if (!isMarked) return true;
-      return (item.archived && state.showArchived)
-        || (item.drafted && state.showDrafted)
-        || (item.unavailable && state.showUnavailable);
-    });
-    if (!visibleItems.length) {
-      const filtered = Boolean(hasActiveFilters() && allItems.length);
-      const onlyMarkedItems = Boolean(allItems.length && !hasActiveFilters());
-      itemsView.innerHTML = `
-        <div class="draft-list-empty">
-          <p class="table-message">${filtered
-            ? "No entries match the current filters."
-            : onlyMarkedItems
-              ? "No active entries. Use filters to show marked entries."
-              : `No items have been added to ${escapeHtml(sheet.name)} yet.`}</p>
-          ${filtered
-            ? `<button class="action-button" type="button" data-draft-list-clear-filter>Clear Filter</button>`
-            : onlyMarkedItems
-              ? `<button class="action-button" type="button" data-draft-list-show-filters>Show Filters</button>`
-            : `<button class="action-button" type="button" data-draft-list-add-empty>Add Item</button>`}
-        </div>
-      `;
-      return;
-    }
-
-    itemsView.innerHTML = visibleItems.map((item) => renderItem(item, sheet)).join("");
-  }
-
-  function renderItem(item, sheet) {
-    const image = item.imageUrl
-      ? `<div class="draft-list-item-image"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-draft-list-image></div>`
-      : "";
-    const releaseDate = item.releaseDate ? formatDate(item.releaseDate) : "Date TBD";
-    const flags = [
-      item.archived ? "Archived" : "",
-      item.drafted ? "Drafted" : "",
-      item.unavailable ? "Unavailable" : "",
-    ].filter(Boolean);
-    const flagMarkup = flags.length ? `<div class="draft-list-item-flags">${flags.map((flag) => `<span>${flag}</span>`).join("")}</div>` : "";
-    const dataLink = item.dataUrl ? `
-      <a class="icon-action-button draft-list-item-action" href="${escapeAttribute(item.dataUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open data page for ${escapeAttribute(item.name)}" title="Open data page">
-        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M10 14 21 3M14 3h7v7"></path><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path></svg>
-      </a>
-    ` : "";
-
-    return `
-      <article class="draft-list-item${image ? " has-image" : ""}" draggable="true" data-draft-list-item-id="${escapeAttribute(item.id)}" data-draft-list-sheet-id="${escapeAttribute(sheet.id)}">
-        ${image}
-        <span class="draft-list-rank">${escapeHtml(item.rank)}</span>
-        <div class="draft-list-item-main">
-          <h2>${escapeHtml(item.name)}</h2>
-          <p class="draft-list-item-date">${escapeHtml(releaseDate)}</p>
-          ${flagMarkup}
-        </div>
-        <div class="draft-list-item-actions">
-          ${dataLink}
-          <button class="icon-action-button draft-list-item-action" type="button" data-draft-list-edit="${escapeAttribute(item.id)}" aria-label="Edit ${escapeAttribute(item.name)}" title="Edit item">
-            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m4 20 4.4-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.4 16 4 20Z"></path><path d="m14.5 6 3.5 3.5"></path></svg>
-          </button>
-        </div>
-        <span class="draft-list-drag-handle" aria-hidden="true" title="Drag to reorder"></span>
-      </article>
-    `;
   }
 
   function handleClick(event) {
@@ -659,7 +591,7 @@ export function createDraftListsController({ getManagerId, request }) {
     rows.splice(targetIndex, 0, moved);
     const ranks = new Map(rows.map((item, index) => [item.id, index + 1]));
     state.items = state.items.map((item) => item.sheetId === sheetId ? { ...item, rank: ranks.get(item.id) } : item);
-    renderItems();
+    publishView();
     return true;
   }
 
@@ -785,16 +717,6 @@ function compareSheets(first, second) {
   return first.position - second.position || first.name.localeCompare(second.name);
 }
 
-function renderSheetIcon(icon = "notebook") {
-  if (icon === "gamepad") {
-    return `<svg viewBox="0 0 24 24" focusable="false"><path d="M8 8h8a5 5 0 0 1 4.7 6.7l-1.1 3.1a2.2 2.2 0 0 1-3.7.8L14.5 17h-5l-1.4 1.6a2.2 2.2 0 0 1-3.7-.8l-1.1-3.1A5 5 0 0 1 8 8Z"></path><path d="M7 12v4M5 14h4M16.5 13h.01M18.5 15h.01"></path></svg>`;
-  }
-  if (icon === "film") {
-    return `<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="6.5" r="1.5"></circle><circle cx="17.2" cy="10.3" r="1.5"></circle><circle cx="15.2" cy="16.4" r="1.5"></circle><circle cx="8.8" cy="16.4" r="1.5"></circle><circle cx="6.8" cy="10.3" r="1.5"></circle></svg>`;
-  }
-  return `<svg viewBox="0 0 24 24" focusable="false"><path d="M6 3.5h13v17H6a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3Z"></path><path d="M7 3.5v17M3 7h4M3 12h4M3 17h4"></path></svg>`;
-}
-
 function formatDate(value) {
   const [year, month, day] = String(value || "").split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -812,10 +734,6 @@ function getEntryDateKey(value) {
   return match?.[1] || "";
 }
 
-function renderLoading(message) {
-  return `<p class="table-message loading-message"><span class="loading-spinner" aria-hidden="true"></span><span>${escapeHtml(message)}</span></p>`;
-}
-
 function closeDialog(dialog) {
   if (dialog?.open) dialog.close();
 }
@@ -830,17 +748,4 @@ function setStatus(element, message, isError = false) {
   if (!element) return;
   element.textContent = message || "";
   element.classList.toggle("is-error", Boolean(isError));
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeAttribute(value) {
-  return escapeHtml(value);
 }

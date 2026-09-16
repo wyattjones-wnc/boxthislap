@@ -23,6 +23,58 @@ import {
   FootySeenPage,
   FootyTeamPage,
 } from "../features/operational/FootyOperationalPages";
+import {
+  FantasyCriticPage,
+  FantasyOfficePage,
+  FormulaOne2025WeeklyPage,
+  FormulaOne2026WeeklyPage,
+  FormulaOneAdminPage,
+  FormulaOneCalculatorPage,
+  FormulaOneQuestionsPage,
+  FormulaOneResultsPage,
+  LeaguesPage,
+  TodayPage,
+  TomorrowPage,
+  WorldCupBracketPage,
+  WorldCupDraftPage,
+  WorldCupMatchesPage,
+  WorldCupResultsPage,
+  WorldCupRulesPage,
+  WorldCupStandingsPage,
+  WorldCupTestingPage,
+} from "../features/competition/CompetitionPages";
+
+export interface CompetitionRoots {
+  bracket: Element;
+  draft: Element;
+  fantasyCritic2025: Element;
+  fantasyCritic2026: Element;
+  fantasyOffice2025Draft: Element;
+  fantasyOffice2025Movies: Element;
+  fantasyOffice2025Results: Element;
+  fantasyOffice2026Draft: Element;
+  fantasyOffice2026Movies: Element;
+  fantasyOffice2026Results: Element;
+  formulaOne2024Questions: Element;
+  formulaOne2024Results: Element;
+  formulaOne2025Questions: Element;
+  formulaOne2025Results: Element;
+  formulaOne2025Weekly: Element;
+  formulaOne2026Calculator: Element;
+  formulaOne2026Manage: Element;
+  formulaOne2026Questions: Element;
+  formulaOne2026Results: Element;
+  formulaOne2026Review: Element;
+  formulaOne2026Weekly: Element;
+  leagues: Element;
+  matches: Element;
+  results: Element;
+  rules: Element;
+  standings: Element;
+  testing: Element;
+  today: Element;
+  tomorrow: Element;
+}
 
 export interface OperationalRoots {
   draftList: Element;
@@ -45,6 +97,7 @@ export interface OperationalRoots {
 
 interface AppProps {
   accountRoot: Element;
+  competitionRoots: CompetitionRoots;
   footerRoot: Element;
   loginRoot: Element;
   operationalRoots: OperationalRoots;
@@ -52,6 +105,7 @@ interface AppProps {
 
 export function App({
   accountRoot,
+  competitionRoots,
   footerRoot,
   loginRoot,
   operationalRoots,
@@ -90,6 +144,92 @@ export function App({
         )}
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
+        {createPortal(<TodayPage />, competitionRoots.today)}
+        {createPortal(<TomorrowPage />, competitionRoots.tomorrow)}
+        {createPortal(<WorldCupResultsPage />, competitionRoots.results)}
+        {createPortal(<WorldCupDraftPage />, competitionRoots.draft)}
+        {createPortal(<WorldCupStandingsPage />, competitionRoots.standings)}
+        {createPortal(<WorldCupRulesPage />, competitionRoots.rules)}
+        {createPortal(<WorldCupMatchesPage />, competitionRoots.matches)}
+        {createPortal(<WorldCupBracketPage />, competitionRoots.bracket)}
+        {createPortal(<WorldCupTestingPage />, competitionRoots.testing)}
+        {createPortal(<LeaguesPage />, competitionRoots.leagues)}
+        {createPortal(
+          <FantasyCriticPage year={2025} />,
+          competitionRoots.fantasyCritic2025,
+        )}
+        {createPortal(
+          <FantasyCriticPage year={2026} />,
+          competitionRoots.fantasyCritic2026,
+        )}
+        {createPortal(
+          <FormulaOneQuestionsPage year={2024} />,
+          competitionRoots.formulaOne2024Questions,
+        )}
+        {createPortal(
+          <FormulaOneResultsPage year={2024} />,
+          competitionRoots.formulaOne2024Results,
+        )}
+        {createPortal(
+          <FormulaOneQuestionsPage year={2025} />,
+          competitionRoots.formulaOne2025Questions,
+        )}
+        {createPortal(
+          <FormulaOneResultsPage year={2025} />,
+          competitionRoots.formulaOne2025Results,
+        )}
+        {createPortal(
+          <FormulaOne2025WeeklyPage />,
+          competitionRoots.formulaOne2025Weekly,
+        )}
+        {createPortal(
+          <FormulaOneQuestionsPage year={2026} />,
+          competitionRoots.formulaOne2026Questions,
+        )}
+        {createPortal(
+          <FormulaOneResultsPage year={2026} />,
+          competitionRoots.formulaOne2026Results,
+        )}
+        {createPortal(
+          <FormulaOne2026WeeklyPage />,
+          competitionRoots.formulaOne2026Weekly,
+        )}
+        {createPortal(
+          <FormulaOneAdminPage mode="manage" />,
+          competitionRoots.formulaOne2026Manage,
+        )}
+        {createPortal(
+          <FormulaOneAdminPage mode="review" />,
+          competitionRoots.formulaOne2026Review,
+        )}
+        {createPortal(
+          <FormulaOneCalculatorPage />,
+          competitionRoots.formulaOne2026Calculator,
+        )}
+        {createPortal(
+          <FantasyOfficePage year={2025} mode="draft" />,
+          competitionRoots.fantasyOffice2025Draft,
+        )}
+        {createPortal(
+          <FantasyOfficePage year={2025} mode="movies" />,
+          competitionRoots.fantasyOffice2025Movies,
+        )}
+        {createPortal(
+          <FantasyOfficePage year={2025} mode="results" />,
+          competitionRoots.fantasyOffice2025Results,
+        )}
+        {createPortal(
+          <FantasyOfficePage year={2026} mode="draft" />,
+          competitionRoots.fantasyOffice2026Draft,
+        )}
+        {createPortal(
+          <FantasyOfficePage year={2026} mode="movies" />,
+          competitionRoots.fantasyOffice2026Movies,
+        )}
+        {createPortal(
+          <FantasyOfficePage year={2026} mode="results" />,
+          competitionRoots.fantasyOffice2026Results,
+        )}
         {createPortal(<SiteFooter />, footerRoot)}
       </AppErrorBoundary>
     </AppProviders>

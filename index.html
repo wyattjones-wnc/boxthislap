@@ -199,7 +199,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.09.16.14.22";
+      window.BOX_THIS_LAP_VERSION = "2026.09.16.14.46";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest vite-ignore>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -213,7 +213,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202609161422">
+    <link rel="stylesheet" href="styles.css?v=202609161446">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">
@@ -696,804 +696,90 @@
       </section>
 
       <section class="page" id="today" data-page="today">
-        <div class="section-heading">
-          <h1>Today</h1>
-        </div>
-
-        <div class="match-list" id="today-match-list">
-          <article class="match-card">
-            <div class="match-header">
-              <h2>Loading matches...</h2>
-              <p>Today</p>
-            </div>
-            <table class="pair-table">
-              <tbody>
-                <tr>
-                  <th scope="row">Status</th>
-                  <td>No match data loaded yet.</td>
-                </tr>
-              </tbody>
-            </table>
-          </article>
-        </div>
       </section>
 
       <section class="page" id="tomorrow" data-page="tomorrow">
-        <div class="section-heading">
-          <h1>Tomorrow</h1>
-        </div>
-
-        <div class="match-list" id="tomorrow-match-list">
-          <article class="match-card">
-            <div class="match-header">
-              <h2>Loading matches...</h2>
-              <p>Tomorrow</p>
-            </div>
-            <table class="pair-table">
-              <tbody>
-                <tr>
-                  <th scope="row">Status</th>
-                  <td>No match data loaded yet.</td>
-                </tr>
-              </tbody>
-            </table>
-          </article>
-        </div>
       </section>
 
       <section class="page" id="results" data-page="results">
-        <div class="section-heading page-heading-with-action results-heading">
-          <div class="heading-title">
-            <h1>World Cup Results</h1>
-            <p class="updated-time" data-updated-time>Updated June 19, 2026 12:06 AM ET</p>
-          </div>
-          <div class="heading-actions heading-actions-right">
-            <a class="action-button" href="#matches" data-page-link="matches">Matches</a>
-          </div>
-        </div>
-
-
-        <div class="results-grid" id="dynamic-result-images"></div>
-
       </section>
 
       <section class="page" id="draft" data-page="draft">
-        <div class="section-heading">
-          <h1>Draft</h1>
-        </div>
-
-        <div class="tabs" role="tablist" aria-label="Draft views">
-          <button class="tab is-active" type="button" data-draft-view="nations" aria-selected="true">
-            Nations
-          </button>
-          <button class="tab" type="button" data-draft-view="players" aria-selected="false">
-            Players
-          </button>
-        </div>
-
-        <div class="draft-panel is-active" data-draft-panel="nations">
-          <div class="draft-list" id="draft-nations-list">
-            <article class="draft-card">
-              <p class="table-message">Loading draft nations...</p>
-            </article>
-          </div>
-        </div>
-
-        <div class="draft-panel" data-draft-panel="players">
-          <div class="standings-controls">
-            <label class="select-control compact-select-control">
-              <span>Position</span>
-              <select id="draft-player-position-filter">
-                <option value="all">All positions</option>
-                <option value="goalkeeper">Goalkeeper</option>
-                <option value="defender">Defender</option>
-                <option value="midfielder">Midfielder</option>
-                <option value="forward">Forward</option>
-              </select>
-            </label>
-          </div>
-          <div class="draft-list" id="draft-players-list">
-            <article class="draft-card">
-              <p class="table-message">Loading draft players...</p>
-            </article>
-          </div>
-        </div>
       </section>
 
       <section class="page" id="standings" data-page="standings">
-        <div class="section-heading page-heading-with-action standings-heading">
-          <h1>Standings</h1>
-          <div class="standings-filter-controls">
-            <label class="standings-scope-toggle">
-              <span>All data</span>
-              <input id="standings-all-data-toggle" type="checkbox" checked>
-            </label>
-            <label class="select-control standings-round-control">
-              <span>Round</span>
-              <select id="standings-round-select">
-                <option value="">All</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <section class="standings-awards" id="standings-awards" hidden>
-          <div class="standings-awards-heading">
-            <h2>Awards</h2>
-          </div>
-          <div class="standings-awards-list" id="standings-awards-list"></div>
-        </section>
-
-        <div class="tabs" role="tablist" aria-label="Standings views">
-          <button class="tab is-active" type="button" data-tab="players-championship" role="tab" aria-selected="true">
-            Players&rsquo; Championship
-          </button>
-          <button class="tab" type="button" data-tab="nations-league" role="tab" aria-selected="false">
-            Nations League
-          </button>
-          <button class="tab" type="button" data-tab="manager-results" role="tab" aria-selected="false">
-            Manager Results
-          </button>
-        </div>
-
-        <div class="tab-panel is-active" data-tab-panel="players-championship" role="tabpanel">
-          <div class="standings-controls">
-            <label class="select-control compact-select-control">
-              <span>Position</span>
-              <select id="player-position-filter">
-                <option value="all">All positions</option>
-                <option value="goalkeeper">Goalkeeper</option>
-                <option value="defender">Defender</option>
-                <option value="midfielder">Midfielder</option>
-                <option value="forward">Forward</option>
-              </select>
-            </label>
-          </div>
-          <div class="table-wrap standings-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Player</th>
-                  <th>Team / Manager</th>
-                  <th>Matches</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
-              <tbody id="player-championship-rows" class="compact-standing-rows">
-                <tr>
-                  <td class="table-message" colspan="5">Loading player performance data...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="tab-panel" data-tab-panel="nations-league" role="tabpanel">
-          <div class="table-wrap standings-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Nation</th>
-                  <th>Record / Manager</th>
-                  <th>Matches</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
-              <tbody id="nations-league-rows" class="compact-standing-rows">
-                <tr>
-                  <td class="table-message" colspan="5">Loading Nations League results...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="tab-panel" data-tab-panel="manager-results" role="tabpanel">
-          <div class="standings-controls">
-            <label class="select-control compact-select-control">
-              <span>Show</span>
-              <select id="manager-results-filter">
-                <option value="all">All</option>
-                <option value="players">Players</option>
-                <option value="nations">Nations</option>
-              </select>
-            </label>
-          </div>
-          <div class="table-wrap standings-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Manager</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
-              <tbody id="manager-results-rows" class="compact-manager-rows">
-                <tr>
-                  <td class="table-message" colspan="3">Loading manager results...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="standings-test-control" data-admin-only hidden>
-          <label class="standings-test-toggle">
-            <input id="nation-test-scoring-toggle" type="checkbox">
-            <span>Test</span>
-          </label>
-        </div>
       </section>
 
       <section class="page rules-page" id="rules" data-page="rules">
-        <div class="league-detail-heading">
-          <div>
-            <h1>Test Rules</h1>
-            <p>Nation scoring proposal</p>
-          </div>
-        </div>
-
-        <section class="rules-breakdown-card" aria-labelledby="rules-nation-heading">
-          <div class="rules-breakdown-heading">
-            <div>
-              <h2 id="rules-nation-heading">Nation Breakdown</h2>
-              <p>Select a nation to see every scored match and how the Test value is calculated.</p>
-            </div>
-            <label class="select-control compact-select-control" for="rules-nation-select">
-              <span>Nation</span>
-              <select id="rules-nation-select">
-                <option value="">Loading nations...</option>
-              </select>
-            </label>
-          </div>
-          <div class="rules-breakdown" id="rules-nation-breakdown">
-            <p class="table-message">Select a nation to see the point breakdown.</p>
-          </div>
-        </section>
-
-        <div class="rules-grid">
-          <article class="rule-card">
-            <h2>Purpose</h2>
-            <p>The Test toggle recalculates nation points with a more aggressive reward for national team results and adds a simple appearance point for players.</p>
-          </article>
-
-          <article class="rule-card">
-            <h2>Base Results</h2>
-            <ul>
-              <li>Group stage win: 9 points.</li>
-              <li>Knockout stage win: 15 points.</li>
-              <li>Draw: 3 points.</li>
-              <li>Penalty shootout loss: 6 points.</li>
-            </ul>
-          </article>
-
-          <article class="rule-card">
-            <h2>Upsets</h2>
-            <p>A win over a nation from a higher pot earns an additional 3 points. A draw can also earn the upset bonus when the lower-pot nation is more than one pot below its opponent.</p>
-            <p>Example: Pot C drawing Pot A earns the draw points plus the upset bonus.</p>
-          </article>
-
-          <article class="rule-card">
-            <h2>Knockout Pot Bonus</h2>
-            <p>Knockout winners from lower pots receive an additional pot bonus. These bonuses are doubled from the original draft concept.</p>
-            <ul>
-              <li>Pot A: no bonus.</li>
-              <li>Pot B: +2 points.</li>
-              <li>Pot C: +4 points.</li>
-              <li>Pot D: +6 points.</li>
-              <li>Pot E: +8 points.</li>
-              <li>Pot G: +10 points.</li>
-            </ul>
-          </article>
-
-          <article class="rule-card">
-            <h2>Players</h2>
-            <p>Each Player Performance row earns 1 point for playing in that match. Any other points from the sheet are added on top of that appearance point.</p>
-          </article>
-
-          <article class="rule-card">
-            <h2>What Changes</h2>
-            <p>When Test is on, Nations League, Players' Championship, Manager Results, draft totals, and match-card points use these calculated values. Draft eligibility rules are unchanged.</p>
-          </article>
-        </div>
       </section>
 
       <section class="page" id="matches" data-page="matches">
-        <div class="section-heading page-heading-with-action">
-          <h1>Matches</h1>
-          <label class="select-control">
-            <span>Matchday</span>
-            <select id="matchday-select">
-              <option>Loading matchdays...</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="match-list" id="matchday-match-list">
-          <article class="match-card">
-            <div class="match-header">
-              <h2>Loading matches...</h2>
-              <p>Matchday</p>
-            </div>
-          </article>
-        </div>
       </section>
 
       <section class="page" id="bracket" data-page="bracket">
-        <div class="section-heading page-heading-with-action">
-          <h1>Bracket</h1>
-          <div class="bracket-actions">
-            <label class="bracket-submitter bracket-submission-viewer">
-              <span>Submitted</span>
-              <select id="bracket-submission-select">
-                <option value="">Official</option>
-              </select>
-            </label>
-            <button class="action-button secondary-action" id="bracket-clear-picks" type="button" hidden disabled>Clear Picks</button>
-          </div>
-        </div>
-        <p class="bracket-submit-status" id="bracket-submit-status" role="status"></p>
-
-        <div class="bracket-shell" id="bracket-view">
-          <article class="match-card">
-            <div class="match-header">
-              <h2>Loading bracket...</h2>
-              <p>Knockout rounds</p>
-            </div>
-          </article>
-        </div>
       </section>
 
       <section class="page" id="testing" data-page="testing">
-        <div class="section-heading">
-          <h1>Testing</h1>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Team</th>
-                <th>Position</th>
-                <th>Player #</th>
-                <th>Transfermarkt Price</th>
-                <th>Drafted</th>
-              </tr>
-            </thead>
-            <tbody id="testing-player-rows">
-              <tr>
-                <td colspan="7">Loading Google Sheets data...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section class="page" id="leagues" data-page="leagues">
-        <div class="section-heading page-heading-with-action">
-          <h1>Leagues</h1>
-          <label class="select-control">
-            <span>Year</span>
-            <select id="league-year-select">
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="league-list" id="league-list"></div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-critic-2025" data-page="fantasy-critic-2025">
-        <div id="fantasy-critic-2025-content"></div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-critic-2026" data-page="fantasy-critic-2026">
-        <div id="fantasy-critic-2026-content"></div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2024-questions" data-page="formula-1-2024-questions">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2024 Questions</p>
-          </div>
-        </div>
-
-        <div class="formula-one-controls">
-          <label class="select-control">
-            <span>Question</span>
-            <select id="formula-one-question-select">
-              <option value="">All questions</option>
-            </select>
-          </label>
-          <label class="filter-control">
-            <span>Filter</span>
-            <input id="formula-one-question-filter" type="search" placeholder="Search">
-          </label>
-        </div>
-        <div class="formula-one-question-list" id="formula-one-question-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">Loading Formula 1 questions...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2024-results" data-page="formula-1-2024-results">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2024 Results</p>
-          </div>
-        </div>
-
-        <section class="standings-awards formula-one-awards" id="formula-one-2024-awards" hidden>
-          <div class="standings-awards-heading">
-            <h2>Awards</h2>
-          </div>
-          <div class="standings-awards-list" id="formula-one-2024-awards-list"></div>
-        </section>
-
-        <div class="table-wrap standings-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Manager</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody id="formula-one-results-rows" class="compact-manager-rows">
-              <tr>
-                <td class="table-message" colspan="3">Loading Formula 1 results...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2025-questions" data-page="formula-1-2025-questions">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2025 Questions</p>
-          </div>
-        </div>
-
-        <div class="formula-one-controls">
-          <label class="select-control">
-            <span>Question</span>
-            <select id="formula-one-2025-question-select">
-              <option value="">All questions</option>
-            </select>
-          </label>
-          <label class="filter-control">
-            <span>Filter</span>
-            <input id="formula-one-2025-question-filter" type="search" placeholder="Search">
-          </label>
-        </div>
-        <div class="formula-one-question-list" id="formula-one-2025-question-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">Loading Formula 1 questions...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2025-results" data-page="formula-1-2025-results">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2025 Results</p>
-          </div>
-        </div>
-
-        <div class="formula-one-results-toggle" role="group" aria-label="Formula 1 result type">
-          <button class="tab is-active" type="button" data-formula-one-results-year="2025" data-formula-one-results-mode="yearly" aria-pressed="true">Yearly</button>
-          <button class="tab" type="button" data-formula-one-results-year="2025" data-formula-one-results-mode="weekly" aria-pressed="false">Weekly</button>
-        </div>
-
-        <section class="standings-awards formula-one-awards" id="formula-one-2025-awards" hidden>
-          <div class="standings-awards-heading">
-            <h2>Awards</h2>
-          </div>
-          <div class="standings-awards-list" id="formula-one-2025-awards-list"></div>
-        </section>
-
-        <div class="formula-one-controls formula-one-results-weekly-controls" id="formula-one-2025-results-weekly-controls" hidden>
-          <label class="select-control">
-            <span>Rounds</span>
-            <select id="formula-one-2025-results-weekly-group"><option value="all">All</option></select>
-          </label>
-        </div>
-
-        <div class="table-wrap standings-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Manager</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody id="formula-one-2025-results-rows" class="compact-manager-rows">
-              <tr>
-                <td class="table-message" colspan="3">Loading Formula 1 results...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2025-weekly" data-page="formula-1-2025-weekly">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2025 Weekly</p>
-          </div>
-        </div>
-
-        <div class="formula-one-controls">
-          <label class="select-control">
-            <span>Round</span>
-            <select id="formula-one-2025-weekly-round-select">
-              <option value="">All rounds</option>
-            </select>
-          </label>
-        </div>
-        <div class="formula-one-weekly-list" id="formula-one-2025-weekly-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">Loading Formula 1 weekly picks...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-questions" data-page="formula-1-2026-questions">
-        <div class="league-detail-heading formula-one-question-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2026 Questions</p>
-          </div>
-          <a class="action-button formula-one-question-manage-link" href="#formula-1-2026-manage" data-page-link="formula-1-2026-manage" data-admin-only hidden>Manage</a>
-        </div>
-
-        <div class="formula-one-controls">
-          <label class="select-control">
-            <span>Question</span>
-            <select id="formula-one-2026-question-select">
-              <option value="">All questions</option>
-            </select>
-          </label>
-          <label class="filter-control">
-            <span>Filter</span>
-            <input id="formula-one-2026-question-filter" type="search" placeholder="Search">
-          </label>
-        </div>
-        <div class="formula-one-question-list" id="formula-one-2026-question-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">Loading Formula 1 questions...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-results" data-page="formula-1-2026-results">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2026 Results</p>
-          </div>
-        </div>
-
-        <div class="formula-one-results-toggle" role="group" aria-label="Formula 1 result type">
-          <button class="tab is-active" type="button" data-formula-one-results-year="2026" data-formula-one-results-mode="yearly" aria-pressed="true">Yearly</button>
-          <button class="tab" type="button" data-formula-one-results-year="2026" data-formula-one-results-mode="weekly" aria-pressed="false">Weekly</button>
-        </div>
-
-        <section class="standings-awards formula-one-awards" id="formula-one-2026-awards" hidden>
-          <div class="standings-awards-heading">
-            <h2>Awards</h2>
-          </div>
-          <div class="standings-awards-list" id="formula-one-2026-awards-list"></div>
-        </section>
-
-        <div class="formula-one-controls formula-one-results-weekly-controls" id="formula-one-2026-results-weekly-controls" hidden>
-          <label class="select-control">
-            <span>Rounds</span>
-            <select id="formula-one-2026-results-weekly-group"><option value="all">All</option></select>
-          </label>
-        </div>
-
-        <div class="table-wrap standings-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Manager</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody id="formula-one-2026-results-rows" class="compact-manager-rows">
-              <tr>
-                <td class="table-message" colspan="3">Loading Formula 1 results...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-weekly" data-page="formula-1-2026-weekly">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2026 Weekly</p>
-          </div>
-        </div>
-
-        <div class="tabs formula-one-tabs" role="tablist" aria-label="2026 Formula 1 weekly sections">
-          <button class="tab is-active" type="button" data-tab="formula-one-2026-weekly-bet" aria-selected="true" role="tab">Bet</button>
-          <button class="tab" type="button" data-tab="formula-one-2026-weekly-results" aria-selected="false" role="tab">Results</button>
-          <button class="tab" type="button" data-tab="formula-one-2026-weekly-managers" aria-selected="false" role="tab">Managers' Championship</button>
-        </div>
-
-        <section class="tab-panel is-active" data-tab-panel="formula-one-2026-weekly-bet" role="tabpanel">
-          <div class="formula-one-form-card" id="formula-one-2026-weekly-form">
-            <p class="table-message">Loading your Formula 1 weekly choices...</p>
-          </div>
-        </section>
-
-        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-results" role="tabpanel">
-          <div class="formula-one-controls">
-            <label class="select-control">
-              <span>Round</span>
-              <select id="formula-one-2026-weekly-round-select">
-                <option value="">All rounds</option>
-              </select>
-            </label>
-          </div>
-          <div class="formula-one-weekly-list" id="formula-one-2026-weekly-list">
-            <article class="formula-one-question-card">
-              <p class="table-message">Loading Formula 1 weekly picks...</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="tab-panel" data-tab-panel="formula-one-2026-weekly-managers" role="tabpanel">
-          <div class="table-wrap standings-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Manager</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
-              <tbody id="formula-one-2026-weekly-managers" class="compact-manager-rows">
-                <tr>
-                  <td class="table-message" colspan="3">Loading Formula 1 weekly standings...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-manage" data-page="formula-1-2026-manage" data-admin-only hidden>
-        <div class="formula-one-admin" id="formula-one-2026-weekly-admin">
-          <p class="table-message">Loading Formula 1 administration...</p>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-review" data-page="formula-1-2026-review" data-admin-only hidden>
-        <div class="formula-one-admin" id="formula-one-2026-review-content">
-          <p class="table-message">Loading Formula 1 data review...</p>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="formula-1-2026-calculator" data-page="formula-1-2026-calculator">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Formula 1</h2>
-            <p>2026 Points Calculator</p>
-          </div>
-        </div>
-
-        <div class="formula-one-calculator" id="formula-one-2026-calculator-content">
-          <p class="table-message">Loading Formula 1 points calculator...</p>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2025-draft" data-page="fantasy-office-2025-draft">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Fantasy Office</h2>
-            <p>2025 Draft</p>
-          </div>
-        </div>
-
-        <div class="office-draft-grid" id="fantasy-office-2025-draft-list">
-          <article class="fantasy-critic-card">
-            <p class="table-message">Loading Fantasy Office draft...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2025-movies" data-page="fantasy-office-2025-movies">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Fantasy Office</h2>
-            <p>2025 Movies</p>
-          </div>
-        </div>
-
-        <div class="office-movie-list" id="fantasy-office-2025-movie-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">Loading Fantasy Office movies...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2025-results" data-page="fantasy-office-2025-results">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Fantasy Office</h2>
-            <p>2025 Results</p>
-          </div>
-        </div>
-
-        <div class="office-result-list" id="fantasy-office-2025-result-list">
-          <article class="fantasy-critic-card">
-            <p class="table-message">Loading Fantasy Office results...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2026-draft" data-page="fantasy-office-2026-draft">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Fantasy Office</h2>
-            <p>2026 Draft</p>
-          </div>
-        </div>
-
-        <div class="office-draft-grid" id="fantasy-office-2026-draft-list">
-          <article class="fantasy-critic-card">
-            <p class="table-message">Loading Fantasy Office draft...</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2026-movies" data-page="fantasy-office-2026-movies">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Fantasy Office</h2>
-            <p>2026 Movies</p>
-          </div>
-        </div>
-
-        <div class="office-movie-list" id="fantasy-office-2026-movie-list">
-          <article class="formula-one-question-card">
-            <p class="table-message">No Fantasy Office movie results are available yet.</p>
-          </article>
-        </div>
       </section>
 
       <section class="page league-detail-page" id="fantasy-office-2026-results" data-page="fantasy-office-2026-results">
-        <div class="league-detail-heading">
-          <div>
-            <h2>Fantasy Office</h2>
-            <p>2026 Results</p>
-          </div>
-        </div>
-
-        <div class="office-result-list" id="fantasy-office-2026-result-list">
-          <article class="fantasy-critic-card">
-            <p class="table-message">No Fantasy Office results are available yet.</p>
-          </article>
-        </div>
       </section>
     </main>
 

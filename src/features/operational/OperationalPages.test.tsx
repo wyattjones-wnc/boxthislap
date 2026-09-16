@@ -164,6 +164,8 @@ describe("operational React pages", () => {
 
   it("renders ranking bridge updates with React actions", async () => {
     renderWithTooltips(<RankingsPage />);
+    expect(screen.getByRole("tab", { name: "TV" })).not.toBeNull();
+    expect(screen.queryByRole("tab", { name: "Tv" })).toBeNull();
     window.dispatchEvent(
       new CustomEvent("boxthislap:ranking-list:games", {
         detail: {

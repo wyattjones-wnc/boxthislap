@@ -1438,7 +1438,11 @@ export function RankingsPage() {
               role="tab"
               key={kind}
             >
-              {kind === "mcu" ? "MCU" : kind[0].toUpperCase() + kind.slice(1)}
+              {kind === "mcu"
+                ? "MCU"
+                : kind === "tv"
+                  ? "TV"
+                  : kind[0].toUpperCase() + kind.slice(1)}
             </button>
           ),
         )}

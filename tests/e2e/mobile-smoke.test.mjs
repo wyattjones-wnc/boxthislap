@@ -27,14 +27,17 @@ for (const route of publicRoutes) {
   });
 }
 
-test("React shell exposes accessible mobile navigation and foundation pages", async ({
+test("React shell exposes an accessible mobile navigation rail and foundation pages", async ({
   page,
 }) => {
   await page.goto("/#footy", { waitUntil: "domcontentloaded" });
 
-  await page.getByRole("button", { name: "Open site navigation" }).click();
-  await expect(page.getByRole("menu")).toBeVisible();
-  await page.getByRole("menuitem", { name: "Next" }).click();
+  const navigationRail = page.locator("[data-nav-scroll]:not([hidden])");
+  await expect(navigationRail).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Open site navigation" }),
+  ).toHaveCount(0);
+  await navigationRail.getByRole("tab", { name: "Next" }).click();
   await expect(page.locator('[data-page="next"]')).toHaveClass(/is-active/);
 
   await page.goto("/#login", { waitUntil: "domcontentloaded" });

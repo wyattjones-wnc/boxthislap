@@ -1,10 +1,7 @@
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Menu } from "lucide-react";
-import { memo } from "react";
-import { IconButton } from "../components/IconButton/IconButton";
+import { memo, useEffect, useRef } from "react";
 import { getNavScope, navItems, type NavItem, type NavScope } from "./routes";
 import { useAppState } from "./providers";
-import styles from "./Shell.module.css";
+import "./Shell.module.css";
 
 const headerArt = [
   {
@@ -61,6 +58,7 @@ const headerArt = [
 
 export function SiteShell() {
   const { route, session } = useAppState();
+  const topbarRef = useRef<HTMLElement>(null);
   const scope = getNavScope(route);
   const isAdmin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
   const displayName =
@@ -70,9 +68,23 @@ export function SiteShell() {
     : "assets/box-this-lap-logo.jpg";
   const activeArt = scope === "home" ? "default" : scope;
 
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 760px)").matches) return;
+    const activeLink = topbarRef.current?.querySelector<HTMLAnchorElement>(
+      '.nav-links:not([hidden]) a[aria-current="page"]',
+    );
+    const navigationRail = activeLink?.closest<HTMLElement>(".nav-links");
+    if (!activeLink || !navigationRail) return;
+    navigationRail.scrollTo({
+      left:
+        activeLink.offsetLeft -
+        (navigationRail.clientWidth - activeLink.offsetWidth) / 2,
+    });
+  }, [route]);
+
   return (
     <>
-      <nav className="topbar" aria-label="Primary">
+      <nav className="topbar" aria-label="Primary" ref={topbarRef}>
         <a className="brand" href="#footy" data-page-link="footy">
           <img
             src={brandImage}
@@ -104,6 +116,7 @@ export function SiteShell() {
         {(Object.keys(navItems) as NavScope[]).map((navScope) => (
           <div
             className="nav-links"
+            data-nav-scroll
             data-nav-scope={navScope}
             role="tablist"
             aria-label={`${navScope.replaceAll("-", " ")} sections`}
@@ -120,37 +133,6 @@ export function SiteShell() {
             ))}
           </div>
         ))}
-        <div className={styles.mobileNav}>
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <IconButton icon={<Menu />} label="Open site navigation" />
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                className={styles.mobileContent}
-                align="end"
-                sideOffset={8}
-              >
-                {navItems[scope]
-                  .filter(
-                    (item) =>
-                      !item.testOnly && (!item.loginOnly || Boolean(session)),
-                  )
-                  .map((item) => (
-                    <DropdownMenu.Item asChild key={item.route}>
-                      <a
-                        className={styles.mobileLink}
-                        data-active={String(route === item.route)}
-                        href={`#${item.route}`}
-                      >
-                        {item.label}
-                      </a>
-                    </DropdownMenu.Item>
-                  ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        </div>
       </nav>
       <div className="login-row">
         <div className="login-row-inner">
@@ -237,6 +219,7 @@ function NavLink({
       data-login-only={item.loginOnly ? "" : undefined}
       data-test-rules-link={item.testOnly ? "" : undefined}
       hidden={Boolean(item.loginOnly && !session) || Boolean(item.testOnly)}
+      aria-current={route === item.route ? "page" : undefined}
       role="tab"
     >
       {item.label}

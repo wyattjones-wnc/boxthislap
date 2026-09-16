@@ -27,6 +27,23 @@ for (const route of publicRoutes) {
   });
 }
 
+test("React shell exposes accessible mobile navigation and foundation pages", async ({
+  page,
+}) => {
+  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "Open site navigation" }).click();
+  await expect(page.getByRole("menu")).toBeVisible();
+  await page.getByRole("menuitem", { name: "Next" }).click();
+  await expect(page.locator('[data-page="next"]')).toHaveClass(/is-active/);
+
+  await page.goto("/#login", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Manager Login" }),
+  ).toBeVisible();
+  await expect(page.getByText("Manager access", { exact: true })).toBeVisible();
+});
+
 test("signed-out manager hub keeps private data closed", async ({ page }) => {
   await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
 
@@ -289,18 +306,32 @@ test("Missing Match Notes prepares once and toggles filters without rebuilding",
   await page.goto("/#footy-missing-notes", { waitUntil: "domcontentloaded" });
   const list = page.locator("#footy-missing-notes-list");
   await expect(list).toHaveAttribute("aria-busy", "false");
-  const renderedList = await list.innerHTML();
+  await list.evaluate((element) => {
+    Reflect.set(element, "__renderedListNode", element.firstElementChild);
+  });
 
   const filterToggle = page.locator("#footy-missing-notes-filter-toggle");
   await filterToggle.click();
   await expect(page.locator("#footy-missing-notes-filters")).toBeVisible();
   await expect(filterToggle).toHaveAttribute("aria-expanded", "true");
-  expect(await list.innerHTML()).toBe(renderedList);
+  expect(
+    await list.evaluate(
+      (element) =>
+        Reflect.get(element, "__renderedListNode") ===
+        element.firstElementChild,
+    ),
+  ).toBe(true);
 
   await filterToggle.click();
   await expect(page.locator("#footy-missing-notes-filters")).toBeHidden();
   await expect(filterToggle).toHaveAttribute("aria-expanded", "false");
-  expect(await list.innerHTML()).toBe(renderedList);
+  expect(
+    await list.evaluate(
+      (element) =>
+        Reflect.get(element, "__renderedListNode") ===
+        element.firstElementChild,
+    ),
+  ).toBe(true);
 });
 
 test("signed-in managers can find notification setup in unsupported browser contexts", async ({

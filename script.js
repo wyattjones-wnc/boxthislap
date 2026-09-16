@@ -15057,6 +15057,8 @@ function saveManagerSession(session) {
     // Session persistence is helpful, but the in-memory session is enough for this visit.
   }
 
+  window.dispatchEvent(new Event("boxthislap:session-changed"));
+
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
@@ -15090,6 +15092,8 @@ function signOutManager() {
   } catch {
     // Ignore storage failures; the in-memory session has already been cleared.
   }
+
+  window.dispatchEvent(new Event("boxthislap:session-changed"));
 
   closeProfileDropdown();
   renderLoginState();

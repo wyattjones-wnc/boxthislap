@@ -137,7 +137,6 @@ import {
   footyFriendliesFilter,
   footyTeamFilter,
   footyScheduleList,
-  footyCustomFilterToggle,
   footyCustomFilters,
   footyCustomTeamSearch,
   footyCustomTeamCompetition,
@@ -419,7 +418,7 @@ import {
 } from "./modules/domRefs.js?v=202609110445";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
+import { createFollowedTeamsController, filterPickerTeams } from "./modules/followedTeams.js?v=202609121804";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -442,7 +441,6 @@ let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowFootyMissingNotesFilters = false;
 let activeFootyMissingNotesPage = 1;
-let shouldShowFootyCustomFilters = false;
 let isFootyCustomScheduleConfirmed = false;
 const selectedFootyCustomTeamKeys = new Set();
 let shouldShowAllFootyFixtures = false;
@@ -1322,10 +1320,13 @@ function getFootyCustomScheduleRecords(schedule = {}) {
         const name = getFootyDisplayTeamName(side.name);
         const key = getFootyTeamFilterKey(name);
         if (!key) return;
-        const team = teamsByKey.get(key) || { badge: "", competitions: new Set(), id: "", key, name };
+        const team = teamsByKey.get(key) || { badge: "", competitions: new Set(), id: "", key, leagues: [], name };
         team.badge ||= String(side.badge || "").trim();
         team.id ||= String(side.id || "").trim();
-        if (competition) team.competitions.add(competition);
+        if (competition) {
+          team.competitions.add(competition);
+          if (!team.leagues.some((league) => league.name === competition)) team.leagues.push({ name: competition });
+        }
         teamsByKey.set(key, team);
       });
 
@@ -1336,7 +1337,9 @@ function getFootyCustomScheduleRecords(schedule = {}) {
     });
   });
 
-  return { fixtures: [...fixturesByKey.values()], teams: [...teamsByKey.values()].sort((a, b) => a.name.localeCompare(b.name)) };
+  const defaultTeamIds = (schedule.schedules || []).map((entry) => String(entry?.team?.id || "")).filter(Boolean);
+  const teams = filterPickerTeams([...teamsByKey.values()], defaultTeamIds).sort((a, b) => a.name.localeCompare(b.name));
+  return { fixtures: [...fixturesByKey.values()], teams };
 }
 
 function syncFootyCustomSelect(select, values, placeholder) {
@@ -1368,10 +1371,7 @@ function renderFootyCustomSchedule() {
   footyCustomTeamPicker.innerHTML = visibleTeams.length
     ? `<div class="footy-custom-team-summary"><strong>${selectionCount} selected</strong><span>${visibleTeams.length} teams shown</span></div><div class="footy-custom-team-grid">${visibleTeams.map((team) => `<label class="footy-custom-team-option${selectedFootyCustomTeamKeys.has(team.key) ? " is-selected" : ""}"><input type="checkbox" value="${escapeHtml(team.key)}"${selectedFootyCustomTeamKeys.has(team.key) ? " checked" : ""}><span class="footy-fixture-badge" aria-hidden="true">${renderFootyBadgeMarkup({ fallbackText: getFootyTeamFallbackBadge(team.name), primarySrc: team.badge })}</span><span>${escapeHtml(team.name)}</span></label>`).join("")}</div>`
     : `<p class="table-message">${selectionCount && selectedOnly ? "No selected teams match these tools." : "No teams match these tools."}</p>`;
-  if (footyCustomFilterToggle) footyCustomFilterToggle.disabled = !isFootyCustomScheduleConfirmed;
-  footyCustomFilterToggle?.classList.toggle("is-active", isFootyCustomScheduleConfirmed && shouldShowFootyCustomFilters);
-  footyCustomFilterToggle?.setAttribute("aria-expanded", String(isFootyCustomScheduleConfirmed && shouldShowFootyCustomFilters));
-  if (footyCustomFilters) footyCustomFilters.hidden = !isFootyCustomScheduleConfirmed || !shouldShowFootyCustomFilters;
+  if (footyCustomFilters) footyCustomFilters.hidden = !isFootyCustomScheduleConfirmed;
   if (footyCustomClear) footyCustomClear.disabled = selectionCount === 0;
   footyCustomScheduleList.hidden = !isFootyCustomScheduleConfirmed;
 
@@ -1749,7 +1749,7 @@ function renderFootyTeamPlayers(team) {
     const message = discovery?.status === "error"
       ? escapeHtml(discovery.error || `No provider roster was found for ${team.name}.`)
       : `Loading ${escapeHtml(team.name)} roster…`;
-    footyTeamContent.innerHTML = `<section class="footy-team-player-section"><p class="table-message">${message}</p>${discovery?.status === "error" ? `<button class="footer-copy-link" type="button" data-footy-roster-discover>Try provider lookup again</button>` : ""}${isCurrentManagerAdmin() ? `<button class="action-button" type="button" data-footy-roster-add>Add first player</button>` : ""}</section>`;
+    footyTeamContent.innerHTML = `<section class="footy-team-player-section"><p class="table-message">${message}</p>${discovery?.status === "error" ? `<button class="footer-copy-link" type="button" data-footy-roster-discover>Try provider lookup again</button>` : ""}${isCurrentManagerAdmin() ? `<button class="icon-action-button" type="button" data-footy-roster-add data-admin-only aria-label="Add first player" title="Add first player">${renderRosterActionIcon("add")}</button>` : ""}</section>`;
     return;
   }
 
@@ -1767,7 +1767,7 @@ function renderFootyTeamPlayers(team) {
     <section class="footy-team-player-section">
       <div class="footy-roster-toolbar">
         <label><span>Season</span><select data-footy-roster-season>${seasons.map((entry) => `<option value="${escapeHtml(entry.season)}"${entry.season === roster.season ? " selected" : ""}>${escapeHtml(entry.season)}</option>`).join("")}</select></label>
-        ${isCurrentManagerAdmin() ? `<div class="footy-roster-admin-actions" data-admin-only><button class="footer-copy-link${footyRosterEditMode ? " is-active" : ""}" type="button" data-footy-roster-edit-mode aria-pressed="${String(footyRosterEditMode)}">${footyRosterEditMode ? "Done editing" : "Edit roster"}</button><button class="action-button" type="button" data-footy-roster-add>Add player</button></div>` : ""}
+        ${isCurrentManagerAdmin() ? `<div class="footy-roster-admin-actions" data-admin-only><button class="icon-action-button${footyRosterEditMode ? " is-active" : ""}" type="button" data-footy-roster-edit-mode aria-label="${footyRosterEditMode ? "Finish editing roster" : "Edit roster"}" title="${footyRosterEditMode ? "Finish editing roster" : "Edit roster"}" aria-pressed="${String(footyRosterEditMode)}">${renderRosterActionIcon(footyRosterEditMode ? "done" : "edit")}</button><button class="icon-action-button" type="button" data-footy-roster-add aria-label="Add player" title="Add player">${renderRosterActionIcon("add")}</button></div>` : ""}
       </div>
       <div class="footy-team-player-grid${shouldExportFootyTradingCards ? " is-export-mode" : ""}">
         ${players.map(renderFootyTeamPlayerCard).join("")}
@@ -1779,6 +1779,12 @@ function renderFootyTeamPlayers(team) {
       <p class="trading-card-export-status" aria-live="polite" data-trading-card-export-status></p>
     </section>
   `;
+}
+
+function renderRosterActionIcon(action) {
+  if (action === "add") return `<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M5 12h14"></path></svg>`;
+  if (action === "done") return `<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6"></path></svg>`;
+  return `<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>`;
 }
 
 function renderFootyPlayerGridLoading() {
@@ -13686,11 +13692,6 @@ footyMissingNotesPagination?.addEventListener("click", (event) => {
   scrollToPageTop();
 });
 
-footyCustomFilterToggle?.addEventListener("click", () => {
-  shouldShowFootyCustomFilters = !shouldShowFootyCustomFilters;
-  renderFootyCustomSchedule();
-});
-
 footyCustomTeamPicker?.addEventListener("change", (event) => {
   const checkbox = event.target.closest('input[type="checkbox"]');
   if (!checkbox) return;
@@ -13707,14 +13708,12 @@ footyCustomClear?.addEventListener("click", () => {
 footyCustomConfirm?.addEventListener("click", () => {
   if (!selectedFootyCustomTeamKeys.size) return;
   isFootyCustomScheduleConfirmed = true;
-  shouldShowFootyCustomFilters = false;
   renderFootyCustomSchedule();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 footyCustomChange?.addEventListener("click", () => {
   isFootyCustomScheduleConfirmed = false;
-  shouldShowFootyCustomFilters = false;
   renderFootyCustomSchedule();
   footyCustomTeamSearch?.focus();
 });

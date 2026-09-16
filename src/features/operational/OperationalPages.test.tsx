@@ -8,6 +8,7 @@ import {
   TodoPage,
   WantPage,
 } from "./OperationalPages";
+import { FootyCustomSchedulePage } from "./FootyOperationalPages";
 
 afterEach(() => {
   cleanup();
@@ -60,6 +61,17 @@ describe("operational React pages", () => {
       screen.getByRole("link", { name: "Create a custom Footy schedule" }),
     ).not.toBeNull();
     expect(screen.getByRole("button", { name: "Show filters" })).not.toBeNull();
+  });
+
+  it("keeps Custom Schedule navigation and filters clear", () => {
+    renderWithTooltips(<FootyCustomSchedulePage />);
+
+    expect(screen.getByRole("link", { name: "Footy" })).not.toBeNull();
+    expect(screen.queryByText(/last only while this page is open/i)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /custom schedule filters/i }),
+    ).toBeNull();
+    expect(document.querySelector("#footy-custom-filters")).not.toBeNull();
   });
 
   it("renders To Do and Want list updates as React cards", async () => {

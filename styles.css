@@ -5597,6 +5597,23 @@ body.has-shell-stale-warning .stale-shell-alert {
   margin-top: 0;
 }
 
+.back-link[href^="#"],
+.guides-back-link[href^="#"] {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.back-link[href^="#"]::before,
+.guides-back-link[href^="#"]::before {
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  content: "";
+  height: 7px;
+  transform: rotate(45deg);
+  width: 7px;
+}
+
 .footy-team-heading .back-link {
   color: var(--muted);
   display: inline-block;

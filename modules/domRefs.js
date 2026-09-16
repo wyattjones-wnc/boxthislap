@@ -72,7 +72,6 @@ export const footyCompetitionPastFilter = document.querySelector("#footy-competi
 export const footyFriendliesFilter = document.querySelector("#footy-friendlies-filter");
 export const footyTeamFilter = document.querySelector("#footy-team-filter");
 export const footyScheduleList = document.querySelector("#footy-schedule-list");
-export const footyCustomFilterToggle = document.querySelector("#footy-custom-filter-toggle");
 export const footyCustomFilters = document.querySelector("#footy-custom-filters");
 export const footyCustomTeamSearch = document.querySelector("#footy-custom-team-search");
 export const footyCustomTeamCompetition = document.querySelector("#footy-custom-team-competition");

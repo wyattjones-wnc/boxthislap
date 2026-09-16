@@ -130,20 +130,9 @@ export function FootyMissingNotesPage() {
 export function FootyCustomSchedulePage() {
   return (
     <>
-      <FootyBackHeading title="Custom Schedule">
-        <IconButton
-          className="icon-action-button"
-          icon={<Filter />}
-          id="footy-custom-filter-toggle"
-          label="Show custom schedule filters"
-          aria-controls="footy-custom-filters"
-          aria-expanded="false"
-          disabled
-        />
-      </FootyBackHeading>
+      <FootyBackHeading title="Custom Schedule" />
       <p className="body-copy footy-custom-intro">
-        Choose any number of teams to build a combined schedule. Your choices
-        last only while this page is open.
+        Choose any number of teams to build a combined schedule.
       </p>
       <div
         className="footy-custom-selection-summary"

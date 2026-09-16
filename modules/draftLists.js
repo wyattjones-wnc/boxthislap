@@ -86,6 +86,7 @@ export function createDraftListsController({ getManagerId, request }) {
     document.addEventListener("pointerup", handlePointerUp, true);
     document.addEventListener("pointercancel", cancelPointerDrag, true);
     document.addEventListener("error", handleImageError, true);
+    window.addEventListener("boxthislap:draft-list-reorder", handleReactReorder);
   }
 
   function renderPage() {
@@ -539,6 +540,7 @@ export function createDraftListsController({ getManagerId, request }) {
   }
 
   function handlePointerDown(event) {
+    if (event.target.closest("[data-react-sort-handle]")) return;
     const handle = event.target.closest(".draft-list-drag-handle");
     const item = handle?.closest("[data-draft-list-item-id]");
     if (!item) return;
@@ -593,6 +595,22 @@ export function createDraftListsController({ getManagerId, request }) {
     state.items = state.items.map((item) => item.sheetId === sheetId ? { ...item, rank: ranks.get(item.id) } : item);
     publishView();
     return true;
+  }
+
+  function handleReactReorder(event) {
+    const sheetId = String(event.detail?.sheetId || "");
+    const itemIds = Array.isArray(event.detail?.itemIds) ? event.detail.itemIds.map(String) : [];
+    const rows = getSheetItems(sheetId);
+    if (!sheetId || sheetId !== state.activeSheetId || !itemIds.length || new Set(itemIds).size !== itemIds.length) return;
+    const rowById = new Map(rows.map((item) => [item.id, item]));
+    if (itemIds.some((id) => !rowById.has(id))) return;
+    const included = new Set(itemIds);
+    let nextIndex = 0;
+    const reordered = rows.map((item) => included.has(item.id) ? rowById.get(itemIds[nextIndex++]) : item);
+    const ranks = new Map(reordered.map((item, index) => [item.id, index + 1]));
+    state.items = state.items.map((item) => item.sheetId === sheetId ? { ...item, rank: ranks.get(item.id) } : item);
+    publishView();
+    void saveOrder(sheetId);
   }
 
   async function saveOrder(sheetId) {

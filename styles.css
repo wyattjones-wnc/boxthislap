@@ -3287,19 +3287,12 @@ body.has-shell-stale-warning .stale-shell-alert {
 }
 
 .ranking-drag-handle::before {
-  background: currentColor;
-  border-radius: 999px;
-  box-shadow:
-    0 9px 0 currentColor,
-    0 18px 0 currentColor,
-    12px 0 0 currentColor,
-    12px 9px 0 currentColor,
-    12px 18px 0 currentColor;
-  content: "";
-  height: 4px;
-  opacity: 0.85;
-  transform: translate(-6px, -9px);
-  width: 4px;
+  content: none;
+}
+
+.ranking-drag-handle svg {
+  height: 22px;
+  width: 22px;
 }
 
 .ranking-item.is-dragging .ranking-drag-handle {
@@ -11271,25 +11264,26 @@ html.has-contained-dialog body {
 }
 
 .draft-list-drag-handle {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
   cursor: grab;
   display: block;
   height: 40px;
   position: relative;
   touch-action: none;
-  width: 28px;
+  padding: 0;
+  width: 40px;
 }
 
 .draft-list-drag-handle::before {
-  background-image: radial-gradient(circle, var(--muted) 1.5px, transparent 1.7px);
-  background-position: 0 0;
-  background-size: 7px 7px;
-  content: "";
-  height: 25px;
-  left: 7px;
-  opacity: 0.8;
-  position: absolute;
-  top: 8px;
-  width: 15px;
+  content: none;
+}
+
+.draft-list-drag-handle svg {
+  height: 22px;
+  width: 22px;
 }
 
 .draft-list-drag-handle:active {

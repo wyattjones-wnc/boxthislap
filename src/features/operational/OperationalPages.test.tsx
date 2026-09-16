@@ -1,5 +1,5 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   FootyPage,
@@ -89,6 +89,20 @@ describe("operational React pages", () => {
               started: true,
               statusChips: [],
             },
+            {
+              children: [],
+              deleted: false,
+              draggable: true,
+              expanded: false,
+              guideLinks: [],
+              hourLabel: "4 hours",
+              id: "todo-2",
+              meta: ["Movies"],
+              name: "Second React To Do card",
+              orderLabel: "2",
+              started: false,
+              statusChips: [],
+            },
           ],
         },
       }),
@@ -123,6 +137,29 @@ describe("operational React pages", () => {
     expect(
       screen.getByRole("button", { name: "Edit React Want card" }),
     ).not.toBeNull();
+
+    const reordered = new Promise<CustomEvent<{ itemIds: string[] }>>(
+      (resolve) =>
+        window.addEventListener(
+          "boxthislap:todo-reorder",
+          (event) => resolve(event as CustomEvent<{ itemIds: string[] }>),
+          { once: true },
+        ),
+    );
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Reorder React To Do card" }),
+      { key: "ArrowDown" },
+    );
+    expect((await reordered).detail.itemIds).toEqual(["todo-2", "todo-1"]);
+    expect(
+      screen
+        .getAllByRole("heading", { level: 2 })
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      "Second React To Do card",
+      "React To Do card",
+      "React Want card",
+    ]);
   });
 
   it("renders ranking bridge updates with React actions", async () => {

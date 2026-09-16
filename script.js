@@ -7692,6 +7692,30 @@ function moveWantItem(draggedId, targetId, options = {}) {
   return true;
 }
 
+function applyOrderedSubset(rows, itemIds) {
+  const ids = itemIds.map(String);
+  if (!ids.length || new Set(ids).size !== ids.length) return null;
+  const rowById = new Map(rows.map((row) => [String(row.id), row]));
+  if (ids.some((id) => !rowById.has(id))) return null;
+  const included = new Set(ids);
+  let nextIndex = 0;
+  return rows.map((row) => included.has(String(row.id)) ? rowById.get(ids[nextIndex++]) : row);
+}
+
+function applyWantOrder(itemIds) {
+  if (!isCurrentManagerAdmin() || !shouldShowWantEditMode) return;
+  const rows = getWantOrderItems();
+  const reordered = applyOrderedSubset(rows, itemIds);
+  if (!reordered) return;
+  const orderById = new Map(reordered.map((item, index) => [item.id, String(index + 1)]));
+  siteData.wantItems = getWantItems().map((raw) => ({
+    ...raw,
+    Order: orderById.get(String(raw.ID || raw.id)) || raw.Order,
+  }));
+  renderWantList();
+  submitWantOrder();
+}
+
 function submitWantOrder() {
   submitNextItemPayload({ action: "saveWantOrder", items: siteData.wantItems, sheetName: "Want" });
 }
@@ -8410,6 +8434,31 @@ function moveTodoItem(draggedId, targetId, options = {}) {
   }
 
   return true;
+}
+
+function applyTodoOrder(itemIds) {
+  if (!isCurrentManagerAdmin() || !shouldShowTodoEditMode) return;
+  const allRows = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const reordered = applyOrderedSubset(getTodoDefaultOrderItems(allRows), itemIds);
+  if (!reordered) return;
+  const orderById = new Map(reordered.map((row, index) => [row.id, String(index + 1)]));
+  siteData.todoItems = allRows.map((row) => ({
+    ID: row.id,
+    Order: orderById.get(row.id) || String(row.order === Number.MAX_SAFE_INTEGER ? "" : row.order),
+    Name: row.name,
+    "Low Hour": row.raw["Low Hour"] ?? "",
+    "High Hour": row.raw["High Hour"] ?? "",
+    "Parent ID": row.parentId || "",
+    Started: row.started ? "TRUE" : "FALSE",
+    Archived: row.archived ? "TRUE" : "FALSE",
+    "Platinum Cleanup": row.platinumCleanup ? "TRUE" : "FALSE",
+    Completed: row.completed ? "TRUE" : "FALSE",
+    IsDeleted: row.deleted ? "TRUE" : "FALSE",
+    Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
+    "Image URL": row.imageUrl || "",
+  })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
+  renderTodoList();
+  submitTodoOrder();
 }
 
 function submitTodoOrder() {
@@ -10141,6 +10190,15 @@ function moveRankingItem(kind, draggedId, targetId, options = {}) {
   }
 
   return true;
+}
+
+function applyRankingOrder(kind, itemIds) {
+  if (!RANKING_CONFIG[kind] || !canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") return;
+  const reordered = applyOrderedSubset(getRankingRows(kind), itemIds);
+  if (!reordered) return;
+  siteData.rankings[kind] = normalizeRankingOrder(reordered);
+  renderRankingList(kind);
+  submitRankingOrder(kind);
 }
 
 function getRankingItemElement(kind, itemId) {
@@ -14146,6 +14204,21 @@ document.addEventListener("click", (event) => {
   rankingItem.classList.toggle("is-actions-open");
 });
 
+window.addEventListener("boxthislap:ranking-reorder", (event) => {
+  const { itemIds, kind } = event.detail || {};
+  if (Array.isArray(itemIds)) applyRankingOrder(String(kind || ""), itemIds);
+});
+
+window.addEventListener("boxthislap:want-reorder", (event) => {
+  const { itemIds } = event.detail || {};
+  if (Array.isArray(itemIds)) applyWantOrder(itemIds);
+});
+
+window.addEventListener("boxthislap:todo-reorder", (event) => {
+  const { itemIds } = event.detail || {};
+  if (Array.isArray(itemIds)) applyTodoOrder(itemIds);
+});
+
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-ranking-id]");
 
@@ -14190,6 +14263,7 @@ document.addEventListener("drop", (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-react-sort-handle]")) return;
   const handle = event.target.closest(".ranking-drag-handle");
   const item = handle?.closest("[data-ranking-id]");
 
@@ -14283,6 +14357,7 @@ document.addEventListener("drop", (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-react-sort-handle]")) return;
   const handle = event.target.closest(".want-drag-handle");
   const item = handle?.closest("[data-want-id]");
   if (!item || !isCurrentManagerAdmin() || !shouldShowWantEditMode) return;
@@ -14351,6 +14426,7 @@ document.addEventListener("drop", (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-react-sort-handle]")) return;
   const handle = event.target.closest(".todo-drag-handle");
   const item = handle?.closest("[data-todo-id]");
 

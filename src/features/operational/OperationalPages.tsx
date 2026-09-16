@@ -24,7 +24,7 @@ import {
   Trophy,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { GuidesFeature } from "./GuidesFeature";
 
@@ -667,6 +667,150 @@ function useOperationalListView<T>(
   return view;
 }
 
+interface SortableOptions<T extends { id: string }> {
+  detail?: Record<string, string>;
+  enabled: boolean;
+  eventName: string;
+  items: T[];
+  selector: string;
+}
+
+function useSortableItems<T extends { id: string }>({
+  detail = {},
+  enabled,
+  eventName,
+  items,
+  selector,
+}: SortableOptions<T>) {
+  const [orderedItems, setOrderedItems] = useState(items);
+  const [draggingId, setDraggingId] = useState("");
+  const detailRef = useRef(detail);
+  const draggingIdRef = useRef("");
+  const orderedItemsRef = useRef(items);
+  const movedRef = useRef(false);
+  detailRef.current = detail;
+
+  useEffect(() => {
+    if (draggingId) return;
+    orderedItemsRef.current = items;
+    setOrderedItems(items);
+  }, [draggingId, items]);
+
+  useEffect(() => {
+    const move = (event: PointerEvent) => {
+      const activeId = draggingIdRef.current;
+      if (!activeId) return;
+      event.preventDefault();
+      const target = document
+        .elementFromPoint(event.clientX, event.clientY)
+        ?.closest<HTMLElement>(selector);
+      const targetId = target?.dataset.sortableId || "";
+      if (!targetId || targetId === activeId) return;
+      const rows = orderedItemsRef.current;
+      const from = rows.findIndex((item) => item.id === activeId);
+      const to = rows.findIndex((item) => item.id === targetId);
+      if (from < 0 || to < 0) return;
+      const next = [...rows];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      movedRef.current = true;
+      orderedItemsRef.current = next;
+      setOrderedItems(next);
+    };
+    const finish = () => {
+      if (!draggingIdRef.current) return;
+      if (movedRef.current) {
+        window.dispatchEvent(
+          new CustomEvent(eventName, {
+            detail: {
+              ...detailRef.current,
+              itemIds: orderedItemsRef.current.map((item) => item.id),
+            },
+          }),
+        );
+      }
+      movedRef.current = false;
+      draggingIdRef.current = "";
+      setDraggingId("");
+    };
+
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+    };
+  }, [eventName, selector]);
+
+  const start = (id: string, event: React.PointerEvent<HTMLElement>) => {
+    if (!enabled || event.button !== 0) return;
+    event.preventDefault();
+    movedRef.current = false;
+    draggingIdRef.current = id;
+    setDraggingId(id);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const moveWithKeyboard = (id: string, direction: -1 | 1) => {
+    if (!enabled) return;
+    const rows = orderedItemsRef.current;
+    const from = rows.findIndex((item) => item.id === id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= rows.length) return;
+    const next = [...rows];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    orderedItemsRef.current = next;
+    setOrderedItems(next);
+    window.dispatchEvent(
+      new CustomEvent(eventName, {
+        detail: { ...detailRef.current, itemIds: next.map((item) => item.id) },
+      }),
+    );
+  };
+
+  return { draggingId, moveWithKeyboard, orderedItems, start };
+}
+
+function SortHandle({
+  id,
+  label,
+  onKeyboardMove,
+  onPointerDown,
+  className,
+}: {
+  className: string;
+  id: string;
+  label: string;
+  onKeyboardMove: (id: string, direction: -1 | 1) => void;
+  onPointerDown: (id: string, event: React.PointerEvent<HTMLElement>) => void;
+}) {
+  return (
+    <button
+      className={className}
+      type="button"
+      data-react-sort-handle
+      aria-label={label}
+      title={`${label}. Use the up and down arrow keys to move it.`}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+        event.preventDefault();
+        event.stopPropagation();
+        onKeyboardMove(id, event.key === "ArrowUp" ? -1 : 1);
+      }}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        onPointerDown(id, event);
+      }}
+    >
+      <GripVertical aria-hidden="true" />
+    </button>
+  );
+}
+
 const emptyTodoList: TodoListView = {
   emptyLabel: "To Do items will load here.",
   items: [],
@@ -678,6 +822,12 @@ function TodoItems() {
     emptyTodoList,
     window.__boxThisLapTodoListView,
   );
+  const sortable = useSortableItems({
+    enabled: view.items.some((item) => item.draggable),
+    eventName: "boxthislap:todo-reorder",
+    items: view.items,
+    selector: "[data-sortable-kind='todo']",
+  });
 
   if (!view.items.length) {
     return <p className="table-message">{view.emptyLabel}</p>;
@@ -685,8 +835,15 @@ function TodoItems() {
 
   return (
     <div className="next-list todo-list">
-      {view.items.map((item) => (
-        <TodoCard item={item} key={item.id || item.name} />
+      {sortable.orderedItems.map((item, index) => (
+        <TodoCard
+          dragging={sortable.draggingId === item.id}
+          item={item}
+          moveWithKeyboard={sortable.moveWithKeyboard}
+          orderLabel={String(index + 1)}
+          startDrag={sortable.start}
+          key={item.id || item.name}
+        />
       ))}
     </div>
   );
@@ -695,9 +852,17 @@ function TodoItems() {
 function TodoCard({
   item,
   child = false,
+  dragging = false,
+  moveWithKeyboard,
+  orderLabel,
+  startDrag,
 }: {
   item: TodoItemView;
   child?: boolean;
+  dragging?: boolean;
+  moveWithKeyboard?: (id: string, direction: -1 | 1) => void;
+  orderLabel?: string;
+  startDrag?: (id: string, event: React.PointerEvent<HTMLElement>) => void;
 }) {
   if (child) {
     return (
@@ -730,6 +895,7 @@ function TodoCard({
     item.started && "todo-card--started",
     item.deleted && "todo-card--deleted",
     item.expanded && "is-actions-open",
+    dragging && "is-dragging",
   ]
     .filter(Boolean)
     .join(" ");
@@ -737,14 +903,17 @@ function TodoCard({
   return (
     <article
       className={classes}
-      draggable={item.draggable}
       tabIndex={0}
       role="button"
       data-todo-id={item.id}
+      data-sortable-id={item.id}
+      data-sortable-kind="todo"
       aria-label={`${item.draggable ? "Edit" : "View"} ${item.name}`}
     >
       <div className="next-card-main">
-        <span className="todo-order-number">{item.orderLabel}</span>
+        <span className="todo-order-number">
+          {orderLabel || item.orderLabel}
+        </span>
         <div>
           <OperationalItemHeading item={item} level={2} />
           {item.hourLabel ? (
@@ -756,9 +925,12 @@ function TodoCard({
           ) : null}
         </div>
         {item.draggable ? (
-          <GripVertical
+          <SortHandle
             className="ranking-drag-handle todo-drag-handle"
-            aria-label="Drag to reorder"
+            id={item.id}
+            label={`Reorder ${item.name}`}
+            onKeyboardMove={moveWithKeyboard!}
+            onPointerDown={startDrag!}
           />
         ) : null}
       </div>
@@ -857,24 +1029,50 @@ function WantItems() {
     emptyWantList,
     window.__boxThisLapWantListView,
   );
+  const sortable = useSortableItems({
+    enabled: view.items.some((item) => item.draggable),
+    eventName: "boxthislap:want-reorder",
+    items: view.items,
+    selector: "[data-sortable-kind='want']",
+  });
 
   if (!view.items.length)
     return <p className="table-message">{view.emptyLabel}</p>;
 
   return (
     <div className="next-list todo-list">
-      {view.items.map((item) => (
-        <WantCard item={item} key={item.id || item.name} />
+      {sortable.orderedItems.map((item, index) => (
+        <WantCard
+          dragging={sortable.draggingId === item.id}
+          item={item}
+          moveWithKeyboard={sortable.moveWithKeyboard}
+          orderLabel={String(index + 1)}
+          startDrag={sortable.start}
+          key={item.id || item.name}
+        />
       ))}
     </div>
   );
 }
 
-function WantCard({ item }: { item: WantItemView }) {
+function WantCard({
+  dragging,
+  item,
+  moveWithKeyboard,
+  orderLabel,
+  startDrag,
+}: {
+  dragging: boolean;
+  item: WantItemView;
+  moveWithKeyboard: (id: string, direction: -1 | 1) => void;
+  orderLabel: string;
+  startDrag: (id: string, event: React.PointerEvent<HTMLElement>) => void;
+}) {
   const classes = [
     "next-card todo-card",
     item.deleted && "todo-card--deleted",
     item.expanded && "is-actions-open",
+    dragging && "is-dragging",
   ]
     .filter(Boolean)
     .join(" ");
@@ -887,14 +1085,15 @@ function WantCard({ item }: { item: WantItemView }) {
   return (
     <article
       className={classes}
-      draggable={item.draggable}
       tabIndex={0}
       role="button"
       data-want-id={item.id}
+      data-sortable-id={item.id}
+      data-sortable-kind="want"
       aria-label={`${item.draggable ? "Edit" : "View"} ${item.name}`}
     >
       <div className="next-card-main">
-        <span className="todo-order-number">{item.orderLabel}</span>
+        <span className="todo-order-number">{orderLabel}</span>
         <div>
           <h2>{item.name}</h2>
           {item.priceLabel ? (
@@ -917,9 +1116,12 @@ function WantCard({ item }: { item: WantItemView }) {
           ) : null}
         </div>
         {item.draggable ? (
-          <GripVertical
+          <SortHandle
             className="ranking-drag-handle want-drag-handle"
-            aria-label="Drag to reorder"
+            id={item.id}
+            label={`Reorder ${item.name}`}
+            onKeyboardMove={moveWithKeyboard}
+            onPointerDown={startDrag}
           />
         ) : null}
       </div>
@@ -1289,6 +1491,13 @@ function RankingItems({ kind }: { kind: RankingKind }) {
     initial,
     window.__boxThisLapRankingListViews?.[kind],
   );
+  const sortable = useSortableItems({
+    detail: { kind },
+    enabled: view.rows.some((item) => item.draggable),
+    eventName: "boxthislap:ranking-reorder",
+    items: view.rows,
+    selector: `[data-sortable-kind='ranking-${kind}']`,
+  });
 
   return (
     <>
@@ -1322,28 +1531,45 @@ function RankingItems({ kind }: { kind: RankingKind }) {
           ) : null}
         </div>
       ) : null}
-      {view.rows.map((item) => (
-        <RankingCard item={item} kind={kind} key={item.id || item.name} />
+      {sortable.orderedItems.map((item, index) => (
+        <RankingCard
+          dragging={sortable.draggingId === item.id}
+          item={item}
+          kind={kind}
+          moveWithKeyboard={sortable.moveWithKeyboard}
+          rankLabel={String(index + 1)}
+          startDrag={sortable.start}
+          key={item.id || item.name}
+        />
       ))}
     </>
   );
 }
 
 function RankingCard({
+  dragging,
   item,
   kind,
+  moveWithKeyboard,
+  rankLabel,
+  startDrag,
 }: {
+  dragging: boolean;
   item: RankingItemView;
   kind: RankingKind;
+  moveWithKeyboard: (id: string, direction: -1 | 1) => void;
+  rankLabel: string;
+  startDrag: (id: string, event: React.PointerEvent<HTMLElement>) => void;
 }) {
   return (
     <article
-      className={`ranking-item${item.excluded ? " is-excluded" : ""}`}
+      className={`ranking-item${item.excluded ? " is-excluded" : ""}${dragging ? " is-dragging" : ""}`}
       data-ranking-kind={kind}
       data-ranking-id={item.id}
-      draggable={item.draggable}
+      data-sortable-id={item.id}
+      data-sortable-kind={`ranking-${kind}`}
     >
-      <span className="ranking-rank">{item.rankLabel}</span>
+      <span className="ranking-rank">{rankLabel}</span>
       <span className="ranking-item-main">
         <span className="guide-linked-heading">
           <strong>{item.name}</strong>
@@ -1376,9 +1602,12 @@ function RankingCard({
         ) : null}
       </span>
       {item.draggable ? (
-        <GripVertical
+        <SortHandle
           className="ranking-drag-handle"
-          aria-label="Drag to reorder"
+          id={item.id}
+          label={`Reorder ${item.name}`}
+          onKeyboardMove={moveWithKeyboard}
+          onPointerDown={startDrag}
         />
       ) : (
         <span className="ranking-spacer" aria-hidden="true" />
@@ -1797,6 +2026,13 @@ function DraftListTabs() {
 
 function DraftListItems() {
   const view = useDraftListView();
+  const sortable = useSortableItems({
+    detail: { sheetId: view.activeSheetId },
+    enabled: Boolean(view.activeSheetId && view.items.length),
+    eventName: "boxthislap:draft-list-reorder",
+    items: view.items,
+    selector: "[data-sortable-kind='draft-list']",
+  });
   if (view.loading) {
     return (
       <p className="table-message loading-message">
@@ -1806,8 +2042,15 @@ function DraftListItems() {
     );
   }
   if (view.items.length) {
-    return view.items.map((item) => (
-      <DraftListCard item={item} key={item.id} />
+    return sortable.orderedItems.map((item, index) => (
+      <DraftListCard
+        dragging={sortable.draggingId === item.id}
+        item={item}
+        moveWithKeyboard={sortable.moveWithKeyboard}
+        rank={index + 1}
+        startDrag={sortable.start}
+        key={item.id}
+      />
     ));
   }
   return (
@@ -1839,7 +2082,19 @@ function DraftListItems() {
   );
 }
 
-function DraftListCard({ item }: { item: DraftListItemView }) {
+function DraftListCard({
+  dragging,
+  item,
+  moveWithKeyboard,
+  rank,
+  startDrag,
+}: {
+  dragging: boolean;
+  item: DraftListItemView;
+  moveWithKeyboard: (id: string, direction: -1 | 1) => void;
+  rank: number;
+  startDrag: (id: string, event: React.PointerEvent<HTMLElement>) => void;
+}) {
   const [showImage, setShowImage] = useState(Boolean(item.imageUrl));
   const flags = [
     item.archived && "Archived",
@@ -1848,10 +2103,11 @@ function DraftListCard({ item }: { item: DraftListItemView }) {
   ].filter(Boolean) as string[];
   return (
     <article
-      className={`draft-list-item${showImage ? " has-image" : ""}`}
-      draggable
+      className={`draft-list-item${showImage ? " has-image" : ""}${dragging ? " is-dragging" : ""}`}
       data-draft-list-item-id={item.id}
       data-draft-list-sheet-id={item.sheetId}
+      data-sortable-id={item.id}
+      data-sortable-kind="draft-list"
     >
       {showImage ? (
         <div className="draft-list-item-image">
@@ -1865,7 +2121,7 @@ function DraftListCard({ item }: { item: DraftListItemView }) {
           />
         </div>
       ) : null}
-      <span className="draft-list-rank">{item.rank}</span>
+      <span className="draft-list-rank">{rank}</span>
       <div className="draft-list-item-main">
         <h2>{item.name}</h2>
         <p className="draft-list-item-date">{item.releaseLabel}</p>
@@ -1900,10 +2156,12 @@ function DraftListCard({ item }: { item: DraftListItemView }) {
           <Pencil aria-hidden="true" />
         </button>
       </div>
-      <span
+      <SortHandle
         className="draft-list-drag-handle"
-        aria-hidden="true"
-        title="Drag to reorder"
+        id={item.id}
+        label={`Reorder ${item.name}`}
+        onKeyboardMove={moveWithKeyboard}
+        onPointerDown={startDrag}
       />
     </article>
   );

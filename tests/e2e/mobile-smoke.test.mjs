@@ -568,7 +568,9 @@ test("Next item form loads as a contained React dialog and saves", async ({
   await expect(dialog).toBeHidden();
 });
 
-test("To Do form uses the shared contained React dialog", async ({ page }) => {
+test("To Do form uses the shared contained React dialog", async ({
+  page,
+}, testInfo) => {
   /** @type {string[]} */
   const dialogBundleRequests = [];
   page.on("request", (request) => {
@@ -637,6 +639,34 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
 
   await page.getByRole("button", { name: "Show To Do filters" }).click();
   await page.getByRole("checkbox", { name: "Edit", exact: true }).check();
+  await page.locator("#todo-filter-toggle").click();
+  const firstHandle = page.getByRole("button", {
+    name: "Reorder Parent task",
+  });
+  if (testInfo.project.name === "mobile-safari") {
+    await firstHandle.press("ArrowDown");
+  } else {
+    const secondCard = page.locator('[data-todo-id="2"]');
+    const firstBounds = await firstHandle.boundingBox();
+    const secondBounds = await secondCard.boundingBox();
+    if (!firstBounds || !secondBounds) {
+      throw new Error("Sortable To Do cards must be visible before dragging.");
+    }
+    await page.mouse.move(
+      firstBounds.x + firstBounds.width / 2,
+      firstBounds.y + firstBounds.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      secondBounds.x + secondBounds.width / 2,
+      secondBounds.y + secondBounds.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+  }
+  await expect
+    .poll(() => page.locator("[data-todo-id] h2").allTextContents())
+    .toEqual(["Existing task", "Parent task"]);
   await page
     .locator("[data-todo-child-id]", { hasText: "React To Do check" })
     .getByRole("button", { name: "Edit" })

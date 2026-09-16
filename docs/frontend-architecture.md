@@ -2,7 +2,7 @@
 
 ## Decision
 
-Box This Lap is migrating from a static DOM controller with React islands to one React and Vite application. The transition is incremental: migrated shell and feature surfaces render through React while the legacy controller continues to own routes that have not moved yet.
+Box This Lap is a React and Vite application. Every route, the shared shell, and the footer now have React as their sole structural owner; `index.html` contains only empty application mount points and pre-React recovery bootstrapping.
 
 The target architecture uses:
 
@@ -14,15 +14,15 @@ The target architecture uses:
 - CSS Modules over shared design tokens;
 - Lucide React for interface icons.
 
-## Migration boundary
+## Application boundary
 
-`src/main.tsx` renders the shared application shell before loading the legacy controller. React now owns Login, Account Settings, navigation, header artwork, the footer, the operational page structures for Footy, Next, To Do, Want, Rankings, Guides, Draft Lists, Manager Hub, and manager awards, and the competition page structures for World Cup, Formula 1, Fantasy Critic, and Fantasy Office.
+`src/main.tsx` renders the shared application shell and every route before loading the compatibility data engines. React owns Login, Account Settings, navigation, header artwork, the footer, all operational routes, all specialist routes, and the World Cup, Formula 1, Fantasy Critic, and Fantasy Office competition routes.
 
 Next, To Do, Want, Rankings, and Draft Lists pass normalized view models across small typed event bridges; their cards, tabs, status, and empty states render in React. Guides owns its query, progress mutations, filters, and checklist lifecycle directly through TanStack Query. Footy's route surfaces and dialogs render in React while its fixture and roster services remain compatibility adapters. Compatibility controllers must not replace children inside a React-owned dynamic list.
 
-Manager Hub, Footy, and the competition data engines are the remaining compatibility service boundaries. They may update only the compatibility IDs provided by their React route components. The static competition markup has been removed. The final migration step will replace those DOM adapters with typed React services and TanStack Query, then remove obsolete global CSS.
+Manager Hub, Footy, specialist-page, and competition data engines remain explicit compatibility service boundaries. They may update only leaf compatibility IDs provided by their React route components; they do not own route structure. New work must replace a leaf adapter with a typed React query or mutation rather than extend the adapter. Global styles remain only for compatibility-rendered leaf content and are removed alongside the corresponding adapter.
 
-Do not add new application behavior to the monolithic legacy controller when the same work can be implemented in the owning React feature. Temporary bridges must preserve existing element IDs and events only long enough for unmigrated features to keep working.
+Do not add new application behavior to the monolithic compatibility controller when the same work can be implemented in the owning React feature. Compatibility bridges preserve existing element IDs and events only for live data engines that have not yet been rewritten as typed hooks.
 
 ## Shared component contract
 
@@ -36,4 +36,5 @@ Feature CSS belongs in CSS Modules. Global CSS is limited to resets, design toke
 - Preserve signed-out and non-admin route protection during every migration step.
 - Keep feature bundles lazy and within the mobile bundle budget.
 - Add component coverage for shared primitives and Playwright coverage for migrated user journeys.
-- Delete the legacy markup, listeners, DOM references, and CSS for a feature only after its React replacement passes parity checks.
+- Keep `index.html` page, header, and footer mount points structurally empty; the production build rejects static UI regressions.
+- Delete compatibility listeners, DOM references, and CSS for a leaf feature only after its typed React replacement passes parity checks.

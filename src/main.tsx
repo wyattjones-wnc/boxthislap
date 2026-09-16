@@ -1,6 +1,11 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { App, type CompetitionRoots, type OperationalRoots } from "./app/App";
+import {
+  App,
+  type CompetitionRoots,
+  type OperationalRoots,
+  type SpecialistRoots,
+} from "./app/App";
 import "./styles/tokens.css";
 
 const shellRoot = document.querySelector(".site-header");
@@ -101,8 +106,16 @@ const competitionRoots = {
   today: document.querySelector('[data-page="today"]'),
   tomorrow: document.querySelector('[data-page="tomorrow"]'),
 };
+const specialistRoots = {
+  adminHome: document.querySelector('[data-page="the-monster-maniac"]'),
+  collectibles: document.querySelector('[data-page="collectibles"]'),
+  trophyLog: document.querySelector('[data-page="trophy-log"]'),
+  trophyStats: document.querySelector('[data-page="trophy-stats"]'),
+  youtube: document.querySelector('[data-page="youtube"]'),
+};
 const hasOperationalRoots = Object.values(operationalRoots).every(Boolean);
 const hasCompetitionRoots = Object.values(competitionRoots).every(Boolean);
+const hasSpecialistRoots = Object.values(specialistRoots).every(Boolean);
 
 if (
   !shellRoot ||
@@ -110,7 +123,8 @@ if (
   !accountRoot ||
   !footerRoot ||
   !hasOperationalRoots ||
-  !hasCompetitionRoots
+  !hasCompetitionRoots ||
+  !hasSpecialistRoots
 ) {
   throw new Error(
     "The React application shell could not find its mount points.",
@@ -122,6 +136,7 @@ accountRoot.replaceChildren();
 footerRoot.replaceChildren();
 Object.values(operationalRoots).forEach((root) => root?.replaceChildren());
 Object.values(competitionRoots).forEach((root) => root?.replaceChildren());
+Object.values(specialistRoots).forEach((root) => root?.replaceChildren());
 [
   "next-item-dialog-root",
   "todo-item-dialog-root",
@@ -141,15 +156,18 @@ flushSync(() => {
       footerRoot={footerRoot}
       loginRoot={loginRoot}
       operationalRoots={operationalRoots as OperationalRoots}
+      specialistRoots={specialistRoots as SpecialistRoots}
     />,
   );
 });
 
 const initialRoute = window.location.hash.slice(1).split("?")[0];
 if (
-  [...Object.values(operationalRoots), ...Object.values(competitionRoots)].some(
-    (root) => root?.id === initialRoute,
-  )
+  [
+    ...Object.values(operationalRoots),
+    ...Object.values(competitionRoots),
+    ...Object.values(specialistRoots),
+  ].some((root) => root?.id === initialRoute)
 ) {
   window.requestAnimationFrame(() => window.scrollTo({ left: 0, top: 0 }));
 }

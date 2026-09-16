@@ -43,6 +43,21 @@ import {
   WorldCupStandingsPage,
   WorldCupTestingPage,
 } from "../features/competition/CompetitionPages";
+import {
+  AdminHomePage,
+  CollectiblesPage,
+  TrophyLogPage,
+  TrophyStatsPage,
+  YouTubePage,
+} from "../features/specialist/SpecialistPages";
+
+export interface SpecialistRoots {
+  adminHome: Element;
+  collectibles: Element;
+  trophyLog: Element;
+  trophyStats: Element;
+  youtube: Element;
+}
 
 export interface CompetitionRoots {
   bracket: Element;
@@ -101,6 +116,7 @@ interface AppProps {
   footerRoot: Element;
   loginRoot: Element;
   operationalRoots: OperationalRoots;
+  specialistRoots: SpecialistRoots;
 }
 
 export function App({
@@ -109,6 +125,7 @@ export function App({
   footerRoot,
   loginRoot,
   operationalRoots,
+  specialistRoots,
 }: AppProps) {
   return (
     <AppProviders>
@@ -144,6 +161,11 @@ export function App({
         )}
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
+        {createPortal(<AdminHomePage />, specialistRoots.adminHome)}
+        {createPortal(<TrophyStatsPage />, specialistRoots.trophyStats)}
+        {createPortal(<CollectiblesPage />, specialistRoots.collectibles)}
+        {createPortal(<TrophyLogPage />, specialistRoots.trophyLog)}
+        {createPortal(<YouTubePage />, specialistRoots.youtube)}
         {createPortal(<TodayPage />, competitionRoots.today)}
         {createPortal(<TomorrowPage />, competitionRoots.tomorrow)}
         {createPortal(<WorldCupResultsPage />, competitionRoots.results)}

@@ -1,12 +1,28 @@
 import {
   BookOpen,
   Boxes,
+  CalendarDays,
   Calculator,
+  ChartNoAxesColumnIncreasing,
+  CircleHelp,
+  Clapperboard,
+  ClipboardList,
+  Flag,
+  GitFork,
+  Heart,
+  House,
   LayoutDashboard,
+  ListChecks,
+  ListTodo,
   LogIn,
   LogOut,
+  Medal,
+  ScrollText,
   Settings,
   Shield,
+  Trophy,
+  Video,
+  type LucideIcon,
 } from "lucide-react";
 import { memo, useEffect, useRef } from "react";
 import { getNavScope, navItems, type NavItem, type NavScope } from "./routes";
@@ -65,6 +81,36 @@ const headerArt = [
     landscape: "assets/fantasy-office-2026-header-landscape.png?v=202607230006",
   },
 ] as const;
+
+const navIcons: Record<string, LucideIcon> = {
+  bracket: GitFork,
+  footy: Flag,
+  guides: BookOpen,
+  leagues: Trophy,
+  next: ListTodo,
+  rankings: ChartNoAxesColumnIncreasing,
+  results: Medal,
+  rules: ScrollText,
+  standings: ChartNoAxesColumnIncreasing,
+  todo: ListChecks,
+  want: Heart,
+  youtube: Video,
+  "the-monster-maniac": House,
+  "fantasy-office-2025-draft": ClipboardList,
+  "fantasy-office-2025-movies": Clapperboard,
+  "fantasy-office-2025-results": Medal,
+  "fantasy-office-2026-draft": ClipboardList,
+  "fantasy-office-2026-movies": Clapperboard,
+  "fantasy-office-2026-results": Medal,
+  "formula-1-2024-questions": CircleHelp,
+  "formula-1-2024-results": Medal,
+  "formula-1-2025-questions": CircleHelp,
+  "formula-1-2025-results": Medal,
+  "formula-1-2025-weekly": CalendarDays,
+  "formula-1-2026-questions": CircleHelp,
+  "formula-1-2026-results": Medal,
+  "formula-1-2026-weekly": CalendarDays,
+};
 
 export function SiteShell() {
   const { route, session } = useAppState();
@@ -243,6 +289,8 @@ function NavLink({
   route: string;
   session: boolean;
 }) {
+  const Icon = navIcons[item.route] ?? Flag;
+
   return (
     <a
       className={route === item.route ? "is-active" : undefined}
@@ -254,7 +302,8 @@ function NavLink({
       aria-current={route === item.route ? "page" : undefined}
       role="tab"
     >
-      {item.label}
+      <Icon className="nav-link-icon" aria-hidden="true" />
+      <span>{item.label}</span>
     </a>
   );
 }

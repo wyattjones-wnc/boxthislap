@@ -267,7 +267,9 @@ test("visible pointer targets meet the WCAG minimum size", async ({ page }) => {
   expect(undersizedTargets).toEqual([]);
 });
 
-test("Formula One navigation fits one mobile row", async ({ page }) => {
+test("Formula One navigation and calculator actions stay in their rows", async ({
+  page,
+}) => {
   await page.goto("/#formula-1-2026-results", {
     waitUntil: "domcontentloaded",
   });
@@ -277,6 +279,11 @@ test("Formula One navigation fits one mobile row", async ({ page }) => {
   await expect(navigation).toBeVisible();
   await expect(
     navigation.getByRole("tab", { name: "Formula 1 points calculator" }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".login-actions")
+      .getByRole("link", { name: "Formula 1 points calculator" }),
   ).toBeVisible();
   expect(
     await navigation.evaluate(
@@ -293,7 +300,7 @@ test("Formula One navigation fits one mobile row", async ({ page }) => {
     .evaluate((element) => getComputedStyle(element).fontSize);
   expect(formulaTabFontSize).toBe(homeTabFontSize);
   await expect(
-    page.getByRole("tab", { name: "Formula 1 points calculator" }),
+    page.getByRole("link", { name: "Formula 1 points calculator" }),
   ).toHaveCount(0);
 });
 

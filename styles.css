@@ -7723,6 +7723,36 @@ main {
   flex: 0 0 auto;
 }
 
+.formula-one-calculator-sort {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  font: inherit;
+  font-weight: inherit;
+  gap: 1px;
+  justify-content: center;
+  padding: 0;
+  text-transform: inherit;
+}
+
+.formula-one-calculator-sort small {
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+
+.formula-one-calculator-sort:hover,
+.formula-one-calculator-sort:focus-visible,
+.formula-one-calculator-sort.is-active {
+  color: var(--accent-dark);
+}
+
 .formula-one-calculator-filters {
   background: var(--soft);
   border-top: 1px solid var(--line);

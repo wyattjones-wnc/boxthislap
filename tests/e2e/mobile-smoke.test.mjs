@@ -1518,6 +1518,14 @@ test("Formula One calculator loads its complete deferred controller", async ({
     2,
   );
   expect(resetBounds?.x ?? 0).toBeLessThan(filterBounds?.x ?? 0);
+  const firstDriver = page
+    .locator(".formula-one-calculator-table tbody tr")
+    .first()
+    .locator("th");
+  await page.getByRole("button", { name: /Current/ }).click();
+  await expect(firstDriver).toContainText("Casey C");
+  await page.getByRole("button", { name: /Projected/ }).click();
+  await expect(firstDriver).toContainText("Alex A");
   await page.getByRole("button", { name: "Expanded" }).click();
   const position = page
     .locator('[data-formula-one-calculator-position][data-event-type="race"]')

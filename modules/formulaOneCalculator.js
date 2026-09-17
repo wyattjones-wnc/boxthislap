@@ -63,6 +63,9 @@ export function createFormulaOneCalculatorController({
     const hiddenDrivers = new Set(storedState.hiddenDrivers ?? []);
     const state = {
       filtersExpanded: false,
+      sortColumn:
+        storedState.sortColumn === "projected" ? "projected" : "current",
+      sortDirection: storedState.sortDirection === "asc" ? "asc" : "desc",
       viewMode: "simple",
       knownDrivers: new Set(data.driversToWatch),
       simpleSelections:
@@ -102,6 +105,8 @@ export function createFormulaOneCalculatorController({
           hiddenDrivers: data.driversToWatch.filter(
             (driver) => !state.visibleDrivers.has(driver),
           ),
+          sortColumn: state.sortColumn,
+          sortDirection: state.sortDirection,
           simpleSelections: state.simpleSelections,
           selections: state.selections,
         }),
@@ -113,6 +118,8 @@ export function createFormulaOneCalculatorController({
 
   function resetFormulaOneCalculatorState(year, data, state) {
     state.viewMode = "simple";
+    state.sortColumn = "current";
+    state.sortDirection = "desc";
     state.simpleSelections = {};
     state.selections = {};
     state.visibleDrivers = new Set(data.driversToWatch);
@@ -279,16 +286,42 @@ export function createFormulaOneCalculatorController({
 
   function getFormulaOneCalculatorSortedDrivers(
     data,
+    state,
+    events,
     drivers = data.driversToWatch,
   ) {
     return [...drivers].sort((firstDriver, secondDriver) => {
+      const getPoints =
+        state.sortColumn === "projected"
+          ? (driver) =>
+              getFormulaOneCalculatorProjectedPoints(
+                data,
+                state,
+                events,
+                driver,
+              )
+          : (driver) => getFormulaOneCalculatorCurrentPoints(data, driver);
+      const difference = getPoints(firstDriver) - getPoints(secondDriver);
       return (
-        getFormulaOneCalculatorCurrentPoints(data, secondDriver) -
-          getFormulaOneCalculatorCurrentPoints(data, firstDriver) ||
+        (state.sortDirection === "asc" ? difference : -difference) ||
         data.driversToWatch.indexOf(firstDriver) -
           data.driversToWatch.indexOf(secondDriver)
       );
     });
+  }
+
+  function renderFormulaOneCalculatorSortHeading(state, column, label) {
+    const active = state.sortColumn === column;
+    const directionLabel =
+      state.sortDirection === "asc" ? "Low–high" : "High–low";
+    return `
+      <th aria-sort="${active ? (state.sortDirection === "asc" ? "ascending" : "descending") : "none"}">
+        <button type="button" class="formula-one-calculator-sort${active ? " is-active" : ""}" data-formula-one-calculator-sort="${column}">
+          <span>${label}</span>
+          ${active ? `<small>${directionLabel}</small>` : ""}
+        </button>
+      </th>
+    `;
   }
 
   function getFormulaOneCalculatorProtagonists(data) {
@@ -331,7 +364,11 @@ export function createFormulaOneCalculatorController({
 
     const state = getFormulaOneCalculatorState(year, data);
     const events = getFormulaOneCalculatorEvents(data);
-    const sortedDrivers = getFormulaOneCalculatorSortedDrivers(data);
+    const sortedDrivers = getFormulaOneCalculatorSortedDrivers(
+      data,
+      state,
+      events,
+    );
     const visibleDrivers = sortedDrivers.filter((driver) =>
       state.visibleDrivers.has(driver),
     );
@@ -516,9 +553,9 @@ export function createFormulaOneCalculatorController({
         <thead>
           <tr>
             <th>Driver</th>
-            <th>Current</th>
+            ${renderFormulaOneCalculatorSortHeading(state, "current", "Current")}
             ${eventHeaders}
-            <th>Projected</th>
+            ${renderFormulaOneCalculatorSortHeading(state, "projected", "Projected")}
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -592,9 +629,9 @@ export function createFormulaOneCalculatorController({
         <thead>
           <tr>
             <th>Driver</th>
-            <th>Current</th>
+            ${renderFormulaOneCalculatorSortHeading(state, "current", "Current")}
             <th>Position</th>
-            <th>Projected</th>
+            ${renderFormulaOneCalculatorSortHeading(state, "projected", "Projected")}
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -859,13 +896,17 @@ export function createFormulaOneCalculatorController({
       const resetButton = event.target.closest(
         "[data-formula-one-calculator-reset]",
       );
+      const sortButton = event.target.closest(
+        "[data-formula-one-calculator-sort]",
+      );
       if (
         !viewToggle &&
         !filterToggle &&
         !showAllButton &&
         !hideAllButton &&
         !protagonistsButton &&
-        !resetButton
+        !resetButton &&
+        !sortButton
       )
         return;
 
@@ -882,6 +923,20 @@ export function createFormulaOneCalculatorController({
       }
       if (filterToggle) {
         state.filtersExpanded = !state.filtersExpanded;
+        renderFormulaOneCalculator(year);
+        return;
+      }
+      if (sortButton) {
+        const column =
+          sortButton.dataset.formulaOneCalculatorSort === "projected"
+            ? "projected"
+            : "current";
+        state.sortDirection =
+          state.sortColumn === column && state.sortDirection === "desc"
+            ? "asc"
+            : "desc";
+        state.sortColumn = column;
+        persistFormulaOneCalculatorState(year, data, state);
         renderFormulaOneCalculator(year);
         return;
       }

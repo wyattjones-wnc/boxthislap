@@ -292,7 +292,9 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
-test("Match Notes dialog keeps comfortable mobile gutters", async ({ page }) => {
+test("Match Notes dialog keeps comfortable mobile gutters", async ({
+  page,
+}) => {
   await page.goto("/#footy", { waitUntil: "domcontentloaded" });
   const dialog = page.locator("#footy-note-dialog");
   await dialog.evaluate((element) =>
@@ -301,7 +303,8 @@ test("Match Notes dialog keeps comfortable mobile gutters", async ({ page }) => 
 
   const bounds = await dialog.boundingBox();
   const viewport = page.viewportSize();
-  if (!bounds || !viewport) throw new Error("Match Notes dialog was not laid out");
+  if (!bounds || !viewport)
+    throw new Error("Match Notes dialog was not laid out");
   expect(bounds.x).toBeGreaterThanOrEqual(20);
   expect(viewport.width - bounds.x - bounds.width).toBeGreaterThanOrEqual(20);
 });

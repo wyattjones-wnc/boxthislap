@@ -1,3 +1,4 @@
+import { Calculator } from "lucide-react";
 import { memo, useEffect, useRef } from "react";
 import { getNavScope, navItems, type NavItem, type NavScope } from "./routes";
 import { useAppState } from "./providers";
@@ -222,7 +223,14 @@ function NavLink({
       aria-current={route === item.route ? "page" : undefined}
       role="tab"
     >
-      {item.label}
+      {item.route === "formula-1-2026-calculator" ? (
+        <>
+          <Calculator aria-hidden="true" />
+          <span>{item.label}</span>
+        </>
+      ) : (
+        item.label
+      )}
     </a>
   );
 }

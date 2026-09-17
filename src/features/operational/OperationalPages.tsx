@@ -1,8 +1,12 @@
 import {
+  Archive,
+  ArchiveRestore,
   BookPlus,
   Bell,
   CalendarPlus,
   Check as CheckIcon,
+  CircleCheckBig,
+  CircleSlash2,
   ChevronLeft,
   ChevronRight,
   Dices,
@@ -1619,34 +1623,31 @@ function RankingCard({
       {item.canExclude || item.canEdit ? (
         <span className="ranking-item-actions">
           {item.canExclude ? (
-            <button
-              className="ranking-inline-action"
-              type="button"
+            <IconButton
+              className="ranking-row-action"
+              icon={item.excluded ? <CircleCheckBig /> : <CircleSlash2 />}
+              label={`${item.exclusionLabel} ${item.name}`}
               data-ranking-exclusion-toggle={item.id}
               data-ranking-kind={kind}
-            >
-              {item.exclusionLabel}
-            </button>
+            />
           ) : null}
           {item.canEdit ? (
-            <button
-              className="ranking-inline-action"
-              type="button"
+            <IconButton
+              className="ranking-row-action"
+              icon={<Pencil />}
+              label={`Edit ${item.name}`}
               data-ranking-edit={item.id}
               data-ranking-kind={kind}
-            >
-              Edit
-            </button>
+            />
           ) : null}
           {item.canEdit ? (
-            <button
-              className="ranking-inline-action"
-              type="button"
+            <IconButton
+              className="ranking-row-action"
+              icon={item.archived ? <ArchiveRestore /> : <Archive />}
+              label={`${item.archived ? "Restore" : "Archive"} ${item.name}`}
               data-ranking-archive={item.id}
               data-ranking-kind={kind}
-            >
-              {item.archived ? "Restore" : "Archive"}
-            </button>
+            />
           ) : null}
         </span>
       ) : null}

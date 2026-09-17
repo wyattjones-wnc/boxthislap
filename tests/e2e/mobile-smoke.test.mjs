@@ -267,6 +267,22 @@ test("visible pointer targets meet the WCAG minimum size", async ({ page }) => {
   expect(undersizedTargets).toEqual([]);
 });
 
+test("Formula One navigation fits one mobile row", async ({ page }) => {
+  await page.goto("/#formula-1-2026-results", {
+    waitUntil: "domcontentloaded",
+  });
+  const navigation = page.locator(
+    '.nav-links[data-nav-scope="formula-one-2026"]',
+  );
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole("tab", { name: "Calc" })).toBeVisible();
+  expect(
+    await navigation.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth + 1,
+    ),
+  ).toBe(true);
+});
+
 test("Footy filters and fixture expansion remain interactive", async ({
   page,
 }) => {

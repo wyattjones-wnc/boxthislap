@@ -3067,17 +3067,19 @@ body.has-shell-stale-warning .stale-shell-alert {
 .ranking-item-actions {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 12px;
   grid-column: 2 / -1;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
+  padding: 0 2px;
   transition: max-height 0.18s ease, opacity 0.18s ease;
 }
 
 .ranking-item.is-actions-open .ranking-item-actions {
-  max-height: 48px;
+  max-height: 52px;
   opacity: 1;
+  padding-block: 2px;
 }
 
 .ranking-empty-state {
@@ -3175,6 +3177,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   gap: 12px;
   margin: -4px 0 18px;
   padding: 14px;
+}
+
+.ranking-row-action {
+  flex: 0 0 auto;
 }
 
 .ranking-compare-button {
@@ -7443,9 +7449,11 @@ main {
 
 .fantasy-critic-meta {
   border-top: 1px solid var(--line);
-  display: flex;
-  gap: 18px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 11px 16px;
+  text-align: center;
 }
 
 .fantasy-critic-meta span {
@@ -7464,6 +7472,23 @@ main {
   display: grid;
 }
 
+.fantasy-critic-roster-heading {
+  background: var(--table-head);
+  color: var(--muted);
+  display: grid;
+  font-size: 0.72rem;
+  font-weight: 900;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 84px 70px;
+  letter-spacing: 0.04em;
+  padding: 9px 16px;
+  text-transform: uppercase;
+}
+
+.fantasy-critic-roster-heading span:not(:first-child) {
+  text-align: right;
+}
+
 .fantasy-critic-game {
   align-items: center;
   border-bottom: 1px solid var(--line);
@@ -7475,6 +7500,34 @@ main {
 
 .fantasy-critic-game:last-child {
   border-bottom: 0;
+}
+
+.fantasy-critic-game.is-counterpick {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
+}
+
+.fantasy-critic-game.is-open-draft-slot {
+  background: color-mix(in srgb, #f5c451 24%, var(--panel));
+}
+
+.fantasy-critic-game-name {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fantasy-critic-game-chip {
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 74%, white);
+  border-radius: 999px;
+  color: #fff;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  padding: 5px 7px;
 }
 
 .fantasy-critic-game strong {
@@ -10622,6 +10675,12 @@ html.has-contained-dialog body {
     gap: 8px 12px;
     grid-template-columns: minmax(0, 1fr) 74px 58px;
     padding: 10px 13px;
+  }
+
+  .fantasy-critic-roster-heading {
+    gap: 8px 12px;
+    grid-template-columns: minmax(0, 1fr) 74px 58px;
+    padding: 9px 13px;
   }
 
   .fantasy-critic-game span {

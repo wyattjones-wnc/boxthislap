@@ -53,7 +53,7 @@ export const navItems: Record<NavScope, NavItem[]> = {
   "formula-one-2026": [
     { label: "Questions", route: "formula-1-2026-questions" },
     { label: "Weekly", route: "formula-1-2026-weekly" },
-    { label: "Calculator", route: "formula-1-2026-calculator" },
+    { label: "Calc", route: "formula-1-2026-calculator" },
     { label: "Results", route: "formula-1-2026-results" },
     { label: "Leagues", route: "leagues" },
   ],

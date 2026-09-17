@@ -11075,7 +11075,12 @@ function renderFantasyCriticStanding(entry, year) {
         <span>Budget <strong>${escapeHtml(entry.budget)}</strong></span>
       </div>
 
-      <div class="fantasy-critic-roster">
+      <div class="fantasy-critic-roster" role="table" aria-label="${escapeHtml(entry.publisher)} roster">
+        <div class="fantasy-critic-roster-heading" role="row">
+          <span role="columnheader">Game</span>
+          <span role="columnheader">Critic</span>
+          <span role="columnheader">Pts</span>
+        </div>
         ${entry.roster.map((game) => renderFantasyCriticGame(game)).join("")}
       </div>
     </article>
@@ -11089,15 +11094,23 @@ function getAwardsForFantasyCriticYear(year) {
   });
 }
 
-function renderFantasyCriticGame([game, critic, points]) {
+function renderFantasyCriticGame([game, critic, points, details = {}]) {
   const criticValue = critic || "--";
   const pointsValue = points || "--";
+  const classes = [
+    "fantasy-critic-game",
+    details.isCounterPick && "is-counterpick",
+    details.isBlank && !details.isCounterPick && "is-open-draft-slot",
+  ].filter(Boolean).join(" ");
 
   return `
-    <div class="fantasy-critic-game">
-      <strong>${escapeHtml(game)}</strong>
-      <span>Critic ${escapeHtml(criticValue)}</span>
-      <span>Pts ${escapeHtml(pointsValue)}</span>
+    <div class="${classes}" role="row">
+      <strong class="fantasy-critic-game-name" role="cell">
+        ${details.isCounterPick ? `<span class="fantasy-critic-game-chip">CPK</span>` : ""}
+        <span>${escapeHtml(game)}</span>
+      </strong>
+      <span role="cell">${escapeHtml(criticValue)}</span>
+      <span role="cell">${escapeHtml(pointsValue)}</span>
     </div>
   `;
 }
@@ -17470,12 +17483,11 @@ function parseFantasyCriticPublisher(publisher, playerRow, slotCounts) {
 }
 
 function parseFantasyCriticGame(game) {
-  const prefix = game.counterPick ? "CPK " : "";
-
   return [
-    `${prefix}${game.gameName || "Untitled Game"}`,
+    game.gameName || "Untitled Game",
     formatFantasyCriticNumber(game.criticScore ?? game.masterGame?.criticScore),
     formatFantasyCriticNumber(game.fantasyPoints ?? game.masterGame?.fantasyPoints),
+    { isCounterPick: Boolean(game.counterPick) },
   ];
 }
 

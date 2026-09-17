@@ -557,7 +557,7 @@ const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
 const formulaOneDataPromises = new Map();
-const FORMULA_ONE_CALCULATOR_CONFIG = {
+const FORMULA_ONE_CALCULATOR_LEGACY_CONFIG = {
   2026: {
     driversSource: "formulaOne2026CalculatorDrivers",
     optionsSource: "formulaOne2026CalculatorOptions",
@@ -796,7 +796,7 @@ const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
   return formulaOneCalculations;
 });
 const loadFormulaOneCalculatorController = createLazyControllerLoader(async () => {
-  const module = await import("./modules/formulaOneCalculator.js?v=202609132235");
+  const module = await import("./modules/formulaOneCalculator.js?v=202609171417");
   formulaOneCalculatorController = module.createFormulaOneCalculatorController({
     escapeHtml,
     getContainer: (year) => formulaOneViews[year]?.calculator,
@@ -11130,14 +11130,6 @@ function parseFormulaOneWeeklyResultsSheet(...args) {
 function parseFormulaOneRoundForms(...args) {
   return formulaOnePublicController.parseRoundForms(...args);
 }
-function parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv }) {
-  return formulaOneCalculatorController.parseData({
-    driversCsv,
-    optionsCsv,
-    sprintsCsv,
-    summaryCsv,
-  });
-}
 function renderFormulaOneCalculator(year) {
   formulaOneCalculatorController?.render(year);
 }
@@ -18389,9 +18381,8 @@ function refreshFormulaOnePage(year) {
 
 function ensureFormulaOneCalculatorData(year) {
   const yearKey = String(year);
-  const config = FORMULA_ONE_CALCULATOR_CONFIG[yearKey];
-
-  if (!config) {
+  const legacyConfig = FORMULA_ONE_CALCULATOR_LEGACY_CONFIG[yearKey];
+  if (!legacyConfig) {
     const error = new Error(`Formula 1 points calculator is not configured for ${yearKey}.`);
     renderFormulaOneCalculatorError(yearKey, error);
     return Promise.reject(error);
@@ -18400,14 +18391,24 @@ function ensureFormulaOneCalculatorData(year) {
   return ensureFormulaOneSource(
     `formulaOne${yearKey}Calculator`,
     async () => {
-      const [, driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
-        loadFormulaOneCalculatorController(),
-        loadSheetText(config.driversSource),
-        loadSheetText(config.optionsSource),
-        loadSheetText(config.sprintsSource),
-        loadSheetText(config.summarySource),
+      await loadFormulaOneCalculatorController();
+      if (FORMULA_ONE_ENDPOINT) {
+        try {
+          const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/calculator`);
+          if (!response.ok) throw new Error(`Formula 1 calculator returned ${response.status}.`);
+          return normalizeFormulaOneCalculatorServiceData(await response.json());
+        } catch (error) {
+          recordDiagnostic("D1 Formula 1 calculator failed to load; using legacy sheet", error);
+        }
+      }
+
+      const [driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+        loadSheetText(legacyConfig.driversSource),
+        loadSheetText(legacyConfig.optionsSource),
+        loadSheetText(legacyConfig.sprintsSource),
+        loadSheetText(legacyConfig.summarySource),
       ]);
-      return parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv });
+      return formulaOneCalculatorController.parseData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv });
     },
     (data) => {
       siteData[`formulaOne${yearKey}Calculator`] = data;
@@ -18415,6 +18416,25 @@ function ensureFormulaOneCalculatorData(year) {
     },
     (error) => renderFormulaOneCalculatorError(yearKey, error)
   );
+}
+
+function normalizeFormulaOneCalculatorServiceData(data) {
+  const normalizePoints = (points) => new Map(Object.entries(points || {}).map(([driver, value]) => [normalizeLookupName(driver), value]));
+  const normalizeRounds = (rounds) => (Array.isArray(rounds) ? rounds : []).map((round) => ({
+    ...round,
+    complete: Boolean(round.complete),
+    id: Number(round.id),
+    pointsByDriver: normalizePoints(round.pointsByDriver),
+  }));
+
+  return {
+    currentTotals: normalizePoints(data.currentTotals),
+    driversToWatch: Array.isArray(data.driversToWatch) ? data.driversToWatch : [],
+    raceOptions: Array.isArray(data.raceOptions) ? data.raceOptions : [],
+    rounds: normalizeRounds(data.rounds),
+    sprintOptions: Array.isArray(data.sprintOptions) ? data.sprintOptions : [],
+    sprintRounds: normalizeRounds(data.sprintRounds),
+  };
 }
 
 function ensureFormulaOneData(year, view = "questions") {

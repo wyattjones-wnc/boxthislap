@@ -12,11 +12,11 @@ describe("getNavScope", () => {
     );
   });
 
-  it("uses the compact Formula One calculator label", () => {
+  it("keeps the Formula One calculator out of the tab strip", () => {
     expect(
-      navItems["formula-one-2026"].find(
+      navItems["formula-one-2026"].some(
         (item) => item.route === "formula-1-2026-calculator",
-      )?.label,
-    ).toBe("Calc");
+      ),
+    ).toBe(false);
   });
 });

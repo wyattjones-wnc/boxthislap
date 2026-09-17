@@ -137,6 +137,17 @@ export function SiteShell() {
       </nav>
       <div className="login-row">
         <div className="login-row-inner">
+          {scope === "formula-one-2026" ? (
+            <a
+              className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
+              href="#formula-1-2026-calculator"
+              data-page-link="formula-1-2026-calculator"
+              aria-label="Formula 1 points calculator"
+              title="Formula 1 points calculator"
+            >
+              <Calculator aria-hidden="true" />
+            </a>
+          ) : null}
           <LegacyShortcuts />
           <div className="login-actions">
             <a
@@ -223,14 +234,7 @@ function NavLink({
       aria-current={route === item.route ? "page" : undefined}
       role="tab"
     >
-      {item.route === "formula-1-2026-calculator" ? (
-        <>
-          <Calculator aria-hidden="true" />
-          <span>{item.label}</span>
-        </>
-      ) : (
-        item.label
-      )}
+      {item.label}
     </a>
   );
 }

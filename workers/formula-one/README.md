@@ -21,6 +21,8 @@ Signed-in managers make native P1, P2, P3, and wildcard choices on the Weekly pa
 
 The public `GET /api/seasons/:year/weekly` endpoint exposes scored, completed weekly rounds for the Results standings. Authenticated `GET /api/seasons/:year/weekly/me` exposes only the signed-in manager's entries. Admin reads and Weekly exports include every manager's entries and scores; exports also include season standings and the podium/wildcard scoring reference tables.
 
+The public `GET /api/seasons/:year/calculator` endpoint builds the points-calculator season state directly from approved D1 sessions. It exposes active drivers, completed points, remaining race and sprint rounds, and the standard scoring options without reading the exported Google workbook.
+
 `Fetch round` treats approved sheet/manual sessions as reconciliation candidates: provider rows are merged into the imported session, non-participant classifications are retained, and the session returns to review. Sessions already sourced from Jolpica remain unchanged until explicitly reopened.
 
 No cron trigger is configured. Admins explicitly fetch a session and explicitly approve it.

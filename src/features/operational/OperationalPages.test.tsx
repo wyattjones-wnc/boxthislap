@@ -232,8 +232,8 @@ describe("operational React pages", () => {
     expect(await screen.findByText("React ranking card")).not.toBeNull();
     expect(screen.getByText("+1")).not.toBeNull();
     expect(
-      screen.getByRole("button", { name: "Exclude React ranking card" }),
-    ).not.toBeNull();
+      screen.queryByRole("button", { name: "Exclude React ranking card" }),
+    ).toBeNull();
     expect(
       screen.getByRole("button", { name: "Edit React ranking card" }),
     ).not.toBeNull();

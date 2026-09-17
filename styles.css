@@ -3076,6 +3076,32 @@ body.has-shell-stale-warning .stale-shell-alert {
   transition: max-height 0.18s ease, opacity 0.18s ease;
 }
 
+.formula-one-calculator-shortcut {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 34px;
+  justify-content: center;
+  text-decoration: none;
+  width: 34px;
+}
+
+.formula-one-calculator-shortcut:hover,
+.formula-one-calculator-shortcut.is-active {
+  background: var(--track);
+  border-color: var(--track);
+  color: var(--track-ink);
+}
+
+.formula-one-calculator-shortcut svg {
+  height: 18px;
+  width: 18px;
+}
+
 .ranking-item.is-actions-open .ranking-item-actions {
   max-height: 52px;
   opacity: 1;

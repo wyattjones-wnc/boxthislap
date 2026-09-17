@@ -317,7 +317,7 @@ export function createFormulaOneCalculatorController({
       <section class="formula-one-calculator-card formula-one-calculator-intro">
         <div>
           <h3>Season scenarios</h3>
-          <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
+          <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint. Current totals come from the approved ${escapeHtml(year)} Formula 1 data.</p>
         </div>
         <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
       </section>

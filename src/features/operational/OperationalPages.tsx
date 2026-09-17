@@ -5,8 +5,6 @@ import {
   Bell,
   CalendarPlus,
   Check as CheckIcon,
-  CircleCheckBig,
-  CircleSlash2,
   ChevronLeft,
   ChevronRight,
   Dices,
@@ -1620,17 +1618,8 @@ function RankingCard({
       ) : (
         <span className="ranking-spacer" aria-hidden="true" />
       )}
-      {item.canExclude || item.canEdit ? (
+      {item.canEdit ? (
         <span className="ranking-item-actions">
-          {item.canExclude ? (
-            <IconButton
-              className="ranking-row-action"
-              icon={item.excluded ? <CircleCheckBig /> : <CircleSlash2 />}
-              label={`${item.exclusionLabel} ${item.name}`}
-              data-ranking-exclusion-toggle={item.id}
-              data-ranking-kind={kind}
-            />
-          ) : null}
           {item.canEdit ? (
             <IconButton
               className="ranking-row-action"

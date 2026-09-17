@@ -275,7 +275,12 @@ test("Formula One navigation fits one mobile row", async ({ page }) => {
     '.nav-links[data-nav-scope="formula-one-2026"]',
   );
   await expect(navigation).toBeVisible();
-  await expect(navigation.getByRole("tab", { name: "Calc" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Formula 1 points calculator" }),
+  ).toBeVisible();
+  await expect(navigation.getByRole("tab", { name: "Calculator" })).toHaveCount(
+    0,
+  );
   expect(
     await navigation.evaluate(
       (element) => element.scrollWidth <= element.clientWidth + 1,
@@ -1449,50 +1454,41 @@ test("Formula One calculator loads its complete deferred controller", async ({
     }
   });
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.route("https://docs.google.com/**", async (route) => {
-    const gid = new URL(route.request().url()).searchParams.get("gid");
-    const sources = new Map([
-      [
-        "0",
-        [
-          ",Round 1,Round 2,",
-          "Driver,Round 1,Round 2,Total",
-          "Alex A,25,,25",
-          "Blake B,18,,18",
-        ].join("\n"),
-      ],
-      [
-        "108234327",
-        [
-          "Position,Points",
-          "1,25",
-          "2,18",
-          "<10,0",
-          ",",
-          "Position,Points",
-          "1,8",
-          "2,7",
-          "<8,0",
-          ",",
-          "Driver",
-          "Alex A",
-          "Blake B",
-        ].join("\n"),
-      ],
-      [
-        "1932990040",
-        [",Round 2,", "Driver,Round 2,Total", "Alex A,,0", "Blake B,,0"].join(
-          "\n",
-        ),
-      ],
-      ["3933362", ["Driver,Total", "Alex A,25", "Blake B,18"].join("\n")],
-    ]);
-    await route.fulfill({
-      body: sources.get(String(gid)) || "",
-      contentType: "text/csv",
-      status: 200,
-    });
-  });
+  await page.route(
+    "https://box-this-lap-formula-one.boxthislap.workers.dev/api/seasons/2026/calculator",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          currentTotals: { "Alex A": 25, "Blake B": 18 },
+          driversToWatch: ["Alex A", "Blake B"],
+          raceOptions: [
+            { position: "1", points: 25 },
+            { position: "2", points: 18 },
+            { position: "<10", points: 0 },
+          ],
+          rounds: [
+            {
+              id: 1,
+              name: "Round 1",
+              complete: true,
+              pointsByDriver: { "Alex A": 25, "Blake B": 18 },
+            },
+            { id: 2, name: "Round 2", complete: false, pointsByDriver: {} },
+          ],
+          sprintOptions: [
+            { position: "1", points: 8 },
+            { position: "2", points: 7 },
+            { position: "<8", points: 0 },
+          ],
+          sprintRounds: [
+            { id: 2, name: "Round 2", complete: false, pointsByDriver: {} },
+          ],
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
   await page.route(
     "https://box-this-lap-rankings.boxthislap.workers.dev/**",
     (route) =>

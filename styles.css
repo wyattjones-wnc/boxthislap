@@ -4846,6 +4846,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 100%;
 }
 
+#footy-note-dialog {
+  box-sizing: border-box;
+  max-width: min(620px, calc(100vw - 40px));
+  width: calc(100vw - 40px);
+}
+
 .footy-note-dialog::backdrop {
   background: rgba(0, 0, 0, 0.58);
 }

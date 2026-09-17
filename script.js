@@ -676,6 +676,8 @@ const formulaOneManagerRoundDriverLoads = new Set();
 let formulaOneManagerWeeklyLoadPromise = null;
 let formulaOneManagerWeeklySelectedRound = "";
 let managerHubActivationSequence = 0;
+let managerAwardsMarkup = null;
+let managerAwardsRenderedHtml = null;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -14972,6 +14974,8 @@ function hydrateStoredManagerSession() {
 function saveManagerSession(session) {
   siteData.managerSession = session;
   managerHubLoadState = null;
+  managerAwardsMarkup = null;
+  managerAwardsRenderedHtml = null;
   hydrateManagerHubDraftsCache();
   delete siteData.formulaOne2026ManagerWeekly;
   formulaOneManagerWeeklySelectedRound = "";
@@ -15009,6 +15013,8 @@ function signOutManager() {
   rankingAuthorizationRefreshTimer = 0;
   siteData.managerSession = null;
   managerHubLoadState = null;
+  managerAwardsMarkup = null;
+  managerAwardsRenderedHtml = null;
   delete siteData.formulaOne2026ManagerWeekly;
   formulaOneManagerWeeklySelectedRound = "";
   formulaOneManagerWeeklyEditing.clear();
@@ -16310,7 +16316,7 @@ function renderManagerAwards(managerId) {
   const loadStatus = renderManagerHubCardStatus("awards", "Loading awards...");
 
   if (!siteData.portalDrafts) {
-    managerAwardsList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
+    updateManagerAwardsMarkup(loadStatus || `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`);
     return;
   }
 
@@ -16319,11 +16325,19 @@ function renderManagerAwards(managerId) {
   });
 
   if (!awards.length) {
-    managerAwardsList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`;
+    updateManagerAwardsMarkup(loadStatus || `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`);
     return;
   }
 
-  managerAwardsList.innerHTML = `${awards.map((award) => renderAwardCard(award, "manager")).join("")}${loadStatus}`;
+  updateManagerAwardsMarkup(`${awards.map((award) => renderAwardCard(award, "manager")).join("")}${loadStatus}`);
+}
+
+function updateManagerAwardsMarkup(markup) {
+  if (!managerAwardsList) return;
+  if (managerAwardsMarkup === markup && managerAwardsList.innerHTML === managerAwardsRenderedHtml) return;
+  managerAwardsMarkup = markup;
+  managerAwardsList.innerHTML = markup;
+  managerAwardsRenderedHtml = managerAwardsList.innerHTML;
 }
 
 function renderLeagueAwards() {

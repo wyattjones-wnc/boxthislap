@@ -276,11 +276,8 @@ test("Formula One navigation fits one mobile row", async ({ page }) => {
   );
   await expect(navigation).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Formula 1 points calculator" }),
+    navigation.getByRole("tab", { name: "Formula 1 points calculator" }),
   ).toBeVisible();
-  await expect(navigation.getByRole("tab", { name: "Calculator" })).toHaveCount(
-    0,
-  );
   expect(
     await navigation.evaluate(
       (element) => element.scrollWidth <= element.clientWidth + 1,
@@ -295,6 +292,9 @@ test("Formula One navigation fits one mobile row", async ({ page }) => {
     .getByRole("tab", { name: "Footy" })
     .evaluate((element) => getComputedStyle(element).fontSize);
   expect(formulaTabFontSize).toBe(homeTabFontSize);
+  await expect(
+    page.getByRole("tab", { name: "Formula 1 points calculator" }),
+  ).toHaveCount(0);
 });
 
 test("Footy filters and fixture expansion remain interactive", async ({

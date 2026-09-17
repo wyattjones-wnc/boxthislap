@@ -124,6 +124,21 @@ export function SiteShell() {
             hidden={scope !== navScope}
             key={navScope}
           >
+            {navScope === "formula-one-2026" ? (
+              <a
+                className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
+                href="#formula-1-2026-calculator"
+                data-page-link="formula-1-2026-calculator"
+                aria-label="Formula 1 points calculator"
+                title="Formula 1 points calculator"
+                aria-current={
+                  route === "formula-1-2026-calculator" ? "page" : undefined
+                }
+                role="tab"
+              >
+                <Calculator aria-hidden="true" />
+              </a>
+            ) : null}
             {navItems[navScope].map((item) => (
               <NavLink
                 item={item}
@@ -137,17 +152,6 @@ export function SiteShell() {
       </nav>
       <div className="login-row">
         <div className="login-row-inner">
-          {scope === "formula-one-2026" ? (
-            <a
-              className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
-              href="#formula-1-2026-calculator"
-              data-page-link="formula-1-2026-calculator"
-              aria-label="Formula 1 points calculator"
-              title="Formula 1 points calculator"
-            >
-              <Calculator aria-hidden="true" />
-            </a>
-          ) : null}
           <LegacyShortcuts />
           <div className="login-actions">
             <a

@@ -7666,6 +7666,10 @@ main {
   gap: 8px;
 }
 
+.nav-links .formula-one-calculator-shortcut {
+  padding: 0;
+}
+
 .formula-one-calculator-utility-actions {
   align-items: center;
   display: flex;
@@ -7730,21 +7734,28 @@ main {
   color: inherit;
   cursor: pointer;
   display: inline-flex;
-  flex-direction: column;
-  font: inherit;
-  font-weight: inherit;
-  gap: 1px;
+  flex: 0 0 auto;
+  height: 28px;
   justify-content: center;
   padding: 0;
-  text-transform: inherit;
+  width: 28px;
 }
 
-.formula-one-calculator-sort small {
-  color: var(--muted);
-  font-size: 0.58rem;
-  letter-spacing: 0;
-  line-height: 1;
-  text-transform: none;
+.formula-one-calculator-sort-heading {
+  align-items: center;
+  display: inline-flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.formula-one-calculator-sort svg {
+  fill: none;
+  height: 16px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 16px;
 }
 
 .formula-one-calculator-sort:hover,

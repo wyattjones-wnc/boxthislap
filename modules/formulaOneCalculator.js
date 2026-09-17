@@ -312,14 +312,22 @@ export function createFormulaOneCalculatorController({
 
   function renderFormulaOneCalculatorSortHeading(state, column, label) {
     const active = state.sortColumn === column;
-    const directionLabel =
-      state.sortDirection === "asc" ? "Low–high" : "High–low";
+    const ascending = active && state.sortDirection === "asc";
+    const action = active
+      ? ascending
+        ? "descending"
+        : "ascending"
+      : "descending";
     return `
       <th aria-sort="${active ? (state.sortDirection === "asc" ? "ascending" : "descending") : "none"}">
-        <button type="button" class="formula-one-calculator-sort${active ? " is-active" : ""}" data-formula-one-calculator-sort="${column}">
+        <span class="formula-one-calculator-sort-heading">
           <span>${label}</span>
-          ${active ? `<small>${directionLabel}</small>` : ""}
-        </button>
+          <button type="button" class="formula-one-calculator-sort${active ? " is-active" : ""}" data-formula-one-calculator-sort="${column}" aria-label="Sort ${label} ${action}" title="Sort ${label} ${action}">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="${ascending ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6"}"></path>
+            </svg>
+          </button>
+        </span>
       </th>
     `;
   }

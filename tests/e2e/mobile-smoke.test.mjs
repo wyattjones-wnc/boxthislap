@@ -534,6 +534,18 @@ test("Next item form loads as a contained React dialog and saves", async ({
   const thing = dialog.getByRole("textbox", { name: "Thing" });
   await expect(dialog).toBeVisible();
   await expect(thing).toBeFocused();
+  await expect(
+    dialog
+      .getByRole("button", { name: "Close Next item dialog" })
+      .locator(".lucide-x"),
+  ).toHaveCount(1);
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toHaveClass(
+    /secondary-action/,
+  );
+  await expect(dialog.locator(".react-form-dialog-actions")).toHaveCSS(
+    "justify-content",
+    "flex-end",
+  );
   expect(dialogBundleRequests).toHaveLength(1);
   expect(
     await thing.evaluate((input) =>

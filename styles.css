@@ -5021,6 +5021,10 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-content: space-between;
 }
 
+.react-form-dialog-panel > header .dialog-close {
+  flex: 0 0 auto;
+}
+
 .react-form-dialog-panel > header h2,
 .react-form-dialog-panel > footer p {
   margin: 0;
@@ -5043,6 +5047,15 @@ body.has-shell-stale-warning .stale-shell-alert {
 
 .react-form-dialog-panel > footer .footy-note-status {
   flex: 1 1 auto;
+}
+
+.react-form-dialog-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .react-form-dialog-panel > footer button {

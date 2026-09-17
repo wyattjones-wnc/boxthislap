@@ -1,4 +1,13 @@
-import { Calculator } from "lucide-react";
+import {
+  BookOpen,
+  Boxes,
+  Calculator,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Settings,
+  Shield,
+} from "lucide-react";
 import { memo, useEffect, useRef } from "react";
 import { getNavScope, navItems, type NavItem, type NavScope } from "./routes";
 import { useAppState } from "./providers";
@@ -161,6 +170,7 @@ export function SiteShell() {
               data-page-link="login"
               hidden={Boolean(session)}
             >
+              <LogIn aria-hidden="true" />
               Log In
             </a>
             <div className="profile-menu" id="profile-menu" hidden={!session}>
@@ -182,6 +192,7 @@ export function SiteShell() {
                   data-admin-only
                   hidden={!isAdmin}
                 >
+                  <Shield aria-hidden="true" />
                   TheMonsterManiac
                 </a>
                 <a
@@ -190,9 +201,11 @@ export function SiteShell() {
                   data-non-admin-only
                   hidden={isAdmin}
                 >
+                  <BookOpen aria-hidden="true" />
                   Guides
                 </a>
                 <a href="#manager-hub" data-page-link="manager-hub">
+                  <LayoutDashboard aria-hidden="true" />
                   Manager Hub
                 </a>
                 <a
@@ -201,12 +214,15 @@ export function SiteShell() {
                   data-admin-only
                   hidden={!isAdmin}
                 >
+                  <Boxes aria-hidden="true" />
                   Collectibles
                 </a>
                 <a href="#account-settings" data-page-link="account-settings">
+                  <Settings aria-hidden="true" />
                   Account Settings
                 </a>
                 <button id="logout-button" type="button">
+                  <LogOut aria-hidden="true" />
                   Sign Out
                 </button>
               </div>

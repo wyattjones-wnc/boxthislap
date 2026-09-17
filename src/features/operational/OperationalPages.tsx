@@ -21,6 +21,7 @@ import {
   Notebook,
   Pencil,
   Plus,
+  Scale,
   Star,
   Trash2,
   Trophy,
@@ -1166,13 +1167,12 @@ export function TodoPage() {
           id="todo-random-button"
           label="Pick a weighted random To Do item"
         />
-        <button
-          className="action-button ranking-compare-button"
+        <IconButton
+          className="icon-action-button ranking-compare-button"
+          icon={<Scale />}
           id="todo-compare-button"
-          type="button"
-        >
-          Compare
-        </button>
+          label="Compare"
+        />
         <IconButton
           className="icon-action-button ranking-filter-toggle"
           icon={<Filter />}
@@ -1209,13 +1209,12 @@ export function WantPage() {
           id="want-random-button"
           label="Pick a weighted random Want item"
         />
-        <button
-          className="action-button ranking-compare-button"
+        <IconButton
+          className="icon-action-button ranking-compare-button"
+          icon={<Scale />}
           id="want-compare-button"
-          type="button"
-        >
-          Compare
-        </button>
+          label="Compare"
+        />
         <IconButton
           className="icon-action-button ranking-filter-toggle"
           icon={<Filter />}
@@ -1320,13 +1319,12 @@ export function RankingsPage() {
   return (
     <>
       <PageHeading title="Rankings">
-        <button
-          className="action-button ranking-compare-button"
+        <IconButton
+          className="icon-action-button ranking-compare-button"
+          icon={<Scale />}
           id="ranking-compare-button"
-          type="button"
-        >
-          Compare
-        </button>
+          label="Compare"
+        />
         <IconButton
           className="icon-action-button ranking-filter-toggle"
           icon={<Filter />}

@@ -1,3 +1,5 @@
+import { CalendarDays } from "lucide-react";
+
 const positions = [
   ["all", "All positions"],
   ["goalkeeper", "Goalkeeper"],
@@ -77,8 +79,14 @@ export function WorldCupResultsPage() {
           </p>
         </div>
         <div className="heading-actions heading-actions-right">
-          <a className="action-button" href="#matches" data-page-link="matches">
-            Matches
+          <a
+            className="icon-action-button"
+            href="#matches"
+            data-page-link="matches"
+            aria-label="Open World Cup matches"
+            title="Matches"
+          >
+            <CalendarDays aria-hidden="true" />
           </a>
         </div>
       </div>

@@ -7666,6 +7666,24 @@ main {
   gap: 8px;
 }
 
+.formula-one-calculator-reset {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.formula-one-calculator-reset:hover,
+.formula-one-calculator-reset:focus-visible {
+  background: var(--soft-strong);
+}
+
 .formula-one-calculator-view-toggle {
   background: var(--soft);
   border: 1px solid var(--line);
@@ -10598,11 +10616,12 @@ html.has-contained-dialog body {
   }
 
   .formula-one-calculator-filter-actions {
+    flex-wrap: wrap;
     width: 100%;
   }
 
   .formula-one-calculator-filter-actions button {
-    flex: 1;
+    flex: 1 1 calc(50% - 4px);
   }
 
   .formula-one-calculator-table th:first-child,

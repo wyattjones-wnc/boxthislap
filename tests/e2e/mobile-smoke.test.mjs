@@ -1459,8 +1459,8 @@ test("Formula One calculator loads its complete deferred controller", async ({
     async (route) => {
       await route.fulfill({
         body: JSON.stringify({
-          currentTotals: { "Alex A": 25, "Blake B": 18 },
-          driversToWatch: ["Alex A", "Blake B"],
+          currentTotals: { "Alex A": 150, "Blake B": 75, "Casey C": 49 },
+          driversToWatch: ["Alex A", "Blake B", "Casey C"],
           raceOptions: [
             { position: "1", points: 25 },
             { position: "2", points: 18 },
@@ -1471,7 +1471,7 @@ test("Formula One calculator loads its complete deferred controller", async ({
               id: 1,
               name: "Round 1",
               complete: true,
-              pointsByDriver: { "Alex A": 25, "Blake B": 18 },
+              pointsByDriver: { "Alex A": 150, "Blake B": 75, "Casey C": 49 },
             },
             { id: 2, name: "Round 2", complete: false, pointsByDriver: {} },
           ],
@@ -1513,7 +1513,7 @@ test("Formula One calculator loads its complete deferred controller", async ({
   await position.selectOption("1");
   await expect(
     page.locator(".formula-one-calculator-projected").first(),
-  ).toContainText("50");
+  ).toContainText("175");
   await page.getByRole("button", { name: "Simple" }).click();
   await page.getByRole("button", { name: "Expanded" }).click();
   await expect(
@@ -1525,6 +1525,26 @@ test("Formula One calculator loads its complete deferred controller", async ({
     localStorage.getItem("boxthislap-formula-one-calculator-2026"),
   );
   expect(storedState).toContain('"race:2:Alex A":"1"');
+  await page.getByRole("button", { name: "Show driver filters" }).click();
+  await page.getByRole("button", { name: "Only Protagonists" }).click();
+  await expect(
+    page.locator("[data-formula-one-calculator-filter]:checked"),
+  ).toHaveCount(2);
+  await expect(
+    page.locator('[data-formula-one-calculator-filter][data-driver="Casey C"]'),
+  ).not.toBeChecked();
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(page.getByRole("button", { name: "Simple" })).toHaveClass(
+    /is-active/,
+  );
+  await expect(
+    page.locator("[data-formula-one-calculator-filter]:checked"),
+  ).toHaveCount(3);
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("boxthislap-formula-one-calculator-2026"),
+    ),
+  ).toBeNull();
   expect(controllerRequests).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });

@@ -111,6 +111,18 @@ export function createFormulaOneCalculatorController({
     }
   }
 
+  function resetFormulaOneCalculatorState(year, data, state) {
+    state.viewMode = "simple";
+    state.simpleSelections = {};
+    state.selections = {};
+    state.visibleDrivers = new Set(data.driversToWatch);
+    try {
+      localStorage.removeItem(getFormulaOneCalculatorStorageKey(year));
+    } catch {
+      // Reset still applies for the current session when storage is unavailable.
+    }
+  }
+
   function getFormulaOneCalculatorStorageKey(year) {
     return `boxthislap-formula-one-calculator-${year}`;
   }
@@ -279,6 +291,19 @@ export function createFormulaOneCalculatorController({
     });
   }
 
+  function getFormulaOneCalculatorProtagonists(data) {
+    const leaderPoints = Math.max(
+      ...data.driversToWatch.map((driver) =>
+        getFormulaOneCalculatorCurrentPoints(data, driver),
+      ),
+    );
+    return data.driversToWatch.filter(
+      (driver) =>
+        leaderPoints - getFormulaOneCalculatorCurrentPoints(data, driver) <=
+        100,
+    );
+  }
+
   function renderFormulaOneCalculatorDriverName(driver) {
     const [firstName, ...remainingNames] = String(driver ?? "")
       .trim()
@@ -329,6 +354,7 @@ export function createFormulaOneCalculatorController({
             <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
           </div>
           <div class="formula-one-calculator-heading-actions">
+            <button class="formula-one-calculator-reset" type="button" data-formula-one-calculator-reset>Reset</button>
             <div class="formula-one-calculator-view-toggle" role="group" aria-label="Calculator view">
               <button
                 type="button"
@@ -398,6 +424,7 @@ export function createFormulaOneCalculatorController({
           </div>
           <div class="formula-one-calculator-filter-actions">
             <button type="button" data-formula-one-calculator-show-all>Show all</button>
+            <button type="button" data-formula-one-calculator-show-protagonists>Only Protagonists</button>
             <button type="button" data-formula-one-calculator-hide-all>Hide all</button>
           </div>
         </div>
@@ -824,7 +851,20 @@ export function createFormulaOneCalculatorController({
       const hideAllButton = event.target.closest(
         "[data-formula-one-calculator-hide-all]",
       );
-      if (!viewToggle && !filterToggle && !showAllButton && !hideAllButton)
+      const protagonistsButton = event.target.closest(
+        "[data-formula-one-calculator-show-protagonists]",
+      );
+      const resetButton = event.target.closest(
+        "[data-formula-one-calculator-reset]",
+      );
+      if (
+        !viewToggle &&
+        !filterToggle &&
+        !showAllButton &&
+        !hideAllButton &&
+        !protagonistsButton &&
+        !resetButton
+      )
         return;
 
       const data = getData(String(year));
@@ -843,7 +883,18 @@ export function createFormulaOneCalculatorController({
         renderFormulaOneCalculator(year);
         return;
       }
-      state.visibleDrivers = new Set(showAllButton ? data.driversToWatch : []);
+      if (resetButton) {
+        resetFormulaOneCalculatorState(year, data, state);
+        renderFormulaOneCalculator(year);
+        return;
+      }
+      state.visibleDrivers = new Set(
+        showAllButton
+          ? data.driversToWatch
+          : protagonistsButton
+            ? getFormulaOneCalculatorProtagonists(data)
+            : [],
+      );
       persistFormulaOneCalculatorState(year, data, state);
       renderFormulaOneCalculator(year);
     });

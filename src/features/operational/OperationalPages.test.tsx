@@ -27,6 +27,19 @@ function renderWithTooltips(component: React.ReactNode) {
 }
 
 describe("operational React pages", () => {
+  it("keeps the Ranking heading actions grouped for consistent sizing", () => {
+    renderWithTooltips(<RankingsPage />);
+
+    const compareButton = screen.getByRole("button", { name: "Compare" });
+    const filterButton = screen.getByRole("button", { name: "Show filters" });
+    const actions = compareButton.closest(".heading-actions");
+
+    expect(compareButton.classList.contains("ranking-compare-button")).toBe(
+      true,
+    );
+    expect(actions?.contains(filterButton)).toBe(true);
+  });
+
   it("renders live Next view updates from the transition data bridge", async () => {
     renderWithTooltips(<NextPage />);
 

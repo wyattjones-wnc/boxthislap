@@ -3177,6 +3177,12 @@ body.has-shell-stale-warning .stale-shell-alert {
   padding: 14px;
 }
 
+.ranking-compare-button {
+  box-sizing: border-box;
+  height: 44px;
+  padding-block: 0;
+}
+
 .ranking-read-only {
   align-self: end;
   background: var(--soft);

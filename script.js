@@ -14543,6 +14543,16 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   view.resultsRows?.addEventListener("click", toggleWeeklyStanding);
   view.resultsRows?.addEventListener("keydown", toggleWeeklyStanding);
 
+  const toggleWeeklyManagerStanding = (event) => {
+    const row = event.target.closest("[data-formula-one-weekly-standing-row]");
+    if (!row) return;
+    if (event.type === "keydown" && !["Enter", " "].includes(event.key)) return;
+    if (event.type === "keydown") event.preventDefault();
+    toggleFormulaOneWeeklyStandingRow(view.weeklyManagers, row);
+  };
+  view.weeklyManagers?.addEventListener("click", toggleWeeklyManagerStanding);
+  view.weeklyManagers?.addEventListener("keydown", toggleWeeklyManagerStanding);
+
   view.weeklyRoundSelect?.addEventListener("change", () => {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
   });

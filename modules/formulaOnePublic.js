@@ -966,12 +966,12 @@ function renderFormulaOneWeeklyPage(year, data) {
 
   if (!data?.races?.length) {
     view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Formula 1 weekly picks were loaded.</p></article>`;
-    renderFormulaOneWeeklyManagers(year, []);
+    renderFormulaOneWeeklyManagers(year, null);
     return;
   }
 
   renderFormulaOneWeeklyRoundOptions(year, data.races);
-  renderFormulaOneWeeklyManagers(year, data.standings ?? []);
+  renderFormulaOneWeeklyManagers(year, data);
 
   const selectedRound = view.weeklyRoundSelect?.value ?? "";
   const races = selectedRound
@@ -988,8 +988,9 @@ function renderFormulaOneWeeklyPage(year, data) {
     .join("");
 }
 
-function renderFormulaOneWeeklyManagers(year, standings) {
+function renderFormulaOneWeeklyManagers(year, data) {
   const rows = formulaOneViews[year]?.weeklyManagers;
+  const standings = data?.standings ?? [];
 
   if (!rows) {
     return;
@@ -1006,12 +1007,15 @@ function renderFormulaOneWeeklyManagers(year, standings) {
         name: entry.manager,
       };
 
+      const detailId = `formula-one-${year}-weekly-manager-standing-${escapeHtml(String(entry.managerId || entry.manager_id || entry.manager || index))}`;
+
       return `
-      <tr>
+      <tr class="manager-result-row" data-formula-one-weekly-standing-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0">
         <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
         <td data-label="Manager">${renderManagerChip(manager)}</td>
         <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
       </tr>
+      <tr class="manager-detail-row formula-one-weekly-standing-detail" id="${detailId}" hidden><td colspan="3">${renderFormulaOneWeeklyStandingDetails(data, entry, "all")}</td></tr>
     `;
     })
     .join("");

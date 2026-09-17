@@ -379,7 +379,7 @@ export function createFormulaOneCalculatorController({
       <section class="formula-one-calculator-card formula-one-calculator-intro">
         <div>
           <h3>Season scenarios</h3>
-          <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint. Current totals come from the approved ${escapeHtml(year)} Formula 1 data.</p>
+          <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint.</p>
         </div>
         <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
       </section>
@@ -432,7 +432,6 @@ export function createFormulaOneCalculatorController({
         <div class="formula-one-calculator-section-heading">
           <div>
             <h3>Championship projection</h3>
-            <p>Cumulative points after each round</p>
           </div>
         </div>
         <div class="formula-one-calculator-chart-wrap">

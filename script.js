@@ -6839,9 +6839,6 @@ function syncNextFilters() {
   const minPercent = range.min * 10;
   const maxPercent = range.max * 10;
 
-  if (nextPriorityMin) nextPriorityMin.max = String(range.max - 1);
-  if (nextPriorityMax) nextPriorityMax.min = String(range.min + 1);
-
   document.documentElement.style.setProperty("--next-priority-min-percent", `${minPercent}%`);
   document.documentElement.style.setProperty("--next-priority-max-percent", `${maxPercent}%`);
 

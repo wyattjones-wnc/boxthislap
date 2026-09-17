@@ -2572,9 +2572,9 @@ body.has-shell-stale-warning .stale-shell-alert {
     );
   border-radius: 999px;
   height: 6px;
-  left: 0;
+  left: 10px;
   position: absolute;
-  right: 0;
+  right: 10px;
   top: 11px;
   z-index: 1;
 }

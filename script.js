@@ -420,6 +420,11 @@ import { createRouter, scrollToPageTop } from "./modules/router.js?v=20260908151
 import { createThemeController } from "./modules/theme.js?v=202607210001";
 import { createFollowedTeamsController, filterPickerTeams } from "./modules/followedTeams.js?v=202609121804";
 import {
+  isNextDateSpanInRange,
+  normalizeNextDateRange,
+  normalizeNextPriorityRange,
+} from "./modules/nextFilters.js?v=202609162330";
+import {
   formatUpdatedTime,
   normalizeLookupName,
   parseCsvMatrix,
@@ -6834,6 +6839,9 @@ function syncNextFilters() {
   const minPercent = range.min * 10;
   const maxPercent = range.max * 10;
 
+  if (nextPriorityMin) nextPriorityMin.max = String(range.max - 1);
+  if (nextPriorityMax) nextPriorityMax.min = String(range.min + 1);
+
   document.documentElement.style.setProperty("--next-priority-min-percent", `${minPercent}%`);
   document.documentElement.style.setProperty("--next-priority-max-percent", `${maxPercent}%`);
 
@@ -6849,24 +6857,18 @@ function syncNextFilters() {
 function getNextDateFilterRange() {
   const rawStart = String(nextDateFromFilter?.value || "").trim();
   const rawEnd = String(nextDateToFilter?.value || "").trim();
-
-  if (!rawStart && !rawEnd) {
-    return null;
-  }
-
-  const start = rawStart || rawEnd;
-  const end = rawEnd || rawStart;
-
-  return start <= end
-    ? { start, end }
-    : { start: end, end: start };
+  return normalizeNextDateRange(rawStart, rawEnd);
 }
 
 function getNextPriorityRange() {
-  const min = clampNextPriority(nextPriorityMin?.value ?? 0);
-  const max = clampNextPriority(nextPriorityMax?.value ?? 10);
+  return normalizeNextPriorityRange(nextPriorityMin?.value, nextPriorityMax?.value);
+}
 
-  return min <= max ? { min, max } : { min: max, max: min };
+function constrainNextPriorityRange(changedControl) {
+  const changed = changedControl === nextPriorityMin ? "min" : "max";
+  const range = normalizeNextPriorityRange(nextPriorityMin?.value, nextPriorityMax?.value, changed);
+  if (nextPriorityMin) nextPriorityMin.value = String(range.min);
+  if (nextPriorityMax) nextPriorityMax.value = String(range.max);
 }
 
 function hasActiveNextFilters() {
@@ -6894,14 +6896,7 @@ function isNextItemPast(item, todayKey = getDateKey(0)) {
 }
 
 function isNextItemInDateRange(item, dateRange) {
-  const start = item.dateKey || item.endDateKey;
-  const end = item.endDateKey || item.dateKey;
-
-  if (!start || !end) {
-    return false;
-  }
-
-  return start <= dateRange.end && end >= dateRange.start;
+  return isNextDateSpanInRange(item.dateKey, item.endDateKey, dateRange);
 }
 
 function parseNextDateKey(value) {
@@ -13809,11 +13804,20 @@ nextFilterToggle?.addEventListener("click", () => {
   nextEditModeFilter,
   nextDateFromFilter,
   nextDateToFilter,
-  nextPriorityMin,
-  nextPriorityMax,
 ].forEach((control) => {
   control?.addEventListener("input", () => renderNextList());
   control?.addEventListener("change", () => renderNextList());
+});
+
+[nextPriorityMin, nextPriorityMax].forEach((control) => {
+  control?.addEventListener("input", () => {
+    constrainNextPriorityRange(control);
+    renderNextList();
+  });
+  control?.addEventListener("change", () => {
+    constrainNextPriorityRange(control);
+    renderNextList();
+  });
 });
 
 nextList?.addEventListener("click", (event) => {

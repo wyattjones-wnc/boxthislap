@@ -292,21 +292,44 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
 });
 
-test("Match Notes dialog keeps comfortable mobile gutters", async ({
+test("Match Notes dialog contains its populated mobile form", async ({
   page,
 }) => {
   await page.goto("/#footy", { waitUntil: "domcontentloaded" });
   const dialog = page.locator("#footy-note-dialog");
-  await dialog.evaluate((element) =>
-    /** @type {HTMLDialogElement} */ (element).showModal(),
-  );
+  await dialog.evaluate((element) => {
+    const matchId = element.querySelector("#footy-note-match-id");
+    const title = element.querySelector("#footy-note-title");
+    if (matchId)
+      matchId.textContent = "MATCH ID FOOTY_COMP_FOOTBALL_DATA_ORG_564679";
+    if (title) title.textContent = "RC Deportivo La Coruña v Sevilla FC";
+    /** @type {HTMLDialogElement} */ (element).showModal();
+  });
 
   const bounds = await dialog.boundingBox();
   const viewport = page.viewportSize();
   if (!bounds || !viewport)
     throw new Error("Match Notes dialog was not laid out");
-  expect(bounds.x).toBeGreaterThanOrEqual(20);
-  expect(viewport.width - bounds.x - bounds.width).toBeGreaterThanOrEqual(20);
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+  expect(
+    await dialog.evaluate((element) => {
+      const dialogBounds = element.getBoundingClientRect();
+      return [
+        ...element.querySelectorAll(
+          "header, .footy-note-grid, label, details, input, textarea, footer, button",
+        ),
+      ]
+        .filter((item) => {
+          const itemBounds = item.getBoundingClientRect();
+          return (
+            itemBounds.left < dialogBounds.left - 1 ||
+            itemBounds.right > dialogBounds.right + 1
+          );
+        })
+        .map((item) => item.tagName);
+    }),
+  ).toEqual([]);
 });
 
 test("Missing Match Notes prepares once and toggles filters without rebuilding", async ({

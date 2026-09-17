@@ -4840,16 +4840,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 .footy-note-dialog {
   background: transparent;
   border: 0;
+  box-sizing: border-box;
   color: var(--ink);
   max-width: min(760px, calc(100vw - 24px));
   padding: 0;
-  width: 100%;
-}
-
-#footy-note-dialog {
-  box-sizing: border-box;
-  max-width: min(620px, calc(100vw - 40px));
-  width: calc(100vw - 40px);
+  width: calc(100vw - 24px);
 }
 
 .footy-note-dialog::backdrop {
@@ -4888,10 +4883,17 @@ body.has-shell-stale-warning .stale-shell-alert {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+  box-sizing: border-box;
   box-shadow: 0 18px 46px var(--shadow);
   display: grid;
   gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 18px;
+  width: 100%;
 }
 
 .footy-note-form header,
@@ -4936,6 +4938,7 @@ body.has-shell-stale-warning .stale-shell-alert {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
 }
 
 .footy-note-grid label,
@@ -5122,11 +5125,14 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--ink);
+  box-sizing: border-box;
   font: inherit;
   font-size: 16px;
   min-height: 42px;
+  min-width: 0;
   padding: 9px 10px;
   resize: vertical;
+  width: 100%;
 }
 
 .footy-note-ga-builder input[type="text"] {
@@ -10186,6 +10192,13 @@ html.has-contained-dialog body {
 
   .footy-goal-assists-status-row {
     display: grid;
+  }
+
+  #footy-note-dialog {
+    inset-inline: 12px;
+    margin-inline: 0;
+    max-width: none;
+    width: auto;
   }
 
   .footy-note-form {

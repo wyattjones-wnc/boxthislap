@@ -8360,6 +8360,36 @@ button.formula-one-admin-status:focus-visible {
   margin-top: 14px;
 }
 
+.formula-one-manager-past-choices {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.formula-one-manager-past-choices h3 {
+  margin: 0;
+}
+
+.formula-one-manager-past-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.formula-one-manager-past-grid .formula-one-admin-card {
+  margin: 0;
+}
+
+.formula-one-manager-past-grid header {
+  margin-bottom: 12px;
+}
+
+.formula-one-manager-past-picks {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .formula-one-manager-bet-footer .formula-one-admin-feedback {
   flex: 1 1 220px;
 }

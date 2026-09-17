@@ -412,7 +412,7 @@ async function requireManager(request, env) {
 }
 
 async function readManagerWeekly(env, year, managerId) {
-  const [roundQuery, driverQuery, roundDriverQuery, entryQuery] =
+  const [roundQuery, driverQuery, roundDriverQuery, entryQuery, submittedEntryQuery] =
     await Promise.all([
       env.DB.prepare(
         "SELECT year, round, name, race_date, deadline_at, has_sprint FROM f1_rounds WHERE year = ? ORDER BY round",
@@ -434,9 +434,22 @@ async function readManagerWeekly(env, year, managerId) {
       )
         .bind(year, managerId)
         .all(),
+      env.DB.prepare(
+        "SELECT year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at FROM f1_weekly_entries WHERE year = ? AND entry_status = 'submitted' ORDER BY round, manager_id",
+      )
+        .bind(year)
+        .all(),
     ]);
   const rounds = roundQuery.results || [];
   await backfillMissingQualifyingDeadlines(env, year, rounds);
+  const closedRoundIds = new Set(
+    rounds
+      .filter((round) => {
+        const deadline = Date.parse(round.deadline_at || "");
+        return Number.isFinite(deadline) && Date.now() >= deadline;
+      })
+      .map((round) => Number(round.round)),
+  );
   return {
     year,
     rounds: rounds.map((round) => ({
@@ -449,6 +462,9 @@ async function readManagerWeekly(env, year, managerId) {
     drivers: driverQuery.results || [],
     roundDrivers: roundDriverQuery.results || [],
     entries: entryQuery.results || [],
+    pastEntries: (submittedEntryQuery.results || []).filter((entry) =>
+      closedRoundIds.has(Number(entry.round)),
+    ),
   };
 }
 

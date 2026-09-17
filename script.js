@@ -11584,7 +11584,7 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
     <form data-formula-one-manager-picks>
       <div class="formula-one-form-header formula-one-manager-bet-header">
         <label class="select-control"><span>Round</span><select data-formula-one-manager-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>
-        <div class="formula-one-manager-deadline"><span>Deadline (Eastern Time)</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
+        <div class="formula-one-manager-deadline"><span>Deadline</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
         ${submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
       </div>
       <div class="formula-one-admin-form-grid">
@@ -11597,7 +11597,49 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
         <p class="formula-one-admin-feedback${feedback.error ? " is-error" : ""}" role="status">${escapeHtml(status)}</p>
         ${locked ? "" : `<button class="action-button" type="submit">${submitted ? "Update choices" : "Submit choices"}</button>`}
       </div>
-    </form>`;
+    </form>
+    ${open ? "" : renderFormulaOnePastRoundChoices(data, selectedRound)}`;
+}
+
+function renderFormulaOnePastRoundChoices(data, round) {
+  const entries = (data.pastEntries || []).filter(
+    (entry) => Number(entry.round) === Number(round.round),
+  );
+  if (!entries.length) {
+    return `<section class="formula-one-manager-past-choices"><h3>Manager choices</h3><p class="table-message">No manager choices were submitted for this round.</p></section>`;
+  }
+  const driverNames = new Map(
+    (data.drivers || []).map((driver) => [driver.driver_id, driver.display_name]),
+  );
+  const choice = (label, driverId) => `
+    <div class="formula-one-weekly-pick">
+      <span>${label}</span>
+      <strong>${escapeHtml(driverNames.get(driverId) || driverId || "No choice")}</strong>
+    </div>`;
+  return `
+    <section class="formula-one-manager-past-choices">
+      <h3>Manager choices</h3>
+      <div class="formula-one-manager-past-grid">
+        ${entries
+          .map((entry) => {
+            const manager = getManagerById(entry.manager_id) || {
+              id: entry.manager_id,
+              name: `Manager ${entry.manager_id}`,
+            };
+            return `
+              <article class="formula-one-admin-card">
+                <header>${renderManagerChip(manager)}</header>
+                <div class="formula-one-manager-past-picks">
+                  ${choice("P1", entry.p1_driver_id)}
+                  ${choice("P2", entry.p2_driver_id)}
+                  ${choice("P3", entry.p3_driver_id)}
+                  ${choice("Wildcard", entry.wildcard_driver_id)}
+                </div>
+              </article>`;
+          })
+          .join("")}
+      </div>
+    </section>`;
 }
 
 function getNextFormulaOneManagerRound(rounds, now = Date.now()) {
@@ -11817,7 +11859,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
         <div class="formula-one-admin-toolbar">
           ${yearControl}${roundControl}
         </div>
-        <p><strong>Deadline (Eastern Time):</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "Not set")}</p>
+        <p><strong>Deadline:</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "Not set")}</p>
         <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
       </div>
       ${renderFormulaOneAdminPicks(data, selectedRound)}`;

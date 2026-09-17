@@ -286,6 +286,15 @@ test("Formula One navigation fits one mobile row", async ({ page }) => {
       (element) => element.scrollWidth <= element.clientWidth + 1,
     ),
   ).toBe(true);
+  const formulaTabFontSize = await navigation
+    .getByRole("tab", { name: "Questions" })
+    .evaluate((element) => getComputedStyle(element).fontSize);
+  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+  const homeTabFontSize = await page
+    .locator('.nav-links[data-nav-scope="home"]')
+    .getByRole("tab", { name: "Footy" })
+    .evaluate((element) => getComputedStyle(element).fontSize);
+  expect(formulaTabFontSize).toBe(homeTabFontSize);
 });
 
 test("Footy filters and fixture expansion remain interactive", async ({
@@ -1317,6 +1326,28 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
       },
     ],
     entries: entry ? [entry] : [],
+    pastEntries: [
+      {
+        entry_status: "submitted",
+        manager_id: "2",
+        p1_driver_id: "norris",
+        p2_driver_id: "russell",
+        p3_driver_id: "leclerc",
+        round: 3,
+        wildcard_driver_id: "sainz",
+        year: 2026,
+      },
+      {
+        entry_status: "submitted",
+        manager_id: "3",
+        p1_driver_id: "russell",
+        p2_driver_id: "norris",
+        p3_driver_id: "sainz",
+        round: 3,
+        wildcard_driver_id: "leclerc",
+        year: 2026,
+      },
+    ],
     ok: true,
     roundDrivers: [],
     rounds: [
@@ -1332,6 +1363,13 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
         is_open: 1,
         name: "Australian Grand Prix",
         round: 2,
+        year: 2026,
+      },
+      {
+        deadline_at: "2026-03-01T05:00:00.000Z",
+        is_open: 0,
+        name: "Bahrain Grand Prix",
+        round: 3,
         year: 2026,
       },
     ],
@@ -1416,13 +1454,23 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue(
     "2",
   );
-  await expect(form.getByText("Deadline (Eastern Time)")).toBeVisible();
+  await expect(form.getByText("Deadline", { exact: true })).toBeVisible();
+  await expect(form.getByText(/Eastern Time/i)).toHaveCount(0);
   await expect(form.locator(".formula-one-manager-deadline strong")).toHaveText(
     /E[DS]T$/,
   );
   await expect(
     form.locator('select[name="wildcardDriverId"] option'),
   ).toHaveText(["Choose driver", "Carlos Sainz"]);
+  await form.locator("[data-formula-one-manager-round]").selectOption("3");
+  const pastChoices = page.locator(".formula-one-manager-past-choices");
+  await expect(
+    pastChoices.getByRole("heading", { name: "Manager choices" }),
+  ).toBeVisible();
+  await expect(pastChoices.locator("article")).toHaveCount(2);
+  await expect(pastChoices).toContainText("Lando Norris");
+  await expect(pastChoices).toContainText("George Russell");
+  await form.locator("[data-formula-one-manager-round]").selectOption("2");
   // Playwright WebKit cannot fulfill this cross-origin PUT reliably, but it
   // still verifies the complete mobile entry UI and wildcard filter above.
   if (browserName === "webkit") return;

@@ -49,7 +49,6 @@
 
   :global(.topbar .nav-links[data-nav-scope="formula-one-2026"] a) {
     flex: initial;
-    font-size: 0.76rem;
     gap: 3px;
     min-width: 0;
     padding-inline: 3px;

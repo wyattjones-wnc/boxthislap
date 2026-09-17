@@ -7405,6 +7405,26 @@ main {
   color: var(--muted);
 }
 
+.league-card-open-button {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 38px;
+  justify-content: center;
+  padding: 0;
+  width: 38px;
+}
+
+.league-card-open-button svg {
+  fill: none;
+  height: 19px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+  width: 19px;
+}
+
 .league-detail-page {
   max-width: 900px;
 }
@@ -7689,10 +7709,6 @@ main {
   display: grid;
   flex: 0 0 auto;
   gap: 8px;
-}
-
-.nav-links .formula-one-calculator-shortcut {
-  padding: 0;
 }
 
 .formula-one-calculator-utility-actions {

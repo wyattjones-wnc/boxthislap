@@ -932,23 +932,36 @@ function renderLeagueList(year) {
 
 function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year }) {
   if (isWorldCup) {
-    return `<a class="league-card-link" href="#results" data-page-link="results">Open</a>`;
+    return renderLeagueOpenAction("results", "Open World Cup");
   }
 
   if (isFantasyCritic) {
-    return `<a class="league-card-link" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open</a>`;
+    return renderLeagueOpenAction(`fantasy-critic-${year}`, `Open ${year} Fantasy Critic`);
   }
 
   if (isFormulaOne) {
-    return `<a class="league-card-link" href="#formula-1-${escapeHtml(year)}-questions" data-page-link="formula-1-${escapeHtml(year)}-questions">Open</a>`;
+    return renderLeagueOpenAction(`formula-1-${year}-questions`, `Open ${year} Formula 1`);
   }
 
   if (isFantasyOffice) {
     const page = year === "2026" ? "draft" : "results";
-    return `<a class="league-card-link" href="#fantasy-office-${escapeHtml(year)}-${page}" data-page-link="fantasy-office-${escapeHtml(year)}-${page}">Open</a>`;
+    return renderLeagueOpenAction(`fantasy-office-${year}-${page}`, `Open ${year} Fantasy Office`);
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
+}
+
+function renderLeagueOpenAction(route, label) {
+  const safeRoute = escapeHtml(route);
+  const safeLabel = escapeHtml(label);
+  return `
+    <a class="league-card-link league-card-open-button" href="#${safeRoute}" data-page-link="${safeRoute}" aria-label="${safeLabel}" title="${safeLabel}">
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <path d="M5 12h14"></path>
+        <path d="m13 6 6 6-6 6"></path>
+      </svg>
+    </a>
+  `;
 }
 
 function renderFootySchedule(schedule) {

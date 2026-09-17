@@ -22,6 +22,7 @@ import {
   Shield,
   Trophy,
   Video,
+  Volleyball,
   type LucideIcon,
 } from "lucide-react";
 import { memo, useEffect, useRef } from "react";
@@ -84,7 +85,7 @@ const headerArt = [
 
 const navIcons: Record<string, LucideIcon> = {
   bracket: GitFork,
-  footy: Flag,
+  footy: Volleyball,
   guides: BookOpen,
   leagues: Trophy,
   next: ListTodo,
@@ -179,21 +180,6 @@ export function SiteShell() {
             hidden={scope !== navScope}
             key={navScope}
           >
-            {navScope === "formula-one-2026" ? (
-              <a
-                className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
-                href="#formula-1-2026-calculator"
-                data-page-link="formula-1-2026-calculator"
-                aria-label="Formula 1 points calculator"
-                title="Formula 1 points calculator"
-                aria-current={
-                  route === "formula-1-2026-calculator" ? "page" : undefined
-                }
-                role="tab"
-              >
-                <Calculator aria-hidden="true" />
-              </a>
-            ) : null}
             {navItems[navScope].map((item) => (
               <NavLink
                 item={item}
@@ -209,6 +195,20 @@ export function SiteShell() {
         <div className="login-row-inner">
           <LegacyShortcuts />
           <div className="login-actions">
+            {scope.startsWith("formula-one-") ? (
+              <a
+                className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
+                href="#formula-1-2026-calculator"
+                data-page-link="formula-1-2026-calculator"
+                aria-label="Formula 1 points calculator"
+                title="Formula 1 points calculator"
+                aria-current={
+                  route === "formula-1-2026-calculator" ? "page" : undefined
+                }
+              >
+                <Calculator aria-hidden="true" />
+              </a>
+            ) : null}
             <a
               className="login-button"
               id="login-open-button"

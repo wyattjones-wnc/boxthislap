@@ -1,4 +1,4 @@
-import { Filter, Plus, X } from "lucide-react";
+import { ChevronLeft, Filter, Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
 
@@ -21,7 +21,12 @@ function FootyBackHeading({
   return (
     <div className="section-heading page-heading-with-action footy-heading">
       <div>
-        <a className="back-link" href="#footy" data-page-link="footy">
+        <a
+          className="back-link back-link--library-icon"
+          href="#footy"
+          data-page-link="footy"
+        >
+          <ChevronLeft aria-hidden="true" />
           Footy
         </a>
         <h1>{title}</h1>
@@ -37,10 +42,11 @@ export function FootyMissingNotesPage() {
       <div className="section-heading page-heading-with-action footy-heading">
         <div>
           <a
-            className="back-link"
+            className="back-link back-link--library-icon"
             href="#manager-hub"
             data-page-link="manager-hub"
           >
+            <ChevronLeft aria-hidden="true" />
             Manager Hub
           </a>
           <h1>Missing Match Notes</h1>
@@ -258,7 +264,12 @@ export function FootyTeamPage() {
     <>
       <div className="section-heading page-heading-with-action footy-team-heading">
         <div>
-          <a className="back-link" href="#footy" data-page-link="footy">
+          <a
+            className="back-link back-link--library-icon"
+            href="#footy"
+            data-page-link="footy"
+          >
+            <ChevronLeft aria-hidden="true" />
             Footy
           </a>
           <h1 id="footy-team-title">Team</h1>

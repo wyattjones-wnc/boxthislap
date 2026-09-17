@@ -5636,9 +5636,19 @@ body.has-shell-stale-warning .stale-shell-alert {
   width: 7px;
 }
 
+.back-link--library-icon[href^="#"]::before {
+  content: none;
+}
+
+.back-link--library-icon svg {
+  height: 1em;
+  stroke-width: 3;
+  width: 1em;
+}
+
 .footy-team-heading .back-link {
   color: var(--muted);
-  display: inline-block;
+  display: inline-flex;
   font-size: 0.88rem;
   font-weight: 900;
   margin-bottom: 8px;

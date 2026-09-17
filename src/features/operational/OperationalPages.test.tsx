@@ -8,7 +8,10 @@ import {
   TodoPage,
   WantPage,
 } from "./OperationalPages";
-import { FootyCustomSchedulePage } from "./FootyOperationalPages";
+import {
+  FootyCustomSchedulePage,
+  FootyTeamPage,
+} from "./FootyOperationalPages";
 
 afterEach(() => {
   cleanup();
@@ -72,6 +75,13 @@ describe("operational React pages", () => {
       screen.queryByRole("button", { name: /custom schedule filters/i }),
     ).toBeNull();
     expect(document.querySelector("#footy-custom-filters")).not.toBeNull();
+  });
+
+  it("uses the icon library for the Footy team back link", () => {
+    renderWithTooltips(<FootyTeamPage />);
+
+    const backLink = screen.getByRole("link", { name: "Footy" });
+    expect(backLink.querySelector(".lucide-chevron-left")).not.toBeNull();
   });
 
   it("renders To Do and Want list updates as React cards", async () => {

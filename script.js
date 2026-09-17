@@ -796,7 +796,7 @@ const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
   return formulaOneCalculations;
 });
 const loadFormulaOneCalculatorController = createLazyControllerLoader(async () => {
-  const module = await import("./modules/formulaOneCalculator.js?v=202609171427");
+  const module = await import("./modules/formulaOneCalculator.js?v=202609171444");
   formulaOneCalculatorController = module.createFormulaOneCalculatorController({
     escapeHtml,
     getContainer: (year) => formulaOneViews[year]?.calculator,

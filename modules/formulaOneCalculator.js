@@ -354,7 +354,21 @@ export function createFormulaOneCalculatorController({
             <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
           </div>
           <div class="formula-one-calculator-heading-actions">
-            <button class="formula-one-calculator-reset" type="button" data-formula-one-calculator-reset>Reset</button>
+            <div class="formula-one-calculator-utility-actions">
+              <button class="formula-one-calculator-reset" type="button" data-formula-one-calculator-reset>Reset</button>
+              <button
+                class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
+                type="button"
+                data-formula-one-calculator-filter-toggle
+                aria-expanded="${state.filtersExpanded ? "true" : "false"}"
+                aria-controls="formula-one-${escapeHtml(year)}-driver-filters"
+                aria-label="${state.filtersExpanded ? "Hide" : "Show"} driver filters"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                  <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
+                </svg>
+              </button>
+            </div>
             <div class="formula-one-calculator-view-toggle" role="group" aria-label="Calculator view">
               <button
                 type="button"
@@ -369,18 +383,6 @@ export function createFormulaOneCalculatorController({
                 aria-pressed="${state.viewMode === "expanded" ? "true" : "false"}"
               >Expanded</button>
             </div>
-          <button
-            class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
-            type="button"
-            data-formula-one-calculator-filter-toggle
-            aria-expanded="${state.filtersExpanded ? "true" : "false"}"
-            aria-controls="formula-one-${escapeHtml(year)}-driver-filters"
-            aria-label="${state.filtersExpanded ? "Hide" : "Show"} driver filters"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-              <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
-            </svg>
-          </button>
           </div>
         </div>
         ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers)}

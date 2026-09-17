@@ -7660,10 +7660,17 @@ main {
 }
 
 .formula-one-calculator-heading-actions {
-  align-items: center;
-  display: flex;
+  align-items: stretch;
+  display: grid;
   flex: 0 0 auto;
   gap: 8px;
+}
+
+.formula-one-calculator-utility-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .formula-one-calculator-reset {
@@ -7675,7 +7682,7 @@ main {
   font: inherit;
   font-size: 0.8rem;
   font-weight: 900;
-  min-height: 34px;
+  min-height: 44px;
   padding: 7px 10px;
 }
 
@@ -10603,8 +10610,7 @@ html.has-contained-dialog body {
   }
 
   .formula-one-calculator-section-heading > .formula-one-calculator-heading-actions {
-    align-items: flex-start;
-    flex-direction: column-reverse;
+    align-items: stretch;
   }
 
   .formula-one-calculator-driver-filters {

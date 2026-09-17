@@ -1506,6 +1506,12 @@ test("Formula One calculator loads its complete deferred controller", async ({
   await expect(
     page.getByRole("heading", { name: "Points calculator" }),
   ).toBeVisible();
+  const tableWrap = page.locator(".formula-one-calculator-table-wrap");
+  expect(
+    await tableWrap.evaluate(
+      (element) => element.scrollHeight <= element.clientHeight + 1,
+    ),
+  ).toBe(true);
   const resetButton = page.getByRole("button", { name: "Reset" });
   const filterButton = page.getByRole("button", {
     name: "Show driver filters",

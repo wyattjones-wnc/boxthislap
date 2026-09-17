@@ -7834,7 +7834,6 @@ main {
   border-bottom: 0;
   box-shadow: none;
   margin: 0;
-  max-height: min(70vh, 680px);
   overflow: auto;
 }
 

@@ -10,6 +10,7 @@ import {
   groupFootyFixturesByCalendarWeek,
   hasFootyMatchNoteData,
   isFootyFixtureInDateRange,
+  isFootyFixtureMissingMatchNoteCandidate,
   isFootyFixturePast,
   isFootyFixturePostponed,
   isFootyFixtureStarted,
@@ -119,6 +120,14 @@ test("recognizes postponed fixtures without treating their old kickoff as starte
   assert.equal(isFootyFixtureStarted(fixture, now), false);
   assert.equal(isFootyFixturePast(fixture, now), false);
   assert.equal(getFootyFixtureTimingLabel(fixture, now), "");
+  assert.equal(isFootyFixtureMissingMatchNoteCandidate(fixture, now), false);
+  assert.equal(
+    isFootyFixtureMissingMatchNoteCandidate(
+      { time: "20:00:00", timestamp: "2026-09-15T20:00:00Z" },
+      now,
+    ),
+    true,
+  );
 });
 
 test("groups fixtures into Monday-based calendar weeks", () => {

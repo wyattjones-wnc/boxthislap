@@ -164,6 +164,17 @@ export function isFootyFixturePostponed(fixture = {}) {
   );
 }
 
+export function isFootyFixtureMissingMatchNoteCandidate(
+  fixture,
+  now = Date.now(),
+) {
+  return (
+    !isFootyFixturePostponed(fixture) &&
+    isFootyFixturePast(fixture, now) &&
+    !hasFootyMatchNoteData(fixture)
+  );
+}
+
 export function hasFootyMatchNoteData(fixture) {
   const note = fixture?.matchNote;
   if (!note) return false;

@@ -21,6 +21,7 @@ import {
   groupFootyFixturesByCalendarWeek,
   hasFootyMatchNoteData,
   isFootyFixtureInDateRange,
+  isFootyFixtureMissingMatchNoteCandidate,
   isFootyFixturePast,
   isFootyFixturePostponed,
   isFootyFixtureStarted,
@@ -1168,11 +1169,10 @@ function getFootyMissingNotesFixtures(schedule = {}) {
 
   return [...fixturesByMatch.values()]
     .filter((fixture) => (
-      isFootyFixturePast(fixture) &&
+      isFootyFixtureMissingMatchNoteCandidate(fixture) &&
       !isFootyFriendlyFixture(fixture) &&
       getFootyCanonicalCompetition(fixture.league).key !== "leagues cup" &&
-      getFootyCanonicalCompetition(fixture.league).key !== "u.s. open cup" &&
-      !hasFootyMatchNoteData(fixture)
+      getFootyCanonicalCompetition(fixture.league).key !== "u.s. open cup"
     ));
 }
 

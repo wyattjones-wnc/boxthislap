@@ -1355,6 +1355,85 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
         year: 2026,
       },
     ],
+    pastResults: [
+      {
+        id: 3,
+        name: "Bahrain Grand Prix",
+        optimal: {
+          picks: {
+            p1: "Lando Norris",
+            p2: "George Russell",
+            p3: "Charles Leclerc",
+            wildcard: "Carlos Sainz",
+          },
+          positions: {
+            p1: 1,
+            p2: 2,
+            p3: 3,
+            wildcardQualifying: 6,
+            wildcardRace: 5,
+          },
+          points: {
+            p1: 60,
+            p2: 50,
+            p3: 50,
+            wildcardQualifying: 115,
+            wildcardRace: 135,
+          },
+          total: 410,
+        },
+        entries: [
+          {
+            managerId: "2",
+            picks: {
+              p1: "Lando Norris",
+              p2: "George Russell",
+              p3: "Charles Leclerc",
+              wildcard: "Carlos Sainz",
+            },
+            positions: {
+              p1: 1,
+              p2: 2,
+              p3: 3,
+              wildcardQualifying: 6,
+              wildcardRace: 5,
+            },
+            points: {
+              p1: 60,
+              p2: 50,
+              p3: 50,
+              wildcardQualifying: 115,
+              wildcardRace: 135,
+            },
+            total: 410,
+          },
+          {
+            managerId: "3",
+            picks: {
+              p1: "George Russell",
+              p2: "Lando Norris",
+              p3: "Carlos Sainz",
+              wildcard: "Charles Leclerc",
+            },
+            positions: {
+              p1: 2,
+              p2: 1,
+              p3: 5,
+              wildcardQualifying: 3,
+              wildcardRace: 3,
+            },
+            points: {
+              p1: 25,
+              p2: 25,
+              p3: 0,
+              wildcardQualifying: 180,
+              wildcardRace: 180,
+            },
+            total: 410,
+          },
+        ],
+      },
+    ],
     ok: true,
     roundDrivers: [],
     rounds: [
@@ -1472,11 +1551,16 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await form.locator("[data-formula-one-manager-round]").selectOption("3");
   const pastChoices = page.locator(".formula-one-manager-past-choices");
   await expect(
-    pastChoices.getByRole("heading", { name: "Manager choices" }),
+    pastChoices.getByRole("heading", { name: "Manager Results" }),
+  ).toBeVisible();
+  await expect(
+    pastChoices.getByRole("heading", { name: "Best Picks" }),
   ).toBeVisible();
   await expect(pastChoices.locator("article")).toHaveCount(2);
   await expect(pastChoices).toContainText("Lando Norris");
   await expect(pastChoices).toContainText("George Russell");
+  await expect(pastChoices).toContainText("Total: 410 points");
+  await expect(pastChoices).toContainText("250 wildcard points");
   await form.locator("[data-formula-one-manager-round]").selectOption("2");
   // Playwright WebKit cannot fulfill this cross-origin PUT reliably, but it
   // still verifies the complete mobile entry UI and wildcard filter above.

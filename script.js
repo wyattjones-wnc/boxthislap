@@ -11665,7 +11665,7 @@ function renderFormulaOnePastOptimal(entry) {
   return `
     <aside class="formula-one-past-optimal">
       <div class="formula-one-past-optimal-heading">
-        <div><span>Round benchmark</span><h4>Best Possible Valid Lineup</h4></div>
+        <div><span>Round benchmark</span><h4>Best Picks</h4></div>
         <strong>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
       </div>
       <p>This is the maximum score available after the race results are known—not a manager submission. It uses the actual podium order and the highest-scoring eligible wildcard outside the restricted constructors.</p>

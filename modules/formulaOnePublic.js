@@ -1082,7 +1082,10 @@ function rankFormulaOneWeeklyEntries(entries) {
 }
 
 function renderFormulaOneWeeklyEntry(year, race, entry, index, entries) {
-  const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
+  const manager = getManagerById(entry.managerId || entry.manager_id) ??
+    (entry.manager ? getManagerByName(entry.manager) : null) ?? {
+      name: entry.manager || `Manager ${entry.managerId || entry.manager_id}`,
+    };
   const detailsId = `formula-one-${year}-weekly-${race.id}-${index}`;
 
   return `

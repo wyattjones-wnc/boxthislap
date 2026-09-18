@@ -1,4 +1,5 @@
 import {
+  buildOptimalWeeklyEntry,
   buildWeeklyStandings,
   scoreWeeklyEntry,
   WILDCARD_POINTS,
@@ -584,7 +585,7 @@ async function readPublicWeekly(env, year) {
         .bind(year)
         .all(),
       env.DB.prepare(
-        "SELECT round, session_type, driver_id, position, classified_position FROM f1_session_results WHERE year = ? AND session_type IN ('qualifying', 'race')",
+        "SELECT round, session_type, driver_id, position, classified_position, constructor_name FROM f1_session_results WHERE year = ? AND session_type IN ('qualifying', 'race')",
       )
         .bind(year)
         .all(),
@@ -652,6 +653,57 @@ async function readPublicWeekly(env, year) {
       },
       total: Number(score.total_points) || 0,
     });
+  }
+  for (const race of races) {
+    const roundResults = (resultQuery.results || []).filter(
+      (result) => Number(result.round) === race.id,
+    );
+    const qualifyingResults = roundResults.filter(
+      (result) => result.session_type === "qualifying",
+    );
+    const raceResults = roundResults.filter(
+      (result) => result.session_type === "race",
+    );
+    const wildcardDriverIds = raceResults
+      .filter(
+        (result) =>
+          result.constructor_name &&
+          !isTopFourConstructor(result.constructor_name),
+      )
+      .map((result) => result.driver_id);
+    const optimal = buildOptimalWeeklyEntry(
+      qualifyingResults,
+      raceResults,
+      wildcardDriverIds,
+    );
+    if (!optimal) continue;
+    const driverName = (driverId) =>
+      driverNames.get(String(driverId)) || String(driverId || "");
+    race.optimal = {
+      picks: {
+        p1: driverName(optimal.entry.p1_driver_id),
+        p2: driverName(optimal.entry.p2_driver_id),
+        p3: driverName(optimal.entry.p3_driver_id),
+        wildcard: driverName(optimal.entry.wildcard_driver_id),
+      },
+      positions: {
+        p1: positions.get(`${race.id}:race:${optimal.entry.p1_driver_id}`) ?? "",
+        p2: positions.get(`${race.id}:race:${optimal.entry.p2_driver_id}`) ?? "",
+        p3: positions.get(`${race.id}:race:${optimal.entry.p3_driver_id}`) ?? "",
+        wildcardQualifying:
+          positions.get(`${race.id}:qualifying:${optimal.entry.wildcard_driver_id}`) ?? "",
+        wildcardRace:
+          positions.get(`${race.id}:race:${optimal.entry.wildcard_driver_id}`) ?? "",
+      },
+      points: {
+        p1: optimal.score.p1Points,
+        p2: optimal.score.p2Points,
+        p3: optimal.score.p3Points,
+        wildcardQualifying: optimal.score.wildcardQualifyingPoints,
+        wildcardRace: optimal.score.wildcardRacePoints,
+      },
+      total: optimal.score.totalPoints,
+    };
   }
   return { year, races, standings: buildWeeklyStandings(scores) };
 }

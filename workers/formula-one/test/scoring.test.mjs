@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildWeeklyStandings, scorePodiumPick, scoreWeeklyEntry, scoreWildcardPosition } from "../src/scoring.js";
+import { buildOptimalWeeklyEntry, buildWeeklyStandings, scorePodiumPick, scoreWeeklyEntry, scoreWildcardPosition } from "../src/scoring.js";
 
 test("podium scoring matches the 2026 workbook rules", () => {
   assert.equal(scorePodiumPick(1, 1), 60);
@@ -30,6 +30,38 @@ test("weekly score combines podium and both wildcard sessions", () => {
     wildcardQualifyingPoints: 50,
     wildcardRacePoints: 5,
     totalPoints: 140,
+  });
+});
+
+test("optimal weekly entry uses the podium order and highest eligible wildcard", () => {
+  const qualifying = [
+    { driver_id: "a", position: 1 },
+    { driver_id: "d", position: 4 },
+    { driver_id: "e", position: 8 },
+  ];
+  const race = [
+    { driver_id: "a", position: 1 },
+    { driver_id: "b", position: 2 },
+    { driver_id: "c", position: 3 },
+    { driver_id: "d", position: 6 },
+    { driver_id: "e", position: 5 },
+  ];
+
+  assert.deepEqual(buildOptimalWeeklyEntry(qualifying, race, ["d", "e"]), {
+    entry: {
+      p1_driver_id: "a",
+      p2_driver_id: "b",
+      p3_driver_id: "c",
+      wildcard_driver_id: "d",
+    },
+    score: {
+      p1Points: 60,
+      p2Points: 50,
+      p3Points: 50,
+      wildcardQualifyingPoints: 155,
+      wildcardRacePoints: 115,
+      totalPoints: 430,
+    },
   });
 });
 

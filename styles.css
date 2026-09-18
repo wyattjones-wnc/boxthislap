@@ -8584,6 +8584,47 @@ button.formula-one-admin-status:focus-visible {
   display: grid;
 }
 
+.formula-one-weekly-optimal {
+  background: linear-gradient(135deg, color-mix(in srgb, #f2c94c 20%, var(--panel)), var(--panel));
+  border: 2px solid color-mix(in srgb, #f2c94c 72%, var(--line));
+  border-radius: 8px;
+  box-shadow: inset 4px 0 0 #f2c94c;
+  display: grid;
+  gap: 12px;
+  margin: 14px 16px;
+  padding: 14px;
+}
+
+.formula-one-weekly-optimal-heading {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.formula-one-weekly-optimal-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.formula-one-weekly-optimal-heading span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.formula-one-weekly-optimal-heading strong {
+  font-size: 1.05rem;
+}
+
+.formula-one-weekly-optimal-heading > b {
+  color: var(--time-strong);
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
 .formula-one-results-weekly-controls {
   justify-content: flex-end;
   margin-bottom: 12px;

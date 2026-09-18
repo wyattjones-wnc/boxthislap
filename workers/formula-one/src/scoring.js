@@ -34,6 +34,53 @@ export function scoreWeeklyEntry(entry, qualifyingResults = [], raceResults = []
   };
 }
 
+export function buildOptimalWeeklyEntry(
+  qualifyingResults = [],
+  raceResults = [],
+  wildcardEligibleDriverIds = [],
+) {
+  const raceByPosition = new Map(
+    raceResults.map((result) => [Number(result.position), result]),
+  );
+  const podium = [1, 2, 3].map((position) => raceByPosition.get(position));
+  if (podium.some((result) => !result?.driver_id)) return null;
+
+  const qualifyingByDriver = new Map(
+    qualifyingResults.map((result) => [String(result.driver_id), result.position]),
+  );
+  const raceByDriver = new Map(
+    raceResults.map((result) => [String(result.driver_id), result.position]),
+  );
+  const podiumIds = new Set(podium.map((result) => String(result.driver_id)));
+  const wildcard = [...new Set(wildcardEligibleDriverIds.map(String))]
+    .filter((driverId) => !podiumIds.has(driverId))
+    .map((driverId) => ({
+      driverId,
+      qualifyingPosition: qualifyingByDriver.get(driverId),
+      racePosition: raceByDriver.get(driverId),
+    }))
+    .map((result) => ({
+      ...result,
+      qualifyingPoints: scoreWildcardPosition(result.qualifyingPosition),
+      racePoints: scoreWildcardPosition(result.racePosition),
+    }))
+    .sort(
+      (first, second) =>
+        second.qualifyingPoints + second.racePoints -
+          (first.qualifyingPoints + first.racePoints) ||
+        first.driverId.localeCompare(second.driverId),
+    )[0];
+  if (!wildcard) return null;
+
+  const entry = {
+    p1_driver_id: String(podium[0].driver_id),
+    p2_driver_id: String(podium[1].driver_id),
+    p3_driver_id: String(podium[2].driver_id),
+    wildcard_driver_id: wildcard.driverId,
+  };
+  return { entry, score: scoreWeeklyEntry(entry, qualifyingResults, raceResults) };
+}
+
 export function buildWeeklyStandings(scores = []) {
   const scoresByManager = new Map();
   for (const score of scores) {

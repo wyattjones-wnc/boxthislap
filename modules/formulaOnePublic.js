@@ -1049,9 +1049,30 @@ function renderFormulaOneWeeklyRace(year, race) {
         <h3>Weekly Picks</h3>
       </header>
       <div class="formula-one-weekly-managers">
+        ${renderFormulaOneWeeklyOptimal(race)}
         ${entries.map((entry, index) => renderFormulaOneWeeklyEntry(year, race, entry, index, entries)).join("")}
       </div>
     </article>
+  `;
+}
+
+function renderFormulaOneWeeklyOptimal(race) {
+  const entry = race.optimal;
+  if (!entry) return "";
+
+  return `
+    <aside class="formula-one-weekly-optimal" aria-label="Optimal picks">
+      <div class="formula-one-weekly-optimal-heading">
+        <div><span>Best possible result</span><strong>Optimal Picks</strong></div>
+        <b>${escapeHtml(formatFormulaOnePointValue(entry.total))} pts</b>
+      </div>
+      <div class="formula-one-weekly-picks">
+        ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+        ${renderFormulaOneWeeklyPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+        ${renderFormulaOneWeeklyPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+        ${renderFormulaOneWeeklyWildcard(entry)}
+      </div>
+    </aside>
   `;
 }
 

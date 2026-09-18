@@ -281,10 +281,17 @@ test("Formula One navigation and calculator actions stay in their rows", async (
     navigation.getByRole("tab", { name: "Formula 1 points calculator" }),
   ).toHaveCount(0);
   await expect(
-    page
-      .locator(".login-actions")
-      .getByRole("link", { name: "Formula 1 points calculator" }),
+    page.getByRole("link", { name: "Formula 1 points calculator" }),
   ).toBeVisible();
+  const calculatorBox = await page
+    .getByRole("link", { name: "Formula 1 points calculator" })
+    .boundingBox();
+  const loginActionsBox = await page.locator(".login-actions").boundingBox();
+  expect(calculatorBox).not.toBeNull();
+  expect(loginActionsBox).not.toBeNull();
+  if (!calculatorBox || !loginActionsBox)
+    throw new Error("Navigation row controls were not rendered.");
+  expect(calculatorBox.x).toBeLessThan(loginActionsBox.x);
   expect(
     await navigation.evaluate(
       (element) => element.scrollWidth <= element.clientWidth + 1,
@@ -293,7 +300,8 @@ test("Formula One navigation and calculator actions stay in their rows", async (
   const formulaTabFontSize = await navigation
     .getByRole("tab", { name: "Questions" })
     .evaluate((element) => getComputedStyle(element).fontSize);
-  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+  await page.locator(".brand").click();
+  await expect(page).toHaveURL(/#footy$/);
   const homeTabFontSize = await page
     .locator('.nav-links[data-nav-scope="home"]')
     .getByRole("tab", { name: "Footy" })

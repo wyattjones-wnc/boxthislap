@@ -11180,6 +11180,7 @@ function renderFormulaOneAwards(...args) {
 function renderPageContext(pageName = "") {
   const previousPageName = activePageName;
   activePageName = pageName;
+  window.dispatchEvent(new CustomEvent("boxthislap:route-changed", { detail: { route: pageName } }));
 
   if (pageName === "manager-hub") {
     syncFollowedTeamShortcutsVisibility(pageName);

@@ -193,22 +193,22 @@ export function SiteShell() {
       </nav>
       <div className="login-row">
         <div className="login-row-inner">
+          {route.startsWith("formula-1-") ? (
+            <a
+              className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
+              href="#formula-1-2026-calculator"
+              data-page-link="formula-1-2026-calculator"
+              aria-label="Formula 1 points calculator"
+              title="Formula 1 points calculator"
+              aria-current={
+                route === "formula-1-2026-calculator" ? "page" : undefined
+              }
+            >
+              <Calculator aria-hidden="true" />
+            </a>
+          ) : null}
           <LegacyShortcuts />
           <div className="login-actions">
-            {scope.startsWith("formula-one-") ? (
-              <a
-                className={`formula-one-calculator-shortcut${route === "formula-1-2026-calculator" ? " is-active" : ""}`}
-                href="#formula-1-2026-calculator"
-                data-page-link="formula-1-2026-calculator"
-                aria-label="Formula 1 points calculator"
-                title="Formula 1 points calculator"
-                aria-current={
-                  route === "formula-1-2026-calculator" ? "page" : undefined
-                }
-              >
-                <Calculator aria-hidden="true" />
-              </a>
-            ) : null}
             <a
               className="login-button"
               id="login-open-button"

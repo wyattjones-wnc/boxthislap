@@ -62,6 +62,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const syncRoute = () => setRoute(readRoute());
+    const syncLegacyRoute = (event: Event) =>
+      setRoute(
+        (event as CustomEvent<{ route?: string }>).detail?.route || readRoute(),
+      );
     const syncSession = () => setSession(readSession());
     const syncOffline = () => setIsOnline(false);
     const syncOnline = () => setIsOnline(true);
@@ -75,6 +79,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       attributes: true,
     });
     window.addEventListener("hashchange", syncRoute);
+    window.addEventListener("boxthislap:route-changed", syncLegacyRoute);
     window.addEventListener("offline", syncOffline);
     window.addEventListener("online", syncOnline);
     window.addEventListener("popstate", syncRoute);
@@ -82,6 +87,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     window.addEventListener("storage", syncSession);
     return () => {
       window.removeEventListener("hashchange", syncRoute);
+      window.removeEventListener("boxthislap:route-changed", syncLegacyRoute);
       window.removeEventListener("offline", syncOffline);
       window.removeEventListener("online", syncOnline);
       window.removeEventListener("popstate", syncRoute);

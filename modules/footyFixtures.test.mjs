@@ -11,6 +11,8 @@ import {
   hasFootyMatchNoteData,
   isFootyFixtureInDateRange,
   isFootyFixturePast,
+  isFootyFixturePostponed,
+  isFootyFixtureStarted,
   isFootyFriendlyFixture,
   normalizeFootyDateRange,
 } from "./footyFixtures.js";
@@ -103,6 +105,20 @@ test("classifies noted matches as past and labels current or imminent fixtures",
     ),
     "",
   );
+});
+
+test("recognizes postponed fixtures without treating their old kickoff as started or past", () => {
+  const now = Date.parse("2026-09-17T12:00:00Z");
+  const fixture = {
+    status: "POSTPONED",
+    time: "00:00:00",
+    timestamp: "2026-09-16T00:00:00Z",
+  };
+
+  assert.equal(isFootyFixturePostponed(fixture), true);
+  assert.equal(isFootyFixtureStarted(fixture, now), false);
+  assert.equal(isFootyFixturePast(fixture, now), false);
+  assert.equal(getFootyFixtureTimingLabel(fixture, now), "");
 });
 
 test("groups fixtures into Monday-based calendar weeks", () => {

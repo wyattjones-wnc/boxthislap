@@ -22,6 +22,7 @@ import {
   hasFootyMatchNoteData,
   isFootyFixtureInDateRange,
   isFootyFixturePast,
+  isFootyFixturePostponed,
   isFootyFixtureStarted,
   isFootyFriendlyFixture,
   normalizeFootyClubName,
@@ -3915,7 +3916,7 @@ function closeProfileDropdown() {
 
 function renderFootyMatchNotificationAction(fixture = {}) {
   const matchId = String(fixture.matchId || fixture.id || "").trim();
-  if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixtureStarted(fixture)) {
+  if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixturePostponed(fixture) || isFootyFixtureStarted(fixture)) {
     return "";
   }
   const followedNotificationState = followedTeamsController.getNotificationSelectionState();
@@ -3954,10 +3955,12 @@ function renderFootyFixture(fixture) {
   const score = getFootyMatchScore(fixture);
   const resultClass = getFootyFixtureResultClass(fixture);
   const matchPeriod = isCompetitionFixture ? getFootyMatchPeriod(fixture) : null;
+  const isPostponed = isFootyFixturePostponed(fixture);
   const isPastCompetitionFixture = isCompetitionFixture && isFootyFixturePast(fixture);
   const cardClasses = [
     "footy-fixture-card",
     isCompetitionFixture ? "footy-fixture-card--competition" : "",
+    isPostponed ? "footy-fixture-card--postponed" : "",
     isPastCompetitionFixture ? "footy-fixture-card--past" : "",
     isHighlighted ? "footy-fixture-card--soon" : "",
     resultClass,
@@ -4008,6 +4011,7 @@ function renderFootyFixture(fixture) {
         <p class="footy-fixture-meta">
           ${followedTeamMarkup}
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
+          ${isPostponed ? '<span class="footy-fixture-status-chip">Postponed</span>' : ""}
           ${matchPeriod ? `<span class="footy-match-period-chip">${escapeHtml(matchPeriod.label)}</span>` : ""}
         </p>
         ${venueMarkup}

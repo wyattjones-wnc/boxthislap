@@ -5295,6 +5295,11 @@ body.has-shell-stale-warning .stale-shell-alert {
   opacity: 0.58;
 }
 
+.footy-fixture-card--postponed {
+  background: color-mix(in srgb, var(--accent) 9%, var(--soft));
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+}
+
 .footy-competition-badge-pair {
   align-items: center;
   display: flex;
@@ -5399,6 +5404,18 @@ body.has-shell-stale-warning .stale-shell-alert {
   border: 1px solid color-mix(in srgb, var(--track) 38%, var(--line));
   border-radius: 999px;
   color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.footy-fixture-status-chip {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--line));
+  border-radius: 999px;
+  color: var(--accent-dark);
   font-size: 0.7rem;
   font-weight: 900;
   line-height: 1;

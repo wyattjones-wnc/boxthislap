@@ -8431,8 +8431,8 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-manager-past-choices {
   display: grid;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .formula-one-manager-past-choices h3 {
@@ -8443,52 +8443,34 @@ button.formula-one-admin-status:focus-visible {
   margin: 14px 0 0;
 }
 
-.formula-one-manager-past-heading {
-  align-items: end;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-}
-
-.formula-one-manager-past-heading span,
-.formula-one-past-optimal-heading span,
-.formula-one-manager-result-card header span {
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.formula-one-manager-past-heading p,
-.formula-one-past-optimal > p {
-  color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.45;
-  margin: 0;
-}
-
 .formula-one-past-optimal {
   background: linear-gradient(135deg, color-mix(in srgb, #f2c94c 20%, var(--panel)), var(--panel));
   border: 2px solid color-mix(in srgb, #f2c94c 72%, var(--line));
   border-radius: 8px;
   box-shadow: inset 4px 0 0 #f2c94c;
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .formula-one-past-optimal-heading,
 .formula-one-manager-result-card header {
   align-items: center;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
+  display: grid;
+  gap: 8px;
+}
+
+.formula-one-manager-result-card header {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+}
+
+.formula-one-past-optimal-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .formula-one-past-optimal-heading h4 {
-  font-size: 1.05rem;
-  margin: 2px 0 0;
+  font-size: 1rem;
+  margin: 0;
 }
 
 .formula-one-past-optimal-heading > strong,
@@ -8500,37 +8482,34 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-manager-past-grid {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 }
 
 .formula-one-manager-past-grid .formula-one-admin-card {
   margin: 0;
+  padding: 10px;
 }
 
 .formula-one-manager-past-grid header {
-  margin-bottom: 12px;
-}
-
-.formula-one-manager-result-card header > div {
-  display: grid;
-  gap: 4px;
+  margin-bottom: 8px;
 }
 
 .formula-one-manager-result-picks {
   display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
 }
 
 .formula-one-manager-result-pick {
+  align-items: baseline;
   background: var(--soft);
   border: 1px solid var(--line);
   border-radius: 6px;
   display: grid;
-  gap: 4px;
+  gap: 7px;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
   min-width: 0;
-  padding: 9px;
+  padding: 6px 8px;
 }
 
 .formula-one-manager-result-pick span {
@@ -8547,6 +8526,10 @@ button.formula-one-admin-status:focus-visible {
 .formula-one-manager-result-pick small {
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+.formula-one-manager-result-pick--wildcard {
+  grid-template-columns: 52px minmax(0, 1fr) auto auto auto;
 }
 
 .formula-one-manager-result-pick b {

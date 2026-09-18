@@ -11595,7 +11595,7 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
   const choice = (label, name, value, wildcard = false) => `<label class="select-control"><span>${label}</span><select name="${name}" required${locked ? " disabled" : ""}>${options(value, wildcard)}</select></label>`;
   const deadlineLabel = selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "To be announced";
   const status = feedback.error || feedback.message || (!open
-    ? (submitted ? `Submitted ${entry.submitted_at ? formatFormulaOneAdminDate(entry.submitted_at) : ""}`.trim() : "The deadline has passed without a submission.")
+    ? (submitted ? "Choices submitted." : "The deadline has passed without a submission.")
     : submitted ? "Choices submitted." : "Submit before qualifying starts.");
   view.weeklyForm.innerHTML = `
     <form data-formula-one-manager-picks>
@@ -11629,11 +11629,7 @@ function renderFormulaOnePastRoundChoices(data, round) {
   }
   return `
     <section class="formula-one-manager-past-choices">
-      <div class="formula-one-manager-past-heading">
-        <div><span>Completed round</span><h3>Manager Results</h3></div>
-        <p>Every submitted lineup with its actual finishes and points.</p>
-      </div>
-      ${renderFormulaOnePastOptimal(race.optimal)}
+      <h3>Manager Results</h3>
       <div class="formula-one-manager-past-grid">
         ${rankFormulaOnePastEntries(entries)
           .map((entry) => {
@@ -11644,19 +11640,21 @@ function renderFormulaOnePastRoundChoices(data, round) {
             return `
               <article class="formula-one-admin-card formula-one-manager-result-card">
                 <header>
-                  <div><span>Rank ${escapeHtml(entry.rank)}</span>${renderManagerChip(manager)}</div>
-                  <strong>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
+                  <span class="formula-one-weekly-rank"><small>Rank</small><b>${escapeHtml(entry.rank)}</b></span>
+                  <span class="formula-one-weekly-manager-chip">${renderManagerChip(manager)}</span>
+                  <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
                 </header>
                 <div class="formula-one-manager-result-picks">
-                  ${renderFormulaOnePastPick("First-place pick", entry.picks.p1, entry.positions.p1, entry.points.p1)}
-                  ${renderFormulaOnePastPick("Second-place pick", entry.picks.p2, entry.positions.p2, entry.points.p2)}
-                  ${renderFormulaOnePastPick("Third-place pick", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+                  ${renderFormulaOnePastPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+                  ${renderFormulaOnePastPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+                  ${renderFormulaOnePastPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
                   ${renderFormulaOnePastWildcard(entry)}
                 </div>
               </article>`;
           })
           .join("")}
       </div>
+      ${renderFormulaOnePastOptimal(race.optimal)}
     </section>`;
 }
 
@@ -11665,14 +11663,13 @@ function renderFormulaOnePastOptimal(entry) {
   return `
     <aside class="formula-one-past-optimal">
       <div class="formula-one-past-optimal-heading">
-        <div><span>Round benchmark</span><h4>Best Picks</h4></div>
-        <strong>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
+        <h4>Best Picks</h4>
+        <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
       </div>
-      <p>This is the maximum score available after the race results are known—not a manager submission. It uses the actual podium order and the highest-scoring eligible wildcard outside the restricted constructors.</p>
       <div class="formula-one-manager-result-picks">
-        ${renderFormulaOnePastPick("First-place pick", entry.picks.p1, entry.positions.p1, entry.points.p1)}
-        ${renderFormulaOnePastPick("Second-place pick", entry.picks.p2, entry.positions.p2, entry.points.p2)}
-        ${renderFormulaOnePastPick("Third-place pick", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+        ${renderFormulaOnePastPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+        ${renderFormulaOnePastPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+        ${renderFormulaOnePastPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
         ${renderFormulaOnePastWildcard(entry)}
       </div>
     </aside>`;
@@ -11694,13 +11691,13 @@ function rankFormulaOnePastEntries(entries) {
 }
 
 function renderFormulaOnePastPick(label, driver, position, points) {
-  return `<div class="formula-one-manager-result-pick"><span>${escapeHtml(label)}</span><strong>${escapeHtml(driver || "No pick")}</strong><small>Finished ${escapeHtml(formatFormulaOnePosition(position))}</small><b>${escapeHtml(formatFormulaOnePointValue(points))} points</b></div>`;
+  return `<div class="formula-one-manager-result-pick"><span>${escapeHtml(label)}</span><strong>${escapeHtml(driver || "No pick")}</strong><small>${escapeHtml(formatFormulaOnePosition(position))}</small><b>${escapeHtml(formatFormulaOnePointValue(points))} pts</b></div>`;
 }
 
 function renderFormulaOnePastWildcard(entry) {
   const wildcardPoints = getFormulaOnePointNumber(entry.points.wildcardQualifying)
     + getFormulaOnePointNumber(entry.points.wildcardRace);
-  return `<div class="formula-one-manager-result-pick"><span>Wildcard pick</span><strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong><small>Qualifying: ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} points</small><small>Race: ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} points</small><b>${escapeHtml(formatFormulaOnePointValue(wildcardPoints))} wildcard points</b></div>`;
+  return `<div class="formula-one-manager-result-pick formula-one-manager-result-pick--wildcard"><span>Wildcard</span><strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong><small>Q ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} pts</small><small>R ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} pts</small><b>${escapeHtml(formatFormulaOnePointValue(wildcardPoints))} pts</b></div>`;
 }
 
 function getNextFormulaOneManagerRound(rounds, now = Date.now()) {

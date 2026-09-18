@@ -1559,8 +1559,8 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(pastChoices.locator("article")).toHaveCount(2);
   await expect(pastChoices).toContainText("Lando Norris");
   await expect(pastChoices).toContainText("George Russell");
-  await expect(pastChoices).toContainText("Total: 410 points");
-  await expect(pastChoices).toContainText("250 wildcard points");
+  await expect(pastChoices).toContainText("410 points");
+  await expect(pastChoices).toContainText("250 pts");
   await form.locator("[data-formula-one-manager-round]").selectOption("2");
   // Playwright WebKit cannot fulfill this cross-origin PUT reliably, but it
   // still verifies the complete mobile entry UI and wildcard filter above.

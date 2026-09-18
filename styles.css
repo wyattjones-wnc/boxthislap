@@ -8439,6 +8439,65 @@ button.formula-one-admin-status:focus-visible {
   margin: 0;
 }
 
+.formula-one-manager-past-status {
+  margin: 14px 0 0;
+}
+
+.formula-one-manager-past-heading {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.formula-one-manager-past-heading span,
+.formula-one-past-optimal-heading span,
+.formula-one-manager-result-card header span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.formula-one-manager-past-heading p,
+.formula-one-past-optimal > p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.formula-one-past-optimal {
+  background: linear-gradient(135deg, color-mix(in srgb, #f2c94c 20%, var(--panel)), var(--panel));
+  border: 2px solid color-mix(in srgb, #f2c94c 72%, var(--line));
+  border-radius: 8px;
+  box-shadow: inset 4px 0 0 #f2c94c;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.formula-one-past-optimal-heading,
+.formula-one-manager-result-card header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.formula-one-past-optimal-heading h4 {
+  font-size: 1.05rem;
+  margin: 2px 0 0;
+}
+
+.formula-one-past-optimal-heading > strong,
+.formula-one-manager-result-card header > strong {
+  color: var(--accent-dark);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 .formula-one-manager-past-grid {
   display: grid;
   gap: 12px;
@@ -8451,6 +8510,48 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-manager-past-grid header {
   margin-bottom: 12px;
+}
+
+.formula-one-manager-result-card header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.formula-one-manager-result-picks {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.formula-one-manager-result-pick {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+}
+
+.formula-one-manager-result-pick span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.formula-one-manager-result-pick strong {
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.formula-one-manager-result-pick small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.formula-one-manager-result-pick b {
+  color: var(--accent-dark);
+  font-size: 0.82rem;
 }
 
 .formula-one-manager-past-picks {
@@ -8584,53 +8685,6 @@ button.formula-one-admin-status:focus-visible {
   display: grid;
 }
 
-.formula-one-weekly-optimal {
-  background: linear-gradient(135deg, color-mix(in srgb, #f2c94c 20%, var(--panel)), var(--panel));
-  border: 2px solid color-mix(in srgb, #f2c94c 72%, var(--line));
-  border-radius: 8px;
-  box-shadow: inset 4px 0 0 #f2c94c;
-  display: grid;
-  gap: 12px;
-  margin: 14px 16px;
-  padding: 14px;
-}
-
-.formula-one-weekly-optimal-heading {
-  align-items: center;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-}
-
-.formula-one-weekly-optimal-heading > div {
-  display: grid;
-  gap: 2px;
-}
-
-.formula-one-weekly-optimal-heading span {
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.formula-one-weekly-optimal-heading strong {
-  font-size: 1.05rem;
-}
-
-.formula-one-weekly-optimal-heading > b {
-  color: var(--time-strong);
-  font-size: 1rem;
-  white-space: nowrap;
-}
-
-.formula-one-weekly-optimal-copy {
-  color: var(--text) !important;
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
 .formula-one-results-weekly-controls {
   justify-content: flex-end;
   margin-bottom: 12px;
@@ -8662,6 +8716,7 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-entry {
   border-bottom: 1px solid var(--line);
+  cursor: pointer;
   display: grid;
   gap: 12px;
   padding: 14px 16px;
@@ -8669,6 +8724,17 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-entry:last-child {
   border-bottom: 0;
+}
+
+.formula-one-weekly-entry:hover,
+.formula-one-weekly-entry:focus-visible,
+.formula-one-weekly-entry.is-weekly-expanded {
+  background: var(--soft);
+}
+
+.formula-one-weekly-entry:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: -2px;
 }
 
 .formula-one-weekly-manager {
@@ -8705,54 +8771,8 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-manager strong {
   color: var(--accent-dark);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   justify-self: end;
-  white-space: nowrap;
-}
-
-.formula-one-weekly-pick-details {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-}
-
-.formula-one-weekly-pick-detail {
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-  padding: 9px;
-}
-
-.formula-one-weekly-pick-detail dt {
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 900;
-}
-
-.formula-one-weekly-pick-detail dd {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  min-width: 0;
-}
-
-.formula-one-weekly-pick-detail strong {
-  font-size: 0.88rem;
-  overflow-wrap: anywhere;
-}
-
-.formula-one-weekly-pick-detail span {
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.formula-one-weekly-pick-detail b {
-  color: var(--accent-dark);
-  font-size: 0.82rem;
 }
 
 .formula-one-weekly-picks {
@@ -10966,28 +10986,20 @@ html.has-contained-dialog body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .formula-one-weekly-optimal {
-    margin: 12px 13px;
-    padding: 12px;
-  }
-
-  .formula-one-weekly-optimal-heading {
+  .formula-one-manager-past-heading,
+  .formula-one-past-optimal-heading,
+  .formula-one-manager-result-card header {
     align-items: flex-start;
     display: grid;
-    gap: 8px;
   }
 
-  .formula-one-weekly-pick-details {
+  .formula-one-manager-result-picks {
     grid-template-columns: 1fr;
   }
 
-  .formula-one-weekly-manager {
-    grid-template-columns: 42px minmax(0, 1fr);
-  }
-
-  .formula-one-weekly-manager > strong {
-    grid-column: 2;
-    justify-self: start;
+  .formula-one-past-optimal-heading > strong,
+  .formula-one-manager-result-card header > strong {
+    white-space: normal;
   }
 
   .office-draft-grid {

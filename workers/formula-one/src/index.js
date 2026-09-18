@@ -442,6 +442,7 @@ async function readManagerWeekly(env, year, managerId) {
         .all(),
     ]);
   const rounds = roundQuery.results || [];
+  const publicWeekly = await readPublicWeekly(env, year);
   await backfillMissingQualifyingDeadlines(env, year, rounds);
   const closedRoundIds = new Set(
     rounds
@@ -465,6 +466,9 @@ async function readManagerWeekly(env, year, managerId) {
     entries: entryQuery.results || [],
     pastEntries: (submittedEntryQuery.results || []).filter((entry) =>
       closedRoundIds.has(Number(entry.round)),
+    ),
+    pastResults: (publicWeekly.races || []).filter((race) =>
+      closedRoundIds.has(Number(race.id)),
     ),
   };
 }

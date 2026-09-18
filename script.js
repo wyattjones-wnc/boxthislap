@@ -11604,59 +11604,103 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
         <div class="formula-one-manager-deadline"><span>Deadline</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
         ${submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
       </div>
-      <div class="formula-one-admin-form-grid">
-        ${choice("P1", "p1DriverId", entry?.p1_driver_id)}
-        ${choice("P2", "p2DriverId", entry?.p2_driver_id)}
-        ${choice("P3", "p3DriverId", entry?.p3_driver_id)}
-        ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, true)}
-      </div>
-      <div class="formula-one-manager-bet-footer">
-        <p class="formula-one-admin-feedback${feedback.error ? " is-error" : ""}" role="status">${escapeHtml(status)}</p>
-        ${locked ? "" : `<button class="action-button" type="submit">${submitted ? "Update choices" : "Submit choices"}</button>`}
-      </div>
+      ${open ? `
+        <div class="formula-one-admin-form-grid">
+          ${choice("P1", "p1DriverId", entry?.p1_driver_id)}
+          ${choice("P2", "p2DriverId", entry?.p2_driver_id)}
+          ${choice("P3", "p3DriverId", entry?.p3_driver_id)}
+          ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, true)}
+        </div>
+        <div class="formula-one-manager-bet-footer">
+          <p class="formula-one-admin-feedback${feedback.error ? " is-error" : ""}" role="status">${escapeHtml(status)}</p>
+          ${locked ? "" : `<button class="action-button" type="submit">${submitted ? "Update choices" : "Submit choices"}</button>`}
+        </div>` : `<p class="formula-one-admin-feedback formula-one-manager-past-status" role="status">${escapeHtml(status)}</p>`}
     </form>
     ${open ? "" : renderFormulaOnePastRoundChoices(data, selectedRound)}`;
 }
 
 function renderFormulaOnePastRoundChoices(data, round) {
-  const entries = (data.pastEntries || []).filter(
-    (entry) => Number(entry.round) === Number(round.round),
+  const race = (data.pastResults || []).find(
+    (entry) => Number(entry.id) === Number(round.round),
   );
-  if (!entries.length) {
-    return `<section class="formula-one-manager-past-choices"><h3>Manager choices</h3><p class="table-message">No manager choices were submitted for this round.</p></section>`;
+  const entries = race?.entries || [];
+  if (!race || !entries.length) {
+    return `<section class="formula-one-manager-past-choices"><h3>Manager results</h3><p class="table-message">No scored manager results are available for this round yet.</p></section>`;
   }
-  const driverNames = new Map(
-    (data.drivers || []).map((driver) => [driver.driver_id, driver.display_name]),
-  );
-  const choice = (label, driverId) => `
-    <div class="formula-one-weekly-pick">
-      <span>${label}</span>
-      <strong>${escapeHtml(driverNames.get(driverId) || driverId || "No choice")}</strong>
-    </div>`;
   return `
     <section class="formula-one-manager-past-choices">
-      <h3>Manager choices</h3>
+      <div class="formula-one-manager-past-heading">
+        <div><span>Completed round</span><h3>Manager Results</h3></div>
+        <p>Every submitted lineup with its actual finishes and points.</p>
+      </div>
+      ${renderFormulaOnePastOptimal(race.optimal)}
       <div class="formula-one-manager-past-grid">
-        ${entries
+        ${rankFormulaOnePastEntries(entries)
           .map((entry) => {
-            const manager = getManagerById(entry.manager_id) || {
-              id: entry.manager_id,
-              name: `Manager ${entry.manager_id}`,
+            const manager = getManagerById(entry.managerId || entry.manager_id) || {
+              id: entry.managerId || entry.manager_id,
+              name: `Manager ${entry.managerId || entry.manager_id}`,
             };
             return `
-              <article class="formula-one-admin-card">
-                <header>${renderManagerChip(manager)}</header>
-                <div class="formula-one-manager-past-picks">
-                  ${choice("P1", entry.p1_driver_id)}
-                  ${choice("P2", entry.p2_driver_id)}
-                  ${choice("P3", entry.p3_driver_id)}
-                  ${choice("Wildcard", entry.wildcard_driver_id)}
+              <article class="formula-one-admin-card formula-one-manager-result-card">
+                <header>
+                  <div><span>Rank ${escapeHtml(entry.rank)}</span>${renderManagerChip(manager)}</div>
+                  <strong>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
+                </header>
+                <div class="formula-one-manager-result-picks">
+                  ${renderFormulaOnePastPick("First-place pick", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+                  ${renderFormulaOnePastPick("Second-place pick", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+                  ${renderFormulaOnePastPick("Third-place pick", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+                  ${renderFormulaOnePastWildcard(entry)}
                 </div>
               </article>`;
           })
           .join("")}
       </div>
     </section>`;
+}
+
+function renderFormulaOnePastOptimal(entry) {
+  if (!entry) return "";
+  return `
+    <aside class="formula-one-past-optimal">
+      <div class="formula-one-past-optimal-heading">
+        <div><span>Round benchmark</span><h4>Best Possible Valid Lineup</h4></div>
+        <strong>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
+      </div>
+      <p>This is the maximum score available after the race results are known—not a manager submission. It uses the actual podium order and the highest-scoring eligible wildcard outside the restricted constructors.</p>
+      <div class="formula-one-manager-result-picks">
+        ${renderFormulaOnePastPick("First-place pick", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+        ${renderFormulaOnePastPick("Second-place pick", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+        ${renderFormulaOnePastPick("Third-place pick", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+        ${renderFormulaOnePastWildcard(entry)}
+      </div>
+    </aside>`;
+}
+
+function rankFormulaOnePastEntries(entries) {
+  let previousPoints;
+  let previousRank = 0;
+  return [...entries]
+    .sort((first, second) => Number(second.total) - Number(first.total)
+      || String(first.managerId || first.manager_id).localeCompare(String(second.managerId || second.manager_id), undefined, { numeric: true }))
+    .map((entry, index) => {
+      const points = Number(entry.total) || 0;
+      const rank = points === previousPoints ? previousRank : index + 1;
+      previousPoints = points;
+      previousRank = rank;
+      return { ...entry, rank };
+    });
+}
+
+function renderFormulaOnePastPick(label, driver, position, points) {
+  return `<div class="formula-one-manager-result-pick"><span>${escapeHtml(label)}</span><strong>${escapeHtml(driver || "No pick")}</strong><small>Finished ${escapeHtml(formatFormulaOnePosition(position))}</small><b>${escapeHtml(formatFormulaOnePointValue(points))} points</b></div>`;
+}
+
+function renderFormulaOnePastWildcard(entry) {
+  const wildcardPoints = getFormulaOnePointNumber(entry.points.wildcardQualifying)
+    + getFormulaOnePointNumber(entry.points.wildcardRace);
+  return `<div class="formula-one-manager-result-pick"><span>Wildcard pick</span><strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong><small>Qualifying: ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} points</small><small>Race: ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} points</small><b>${escapeHtml(formatFormulaOnePointValue(wildcardPoints))} wildcard points</b></div>`;
 }
 
 function getNextFormulaOneManagerRound(rounds, now = Date.now()) {

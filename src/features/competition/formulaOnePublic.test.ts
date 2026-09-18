@@ -86,7 +86,32 @@ describe("Formula One public standings", () => {
         {
           id: 1,
           name: "Australian Grand Prix",
-          entries: [],
+          entries: [
+            {
+              managerId: "6",
+              picks: {
+                p1: "Norris",
+                p2: "Russell",
+                p3: "Leclerc",
+                wildcard: "Albon",
+              },
+              positions: {
+                p1: 1,
+                p2: 3,
+                p3: 4,
+                wildcardQualifying: 6,
+                wildcardRace: 5,
+              },
+              points: {
+                p1: 60,
+                p2: 25,
+                p3: 0,
+                wildcardQualifying: 115,
+                wildcardRace: 135,
+              },
+              total: 335,
+            },
+          ],
           optimal: {
             picks: {
               p1: "Norris",
@@ -115,8 +140,16 @@ describe("Formula One public standings", () => {
       standings: [],
     });
     const card = document.querySelector(".formula-one-weekly-optimal");
-    expect(card?.textContent).toContain("Optimal Picks");
-    expect(card?.textContent).toContain("410 pts");
+    expect(card?.textContent).toContain("Best Possible Picks");
+    expect(card?.textContent).toContain("benchmark, not a manager entry");
+    expect(card?.textContent).toContain("Total: 410 points");
     expect(card?.textContent).toContain("Albon");
+    expect(card?.textContent).toContain("250 wildcard points");
+    const managerResult = document.querySelector(".formula-one-weekly-entry");
+    expect(managerResult?.getAttribute("role")).toBeNull();
+    expect(managerResult?.textContent).toContain("Manager 6");
+    expect(managerResult?.textContent).toContain("Total: 335 points");
+    expect(managerResult?.textContent).toContain("Finished P3");
+    expect(managerResult?.textContent).toContain("25 points");
   });
 });

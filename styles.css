@@ -8621,8 +8621,14 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-optimal-heading > b {
   color: var(--time-strong);
-  font-size: 1.15rem;
+  font-size: 1rem;
   white-space: nowrap;
+}
+
+.formula-one-weekly-optimal-copy {
+  color: var(--text) !important;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .formula-one-results-weekly-controls {
@@ -8656,7 +8662,6 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-entry {
   border-bottom: 1px solid var(--line);
-  cursor: pointer;
   display: grid;
   gap: 12px;
   padding: 14px 16px;
@@ -8664,17 +8669,6 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-entry:last-child {
   border-bottom: 0;
-}
-
-.formula-one-weekly-entry:hover,
-.formula-one-weekly-entry:focus-visible,
-.formula-one-weekly-entry.is-weekly-expanded {
-  background: var(--soft);
-}
-
-.formula-one-weekly-entry:focus-visible {
-  outline: 2px solid var(--accent-dark);
-  outline-offset: -2px;
 }
 
 .formula-one-weekly-manager {
@@ -8711,8 +8705,54 @@ button.formula-one-admin-status:focus-visible {
 
 .formula-one-weekly-manager strong {
   color: var(--accent-dark);
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   justify-self: end;
+  white-space: nowrap;
+}
+
+.formula-one-weekly-pick-details {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.formula-one-weekly-pick-detail {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 9px;
+}
+
+.formula-one-weekly-pick-detail dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.formula-one-weekly-pick-detail dd {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+}
+
+.formula-one-weekly-pick-detail strong {
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.formula-one-weekly-pick-detail span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.formula-one-weekly-pick-detail b {
+  color: var(--accent-dark);
+  font-size: 0.82rem;
 }
 
 .formula-one-weekly-picks {
@@ -10924,6 +10964,30 @@ html.has-contained-dialog body {
 
   .formula-one-weekly-picks {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formula-one-weekly-optimal {
+    margin: 12px 13px;
+    padding: 12px;
+  }
+
+  .formula-one-weekly-optimal-heading {
+    align-items: flex-start;
+    display: grid;
+    gap: 8px;
+  }
+
+  .formula-one-weekly-pick-details {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-one-weekly-manager {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .formula-one-weekly-manager > strong {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .office-draft-grid {

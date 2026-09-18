@@ -1063,15 +1063,11 @@ function renderFormulaOneWeeklyOptimal(race) {
   return `
     <aside class="formula-one-weekly-optimal" aria-label="Optimal picks">
       <div class="formula-one-weekly-optimal-heading">
-        <div><span>Best possible result</span><strong>Optimal Picks</strong></div>
-        <b>${escapeHtml(formatFormulaOnePointValue(entry.total))} pts</b>
+        <div><span>Round benchmark</span><strong>Best Possible Picks</strong></div>
+        <b>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</b>
       </div>
-      <div class="formula-one-weekly-picks">
-        ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
-        ${renderFormulaOneWeeklyPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
-        ${renderFormulaOneWeeklyPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
-        ${renderFormulaOneWeeklyWildcard(entry)}
-      </div>
+      <p class="formula-one-weekly-optimal-copy">The highest-scoring valid lineup after the results are known. The podium picks match the actual top three, and the wildcard is the best eligible driver outside the restricted constructors. This is a benchmark, not a manager entry.</p>
+      ${renderFormulaOneWeeklyPickDetails(entry)}
     </aside>
   `;
 }
@@ -1103,33 +1099,57 @@ function rankFormulaOneWeeklyEntries(entries) {
 }
 
 function renderFormulaOneWeeklyEntry(year, race, entry, index, entries) {
-  const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
-  const detailsId = `formula-one-${year}-weekly-${race.id}-${index}`;
+  const manager = getManagerById(entry.managerId || entry.manager_id) ??
+    (entry.manager ? getManagerByName(entry.manager) : null) ?? {
+      name: entry.manager || `Manager ${entry.managerId || entry.manager_id}`,
+    };
 
   return `
-    <section
-      class="formula-one-weekly-entry"
-      data-formula-one-weekly-entry
-      aria-controls="${escapeHtml(detailsId)}"
-      aria-expanded="false"
-      role="button"
-      tabindex="0"
-    >
+    <section class="formula-one-weekly-entry">
       <div class="formula-one-weekly-manager">
         <span class="formula-one-weekly-rank">
           <small>Rank</small>
           <b>${escapeHtml(formatRankDisplay(entry, index, entries))}</b>
         </span>
         <span class="formula-one-weekly-manager-chip">${renderManagerChip(manager)}</span>
-        <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))}</strong>
+        <strong>Total: ${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
       </div>
-      <div class="formula-one-weekly-picks" id="${escapeHtml(detailsId)}" hidden>
-        ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
-        ${renderFormulaOneWeeklyPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
-        ${renderFormulaOneWeeklyPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
-        ${renderFormulaOneWeeklyWildcard(entry)}
-      </div>
+      ${renderFormulaOneWeeklyPickDetails(entry)}
     </section>
+  `;
+}
+
+function renderFormulaOneWeeklyPickDetails(entry) {
+  return `
+    <dl class="formula-one-weekly-pick-details">
+      ${renderFormulaOneWeeklyPickDetail("First-place pick", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+      ${renderFormulaOneWeeklyPickDetail("Second-place pick", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+      ${renderFormulaOneWeeklyPickDetail("Third-place pick", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+      ${renderFormulaOneWeeklyWildcardDetail(entry)}
+    </dl>
+  `;
+}
+
+function renderFormulaOneWeeklyPickDetail(label, pick, position, points) {
+  return `
+    <div class="formula-one-weekly-pick-detail">
+      <dt>${escapeHtml(label)}</dt>
+      <dd><strong>${escapeHtml(pick || "No pick")}</strong><span>Finished ${escapeHtml(formatFormulaOnePosition(position))}</span><b>${escapeHtml(formatFormulaOnePointValue(points))} points</b></dd>
+    </div>
+  `;
+}
+
+function renderFormulaOneWeeklyWildcardDetail(entry) {
+  return `
+    <div class="formula-one-weekly-pick-detail formula-one-weekly-pick-detail--wildcard">
+      <dt>Wildcard pick</dt>
+      <dd>
+        <strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong>
+        <span>Qualifying: ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} points</span>
+        <span>Race: ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} points</span>
+        <b>${escapeHtml(formatFormulaOnePointValue(getFormulaOnePointNumber(entry.points.wildcardQualifying) + getFormulaOnePointNumber(entry.points.wildcardRace)))} wildcard points</b>
+      </dd>
+    </div>
   `;
 }
 

@@ -22,10 +22,10 @@ import {
   Shield,
   Trophy,
   Video,
-  Volleyball,
   type LucideIcon,
 } from "lucide-react";
 import { memo, useEffect, useRef } from "react";
+import { SoccerBallIcon } from "../components/icons";
 import { getNavScope, navItems, type NavItem, type NavScope } from "./routes";
 import { useAppState } from "./providers";
 import "./Shell.module.css";
@@ -85,7 +85,7 @@ const headerArt = [
 
 const navIcons: Record<string, LucideIcon> = {
   bracket: GitFork,
-  footy: Volleyball,
+  footy: SoccerBallIcon,
   guides: BookOpen,
   leagues: Trophy,
   next: ListTodo,

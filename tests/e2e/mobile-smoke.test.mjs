@@ -1292,9 +1292,9 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
     localStorage.setItem(
       "boxThisLapManagerSession",
       JSON.stringify({
-        isAdmin: false,
-        manager: { id: "2", displayName: "Test Manager", isAdmin: false },
-        managerId: "2",
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        managerId: "6",
         rankingAuth: {
           accessExpiresAt: "2099-01-01T00:00:00.000Z",
           accessToken: "test-access-token",
@@ -1501,7 +1501,7 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
         submissionReceived = true;
         entry = {
           entry_status: "submitted",
-          manager_id: "2",
+          manager_id: "6",
           p1_driver_id: "norris",
           p2_driver_id: "russell",
           p3_driver_id: "leclerc",
@@ -1540,6 +1540,7 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue(
     "2",
   );
+  await form.getByRole("button", { name: "Enter choices" }).click();
   await expect(form.getByText("Deadline", { exact: true })).toBeVisible();
   await expect(form.getByText(/Eastern Time/i)).toHaveCount(0);
   await expect(form.locator(".formula-one-manager-deadline strong")).toHaveText(
@@ -1561,6 +1562,8 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(pastChoices).toContainText("George Russell");
   await expect(pastChoices).toContainText("410 points");
   await expect(pastChoices).toContainText("250 pts");
+  await form.getByRole("button", { name: "Enter choices" }).click();
+  await expect(form.locator('select[name="p1DriverId"]')).toBeEnabled();
   await form.locator("[data-formula-one-manager-round]").selectOption("2");
   // Playwright WebKit cannot fulfill this cross-origin PUT reliably, but it
   // still verifies the complete mobile entry UI and wildcard filter above.

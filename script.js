@@ -11583,7 +11583,10 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
   const editing = formulaOneManagerWeeklyEditing.has(editKey);
   const submitted = entry?.entry_status === "submitted";
   const open = Boolean(selectedRound.is_open);
-  const locked = !open || (submitted && !editing);
+  const admin = isCurrentManagerAdmin();
+  const adminEditing = admin && editing;
+  const locked = admin ? !adminEditing : !open || (submitted && !editing);
+  const showEntryForm = open || adminEditing;
   const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(selectedRound.round));
   const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
   const roundDriverIds = new Set(roundRoster.map((item) => item.driver_id));
@@ -11602,9 +11605,9 @@ function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
       <div class="formula-one-form-header formula-one-manager-bet-header">
         <label class="select-control"><span>Round</span><select data-formula-one-manager-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>
         <div class="formula-one-manager-deadline"><span>Deadline</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
-        ${submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
+        ${admin ? `<button class="icon-action-button formula-one-manager-edit-button${adminEditing ? " is-active" : ""}" type="button" data-formula-one-manager-edit aria-label="${submitted ? "Edit choices" : "Enter choices"}" title="${submitted ? "Edit choices" : "Enter choices"}" aria-pressed="${String(adminEditing)}">${renderRosterActionIcon("edit")}</button>` : submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
       </div>
-      ${open ? `
+      ${showEntryForm ? `
         <div class="formula-one-admin-form-grid">
           ${choice("P1", "p1DriverId", entry?.p1_driver_id)}
           ${choice("P2", "p2DriverId", entry?.p2_driver_id)}
@@ -11697,7 +11700,7 @@ function renderFormulaOnePastPick(label, driver, position, points) {
 function renderFormulaOnePastWildcard(entry) {
   const wildcardPoints = getFormulaOnePointNumber(entry.points.wildcardQualifying)
     + getFormulaOnePointNumber(entry.points.wildcardRace);
-  return `<div class="formula-one-manager-result-pick formula-one-manager-result-pick--wildcard"><span>Wildcard</span><strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong><small>Q ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} pts</small><small>R ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} pts</small><b>${escapeHtml(formatFormulaOnePointValue(wildcardPoints))} pts</b></div>`;
+  return `<div class="formula-one-manager-result-pick formula-one-manager-result-pick--wildcard"><span class="formula-one-wildcard-icon" aria-label="Wildcard" title="Wildcard"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 5v14"></path><path d="m18.065 8.496-12.125 7"></path><path d="m5.94 8.504 12.125 7"></path></svg></span><strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong><span class="formula-one-wildcard-session-results"><small>Q ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} pts</small><small>R ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} pts</small></span><b>${escapeHtml(formatFormulaOnePointValue(wildcardPoints))} pts</b></div>`;
 }
 
 function getNextFormulaOneManagerRound(rounds, now = Date.now()) {
@@ -11761,7 +11764,13 @@ async function refreshFormulaOneManagerRoundDrivers(round) {
 async function submitFormulaOneManagerPicks(form) {
   const body = Object.fromEntries(new FormData(form).entries());
   body.submit = true;
-  await formulaOneManagerRequest(`/api/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/me`, { method: "PUT", body });
+  const admin = isCurrentManagerAdmin();
+  if (admin) body.force = true;
+  const path = admin
+    ? `/api/admin/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/me`
+    : `/api/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/me`;
+  const request = admin ? formulaOneAdminRequest : formulaOneManagerRequest;
+  await request(path, { method: "PUT", body });
   formulaOneManagerWeeklyEditing.delete(`2026:${formulaOneManagerWeeklySelectedRound}`);
   await ensureFormulaOneManagerWeeklyData({ force: true });
   renderFormulaOneManagerWeeklyEntry({ message: "Choices submitted." });

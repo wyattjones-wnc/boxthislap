@@ -8420,6 +8420,12 @@ button.formula-one-admin-status:focus-visible {
   margin-left: auto;
 }
 
+.formula-one-manager-edit-button {
+  align-self: center;
+  justify-self: end;
+  margin-left: auto;
+}
+
 .formula-one-manager-bet-footer {
   align-items: center;
   display: flex;
@@ -8461,7 +8467,12 @@ button.formula-one-admin-status:focus-visible {
 }
 
 .formula-one-manager-result-card header {
+  align-items: center;
   grid-template-columns: 44px minmax(0, 1fr) auto;
+}
+
+.formula-one-manager-result-card .formula-one-weekly-manager-chip {
+  align-self: center;
 }
 
 .formula-one-past-optimal-heading {
@@ -8529,7 +8540,29 @@ button.formula-one-admin-status:focus-visible {
 }
 
 .formula-one-manager-result-pick--wildcard {
-  grid-template-columns: 52px minmax(0, 1fr) auto auto auto;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+}
+
+.formula-one-wildcard-icon {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  justify-content: center;
+}
+
+.formula-one-wildcard-icon svg {
+  fill: none;
+  height: 16px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 16px;
+}
+
+.formula-one-wildcard-session-results {
+  display: grid;
+  gap: 2px;
 }
 
 .formula-one-manager-result-pick b {

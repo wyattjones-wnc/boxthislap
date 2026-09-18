@@ -12218,6 +12218,7 @@ function returnToFormulaOneManage() {
 }
 
 function renderFormulaOneAdminPicks(data, round, { editAll = false } = {}) {
+  const getEntryManagerId = (item) => String(item?.manager_id ?? item?.managerId ?? "").trim();
   const driverOptions = (value, disabled, wildcard = false) => {
     const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(round.round));
     const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
@@ -12230,12 +12231,11 @@ function renderFormulaOneAdminPicks(data, round, { editAll = false } = {}) {
     return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${availableDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
   };
   const managerIds = new Set(getFormulaOneManagers().map((manager) => String(manager.id || "")).filter(Boolean));
-  (data.entries || []).forEach((entry) => managerIds.add(String(entry.manager_id)));
   const managers = [...managerIds].map((managerId) => ({ managerId, manager: getManagerById(managerId) }))
     .sort((first, second) => (first.manager?.displayName || first.managerId).localeCompare(second.manager?.displayName || second.managerId));
   return `<div class="formula-one-weekly-admin-list">${managers.map(({ managerId, manager }) => {
-    const entry = data.entries?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
-    const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
+    const entry = data.entries?.find((item) => Number(item.round) === Number(round.round) && getEntryManagerId(item) === managerId);
+    const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && getEntryManagerId(item) === managerId);
     const managerName = manager?.displayName || `Manager ${managerId}`;
     const editKey = `${data.year}:${round.round}:${managerId}`;
     const editing = editAll || formulaOneWeeklyEditing.has(editKey);

@@ -1527,7 +1527,11 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
         : isAdminWeeklyRead
           ? {
               ...managerData,
-              entries: [...managerData.pastEntries, ...(entry ? [entry] : [])],
+              entries: [
+                { entry_status: "draft", round: 2, year: 2026 },
+                ...managerData.pastEntries,
+                ...(entry ? [entry] : []),
+              ],
               scores: [],
             }
           : { drivers: [], ok: true };
@@ -1560,6 +1564,9 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(
     roundEditor.locator("[data-formula-one-admin-picks]"),
   ).toHaveCount(6);
+  await expect(roundEditor.getByText("Manager", { exact: true })).toHaveCount(
+    0,
+  );
   await form.getByRole("button", { name: "Stop editing round" }).click();
   await expect(form.getByText("Deadline", { exact: true })).toBeVisible();
   await expect(form.getByText(/Eastern Time/i)).toHaveCount(0);

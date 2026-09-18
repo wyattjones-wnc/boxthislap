@@ -1497,7 +1497,7 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
           status: 200,
         });
       }
-      if (request.method() === "PUT" && url.pathname.endsWith("/picks/me")) {
+      if (request.method() === "PUT" && /\/picks\/\d+$/.test(url.pathname)) {
         submissionReceived = true;
         entry = {
           entry_status: "submitted",
@@ -1518,7 +1518,13 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
         });
       }
       const isWeeklyRead = url.pathname.endsWith("/weekly/me");
-      const body = isWeeklyRead ? weeklyData() : { drivers: [], ok: true };
+      const isAdminWeeklyRead = url.pathname.endsWith("/api/admin/seasons/2026/weekly");
+      const managerData = weeklyData();
+      const body = isWeeklyRead
+        ? managerData
+        : isAdminWeeklyRead
+          ? { ...managerData, entries: [...managerData.pastEntries, ...(entry ? [entry] : [])], scores: [] }
+          : { drivers: [], ok: true };
       return route.fulfill({
         body: JSON.stringify(body),
         contentType: "application/json",
@@ -1540,7 +1546,11 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue(
     "2",
   );
-  await form.getByRole("button", { name: "Enter choices" }).click();
+  await form.getByRole("button", { name: "Edit all manager choices" }).click();
+  const roundEditor = page.locator(".formula-one-manager-round-editor");
+  await expect(roundEditor.getByRole("heading", { name: "Manager Choices" })).toBeVisible();
+  await expect(roundEditor.locator("[data-formula-one-admin-picks]")).toHaveCount(6);
+  await form.getByRole("button", { name: "Stop editing round" }).click();
   await expect(form.getByText("Deadline", { exact: true })).toBeVisible();
   await expect(form.getByText(/Eastern Time/i)).toHaveCount(0);
   await expect(form.locator(".formula-one-manager-deadline strong")).toHaveText(
@@ -1562,21 +1572,25 @@ test("signed-in managers submit Formula One weekly choices on-site", async ({
   await expect(pastChoices).toContainText("George Russell");
   await expect(pastChoices).toContainText("410 points");
   await expect(pastChoices).toContainText("250 pts");
-  await form.getByRole("button", { name: "Enter choices" }).click();
-  await expect(form.locator('select[name="p1DriverId"]')).toBeEnabled();
+  await form.getByRole("button", { name: "Edit all manager choices" }).click();
+  await expect(roundEditor.locator('select[name="p1DriverId"]').first()).toBeEnabled();
+  await form.getByRole("button", { name: "Stop editing round" }).click();
   await form.locator("[data-formula-one-manager-round]").selectOption("2");
   // Playwright WebKit cannot fulfill this cross-origin PUT reliably, but it
   // still verifies the complete mobile entry UI and wildcard filter above.
   if (browserName === "webkit") return;
-  await form.locator('select[name="p1DriverId"]').selectOption("norris");
-  await form.locator('select[name="p2DriverId"]').selectOption("russell");
-  await form.locator('select[name="p3DriverId"]').selectOption("leclerc");
-  await form.locator('select[name="wildcardDriverId"]').selectOption("sainz");
-  await form.getByRole("button", { name: "Submit choices" }).click();
+  await expect(form.getByRole("button", { name: "Edit all manager choices" })).toBeVisible();
+  await form.getByRole("button", { name: "Edit all manager choices" }).click();
+  const adminEntry = roundEditor.locator('[data-formula-one-admin-picks]:has(input[name="managerId"][value="6"])');
+  await adminEntry.locator('select[name="p1DriverId"]').selectOption("norris");
+  await adminEntry.locator('select[name="p2DriverId"]').selectOption("russell");
+  await adminEntry.locator('select[name="p3DriverId"]').selectOption("leclerc");
+  await adminEntry.locator('select[name="wildcardDriverId"]').selectOption("sainz");
+  await adminEntry.getByRole("button", { name: "Submit choices" }).click();
 
-  await expect(form.getByText("Choices submitted.")).toBeVisible();
+  await expect(form.getByText("Manager choices saved.")).toBeVisible();
   await expect(
-    form.getByRole("button", { name: "Edit choices" }),
+    form.getByRole("button", { name: "Stop editing round" }),
   ).toBeVisible();
   expect(submissionReceived).toBe(true);
 });

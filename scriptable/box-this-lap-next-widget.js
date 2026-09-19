@@ -4,7 +4,7 @@
 // Set this to true in your installed script to include manager-only items.
 // The loader replaces local edits when updating the widget.
 const SHOW_ALL_NEXT_ITEMS = false;
-const LARGE_ITEM_LIMIT = 4;
+const LARGE_ITEM_LIMIT = 6;
 //
 // Optional widget parameter overrides:
 // - Leave blank: show the saved focus item if it is still upcoming, or the next
@@ -236,7 +236,7 @@ function sortItemsForPicker(items) {
 async function createLargeWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  widget.setPadding(12, 12, 12, 12);
+  widget.setPadding(10, 12, 10, 12);
 
   const header = widget.addStack();
   header.centerAlignContent();
@@ -248,7 +248,7 @@ async function createLargeWidget(result) {
   const icon = header.addImage(symbol.image);
   icon.imageSize = new Size(18, 18);
   icon.tintColor = COLORS.accent;
-  widget.addSpacer(10);
+  widget.addSpacer(6);
 
   if (!result.ok) {
     widget.refreshAfterDate = getWidgetRefreshDate(null);
@@ -265,37 +265,39 @@ async function createLargeWidget(result) {
   }
 
   for (const [index, item] of items.entries()) {
-    if (index > 0) widget.addSpacer(7);
+    if (index > 0) widget.addSpacer(4);
     const card = widget.addStack();
     card.layoutHorizontally();
     card.centerAlignContent();
+    card.size = new Size(0, 48);
     card.backgroundColor = COLORS.card;
     card.cornerRadius = 9;
     card.borderColor = COLORS.border;
     card.borderWidth = 1;
-    card.setPadding(7, 8, 7, 8);
+    card.setPadding(3, 6, 3, 6);
 
     const artwork = await loadItemImage(item);
     if (artwork) {
       const thumbnail = card.addImage(artwork);
-      thumbnail.imageSize = new Size(46, 46);
-      thumbnail.cornerRadius = 6;
+      thumbnail.imageSize = new Size(68, 42);
+      thumbnail.cornerRadius = 5;
       thumbnail.applyFillingContentMode();
-      card.addSpacer(8);
+      card.addSpacer(7);
     }
 
     const details = card.addStack();
     details.layoutVertically();
     const name = details.addText(item.thing);
-    name.font = Font.boldSystemFont(13);
+    name.font = Font.boldSystemFont(12);
     name.textColor = COLORS.text;
     name.lineLimit = 2;
     name.minimumScaleFactor = 0.85;
-    details.addSpacer(3);
+    details.addSpacer(2);
     const date = details.addText(formatDateRangeCompact(item));
-    date.font = Font.semiboldSystemFont(11);
+    date.font = Font.semiboldSystemFont(10);
     date.textColor = COLORS.muted;
     date.lineLimit = 1;
+    card.addSpacer();
   }
 
   widget.addSpacer();

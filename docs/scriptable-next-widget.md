@@ -27,7 +27,7 @@ Follow the shared setup in:
 docs/scriptable-widgets.md
 ```
 
-The loader installs the script as `Box This Lap Next`. A large widget shows up to four upcoming incomplete items as cards with artwork when available, titles, and dates. A medium widget shows one countdown; run the installed script to choose its focus.
+The loader installs the script as `Box This Lap Next`. A large widget shows up to six upcoming incomplete items as full-width cards with artwork when available, titles, and dates. A medium widget shows one countdown; run the installed script to choose its focus.
 
 By default, both sizes show only items marked for non-managers on the website. To see the complete list, edit your installed `Box This Lap Next` script in Scriptable and change `SHOW_ALL_NEXT_ITEMS` near the top from `false` to `true`. This setting is in the code, so other installers see the default and no admin setting prompt appears. Updating the widget through the loader replaces this edit; set the flag again after an update.
 

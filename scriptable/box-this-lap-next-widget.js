@@ -4,7 +4,7 @@
 // Set this to true in your installed script to include manager-only items.
 // The loader replaces local edits when updating the widget.
 const SHOW_ALL_NEXT_ITEMS = false;
-const LARGE_ITEM_LIMIT = 6;
+const LARGE_ITEM_LIMIT = 4;
 //
 // Optional widget parameter overrides:
 // - Leave blank: show the saved focus item if it is still upcoming, or the next
@@ -40,7 +40,7 @@ if (result.ok && !config.runsInWidget && config.widgetFamily !== "large") {
 const savedFocus = readSavedFocus();
 const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM, savedFocus) : null;
 const widget = config.widgetFamily === "large"
-  ? createLargeWidget(result)
+  ? await createLargeWidget(result)
   : await createWidget(item, result);
 
 if (config.runsInWidget) {
@@ -233,22 +233,22 @@ function sortItemsForPicker(items) {
   });
 }
 
-function createLargeWidget(result) {
+async function createLargeWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
-  widget.setPadding(14, 14, 14, 14);
+  widget.setPadding(12, 12, 12, 12);
 
   const header = widget.addStack();
   header.centerAlignContent();
   const title = header.addText("Next");
-  title.font = Font.boldSystemFont(17);
+  title.font = Font.boldSystemFont(18);
   title.textColor = COLORS.text;
   header.addSpacer();
   const symbol = SFSymbol.named("calendar.badge.clock");
   const icon = header.addImage(symbol.image);
   icon.imageSize = new Size(18, 18);
   icon.tintColor = COLORS.accent;
-  widget.addSpacer(8);
+  widget.addSpacer(10);
 
   if (!result.ok) {
     widget.refreshAfterDate = getWidgetRefreshDate(null);
@@ -264,31 +264,56 @@ function createLargeWidget(result) {
     return widget;
   }
 
-  items.forEach((item, index) => {
-    if (index > 0) widget.addSpacer(8);
-    const row = widget.addStack();
-    row.layoutHorizontally();
-    row.centerAlignContent();
-    const details = row.addStack();
+  for (const [index, item] of items.entries()) {
+    if (index > 0) widget.addSpacer(7);
+    const card = widget.addStack();
+    card.layoutHorizontally();
+    card.centerAlignContent();
+    card.backgroundColor = COLORS.card;
+    card.cornerRadius = 9;
+    card.borderColor = COLORS.border;
+    card.borderWidth = 1;
+    card.setPadding(7, 8, 7, 8);
+
+    const artwork = await loadItemImage(item);
+    if (artwork) {
+      const thumbnail = card.addImage(artwork);
+      thumbnail.imageSize = new Size(46, 46);
+      thumbnail.cornerRadius = 6;
+      thumbnail.applyFillingContentMode();
+      card.addSpacer(8);
+    }
+
+    const details = card.addStack();
     details.layoutVertically();
     const name = details.addText(item.thing);
-    name.font = Font.semiboldSystemFont(14);
+    name.font = Font.boldSystemFont(13);
     name.textColor = COLORS.text;
-    name.lineLimit = 1;
-    name.minimumScaleFactor = 0.8;
-    const date = details.addText(formatPickerDate(item));
-    date.font = Font.mediumSystemFont(11);
+    name.lineLimit = 2;
+    name.minimumScaleFactor = 0.85;
+    details.addSpacer(3);
+    const date = details.addText(formatDateRangeCompact(item));
+    date.font = Font.semiboldSystemFont(11);
     date.textColor = COLORS.muted;
-    row.addSpacer(8);
-    const state = getEventState(item);
-    const countdown = row.addText(state.label);
-    countdown.font = Font.semiboldSystemFont(12);
-    countdown.textColor = state.color;
-    countdown.lineLimit = 1;
-    countdown.minimumScaleFactor = 0.75;
-  });
+    date.lineLimit = 1;
+  }
+
+  widget.addSpacer();
 
   return widget;
+}
+
+async function loadItemImage(item) {
+  if (!item.imageUrl) return null;
+
+  try {
+    const request = new Request(item.imageUrl);
+    request.timeoutInterval = 5;
+    return await request.loadImage();
+  } catch (error) {
+    console.warn(`Unable to load Next artwork: ${error}`);
+    return null;
+  }
 }
 
 async function createWidget(item, result) {
@@ -645,6 +670,15 @@ function formatDateRange(item) {
   }
 
   return `${start} to ${formatDate(item.endDate, false)}`;
+}
+
+function formatDateRangeCompact(item) {
+  const start = formatPickerDate(item);
+  if (!item.endDate) return start;
+
+  const formatter = new DateFormatter();
+  formatter.dateFormat = "MMM d";
+  return `${start} – ${formatter.string(item.endDate)}`;
 }
 
 function formatPickerDate(item) {

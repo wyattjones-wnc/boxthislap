@@ -15,6 +15,10 @@ const LARGE_ITEM_LIMIT = 6;
 const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev/api/items";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
 const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache-v2.json";
+// Mirror this image so Scriptable can use the same artwork if its host fails.
+const WIDGET_IMAGE_MIRRORS = {
+  "199": "https://wyattjones-wnc.github.io/boxthislap/dev/assets/next/ghost-of-yotei-complete-edition.jpg",
+};
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
 const CURRENT_TIMED_EVENT_WINDOW_MS = 60 * 60 * 1000;
 
@@ -307,16 +311,17 @@ async function createLargeWidget(result) {
 }
 
 async function loadItemImage(item) {
-  if (!item.imageUrl) return null;
-
-  try {
-    const request = new Request(item.imageUrl);
-    request.timeoutInterval = 5;
-    return await request.loadImage();
-  } catch (error) {
-    console.warn(`Unable to load Next artwork: ${error}`);
-    return null;
+  for (const url of [WIDGET_IMAGE_MIRRORS[item.id], item.imageUrl].filter(Boolean)) {
+    try {
+      const request = new Request(url);
+      request.timeoutInterval = 10;
+      return await request.loadImage();
+    } catch (error) {
+      console.warn(`Unable to load Next artwork from ${url}: ${error}`);
+    }
   }
+
+  return null;
 }
 
 async function createWidget(item, result) {
@@ -398,19 +403,10 @@ async function createWidget(item, result) {
 }
 
 async function applyItemBackground(widget, item) {
-  if (!item.imageUrl) {
-    return false;
-  }
-
-  try {
-    const request = new Request(item.imageUrl);
-    request.timeoutInterval = 15;
-    widget.backgroundImage = await request.loadImage();
-    return true;
-  } catch (error) {
-    console.warn(`Unable to load Next image: ${error}`);
-    return false;
-  }
+  const artwork = await loadItemImage(item);
+  if (!artwork) return false;
+  widget.backgroundImage = artwork;
+  return true;
 }
 
 function applyTextShadow(text, enabled) {

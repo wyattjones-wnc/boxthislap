@@ -279,7 +279,8 @@ async function createLargeWidget(result) {
     const artwork = await loadItemImage(item);
     if (artwork) {
       const thumbnail = card.addImage(artwork);
-      thumbnail.imageSize = new Size(68, 42);
+      // A wide, filling crop gives the artwork space while keeping six rows.
+      thumbnail.imageSize = new Size(120, 42);
       thumbnail.cornerRadius = 5;
       thumbnail.applyFillingContentMode();
       card.addSpacer(7);

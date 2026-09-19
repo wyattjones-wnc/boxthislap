@@ -212,9 +212,7 @@ function GuideIndex({
         <div>
           <p className="guides-eyebrow">Walkthroughs</p>
           <h1>Guides</h1>
-          <p className="guides-intro">
-            Pick a guide and keep your place as you work through it.
-          </p>
+          <p className="guides-intro">Pick a guide. We’ll save your place.</p>
         </div>
       </div>
       <div className="guides-grid">
@@ -351,7 +349,7 @@ function GuideDetail({
           navigate("");
         }}
       >
-        ← All Guides
+        All Guides
       </a>
       <div className="section-heading page-heading-with-action footy-heading guides-detail-heading">
         <div>
@@ -722,7 +720,7 @@ function GuidesLoading({
   return detail ? (
     <>
       <a className="guides-back-link" href="#guides">
-        ← All Guides
+        All Guides
       </a>
       <div className="section-heading page-heading-with-action footy-heading">
         <div>
@@ -779,7 +777,7 @@ function GuideNotFound({ navigate }: { navigate: (id: string) => void }) {
           navigate("");
         }}
       >
-        ← All Guides
+        All Guides
       </a>
       <div className="guides-empty-state">
         <h1>Guide not found</h1>

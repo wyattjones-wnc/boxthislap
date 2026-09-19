@@ -69,7 +69,9 @@ dev Wyatt
 
 ## Next
 
-When Next is run in Scriptable, it asks which upcoming incomplete item the widget should focus on. That selection is saved on the phone.
+The large Next widget lists up to six upcoming incomplete items. The medium widget shows one focused countdown. When Next is run in Scriptable, it asks which upcoming incomplete item the medium widget should focus on. That selection is saved on the phone.
+
+Both sizes default to items marked for non-managers. To include all items, edit the installed `Box This Lap Next` script and set `SHOW_ALL_NEXT_ITEMS = true` near the top. The loader overwrites this local edit on updates, so set it again afterward.
 
 An optional widget parameter overrides the saved selection:
 

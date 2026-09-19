@@ -1,7 +1,10 @@
-// Box This Lap - Next Countdown Widget for Scriptable
+// Box This Lap - Next Widget for Scriptable
 //
-// Run this script inside Scriptable to choose the Next item the widget should
-// focus on. That choice is saved locally on the phone.
+// Large widgets list upcoming items. Medium widgets show a saved focus item.
+// Set this to true in your installed script to include manager-only items.
+// The loader replaces local edits when updating the widget.
+const SHOW_ALL_NEXT_ITEMS = false;
+const LARGE_ITEM_LIMIT = 6;
 //
 // Optional widget parameter overrides:
 // - Leave blank: show the saved focus item if it is still upcoming, or the next
@@ -25,20 +28,29 @@ const COLORS = {
   warning: new Color("#f1c65b"),
 };
 
-const result = await loadNextItems();
+const loadedResult = await loadNextItems();
+const result = loadedResult.ok
+  ? { ...loadedResult, items: loadedResult.items.filter((item) => SHOW_ALL_NEXT_ITEMS || item.nonAdmin) }
+  : loadedResult;
 
-if (result.ok && !config.runsInWidget) {
+if (result.ok && !config.runsInWidget && config.widgetFamily !== "large") {
   await chooseFocusItem(result.items);
 }
 
 const savedFocus = readSavedFocus();
 const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM, savedFocus) : null;
-const widget = await createWidget(item, result);
+const widget = config.widgetFamily === "large"
+  ? createLargeWidget(result)
+  : await createWidget(item, result);
 
 if (config.runsInWidget) {
   Script.setWidget(widget);
 } else {
-  await widget.presentMedium();
+  if (config.widgetFamily === "large") {
+    await widget.presentLarge();
+  } else {
+    await widget.presentMedium();
+  }
 }
 
 Script.complete();
@@ -219,6 +231,64 @@ function sortItemsForPicker(items) {
 
     return first.thing.localeCompare(second.thing);
   });
+}
+
+function createLargeWidget(result) {
+  const widget = new ListWidget();
+  widget.backgroundColor = COLORS.background;
+  widget.setPadding(14, 14, 14, 14);
+
+  const header = widget.addStack();
+  header.centerAlignContent();
+  const title = header.addText("Next");
+  title.font = Font.boldSystemFont(17);
+  title.textColor = COLORS.text;
+  header.addSpacer();
+  const symbol = SFSymbol.named("calendar.badge.clock");
+  const icon = header.addImage(symbol.image);
+  icon.imageSize = new Size(18, 18);
+  icon.tintColor = COLORS.accent;
+  widget.addSpacer(8);
+
+  if (!result.ok) {
+    widget.refreshAfterDate = getWidgetRefreshDate(null);
+    addErrorState(widget, result.error);
+    return widget;
+  }
+
+  const items = sortItemsForPicker(result.items.filter(isUpcomingItem)).slice(0, LARGE_ITEM_LIMIT);
+  widget.refreshAfterDate = items.length ? getWidgetRefreshDate(items[0]) : getWidgetRefreshDate(null);
+
+  if (!items.length) {
+    addEmptyState(widget);
+    return widget;
+  }
+
+  items.forEach((item, index) => {
+    if (index > 0) widget.addSpacer(8);
+    const row = widget.addStack();
+    row.layoutHorizontally();
+    row.centerAlignContent();
+    const details = row.addStack();
+    details.layoutVertically();
+    const name = details.addText(item.thing);
+    name.font = Font.semiboldSystemFont(14);
+    name.textColor = COLORS.text;
+    name.lineLimit = 1;
+    name.minimumScaleFactor = 0.8;
+    const date = details.addText(formatPickerDate(item));
+    date.font = Font.mediumSystemFont(11);
+    date.textColor = COLORS.muted;
+    row.addSpacer(8);
+    const state = getEventState(item);
+    const countdown = row.addText(state.label);
+    countdown.font = Font.semiboldSystemFont(12);
+    countdown.textColor = state.color;
+    countdown.lineLimit = 1;
+    countdown.minimumScaleFactor = 0.75;
+  });
+
+  return widget;
 }
 
 async function createWidget(item, result) {

@@ -1,6 +1,6 @@
 # Scriptable Next Countdown Widget
 
-This setup lets an iPhone Home Screen widget count down to an item from the Box This Lap `Next` list.
+This setup shows a focused countdown in a medium iPhone Home Screen widget, or an upcoming list in a large widget.
 
 ## 1. Verify the Next Worker
 
@@ -27,7 +27,9 @@ Follow the shared setup in:
 docs/scriptable-widgets.md
 ```
 
-The loader installs the script as `Box This Lap Next`. Run that installed script and choose any upcoming incomplete item from the `Next` list.
+The loader installs the script as `Box This Lap Next`. A large widget lists up to six upcoming incomplete items. A medium widget shows one item; run the installed script to choose its focus.
+
+By default, both sizes show only items marked for non-managers on the website. To see the complete list, edit your installed `Box This Lap Next` script in Scriptable and change `SHOW_ALL_NEXT_ITEMS` near the top from `false` to `true`. This setting is in the code, so other installers see the default and no admin setting prompt appears. Updating the widget through the loader replaces this edit; set the flag again after an update.
 
 That choice is saved locally on the phone. The widget will keep focusing on that item through its current-event window, until you run the script again and choose a different one, or until you set a widget parameter.
 
@@ -41,7 +43,7 @@ After updating an existing Home Screen widget, remove it and add it again once s
 2. Edit the widget.
 3. Choose the `Box This Lap Next` script.
 4. Set **When Interacting** to **Run Script**.
-5. Leave the widget parameter blank if you want to use the saved focus item.
+5. For a medium widget, leave the widget parameter blank if you want to use the saved focus item. The large widget lists upcoming items regardless of the saved focus or parameter.
 
 If no saved focus item exists, or the saved focus item has passed, blank means the widget shows the next upcoming incomplete item.
 

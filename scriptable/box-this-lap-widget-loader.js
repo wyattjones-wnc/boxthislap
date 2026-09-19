@@ -24,7 +24,7 @@ const AVAILABLE_WIDGETS = [
   },
   {
     name: "Box This Lap Next",
-    description: "A countdown chosen from the Next list",
+    description: "A focused countdown or a large upcoming list",
     sourceFile: "box-this-lap-next-widget.js",
   },
 ];

@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useRef } from "react";
 import { useContainedDialog } from "./useContainedDialog.js";
 
@@ -50,12 +51,13 @@ export function FormDialog({
           <h2 id={titleId}>{title}</h2>
           <button
             aria-label={closeLabel}
-            className="dialog-close"
+            className="icon-action-button dialog-close"
             disabled={saving}
             onClick={onClose}
+            title={closeLabel}
             type="button"
           >
-            ×
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="react-form-dialog-scroll" ref={scrollRef}>
@@ -69,12 +71,19 @@ export function FormDialog({
           >
             {message}
           </p>
-          <button disabled={saving} onClick={onClose} type="button">
-            Cancel
-          </button>
-          <button className="action-button" disabled={saving} type="submit">
-            {saving ? "Saving…" : submitLabel}
-          </button>
+          <div className="react-form-dialog-actions">
+            <button
+              className="action-button secondary-action"
+              disabled={saving}
+              onClick={onClose}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button className="action-button" disabled={saving} type="submit">
+              {saving ? "Saving…" : submitLabel}
+            </button>
+          </div>
         </footer>
       </form>
     </dialog>

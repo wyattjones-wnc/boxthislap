@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = ["footy", "next", "leagues", "formula-1-2026-results"];
 
+test.beforeEach(async ({ page }) => {
+  await page.route("https://visitor-badge.laobi.icu/**", (route) =>
+    route.abort(),
+  );
+});
+
 for (const route of publicRoutes) {
   test(`${route} renders without horizontal overflow`, async ({ page }) => {
     await page.goto(`/#${route}`, { waitUntil: "domcontentloaded" });
@@ -21,6 +27,26 @@ for (const route of publicRoutes) {
   });
 }
 
+test("React shell exposes an accessible mobile navigation rail and foundation pages", async ({
+  page,
+}) => {
+  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+
+  const navigationRail = page.locator("[data-nav-scroll]:not([hidden])");
+  await expect(navigationRail).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Open site navigation" }),
+  ).toHaveCount(0);
+  await navigationRail.getByRole("tab", { name: "Next" }).click();
+  await expect(page.locator('[data-page="next"]')).toHaveClass(/is-active/);
+
+  await page.goto("/#login", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Manager Login" }),
+  ).toBeVisible();
+  await expect(page.getByText("Manager access", { exact: true })).toBeVisible();
+});
+
 test("signed-out manager hub keeps private data closed", async ({ page }) => {
   await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
 
@@ -29,6 +55,183 @@ test("signed-out manager hub keeps private data closed", async ({ page }) => {
   await expect(managerHub.getByText("Log in to load awards.")).toBeVisible();
   await expect(
     managerHub.getByText("Log in to load manager results."),
+  ).toBeVisible();
+});
+
+test("admin Manager Hub cards load independently of slow portal sheets", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const formulaOnePaths = [];
+  /** @type {string[]} */
+  const pageErrors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") pageErrors.push(message.text());
+  });
+  await page.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (
+        url.includes("docs.google.com/") &&
+        ["121360226", "1819817720"].includes(
+          String(new URL(url).searchParams.get("gid") || ""),
+        )
+      ) {
+        const stalledResponse = new Response("", { status: 200 });
+        stalledResponse.text = () => new Promise(() => {});
+        return Promise.resolve(stalledResponse);
+      }
+      return nativeFetch(input, init);
+    };
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        managerId: "6",
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00.000Z",
+          accessToken: "test-access-token",
+        },
+      }),
+    );
+    localStorage.setItem(
+      "boxthislap-manager-hub-drafts",
+      JSON.stringify({
+        cachedAt: new Date().toISOString(),
+        drafts: [
+          {
+            ID: "fantasy-critic-2025",
+            "Is Completed": "TRUE",
+            League: "Fantasy Critic",
+            Name: "2025 Fantasy Critic",
+            "Winner Manager ID": "6",
+            Year: "2025",
+          },
+        ],
+      }),
+    );
+  });
+  await page.route("https://docs.google.com/**", (route) => {
+    const url = route.request().url();
+    const gid = new URL(url).searchParams.get("gid");
+    const body =
+      url.includes("2PACX-1vTQnBD") && gid === "0"
+        ? "ID,Display Name,Is Admin\n6,Wyatt,TRUE"
+        : "";
+    return route.fulfill({ body, contentType: "text/csv", status: 200 });
+  });
+  await page.route("https://script.google.com/**", (route) =>
+    route.fulfill({ body: "", contentType: "text/javascript", status: 200 }),
+  );
+  await page
+    .context()
+    .route("https://box-this-lap-rankings.boxthislap.workers.dev/**", (route) =>
+      route.fulfill({
+        body: JSON.stringify({ defaultTeamIds: [], ok: true, teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+    );
+  await page
+    .context()
+    .route(
+      "https://box-this-lap-formula-one.boxthislap.workers.dev/**",
+      (route) => {
+        const request = route.request();
+        const corsHeaders = {
+          "access-control-allow-headers": "authorization,content-type",
+          "access-control-allow-methods": "GET,OPTIONS",
+          "access-control-allow-origin": "*",
+        };
+        if (request.method() === "OPTIONS") {
+          return route.fulfill({ headers: corsHeaders, status: 204 });
+        }
+        const path = new URL(request.url()).pathname;
+        formulaOnePaths.push(path);
+        const body = path.endsWith("/api/admin/seasons/2026/weekly")
+          ? {
+              ok: true,
+              rounds: [
+                {
+                  facts_complete: 0,
+                  has_sprint: 0,
+                  is_complete: 0,
+                  name: "Australian Grand Prix",
+                  race_date: "2020-03-08",
+                  round: 1,
+                },
+              ],
+              sessions: [],
+              year: 2026,
+            }
+          : path.endsWith("/api/admin/seasons")
+            ? { ok: true, seasons: [{ year: 2026 }] }
+            : {
+                entries: [],
+                ok: true,
+                roundDrivers: [],
+                rounds: [],
+                year: 2026,
+              };
+        return route.fulfill({
+          body: JSON.stringify(body),
+          contentType: "application/json",
+          headers: corsHeaders,
+          status: 200,
+        });
+      },
+    );
+  await page
+    .context()
+    .route(
+      "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+      (route) =>
+        route.fulfill({
+          body: JSON.stringify({ notes: [], ok: true }),
+          contentType: "application/json",
+          status: 200,
+        }),
+    );
+
+  await page.goto("/#fantasy-critic-2026", { waitUntil: "domcontentloaded" });
+  await page.locator("#fantasy-critic-2026-content").evaluate((container) => {
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 5000; index += 1) {
+      fragment.append(document.createElement("article"));
+    }
+    container.replaceChildren(fragment);
+  });
+  await page.locator("#profile-menu-button").click();
+  await page
+    .locator("#profile-dropdown")
+    .getByText("Manager Hub", { exact: true })
+    .click();
+  const hub = page.locator('[data-page="manager-hub"]');
+  await expect(hub).toHaveClass(/is-active/, { timeout: 1000 });
+  await expect(page.locator("#profile-dropdown")).toBeHidden();
+  await expect(
+    hub.getByRole("heading", { name: "2025 Fantasy Critic Winner" }),
+  ).toBeVisible();
+  await hub.getByText("Notifications", { exact: true }).click();
+  await expect
+    .poll(() => formulaOnePaths)
+    .toContain("/api/admin/seasons/2026/weekly");
+  await expect
+    .poll(() =>
+      pageErrors.filter((message) =>
+        message.includes("Manager Hub notifications source formula-one-admin"),
+      ),
+    )
+    .toEqual([]);
+  await expect(
+    hub.getByRole("heading", {
+      name: "2026 Australian Grand Prix data is incomplete",
+    }),
+  ).toBeVisible();
+  await expect(
+    hub.getByText("Checking remaining notifications..."),
   ).toBeVisible();
 });
 
@@ -64,6 +267,51 @@ test("visible pointer targets meet the WCAG minimum size", async ({ page }) => {
   expect(undersizedTargets).toEqual([]);
 });
 
+test("Formula One navigation and calculator actions stay in their rows", async ({
+  page,
+}) => {
+  await page.goto("/#formula-1-2026-results", {
+    waitUntil: "domcontentloaded",
+  });
+  const navigation = page.locator(
+    '.nav-links[data-nav-scope="formula-one-2026"]',
+  );
+  await expect(navigation).toBeVisible();
+  await expect(
+    navigation.getByRole("tab", { name: "Formula 1 points calculator" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Formula 1 points calculator" }),
+  ).toBeVisible();
+  const calculatorBox = await page
+    .getByRole("link", { name: "Formula 1 points calculator" })
+    .boundingBox();
+  const loginActionsBox = await page.locator(".login-actions").boundingBox();
+  expect(calculatorBox).not.toBeNull();
+  expect(loginActionsBox).not.toBeNull();
+  if (!calculatorBox || !loginActionsBox)
+    throw new Error("Navigation row controls were not rendered.");
+  expect(calculatorBox.x).toBeLessThan(loginActionsBox.x);
+  expect(
+    await navigation.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth + 1,
+    ),
+  ).toBe(true);
+  const formulaTabFontSize = await navigation
+    .getByRole("tab", { name: "Questions" })
+    .evaluate((element) => getComputedStyle(element).fontSize);
+  await page.locator(".brand").click();
+  await expect(page).toHaveURL(/#footy$/);
+  const homeTabFontSize = await page
+    .locator('.nav-links[data-nav-scope="home"]')
+    .getByRole("tab", { name: "Footy" })
+    .evaluate((element) => getComputedStyle(element).fontSize);
+  expect(formulaTabFontSize).toBe(homeTabFontSize);
+  await expect(
+    page.getByRole("link", { name: "Formula 1 points calculator" }),
+  ).toHaveCount(0);
+});
+
 test("Footy filters and fixture expansion remain interactive", async ({
   page,
 }) => {
@@ -87,6 +335,91 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await restoredFixture.click();
   await expect(restoredFixture).toHaveAttribute("aria-expanded", "true");
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
+});
+
+test("Match Notes dialog contains its populated mobile form", async ({
+  page,
+}) => {
+  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+  const dialog = page.locator("#footy-note-dialog");
+  await dialog.evaluate((element) => {
+    const matchId = element.querySelector("#footy-note-match-id");
+    const title = element.querySelector("#footy-note-title");
+    if (matchId)
+      matchId.textContent = "MATCH ID FOOTY_COMP_FOOTBALL_DATA_ORG_564679";
+    if (title) title.textContent = "RC Deportivo La Coruña v Sevilla FC";
+    /** @type {HTMLDialogElement} */ (element).showModal();
+  });
+
+  const bounds = await dialog.boundingBox();
+  const viewport = page.viewportSize();
+  if (!bounds || !viewport)
+    throw new Error("Match Notes dialog was not laid out");
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+  expect(
+    await dialog.evaluate((element) => {
+      const dialogBounds = element.getBoundingClientRect();
+      return [
+        ...element.querySelectorAll(
+          "header, .footy-note-grid, label, details, input, textarea, footer, button",
+        ),
+      ]
+        .filter((item) => {
+          const itemBounds = item.getBoundingClientRect();
+          return (
+            itemBounds.left < dialogBounds.left - 1 ||
+            itemBounds.right > dialogBounds.right + 1
+          );
+        })
+        .map((item) => item.tagName);
+    }),
+  ).toEqual([]);
+});
+
+test("Missing Match Notes prepares once and toggles filters without rebuilding", async ({
+  page,
+}) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.route(
+    "https://box-this-lap-footy-notes.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ notes: [], ok: true }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#footy-missing-notes", { waitUntil: "domcontentloaded" });
+  const list = page.locator("#footy-missing-notes-list");
+  await expect(list).toHaveAttribute("aria-busy", "false");
+  await list.evaluate((element) => {
+    Reflect.set(element, "__renderedListNode", element.firstElementChild);
+  });
+
+  const filterToggle = page.locator("#footy-missing-notes-filter-toggle");
+  await filterToggle.click();
+  await expect(page.locator("#footy-missing-notes-filters")).toBeVisible();
+  await expect(filterToggle).toHaveAttribute("aria-expanded", "true");
+  expect(
+    await list.evaluate(
+      (element) =>
+        Reflect.get(element, "__renderedListNode") ===
+        element.firstElementChild,
+    ),
+  ).toBe(true);
+
+  await filterToggle.click();
+  await expect(page.locator("#footy-missing-notes-filters")).toBeHidden();
+  await expect(filterToggle).toHaveAttribute("aria-expanded", "false");
+  expect(
+    await list.evaluate(
+      (element) =>
+        Reflect.get(element, "__renderedListNode") ===
+        element.firstElementChild,
+    ),
+  ).toBe(true);
 });
 
 test("signed-in managers can find notification setup in unsupported browser contexts", async ({
@@ -286,6 +619,18 @@ test("Next item form loads as a contained React dialog and saves", async ({
   const thing = dialog.getByRole("textbox", { name: "Thing" });
   await expect(dialog).toBeVisible();
   await expect(thing).toBeFocused();
+  await expect(
+    dialog
+      .getByRole("button", { name: "Close Next item dialog" })
+      .locator(".lucide-x"),
+  ).toHaveCount(1);
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toHaveClass(
+    /secondary-action/,
+  );
+  await expect(dialog.locator(".react-form-dialog-actions")).toHaveCSS(
+    "justify-content",
+    "flex-end",
+  );
   expect(dialogBundleRequests).toHaveLength(1);
   expect(
     await thing.evaluate((input) =>
@@ -320,7 +665,9 @@ test("Next item form loads as a contained React dialog and saves", async ({
   await expect(dialog).toBeHidden();
 });
 
-test("To Do form uses the shared contained React dialog", async ({ page }) => {
+test("To Do form uses the shared contained React dialog", async ({
+  page,
+}, testInfo) => {
   /** @type {string[]} */
   const dialogBundleRequests = [];
   page.on("request", (request) => {
@@ -389,6 +736,34 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
 
   await page.getByRole("button", { name: "Show To Do filters" }).click();
   await page.getByRole("checkbox", { name: "Edit", exact: true }).check();
+  await page.locator("#todo-filter-toggle").click();
+  const firstHandle = page.getByRole("button", {
+    name: "Reorder Parent task",
+  });
+  if (testInfo.project.name === "mobile-safari") {
+    await firstHandle.press("ArrowDown");
+  } else {
+    const secondCard = page.locator('[data-todo-id="2"]');
+    const firstBounds = await firstHandle.boundingBox();
+    const secondBounds = await secondCard.boundingBox();
+    if (!firstBounds || !secondBounds) {
+      throw new Error("Sortable To Do cards must be visible before dragging.");
+    }
+    await page.mouse.move(
+      firstBounds.x + firstBounds.width / 2,
+      firstBounds.y + firstBounds.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      secondBounds.x + secondBounds.width / 2,
+      secondBounds.y + secondBounds.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+  }
+  await expect
+    .poll(() => page.locator("[data-todo-id] h2").allTextContents())
+    .toEqual(["Existing task", "Parent task"]);
   await page
     .locator("[data-todo-child-id]", { hasText: "React To Do check" })
     .getByRole("button", { name: "Edit" })
@@ -720,9 +1095,23 @@ test("secondary admin bundles stay off public mobile routes", async ({
 }) => {
   /** @type {string[]} */
   const secondaryBundleRequests = [];
+  /** @type {string[]} */
+  const formulaOnePublicRequests = [];
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
   page.on("request", (request) => {
+    if (/\/formulaOnePublic-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
+      formulaOnePublicRequests.push(request.url());
+    }
     if (
-      /\/(?:collectibles|draftLists|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
+      /\/(?:collectibles|draftLists|formulaOneCalculator|formulaOneQualifying|guideData|guides|platinums|trophyLog|trophyStats|youtubeInbox)-[^/]+\.js$/.test(
         new URL(request.url()).pathname,
       )
     ) {
@@ -734,6 +1123,7 @@ test("secondary admin bundles stay off public mobile routes", async ({
   await expect(page.locator('[data-page="footy"]')).toHaveClass(/is-active/);
 
   expect(secondaryBundleRequests).toEqual([]);
+  expect(formulaOnePublicRequests).toEqual([]);
 
   await page.goto("/#formula-1-2026-results", { waitUntil: "networkidle" });
   await expect(
@@ -741,6 +1131,73 @@ test("secondary admin bundles stay off public mobile routes", async ({
   ).toHaveClass(/is-active/);
 
   expect(secondaryBundleRequests).toEqual([]);
+  expect(formulaOnePublicRequests).toHaveLength(1);
+});
+
+test("2025 Formula One pages load while their deferred controller downloads", async ({
+  page,
+}) => {
+  let controllerFinished = false;
+  let dataStartedBeforeControllerFinished = false;
+  const mainSheet = [
+    ",,Wyatt,",
+    "Question,Answer,Wyatt,Points",
+    "Who wins the championship?,Oscar,Lando,10",
+  ].join("\n");
+  const weeklySheet = [
+    "Person,P1,P2,P3,Wildcard,,Person,P1,P2,P3,Wildcard Qualifying,Wildcard Race,,Person,P1,P2,P3,Wildcard Qualifying,Wildcard Race,Total",
+    "Wyatt,Lando,Oscar,George,Charles,,Wyatt,1,2,3,4,5,,Wyatt,25,18,15,10,8,76",
+  ].join("\n");
+
+  await page.route("**/formulaOnePublic-*.js", async (route) => {
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.fulfill({ response });
+    controllerFinished = true;
+  });
+  await page.route("https://docs.google.com/**", async (route) => {
+    const url = route.request().url();
+    if (url.includes("2PACX-1vRrushAAc96VpAzSRiZsRK0198bbc")) {
+      dataStartedBeforeControllerFinished ||= !controllerFinished;
+      await route.fulfill({ body: mainSheet, contentType: "text/csv" });
+      return;
+    }
+    if (url.includes("2PACX-1vR4JBp8m58prqFPqifgHB0xS7y")) {
+      await route.fulfill({ body: weeklySheet, contentType: "text/csv" });
+      return;
+    }
+    await route.fulfill({ body: "", contentType: "text/csv" });
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#formula-1-2025-questions", { waitUntil: "networkidle" });
+  await expect(page.getByText("Who wins the championship?")).toBeVisible();
+  expect(dataStartedBeforeControllerFinished).toBe(true);
+
+  await page.evaluate(() => {
+    window.location.hash = "formula-1-2025-weekly";
+  });
+  await expect(
+    page.locator("#formula-one-2025-weekly-round-select"),
+  ).toBeVisible();
+  await expect(page.locator("#formula-one-2025-weekly-list")).not.toContainText(
+    "Loading",
+  );
+
+  await page.evaluate(() => {
+    window.location.hash = "formula-1-2025-results";
+  });
+  await expect(page.locator("#formula-one-2025-results-rows")).toContainText(
+    "Wyatt",
+  );
 });
 
 test("authenticated YouTube route loads its deferred controller", async ({
@@ -769,22 +1226,15 @@ test("authenticated YouTube route loads its deferred controller", async ({
   expect(pageErrors).toEqual([]);
 });
 
-test("authenticated Guides and Draft List load their deferred controllers", async ({
+test("authenticated Guides render in React and Draft List loads its deferred controller", async ({
   page,
 }) => {
-  /** @type {string[]} */
-  const guideDataBundleRequests = [];
-  page.on("request", (request) => {
-    if (/\/guideData-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
-      guideDataBundleRequests.push(request.url());
-    }
-  });
   await prepareAuthenticatedSecondaryRoutes(page);
 
   await page.goto("/#guides", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="guides"]')).toHaveClass(/is-active/);
   await expect(page.locator(".guides-grid")).toBeVisible();
-  expect(guideDataBundleRequests).toHaveLength(1);
+  await expect(page.getByRole("heading", { name: "Guides" })).toBeVisible();
 
   await page.goto("/#draft-list", { waitUntil: "networkidle" });
   await expect(page.locator('[data-page="draft-list"]')).toHaveClass(
@@ -839,6 +1289,478 @@ test("Formula One admin loads its deferred calculation engine", async ({
     /is-active/,
   );
   expect(calculationBundleRequests).toHaveLength(1);
+  expect(pageErrors).toEqual([]);
+});
+
+test("signed-in managers submit Formula One weekly choices on-site", async ({
+  browserName,
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        managerId: "6",
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00.000Z",
+          accessToken: "test-access-token",
+        },
+      }),
+    );
+  });
+  /** @type {null | Record<string, string | number>} */
+  let entry = null;
+  let submissionReceived = false;
+  const weeklyData = () => ({
+    drivers: [
+      {
+        active: 1,
+        constructor_name: "McLaren",
+        display_name: "Lando Norris",
+        driver_id: "norris",
+      },
+      {
+        active: 1,
+        constructor_name: "Mercedes",
+        display_name: "George Russell",
+        driver_id: "russell",
+      },
+      {
+        active: 1,
+        constructor_name: "Ferrari",
+        display_name: "Charles Leclerc",
+        driver_id: "leclerc",
+      },
+      {
+        active: 1,
+        constructor_name: "Williams",
+        display_name: "Carlos Sainz",
+        driver_id: "sainz",
+      },
+    ],
+    entries: entry ? [entry] : [],
+    pastEntries: [
+      {
+        entry_status: "submitted",
+        manager_id: "2",
+        p1_driver_id: "norris",
+        p2_driver_id: "russell",
+        p3_driver_id: "leclerc",
+        round: 3,
+        wildcard_driver_id: "sainz",
+        year: 2026,
+      },
+      {
+        entry_status: "submitted",
+        manager_id: "3",
+        p1_driver_id: "russell",
+        p2_driver_id: "norris",
+        p3_driver_id: "sainz",
+        round: 3,
+        wildcard_driver_id: "leclerc",
+        year: 2026,
+      },
+    ],
+    pastResults: [
+      {
+        id: 3,
+        name: "Bahrain Grand Prix",
+        optimal: {
+          picks: {
+            p1: "Lando Norris",
+            p2: "George Russell",
+            p3: "Charles Leclerc",
+            wildcard: "Carlos Sainz",
+          },
+          positions: {
+            p1: 1,
+            p2: 2,
+            p3: 3,
+            wildcardQualifying: 6,
+            wildcardRace: 5,
+          },
+          points: {
+            p1: 60,
+            p2: 50,
+            p3: 50,
+            wildcardQualifying: 115,
+            wildcardRace: 135,
+          },
+          total: 410,
+        },
+        entries: [
+          {
+            managerId: "2",
+            picks: {
+              p1: "Lando Norris",
+              p2: "George Russell",
+              p3: "Charles Leclerc",
+              wildcard: "Carlos Sainz",
+            },
+            positions: {
+              p1: 1,
+              p2: 2,
+              p3: 3,
+              wildcardQualifying: 6,
+              wildcardRace: 5,
+            },
+            points: {
+              p1: 60,
+              p2: 50,
+              p3: 50,
+              wildcardQualifying: 115,
+              wildcardRace: 135,
+            },
+            total: 410,
+          },
+          {
+            managerId: "3",
+            picks: {
+              p1: "George Russell",
+              p2: "Lando Norris",
+              p3: "Carlos Sainz",
+              wildcard: "Charles Leclerc",
+            },
+            positions: {
+              p1: 2,
+              p2: 1,
+              p3: 5,
+              wildcardQualifying: 3,
+              wildcardRace: 3,
+            },
+            points: {
+              p1: 25,
+              p2: 25,
+              p3: 0,
+              wildcardQualifying: 180,
+              wildcardRace: 180,
+            },
+            total: 410,
+          },
+        ],
+      },
+    ],
+    ok: true,
+    roundDrivers: [],
+    rounds: [
+      {
+        deadline_at: "2099-04-01T05:00:00.000Z",
+        is_open: 1,
+        name: "Japanese Grand Prix",
+        round: 1,
+        year: 2026,
+      },
+      {
+        deadline_at: "2099-03-07T05:00:00.000Z",
+        is_open: 1,
+        name: "Australian Grand Prix",
+        round: 2,
+        year: 2026,
+      },
+      {
+        deadline_at: "2026-03-01T05:00:00.000Z",
+        is_open: 0,
+        name: "Bahrain Grand Prix",
+        round: 3,
+        year: 2026,
+      },
+    ],
+    year: 2026,
+  });
+  await page.route("https://docs.google.com/**", (route) =>
+    route.fulfill({ body: "", contentType: "text/csv", status: 200 }),
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ ok: true, teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+  await page.route(
+    "https://box-this-lap-formula-one.boxthislap.workers.dev/**",
+    async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const corsHeaders = {
+        "access-control-allow-headers": "authorization,content-type",
+        "access-control-allow-methods": "GET,POST,PUT,OPTIONS",
+        "access-control-allow-origin": "*",
+      };
+      if (request.method() === "OPTIONS") {
+        return route.fulfill({ headers: corsHeaders, status: 204 });
+      }
+      if (
+        request.method() === "POST" &&
+        url.pathname.endsWith("/drivers/refresh")
+      ) {
+        return route.fulfill({
+          body: JSON.stringify({ drivers: [], ok: true }),
+          contentType: "application/json",
+          headers: corsHeaders,
+          status: 200,
+        });
+      }
+      if (request.method() === "PUT" && /\/picks\/\d+$/.test(url.pathname)) {
+        submissionReceived = true;
+        entry = {
+          entry_status: "submitted",
+          manager_id: "6",
+          p1_driver_id: "norris",
+          p2_driver_id: "russell",
+          p3_driver_id: "leclerc",
+          round: 2,
+          submitted_at: "2099-03-01T12:00:00.000Z",
+          wildcard_driver_id: "sainz",
+          year: 2026,
+        };
+        return route.fulfill({
+          body: JSON.stringify({ entry, ok: true }),
+          contentType: "application/json",
+          headers: corsHeaders,
+          status: 200,
+        });
+      }
+      const isWeeklyRead = url.pathname.endsWith("/weekly/me");
+      const isAdminWeeklyRead = url.pathname.endsWith(
+        "/api/admin/seasons/2026/weekly",
+      );
+      const managerData = weeklyData();
+      const body = isWeeklyRead
+        ? managerData
+        : isAdminWeeklyRead
+          ? {
+              ...managerData,
+              entries: [
+                { entry_status: "draft", round: 2, year: 2026 },
+                ...managerData.pastEntries,
+                ...(entry ? [entry] : []),
+              ],
+              scores: [],
+            }
+          : { drivers: [], ok: true };
+      return route.fulfill({
+        body: JSON.stringify(body),
+        contentType: "application/json",
+        headers: corsHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
+  await page.getByText("Notifications", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Australian Grand Prix weekly choices" }),
+  ).toBeVisible();
+
+  await page.goto("/#formula-1-2026-weekly", { waitUntil: "domcontentloaded" });
+  const form = page.locator("[data-formula-one-manager-picks]");
+  await expect(form).toBeVisible();
+  await expect(form.locator("[data-formula-one-manager-round]")).toHaveValue(
+    "2",
+  );
+  await form.getByRole("button", { name: "Edit all manager choices" }).click();
+  const roundEditor = page.locator(".formula-one-manager-round-editor");
+  await expect(
+    roundEditor.getByRole("heading", { name: "Manager Choices" }),
+  ).toBeVisible();
+  await expect(
+    roundEditor.locator("[data-formula-one-admin-picks]"),
+  ).toHaveCount(6);
+  await expect(roundEditor.getByText("Manager", { exact: true })).toHaveCount(
+    0,
+  );
+  await form.getByRole("button", { name: "Stop editing round" }).click();
+  await expect(form.getByText("Deadline", { exact: true })).toBeVisible();
+  await expect(form.getByText(/Eastern Time/i)).toHaveCount(0);
+  await expect(form.locator(".formula-one-manager-deadline strong")).toHaveText(
+    /E[DS]T$/,
+  );
+  await expect(
+    form.locator('select[name="wildcardDriverId"] option'),
+  ).toHaveText(["Choose driver", "Carlos Sainz"]);
+  await form.locator("[data-formula-one-manager-round]").selectOption("3");
+  const pastChoices = page.locator(".formula-one-manager-past-choices");
+  await expect(
+    pastChoices.getByRole("heading", { name: "Manager Results" }),
+  ).toBeVisible();
+  await expect(
+    pastChoices.getByRole("heading", { name: "Best Picks" }),
+  ).toBeVisible();
+  await expect(pastChoices.locator("article")).toHaveCount(2);
+  await expect(pastChoices).toContainText("Lando Norris");
+  await expect(pastChoices).toContainText("George Russell");
+  await expect(pastChoices).toContainText("410 points");
+  await expect(pastChoices).toContainText("250 pts");
+  await form.getByRole("button", { name: "Edit all manager choices" }).click();
+  await expect(
+    roundEditor.locator('select[name="p1DriverId"]').first(),
+  ).toBeEnabled();
+  await form.getByRole("button", { name: "Stop editing round" }).click();
+  await form.locator("[data-formula-one-manager-round]").selectOption("2");
+  // Playwright WebKit cannot fulfill this cross-origin PUT reliably, but it
+  // still verifies the complete mobile entry UI and wildcard filter above.
+  if (browserName === "webkit") return;
+  await expect(
+    form.getByRole("button", { name: "Edit all manager choices" }),
+  ).toBeVisible();
+  await form.getByRole("button", { name: "Edit all manager choices" }).click();
+  const adminEntry = roundEditor.locator(
+    '[data-formula-one-admin-picks]:has(input[name="managerId"][value="6"])',
+  );
+  await adminEntry.locator('select[name="p1DriverId"]').selectOption("norris");
+  await adminEntry.locator('select[name="p2DriverId"]').selectOption("russell");
+  await adminEntry.locator('select[name="p3DriverId"]').selectOption("leclerc");
+  await adminEntry
+    .locator('select[name="wildcardDriverId"]')
+    .selectOption("sainz");
+  await adminEntry.getByRole("button", { name: "Submit choices" }).click();
+
+  await expect(form.getByText("Manager choices saved.")).toBeVisible();
+  await expect(
+    form.getByRole("button", { name: "Stop editing round" }),
+  ).toBeVisible();
+  expect(submissionReceived).toBe(true);
+});
+
+test("Formula One calculator loads its complete deferred controller", async ({
+  page,
+}) => {
+  /** @type {string[]} */
+  const controllerRequests = [];
+  /** @type {string[]} */
+  const pageErrors = [];
+  page.on("request", (request) => {
+    if (
+      /\/formulaOneCalculator-[^/]+\.js$/.test(new URL(request.url()).pathname)
+    ) {
+      controllerRequests.push(request.url());
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route(
+    "https://box-this-lap-formula-one.boxthislap.workers.dev/api/seasons/2026/calculator",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          currentTotals: { "Alex A": 150, "Blake B": 75, "Casey C": 49 },
+          driversToWatch: ["Alex A", "Blake B", "Casey C"],
+          raceOptions: [
+            { position: "1", points: 25 },
+            { position: "2", points: 18 },
+            { position: "<10", points: 0 },
+          ],
+          rounds: [
+            {
+              id: 1,
+              name: "Round 1",
+              complete: true,
+              pointsByDriver: { "Alex A": 150, "Blake B": 75, "Casey C": 49 },
+            },
+            { id: 2, name: "Round 2", complete: false, pointsByDriver: {} },
+          ],
+          sprintOptions: [
+            { position: "1", points: 8 },
+            { position: "2", points: 7 },
+            { position: "<8", points: 0 },
+          ],
+          sprintRounds: [
+            { id: 2, name: "Round 2", complete: false, pointsByDriver: {} },
+          ],
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        body: JSON.stringify({ teams: [] }),
+        contentType: "application/json",
+        status: 200,
+      }),
+  );
+
+  await page.goto("/#formula-1-2026-calculator", { waitUntil: "networkidle" });
+  await expect(
+    page.locator('[data-page="formula-1-2026-calculator"]'),
+  ).toHaveClass(/is-active/);
+  await expect(
+    page.getByRole("heading", { name: "Points calculator" }),
+  ).toBeVisible();
+  const tableWrap = page.locator(".formula-one-calculator-table-wrap");
+  expect(
+    await tableWrap.evaluate(
+      (element) => element.scrollHeight <= element.clientHeight + 1,
+    ),
+  ).toBe(true);
+  const resetButton = page.getByRole("button", { name: "Reset" });
+  const filterButton = page.getByRole("button", {
+    name: "Show driver filters",
+  });
+  const [resetBounds, filterBounds] = await Promise.all([
+    resetButton.boundingBox(),
+    filterButton.boundingBox(),
+  ]);
+  expect(Math.abs((resetBounds?.y ?? 0) - (filterBounds?.y ?? 0))).toBeLessThan(
+    2,
+  );
+  expect(resetBounds?.x ?? 0).toBeLessThan(filterBounds?.x ?? 0);
+  const firstDriver = page
+    .locator(".formula-one-calculator-table tbody tr")
+    .first()
+    .locator("th");
+  await page.getByRole("button", { name: /Current/ }).click();
+  await expect(firstDriver).toContainText("Casey C");
+  await page.getByRole("button", { name: /Projected/ }).click();
+  await expect(firstDriver).toContainText("Alex A");
+  await page.getByRole("button", { name: "Expanded" }).click();
+  const position = page
+    .locator('[data-formula-one-calculator-position][data-event-type="race"]')
+    .first();
+  await position.selectOption("1");
+  await expect(
+    page.locator(".formula-one-calculator-projected").first(),
+  ).toContainText("175");
+  await page.getByRole("button", { name: "Simple" }).click();
+  await page.getByRole("button", { name: "Expanded" }).click();
+  await expect(
+    page
+      .locator('[data-formula-one-calculator-position][data-event-type="race"]')
+      .first(),
+  ).toHaveValue("1");
+  const storedState = await page.evaluate(() =>
+    localStorage.getItem("boxthislap-formula-one-calculator-2026"),
+  );
+  expect(storedState).toContain('"race:2:Alex A":"1"');
+  await page.getByRole("button", { name: "Show driver filters" }).click();
+  await page.getByRole("button", { name: "Only Protagonists" }).click();
+  await expect(
+    page.locator("[data-formula-one-calculator-filter]:checked"),
+  ).toHaveCount(2);
+  await expect(
+    page.locator('[data-formula-one-calculator-filter][data-driver="Casey C"]'),
+  ).not.toBeChecked();
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(page.getByRole("button", { name: "Simple" })).toHaveClass(
+    /is-active/,
+  );
+  await expect(
+    page.locator("[data-formula-one-calculator-filter]:checked"),
+  ).toHaveCount(3);
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("boxthislap-formula-one-calculator-2026"),
+    ),
+  ).toBeNull();
+  expect(controllerRequests).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });
 

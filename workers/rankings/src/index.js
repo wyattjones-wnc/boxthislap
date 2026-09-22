@@ -5,6 +5,7 @@ const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 const BASE_RATING = 1500;
 let catalogCache = null;
+let managerCatalogCache = null;
 const footyCatalogCache = new Map();
 
 export default {
@@ -27,6 +28,12 @@ export default {
           "Cache-Control": "public, max-age=300",
         });
       }
+      if (request.method === "GET" && url.pathname === "/api/managers") {
+        return json({ ok: true, managers: await readManagerCatalog(env) }, 200, {
+          ...cors,
+          "Cache-Control": "public, max-age=300",
+        });
+      }
       if (request.method === "POST" && url.pathname === "/api/auth/bootstrap") {
         return json(await bootstrapAuth(request, env), 200, cors);
       }
@@ -45,6 +52,13 @@ export default {
         const result = request.method === "GET"
           ? await readFollowedTeams(env, manager.sub)
           : await replaceFollowedTeams(env, manager.sub, await readBody(request), getCatalogChannel(request));
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
+      const publicFollowedTeamsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/followed-teams$/);
+      if (publicFollowedTeamsMatch && request.method === "GET") {
+        const managerId = parseId(publicFollowedTeamsMatch[1], "manager ID");
+        const result = await readFollowedTeams(env, managerId);
         return json({ ok: true, ...result }, 200, cors);
       }
 
@@ -276,6 +290,51 @@ async function readFollowedTeams(env, managerId) {
     usingDefault: resolved.usingDefault,
     updatedAt: revision?.updated_at || "",
   };
+}
+
+async function readManagerCatalog(env) {
+  if (managerCatalogCache?.expiresAt > Date.now()) return managerCatalogCache.managers;
+  if (!env.MANAGER_CATALOG_URL) throw new Error("Manager catalog is not configured.");
+  const response = await fetch(env.MANAGER_CATALOG_URL, { headers: { Accept: "text/csv" } });
+  if (!response.ok) throw new Error(`Manager catalog request failed: ${response.status}`);
+  const managers = parseManagerCatalogCsv(await response.text()).filter((manager) => manager.active);
+  managerCatalogCache = { expiresAt: Date.now() + 5 * 60 * 1000, managers };
+  return managers;
+}
+
+export function parseManagerCatalogCsv(text) {
+  const rows = String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim()).map(parseCsvLine);
+  const headers = rows.shift() || [];
+  const column = (name) => headers.findIndex((header) => header.trim().toLowerCase() === name.toLowerCase());
+  const idColumn = column("Manager ID");
+  const nameColumn = column("Name");
+  const displayNameColumn = column("Display Name");
+  const activeColumn = column("IsActive");
+  if (idColumn < 0 || nameColumn < 0) throw new Error("Manager catalog is missing required columns.");
+  return rows.map((row) => ({
+    active: activeColumn < 0 || /^(true|yes|1)$/i.test(String(row[activeColumn] || "").trim()),
+    displayName: String(row[displayNameColumn] || "").trim(),
+    id: String(row[idColumn] || "").trim(),
+    name: String(row[nameColumn] || "").trim(),
+  })).filter((manager) => manager.id && manager.name);
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let value = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') { value += '"'; index += 1; }
+      else quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      values.push(value);
+      value = "";
+    } else value += character;
+  }
+  values.push(value);
+  return values;
 }
 
 export function resolveFollowedTeamRows(managerRows = [], defaultRows = [], managerId = "", defaultManagerId = "6") {

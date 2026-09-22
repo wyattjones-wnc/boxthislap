@@ -1,7 +1,10 @@
-// Box This Lap - Next Countdown Widget for Scriptable
+// Box This Lap - Next Widget for Scriptable
 //
-// Run this script inside Scriptable to choose the Next item the widget should
-// focus on. That choice is saved locally on the phone.
+// Large widgets list upcoming items. Medium widgets show a saved focus item.
+// Set this to true in your installed script to include manager-only items.
+// The loader replaces local edits when updating the widget.
+const SHOW_ALL_NEXT_ITEMS = false;
+const LARGE_ITEM_LIMIT = 6;
 //
 // Optional widget parameter overrides:
 // - Leave blank: show the saved focus item if it is still upcoming, or the next
@@ -12,6 +15,10 @@
 const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev/api/items";
 const SAVED_FOCUS_FILE = "box-this-lap-next-focus.json";
 const NEXT_ITEMS_CACHE_FILE = "box-this-lap-next-items-cache-v2.json";
+// Mirror this image so Scriptable can use the same artwork if its host fails.
+const WIDGET_IMAGE_MIRRORS = {
+  "199": "https://wyattjones-wnc.github.io/boxthislap/dev/assets/next/ghost-of-yotei-complete-edition.jpg",
+};
 const REQUESTED_ITEM = String(args.widgetParameter || "").trim();
 const CURRENT_TIMED_EVENT_WINDOW_MS = 60 * 60 * 1000;
 
@@ -25,20 +32,29 @@ const COLORS = {
   warning: new Color("#f1c65b"),
 };
 
-const result = await loadNextItems();
+const loadedResult = await loadNextItems();
+const result = loadedResult.ok
+  ? { ...loadedResult, items: loadedResult.items.filter((item) => SHOW_ALL_NEXT_ITEMS || item.nonAdmin) }
+  : loadedResult;
 
-if (result.ok && !config.runsInWidget) {
+if (result.ok && !config.runsInWidget && config.widgetFamily !== "large") {
   await chooseFocusItem(result.items);
 }
 
 const savedFocus = readSavedFocus();
 const item = result.ok ? chooseItem(result.items, REQUESTED_ITEM, savedFocus) : null;
-const widget = await createWidget(item, result);
+const widget = config.widgetFamily === "large"
+  ? await createLargeWidget(result)
+  : await createWidget(item, result);
 
 if (config.runsInWidget) {
   Script.setWidget(widget);
 } else {
-  await widget.presentMedium();
+  if (config.widgetFamily === "large") {
+    await widget.presentLarge();
+  } else {
+    await widget.presentMedium();
+  }
 }
 
 Script.complete();
@@ -221,6 +237,93 @@ function sortItemsForPicker(items) {
   });
 }
 
+async function createLargeWidget(result) {
+  const widget = new ListWidget();
+  widget.backgroundColor = COLORS.background;
+  widget.setPadding(10, 12, 10, 12);
+
+  const header = widget.addStack();
+  header.centerAlignContent();
+  const title = header.addText("Next");
+  title.font = Font.boldSystemFont(18);
+  title.textColor = COLORS.text;
+  header.addSpacer();
+  const symbol = SFSymbol.named("calendar.badge.clock");
+  const icon = header.addImage(symbol.image);
+  icon.imageSize = new Size(18, 18);
+  icon.tintColor = COLORS.accent;
+  widget.addSpacer(6);
+
+  if (!result.ok) {
+    widget.refreshAfterDate = getWidgetRefreshDate(null);
+    addErrorState(widget, result.error);
+    return widget;
+  }
+
+  const items = sortItemsForPicker(result.items.filter(isUpcomingItem)).slice(0, LARGE_ITEM_LIMIT);
+  widget.refreshAfterDate = items.length ? getWidgetRefreshDate(items[0]) : getWidgetRefreshDate(null);
+
+  if (!items.length) {
+    addEmptyState(widget);
+    return widget;
+  }
+
+  for (const [index, item] of items.entries()) {
+    if (index > 0) widget.addSpacer(4);
+    const card = widget.addStack();
+    card.layoutHorizontally();
+    card.centerAlignContent();
+    card.size = new Size(0, 48);
+    card.backgroundColor = COLORS.card;
+    card.cornerRadius = 9;
+    card.borderColor = COLORS.border;
+    card.borderWidth = 1;
+    card.setPadding(3, 6, 3, 6);
+
+    const artwork = await loadItemImage(item);
+    if (artwork) {
+      const thumbnail = card.addImage(artwork);
+      // A wide, filling crop gives the artwork space while keeping six rows.
+      thumbnail.imageSize = new Size(120, 42);
+      thumbnail.cornerRadius = 5;
+      thumbnail.applyFillingContentMode();
+      card.addSpacer(7);
+    }
+
+    const details = card.addStack();
+    details.layoutVertically();
+    const name = details.addText(item.thing);
+    name.font = Font.boldSystemFont(12);
+    name.textColor = COLORS.text;
+    name.lineLimit = 2;
+    name.minimumScaleFactor = 0.85;
+    details.addSpacer(2);
+    const date = details.addText(formatDateRangeCompact(item));
+    date.font = Font.semiboldSystemFont(10);
+    date.textColor = COLORS.muted;
+    date.lineLimit = 1;
+    card.addSpacer();
+  }
+
+  widget.addSpacer();
+
+  return widget;
+}
+
+async function loadItemImage(item) {
+  for (const url of [WIDGET_IMAGE_MIRRORS[item.id], item.imageUrl].filter(Boolean)) {
+    try {
+      const request = new Request(url);
+      request.timeoutInterval = 10;
+      return await request.loadImage();
+    } catch (error) {
+      console.warn(`Unable to load Next artwork from ${url}: ${error}`);
+    }
+  }
+
+  return null;
+}
+
 async function createWidget(item, result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
@@ -300,19 +403,10 @@ async function createWidget(item, result) {
 }
 
 async function applyItemBackground(widget, item) {
-  if (!item.imageUrl) {
-    return false;
-  }
-
-  try {
-    const request = new Request(item.imageUrl);
-    request.timeoutInterval = 15;
-    widget.backgroundImage = await request.loadImage();
-    return true;
-  } catch (error) {
-    console.warn(`Unable to load Next image: ${error}`);
-    return false;
-  }
+  const artwork = await loadItemImage(item);
+  if (!artwork) return false;
+  widget.backgroundImage = artwork;
+  return true;
 }
 
 function applyTextShadow(text, enabled) {
@@ -575,6 +669,15 @@ function formatDateRange(item) {
   }
 
   return `${start} to ${formatDate(item.endDate, false)}`;
+}
+
+function formatDateRangeCompact(item) {
+  const start = formatPickerDate(item);
+  if (!item.endDate) return start;
+
+  const formatter = new DateFormatter();
+  formatter.dateFormat = "MMM d";
+  return `${start} – ${formatter.string(item.endDate)}`;
 }
 
 function formatPickerDate(item) {

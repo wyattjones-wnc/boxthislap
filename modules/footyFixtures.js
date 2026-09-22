@@ -146,14 +146,33 @@ export function getFootyFixtureSortTime(fixture) {
 }
 
 export function isFootyFixturePast(fixture, now = Date.now()) {
+  if (isFootyFixturePostponed(fixture)) return false;
   if (hasFootyMatchNoteData(fixture)) return true;
   const pastCutoffTime = getFootyFixturePastCutoffTime(fixture);
   return Number.isFinite(pastCutoffTime) && pastCutoffTime < now;
 }
 
 export function isFootyFixtureStarted(fixture, now = Date.now()) {
+  if (isFootyFixturePostponed(fixture)) return false;
   const fixtureTime = getFootyFixtureComparableTime(fixture);
   return Number.isFinite(fixtureTime) && fixtureTime < now;
+}
+
+export function isFootyFixturePostponed(fixture = {}) {
+  return ["postponed", "suspended"].includes(
+    String(fixture.status || "").trim().toLowerCase(),
+  );
+}
+
+export function isFootyFixtureMissingMatchNoteCandidate(
+  fixture,
+  now = Date.now(),
+) {
+  return (
+    !isFootyFixturePostponed(fixture) &&
+    isFootyFixturePast(fixture, now) &&
+    !hasFootyMatchNoteData(fixture)
+  );
 }
 
 export function hasFootyMatchNoteData(fixture) {
@@ -207,6 +226,7 @@ export function isFootyFixtureWithinNextDay(fixture, now = Date.now()) {
 }
 
 export function getFootyFixtureTimingLabel(fixture, now = Date.now()) {
+  if (isFootyFixturePostponed(fixture)) return "";
   if (isFootyFixtureCurrent(fixture, now)) return "Today";
   return isFootyFixtureWithinNextDay(fixture, now) ? "Next 24h" : "";
 }

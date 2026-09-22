@@ -15,6 +15,29 @@ const indexHtml = await readFile(
 );
 const mainScriptMatch = indexHtml.match(/\.\/build\/(index-[^"']+\.js)/);
 
+const staticPageContent = [
+  ...indexHtml.matchAll(
+    /<section\b[^>]*\bdata-page=["'][^"']+["'][^>]*>([\s\S]*?)<\/section>/g,
+  ),
+].filter((match) => match[1].trim());
+
+if (staticPageContent.length) {
+  throw new Error(
+    "Production page roots must be empty so React remains their only structural owner.",
+  );
+}
+
+for (const shellElement of ["header", "footer"]) {
+  const shellContent = indexHtml.match(
+    new RegExp(`<${shellElement}\\b[^>]*>([\\s\\S]*?)<\\/${shellElement}>`),
+  )?.[1];
+  if (shellContent?.trim()) {
+    throw new Error(
+      `Production ${shellElement} root must be empty so React remains its only structural owner.`,
+    );
+  }
+}
+
 if (!mainScriptMatch) {
   throw new Error(
     "The production page does not reference a hashed main script.",
@@ -62,7 +85,6 @@ const expectedLazyChunks = [
   "formulaOneQualifying-",
   "followedTeamsDialog-",
   "guideData-",
-  "guides-",
   "nextItemDialog-",
   "platinums-",
   "todoItemDialog-",

@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeMatchNotificationRequest, normalizeSubmittedTeamIds, resolveFollowedTeamRows } from "../src/index.js";
+import { normalizeMatchNotificationRequest, normalizeSubmittedTeamIds, parseManagerCatalogCsv, resolveFollowedTeamRows } from "../src/index.js";
+
+test("manager catalog parses active and inactive managers without hardcoded names", () => {
+  assert.deepEqual(parseManagerCatalogCsv([
+    "Manager ID,Name,Display Name,Color,IsActive",
+    '9,"Jones, Mom",Mom,7F22B5,TRUE',
+    "10,Future Manager,Future,123456,FALSE",
+  ].join("\n")), [
+    { active: true, displayName: "Mom", id: "9", name: "Jones, Mom" },
+    { active: false, displayName: "Future", id: "10", name: "Future Manager" },
+  ]);
+});
 
 test("followed team order is preserved", () => {
   assert.deepEqual(normalizeSubmittedTeamIds(["arsenal", "atlanta-united"]), ["arsenal", "atlanta-united"]);

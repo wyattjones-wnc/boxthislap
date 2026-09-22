@@ -5,6 +5,7 @@ const KNOWN_PLAYLISTS = [
   { id: "PLGNVOQrF_q_U", name: "3New" },
 ];
 const INBOX_SNAPSHOT_KEY = "youtube-inbox:v1";
+const MAX_VISIBLE_VIDEO_IDS = 1000;
 
 export default {
   async fetch(request, env) {
@@ -177,11 +178,14 @@ async function updateVideoStatus(videoId, request, env) {
   return { ok: true, status: body.status, videoId };
 }
 
-async function markVideosSeenThrough(videoId, request, env) {
+export async function markVideosSeenThrough(videoId, request, env) {
   const body = await readJson(request);
   const videoIds = [...new Set((Array.isArray(body.videoIds) ? body.videoIds : [])
     .map((value) => String(value || "").trim())
-    .filter(Boolean))].slice(0, 100);
+    .filter(Boolean))];
+  if (videoIds.length > MAX_VISIBLE_VIDEO_IDS) {
+    throw httpError(400, `No more than ${MAX_VISIBLE_VIDEO_IDS} visible videos can be updated at once.`);
+  }
   if (!videoIds.length || !videoIds.includes(videoId)) {
     throw httpError(400, "The visible video selection is required.");
   }

@@ -21,7 +21,9 @@ import {
   groupFootyFixturesByCalendarWeek,
   hasFootyMatchNoteData,
   isFootyFixtureInDateRange,
+  isFootyFixtureMissingMatchNoteCandidate,
   isFootyFixturePast,
+  isFootyFixturePostponed,
   isFootyFixtureStarted,
   isFootyFriendlyFixture,
   normalizeFootyClubName,
@@ -38,7 +40,6 @@ import {
   FOOTY_PUSH_ENDPOINT,
   NEXT_DATA_ENDPOINT,
   NEXT_ITEMS_ENDPOINT,
-  GUIDES_PROGRESS_ENDPOINT,
   RANKINGS_ENDPOINT,
   FORMULA_ONE_ENDPOINT,
   PSN_TROPHIES_ENDPOINT,
@@ -138,7 +139,6 @@ import {
   footyFriendliesFilter,
   footyTeamFilter,
   footyScheduleList,
-  footyCustomFilterToggle,
   footyCustomFilters,
   footyCustomTeamSearch,
   footyCustomTeamCompetition,
@@ -420,7 +420,12 @@ import {
 } from "./modules/domRefs.js?v=202609110445";
 import { createRouter, scrollToPageTop } from "./modules/router.js?v=202609081516";
 import { createThemeController } from "./modules/theme.js?v=202607210001";
-import { createFollowedTeamsController } from "./modules/followedTeams.js?v=202609121804";
+import { createFollowedTeamsController, filterPickerTeams } from "./modules/followedTeams.js?v=202609121804";
+import {
+  isNextDateSpanInRange,
+  normalizeNextDateRange,
+  normalizeNextPriorityRange,
+} from "./modules/nextFilters.js?v=202609162330";
 import {
   formatUpdatedTime,
   normalizeLookupName,
@@ -436,20 +441,13 @@ const fantasyOfficeMovieSort = {
   direction: "desc",
   key: "points",
 };
-const formulaOneResultsMode = {
-  2025: "yearly",
-  2026: "yearly",
-};
-const formulaOneWeeklyResultsGroup = {
-  2025: "all",
-  2026: "all",
-};
+const formulaOneResultsMode = { 2025: "yearly", 2026: "yearly" };
+const formulaOneWeeklyResultsGroup = { 2025: "all", 2026: "all" };
 let bracketPicksFallback = {};
 let shouldShowPastFootyFixtures = false;
 let shouldShowFootyFilters = false;
 let shouldShowFootyMissingNotesFilters = false;
 let activeFootyMissingNotesPage = 1;
-let shouldShowFootyCustomFilters = false;
 let isFootyCustomScheduleConfirmed = false;
 const selectedFootyCustomTeamKeys = new Set();
 let shouldShowAllFootyFixtures = false;
@@ -462,7 +460,6 @@ const footyTeamFixtureLimits = new Map();
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
-const nextCardElementCache = new Map();
 let isSavingNextItem = false;
 let isNextItemDialogOpen = false;
 let nextItemDialogController = null;
@@ -530,6 +527,8 @@ const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notification
 const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
 const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
 const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
+const MANAGER_HUB_DRAFTS_CACHE_KEY = "boxthislap-manager-hub-drafts";
+const MANAGER_HUB_DRAFTS_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const IMAGE_CACHE_STORAGE_KEY = "boxthislap-image-cache-enabled";
 const FOOTY_NOTIFICATION_OFFSETS = [
   { key: "2h", label: "in 2 hours", minutes: 120 },
@@ -540,7 +539,14 @@ let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
 let footyMatchNotificationsLoadPromise = null;
 const pendingFootyMatchNotificationIds = new Set();
+let footyMissingNotesFixturesCache = null;
+let footyMissingNotesFixturesPromise = null;
+let footyMissingNotesGeneration = 0;
+let footyMissingNotesFilterSource = null;
+let footyScheduleFixtureIndex = null;
+let footyScheduleFixtureIndexSource = null;
 let footyMatchNotesLoadPromise = null;
+let managerHubLoadState = null;
 let footyPerfectPerformancesLoadPromise = null;
 let footySeenMatchesLoadPromise = null;
 let releaseFootyPerfectDialog = null;
@@ -553,8 +559,7 @@ const pageDataPromises = new Map();
 const sharedDataPromises = new Map();
 const fantasyCriticLoadPromises = new Map();
 const formulaOneDataPromises = new Map();
-const formulaOneCalculatorStates = new Map();
-const FORMULA_ONE_CALCULATOR_CONFIG = {
+const FORMULA_ONE_CALCULATOR_LEGACY_CONFIG = {
   2026: {
     driversSource: "formulaOne2026CalculatorDrivers",
     optionsSource: "formulaOne2026CalculatorOptions",
@@ -562,18 +567,6 @@ const FORMULA_ONE_CALCULATOR_CONFIG = {
     summarySource: "formulaOne2026CalculatorSummary",
   },
 };
-const FORMULA_ONE_DRIVER_COLOR_PALETTE = [
-  "#e10600",
-  "#0072ce",
-  "#00a19c",
-  "#ff8700",
-  "#7c4dff",
-  "#d81b60",
-  "#2e7d32",
-  "#795548",
-  "#00838f",
-  "#c62828",
-];
 const fantasyOfficeData = {
   2025: { draft: [], movies: [], ordering: [], results: [] },
   2026: { draft: [], movies: [], ordering: [], results: [] },
@@ -670,6 +663,8 @@ let rankingAuthorizationRefreshTimer = 0;
 const formulaOneAdminLoadPromises = new Map();
 let formulaOneAdminSeasonsLoadPromise = null;
 let formulaOneCalculations = null;
+let formulaOneCalculatorController = null;
+let formulaOnePublicController = null;
 let formulaOneAdminSelectedYear = "2026";
 let formulaOneAdminSelectedRound = "";
 let formulaOneAdminSelectedSession = "qualifying";
@@ -678,6 +673,13 @@ let formulaOneAdminMode = "main";
 let formulaOneFactsEditing = false;
 const formulaOneWeeklyEditing = new Set();
 const formulaOneRoundDriverLoads = new Set();
+const formulaOneManagerWeeklyEditing = new Set();
+const formulaOneManagerRoundDriverLoads = new Set();
+let formulaOneManagerWeeklyLoadPromise = null;
+let formulaOneManagerWeeklySelectedRound = "";
+let managerHubActivationSequence = 0;
+let managerAwardsMarkup = null;
+let managerAwardsRenderedHtml = null;
 window.boxThisLapData = siteData;
 window.boxThisLapDiagnostics = window.boxThisLapDiagnostics || [];
 
@@ -719,6 +721,7 @@ const followedTeamsController = createFollowedTeamsController({
   request: rankingApiRequest,
   onChanged: (teams, change = {}) => {
     siteData.followedTeams = teams;
+    invalidateFootyMissingNotesFixtures();
     if (change.source === "save" && change.addedTeamIds?.length) {
       void initializeNewlyFollowedRosters(teams, change.addedTeamIds);
     }
@@ -746,17 +749,6 @@ const loadGuideDataLoader = createLazyControllerLoader(async () => {
 async function loadGuideData() {
   return (await loadGuideDataLoader())();
 }
-const loadGuidesController = createLazyControllerLoader(async () => {
-  const { createGuidesController } = await import(
-    "./modules/guides.js?v=202609112020"
-  );
-  return createGuidesController({
-    getManagerId: getCurrentManagerId,
-    getIsAdmin: isCurrentManagerAdmin,
-    loadData: loadGuideData,
-    progressEndpoint: GUIDES_PROGRESS_ENDPOINT,
-  });
-});
 const loadDraftListsController = createLazyControllerLoader(async () => {
   const { createDraftListsController } = await import("./modules/draftLists.js?v=202609130510");
   activeDraftListsController = createDraftListsController({
@@ -802,8 +794,47 @@ const loadCollectiblesController = createLazyControllerLoader(async () => {
   });
 });
 const loadFormulaOneCalculations = createLazyControllerLoader(async () => {
-  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609131601");
+  formulaOneCalculations = await import("./modules/formulaOneQualifying.js?v=202609132235");
   return formulaOneCalculations;
+});
+const loadFormulaOneCalculatorController = createLazyControllerLoader(async () => {
+  const module = await import("./modules/formulaOneCalculator.js?v=202609171459");
+  formulaOneCalculatorController = module.createFormulaOneCalculatorController({
+    escapeHtml,
+    getContainer: (year) => formulaOneViews[year]?.calculator,
+    getData: (year) => siteData[`formulaOne${year}Calculator`],
+  });
+  return formulaOneCalculatorController;
+});
+const loadFormulaOnePublicController = createLazyControllerLoader(async () => {
+  const module = await import("./modules/formulaOnePublic.js?v=202609140351");
+  formulaOnePublicController = module.createFormulaOnePublicController({
+    escapeHtml,
+    formatPoints,
+    formatRankDisplay,
+    getActivePage: () => activePageName,
+    getAwardsForManager,
+    getData: (key) => siteData[key],
+    getField,
+    getManagerById,
+    getManagerByName,
+    getResolvedAwards,
+    getView: (year) => formulaOneViews[year],
+    isKnownManager: (key) => Object.prototype.hasOwnProperty.call(MANAGER_COLORS, key),
+    normalizeLookupName,
+    parseCsvMatrix,
+    rankRows,
+    renderAwardBadges,
+    renderAwardCard,
+    renderManagerChip,
+    setData: (key, value) => { siteData[key] = value; },
+    shouldRenderPageSection,
+  });
+  Object.keys(formulaOneResultsMode).forEach((year) => {
+    formulaOnePublicController.setResultsMode(year, formulaOneResultsMode[year]);
+    formulaOnePublicController.setResultsGroup(year, formulaOneWeeklyResultsGroup[year]);
+  });
+  return formulaOnePublicController;
 });
 
 function createLazyControllerLoader(factory) {
@@ -828,7 +859,7 @@ async function renderPlatinumsPage() {
 }
 
 async function renderGuidesPage() {
-  return (await loadGuidesController()).renderPage();
+  return Promise.resolve();
 }
 
 async function renderDraftListsPage() {
@@ -903,23 +934,36 @@ function renderLeagueList(year) {
 
 function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year }) {
   if (isWorldCup) {
-    return `<a class="league-card-link" href="#results" data-page-link="results">Open</a>`;
+    return renderLeagueOpenAction("results", "Open World Cup");
   }
 
   if (isFantasyCritic) {
-    return `<a class="league-card-link" href="#fantasy-critic-${escapeHtml(year)}" data-page-link="fantasy-critic-${escapeHtml(year)}">Open</a>`;
+    return renderLeagueOpenAction(`fantasy-critic-${year}`, `Open ${year} Fantasy Critic`);
   }
 
   if (isFormulaOne) {
-    return `<a class="league-card-link" href="#formula-1-${escapeHtml(year)}-questions" data-page-link="formula-1-${escapeHtml(year)}-questions">Open</a>`;
+    return renderLeagueOpenAction(`formula-1-${year}-questions`, `Open ${year} Formula 1`);
   }
 
   if (isFantasyOffice) {
     const page = year === "2026" ? "draft" : "results";
-    return `<a class="league-card-link" href="#fantasy-office-${escapeHtml(year)}-${page}" data-page-link="fantasy-office-${escapeHtml(year)}-${page}">Open</a>`;
+    return renderLeagueOpenAction(`fantasy-office-${year}-${page}`, `Open ${year} Fantasy Office`);
   }
 
   return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
+}
+
+function renderLeagueOpenAction(route, label) {
+  const safeRoute = escapeHtml(route);
+  const safeLabel = escapeHtml(label);
+  return `
+    <a class="league-card-link league-card-open-button" href="#${safeRoute}" data-page-link="${safeRoute}" aria-label="${safeLabel}" title="${safeLabel}">
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <path d="M5 12h14"></path>
+        <path d="m13 6 6 6-6 6"></path>
+      </svg>
+    </a>
+  `;
 }
 
 function renderFootySchedule(schedule) {
@@ -1037,7 +1081,22 @@ function renderFootyMissingNotesPage() {
     return;
   }
 
-  const missingFixtures = getFootyMissingNotesFixtures(siteData.footySchedule);
+  if (!footyMissingNotesFixturesCache) {
+    footyMissingNotesList.setAttribute("aria-busy", "true");
+    footyMissingNotesList.innerHTML = renderLoadingMessage("Preparing missing match notes...");
+    void ensureFootyMissingNotesFixtures()
+      .then(() => {
+        renderFootyMissingNotesPage();
+        if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
+      })
+      .catch((error) => {
+        footyMissingNotesList.setAttribute("aria-busy", "false");
+        footyMissingNotesList.innerHTML = `<p class="table-message">Unable to prepare missing match notes: ${escapeHtml(error.message)}</p>`;
+      });
+    return;
+  }
+
+  const missingFixtures = footyMissingNotesFixturesCache;
   syncFootyMissingNotesFilters(missingFixtures);
   const visibleFixtures = getFilteredFootyMissingNotesFixtures(missingFixtures)
     .sort(compareFootyFixturesDescending);
@@ -1047,9 +1106,7 @@ function renderFootyMissingNotesPage() {
   const pageStart = (activeFootyMissingNotesPage - 1) * FOOTY_MISSING_NOTES_PAGE_SIZE;
   const pageFixtures = visibleFixtures.slice(pageStart, pageStart + FOOTY_MISSING_NOTES_PAGE_SIZE);
 
-  footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
-  footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
-  if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
+  syncFootyMissingNotesFilterVisibility();
   if (footyMissingNotesSummary) {
     const pageEnd = Math.min(pageStart + pageFixtures.length, visibleFixtures.length);
     footyMissingNotesSummary.textContent = visibleFixtures.length
@@ -1099,10 +1156,11 @@ function getFootyMissingNotesFixtures(schedule = {}) {
   });
 
   const fixturesByMatch = new Map();
+  const decorationContext = createFootyMissingNotesDecorationContext(schedule);
   fixtures.forEach((fixture) => {
     const matchId = String(fixture.matchId || "").trim();
     if (!matchId) return;
-    const normalizedFixture = decorateFootyMissingNotesFixture(fixture, schedule);
+    const normalizedFixture = decorateFootyMissingNotesFixture(fixture, decorationContext);
     const existing = fixturesByMatch.get(matchId);
     fixturesByMatch.set(matchId, existing
       ? mergeFootyCompetitionFixtures(existing, normalizedFixture)
@@ -1111,17 +1169,23 @@ function getFootyMissingNotesFixtures(schedule = {}) {
 
   return [...fixturesByMatch.values()]
     .filter((fixture) => (
-      isFootyFixturePast(fixture) &&
+      isFootyFixtureMissingMatchNoteCandidate(fixture) &&
       !isFootyFriendlyFixture(fixture) &&
       getFootyCanonicalCompetition(fixture.league).key !== "leagues cup" &&
-      getFootyCanonicalCompetition(fixture.league).key !== "u.s. open cup" &&
-      !hasFootyMatchNoteData(fixture)
+      getFootyCanonicalCompetition(fixture.league).key !== "u.s. open cup"
     ));
 }
 
-function decorateFootyMissingNotesFixture(fixture = {}, schedule = {}) {
-  const followedIds = new Set(followedTeamsController.getFollowedTeamIds().map(String));
-  const teams = new Map(getAllFootyScheduleTeams(schedule).map((team) => [String(team.id), team]));
+function createFootyMissingNotesDecorationContext(schedule = {}) {
+  return {
+    followedIds: new Set(followedTeamsController.getFollowedTeamIds().map(String)),
+    teams: new Map(getAllFootyScheduleTeams(schedule).map((team) => [String(team.id), team])),
+  };
+}
+
+function decorateFootyMissingNotesFixture(fixture = {}, context = {}) {
+  const followedIds = context.followedIds || new Set();
+  const teams = context.teams || new Map();
   const sides = [
     { id: String(fixture.homeTeamId || ""), isHome: true, name: fixture.home },
     { id: String(fixture.awayTeamId || ""), isHome: false, name: fixture.away },
@@ -1141,11 +1205,59 @@ function decorateFootyMissingNotesFixture(fixture = {}, schedule = {}) {
   };
 }
 
+function invalidateFootyMissingNotesFixtures() {
+  footyMissingNotesGeneration += 1;
+  footyMissingNotesFixturesCache = null;
+  footyMissingNotesFixturesPromise = null;
+  footyMissingNotesFilterSource = null;
+}
+
+function ensureFootyMissingNotesFixtures() {
+  if (footyMissingNotesFixturesCache) return Promise.resolve(footyMissingNotesFixturesCache);
+  if (footyMissingNotesFixturesPromise) return footyMissingNotesFixturesPromise;
+
+  const generation = footyMissingNotesGeneration;
+  const promise = waitForBrowserRender()
+    .then(() => getFootyMissingNotesFixtures(siteData.footySchedule))
+    .then((fixtures) => {
+      if (generation === footyMissingNotesGeneration) {
+        footyMissingNotesFixturesCache = fixtures;
+      }
+      return fixtures;
+    })
+    .finally(() => {
+      if (footyMissingNotesFixturesPromise === promise) {
+        footyMissingNotesFixturesPromise = null;
+      }
+    });
+
+  footyMissingNotesFixturesPromise = promise;
+  return promise;
+}
+
+function waitForBrowserRender() {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => window.setTimeout(resolve, 0));
+  });
+}
+
+function syncFootyMissingNotesFilterVisibility() {
+  footyMissingNotesFilterToggle?.classList.toggle("is-active", shouldShowFootyMissingNotesFilters);
+  footyMissingNotesFilterToggle?.setAttribute("aria-expanded", String(shouldShowFootyMissingNotesFilters));
+  footyMissingNotesFilterToggle?.setAttribute(
+    "aria-label",
+    shouldShowFootyMissingNotesFilters ? "Hide missing match note filters" : "Show missing match note filters",
+  );
+  if (footyMissingNotesFilters) footyMissingNotesFilters.hidden = !shouldShowFootyMissingNotesFilters;
+}
+
 function teamNameForFootyMissingNotesSide(side, teams) {
   return getFootyDisplayTeamName(teams.get(side.id)?.name || side.name || "");
 }
 
 function syncFootyMissingNotesFilters(fixtures = []) {
+  if (footyMissingNotesFilterSource === fixtures) return;
+  footyMissingNotesFilterSource = fixtures;
   const competitions = [...new Set(fixtures.map((fixture) => getFootyCanonicalCompetition(fixture.league).name).filter(Boolean))]
     .sort((first, second) => first.localeCompare(second));
   const teams = [...new Set(fixtures.flatMap((fixture) => [fixture.home, fixture.away]).map(getFootyDisplayTeamName).filter(Boolean))]
@@ -1229,10 +1341,13 @@ function getFootyCustomScheduleRecords(schedule = {}) {
         const name = getFootyDisplayTeamName(side.name);
         const key = getFootyTeamFilterKey(name);
         if (!key) return;
-        const team = teamsByKey.get(key) || { badge: "", competitions: new Set(), id: "", key, name };
+        const team = teamsByKey.get(key) || { badge: "", competitions: new Set(), id: "", key, leagues: [], name };
         team.badge ||= String(side.badge || "").trim();
         team.id ||= String(side.id || "").trim();
-        if (competition) team.competitions.add(competition);
+        if (competition) {
+          team.competitions.add(competition);
+          if (!team.leagues.some((league) => league.name === competition)) team.leagues.push({ name: competition });
+        }
         teamsByKey.set(key, team);
       });
 
@@ -1243,7 +1358,9 @@ function getFootyCustomScheduleRecords(schedule = {}) {
     });
   });
 
-  return { fixtures: [...fixturesByKey.values()], teams: [...teamsByKey.values()].sort((a, b) => a.name.localeCompare(b.name)) };
+  const defaultTeamIds = (schedule.schedules || []).map((entry) => String(entry?.team?.id || "")).filter(Boolean);
+  const teams = filterPickerTeams([...teamsByKey.values()], defaultTeamIds).sort((a, b) => a.name.localeCompare(b.name));
+  return { fixtures: [...fixturesByKey.values()], teams };
 }
 
 function syncFootyCustomSelect(select, values, placeholder) {
@@ -1275,10 +1392,7 @@ function renderFootyCustomSchedule() {
   footyCustomTeamPicker.innerHTML = visibleTeams.length
     ? `<div class="footy-custom-team-summary"><strong>${selectionCount} selected</strong><span>${visibleTeams.length} teams shown</span></div><div class="footy-custom-team-grid">${visibleTeams.map((team) => `<label class="footy-custom-team-option${selectedFootyCustomTeamKeys.has(team.key) ? " is-selected" : ""}"><input type="checkbox" value="${escapeHtml(team.key)}"${selectedFootyCustomTeamKeys.has(team.key) ? " checked" : ""}><span class="footy-fixture-badge" aria-hidden="true">${renderFootyBadgeMarkup({ fallbackText: getFootyTeamFallbackBadge(team.name), primarySrc: team.badge })}</span><span>${escapeHtml(team.name)}</span></label>`).join("")}</div>`
     : `<p class="table-message">${selectionCount && selectedOnly ? "No selected teams match these tools." : "No teams match these tools."}</p>`;
-  if (footyCustomFilterToggle) footyCustomFilterToggle.disabled = !isFootyCustomScheduleConfirmed;
-  footyCustomFilterToggle?.classList.toggle("is-active", isFootyCustomScheduleConfirmed && shouldShowFootyCustomFilters);
-  footyCustomFilterToggle?.setAttribute("aria-expanded", String(isFootyCustomScheduleConfirmed && shouldShowFootyCustomFilters));
-  if (footyCustomFilters) footyCustomFilters.hidden = !isFootyCustomScheduleConfirmed || !shouldShowFootyCustomFilters;
+  if (footyCustomFilters) footyCustomFilters.hidden = !isFootyCustomScheduleConfirmed;
   if (footyCustomClear) footyCustomClear.disabled = selectionCount === 0;
   footyCustomScheduleList.hidden = !isFootyCustomScheduleConfirmed;
 
@@ -1656,7 +1770,7 @@ function renderFootyTeamPlayers(team) {
     const message = discovery?.status === "error"
       ? escapeHtml(discovery.error || `No provider roster was found for ${team.name}.`)
       : `Loading ${escapeHtml(team.name)} roster…`;
-    footyTeamContent.innerHTML = `<section class="footy-team-player-section"><p class="table-message">${message}</p>${discovery?.status === "error" ? `<button class="footer-copy-link" type="button" data-footy-roster-discover>Try provider lookup again</button>` : ""}${isCurrentManagerAdmin() ? `<button class="action-button" type="button" data-footy-roster-add>Add first player</button>` : ""}</section>`;
+    footyTeamContent.innerHTML = `<section class="footy-team-player-section"><p class="table-message">${message}</p>${discovery?.status === "error" ? `<button class="footer-copy-link" type="button" data-footy-roster-discover>Try provider lookup again</button>` : ""}${isCurrentManagerAdmin() ? `<button class="icon-action-button" type="button" data-footy-roster-add data-admin-only aria-label="Add first player" title="Add first player">${renderRosterActionIcon("add")}</button>` : ""}</section>`;
     return;
   }
 
@@ -1674,7 +1788,7 @@ function renderFootyTeamPlayers(team) {
     <section class="footy-team-player-section">
       <div class="footy-roster-toolbar">
         <label><span>Season</span><select data-footy-roster-season>${seasons.map((entry) => `<option value="${escapeHtml(entry.season)}"${entry.season === roster.season ? " selected" : ""}>${escapeHtml(entry.season)}</option>`).join("")}</select></label>
-        ${isCurrentManagerAdmin() ? `<div class="footy-roster-admin-actions" data-admin-only><button class="footer-copy-link${footyRosterEditMode ? " is-active" : ""}" type="button" data-footy-roster-edit-mode aria-pressed="${String(footyRosterEditMode)}">${footyRosterEditMode ? "Done editing" : "Edit roster"}</button><button class="action-button" type="button" data-footy-roster-add>Add player</button></div>` : ""}
+        ${isCurrentManagerAdmin() ? `<div class="footy-roster-admin-actions" data-admin-only><button class="icon-action-button${footyRosterEditMode ? " is-active" : ""}" type="button" data-footy-roster-edit-mode aria-label="${footyRosterEditMode ? "Finish editing roster" : "Edit roster"}" title="${footyRosterEditMode ? "Finish editing roster" : "Edit roster"}" aria-pressed="${String(footyRosterEditMode)}">${renderRosterActionIcon(footyRosterEditMode ? "done" : "edit")}</button><button class="icon-action-button" type="button" data-footy-roster-add aria-label="Add player" title="Add player">${renderRosterActionIcon("add")}</button></div>` : ""}
       </div>
       <div class="footy-team-player-grid${shouldExportFootyTradingCards ? " is-export-mode" : ""}">
         ${players.map(renderFootyTeamPlayerCard).join("")}
@@ -1686,6 +1800,12 @@ function renderFootyTeamPlayers(team) {
       <p class="trading-card-export-status" aria-live="polite" data-trading-card-export-status></p>
     </section>
   `;
+}
+
+function renderRosterActionIcon(action) {
+  if (action === "add") return `<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M5 12h14"></path></svg>`;
+  if (action === "done") return `<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6"></path></svg>`;
+  return `<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>`;
 }
 
 function renderFootyPlayerGridLoading() {
@@ -2869,8 +2989,8 @@ function getFootyMatchNoteById(matchId) {
     return null;
   }
 
-  return (Array.isArray(siteData.footyMatchNotes) ? siteData.footyMatchNotes : [])
-    .find((note) => normalizeFootyMatchId(note?.matchId) === normalizedId) || null;
+  siteData.footyMatchNotesById ||= createFootyMatchNotesById(siteData.footyMatchNotes || []);
+  return siteData.footyMatchNotesById.get(normalizedId) || null;
 }
 
 function mergeFootyCompetitionFixtures(existing = {}, fixture = {}) {
@@ -3796,7 +3916,7 @@ function closeProfileDropdown() {
 
 function renderFootyMatchNotificationAction(fixture = {}) {
   const matchId = String(fixture.matchId || fixture.id || "").trim();
-  if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixtureStarted(fixture)) {
+  if (!getCurrentManagerId() || !matchId || !hasFootyFixtureNotificationTime(fixture) || isFootyFixturePostponed(fixture) || isFootyFixtureStarted(fixture)) {
     return "";
   }
   const followedNotificationState = followedTeamsController.getNotificationSelectionState();
@@ -3835,10 +3955,12 @@ function renderFootyFixture(fixture) {
   const score = getFootyMatchScore(fixture);
   const resultClass = getFootyFixtureResultClass(fixture);
   const matchPeriod = isCompetitionFixture ? getFootyMatchPeriod(fixture) : null;
+  const isPostponed = isFootyFixturePostponed(fixture);
   const isPastCompetitionFixture = isCompetitionFixture && isFootyFixturePast(fixture);
   const cardClasses = [
     "footy-fixture-card",
     isCompetitionFixture ? "footy-fixture-card--competition" : "",
+    isPostponed ? "footy-fixture-card--postponed" : "",
     isPastCompetitionFixture ? "footy-fixture-card--past" : "",
     isHighlighted ? "footy-fixture-card--soon" : "",
     resultClass,
@@ -3889,6 +4011,7 @@ function renderFootyFixture(fixture) {
         <p class="footy-fixture-meta">
           ${followedTeamMarkup}
           ${fixture.league ? `<span>${escapeHtml(fixture.league)}</span>` : ""}
+          ${isPostponed ? '<span class="footy-fixture-status-chip">Postponed</span>' : ""}
           ${matchPeriod ? `<span class="footy-match-period-chip">${escapeHtml(matchPeriod.label)}</span>` : ""}
         </p>
         ${venueMarkup}
@@ -5142,10 +5265,12 @@ function ensureFootyMatchNotes({ force = false } = {}) {
   footyMatchNotesLoadPromise = loadFootyMatchNotesWithRetry()
     .then((notes) => {
       siteData.footyMatchNotes = notes;
+      siteData.footyMatchNotesById = createFootyMatchNotesById(notes);
       siteData.footyMatchNotesLoadedAt = new Date().toISOString();
       siteData.footyMatchNotesError = null;
       clearFootyScheduleMatchNotes(siteData.footySchedule);
       mergeFootyMatchNotes(notes);
+      invalidateFootyMissingNotesFixtures();
       return notes;
     })
     .finally(() => {
@@ -6062,7 +6187,8 @@ function getFootyFixtureOpponentRosterName(fixture) {
 }
 
 function mergeFootyMatchNotes(notes = []) {
-  notes.forEach((note) => updateFootyFixtureMatchNote(note));
+  const fixturesByMatchId = getFootyScheduleFixtureIndex();
+  notes.forEach((note) => applyFootyMatchNoteToFixtures(note, fixturesByMatchId));
 }
 
 function upsertFootyMatchNote(note) {
@@ -6084,7 +6210,16 @@ function upsertFootyMatchNote(note) {
   }
 
   siteData.footyMatchNotes = notes;
+  siteData.footyMatchNotesById ||= createFootyMatchNotesById(notes);
+  siteData.footyMatchNotesById.set(normalizedId, note);
   siteData.footyMatchNotesLoadedAt = new Date().toISOString();
+  invalidateFootyMissingNotesFixtures();
+}
+
+function createFootyMatchNotesById(notes = []) {
+  return new Map(notes
+    .map((note) => [normalizeFootyMatchId(note?.matchId), note])
+    .filter(([matchId]) => Boolean(matchId)));
 }
 
 async function saveFootyMatchNote(note, retried = false) {
@@ -6137,9 +6272,20 @@ function updateFootyFixtureMatchNote(note) {
     return;
   }
 
+  applyFootyMatchNoteToFixtures(note, getFootyScheduleFixtureIndex());
+}
+
+function getFootyScheduleFixtureIndex() {
+  const schedule = siteData.footySchedule;
+  if (!schedule) return new Map();
+  if (footyScheduleFixtureIndex && footyScheduleFixtureIndexSource === schedule) {
+    return footyScheduleFixtureIndex;
+  }
+
+  const fixturesByMatchId = new Map();
   [
-    ...(siteData.footySchedule.teamSchedules || []),
-    ...(siteData.footySchedule.competitionSchedules || []),
+    ...(schedule.teamSchedules || []),
+    ...(schedule.competitionSchedules || []),
   ].forEach((fixtureGroup) => {
     const fixtures = Array.isArray(fixtureGroup?.fixtures) ? fixtureGroup.fixtures : [];
 
@@ -6147,21 +6293,34 @@ function updateFootyFixtureMatchNote(note) {
       const fixtureMatchId = fixture.isCompetitionFixture
         ? getFootyCompetitionFixtureMatchId(fixture)
         : fixture.matchId;
-
-      if (normalizeFootyMatchId(fixtureMatchId) === normalizedId) {
-        fixture.matchId = fixtureMatchId;
-        fixture.matchNote = {
-          awayScore: note.awayScore,
-          followGoalAssists: note.followGoalAssists,
-          highlightLink: note.highlightLink,
-          homeScore: note.homeScore,
-          note: note.note,
-          opponentGoalAssists: note.opponentGoalAssists,
-          revision: Number(note.revision || 0),
-          updatedAt: note.updatedAt || "",
-        };
-      }
+      const normalizedId = normalizeFootyMatchId(fixtureMatchId);
+      if (!normalizedId) return;
+      fixture.matchId = fixtureMatchId;
+      const indexedFixtures = fixturesByMatchId.get(normalizedId) || [];
+      indexedFixtures.push(fixture);
+      fixturesByMatchId.set(normalizedId, indexedFixtures);
     });
+  });
+
+  footyScheduleFixtureIndex = fixturesByMatchId;
+  footyScheduleFixtureIndexSource = schedule;
+  return fixturesByMatchId;
+}
+
+function applyFootyMatchNoteToFixtures(note, fixturesByMatchId) {
+  const normalizedId = normalizeFootyMatchId(note?.matchId);
+  if (!normalizedId) return;
+  (fixturesByMatchId.get(normalizedId) || []).forEach((fixture) => {
+    fixture.matchNote = {
+      awayScore: note.awayScore,
+      followGoalAssists: note.followGoalAssists,
+      highlightLink: note.highlightLink,
+      homeScore: note.homeScore,
+      note: note.note,
+      opponentGoalAssists: note.opponentGoalAssists,
+      revision: Number(note.revision || 0),
+      updatedAt: note.updatedAt || "",
+    };
   });
 }
 
@@ -6496,66 +6655,28 @@ function renderNextList(items = siteData.nextItems || []) {
   const previousTailItems = shouldRenderDefaultNextPreviousTail()
     ? getDefaultNextPreviousTailItems(normalizedItems)
     : [];
-  const renderedItems = [...visibleItems, ...previousTailItems];
-  pruneNextCardElementCache(normalizedItems);
-
-  if (!renderedItems.length) {
-    nextList.innerHTML = `<p class="table-message">${hasActiveNextFilters() ? "No Next items match those filters." : "No upcoming Next items found."}</p>`;
-    return;
-  }
-
-  const list = document.createElement("div");
-  list.className = "next-list";
-  visibleItems.forEach((item) => {
-    list.append(getNextCardElement(item, { showPassedStatus: showDefaultPassedStatus }));
+  const toView = (item, showPassedStatus = false) => ({
+    completed: item.completed,
+    dateLabel: formatNextDateRange(item),
+    id: item.id,
+    imageUrl: item.imageUrl,
+    isPast: isNextItemPast(item, getDateKey(0)),
+    passed: Boolean(showPassedStatus && hasNextItemTimePassed(item)),
+    thing: item.thing,
+    timeLabel: item.timeLabel,
   });
-
-  if (previousTailItems.length) {
-    const divider = document.createElement("div");
-    divider.className = "next-previous-divider";
-    divider.setAttribute("role", "separator");
-    divider.setAttribute("aria-label", "Previous items");
-    divider.innerHTML = "<span>Previous</span>";
-    list.append(divider);
-    previousTailItems.forEach((item) => list.append(getNextCardElement(item)));
-  }
-
-  nextList.replaceChildren(list);
-}
-
-function pruneNextCardElementCache(items = []) {
-  const currentIds = new Set(items.map((item) => item.id).filter(Boolean));
-
-  nextCardElementCache.forEach((_entry, id) => {
-    if (!currentIds.has(id)) {
-      nextCardElementCache.delete(id);
-    }
-  });
-}
-
-function getNextCardElement(item, options = {}) {
-  const markup = renderNextItem(item, options).trim();
-  const cached = item.id ? nextCardElementCache.get(item.id) : null;
-
-  if (cached?.markup === markup) {
-    return cached.element;
-  }
-
-  const template = document.createElement("template");
-  template.innerHTML = markup;
-  const element = template.content.firstElementChild;
-  const cachedImage = cached?.element.querySelector("[data-next-card-image]");
-  const nextImage = element?.querySelector("[data-next-card-image]");
-
-  if (cachedImage && nextImage && cachedImage.getAttribute("src") === nextImage.getAttribute("src")) {
-    nextImage.replaceWith(cachedImage);
-  }
-
-  if (item.id && element) {
-    nextCardElementCache.set(item.id, { element, markup });
-  }
-
-  return element;
+  const detail = {
+    activeItemId: activeNextItemId,
+    editMode: isNextEditModeEnabled(),
+    emptyLabel: hasActiveNextFilters()
+      ? "No Next items match those filters."
+      : "No upcoming Next items found.",
+    items: visibleItems.map((item) => toView(item, showDefaultPassedStatus)),
+    previousItems: previousTailItems.map((item) => toView(item)),
+  };
+  window.__boxThisLapNextListView = detail;
+  window.__boxThisLapSetNextListView?.(detail);
+  window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
 }
 
 function normalizeNextItem(row) {
@@ -6719,56 +6840,6 @@ function comparePreviousNextItems(first, second) {
   return first.thing.localeCompare(second.thing);
 }
 
-function renderNextItem(item, options = {}) {
-  const isAdmin = isCurrentManagerAdmin();
-  const isPast = isNextItemPast(item, getDateKey(0));
-  const dateLabel = formatNextDateRange(item);
-  const timeMarkup = item.timeLabel
-    ? `<span class="next-time">${escapeHtml(item.timeLabel)}</span>`
-    : "";
-  const completedIcon = isAdmin && item.completed
-    ? `<span class="next-completed-icon" aria-label="Completed" title="Completed">&#10003;</span>`
-    : "";
-  const passedStatus = options.showPassedStatus && hasNextItemTimePassed(item) && !item.completed
-    ? `<span class="next-passed-status" aria-label="Event time has passed" title="Event time has passed">&#10003;</span>`
-    : "";
-  const classNames = [
-    "next-card",
-    item.completed ? "next-card--completed" : "",
-    isNextEditModeEnabled() ? "next-card--editable" : "",
-    activeNextItemId === item.id ? "is-expanded" : "",
-    isPast ? "next-card--past" : "",
-  ].filter(Boolean).join(" ");
-  const editButton = isNextEditModeEnabled() && activeNextItemId === item.id
-    ? `<button class="action-button next-edit-button" type="button" data-next-edit="${escapeHtml(item.id)}">Edit</button>`
-    : "";
-  const interactionAttributes = isNextEditModeEnabled() && item.id
-    ? ` role="button" tabindex="0" aria-expanded="${String(activeNextItemId === item.id)}" data-next-item-id="${escapeHtml(item.id)}"`
-    : "";
-  const imageMarkup = item.imageUrl
-    ? `<img class="next-card-image" src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" decoding="async" data-next-card-image>`
-    : "";
-  const imageClass = imageMarkup ? " next-card--with-image" : "";
-
-  return `
-    <article class="${classNames}${imageClass}"${interactionAttributes}>
-      ${imageMarkup}
-      <div class="next-card-main${completedIcon ? " has-completed-icon" : ""}">
-        ${completedIcon}
-        <div>
-          ${passedStatus}
-          <h2>${escapeHtml(item.thing)}</h2>
-          <p class="next-card-date">
-            <span>${escapeHtml(dateLabel)}</span>
-            ${timeMarkup}
-          </p>
-        </div>
-      </div>
-      ${editButton}
-    </article>
-  `;
-}
-
 function isNextEditModeEnabled() {
   return Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
 }
@@ -6802,24 +6873,18 @@ function syncNextFilters() {
 function getNextDateFilterRange() {
   const rawStart = String(nextDateFromFilter?.value || "").trim();
   const rawEnd = String(nextDateToFilter?.value || "").trim();
-
-  if (!rawStart && !rawEnd) {
-    return null;
-  }
-
-  const start = rawStart || rawEnd;
-  const end = rawEnd || rawStart;
-
-  return start <= end
-    ? { start, end }
-    : { start: end, end: start };
+  return normalizeNextDateRange(rawStart, rawEnd);
 }
 
 function getNextPriorityRange() {
-  const min = clampNextPriority(nextPriorityMin?.value ?? 0);
-  const max = clampNextPriority(nextPriorityMax?.value ?? 10);
+  return normalizeNextPriorityRange(nextPriorityMin?.value, nextPriorityMax?.value);
+}
 
-  return min <= max ? { min, max } : { min: max, max: min };
+function constrainNextPriorityRange(changedControl) {
+  const changed = changedControl === nextPriorityMin ? "min" : "max";
+  const range = normalizeNextPriorityRange(nextPriorityMin?.value, nextPriorityMax?.value, changed);
+  if (nextPriorityMin) nextPriorityMin.value = String(range.min);
+  if (nextPriorityMax) nextPriorityMax.value = String(range.max);
 }
 
 function hasActiveNextFilters() {
@@ -6847,14 +6912,7 @@ function isNextItemPast(item, todayKey = getDateKey(0)) {
 }
 
 function isNextItemInDateRange(item, dateRange) {
-  const start = item.dateKey || item.endDateKey;
-  const end = item.endDateKey || item.dateKey;
-
-  if (!start || !end) {
-    return false;
-  }
-
-  return start <= dateRange.end && end >= dateRange.start;
+  return isNextDateSpanInRange(item.dateKey, item.endDateKey, dateRange);
 }
 
 function parseNextDateKey(value) {
@@ -7299,7 +7357,16 @@ function renderNextListError(error) {
     return;
   }
 
-  nextList.innerHTML = `<p class="table-message">Unable to load Next items: ${escapeHtml(error.message)}</p>`;
+  const detail = {
+    activeItemId: "",
+    editMode: false,
+    emptyLabel: `Unable to load Next items: ${error.message}`,
+    items: [],
+    previousItems: [],
+  };
+  window.__boxThisLapNextListView = detail;
+  window.__boxThisLapSetNextListView?.(detail);
+  window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
 }
 
 function ensureGuideLinksLoaded() {
@@ -7358,10 +7425,33 @@ function getGuideEntryUrl(guideId) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+function getGuideEntryLinkViews(kind, itemId) {
+  if (!isCurrentManagerAdmin() || !itemId) return [];
+  const idKey = kind === "todo" ? "todoId" : "rankingId";
+  return (siteData.guideLinks || [])
+    .filter((guide) => guide[idKey] === String(itemId))
+    .map((guide) => ({
+      href: getGuideEntryUrl(guide.id),
+      label: `Open ${guide.name} guide`,
+    }));
+}
+
+function publishOperationalListView(kind, detail) {
+  const globalKey = kind === "todo" ? "__boxThisLapTodoListView" : "__boxThisLapWantListView";
+  window[globalKey] = detail;
+  window.dispatchEvent(new CustomEvent(`boxthislap:${kind}-list`, { detail }));
+}
+
+function publishRankingListView(kind, detail) {
+  window.__boxThisLapRankingListViews = window.__boxThisLapRankingListViews || {};
+  window.__boxThisLapRankingListViews[kind] = detail;
+  window.dispatchEvent(new CustomEvent(`boxthislap:ranking-list:${kind}`, { detail }));
+}
+
 function renderWantList(items = siteData.wantItems || []) {
   if (!wantList || !shouldRenderPageSection("want")) return;
   if (!isCurrentManagerAdmin()) {
-    wantList.innerHTML = `<p class="table-message">Want is available to admin users.</p>`;
+    publishOperationalListView("want", { emptyLabel: "Want is available to admin users.", items: [] });
     return;
   }
 
@@ -7379,51 +7469,53 @@ function renderWantList(items = siteData.wantItems || []) {
     const rows = activeWantSnapshotId === "current"
       ? currentRows
       : getRankingSnapshotRows("want", activeWantSnapshotId).filter((item) => visibleIds.has(String(item.id)));
-    wantList.innerHTML = rows.length
-      ? `<div class="next-list todo-list">${rows.map((item, index) => renderWantCalculatedItem(item, index + 1, currentRows)).join("")}</div>`
-      : `<p class="table-message">No Want items found.</p>`;
+    const compareRows = activeWantCompareSnapshotId === "current"
+      ? currentRows
+      : activeWantCompareSnapshotId ? getRankingSnapshotRows("want", activeWantCompareSnapshotId) : [];
+    publishOperationalListView("want", {
+      emptyLabel: "No Want items found.",
+      items: rows.map((item, index) => {
+        const rank = index + 1;
+        const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+        const movement = compareRank ? compareRank - rank : 0;
+        return {
+          archived: false,
+          completed: false,
+          deleted: false,
+          draggable: false,
+          expanded: false,
+          id: String(item.id || ""),
+          meta: [
+            `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+            `${item.wins || 0}-${item.losses || 0}`,
+            Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+            `Manual #${formatWantOrder(item)}`,
+            compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getWantSnapshotLabel(activeWantCompareSnapshotId)}` : "",
+          ].filter(Boolean),
+          name: item.name,
+          orderLabel: String(rank),
+          priceLabel: item.price !== null && item.price !== undefined ? formatWantPrice(item.price) : "",
+        };
+      }),
+    });
     return;
   }
 
-  wantList.innerHTML = visibleItems.length
-    ? `<div class="next-list todo-list">${visibleItems.map(renderWantItem).join("")}</div>`
-    : `<p class="table-message">No Want items found.</p>`;
-}
-
-function renderWantCalculatedItem(item, rank, currentRows) {
-  const compareRows = activeWantCompareSnapshotId === "current"
-    ? currentRows
-    : activeWantCompareSnapshotId ? getRankingSnapshotRows("want", activeWantCompareSnapshotId) : [];
-  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
-  const movement = compareRank ? compareRank - rank : 0;
-  const meta = [
-    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
-    `${item.wins || 0}-${item.losses || 0}`,
-    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
-    `Manual #${formatWantOrder(item)}`,
-    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getWantSnapshotLabel(activeWantCompareSnapshotId)}` : "",
-  ].filter(Boolean);
-  return `<article class="next-card todo-card"><div class="next-card-main"><span class="todo-order-number">${rank}</span><div><h2>${escapeHtml(item.name)}</h2>${item.price !== null && item.price !== undefined ? `<p class="next-card-date">${escapeHtml(formatWantPrice(item.price))}</p>` : ""}<p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p></div></div></article>`;
-}
-
-function renderWantItem(item) {
-  const expandedClass = shouldShowWantEditMode && activeWantItemId === item.id ? " is-actions-open" : "";
-  const deletedClass = item.deleted ? " todo-card--deleted" : "";
-  const draggable = shouldShowWantEditMode ? ` draggable="true"` : "";
-  const chips = [
-    item.archived ? { key: "archived", label: "Archived" } : null,
-    item.completed ? { key: "completed", label: "Completed" } : null,
-    item.deleted ? { key: "deleted", label: "Deleted" } : null,
-  ].filter(Boolean);
-  return `
-    <article class="next-card todo-card${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-want-id="${escapeHtml(item.id)}" aria-label="${shouldShowWantEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
-      <div class="next-card-main">
-        <span class="todo-order-number">${escapeHtml(formatWantOrder(item))}</span>
-        <div><h2>${escapeHtml(item.name)}</h2>${item.price !== null ? `<p class="next-card-date">${escapeHtml(formatWantPrice(item.price))}</p>` : ""}${chips.length ? `<div class="todo-chip-list">${chips.map((chip) => `<span class="todo-status-chip todo-status-chip--${chip.key}">${escapeHtml(chip.label)}</span>`).join("")}</div>` : ""}</div>
-        ${shouldShowWantEditMode ? `<span class="ranking-drag-handle want-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
-      </div>
-      ${shouldShowWantEditMode ? `<div class="todo-card-actions"><button class="ranking-inline-action" type="button" data-want-edit="${escapeHtml(item.id)}">Edit</button><button class="ranking-inline-action" type="button" data-want-move="${escapeHtml(item.id)}">Move to To Do</button><button class="ranking-inline-action" type="button" data-want-delete="${escapeHtml(item.id)}">Delete</button></div>` : ""}
-    </article>`;
+  publishOperationalListView("want", {
+    emptyLabel: "No Want items found.",
+    items: visibleItems.map((item) => ({
+      archived: item.archived,
+      completed: item.completed,
+      deleted: item.deleted,
+      draggable: shouldShowWantEditMode,
+      expanded: shouldShowWantEditMode && activeWantItemId === item.id,
+      id: item.id,
+      meta: [],
+      name: item.name,
+      orderLabel: formatWantOrder(item),
+      priceLabel: item.price !== null ? formatWantPrice(item.price) : "",
+    })),
+  });
 }
 
 function normalizeWantItem(row) {
@@ -7617,6 +7709,30 @@ function moveWantItem(draggedId, targetId, options = {}) {
   return true;
 }
 
+function applyOrderedSubset(rows, itemIds) {
+  const ids = itemIds.map(String);
+  if (!ids.length || new Set(ids).size !== ids.length) return null;
+  const rowById = new Map(rows.map((row) => [String(row.id), row]));
+  if (ids.some((id) => !rowById.has(id))) return null;
+  const included = new Set(ids);
+  let nextIndex = 0;
+  return rows.map((row) => included.has(String(row.id)) ? rowById.get(ids[nextIndex++]) : row);
+}
+
+function applyWantOrder(itemIds) {
+  if (!isCurrentManagerAdmin() || !shouldShowWantEditMode) return;
+  const rows = getWantOrderItems();
+  const reordered = applyOrderedSubset(rows, itemIds);
+  if (!reordered) return;
+  const orderById = new Map(reordered.map((item, index) => [item.id, String(index + 1)]));
+  siteData.wantItems = getWantItems().map((raw) => ({
+    ...raw,
+    Order: orderById.get(String(raw.ID || raw.id)) || raw.Order,
+  }));
+  renderWantList();
+  submitWantOrder();
+}
+
 function submitWantOrder() {
   submitNextItemPayload({ action: "saveWantOrder", items: siteData.wantItems, sheetName: "Want" });
 }
@@ -7670,7 +7786,7 @@ function setWantItemStatus(message, isError = false) {
 }
 
 function renderWantListError(error) {
-  if (wantList) wantList.innerHTML = `<p class="table-message">Unable to load Want items: ${escapeHtml(error.message)}</p>`;
+  if (wantList) publishOperationalListView("want", { emptyLabel: `Unable to load Want items: ${error.message}`, items: [] });
 }
 
 function ensureWantRankingDataLoaded() {
@@ -7725,7 +7841,7 @@ function renderTodoList(items = siteData.todoItems || []) {
   }
 
   if (!isCurrentManagerAdmin()) {
-    todoList.innerHTML = `<p class="table-message">To Do is available to admin users.</p>`;
+    publishOperationalListView("todo", { emptyLabel: "To Do is available to admin users.", items: [] });
     return;
   }
 
@@ -7748,56 +7864,61 @@ function renderTodoList(items = siteData.todoItems || []) {
       ? currentCalculatedItems
       : getRankingSnapshotRows("todo", activeTodoSnapshotId).filter((item) => visibleIds.has(String(item.id)));
 
-    if (!calculatedItems.length) {
-      todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
-      return;
-    }
-
-    todoList.innerHTML = `<div class="next-list todo-list">${calculatedItems.map((item, index) =>
-      renderTodoCalculatedItem(item, index + 1, currentCalculatedItems)
-    ).join("")}</div>`;
+    const compareRows = activeTodoCompareSnapshotId === "current"
+      ? currentCalculatedItems
+      : activeTodoCompareSnapshotId ? getRankingSnapshotRows("todo", activeTodoCompareSnapshotId) : [];
+    publishOperationalListView("todo", {
+      emptyLabel: "No To Do items found.",
+      items: calculatedItems.map((item, index) => {
+        const rank = index + 1;
+        const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
+        const movement = compareRank ? compareRank - rank : 0;
+        return {
+          children: [],
+          deleted: Boolean(item.deleted),
+          draggable: false,
+          expanded: false,
+          guideLinks: getGuideEntryLinkViews("todo", item.id),
+          hourLabel: "",
+          id: String(item.id || ""),
+          meta: [
+            `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
+            `${item.wins || 0}-${item.losses || 0}`,
+            Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
+            `Manual #${formatTodoOrderNumber(item)}`,
+            compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getTodoSnapshotLabel(activeTodoCompareSnapshotId)}` : "",
+            ...(shouldShowTodoMoreData && item.parentId ? [`Parent: ${getTodoParentLabel(item.parentId) || item.parentId}`] : []),
+          ].filter(Boolean),
+          name: item.name,
+          orderLabel: String(rank),
+          started: Boolean(item.started),
+          statusChips: getTodoStatusChips(item),
+        };
+      }),
+    });
     return;
   }
   const groupedItems = groupTodoItems(visibleItems, normalizedItems);
-
-  if (!groupedItems.length) {
-    todoList.innerHTML = `<p class="table-message">No To Do items found.</p>`;
-    return;
-  }
-
-  todoList.innerHTML = `
-    <div class="next-list todo-list">
-      ${groupedItems.map((entry) => renderTodoItem(entry.item, entry.children)).join("")}
-    </div>
-  `;
-}
-
-function renderTodoCalculatedItem(item, rank, currentRows = []) {
-  const compareRows = activeTodoCompareSnapshotId === "current"
-    ? currentRows
-    : activeTodoCompareSnapshotId ? getRankingSnapshotRows("todo", activeTodoCompareSnapshotId) : [];
-  const compareRank = compareRows.findIndex((row) => String(row.id) === String(item.id)) + 1;
-  const movement = compareRank ? compareRank - rank : 0;
-  const meta = [
-    `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
-    `${item.wins || 0}-${item.losses || 0}`,
-    Number(item.comparisons || 0) <= 0 ? "New" : Number(item.comparisons || 0) < RANKING_PROVISIONAL_COMPARISONS ? "Provisional" : "",
-    `Manual #${formatTodoOrderNumber(item)}`,
-    compareRank ? `${movement > 0 ? "+" : ""}${movement} vs ${getTodoSnapshotLabel(activeTodoCompareSnapshotId)}` : "",
-  ].filter(Boolean);
-
-  return `
-    <article class="next-card todo-card">
-      <div class="next-card-main">
-        <span class="todo-order-number">${rank}</span>
-        <div>
-          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
-          <p class="todo-more-data">${meta.map(escapeHtml).join(" | ")}</p>
-          ${renderTodoStatusChips(item)}
-          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
-        </div>
-      </div>
-    </article>`;
+  const toView = (item, children = []) => ({
+    children: children.map((child) => toView(child)),
+    deleted: item.deleted,
+    draggable: shouldShowTodoEditMode,
+    expanded: shouldShowTodoEditMode && activeTodoItemId === item.id,
+    guideLinks: getGuideEntryLinkViews("todo", item.id),
+    hourLabel: formatTodoHourRange(item),
+    id: item.id,
+    meta: shouldShowTodoMoreData && item.parentId
+      ? [`Parent: ${getTodoParentLabel(item.parentId) || item.parentId}`]
+      : [],
+    name: item.name,
+    orderLabel: formatTodoOrderNumber(item),
+    started: item.started,
+    statusChips: getTodoStatusChips(item),
+  });
+  publishOperationalListView("todo", {
+    emptyLabel: "No To Do items found.",
+    items: groupedItems.map((entry) => toView(entry.item, entry.children)),
+  });
 }
 
 function ensureTodoRankingDataLoaded() {
@@ -8006,58 +8127,6 @@ function groupTodoItems(visibleItems, allItems) {
       children: (childrenByParentId.get(item.id) || []).sort(compareTodoItems),
       item,
     }));
-}
-
-function renderTodoItem(item, children = []) {
-  const hourLabel = formatTodoHourRange(item);
-  const startedClass = item.started ? " todo-card--started" : "";
-  const deletedClass = item.deleted ? " todo-card--deleted" : "";
-  const expandedClass = shouldShowTodoEditMode && activeTodoItemId === item.id ? " is-actions-open" : "";
-  const chips = renderTodoStatusChips(item);
-  const draggable = shouldShowTodoEditMode ? ` draggable="true"` : "";
-  const controls = shouldShowTodoEditMode ? `
-    <div class="todo-card-actions">
-      <button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>
-      <button class="ranking-inline-action" type="button" data-todo-delete="${escapeHtml(item.id)}">Delete</button>
-    </div>
-  ` : "";
-  const childMarkup = children.length
-    ? `<div class="todo-child-list">${children.map(renderTodoChildItem).join("")}</div>`
-    : "";
-
-  return `
-    <article class="next-card todo-card${startedClass}${deletedClass}${expandedClass}"${draggable} tabindex="0" role="button" data-todo-id="${escapeHtml(item.id)}" aria-label="${shouldShowTodoEditMode ? "Edit" : "View"} ${escapeHtml(item.name)}">
-      <div class="next-card-main">
-        <span class="todo-order-number">${escapeHtml(formatTodoOrderNumber(item))}</span>
-        <div>
-          <div class="guide-linked-heading"><h2>${escapeHtml(item.name)}</h2>${renderGuideEntryLinks("todo", item.id)}</div>
-          ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
-          ${chips}
-          ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
-        </div>
-        ${shouldShowTodoEditMode ? `<span class="ranking-drag-handle todo-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : ""}
-      </div>
-      ${controls}
-      ${childMarkup}
-    </article>
-  `;
-}
-
-function renderTodoChildItem(item) {
-  const hourLabel = formatTodoHourRange(item);
-  const chips = renderTodoStatusChips(item);
-
-  return `
-    <article class="todo-child-card" data-todo-child-id="${escapeHtml(item.id)}">
-      <div>
-        <div class="guide-linked-heading"><h3>${escapeHtml(item.name)}</h3>${renderGuideEntryLinks("todo", item.id)}</div>
-        ${hourLabel ? `<p class="next-card-date">${escapeHtml(hourLabel)}</p>` : ""}
-        ${chips}
-        ${shouldShowTodoMoreData ? renderTodoMoreData(item) : ""}
-      </div>
-      ${shouldShowTodoEditMode ? `<button class="ranking-inline-action" type="button" data-todo-edit="${escapeHtml(item.id)}">Edit</button>` : ""}
-    </article>
-  `;
 }
 
 function renderTodoStatusChips(item) {
@@ -8384,6 +8453,31 @@ function moveTodoItem(draggedId, targetId, options = {}) {
   return true;
 }
 
+function applyTodoOrder(itemIds) {
+  if (!isCurrentManagerAdmin() || !shouldShowTodoEditMode) return;
+  const allRows = getTodoItems().map(normalizeTodoItem).filter(Boolean);
+  const reordered = applyOrderedSubset(getTodoDefaultOrderItems(allRows), itemIds);
+  if (!reordered) return;
+  const orderById = new Map(reordered.map((row, index) => [row.id, String(index + 1)]));
+  siteData.todoItems = allRows.map((row) => ({
+    ID: row.id,
+    Order: orderById.get(row.id) || String(row.order === Number.MAX_SAFE_INTEGER ? "" : row.order),
+    Name: row.name,
+    "Low Hour": row.raw["Low Hour"] ?? "",
+    "High Hour": row.raw["High Hour"] ?? "",
+    "Parent ID": row.parentId || "",
+    Started: row.started ? "TRUE" : "FALSE",
+    Archived: row.archived ? "TRUE" : "FALSE",
+    "Platinum Cleanup": row.platinumCleanup ? "TRUE" : "FALSE",
+    Completed: row.completed ? "TRUE" : "FALSE",
+    IsDeleted: row.deleted ? "TRUE" : "FALSE",
+    Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
+    "Image URL": row.imageUrl || "",
+  })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
+  renderTodoList();
+  submitTodoOrder();
+}
+
 function submitTodoOrder() {
   submitNextItemPayload({
     action: "saveTodoOrder",
@@ -8599,7 +8693,7 @@ function setTodoItemStatus(message, isError = false) {
 
 function renderTodoListError(error) {
   if (todoList) {
-    todoList.innerHTML = `<p class="table-message">Unable to load To Do items: ${escapeHtml(error.message)}</p>`;
+    publishOperationalListView("todo", { emptyLabel: `Unable to load To Do items: ${error.message}`, items: [] });
   }
 }
 
@@ -9204,29 +9298,51 @@ function renderRankingList(kind) {
 
   const rows = getDisplayedRankingRows(kind);
 
-  if (siteData.rankingLoading?.[kind]) {
-    list.innerHTML = renderLoadingMessage(`Loading ${config.itemLabel.toLowerCase()} rankings...`);
-    return;
-  }
-
   const messages = [
     ...(siteData.rankingErrorsByKind?.[kind] ? [siteData.rankingErrorsByKind[kind]] : []),
     ...(kind === activeRankingKind ? siteData.rankingErrors || [] : []),
   ];
-  const errorMarkup = messages.length
-    ? `<p class="table-message ranking-warning">${messages.map(escapeHtml).join("<br>")}</p>`
-    : "";
 
-  if (!rows.length) {
-    const action = canEditActiveRankingManager() && kind !== "mcu"
-      ? `<button class="action-button ranking-empty-add" type="button" data-ranking-empty-add="${escapeHtml(kind)}">Add One</button>`
-      : "";
-    list.innerHTML = `${errorMarkup}<div class="table-message ranking-empty-state"><span>You have not added any ${escapeHtml(config.itemLabel.toLowerCase())} rankings yet.</span>${action}</div>`;
-    return;
-  }
-
-  list.innerHTML = rows.map((item) => renderRankingItem(kind, item)).join("");
-  list.insertAdjacentHTML("afterbegin", errorMarkup);
+  const isOwner = canEditActiveRankingManager();
+  const isSnapshotView = isOwner && activeRankingSnapshotId !== "current";
+  const isManualView = isOwner && activeRankingViewMode === "manual" && !isSnapshotView;
+  const detail = {
+      canAdd: isOwner && kind !== "mcu",
+      emptyLabel: siteData.rankingLoading?.[kind]
+        ? `Loading ${config.itemLabel.toLowerCase()} rankings...`
+        : `You have not added any ${config.itemLabel.toLowerCase()} rankings yet.`,
+      itemLabel: config.itemLabel,
+      loading: Boolean(siteData.rankingLoading?.[kind]),
+      messages,
+      rows: rows.map((item) => {
+        const excluded = isRankingItemExcluded(kind, item.id);
+        let movement = "";
+        if (isOwner && activeRankingCompareSnapshotId) {
+          const compareRank = getRankingCompareRank(kind, item.id);
+          if (!compareRank) movement = "New since comparison";
+          else {
+            const delta = compareRank - Number(item.displayRank || item.rank || 0);
+            const label = delta > 0 ? `Up ${delta}` : delta < 0 ? `Down ${Math.abs(delta)}` : "No change";
+            movement = `${label} from ${getRankingCompareLabel()}`;
+          }
+        }
+        return {
+          archived: Boolean(item.archived),
+          canEdit: isOwner && kind !== "mcu" && !isSnapshotView,
+          canExclude: isOwner && activeRankingSnapshotId === "current",
+          draggable: isManualView,
+          excluded,
+          exclusionLabel: excluded ? "Include" : "Exclude",
+          guideLinks: kind === "games" ? getGuideEntryLinkViews("ranking", item.id) : [],
+          id: item.id,
+          meta: shouldShowRankingMoreData ? getRankingItemMetaParts(item) : [],
+          movement,
+          name: item.name,
+          rankLabel: String(item.displayRank || item.rank),
+        };
+      }),
+  };
+  publishRankingListView(kind, detail);
 }
 
 function renderLoadingMessage(message = "Loading...") {
@@ -9236,64 +9352,6 @@ function renderLoadingMessage(message = "Loading...") {
       <span>${escapeHtml(message)}</span>
     </p>
   `;
-}
-
-function renderRankingItem(kind, item) {
-  const isOwner = canEditActiveRankingManager();
-  const isSnapshotView = isOwner && activeRankingSnapshotId !== "current";
-  const isManualView = isOwner && activeRankingViewMode === "manual" && !isSnapshotView;
-  const draggable = isManualView ? ` draggable="true"` : "";
-  const isExcluded = isRankingItemExcluded(kind, item.id);
-  const meta = shouldShowRankingMoreData ? renderRankingItemMeta(item) : "";
-  const movement = renderRankingMovement(kind, item);
-  const exclusionAction = renderRankingExclusionAction(kind, item);
-
-  return `
-    <article class="ranking-item${isExcluded ? " is-excluded" : ""}" data-ranking-kind="${escapeHtml(kind)}" data-ranking-id="${escapeHtml(item.id)}"${draggable}>
-      <span class="ranking-rank">${escapeHtml(String(item.displayRank || item.rank))}</span>
-      <span class="ranking-item-main">
-        <span class="guide-linked-heading"><strong>${escapeHtml(item.name)}</strong>${kind === "games" ? renderGuideEntryLinks("ranking", item.id) : ""}</span>
-        ${isExcluded ? `<small class="ranking-excluded-label">Excluded</small>` : ""}
-        ${movement}
-        ${meta}
-      </span>
-      ${isManualView ? `<span class="ranking-drag-handle" aria-hidden="true" title="Drag to reorder"></span>` : `<span class="ranking-spacer" aria-hidden="true"></span>`}
-      ${(exclusionAction || (isOwner && kind !== "mcu" && !isSnapshotView)) ? `<span class="ranking-item-actions">${exclusionAction}${isOwner && kind !== "mcu" && !isSnapshotView ? `<button class="ranking-inline-action" type="button" data-ranking-edit="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Edit</button><button class="ranking-inline-action" type="button" data-ranking-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${item.archived ? "Restore" : "Archive"}</button>` : ""}</span>` : ""}
-    </article>
-  `;
-}
-
-function renderRankingExclusionAction(kind, item) {
-  if (!canEditActiveRankingManager() || activeRankingSnapshotId !== "current") {
-    return "";
-  }
-
-  const isExcluded = isRankingItemExcluded(kind, item.id);
-  const label = isExcluded ? "Include" : "Exclude";
-
-  return `<button class="ranking-inline-action" type="button" data-ranking-exclusion-toggle="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">${escapeHtml(label)}</button>`;
-}
-
-function renderRankingMovement(kind, item) {
-  if (!canEditActiveRankingManager() || !activeRankingCompareSnapshotId) {
-    return "";
-  }
-
-  const compareRank = getRankingCompareRank(kind, item.id);
-
-  if (!compareRank) {
-    return `<small>New since comparison</small>`;
-  }
-
-  const currentRank = Number(item.displayRank || item.rank || 0);
-  const movement = compareRank - currentRank;
-  const label = movement > 0
-    ? `Up ${movement}`
-    : movement < 0
-      ? `Down ${Math.abs(movement)}`
-      : "No change";
-
-  return `<small>${escapeHtml(label)} from ${escapeHtml(getRankingCompareLabel())}</small>`;
 }
 
 function normalizeRankingRows(rows = []) {
@@ -9621,20 +9679,6 @@ function getStandaloneImplicitSeedRating(kind, itemId) {
   const rows = getRankingRows(kind);
   const index = rows.findIndex((row) => String(row.id) === String(itemId));
   return calculateNormalizedRating(index >= 0 ? index + 1 : rows.length + 1, Math.max(rows.length, 1));
-}
-
-function renderRankingItemMeta(item) {
-  const parts = getRankingItemMetaParts(item);
-
-  if (!parts.length) {
-    return "";
-  }
-
-  return `
-    <span class="ranking-item-meta">
-      ${parts.map((part) => `<span>${escapeHtml(part)}</span>`).join("")}
-    </span>
-  `;
 }
 
 function getRankingItemMetaParts(item) {
@@ -10163,6 +10207,15 @@ function moveRankingItem(kind, draggedId, targetId, options = {}) {
   }
 
   return true;
+}
+
+function applyRankingOrder(kind, itemIds) {
+  if (!RANKING_CONFIG[kind] || !canEditActiveRankingManager() || activeRankingViewMode !== "manual" || activeRankingSnapshotId !== "current") return;
+  const reordered = applyOrderedSubset(getRankingRows(kind), itemIds);
+  if (!reordered) return;
+  siteData.rankings[kind] = normalizeRankingOrder(reordered);
+  renderRankingList(kind);
+  submitRankingOrder(kind);
 }
 
 function getRankingItemElement(kind, itemId) {
@@ -11039,7 +11092,12 @@ function renderFantasyCriticStanding(entry, year) {
         <span>Budget <strong>${escapeHtml(entry.budget)}</strong></span>
       </div>
 
-      <div class="fantasy-critic-roster">
+      <div class="fantasy-critic-roster" role="table" aria-label="${escapeHtml(entry.publisher)} roster">
+        <div class="fantasy-critic-roster-heading" role="row">
+          <span role="columnheader">Game</span>
+          <span role="columnheader">Critic</span>
+          <span role="columnheader">Pts</span>
+        </div>
         ${entry.roster.map((game) => renderFantasyCriticGame(game)).join("")}
       </div>
     </article>
@@ -11053,1142 +11111,82 @@ function getAwardsForFantasyCriticYear(year) {
   });
 }
 
-function renderFantasyCriticGame([game, critic, points]) {
+function renderFantasyCriticGame([game, critic, points, details = {}]) {
   const criticValue = critic || "--";
   const pointsValue = points || "--";
+  const classes = [
+    "fantasy-critic-game",
+    details.isCounterPick && "is-counterpick",
+    details.isBlank && !details.isCounterPick && "is-open-draft-slot",
+  ].filter(Boolean).join(" ");
 
   return `
-    <div class="fantasy-critic-game">
-      <strong>${escapeHtml(game)}</strong>
-      <span>Critic ${escapeHtml(criticValue)}</span>
-      <span>Pts ${escapeHtml(pointsValue)}</span>
+    <div class="${classes}" role="row">
+      <strong class="fantasy-critic-game-name" role="cell">
+        ${details.isCounterPick ? `<span class="fantasy-critic-game-chip">CPK</span>` : ""}
+        <span>${escapeHtml(game)}</span>
+      </strong>
+      <span role="cell">${escapeHtml(criticValue)}</span>
+      <span role="cell">${escapeHtml(pointsValue)}</span>
     </div>
   `;
 }
 
-function parseFormulaOneSheet(csvText) {
-  const rows = parseCsvMatrix(csvText).filter((row) => row.some((value) => value.trim() !== ""));
-  const managerRow = rows[0] ?? [];
-  const headerRow = rows[1] ?? [];
-
-  if (rows.length < 3 || headerRow[0] !== "Question" || headerRow[1] !== "Answer") {
-    throw new Error("Formula 1 sheet did not include the expected Question and Answer columns.");
-  }
-
-  const managerColumns = managerRow
-    .map((manager, index) => ({ manager: manager.trim(), index }))
-    .filter(({ manager, index }) => manager && index >= 2);
-
-  const questions = rows.slice(2).filter((row) => {
-    return !isFormulaOneTotalRow(row[0]);
-  }).map((row, index) => {
-    return {
-      id: `question-${index + 1}`,
-      number: index + 1,
-      question: row[0]?.trim() ?? "",
-      answer: row[1]?.trim() ?? "",
-      bets: managerColumns.map(({ manager, index: betIndex }) => ({
-        manager,
-        bet: row[betIndex]?.trim() ?? "",
-        points: parseFormulaOnePointValue(row[betIndex + 1]),
-      })),
-    };
-  }).filter((question) => question.question);
-
-  const standings = managerColumns.map(({ manager }) => {
-    const managerQuestions = questions.map((question) => {
-      return question.bets.find((bet) => bet.manager === manager) ?? { manager, bet: "", points: 0 };
-    });
-    const points = managerQuestions.reduce((total, bet) => total + getFormulaOnePointNumber(bet.points), 0);
-    const scored = managerQuestions.filter((bet) => getFormulaOnePointNumber(bet.points) !== 0).length;
-
-    return {
-      manager,
-      questions: managerQuestions.length,
-      scored,
-      points,
-    };
-  }).sort((a, b) => b.points - a.points || a.manager.localeCompare(b.manager));
-
-  return { questions, standings: rankRows(standings) };
+function parseFormulaOneSheet(...args) {
+  return formulaOnePublicController.parseSheet(...args);
 }
 
-function parseFormulaOneWeeklySheet(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const races = [];
-
-  for (let index = 0; index < rows.length; index += 1) {
-    const row = rows[index] ?? [];
-    const isRaceHeader = normalizeLookupName(row[0]) === "person" &&
-      normalizeLookupName(row[1]) === "p1" &&
-      normalizeLookupName(row[6]) === "person" &&
-      normalizeLookupName(row[13]) === "person" &&
-      normalizeLookupName(row[19]) === "total";
-
-    if (!isRaceHeader) {
-      continue;
-    }
-
-    const roundId = races.length + 1;
-    const entries = [];
-
-    for (const entryRow of rows.slice(index + 1)) {
-      const manager = entryRow[0]?.trim() ?? "";
-
-      if (!manager) {
-        break;
-      }
-
-      const entry = {
-        manager,
-        picks: {
-          p1: entryRow[1]?.trim() ?? "",
-          p2: entryRow[2]?.trim() ?? "",
-          p3: entryRow[3]?.trim() ?? "",
-          wildcard: entryRow[4]?.trim() ?? "",
-        },
-        positions: {
-          p1: entryRow[7]?.trim() ?? "",
-          p2: entryRow[8]?.trim() ?? "",
-          p3: entryRow[9]?.trim() ?? "",
-          wildcardQualifying: entryRow[10]?.trim() ?? "",
-          wildcardRace: entryRow[11]?.trim() ?? "",
-        },
-        points: {
-          p1: parseFormulaOnePointValue(entryRow[14]),
-          p2: parseFormulaOnePointValue(entryRow[15]),
-          p3: parseFormulaOnePointValue(entryRow[16]),
-          wildcardQualifying: parseFormulaOnePointValue(entryRow[17]),
-          wildcardRace: parseFormulaOnePointValue(entryRow[18]),
-        },
-        total: parseFormulaOnePointValue(entryRow[19]),
-      };
-
-      if (hasFormulaOneWeeklyPicks(entry)) {
-        entries.push(entry);
-      }
-    }
-
-    if (entries.length > 0) {
-      races.push({
-        entries,
-        id: roundId,
-        name: `Round ${roundId}`,
-      });
-    }
-  }
-
-  return {
-    races,
-    standings: getFormulaOneWeeklyStandings(races),
-  };
+function parseFormulaOneWeeklySheet(...args) {
+  return formulaOnePublicController.parseWeeklySheet(...args);
 }
 
-function hasFormulaOneWeeklyPicks(entry) {
-  return Boolean(
-    entry.picks.p1 ||
-    entry.picks.p2 ||
-    entry.picks.p3 ||
-    entry.picks.wildcard
-  );
+function parseFormulaOneWeeklyResultsSheet(...args) {
+  return formulaOnePublicController.parseWeeklyResultsSheet(...args);
 }
 
-function getFormulaOneWeeklyStandings(races) {
-  const totalsByManager = new Map();
-  const managerNames = new Set();
-
-  for (const race of races) {
-    for (const entry of race.entries) {
-      managerNames.add(entry.manager);
-    }
-  }
-
-  for (const manager of managerNames) {
-    const raceTotals = races.map((race) => {
-      return getFormulaOnePointNumber(race.entries.find((entry) => entry.manager === manager)?.total);
-    });
-    let points = 0;
-
-    for (let index = 0; index < raceTotals.length; index += 8) {
-      points += raceTotals
-        .slice(index, index + 8)
-        .sort((firstTotal, secondTotal) => secondTotal - firstTotal)
-        .slice(0, 4)
-        .reduce((sum, total) => sum + total, 0);
-    }
-
-    totalsByManager.set(manager, points);
-  }
-
-  return rankRows(
-    [...totalsByManager.entries()]
-      .map(([manager, points]) => ({ manager, points }))
-      .sort((firstManager, secondManager) => {
-        if (secondManager.points !== firstManager.points) {
-          return secondManager.points - firstManager.points;
-        }
-
-        return firstManager.manager.localeCompare(secondManager.manager);
-      })
-  );
+function parseFormulaOneRoundForms(...args) {
+  return formulaOnePublicController.parseRoundForms(...args);
 }
-
-function parseFormulaOneWeeklyResultsSheet(csvText) {
-  const rows = parseCsvMatrix(csvText);
-  const managerBlocks = [];
-  let currentBlock = [];
-
-  for (const row of rows) {
-    if (isKnownFormulaOneManager(row[0])) {
-      currentBlock.push(row);
-      continue;
-    }
-
-    if (currentBlock.length > 0) {
-      managerBlocks.push(currentBlock);
-      currentBlock = [];
-    }
-  }
-
-  if (currentBlock.length > 0) {
-    managerBlocks.push(currentBlock);
-  }
-
-  const totalBlocks = managerBlocks.filter((block) => {
-    return block.length > 0 && block.every((row) => {
-      return row[1]?.trim() && row.slice(2).every((value) => !String(value ?? "").trim());
-    });
-  });
-  const totalBlock = totalBlocks[totalBlocks.length - 1] ?? managerBlocks[managerBlocks.length - 1] ?? [];
-  const standings = totalBlock
-    .map((row) => {
-      const points = parseFormulaOnePointValue(row[1]);
-
-      return {
-        manager: row[0].trim(),
-        points,
-        pointsNumber: getFormulaOnePointNumber(points),
-      };
-    })
-    .filter((entry) => entry.manager)
-    .sort((firstEntry, secondEntry) => {
-      if (secondEntry.pointsNumber !== firstEntry.pointsNumber) {
-        return secondEntry.pointsNumber - firstEntry.pointsNumber;
-      }
-
-      return firstEntry.manager.localeCompare(secondEntry.manager);
-    })
-    .map(({ pointsNumber, ...entry }) => entry);
-
-  return { standings: rankRows(standings) };
-}
-
-function isKnownFormulaOneManager(value) {
-  return Object.prototype.hasOwnProperty.call(MANAGER_COLORS, normalizeLookupName(value));
-}
-
-function parseFormulaOneRoundForms(rows) {
-  return rows
-    .map((row) => {
-      const roundId = getField(row, "Round ID", "Round Id", "ID");
-      const name = getField(row, "Round Name", "Round", "Name");
-      const formUrl = getField(row, "Form Link", "Form", "URL");
-
-      return {
-        date: parseFormulaOneFormDate(getField(row, "Date")),
-        dueEst: getField(row, "Due (est)", "Due (EST)", "Due EST", "Due"),
-        formUrl,
-        id: String(roundId ?? "").trim(),
-        name,
-        priority: getField(row, "Priority"),
-      };
-    })
-    .filter((form) => form.id && form.name && form.formUrl);
-}
-
-function parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv }) {
-  return formulaOneCalculations.parseFormulaOneCalculatorData({
-    driversCsv,
-    optionsCsv,
-    sprintsCsv,
-    summaryCsv,
-  });
-}
-function getFormulaOneCalculatorState(year, data) {
-  const yearKey = String(year);
-  const existingState = formulaOneCalculatorStates.get(yearKey);
-
-  if (existingState) {
-    const currentDrivers = new Set(data.driversToWatch);
-    existingState.visibleDrivers = new Set([...existingState.visibleDrivers].filter((driver) => currentDrivers.has(driver)));
-    data.driversToWatch.forEach((driver) => {
-      if (!existingState.knownDrivers.has(driver)) {
-        existingState.visibleDrivers.add(driver);
-      }
-    });
-    existingState.knownDrivers = currentDrivers;
-    return existingState;
-  }
-
-  const storedState = loadFormulaOneCalculatorStoredState(yearKey);
-  const hiddenDrivers = new Set(storedState.hiddenDrivers ?? []);
-  const state = {
-    filtersExpanded: false,
-    viewMode: "simple",
-    knownDrivers: new Set(data.driversToWatch),
-    simpleSelections: storedState.simpleSelections && typeof storedState.simpleSelections === "object" ? storedState.simpleSelections : {},
-    selections: storedState.selections && typeof storedState.selections === "object" ? storedState.selections : {},
-    visibleDrivers: new Set(data.driversToWatch.filter((driver) => !hiddenDrivers.has(driver))),
-  };
-  formulaOneCalculatorStates.set(yearKey, state);
-  return state;
-}
-
-function loadFormulaOneCalculatorStoredState(year) {
-  try {
-    return JSON.parse(localStorage.getItem(getFormulaOneCalculatorStorageKey(year)) || "{}") || {};
-  } catch {
-    return {};
-  }
-}
-
-function persistFormulaOneCalculatorState(year, data, state) {
-  try {
-    localStorage.setItem(getFormulaOneCalculatorStorageKey(year), JSON.stringify({
-      hiddenDrivers: data.driversToWatch.filter((driver) => !state.visibleDrivers.has(driver)),
-      simpleSelections: state.simpleSelections,
-      selections: state.selections,
-    }));
-  } catch {
-    // The calculator still works when browser storage is unavailable.
-  }
-}
-
-function getFormulaOneCalculatorStorageKey(year) {
-  return `boxthislap-formula-one-calculator-${year}`;
-}
-
-function getFormulaOneCalculatorEvents(data) {
-  const events = [];
-
-  data.rounds.filter((round) => !round.complete).forEach((round) => {
-    events.push({ round, type: "race" });
-  });
-  data.sprintRounds.filter((round) => !round.complete).forEach((round) => {
-    events.push({ round: getFormulaOneCalculatorRaceRoundForSprint(data, round), sourceRound: round, type: "sprint" });
-  });
-
-  return events.sort((firstEvent, secondEvent) => {
-    return firstEvent.round.id - secondEvent.round.id || (firstEvent.type === "sprint" ? -1 : 1);
-  });
-}
-
-function getFormulaOneCalculatorRaceRoundForSprint(data, sprintRound) {
-  const sprintName = getFormulaOneCalculatorRoundName(sprintRound);
-  return data.rounds.find((round) => getFormulaOneCalculatorRoundName(round) === sprintName) || sprintRound;
-}
-
-function getFormulaOneCalculatorRoundName(round) {
-  return normalizeLookupName(String(round?.name ?? "").replace(/^round\s+\d+\s*/i, ""));
-}
-
-function getFormulaOneCalculatorSelectionKey(type, roundId, driver) {
-  return `${type}:${roundId}:${driver}`;
-}
-
-function getFormulaOneCalculatorSimpleEventPosition(data, event, position) {
-  if (!position) {
-    return "";
-  }
-
-  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
-  if (options.some((option) => option.position === position)) {
-    return position;
-  }
-
-  if (event.type === "sprint") {
-    return options.find((option) => option.position.startsWith("<"))?.position ?? "";
-  }
-
-  return position;
-}
-
-function applyFormulaOneCalculatorSimpleSelection(data, state, events, driver, position) {
-  if (position) {
-    state.simpleSelections[driver] = position;
-  } else {
-    delete state.simpleSelections[driver];
-  }
-
-  events.forEach((event) => {
-    const key = getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver);
-    const eventPosition = getFormulaOneCalculatorSimpleEventPosition(data, event, position);
-    if (eventPosition) state.selections[key] = eventPosition;
-    else delete state.selections[key];
-  });
-}
-
-function getFormulaOneCalculatorSelectedPoints(data, state, event, driver) {
-  const position = state.selections[getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver)] || "";
-  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
-  return options.find((option) => option.position === position)?.points ?? 0;
-}
-
-function getFormulaOneCalculatorCurrentPoints(data, driver) {
-  const summaryPoints = data.currentTotals.get(normalizeLookupName(driver));
-  if (Number.isFinite(summaryPoints)) {
-    return summaryPoints;
-  }
-
-  return data.rounds.reduce((total, round) => total + getFormulaOneCalculatorRoundPoints(round, driver), 0) +
-    data.sprintRounds.reduce((total, round) => total + getFormulaOneCalculatorRoundPoints(round, driver), 0);
-}
-
-function getFormulaOneCalculatorRoundPoints(round, driver) {
-  return getFormulaOneCalculatorPointNumber(round?.pointsByDriver.get(normalizeLookupName(driver)));
-}
-
-function getFormulaOneCalculatorProjectedPoints(data, state, events, driver) {
-  return getFormulaOneCalculatorCurrentPoints(data, driver) + events.reduce((total, event) => {
-    return total + getFormulaOneCalculatorSelectedPoints(data, state, event, driver);
-  }, 0);
-}
-
-function getFormulaOneDriverColor(driver, data) {
-  const index = Math.max(0, data.driversToWatch.indexOf(driver));
-  return FORMULA_ONE_DRIVER_COLOR_PALETTE[index % FORMULA_ONE_DRIVER_COLOR_PALETTE.length];
-}
-
-function getFormulaOneCalculatorSortedDrivers(data, drivers = data.driversToWatch) {
-  return [...drivers].sort((firstDriver, secondDriver) => {
-    return getFormulaOneCalculatorCurrentPoints(data, secondDriver) - getFormulaOneCalculatorCurrentPoints(data, firstDriver) ||
-      data.driversToWatch.indexOf(firstDriver) - data.driversToWatch.indexOf(secondDriver);
-  });
-}
-
-function renderFormulaOneCalculatorDriverName(driver) {
-  const [firstName, ...remainingNames] = String(driver ?? "").trim().split(/\s+/);
-
-  if (!remainingNames.length) {
-    return `<span class="formula-one-calculator-driver-name"><span>${escapeHtml(firstName)}</span></span>`;
-  }
-
-  return `
-    <span class="formula-one-calculator-driver-name">
-      <span>${escapeHtml(firstName)}</span>
-      <span>${escapeHtml(remainingNames.join(" "))}</span>
-    </span>
-  `;
-}
-
 function renderFormulaOneCalculator(year) {
-  const view = formulaOneViews[year];
-  const data = siteData[`formulaOne${year}Calculator`];
-
-  if (!view?.calculator || !data) {
-    return;
-  }
-
-  const state = getFormulaOneCalculatorState(year, data);
-  const events = getFormulaOneCalculatorEvents(data);
-  const sortedDrivers = getFormulaOneCalculatorSortedDrivers(data);
-  const visibleDrivers = sortedDrivers.filter((driver) => state.visibleDrivers.has(driver));
-  const lastCompletedRound = data.rounds.filter((round) => round.complete).at(-1)?.id ?? 0;
-
-  view.calculator.innerHTML = `
-    <section class="formula-one-calculator-card formula-one-calculator-intro">
-      <div>
-        <h3>Season scenarios</h3>
-        <p>Use Simple view to repeat one finishing position, or Expanded view to set each remaining race and sprint. Current totals come from the live ${escapeHtml(year)} data sheet.</p>
-      </div>
-      <span>Through Round ${escapeHtml(lastCompletedRound)}</span>
-    </section>
-
-    <section class="formula-one-calculator-card">
-      <div class="formula-one-calculator-section-heading">
-        <div>
-          <h3>Points calculator</h3>
-          <p>${escapeHtml(events.length)} remaining race and sprint scenarios</p>
-        </div>
-        <div class="formula-one-calculator-heading-actions">
-          <div class="formula-one-calculator-view-toggle" role="group" aria-label="Calculator view">
-            <button
-              type="button"
-              class="${state.viewMode === "simple" ? "is-active" : ""}"
-              data-formula-one-calculator-view="simple"
-              aria-pressed="${state.viewMode === "simple" ? "true" : "false"}"
-            >Simple</button>
-            <button
-              type="button"
-              class="${state.viewMode === "expanded" ? "is-active" : ""}"
-              data-formula-one-calculator-view="expanded"
-              aria-pressed="${state.viewMode === "expanded" ? "true" : "false"}"
-            >Expanded</button>
-          </div>
-        <button
-          class="icon-action-button formula-one-calculator-filter-toggle${state.filtersExpanded ? " is-active" : ""}"
-          type="button"
-          data-formula-one-calculator-filter-toggle
-          aria-expanded="${state.filtersExpanded ? "true" : "false"}"
-          aria-controls="formula-one-${escapeHtml(year)}-driver-filters"
-          aria-label="${state.filtersExpanded ? "Hide" : "Show"} driver filters"
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.8v-7L4 5Z"></path>
-          </svg>
-        </button>
-        </div>
-      </div>
-      ${renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers)}
-      <div class="table-wrap formula-one-calculator-table-wrap">
-        ${renderFormulaOneCalculatorTable(data, state, events, visibleDrivers)}
-      </div>
-    </section>
-
-    <section class="formula-one-calculator-card">
-      <div class="formula-one-calculator-section-heading">
-        <div>
-          <h3>Championship projection</h3>
-          <p>Cumulative points after each round</p>
-        </div>
-      </div>
-      <div class="formula-one-calculator-chart-wrap">
-        ${renderFormulaOneCalculatorChart(data, state, visibleDrivers)}
-      </div>
-    </section>
-  `;
-}
-
-function renderFormulaOneCalculatorFilters(year, data, state, visibleDrivers, sortedDrivers) {
-  return `
-    <div
-      class="formula-one-calculator-filters"
-      id="formula-one-${escapeHtml(year)}-driver-filters"
-      aria-labelledby="formula-one-${escapeHtml(year)}-driver-filter-heading"
-      ${state.filtersExpanded ? "" : "hidden"}
-    >
-      <div class="formula-one-calculator-section-heading">
-        <div>
-          <h3 id="formula-one-${escapeHtml(year)}-driver-filter-heading">Drivers</h3>
-          <p>Showing ${escapeHtml(visibleDrivers.length)} of ${escapeHtml(data.driversToWatch.length)}</p>
-        </div>
-        <div class="formula-one-calculator-filter-actions">
-          <button type="button" data-formula-one-calculator-show-all>Show all</button>
-          <button type="button" data-formula-one-calculator-hide-all>Hide all</button>
-        </div>
-      </div>
-      <div class="formula-one-calculator-driver-filters">
-        ${sortedDrivers.map((driver) => `
-          <label style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
-            <input
-              type="checkbox"
-              data-formula-one-calculator-filter
-              data-driver="${escapeHtml(driver)}"
-              ${state.visibleDrivers.has(driver) ? "checked" : ""}
-            >
-            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
-            <span>${escapeHtml(driver)}</span>
-          </label>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
-
-function renderFormulaOneCalculatorTable(data, state, events, visibleDrivers) {
-  if (state.viewMode === "simple") {
-    return renderFormulaOneCalculatorSimpleTable(data, state, events, visibleDrivers);
-  }
-
-  const eventHeaders = events.map((event) => {
-    const eventLabel = event.type === "sprint" ? "Sprint" : "Race";
-    return `<th title="${escapeHtml(`${event.round.name} ${eventLabel}`)}"><span>R${escapeHtml(event.round.id)}</span>${escapeHtml(eventLabel)}</th>`;
-  }).join("");
-
-  const rows = visibleDrivers.length ? visibleDrivers.map((driver) => {
-    const currentPoints = getFormulaOneCalculatorCurrentPoints(data, driver);
-    const projectedPoints = getFormulaOneCalculatorProjectedPoints(data, state, events, driver);
-    return `
-      <tr>
-        <th scope="row">
-          <span class="formula-one-calculator-driver" style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
-            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
-            ${renderFormulaOneCalculatorDriverName(driver)}
-          </span>
-        </th>
-        <td class="formula-one-calculator-total">${escapeHtml(currentPoints)}</td>
-        ${events.map((event) => renderFormulaOneCalculatorPositionSelect(data, state, event, driver)).join("")}
-        <td class="formula-one-calculator-total formula-one-calculator-projected">
-          ${escapeHtml(projectedPoints)}
-          <small>+${escapeHtml(projectedPoints - currentPoints)}</small>
-        </td>
-      </tr>
-    `;
-  }).join("") : `
-    <tr>
-      <td class="table-message" colspan="${escapeHtml(events.length + 3)}">No drivers are selected. Use the driver filters above to add one.</td>
-    </tr>
-  `;
-
-  return `
-    <table class="formula-one-calculator-table">
-      <thead>
-        <tr>
-          <th>Driver</th>
-          <th>Current</th>
-          ${eventHeaders}
-          <th>Projected</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-function renderFormulaOneCalculatorSimpleTable(data, state, events, visibleDrivers) {
-  const rows = visibleDrivers.length ? visibleDrivers.map((driver) => {
-    const currentPoints = getFormulaOneCalculatorCurrentPoints(data, driver);
-    const projectedPoints = getFormulaOneCalculatorProjectedPoints(data, state, events, driver);
-    const selectedPosition = state.simpleSelections[driver] || "";
-    return `
-      <tr>
-        <th scope="row">
-          <span class="formula-one-calculator-driver" style="--driver-color: ${escapeHtml(getFormulaOneDriverColor(driver, data))}">
-            <span class="formula-one-driver-swatch" aria-hidden="true"></span>
-            ${renderFormulaOneCalculatorDriverName(driver)}
-          </span>
-        </th>
-        <td class="formula-one-calculator-total">${escapeHtml(currentPoints)}</td>
-        <td>
-          <select
-            aria-label="${escapeHtml(`${driver}, position for every remaining round`)}"
-            data-formula-one-calculator-simple-position
-            data-driver="${escapeHtml(driver)}"
-          >
-            <option value="">—</option>
-            ${data.raceOptions.map((option) => `
-              <option value="${escapeHtml(option.position)}" ${option.position === selectedPosition ? "selected" : ""}>
-                ${escapeHtml(option.position)}
-              </option>
-            `).join("")}
-          </select>
-        </td>
-        <td class="formula-one-calculator-total formula-one-calculator-projected">
-          ${escapeHtml(projectedPoints)}
-          <small>+${escapeHtml(projectedPoints - currentPoints)}</small>
-        </td>
-      </tr>
-    `;
-  }).join("") : `
-    <tr>
-      <td class="table-message" colspan="4">No drivers are selected. Use the driver filters above to add one.</td>
-    </tr>
-  `;
-
-  return `
-    <table class="formula-one-calculator-table formula-one-calculator-table--simple">
-      <thead>
-        <tr>
-          <th>Driver</th>
-          <th>Current</th>
-          <th>Position</th>
-          <th>Projected</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-function renderFormulaOneCalculatorPositionSelect(data, state, event, driver) {
-  const options = event.type === "sprint" ? data.sprintOptions : data.raceOptions;
-  const key = getFormulaOneCalculatorSelectionKey(event.type, event.round.id, driver);
-  const selectedPosition = state.selections[key] || "";
-  const eventLabel = event.type === "sprint" ? "Sprint" : "Race";
-
-  return `
-    <td>
-      <select
-        aria-label="${escapeHtml(`${driver}, ${event.round.name} ${eventLabel} position`)}"
-        data-formula-one-calculator-position
-        data-driver="${escapeHtml(driver)}"
-        data-event-type="${escapeHtml(event.type)}"
-        data-round-id="${escapeHtml(event.round.id)}"
-      >
-        <option value="">—</option>
-        ${options.map((option) => `
-          <option value="${escapeHtml(option.position)}" ${option.position === selectedPosition ? "selected" : ""}>
-            ${escapeHtml(option.position)} · ${escapeHtml(option.points)} pts
-          </option>
-        `).join("")}
-      </select>
-    </td>
-  `;
-}
-
-function getFormulaOneCalculatorSeries(data, state, driver) {
-  const sprintRoundsById = new Map(data.sprintRounds.map((sprintRound) => {
-    return [getFormulaOneCalculatorRaceRoundForSprint(data, sprintRound).id, sprintRound];
-  }));
-  let cumulativePoints = 0;
-
-  return data.rounds.map((round) => {
-    const raceEvent = { round, type: "race" };
-    const sprintRound = sprintRoundsById.get(round.id);
-    const sprintEvent = sprintRound ? { round, sourceRound: sprintRound, type: "sprint" } : null;
-    cumulativePoints += round.complete
-      ? getFormulaOneCalculatorRoundPoints(round, driver)
-      : getFormulaOneCalculatorSelectedPoints(data, state, raceEvent, driver);
-    if (sprintRound) {
-      cumulativePoints += sprintRound.complete
-        ? getFormulaOneCalculatorRoundPoints(sprintRound, driver)
-        : getFormulaOneCalculatorSelectedPoints(data, state, sprintEvent, driver);
-    }
-    return { points: cumulativePoints, roundId: round.id };
-  });
-}
-
-function renderFormulaOneCalculatorChart(data, state, visibleDrivers) {
-  if (!visibleDrivers.length) {
-    return `<p class="table-message">No drivers are selected. The graph will update when a driver is turned on.</p>`;
-  }
-
-  const series = visibleDrivers.map((driver) => ({
-    color: getFormulaOneDriverColor(driver, data),
-    driver,
-    values: getFormulaOneCalculatorSeries(data, state, driver),
-  }));
-  const width = Math.max(760, 112 + data.rounds.length * 62);
-  const height = 420;
-  const margin = { bottom: 48, left: 64, right: 28, top: 28 };
-  const plotWidth = width - margin.left - margin.right;
-  const plotHeight = height - margin.top - margin.bottom;
-  const maxPoints = Math.max(25, ...series.flatMap((entry) => entry.values.map((value) => value.points)));
-  const yMax = Math.ceil(maxPoints / 25) * 25;
-  const xForIndex = (index) => margin.left + (data.rounds.length === 1 ? 0 : (index / (data.rounds.length - 1)) * plotWidth);
-  const yForPoints = (points) => margin.top + plotHeight - (points / yMax) * plotHeight;
-  const completedRoundIndex = data.rounds.findLastIndex((round) => round.complete);
-  const projectionX = completedRoundIndex >= 0 && completedRoundIndex < data.rounds.length - 1
-    ? (xForIndex(completedRoundIndex) + xForIndex(completedRoundIndex + 1)) / 2
-    : null;
-  const yGrid = Array.from({ length: 6 }, (_, index) => {
-    const points = Math.round((yMax / 5) * index);
-    const y = yForPoints(points);
-    return `
-      <line class="formula-one-chart-grid" x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}"></line>
-      <text class="formula-one-chart-label" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${escapeHtml(points)}</text>
-    `;
-  }).join("");
-  const xLabels = data.rounds.map((round, index) => {
-    return `<text class="formula-one-chart-label" x="${xForIndex(index)}" y="${height - 18}" text-anchor="middle">R${escapeHtml(round.id)}</text>`;
-  }).join("");
-  const lines = series.map((entry) => {
-    const points = entry.values.map((value, index) => `${xForIndex(index)},${yForPoints(value.points)}`).join(" ");
-    const markers = entry.values.map((value, index) => `
-      <circle cx="${xForIndex(index)}" cy="${yForPoints(value.points)}" r="3.5" fill="${escapeHtml(entry.color)}">
-        <title>${escapeHtml(`${entry.driver} — Round ${value.roundId}: ${value.points} points`)}</title>
-      </circle>
-    `).join("");
-    return `
-      <polyline class="formula-one-chart-line" points="${points}" stroke="${escapeHtml(entry.color)}"></polyline>
-      ${markers}
-    `;
-  }).join("");
-
-  return `
-    <svg
-      class="formula-one-calculator-chart"
-      viewBox="0 0 ${width} ${height}"
-      width="${width}"
-      height="${height}"
-      role="img"
-      aria-labelledby="formula-one-calculator-chart-title formula-one-calculator-chart-description"
-    >
-      <title id="formula-one-calculator-chart-title">Formula 1 championship points projection</title>
-      <desc id="formula-one-calculator-chart-description">Cumulative points by round for the selected drivers, including the chosen future finishing positions.</desc>
-      ${yGrid}
-      ${xLabels}
-      ${projectionX === null ? "" : `
-        <line class="formula-one-chart-projection" x1="${projectionX}" x2="${projectionX}" y1="${margin.top}" y2="${margin.top + plotHeight}"></line>
-        <text class="formula-one-chart-projection-label" x="${projectionX + 8}" y="${margin.top + 14}">Projection</text>
-      `}
-      ${lines}
-    </svg>
-  `;
+  formulaOneCalculatorController?.render(year);
 }
 
 function renderFormulaOneCalculatorError(year, error) {
+  if (formulaOneCalculatorController) {
+    formulaOneCalculatorController.renderError(year, error);
+    return;
+  }
+
   const calculator = formulaOneViews[year]?.calculator;
   if (calculator) {
     calculator.innerHTML = `<p class="table-message">Unable to load Formula 1 points calculator: ${escapeHtml(getErrorMessage(error))}</p>`;
   }
 }
-
-function parseFormulaOneFormDate(value) {
-  const match = String(value ?? "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-
-  if (!match) {
-    return null;
-  }
-
-  const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
-  return new Date(Date.UTC(year, Number(match[1]) - 1, Number(match[2])));
+function renderFormulaOneLeague(...args) {
+  return formulaOnePublicController?.renderLeague(...args);
 }
 
-function renderFormulaOneLeague(year, data) {
-  siteData[`formulaOne${year}`] = data;
-  renderFormulaOneQuestionOptions(year, data.questions);
-  renderFormulaOneQuestions(year);
-  renderFormulaOneResults(year);
+function renderFormulaOneQuestions(...args) {
+  return formulaOnePublicController?.renderQuestions(...args);
 }
 
-function renderFormulaOneQuestionOptions(year, questions) {
-  const view = formulaOneViews[year];
-
-  if (!view?.questionSelect) {
-    return;
-  }
-
-  view.questionSelect.innerHTML = `
-    <option value="">All questions</option>
-    ${questions.map((question) => {
-      return `<option value="${escapeHtml(question.id)}" title="${escapeHtml(question.question)}">${escapeHtml(formatFormulaOneQuestionOption(question))}</option>`;
-    }).join("")}
-  `;
+function renderFormulaOneResults(...args) {
+  return formulaOnePublicController?.renderResults(...args);
 }
 
-function formatFormulaOneQuestionOption(question) {
-  return `${question.number}. ${getFormulaOneQuestionSummary(question.question)}`;
+function renderFormulaOneAwards(...args) {
+  return formulaOnePublicController?.renderAwards(...args);
 }
-
-function getFormulaOneQuestionSummary(questionText) {
-  const normalizedQuestion = String(questionText ?? "").trim();
-  const comparisonSummary = getFormulaOneComparisonSummary(normalizedQuestion);
-
-  if (comparisonSummary) {
-    return comparisonSummary;
-  }
-
-  const specialSummaries = [
-    [/last in the drivers championship/i, "Last in Drivers Championship"],
-    [/last in the world constructors championship/i, "Last in Constructors Championship"],
-    [/(^|\s)world drivers champion|driver'?s champion/i, "Driver's Champion"],
-    [/(^|\s)world constructors championship|constructor'?s champion/i, "Constructors Champion"],
-    [/finish on the podium/i, "Podium Finishers"],
-    [/driver of the day/i, "Driver of the Day Awards"],
-    [/closest teammate pair in qualifying/i, "Closest Teammates: Qualifying"],
-    [/closest teammate pair in the grand prix/i, "Closest Teammates: Grand Prix"],
-    [/sprint race champion/i, "Sprint Race Champion"],
-    [/overtake award/i, "Overtake Award"],
-    [/final championship order/i, "Championship Order"],
-    [/fewest racing laps/i, "Fewest Racing Laps"],
-    [/most classified dnfs/i, "Most Classified DNFs"],
-    [/fastest pit stop/i, "Fastest Pit Stop"],
-    [/safety car/i, "Safety Cars"],
-    [/bold prediction/i, "Bold Prediction"],
-  ];
-
-  for (const [pattern, summary] of specialSummaries) {
-    if (pattern.test(normalizedQuestion)) {
-      return summary;
-    }
-  }
-
-  return truncateQuestionSummary(normalizedQuestion
-    .replace(/\?$/g, "")
-    .replace(/^who will\s+/i, "")
-    .replace(/^which\s+/i, "")
-    .replace(/^what will\s+/i, "")
-    .replace(/^what\s+/i, "")
-    .replace(/^how many\s+/i, "How many ")
-    .replace(/^will\s+/i, "")
-    .trim());
-}
-
-function getFormulaOneComparisonSummary(questionText) {
-  const teammatePairing = questionText.match(/teammate pairing of (.+?) and (.+?)\?/i);
-
-  if (teammatePairing) {
-    return `${teammatePairing[1].trim()} v ${teammatePairing[2].trim()}`;
-  }
-
-  const directComparison = questionText.match(/between (.+?) and (.+?)\?/i);
-
-  if (directComparison) {
-    return `${directComparison[1].trim()} v ${directComparison[2].trim()}`;
-  }
-
-  return "";
-}
-
-function truncateQuestionSummary(summary) {
-  const maxLength = 54;
-  const normalizedSummary = capitalizeFirst(summary);
-
-  if (normalizedSummary.length <= maxLength) {
-    return normalizedSummary;
-  }
-
-  return `${normalizedSummary.slice(0, maxLength).replace(/\s+\S*$/, "")}...`;
-}
-
-function capitalizeFirst(value) {
-  return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
-}
-
-function renderFormulaOneQuestions(year) {
-  const view = formulaOneViews[year];
-
-  if (!view?.questionList) {
-    return;
-  }
-
-  if (!shouldRenderPageSection(`formula-1-${year}-questions`)) {
-    return;
-  }
-
-  const data = siteData[`formulaOne${year}`];
-
-  if (!data) {
-    return;
-  }
-
-  const selectedQuestion = view.questionSelect?.value ?? "";
-  const filterText = (view.questionFilter?.value ?? "").trim().toLowerCase();
-  const questions = data.questions.filter((question) => {
-    if (selectedQuestion && question.id !== selectedQuestion) {
-      return false;
-    }
-
-    if (!filterText) {
-      return true;
-    }
-
-    return question.question.toLowerCase().includes(filterText);
-  });
-
-  if (questions.length === 0) {
-    view.questionList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Formula 1 questions match that filter.</p></article>`;
-    return;
-  }
-
-  view.questionList.innerHTML = questions.map(renderFormulaOneQuestion).join("");
-}
-
-function renderFormulaOneQuestion(question) {
-  return `
-    <article class="formula-one-question-card">
-      <header>
-        <span>Question ${escapeHtml(question.number)}</span>
-        <h3>${escapeHtml(question.question)}</h3>
-        ${renderFormulaOneAnswer(question)}
-      </header>
-      <div class="formula-one-bet-list">
-        ${question.bets.map(renderFormulaOneBet).join("")}
-      </div>
-    </article>
-  `;
-}
-
-function renderFormulaOneAnswer(question) {
-  if (isBoldPredictionQuestion(question.question) || !question.answer) {
-    return "";
-  }
-
-  return `<p>Answer: <strong>${escapeHtml(question.answer)}</strong></p>`;
-}
-
-function isBoldPredictionQuestion(question) {
-  return String(question ?? "").toLowerCase().includes("bold prediction");
-}
-
-function isFormulaOneTotalRow(question) {
-  return String(question ?? "").trim().toLowerCase() === "total";
-}
-
-function renderFormulaOneBet(bet) {
-  const manager = getManagerByName(bet.manager) ?? { name: bet.manager };
-
-  return `
-    <div class="formula-one-bet">
-      <div>
-        ${renderManagerChip(manager)}
-        <p>${escapeHtml(bet.bet || "No bet listed")}</p>
-      </div>
-      <strong>${escapeHtml(formatFormulaOnePointValue(bet.points))}</strong>
-    </div>
-  `;
-}
-
-function renderFormulaOneResults(year) {
-  const view = formulaOneViews[year];
-
-  if (!view?.resultsRows) {
-    return;
-  }
-
-  if (!shouldRenderPageSection(`formula-1-${year}-results`)) {
-    return;
-  }
-
-  renderFormulaOneAwards(year);
-
-  const data = siteData[`formulaOne${year}`];
-  const weeklyResultsData = siteData[`formulaOne${year}WeeklyResults`];
-  const weeklyPicksData = siteData[`formulaOne${year}Weekly`];
-  const weeklyData = weeklyResultsData
-    ? { ...weeklyPicksData, ...weeklyResultsData, races: weeklyResultsData.races?.length ? weeklyResultsData.races : weeklyPicksData?.races || [] }
-    : weeklyPicksData;
-  const mode = formulaOneResultsMode[year] ?? "yearly";
-  const activeSource = mode === "weekly" ? weeklyData : data;
-  const standings = mode === "weekly"
-    ? getFormulaOneWeeklyGroupStandings(weeklyData, formulaOneWeeklyResultsGroup[year] ?? "all")
-    : data?.standings ?? [];
-  renderFormulaOneWeeklyResultsGroupControl(year, weeklyData, mode);
-
-  if (!activeSource) {
-    const label = mode === "weekly" ? "weekly" : "yearly";
-    view.resultsRows.innerHTML = `<tr><td class="table-message" colspan="3">Loading Formula 1 ${label} results...</td></tr>`;
-    return;
-  }
-
-  if (standings.length === 0) {
-    const label = mode === "weekly" ? "weekly" : "yearly";
-    view.resultsRows.innerHTML = `<tr><td class="table-message" colspan="3">No Formula 1 ${label} results were loaded.</td></tr>`;
-    return;
-  }
-
-  view.resultsRows.innerHTML = standings.map((entry, index) => {
-    const manager = getManagerById(entry.managerId || entry.manager_id) ?? getManagerByName(entry.manager) ?? { name: entry.manager || `Manager ${entry.managerId || entry.manager_id}` };
-    const standingsKey = getFormulaOneAwardStandingsForMode(mode);
-    const awards = entry.rank === 1
-      ? getAwardsForManager(manager, { standings: standingsKey, year })
-      : [];
-
-    const detailId = `formula-one-${year}-weekly-standing-${escapeHtml(String(entry.managerId || entry.manager_id || entry.manager || index))}`;
-    const expandable = mode === "weekly";
-    return `
-      <tr${expandable ? ` class="manager-result-row" data-formula-one-weekly-standing-row aria-expanded="false" aria-controls="${detailId}" role="button" tabindex="0"` : ""}>
-        <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
-        <td data-label="Manager">
-          <span class="standing-manager-with-awards">
-            ${renderManagerChip(manager)}
-            ${renderAwardBadges(awards)}
-          </span>
-        </td>
-        <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
-      </tr>
-      ${expandable ? `<tr class="manager-detail-row formula-one-weekly-standing-detail" id="${detailId}" hidden><td colspan="3">${renderFormulaOneWeeklyStandingDetails(weeklyData, entry, formulaOneWeeklyResultsGroup[year] ?? "all")}</td></tr>` : ""}
-    `;
-  }).join("");
-}
-
-function renderFormulaOneWeeklyResultsGroupControl(year, data, mode) {
-  const view = formulaOneViews[year];
-  if (!view?.resultsWeeklyControls || !view.resultsWeeklyGroupSelect) return;
-  view.resultsWeeklyControls.hidden = mode !== "weekly";
-  if (mode !== "weekly") return;
-
-  const groups = [...new Set((data?.races || []).map((race) => Math.floor((Number(race.id) - 1) / 8) + 1).filter(Number.isInteger))].sort((a, b) => a - b);
-  const selected = groups.includes(Number(formulaOneWeeklyResultsGroup[year])) ? String(formulaOneWeeklyResultsGroup[year]) : "all";
-  formulaOneWeeklyResultsGroup[year] = selected;
-  view.resultsWeeklyGroupSelect.innerHTML = `<option value="all">All</option>${groups.map((group) => {
-    const start = (group - 1) * 8 + 1;
-    return `<option value="${group}">Rounds ${start}–${start + 7}</option>`;
-  }).join("")}`;
-  view.resultsWeeklyGroupSelect.value = selected;
-}
-
-function getFormulaOneWeeklyGroupStandings(data, selectedGroup) {
-  const standings = data?.standings || [];
-  if (selectedGroup === "all") return standings;
-  const group = Number(selectedGroup);
-  const rows = standings.map((entry) => {
-    const block = (entry.blockTotals || []).find((item) => Number(item.block) === group);
-    const fallbackScores = (data?.races || [])
-      .filter((race) => Math.floor((Number(race.id) - 1) / 8) + 1 === group)
-      .map((race) => ({
-        round: Number(race.id),
-        points: Number((race.entries || []).find((item) => getFormulaOneWeeklyManagerKey(item) === getFormulaOneWeeklyManagerKey(entry))?.total) || 0,
-      }))
-      .sort((first, second) => second.points - first.points || first.round - second.round)
-      .slice(0, 4);
-    return {
-      ...entry,
-      points: block ? Number(block.points) || 0 : fallbackScores.reduce((total, score) => total + score.points, 0),
-      countedRounds: block?.countedRounds || fallbackScores.map((score) => score.round),
-    };
-  }).sort((first, second) => second.points - first.points || getFormulaOneWeeklyManagerKey(first).localeCompare(getFormulaOneWeeklyManagerKey(second), undefined, { numeric: true }));
-  return rankRows(rows);
-}
-
-function getFormulaOneWeeklyManagerKey(entry) {
-  return String(entry?.managerId ?? entry?.manager_id ?? entry?.manager ?? "");
-}
-
-function renderFormulaOneWeeklyStandingDetails(data, standing, selectedGroup) {
-  const managerKey = getFormulaOneWeeklyManagerKey(standing);
-  let rounds = (data?.races || []).map((race) => ({
-    race,
-    entry: (race.entries || []).find((entry) => getFormulaOneWeeklyManagerKey(entry) === managerKey),
-  }));
-  if (selectedGroup !== "all") {
-    const counted = new Set((standing.countedRounds || []).map(Number));
-    rounds = rounds.filter(({ race }) => counted.has(Number(race.id)));
-  }
-  rounds.sort(selectedGroup === "all"
-    ? (first, second) => Number(first.race.id) - Number(second.race.id)
-    : (first, second) => (Number(second.entry?.total) || 0) - (Number(first.entry?.total) || 0) || Number(first.race.id) - Number(second.race.id));
-  if (!rounds.length) return `<div class="standing-result-detail-panel"><p class="table-message">No completed rounds are available.</p></div>`;
-
-  return `<div class="standing-result-detail-panel"><ul class="standing-result-detail-list formula-one-weekly-standing-rounds">${rounds.map(({ race, entry }) => {
-    const total = Number(entry?.total) || 0;
-    const breakdown = selectedGroup === "all" ? "" : renderFormulaOneWeeklyStandingBreakdown(entry);
-    const roundName = /^round\s+\d+/i.test(String(race.name || "")) ? race.name : `${race.id}. ${race.name || `Round ${race.id}`}`;
-    return `<li><div><strong>${escapeHtml(roundName)}</strong>${breakdown}</div><b>${escapeHtml(formatFormulaOnePointValue(total))} pts</b></li>`;
-  }).join("")}</ul></div>`;
-}
-
-function renderFormulaOneWeeklyStandingBreakdown(entry) {
-  if (!entry) return `<small>No choices · 0 pts</small>`;
-  const items = [
-    ["P1", entry.picks?.p1, entry.positions?.p1, entry.points?.p1],
-    ["P2", entry.picks?.p2, entry.positions?.p2, entry.points?.p2],
-    ["P3", entry.picks?.p3, entry.positions?.p3, entry.points?.p3],
-    ["Wildcard Q", entry.picks?.wildcard, entry.positions?.wildcardQualifying, entry.points?.wildcardQualifying],
-    ["Wildcard Race", entry.picks?.wildcard, entry.positions?.wildcardRace, entry.points?.wildcardRace],
-  ];
-  return `<small>${items.map(([label, pick, position, points]) => `${escapeHtml(label)}: ${escapeHtml(pick || "—")} ${escapeHtml(formatFormulaOnePosition(position))} · ${escapeHtml(formatFormulaOnePointValue(points))} pts`).join("<br>")}</small>`;
-}
-
-function renderFormulaOneAwards(year) {
-  const view = formulaOneViews[year];
-
-  if (!view?.awards || !view?.awardsList) {
-    return;
-  }
-
-  const awards = getAwardsForFormulaOneYear(year);
-  view.awards.hidden = awards.length === 0;
-
-  if (!awards.length) {
-    view.awardsList.innerHTML = "";
-    return;
-  }
-
-  view.awardsList.innerHTML = awards.map((award) => renderAwardCard(award, "standings-summary")).join("");
-}
-
-function getAwardsForFormulaOneYear(year) {
-  return getResolvedAwards().filter((award) => {
-    return award.competition === `${year} Formula 1` &&
-      String(award.year || "") === String(year || "");
-  });
-}
-
 function renderPageContext(pageName = "") {
   const previousPageName = activePageName;
   activePageName = pageName;
+  window.dispatchEvent(new CustomEvent("boxthislap:route-changed", { detail: { route: pageName } }));
+
+  if (pageName === "manager-hub") {
+    syncFollowedTeamShortcutsVisibility(pageName);
+    deferManagerHubActivation(previousPageName);
+    return;
+  }
 
   if (previousPageName && previousPageName !== pageName) {
     disposePageResources(previousPageName);
@@ -12205,6 +11203,18 @@ function renderPageContext(pageName = "") {
   }
 
   void ensurePageData(pageName);
+}
+
+function deferManagerHubActivation(previousPageName) {
+  const sequence = ++managerHubActivationSequence;
+  window.requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      if (sequence !== managerHubActivationSequence || activePageName !== "manager-hub") return;
+      if (previousPageName && previousPageName !== "manager-hub") disposePageResources(previousPageName);
+      renderManagerHub();
+      void ensurePageData("manager-hub");
+    }, 0);
+  });
 }
 
 function shouldRenderPageSection(pageName) {
@@ -12264,7 +11274,16 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.nextItems)) {
       renderNextList();
     } else if (nextList) {
-      nextList.innerHTML = renderLoadingMessage("Loading Next items...");
+      const detail = {
+        activeItemId: "",
+        editMode: false,
+        emptyLabel: "Loading Next items...",
+        items: [],
+        previousItems: [],
+      };
+      window.__boxThisLapNextListView = detail;
+      window.__boxThisLapSetNextListView?.(detail);
+      window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
     }
     return;
   }
@@ -12273,7 +11292,7 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.todoItems)) {
       renderTodoList();
     } else if (todoList) {
-      todoList.innerHTML = renderLoadingMessage("Loading To Do items...");
+      publishOperationalListView("todo", { emptyLabel: "Loading To Do items...", items: [] });
     }
     return;
   }
@@ -12287,7 +11306,7 @@ function renderActivePageContent(pageName = "") {
     if (Array.isArray(siteData.wantItems)) {
       renderWantList();
     } else if (wantList) {
-      wantList.innerHTML = renderLoadingMessage("Loading Want items...");
+      publishOperationalListView("want", { emptyLabel: "Loading Want items...", items: [] });
     }
     return;
   }
@@ -12401,13 +11420,18 @@ function renderActivePageContent(pageName = "") {
     }
 
     if (pageName.endsWith("-weekly")) {
+      if (formulaOneYear === "2026") formulaOneManagerWeeklySelectedRound = "";
       if (siteData[`formulaOne${formulaOneYear}Weekly`]) {
         renderFormulaOneWeeklyPage(formulaOneYear, siteData[`formulaOne${formulaOneYear}Weekly`]);
       } else if (formulaOneViews[formulaOneYear]?.weeklyList) {
         formulaOneViews[formulaOneYear].weeklyList.innerHTML = renderLoadingMessage("Loading Formula 1 weekly picks...");
       }
-      if (formulaOneYear === "2026" && !siteData.formulaOne2026RoundForms && formulaOneViews[2026]?.weeklyForm) {
-        formulaOneViews[2026].weeklyForm.innerHTML = renderLoadingMessage("Loading Formula 1 bet forms...");
+      if (formulaOneYear === "2026") {
+        renderFormulaOneManagerWeeklyEntry();
+        void ensureFormulaOneManagerWeeklyData().then((data) => {
+          const selected = data?.rounds?.find((round) => String(round.round) === formulaOneManagerWeeklySelectedRound);
+          if (selected?.is_open) void refreshFormulaOneManagerRoundDrivers(selected.round);
+        }).catch(() => {});
       } else {
         renderFormulaOneWeeklyForm(formulaOneYear, siteData[`formulaOne${formulaOneYear}RoundForms`]);
       }
@@ -12468,6 +11492,7 @@ function getFormulaOneAwardStandingsForMode(mode) {
 
 function setFormulaOneResultsMode(year, mode) {
   formulaOneResultsMode[year] = mode === "weekly" ? "weekly" : "yearly";
+  formulaOnePublicController?.setResultsMode(year, formulaOneResultsMode[year]);
 
   formulaOneViews[year]?.resultsModeButtons?.forEach((button) => {
     const isActive = button.getAttribute("data-formula-one-results-mode") === formulaOneResultsMode[year];
@@ -12516,305 +11541,276 @@ function disposeInactiveHeavyMarkup() {
   });
 }
 
-function renderFormulaOneWeeklyForm(year, forms) {
-  const view = formulaOneViews[year];
-
-  if (!view?.weeklyForm) {
+function renderFormulaOneWeeklyForm(...args) {
+  if (String(args[0]) === "2026") {
+    renderFormulaOneManagerWeeklyEntry();
     return;
   }
+  return formulaOnePublicController?.renderWeeklyForm(...args);
+}
 
-  if (!forms?.length) {
-    view.weeklyForm.innerHTML = `<p class="table-message">No Formula 1 bet forms were loaded.</p>`;
+function loadVisibleFormulaOneFormIframes(...args) {
+  return formulaOnePublicController?.loadVisibleFormIframes(...args);
+}
+
+function renderFormulaOneManagerWeeklyEntry(feedback = {}) {
+  const view = formulaOneViews[2026];
+  if (!view?.weeklyForm) return;
+  if (!siteData.managerSession?.managerId) {
+    view.weeklyForm.innerHTML = `<p class="table-message">Sign in to make your weekly choices.</p>`;
     return;
   }
-
-  const selectedId = view.weeklyForm.querySelector("[data-formula-one-form-select]")?.value ||
-    getDefaultFormulaOneFormId(forms);
-  const selectedForm = forms.find((form) => form.id === selectedId) ?? forms[0];
-
+  const data = siteData.formulaOne2026ManagerWeekly;
+  if (!data) {
+    view.weeklyForm.innerHTML = feedback.error
+      ? `<p class="table-message">Unable to load your Formula 1 choices: ${escapeHtml(feedback.error)}</p>`
+      : renderLoadingMessage("Loading your Formula 1 weekly choices...");
+    return;
+  }
+  const rounds = data.rounds || [];
+  if (!rounds.length) {
+    view.weeklyForm.innerHTML = `<p class="table-message">No Formula 1 rounds are available yet.</p>`;
+    return;
+  }
+  const entriesByRound = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
+  const defaultRound = getNextFormulaOneManagerRound(rounds)
+    || rounds.find((round) => round.is_open)
+    || [...rounds].reverse().find((round) => entriesByRound.has(Number(round.round)))
+    || rounds[0];
+  const selectedRound = rounds.find((round) => String(round.round) === formulaOneManagerWeeklySelectedRound) || defaultRound;
+  formulaOneManagerWeeklySelectedRound = String(selectedRound.round);
+  const entry = entriesByRound.get(Number(selectedRound.round));
+  const editKey = `${data.year}:${selectedRound.round}`;
+  const editing = formulaOneManagerWeeklyEditing.has(editKey);
+  const submitted = entry?.entry_status === "submitted";
+  const open = Boolean(selectedRound.is_open);
+  const admin = isCurrentManagerAdmin();
+  const adminEditing = admin && editing;
+  const locked = !open || (submitted && !editing);
+  const showEntryForm = open && !adminEditing;
+  const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(selectedRound.round));
+  const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
+  const roundDriverIds = new Set(roundRoster.map((item) => item.driver_id));
+  const drivers = (data.drivers || []).filter((driver) => hasAuthoritativeRoster ? roundDriverIds.has(driver.driver_id) : driver.active !== 0);
+  const options = (value, wildcard = false) => {
+    const available = drivers.filter((driver) => driver.driver_id === value || !wildcard || !isFormulaOneTopFourTeam(driver.constructor_name));
+    return `<option value="">Choose driver</option>${available.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}`;
+  };
+  const choice = (label, name, value, wildcard = false) => `<label class="select-control"><span>${label}</span><select name="${name}" required${locked ? " disabled" : ""}>${options(value, wildcard)}</select></label>`;
+  const deadlineLabel = selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "To be announced";
+  const status = feedback.error || feedback.message || (!open
+    ? (submitted ? "Choices submitted." : "The deadline has passed without a submission.")
+    : submitted ? "Choices submitted." : "Submit before qualifying starts.");
   view.weeklyForm.innerHTML = `
-    <div class="formula-one-form-header">
-      <label class="select-control">
-        <span>Bet Form</span>
-        <select data-formula-one-form-select>
-          ${forms.map((form) => {
-            return `<option value="${escapeHtml(form.id)}"${form.id === selectedForm.id ? " selected" : ""}>${escapeHtml(`${form.id}. ${form.name}`)}</option>`;
-          }).join("")}
-        </select>
-      </label>
-      <a class="league-card-link formula-one-form-link" href="${escapeHtml(selectedForm.formUrl)}" target="_blank" rel="noopener">Open Form</a>
-    </div>
-    ${renderFormulaOneFormEmbed(selectedForm)}
-  `;
-
-  loadVisibleFormulaOneFormIframes(view.weeklyForm, year);
-}
-
-function renderFormulaOneFormEmbed(form) {
-  const isCollapsed = isMobileSafari();
-  const embedUrl = getGoogleFormEmbedUrl(form.formUrl);
-  const shouldLoadIframe = !isCollapsed && isFormulaOneWeeklyBetPanelActive();
-
-  return `
-    <details class="formula-one-form-embed"${isCollapsed ? "" : " open"}>
-      <summary>Show embedded form</summary>
-      <iframe
-        title="${escapeHtml(`${form.name} bet form`)}"
-        data-src="${escapeHtml(embedUrl)}"
-        src="${shouldLoadIframe ? escapeHtml(embedUrl) : ""}"
-        loading="lazy"
-      ></iframe>
-    </details>
-  `;
-}
-
-function getDefaultFormulaOneFormId(forms) {
-  const today = getEasternTodayDate();
-  const futureForms = forms
-    .filter((form) => form.date && form.date >= today)
-    .sort((firstForm, secondForm) => firstForm.date - secondForm.date);
-
-  return (futureForms[0] ?? forms[0])?.id ?? "";
-}
-
-function getEasternTodayDate() {
-  const dateParts = new Intl.DateTimeFormat("en-US", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "America/New_York",
-    year: "numeric",
-  }).formatToParts(new Date());
-  const parts = Object.fromEntries(dateParts.map((part) => [part.type, part.value]));
-
-  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
-}
-
-function getGoogleFormEmbedUrl(formUrl) {
-  try {
-    const url = new URL(formUrl);
-    url.search = "";
-    url.searchParams.set("embedded", "true");
-    return url.toString();
-  } catch {
-    return formUrl;
-  }
-}
-
-function loadVisibleFormulaOneFormIframes(container, year = getFormulaOneYearFromPage(activePageName)) {
-  if (!isFormulaOneWeeklyBetPanelActive(year)) {
-    return;
-  }
-
-  container.querySelectorAll(".formula-one-form-embed[open] iframe[data-src]").forEach((iframe) => {
-    if (!iframe.getAttribute("src")) {
-      iframe.setAttribute("src", iframe.getAttribute("data-src"));
-    }
-  });
-}
-
-function isFormulaOneWeeklyBetPanelActive(year = getFormulaOneYearFromPage(activePageName)) {
-  if (!year || activePageName !== `formula-1-${year}-weekly`) {
-    return false;
-  }
-
-  return Boolean(document.querySelector(`[data-tab-panel="formula-one-${year}-weekly-bet"].is-active`));
-}
-
-function isMobileSafari() {
-  const userAgent = navigator.userAgent || "";
-  const isIos = /iP(ad|hone|od)/.test(userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isSafari = /Safari/i.test(userAgent) && !/(CriOS|FxiOS|EdgiOS|OPiOS)/i.test(userAgent);
-
-  return isIos && isSafari;
-}
-
-function renderFormulaOneWeeklyPage(year, data) {
-  const view = formulaOneViews[year];
-
-  if (!view?.weeklyList) {
-    return;
-  }
-
-  if (!shouldRenderPageSection(`formula-1-${year}-weekly`)) {
-    return;
-  }
-
-  if (!data?.races?.length) {
-    view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Formula 1 weekly picks were loaded.</p></article>`;
-    renderFormulaOneWeeklyManagers(year, []);
-    return;
-  }
-
-  renderFormulaOneWeeklyRoundOptions(year, data.races);
-  renderFormulaOneWeeklyManagers(year, data.standings ?? []);
-
-  const selectedRound = view.weeklyRoundSelect?.value ?? "";
-  const races = selectedRound
-    ? data.races.filter((race) => String(race.id) === selectedRound)
-    : data.races;
-
-  if (races.length === 0) {
-    view.weeklyList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No weekly picks matched that round.</p></article>`;
-    return;
-  }
-
-  view.weeklyList.innerHTML = races.map((race) => renderFormulaOneWeeklyRace(year, race)).join("");
-}
-
-function renderFormulaOneWeeklyManagers(year, standings) {
-  const rows = formulaOneViews[year]?.weeklyManagers;
-
-  if (!rows) {
-    return;
-  }
-
-  if (!standings.length) {
-    rows.innerHTML = `<tr><td class="table-message" colspan="3">No Formula 1 weekly standings were loaded.</td></tr>`;
-    return;
-  }
-
-  rows.innerHTML = standings.map((entry, index) => {
-    const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
-
-    return `
-      <tr>
-        <td data-label="Rank">${escapeHtml(formatRankDisplay(entry, index, standings))}</td>
-        <td data-label="Manager">${renderManagerChip(manager)}</td>
-        <td data-label="Points">${escapeHtml(formatFormulaOnePointValue(entry.points))}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
-function renderFormulaOneWeeklyRoundOptions(year, races) {
-  const select = formulaOneViews[year]?.weeklyRoundSelect;
-
-  if (!select) {
-    return;
-  }
-
-  const selectedValue = select.value;
-  select.innerHTML = `
-    <option value="">All rounds</option>
-    ${races.map((race) => `<option value="${escapeHtml(String(race.id))}">${escapeHtml(race.name)}</option>`).join("")}
-  `;
-
-  select.value = races.some((race) => String(race.id) === selectedValue) ? selectedValue : "";
-}
-
-function renderFormulaOneWeeklyRace(year, race) {
-  const entries = rankFormulaOneWeeklyEntries(race.entries);
-
-  return `
-    <article class="formula-one-weekly-card">
-      <header>
-        <span>${escapeHtml(race.name)}</span>
-        <h3>Weekly Picks</h3>
-      </header>
-      <div class="formula-one-weekly-managers">
-        ${entries.map((entry, index) => renderFormulaOneWeeklyEntry(year, race, entry, index, entries)).join("")}
+    <form data-formula-one-manager-picks>
+      <div class="formula-one-form-header formula-one-manager-bet-header">
+        <label class="select-control"><span>Round</span><select data-formula-one-manager-round>${rounds.map((round) => `<option value="${escapeHtml(String(round.round))}"${Number(round.round) === Number(selectedRound.round) ? " selected" : ""}>${escapeHtml(`${round.round}. ${round.name}`)}</option>`).join("")}</select></label>
+        <div class="formula-one-manager-deadline"><span>Deadline</span><strong>${escapeHtml(deadlineLabel)}</strong></div>
+        ${admin ? `<button class="icon-action-button formula-one-manager-edit-button${adminEditing ? " is-active" : ""}" type="button" data-formula-one-manager-edit aria-label="${adminEditing ? "Stop editing round" : "Edit all manager choices"}" title="${adminEditing ? "Stop editing round" : "Edit all manager choices"}" aria-pressed="${String(adminEditing)}">${renderRosterActionIcon("edit")}</button>` : submitted && open && !editing ? `<button class="footer-copy-link" type="button" data-formula-one-manager-edit>Edit choices</button>` : ""}
       </div>
-    </article>
-  `;
+      ${adminEditing ? (feedback.error || feedback.message ? `<p class="formula-one-admin-feedback${feedback.error ? " is-error" : ""}" role="status">${escapeHtml(feedback.error || feedback.message)}</p>` : "") : showEntryForm ? `
+        <div class="formula-one-admin-form-grid">
+          ${choice("P1", "p1DriverId", entry?.p1_driver_id)}
+          ${choice("P2", "p2DriverId", entry?.p2_driver_id)}
+          ${choice("P3", "p3DriverId", entry?.p3_driver_id)}
+          ${choice("Wildcard", "wildcardDriverId", entry?.wildcard_driver_id, true)}
+        </div>
+        <div class="formula-one-manager-bet-footer">
+          <p class="formula-one-admin-feedback${feedback.error ? " is-error" : ""}" role="status">${escapeHtml(status)}</p>
+          ${locked ? "" : `<button class="action-button" type="submit">${submitted ? "Update choices" : "Submit choices"}</button>`}
+        </div>` : `<p class="formula-one-admin-feedback formula-one-manager-past-status" role="status">${escapeHtml(status)}</p>`}
+    </form>
+    ${adminEditing ? renderFormulaOneManagerRoundEditor(selectedRound) : open ? "" : renderFormulaOnePastRoundChoices(data, selectedRound)}`;
 }
 
-function rankFormulaOneWeeklyEntries(entries) {
+function renderFormulaOneManagerRoundEditor(selectedRound) {
+  const data = getFormulaOneAdminData("2026");
+  if (!data) return renderLoadingMessage("Loading all manager choices...");
+  const round = data.rounds?.find((item) => Number(item.round) === Number(selectedRound.round));
+  if (!round) return `<p class="table-message">This round is not available in the admin data.</p>`;
+  return `<section class="formula-one-manager-round-editor"><h3>Manager Choices</h3>${renderFormulaOneAdminPicks(data, round, { editAll: true })}</section>`;
+}
+
+function renderFormulaOnePastRoundChoices(data, round) {
+  const race = (data.pastResults || []).find(
+    (entry) => Number(entry.id) === Number(round.round),
+  );
+  const entries = race?.entries || [];
+  if (!race || !entries.length) {
+    return `<section class="formula-one-manager-past-choices"><h3>Manager results</h3><p class="table-message">No scored manager results are available for this round yet.</p></section>`;
+  }
+  return `
+    <section class="formula-one-manager-past-choices">
+      <h3>Manager Results</h3>
+      <div class="formula-one-manager-past-grid">
+        ${rankFormulaOnePastEntries(entries)
+          .map((entry) => {
+            const manager = getManagerById(entry.managerId || entry.manager_id) || {
+              id: entry.managerId || entry.manager_id,
+              name: `Manager ${entry.managerId || entry.manager_id}`,
+            };
+            return `
+              <article class="formula-one-admin-card formula-one-manager-result-card">
+                <header>
+                  <span class="formula-one-weekly-rank"><small>Rank</small><b>${escapeHtml(entry.rank)}</b></span>
+                  <span class="formula-one-weekly-manager-chip">${renderManagerChip(manager)}</span>
+                  <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
+                </header>
+                <div class="formula-one-manager-result-picks">
+                  ${renderFormulaOnePastPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+                  ${renderFormulaOnePastPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+                  ${renderFormulaOnePastPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+                  ${renderFormulaOnePastWildcard(entry)}
+                </div>
+              </article>`;
+          })
+          .join("")}
+      </div>
+      ${renderFormulaOnePastOptimal(race.optimal)}
+    </section>`;
+}
+
+function renderFormulaOnePastOptimal(entry) {
+  if (!entry) return "";
+  return `
+    <aside class="formula-one-past-optimal">
+      <div class="formula-one-past-optimal-heading">
+        <h4>Best Picks</h4>
+        <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))} points</strong>
+      </div>
+      <div class="formula-one-manager-result-picks">
+        ${renderFormulaOnePastPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
+        ${renderFormulaOnePastPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
+        ${renderFormulaOnePastPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
+        ${renderFormulaOnePastWildcard(entry)}
+      </div>
+    </aside>`;
+}
+
+function rankFormulaOnePastEntries(entries) {
   let previousPoints;
   let previousRank = 0;
-
   return [...entries]
-    .sort((firstEntry, secondEntry) => {
-      const pointsDifference = getFormulaOnePointNumber(secondEntry.total) - getFormulaOnePointNumber(firstEntry.total);
-
-      if (pointsDifference !== 0) {
-        return pointsDifference;
-      }
-
-      return firstEntry.manager.localeCompare(secondEntry.manager);
-    })
+    .sort((first, second) => Number(second.total) - Number(first.total)
+      || String(first.managerId || first.manager_id).localeCompare(String(second.managerId || second.manager_id), undefined, { numeric: true }))
     .map((entry, index) => {
-      const currentPoints = getFormulaOnePointNumber(entry.total);
-      const rank = previousPoints === currentPoints ? previousRank : index + 1;
-      previousPoints = currentPoints;
+      const points = Number(entry.total) || 0;
+      const rank = points === previousPoints ? previousRank : index + 1;
+      previousPoints = points;
       previousRank = rank;
-
       return { ...entry, rank };
     });
 }
 
-function renderFormulaOneWeeklyEntry(year, race, entry, index, entries) {
-  const manager = getManagerByName(entry.manager) ?? { name: entry.manager };
-  const detailsId = `formula-one-${year}-weekly-${race.id}-${index}`;
-
-  return `
-    <section
-      class="formula-one-weekly-entry"
-      data-formula-one-weekly-entry
-      aria-controls="${escapeHtml(detailsId)}"
-      aria-expanded="false"
-      role="button"
-      tabindex="0"
-    >
-      <div class="formula-one-weekly-manager">
-        <span class="formula-one-weekly-rank">
-          <small>Rank</small>
-          <b>${escapeHtml(formatRankDisplay(entry, index, entries))}</b>
-        </span>
-        <span class="formula-one-weekly-manager-chip">${renderManagerChip(manager)}</span>
-        <strong>${escapeHtml(formatFormulaOnePointValue(entry.total))}</strong>
-      </div>
-      <div class="formula-one-weekly-picks" id="${escapeHtml(detailsId)}" hidden>
-        ${renderFormulaOneWeeklyPick("P1", entry.picks.p1, entry.positions.p1, entry.points.p1)}
-        ${renderFormulaOneWeeklyPick("P2", entry.picks.p2, entry.positions.p2, entry.points.p2)}
-        ${renderFormulaOneWeeklyPick("P3", entry.picks.p3, entry.positions.p3, entry.points.p3)}
-        ${renderFormulaOneWeeklyWildcard(entry)}
-      </div>
-    </section>
-  `;
+function renderFormulaOnePastPick(label, driver, position, points) {
+  return `<div class="formula-one-manager-result-pick"><span>${escapeHtml(label)}</span><strong>${escapeHtml(driver || "No pick")}</strong><small>${escapeHtml(formatFormulaOnePosition(position))}</small><b>${escapeHtml(formatFormulaOnePointValue(points))} pts</b></div>`;
 }
 
-function toggleFormulaOneWeeklyEntry(entry) {
-  const isExpanded = entry.getAttribute("aria-expanded") === "true";
-  const managerList = entry.closest(".formula-one-weekly-managers");
+function renderFormulaOnePastWildcard(entry) {
+  const wildcardPoints = getFormulaOnePointNumber(entry.points.wildcardQualifying)
+    + getFormulaOnePointNumber(entry.points.wildcardRace);
+  return `<div class="formula-one-manager-result-pick formula-one-manager-result-pick--wildcard"><span class="formula-one-wildcard-icon" aria-label="Wildcard" title="Wildcard"><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 5v14"></path><path d="m18.065 8.496-12.125 7"></path><path d="m5.94 8.504 12.125 7"></path></svg></span><strong>${escapeHtml(entry.picks.wildcard || "No pick")}</strong><span class="formula-one-wildcard-session-results"><small>Q ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardQualifying))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardQualifying))} pts</small><small>R ${escapeHtml(formatFormulaOnePosition(entry.positions.wildcardRace))} · ${escapeHtml(formatFormulaOnePointValue(entry.points.wildcardRace))} pts</small></span><b>${escapeHtml(formatFormulaOnePointValue(wildcardPoints))} pts</b></div>`;
+}
 
-  managerList?.querySelectorAll("[data-formula-one-weekly-entry]").forEach((row) => {
-    row.classList.remove("is-weekly-expanded");
-    row.setAttribute("aria-expanded", "false");
+function getNextFormulaOneManagerRound(rounds, now = Date.now()) {
+  return [...(rounds || [])]
+    .filter((round) => {
+      const deadline = Date.parse(round.deadline_at || "");
+      return Number.isFinite(deadline) && deadline > now;
+    })
+    .sort((first, second) => Date.parse(first.deadline_at) - Date.parse(second.deadline_at)
+      || Number(first.round) - Number(second.round))[0] || null;
+}
 
-    const details = document.getElementById(row.getAttribute("aria-controls"));
-    if (details) {
-      details.hidden = true;
-    }
+async function formulaOneManagerRequest(path, options = {}) {
+  if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
+  const token = await ensureRankingAuthorization();
+  if (!token) throw new Error("Sign in again to make Formula 1 choices.");
+  const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}${path}`, {
+    method: options.method || "GET",
+    headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false) throw new Error(result.error || "Your Formula 1 choices could not be updated.");
+  return result;
+}
 
-  if (isExpanded) {
-    return;
+async function ensureFormulaOneManagerWeeklyData({ force = false } = {}) {
+  if (!siteData.managerSession?.managerId || !FORMULA_ONE_ENDPOINT) {
+    renderFormulaOneManagerWeeklyEntry();
+    return null;
   }
+  if (siteData.formulaOne2026ManagerWeekly && !force) return siteData.formulaOne2026ManagerWeekly;
+  if (formulaOneManagerWeeklyLoadPromise && !force) return formulaOneManagerWeeklyLoadPromise;
+  formulaOneManagerWeeklyLoadPromise = formulaOneManagerRequest("/api/seasons/2026/weekly/me")
+    .then((result) => {
+      siteData.formulaOne2026ManagerWeekly = result;
+      renderFormulaOneManagerWeeklyEntry();
+      if (activePageName === "manager-hub") renderManagerHub();
+      return result;
+    })
+    .catch((error) => {
+      renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) });
+      throw error;
+    })
+    .finally(() => { formulaOneManagerWeeklyLoadPromise = null; });
+  return formulaOneManagerWeeklyLoadPromise;
+}
 
-  entry.classList.add("is-weekly-expanded");
-  entry.setAttribute("aria-expanded", "true");
-
-  const details = document.getElementById(entry.getAttribute("aria-controls"));
-  if (details) {
-    details.hidden = false;
+async function refreshFormulaOneManagerRoundDrivers(round) {
+  const key = `2026:${round}`;
+  if (!round || formulaOneManagerRoundDriverLoads.has(key)) return;
+  formulaOneManagerRoundDriverLoads.add(key);
+  try {
+    await formulaOneManagerRequest(`/api/seasons/2026/rounds/${encodeURIComponent(round)}/drivers/refresh`, { method: "POST" });
+    await ensureFormulaOneManagerWeeklyData({ force: true });
+  } catch (error) {
+    recordDiagnostic("Formula 1 manager round drivers failed to refresh", error);
   }
 }
 
-function toggleFormulaOneWeeklyStandingRow(container, row) {
-  const isExpanded = row.getAttribute("aria-expanded") === "true";
-  container.querySelectorAll("[data-formula-one-weekly-standing-row]").forEach((item) => {
-    item.setAttribute("aria-expanded", "false");
-    item.classList.remove("is-manager-expanded");
-    const detail = item.nextElementSibling;
-    if (detail?.classList.contains("formula-one-weekly-standing-detail")) detail.hidden = true;
-  });
-  if (isExpanded) return;
-  row.setAttribute("aria-expanded", "true");
-  row.classList.add("is-manager-expanded");
-  const detail = row.nextElementSibling;
-  if (detail?.classList.contains("formula-one-weekly-standing-detail")) detail.hidden = false;
+async function submitFormulaOneManagerPicks(form) {
+  const body = Object.fromEntries(new FormData(form).entries());
+  body.submit = true;
+  const admin = isCurrentManagerAdmin();
+  if (admin) body.force = true;
+  const path = admin
+    ? `/api/admin/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/me`
+    : `/api/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/me`;
+  const request = admin ? formulaOneAdminRequest : formulaOneManagerRequest;
+  await request(path, { method: "PUT", body });
+  formulaOneManagerWeeklyEditing.delete(`2026:${formulaOneManagerWeeklySelectedRound}`);
+  await ensureFormulaOneManagerWeeklyData({ force: true });
+  renderFormulaOneManagerWeeklyEntry({ message: "Choices submitted." });
 }
 
+async function submitFormulaOneManagerAdminPicks(form) {
+  const body = Object.fromEntries(new FormData(form).entries());
+  const managerId = String(body.managerId || "");
+  delete body.managerId;
+  body.submit = true;
+  body.force = true;
+  body.allowPartial = true;
+  await formulaOneAdminRequest(`/api/admin/seasons/2026/rounds/${encodeURIComponent(formulaOneManagerWeeklySelectedRound)}/picks/${encodeURIComponent(managerId)}`, { method: "PUT", body });
+  await Promise.all([
+    ensureFormulaOneAdminData({ force: true, year: "2026" }),
+    ensureFormulaOneManagerWeeklyData({ force: true }),
+  ]);
+  renderFormulaOneManagerWeeklyEntry({ message: "Manager choices saved." });
+}
+
+function renderFormulaOneWeeklyPage(...args) {
+  return formulaOnePublicController?.renderWeeklyPage(...args);
+}
+
+function toggleFormulaOneWeeklyEntry(...args) {
+  return formulaOnePublicController?.toggleWeeklyEntry(...args);
+}
+
+function toggleFormulaOneWeeklyStandingRow(...args) {
+  return formulaOnePublicController?.toggleWeeklyStandingRow(...args);
+}
 function renderFormulaOneWeeklyPick(label, pick, position, points) {
   if (!pick) {
     return "";
@@ -12954,7 +11950,7 @@ function renderFormulaOneAdminWeekly(feedback = {}) {
         <div class="formula-one-admin-toolbar">
           ${yearControl}${roundControl}
         </div>
-        <p><strong>Deadline:</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneAdminDate(selectedRound.deadline_at) : "Not set")}</p>
+        <p><strong>Deadline:</strong> ${escapeHtml(selectedRound.deadline_at ? formatFormulaOneDeadline(selectedRound.deadline_at) : "Not set")}</p>
         <p class="formula-one-admin-feedback" data-formula-one-admin-feedback role="status">${escapeHtml(feedback.message || feedback.error || "")}</p>
       </div>
       ${renderFormulaOneAdminPicks(data, selectedRound)}`;
@@ -13222,7 +12218,8 @@ function returnToFormulaOneManage() {
   renderFormulaOneAdminWeekly();
 }
 
-function renderFormulaOneAdminPicks(data, round) {
+function renderFormulaOneAdminPicks(data, round, { editAll = false } = {}) {
+  const getEntryManagerId = (item) => String(item?.manager_id ?? item?.managerId ?? "").trim();
   const driverOptions = (value, disabled, wildcard = false) => {
     const roundRoster = (data.roundDrivers || []).filter((item) => Number(item.round) === Number(round.round));
     const hasAuthoritativeRoster = roundRoster.some((item) => ["session_result", "openf1_second_session"].includes(item.source));
@@ -13235,19 +12232,18 @@ function renderFormulaOneAdminPicks(data, round) {
     return `<select${disabled ? " disabled" : ""}><option value="">No choice</option>${availableDrivers.map((driver) => `<option value="${escapeHtml(driver.driver_id)}"${driver.driver_id === value ? " selected" : ""}>${escapeHtml(driver.display_name)}</option>`).join("")}</select>`;
   };
   const managerIds = new Set(getFormulaOneManagers().map((manager) => String(manager.id || "")).filter(Boolean));
-  (data.entries || []).forEach((entry) => managerIds.add(String(entry.manager_id)));
   const managers = [...managerIds].map((managerId) => ({ managerId, manager: getManagerById(managerId) }))
     .sort((first, second) => (first.manager?.displayName || first.managerId).localeCompare(second.manager?.displayName || second.managerId));
   return `<div class="formula-one-weekly-admin-list">${managers.map(({ managerId, manager }) => {
-    const entry = data.entries?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
-    const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && String(item.manager_id) === managerId);
+    const entry = data.entries?.find((item) => Number(item.round) === Number(round.round) && getEntryManagerId(item) === managerId);
+    const score = data.scores?.find((item) => Number(item.round) === Number(round.round) && getEntryManagerId(item) === managerId);
     const managerName = manager?.displayName || `Manager ${managerId}`;
     const editKey = `${data.year}:${round.round}:${managerId}`;
-    const editing = formulaOneWeeklyEditing.has(editKey);
+    const editing = editAll || formulaOneWeeklyEditing.has(editKey);
     const submitted = entry?.entry_status === "submitted";
     const hasChoices = Boolean(entry && [entry.p1_driver_id, entry.p2_driver_id, entry.p3_driver_id, entry.wildcard_driver_id].some(Boolean));
     const deadline = Date.parse(round.deadline_at || "");
-    const compactEmpty = Number.isFinite(deadline) && Date.now() >= deadline && !hasChoices && !editing;
+    const compactEmpty = !editAll && Number.isFinite(deadline) && Date.now() >= deadline && !hasChoices && !editing;
     const locked = submitted && !editing;
     const choice = (label, name, driverId, pointsKey, sessionType = "race") => `<label class="select-control"><span>${label}</span>${driverOptions(driverId, locked, sessionType === "wildcard").replace("<select", `<select name="${name}"`)}${renderFormulaOneWeeklyChoiceResult(data, round.round, driverId, score, pointsKey, sessionType)}</label>`;
     return `<form class="formula-one-admin-card${compactEmpty ? " formula-one-weekly-empty-card" : ""}" data-formula-one-admin-picks>
@@ -13488,6 +12484,19 @@ function formatFormulaOneSessionStatus(value) {
 function formatFormulaOneAdminDate(value) {
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? String(value || "") : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
+function formatFormulaOneDeadline(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? String(value || "") : date.toLocaleString("en-US", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+    year: "numeric",
+  });
 }
 
 function renderFormulaOneError(year, error) {
@@ -14158,12 +13167,32 @@ followedTeamShortcuts?.addEventListener("click", (event) => {
 });
 
 workflowList?.addEventListener("click", (event) => {
+  const renderRetryButton = event.target.closest("[data-manager-hub-render-retry]");
+  if (renderRetryButton) {
+    renderManagerHubCard(renderRetryButton.dataset.managerHubRenderRetry);
+    return;
+  }
+  const retryButton = event.target.closest("[data-manager-hub-retry]");
+  if (retryButton) {
+    retryManagerHubCard(retryButton.dataset.managerHubRetry);
+    return;
+  }
   const item = event.target.closest("[data-workflow-target], [data-workflow-url]");
 
   if (item) {
     activateWorkflowItem(item);
   }
 });
+
+[managerAwardsList, managerSummaryList].forEach((list) => list?.addEventListener("click", (event) => {
+  const renderRetryButton = event.target.closest("[data-manager-hub-render-retry]");
+  if (renderRetryButton) {
+    renderManagerHubCard(renderRetryButton.dataset.managerHubRenderRetry);
+    return;
+  }
+  const retryButton = event.target.closest("[data-manager-hub-retry]");
+  if (retryButton) retryManagerHubCard(retryButton.dataset.managerHubRetry);
+}));
 
 workflowList?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {
@@ -14769,7 +13798,7 @@ footyFilterToggle?.addEventListener("click", () => {
 
 footyMissingNotesFilterToggle?.addEventListener("click", () => {
   shouldShowFootyMissingNotesFilters = !shouldShowFootyMissingNotesFilters;
-  renderFootyMissingNotesPage();
+  syncFootyMissingNotesFilterVisibility();
 });
 
 [
@@ -14795,11 +13824,6 @@ footyMissingNotesPagination?.addEventListener("click", (event) => {
   scrollToPageTop();
 });
 
-footyCustomFilterToggle?.addEventListener("click", () => {
-  shouldShowFootyCustomFilters = !shouldShowFootyCustomFilters;
-  renderFootyCustomSchedule();
-});
-
 footyCustomTeamPicker?.addEventListener("change", (event) => {
   const checkbox = event.target.closest('input[type="checkbox"]');
   if (!checkbox) return;
@@ -14816,14 +13840,12 @@ footyCustomClear?.addEventListener("click", () => {
 footyCustomConfirm?.addEventListener("click", () => {
   if (!selectedFootyCustomTeamKeys.size) return;
   isFootyCustomScheduleConfirmed = true;
-  shouldShowFootyCustomFilters = false;
   renderFootyCustomSchedule();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 footyCustomChange?.addEventListener("click", () => {
   isFootyCustomScheduleConfirmed = false;
-  shouldShowFootyCustomFilters = false;
   renderFootyCustomSchedule();
   footyCustomTeamSearch?.focus();
 });
@@ -14919,11 +13941,20 @@ nextFilterToggle?.addEventListener("click", () => {
   nextEditModeFilter,
   nextDateFromFilter,
   nextDateToFilter,
-  nextPriorityMin,
-  nextPriorityMax,
 ].forEach((control) => {
   control?.addEventListener("input", () => renderNextList());
   control?.addEventListener("change", () => renderNextList());
+});
+
+[nextPriorityMin, nextPriorityMax].forEach((control) => {
+  control?.addEventListener("input", () => {
+    constrainNextPriorityRange(control);
+    renderNextList();
+  });
+  control?.addEventListener("change", () => {
+    constrainNextPriorityRange(control);
+    renderNextList();
+  });
 });
 
 nextList?.addEventListener("click", (event) => {
@@ -15313,6 +14344,21 @@ document.addEventListener("click", (event) => {
   rankingItem.classList.toggle("is-actions-open");
 });
 
+window.addEventListener("boxthislap:ranking-reorder", (event) => {
+  const { itemIds, kind } = event.detail || {};
+  if (Array.isArray(itemIds)) applyRankingOrder(String(kind || ""), itemIds);
+});
+
+window.addEventListener("boxthislap:want-reorder", (event) => {
+  const { itemIds } = event.detail || {};
+  if (Array.isArray(itemIds)) applyWantOrder(itemIds);
+});
+
+window.addEventListener("boxthislap:todo-reorder", (event) => {
+  const { itemIds } = event.detail || {};
+  if (Array.isArray(itemIds)) applyTodoOrder(itemIds);
+});
+
 document.addEventListener("dragstart", (event) => {
   const item = event.target.closest("[data-ranking-id]");
 
@@ -15357,6 +14403,7 @@ document.addEventListener("drop", (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-react-sort-handle]")) return;
   const handle = event.target.closest(".ranking-drag-handle");
   const item = handle?.closest("[data-ranking-id]");
 
@@ -15450,6 +14497,7 @@ document.addEventListener("drop", (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-react-sort-handle]")) return;
   const handle = event.target.closest(".want-drag-handle");
   const item = handle?.closest("[data-want-id]");
   if (!item || !isCurrentManagerAdmin() || !shouldShowWantEditMode) return;
@@ -15518,6 +14566,7 @@ document.addEventListener("drop", (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-react-sort-handle]")) return;
   const handle = event.target.closest(".todo-drag-handle");
   const item = handle?.closest("[data-todo-id]");
 
@@ -15600,93 +14649,6 @@ document.addEventListener("click", (event) => {
 }, true);
 
 Object.entries(formulaOneViews).forEach(([year, view]) => {
-  view.calculator?.addEventListener("change", (event) => {
-    const data = siteData[`formulaOne${year}Calculator`];
-    if (!data) {
-      return;
-    }
-
-    const state = getFormulaOneCalculatorState(year, data);
-    const filter = event.target.closest("[data-formula-one-calculator-filter]");
-    const simplePositionSelect = event.target.closest("[data-formula-one-calculator-simple-position]");
-    if (simplePositionSelect) {
-      applyFormulaOneCalculatorSimpleSelection(
-        data,
-        state,
-        getFormulaOneCalculatorEvents(data),
-        simplePositionSelect.dataset.driver,
-        simplePositionSelect.value
-      );
-      persistFormulaOneCalculatorState(year, data, state);
-      renderFormulaOneCalculator(year);
-      return;
-    }
-    if (filter) {
-      if (filter.checked) {
-        state.visibleDrivers.add(filter.dataset.driver);
-      } else {
-        state.visibleDrivers.delete(filter.dataset.driver);
-      }
-      persistFormulaOneCalculatorState(year, data, state);
-      renderFormulaOneCalculator(year);
-      return;
-    }
-
-    const positionSelect = event.target.closest("[data-formula-one-calculator-position]");
-    if (positionSelect) {
-      const tableScrollLeft = positionSelect.closest(".formula-one-calculator-table-wrap")?.scrollLeft ?? 0;
-      const key = getFormulaOneCalculatorSelectionKey(
-        positionSelect.dataset.eventType,
-        positionSelect.dataset.roundId,
-        positionSelect.dataset.driver
-      );
-      if (positionSelect.value) {
-        state.selections[key] = positionSelect.value;
-      } else {
-        delete state.selections[key];
-      }
-      delete state.simpleSelections[positionSelect.dataset.driver];
-      persistFormulaOneCalculatorState(year, data, state);
-      renderFormulaOneCalculator(year);
-      const tableWrap = view.calculator.querySelector(".formula-one-calculator-table-wrap");
-      if (tableWrap) {
-        tableWrap.scrollLeft = tableScrollLeft;
-      }
-    }
-  });
-
-  view.calculator?.addEventListener("click", (event) => {
-    const viewToggle = event.target.closest("[data-formula-one-calculator-view]");
-    const filterToggle = event.target.closest("[data-formula-one-calculator-filter-toggle]");
-    const showAllButton = event.target.closest("[data-formula-one-calculator-show-all]");
-    const hideAllButton = event.target.closest("[data-formula-one-calculator-hide-all]");
-    if (!viewToggle && !filterToggle && !showAllButton && !hideAllButton) {
-      return;
-    }
-
-    const data = siteData[`formulaOne${year}Calculator`];
-    if (!data) {
-      return;
-    }
-
-    const state = getFormulaOneCalculatorState(year, data);
-    if (viewToggle) {
-      state.viewMode = viewToggle.dataset.formulaOneCalculatorView === "expanded" ? "expanded" : "simple";
-      renderFormulaOneCalculator(year);
-      return;
-    }
-
-    if (filterToggle) {
-      state.filtersExpanded = !state.filtersExpanded;
-      renderFormulaOneCalculator(year);
-      return;
-    }
-
-    state.visibleDrivers = new Set(showAllButton ? data.driversToWatch : []);
-    persistFormulaOneCalculatorState(year, data, state);
-    renderFormulaOneCalculator(year);
-  });
-
   view.questionSelect?.addEventListener("change", () => {
     if (view.questionFilter) {
       view.questionFilter.value = "";
@@ -15707,6 +14669,7 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
 
   view.resultsWeeklyGroupSelect?.addEventListener("change", () => {
     formulaOneWeeklyResultsGroup[year] = view.resultsWeeklyGroupSelect.value || "all";
+    formulaOnePublicController?.setResultsGroup(year, formulaOneWeeklyResultsGroup[year]);
     renderFormulaOneResults(year);
   });
 
@@ -15720,16 +14683,69 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
   view.resultsRows?.addEventListener("click", toggleWeeklyStanding);
   view.resultsRows?.addEventListener("keydown", toggleWeeklyStanding);
 
+  const toggleWeeklyManagerStanding = (event) => {
+    const row = event.target.closest("[data-formula-one-weekly-standing-row]");
+    if (!row) return;
+    if (event.type === "keydown" && !["Enter", " "].includes(event.key)) return;
+    if (event.type === "keydown") event.preventDefault();
+    toggleFormulaOneWeeklyStandingRow(view.weeklyManagers, row);
+  };
+  view.weeklyManagers?.addEventListener("click", toggleWeeklyManagerStanding);
+  view.weeklyManagers?.addEventListener("keydown", toggleWeeklyManagerStanding);
+
   view.weeklyRoundSelect?.addEventListener("change", () => {
     renderFormulaOneWeeklyPage(year, siteData[`formulaOne${year}Weekly`]);
   });
 
   view.weeklyForm?.addEventListener("change", (event) => {
-    if (!event.target.matches("[data-formula-one-form-select]")) {
+    if (event.target.matches("[data-formula-one-manager-round]")) {
+      formulaOneManagerWeeklySelectedRound = event.target.value;
+      renderFormulaOneManagerWeeklyEntry();
+      const round = siteData.formulaOne2026ManagerWeekly?.rounds?.find((item) => String(item.round) === formulaOneManagerWeeklySelectedRound);
+      if (round?.is_open) void refreshFormulaOneManagerRoundDrivers(formulaOneManagerWeeklySelectedRound);
       return;
     }
+    if (event.target.matches("[data-formula-one-form-select]")) {
+      renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+    }
+  });
 
-    renderFormulaOneWeeklyForm(year, siteData[`formulaOne${year}RoundForms`]);
+  view.weeklyForm?.addEventListener("click", (event) => {
+    const editButton = event.target.closest("[data-formula-one-manager-edit]");
+    if (!editButton) return;
+    const editKey = `2026:${formulaOneManagerWeeklySelectedRound}`;
+    if (isCurrentManagerAdmin() && formulaOneManagerWeeklyEditing.has(editKey)) {
+      formulaOneManagerWeeklyEditing.delete(editKey);
+      renderFormulaOneManagerWeeklyEntry();
+      return;
+    }
+    formulaOneManagerWeeklyEditing.add(editKey);
+    renderFormulaOneManagerWeeklyEntry();
+    if (isCurrentManagerAdmin()) {
+      void Promise.all([
+        ensureFormulaOneAdminData({ year: "2026" }),
+        ensureFormulaOneRoundDrivers("2026", formulaOneManagerWeeklySelectedRound),
+      ]).then(() => renderFormulaOneManagerWeeklyEntry())
+        .catch((error) => renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) }));
+    }
+  });
+
+  view.weeklyForm?.addEventListener("submit", (event) => {
+    const adminForm = event.target.closest("[data-formula-one-admin-picks]");
+    if (adminForm) {
+      event.preventDefault();
+      adminForm.querySelectorAll("button[type='submit']").forEach((button) => button.setAttribute("disabled", ""));
+      void submitFormulaOneManagerAdminPicks(adminForm)
+        .catch((error) => renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) }));
+      return;
+    }
+    const form = event.target.closest("[data-formula-one-manager-picks]");
+    if (!form) return;
+    event.preventDefault();
+    const submitButton = form.querySelector("button[type='submit']");
+    if (submitButton) submitButton.disabled = true;
+    void submitFormulaOneManagerPicks(form)
+      .catch((error) => renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) }));
   });
 
   view.weeklyForm?.addEventListener("toggle", (event) => {
@@ -16011,6 +15027,7 @@ managerSummaryYearSelect?.addEventListener("change", () => {
   const session = siteData.managerSession;
 
   if (session) {
+    ensureManagerHubResultsForYear(getManagerSummarySelectedYear());
     renderManagerSummary(session.managerId);
   }
 });
@@ -16095,6 +15112,7 @@ function hideLoginPanel() {
 
 function hydrateManagerSession() {
   hydrateStoredManagerSession();
+  hydrateManagerHubDraftsCache();
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
@@ -16114,6 +15132,13 @@ function hydrateStoredManagerSession() {
 
 function saveManagerSession(session) {
   siteData.managerSession = session;
+  managerHubLoadState = null;
+  managerAwardsMarkup = null;
+  managerAwardsRenderedHtml = null;
+  hydrateManagerHubDraftsCache();
+  delete siteData.formulaOne2026ManagerWeekly;
+  formulaOneManagerWeeklySelectedRound = "";
+  formulaOneManagerWeeklyEditing.clear();
   activeRankingManagerId = String(session?.managerId || "");
   resetRankingManagerData();
   resetDraftListsPage();
@@ -16125,6 +15150,8 @@ function saveManagerSession(session) {
   } catch {
     // Session persistence is helpful, but the in-memory session is enough for this visit.
   }
+
+  window.dispatchEvent(new Event("boxthislap:session-changed"));
 
   renderLoginState();
   renderManagerHub();
@@ -16144,6 +15171,12 @@ function signOutManager() {
   window.clearTimeout(rankingAuthorizationRefreshTimer);
   rankingAuthorizationRefreshTimer = 0;
   siteData.managerSession = null;
+  managerHubLoadState = null;
+  managerAwardsMarkup = null;
+  managerAwardsRenderedHtml = null;
+  delete siteData.formulaOne2026ManagerWeekly;
+  formulaOneManagerWeeklySelectedRound = "";
+  formulaOneManagerWeeklyEditing.clear();
   activeRankingManagerId = "";
   resetRankingManagerData();
   resetDraftListsPage();
@@ -16155,6 +15188,8 @@ function signOutManager() {
   } catch {
     // Ignore storage failures; the in-memory session has already been cleared.
   }
+
+  window.dispatchEvent(new Event("boxthislap:session-changed"));
 
   closeProfileDropdown();
   renderLoginState();
@@ -16797,6 +15832,8 @@ function submitManagerPortalPayloadWithForm(payload) {
 function renderManagerHub() {
   const session = siteData.managerSession;
 
+  if (activePageName && activePageName !== "manager-hub") return;
+
   if (!session) {
     if (managerHubSubtitle) {
       managerHubSubtitle.textContent = "";
@@ -16827,9 +15864,107 @@ function renderManagerHub() {
     managerHubSubtitle.hidden = true;
   }
 
-  renderManagerWorkflow(session.managerId);
-  renderManagerSummary(session.managerId);
-  renderManagerAwards(session.managerId);
+  renderManagerHubCard("notifications");
+  renderManagerHubCard("awards");
+  renderManagerHubCard("results");
+}
+
+function createManagerHubCardLoadState() {
+  return {
+    completed: new Set(),
+    failed: new Map(),
+    loaders: new Map(),
+    pending: new Set(),
+  };
+}
+
+function initializeManagerHubLoadState(managerId) {
+  const normalizedManagerId = String(managerId || "");
+  if (managerHubLoadState?.managerId === normalizedManagerId) return managerHubLoadState;
+  managerHubLoadState = {
+    awards: createManagerHubCardLoadState(),
+    managerId: normalizedManagerId,
+    notifications: createManagerHubCardLoadState(),
+    results: createManagerHubCardLoadState(),
+  };
+  return managerHubLoadState;
+}
+
+function getManagerHubCardLoadState(card) {
+  const managerId = String(getCurrentManagerId() || "");
+  if (!managerId || managerHubLoadState?.managerId !== managerId) return null;
+  return managerHubLoadState[card] || null;
+}
+
+function renderManagerHubCard(card) {
+  if (activePageName && activePageName !== "manager-hub") return;
+  const managerId = getCurrentManagerId();
+  if (!managerId) return;
+  try {
+    if (card === "notifications") renderManagerWorkflow(managerId);
+    if (card === "awards") renderManagerAwards(managerId);
+    if (card === "results") renderManagerSummary(managerId);
+  } catch (error) {
+    recordDiagnostic(`Manager Hub ${card} card failed to render`, error);
+    const container = card === "notifications"
+      ? workflowList
+      : card === "awards"
+        ? managerAwardsList
+        : managerSummaryList;
+    if (container) {
+      container.innerHTML = `<article class="workflow-item manager-hub-load-status"><p class="table-message">This card could not be displayed.</p><button class="footer-copy-link" type="button" data-manager-hub-render-retry="${escapeHtml(card)}">Retry</button></article>`;
+    }
+  }
+}
+
+function trackManagerHubCardLoad(card, key, loader) {
+  const managerId = String(getCurrentManagerId() || "");
+  const cardState = initializeManagerHubLoadState(managerId)?.[card];
+  if (!managerId || !cardState || cardState.pending.has(key) || cardState.completed.has(key)) return;
+
+  cardState.loaders.set(key, loader);
+  cardState.failed.delete(key);
+  cardState.pending.add(key);
+  renderManagerHubCard(card);
+
+  Promise.resolve()
+    .then(loader)
+    .then(() => {
+      if (managerHubLoadState?.managerId === managerId) cardState.completed.add(key);
+    })
+    .catch((error) => {
+      if (managerHubLoadState?.managerId !== managerId) return;
+      cardState.failed.set(key, error);
+      recordDiagnostic(`Manager Hub ${card} source ${key} failed to load`, error);
+    })
+    .finally(() => {
+      if (managerHubLoadState?.managerId !== managerId) return;
+      cardState.pending.delete(key);
+      renderManagerHubCard(card);
+    });
+}
+
+function retryManagerHubCard(card) {
+  const cardState = getManagerHubCardLoadState(card);
+  if (!cardState) return;
+  const retries = [...cardState.failed.keys()]
+    .map((key) => [key, cardState.loaders.get(key)])
+    .filter(([, loader]) => typeof loader === "function");
+  cardState.failed.clear();
+  retries.forEach(([key, loader]) => trackManagerHubCardLoad(card, key, loader));
+  renderManagerHubCard(card);
+}
+
+function renderManagerHubCardStatus(card, loadingLabel) {
+  const cardState = getManagerHubCardLoadState(card);
+  if (!cardState) return "";
+  if (cardState.pending.size) {
+    return `<article class="workflow-item manager-hub-load-status"><p class="table-message"><span class="loading-spinner" aria-hidden="true"></span>${escapeHtml(loadingLabel)}</p></article>`;
+  }
+  if (cardState.failed.size) {
+    return `<article class="workflow-item manager-hub-load-status"><p class="table-message">Some data could not be loaded.</p><button class="footer-copy-link" type="button" data-manager-hub-retry="${escapeHtml(card)}">Retry</button></article>`;
+  }
+  return "";
 }
 
 function renderManagerWorkflowLegacy(managerId) {
@@ -16897,9 +16032,10 @@ function renderManagerWorkflow(managerId) {
     return;
   }
 
-  const drafts = siteData.portalDrafts;
+  const loadStatus = renderManagerHubCardStatus("notifications", "Checking remaining notifications...");
+  const hasStartedLoading = Boolean(getManagerHubCardLoadState("notifications"));
 
-  if (!Array.isArray(drafts)) {
+  if (!hasStartedLoading && !Array.isArray(siteData.portalDrafts)) {
     workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading notifications...</p></article>`;
     return;
   }
@@ -16907,15 +16043,16 @@ function renderManagerWorkflow(managerId) {
   const openItems = buildManagerWorkflowItems(managerId).sort(compareWorkflowItems);
 
   if (workflowCount) {
-    workflowCount.textContent = formatNotificationCount(openItems.length);
+    const checking = getManagerHubCardLoadState("notifications")?.pending.size ? " · checking" : "";
+    workflowCount.textContent = `${formatNotificationCount(openItems.length)}${checking}`;
   }
 
   if (!openItems.length) {
-    workflowList.innerHTML = `<article class="workflow-item"><p class="table-message">No notifications need attention.</p></article>`;
+    workflowList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">No notifications need attention.</p></article>`;
     return;
   }
 
-  workflowList.innerHTML = openItems.map(renderWorkflowItem).join("");
+  workflowList.innerHTML = `${openItems.map(renderWorkflowItem).join("")}${loadStatus}`;
 }
 
 function buildManagerWorkflowItems(managerId) {
@@ -16962,7 +16099,8 @@ function buildFootyMissingNotesWorkflowItems() {
     return [];
   }
 
-  const fixtures = getFootyMissingNotesFixtures(siteData.footySchedule);
+  const fixtures = footyMissingNotesFixturesCache;
+  if (!fixtures) return [];
   if (!fixtures.length) return [];
   const competitionCount = new Set(fixtures
     .map((fixture) => getFootyCanonicalCompetition(fixture.league).key)
@@ -17022,38 +16160,24 @@ function buildDraftWorkflowItems(managerId) {
 }
 
 function buildFormulaOneWeeklyWorkflowItems(managerId) {
-  const forms = siteData.formulaOne2026RoundForms || [];
-  const logs = siteData.portalLogs || [];
-  const nextForm = getUpcomingFormulaOneForm(forms);
-
-  if (!nextForm || isWorkflowLeagueCompleted({ league: "Formula 1", terms: ["weekly"], year: "2026" })) {
-    return [];
-  }
-
-  const completionIds = [
-    `formula-one-2026-weekly-${nextForm.id}`,
-    `f1-2026-weekly-${nextForm.id}`,
-    `2026-f1-weekly-${nextForm.id}`,
-    nextForm.id,
-  ];
-
-  if (completionIds.some((id) => hasManagerCompletedDraft(logs, managerId, id))) {
-    return [];
-  }
+  const data = siteData.formulaOne2026ManagerWeekly;
+  if (!data?.rounds || String(siteData.managerSession?.managerId || "") !== String(managerId || "")) return [];
+  const entries = new Map((data.entries || []).map((entry) => [Number(entry.round), entry]));
+  const nextRound = getNextFormulaOneManagerRound(data.rounds);
+  if (!nextRound || entries.get(Number(nextRound.round))?.entry_status === "submitted") return [];
 
   return [{
     actionLabel: "Open",
-    description: "2026 Formula 1 weekly bet",
-    dueDate: formatWorkflowDue(nextForm),
-    id: `formula-one-2026-weekly-${nextForm.id}`,
-    priority: nextForm.Priority || nextForm.priority || "1",
-    status: "Upcoming race",
+    description: "Make your P1, P2, P3, and wildcard choices",
+    dueDate: nextRound.deadline_at ? formatFormulaOneDeadline(nextRound.deadline_at) : "",
+    id: `formula-one-2026-weekly-${nextRound.round}`,
+    priority: "1",
+    status: "Not submitted",
     tab: "formula-one-2026-weekly-bet",
     target: "formula-1-2026-weekly",
-    title: nextForm.name,
+    title: `${nextRound.name} weekly choices`,
     url: "",
-    weeklyFormId: nextForm.id,
-    year: "2026",
+    formulaOneBetRound: String(nextRound.round),
   }];
 }
 
@@ -17163,6 +16287,7 @@ function renderWorkflowItem(item) {
     item.year ? `data-workflow-year="${escapeHtml(item.year)}"` : "",
     item.formulaOneYear ? `data-workflow-formula-one-year="${escapeHtml(item.formulaOneYear)}"` : "",
     item.formulaOneRound ? `data-workflow-formula-one-round="${escapeHtml(item.formulaOneRound)}"` : "",
+    item.formulaOneBetRound ? `data-workflow-formula-one-bet-round="${escapeHtml(item.formulaOneBetRound)}"` : "",
   ].filter(Boolean).join(" ");
 
   return `
@@ -17189,6 +16314,17 @@ function formatWorkflowDate(date) {
     month: "short",
     timeZone: "America/New_York",
   }).format(date);
+}
+
+function getEasternTodayDate() {
+  const dateParts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/New_York",
+    year: "numeric",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(dateParts.map((part) => [part.type, part.value]));
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
 }
 
 function formatWorkflowDue(form) {
@@ -17264,6 +16400,11 @@ function activateWorkflowItem(item) {
       showTab(item.dataset.workflowTab);
     }
 
+    if (item.dataset.workflowFormulaOneBetRound) {
+      formulaOneManagerWeeklySelectedRound = item.dataset.workflowFormulaOneBetRound;
+      renderFormulaOneManagerWeeklyEntry();
+    }
+
     if (item.dataset.workflowFormId && item.dataset.workflowYear) {
       selectFormulaOneWeeklyForm(item.dataset.workflowYear, item.dataset.workflowFormId);
     }
@@ -17299,9 +16440,10 @@ function renderManagerSummary(managerId) {
   }
 
   const source = siteData.managerResultsSource;
+  const loadStatus = renderManagerHubCardStatus("results", "Loading remaining results...");
 
   if (!source && !hasManagerHubResultData()) {
-    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
+    managerSummaryList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">Loading manager results...</p></article>`;
     return;
   }
 
@@ -17318,11 +16460,11 @@ function renderManagerSummary(managerId) {
   ].filter(Boolean);
 
   if (!resultCards.length) {
-    managerSummaryList.innerHTML = `<article class="workflow-item"><p class="table-message">No ${escapeHtml(selectedYear === "all" ? "" : `${selectedYear} `)}result summary found for this manager yet.</p></article>`;
+    managerSummaryList.innerHTML = loadStatus || `<article class="workflow-item"><p class="table-message">No ${escapeHtml(selectedYear === "all" ? "" : `${selectedYear} `)}result summary found for this manager yet.</p></article>`;
     return;
   }
 
-  managerSummaryList.innerHTML = resultCards.join("");
+  managerSummaryList.innerHTML = `${resultCards.join("")}${loadStatus}`;
 }
 
 function renderManagerAwards(managerId) {
@@ -17330,8 +16472,10 @@ function renderManagerAwards(managerId) {
     return;
   }
 
+  const loadStatus = renderManagerHubCardStatus("awards", "Loading awards...");
+
   if (!siteData.portalDrafts) {
-    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`;
+    updateManagerAwardsMarkup(loadStatus || `<article class="workflow-item"><p class="table-message">Loading awards...</p></article>`);
     return;
   }
 
@@ -17340,11 +16484,19 @@ function renderManagerAwards(managerId) {
   });
 
   if (!awards.length) {
-    managerAwardsList.innerHTML = `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`;
+    updateManagerAwardsMarkup(loadStatus || `<article class="workflow-item"><p class="table-message">No awards yet.</p></article>`);
     return;
   }
 
-  managerAwardsList.innerHTML = awards.map((award) => renderAwardCard(award, "manager")).join("");
+  updateManagerAwardsMarkup(`${awards.map((award) => renderAwardCard(award, "manager")).join("")}${loadStatus}`);
+}
+
+function updateManagerAwardsMarkup(markup) {
+  if (!managerAwardsList) return;
+  if (managerAwardsMarkup === markup && managerAwardsList.innerHTML === managerAwardsRenderedHtml) return;
+  managerAwardsMarkup = markup;
+  managerAwardsList.innerHTML = markup;
+  managerAwardsRenderedHtml = managerAwardsList.innerHTML;
 }
 
 function renderLeagueAwards() {
@@ -18271,6 +17423,7 @@ async function loadFantasyCriticLeague(year) {
     renderFantasyCriticPage();
     renderManagerHub();
     console.error(`Box This Lap Fantasy Critic ${yearKey} data failed to load`, error);
+    throw error;
   }
 }
 
@@ -18476,12 +17629,11 @@ function parseFantasyCriticPublisher(publisher, playerRow, slotCounts) {
 }
 
 function parseFantasyCriticGame(game) {
-  const prefix = game.counterPick ? "CPK " : "";
-
   return [
-    `${prefix}${game.gameName || "Untitled Game"}`,
+    game.gameName || "Untitled Game",
     formatFantasyCriticNumber(game.criticScore ?? game.masterGame?.criticScore),
     formatFantasyCriticNumber(game.fantasyPoints ?? game.masterGame?.fantasyPoints),
+    { isCounterPick: Boolean(game.counterPick) },
   ];
 }
 
@@ -18980,6 +18132,9 @@ function ensureFootyData() {
     const schedule = await loadJson("data/footy-schedule.json");
     clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
+    footyScheduleFixtureIndex = null;
+    footyScheduleFixtureIndexSource = null;
+    invalidateFootyMissingNotesFixtures();
     renderFollowedTeamShortcuts(schedule);
     renderFootySchedule(schedule);
     renderFootyCustomSchedule();
@@ -19103,27 +18258,62 @@ function ensurePortalData() {
     runPortalRender("2024 Formula 1 awards", () => renderFormulaOneResults("2024"));
     runPortalRender("2025 Formula 1 awards", () => renderFormulaOneResults("2025"));
     runPortalRender("2026 Formula 1 awards", () => renderFormulaOneResults("2026"));
+    if (awardsResult.status === "rejected") throw awardsResult.reason;
+    if (logsResult.status === "rejected") throw logsResult.reason;
     return siteData.portalDrafts;
   });
 }
 
+function hydrateManagerHubDraftsCache() {
+  if (Array.isArray(siteData.portalDrafts)) return;
+  try {
+    const cached = JSON.parse(localStorage.getItem(MANAGER_HUB_DRAFTS_CACHE_KEY) || "null");
+    const cachedAt = Date.parse(cached?.cachedAt || "");
+    if (
+      Array.isArray(cached?.drafts)
+      && Number.isFinite(cachedAt)
+      && Date.now() - cachedAt <= MANAGER_HUB_DRAFTS_CACHE_MAX_AGE_MS
+    ) {
+      siteData.portalDrafts = cached.drafts;
+    }
+  } catch {
+    // A fresh published-sheet request below replaces an unreadable cache.
+  }
+}
+
+function cacheManagerHubDrafts(drafts) {
+  try {
+    localStorage.setItem(MANAGER_HUB_DRAFTS_CACHE_KEY, JSON.stringify({
+      cachedAt: new Date().toISOString(),
+      drafts,
+    }));
+  } catch {
+    // Awards still work for this visit when browser storage is unavailable.
+  }
+}
+
 function ensurePortalAwardsData() {
   return ensureSharedData("portal-awards", async () => {
-    const [managersResult, draftsResult] = await Promise.allSettled([
-      ensurePortalManagersData(),
-      loadSheet("portalDrafts"),
-    ]);
-
-    if (managersResult.status === "fulfilled") {
-      siteData.portalManagers = managersResult.value;
+    const managersPromise = ensurePortalManagersData();
+    try {
+      siteData.portalDrafts = await loadSheet("portalDrafts");
+      cacheManagerHubDrafts(siteData.portalDrafts);
+    } catch (error) {
+      siteData.portalDrafts = [];
+      recordDiagnostic("portal drafts failed to load", error);
+      throw error;
+    } finally {
+      if (siteData.managerSession?.managerId) {
+        renderManagerAwards(siteData.managerSession.managerId);
+        renderManagerWorkflow(siteData.managerSession.managerId);
+      }
+      runPortalRender("league awards", renderLeagueAwards);
+      runPortalRender("standings awards", renderStandingsAwards);
     }
+
+    await managersPromise;
     siteData.portalManagers ||= [...DEFAULT_PORTAL_MANAGERS];
-    siteData.portalDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
-
-    if (draftsResult.status === "rejected") {
-      recordDiagnostic("portal drafts failed to load", draftsResult.reason);
-    }
-
+    if (siteData.managerSession?.managerId) renderManagerAwards(siteData.managerSession.managerId);
     runPortalRender("league awards", renderLeagueAwards);
     runPortalRender("standings awards", renderStandingsAwards);
     return siteData.portalDrafts;
@@ -19345,9 +18535,8 @@ function refreshFormulaOnePage(year) {
 
 function ensureFormulaOneCalculatorData(year) {
   const yearKey = String(year);
-  const config = FORMULA_ONE_CALCULATOR_CONFIG[yearKey];
-
-  if (!config) {
+  const legacyConfig = FORMULA_ONE_CALCULATOR_LEGACY_CONFIG[yearKey];
+  if (!legacyConfig) {
     const error = new Error(`Formula 1 points calculator is not configured for ${yearKey}.`);
     renderFormulaOneCalculatorError(yearKey, error);
     return Promise.reject(error);
@@ -19356,14 +18545,24 @@ function ensureFormulaOneCalculatorData(year) {
   return ensureFormulaOneSource(
     `formulaOne${yearKey}Calculator`,
     async () => {
-      const [, driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
-        loadFormulaOneCalculations(),
-        loadSheetText(config.driversSource),
-        loadSheetText(config.optionsSource),
-        loadSheetText(config.sprintsSource),
-        loadSheetText(config.summarySource),
+      await loadFormulaOneCalculatorController();
+      if (FORMULA_ONE_ENDPOINT) {
+        try {
+          const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/calculator`);
+          if (!response.ok) throw new Error(`Formula 1 calculator returned ${response.status}.`);
+          return normalizeFormulaOneCalculatorServiceData(await response.json());
+        } catch (error) {
+          recordDiagnostic("D1 Formula 1 calculator failed to load; using legacy sheet", error);
+        }
+      }
+
+      const [driversCsv, optionsCsv, sprintsCsv, summaryCsv] = await Promise.all([
+        loadSheetText(legacyConfig.driversSource),
+        loadSheetText(legacyConfig.optionsSource),
+        loadSheetText(legacyConfig.sprintsSource),
+        loadSheetText(legacyConfig.summarySource),
       ]);
-      return parseFormulaOneCalculatorData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv });
+      return formulaOneCalculatorController.parseData({ driversCsv, optionsCsv, sprintsCsv, summaryCsv });
     },
     (data) => {
       siteData[`formulaOne${yearKey}Calculator`] = data;
@@ -19373,14 +18572,40 @@ function ensureFormulaOneCalculatorData(year) {
   );
 }
 
+function normalizeFormulaOneCalculatorServiceData(data) {
+  const normalizePoints = (points) => new Map(Object.entries(points || {}).map(([driver, value]) => [normalizeLookupName(driver), value]));
+  const normalizeRounds = (rounds) => (Array.isArray(rounds) ? rounds : []).map((round) => ({
+    ...round,
+    complete: Boolean(round.complete),
+    id: Number(round.id),
+    pointsByDriver: normalizePoints(round.pointsByDriver),
+  }));
+
+  return {
+    currentTotals: normalizePoints(data.currentTotals),
+    driversToWatch: Array.isArray(data.driversToWatch) ? data.driversToWatch : [],
+    raceOptions: Array.isArray(data.raceOptions) ? data.raceOptions : [],
+    rounds: normalizeRounds(data.rounds),
+    sprintOptions: Array.isArray(data.sprintOptions) ? data.sprintOptions : [],
+    sprintRounds: normalizeRounds(data.sprintRounds),
+  };
+}
+
 function ensureFormulaOneData(year, view = "questions") {
+  // Start the deferred UI controller and the requested data at the same time.
+  // Waiting for the controller before beginning the network request made archived
+  // seasons appear stuck on "Loading" on slower mobile connections.
+  const controllerTask = loadFormulaOnePublicController();
   const yearKey = String(year);
   if (view === "weekly-results" && yearKey === "2026") {
     const weeklyTask = ensureFormulaOneSource(
       "formulaOne2026WeeklyResults",
       async () => {
         if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
-        const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/weekly`);
+        const [, response] = await Promise.all([
+          controllerTask,
+          fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/${encodeURIComponent(yearKey)}/weekly`),
+        ]);
         if (!response.ok) throw new Error(`Formula 1 weekly results returned ${response.status}.`);
         return response.json();
       },
@@ -19396,7 +18621,13 @@ function ensureFormulaOneData(year, view = "questions") {
   }
   const sourceTasks = [ensureFormulaOneSource(
     `formulaOne${yearKey}`,
-    () => loadSheetText(`formulaOne${yearKey}`),
+    async () => {
+      const [, csvText] = await Promise.all([
+        controllerTask,
+        loadSheetText(`formulaOne${yearKey}`),
+      ]);
+      return csvText;
+    },
     (csvText) => {
       const data = parseFormulaOneSheet(csvText);
       siteData[`formulaOne${yearKey}`] = data;
@@ -19408,7 +18639,13 @@ function ensureFormulaOneData(year, view = "questions") {
   if ((view === "weekly" || view === "weekly-results") && ["2025", "2026"].includes(yearKey)) {
     sourceTasks.push(ensureFormulaOneSource(
       `formulaOne${yearKey}Weekly`,
-      () => loadSheetText(`formulaOne${yearKey}Weekly`),
+      async () => {
+        const [, csvText] = await Promise.all([
+          controllerTask,
+          loadSheetText(`formulaOne${yearKey}Weekly`),
+        ]);
+        return csvText;
+      },
       (csvText) => {
         const data = parseFormulaOneWeeklySheet(csvText);
         siteData[`formulaOne${yearKey}Weekly`] = data;
@@ -19418,21 +18655,8 @@ function ensureFormulaOneData(year, view = "questions") {
     ));
   }
 
-  if ((view === "weekly" || view === "weekly-results") && yearKey === "2026") {
-    sourceTasks.push(ensureFormulaOneSource(
-      "formulaOne2026RoundForms",
-      () => loadSheet("formulaOne2026RoundForms"),
-      (rows) => {
-        siteData.formulaOne2026RoundForms = parseFormulaOneRoundForms(rows);
-        renderFormulaOneWeeklyForm(yearKey, siteData.formulaOne2026RoundForms);
-      },
-      (error) => {
-        const form = formulaOneViews[2026]?.weeklyForm;
-        if (form) {
-          form.innerHTML = `<p class="table-message">Unable to load Formula 1 bet forms: ${escapeHtml(getErrorMessage(error))}</p>`;
-        }
-      }
-    ));
+  if ((view === "weekly" || view === "weekly-results") && yearKey === "2026" && siteData.managerSession) {
+    sourceTasks.push(ensureFormulaOneManagerWeeklyData());
   }
 
   return Promise.allSettled(sourceTasks).then((results) => {
@@ -19451,7 +18675,10 @@ function ensureFantasyCriticData(year) {
     return existingPromise;
   }
 
-  const promise = loadFantasyCriticLeague(yearKey);
+  const promise = loadFantasyCriticLeague(yearKey).catch((error) => {
+    fantasyCriticLoadPromises.delete(yearKey);
+    throw error;
+  });
   fantasyCriticLoadPromises.set(yearKey, promise);
   return promise;
 }
@@ -19498,25 +18725,51 @@ function ensureManagerHubData() {
     return ensurePortalManagersData();
   }
 
-  return ensureSharedData("manager-hub", async () => {
-    const loads = [
-      ensurePortalData(),
-      ensureWorldCupStandingsData(),
-      ensureFantasyCriticData(2025),
-      ensureFantasyCriticData(2026),
-      ensureFantasyOfficeData(2025, "results"),
-      ensureFantasyOfficeData(2026, "results"),
-      ensureFormulaOneData(2024, "questions"),
-      ensureFormulaOneData(2025, "questions"),
-      ensureFormulaOneData(2026, "questions"),
-      ensureFormulaOneData(2025, "weekly-results"),
-      ensureFormulaOneData(2026, "weekly-results"),
-    ];
-    if (isCurrentManagerAdmin()) loads.push(ensureFootyMissingNotesData());
-    if (isCurrentManagerAdmin()) loads.push(ensureFormulaOneAdminData());
-    await Promise.allSettled(loads);
+  return ensureSharedData("manager-hub", () => {
+    initializeManagerHubLoadState(getCurrentManagerId());
+
+    trackManagerHubCardLoad("awards", "portal-awards", ensurePortalAwardsData);
+    trackManagerHubCardLoad("notifications", "portal", ensurePortalData);
+    trackManagerHubCardLoad("notifications", "followed-teams", () => followedTeamsController.load());
+    trackManagerHubCardLoad("notifications", "formula-one-weekly", ensureFormulaOneManagerWeeklyData);
+    if (isCurrentManagerAdmin()) {
+      trackManagerHubCardLoad("notifications", "formula-one-admin", ensureFormulaOneAdminData);
+      trackManagerHubCardLoad("notifications", "footy-match-notes", () => deferManagerHubLoad(ensureFootyMissingNotesData, 400));
+    }
+
+    trackManagerHubCardLoad("notifications", "fantasy-critic-2025", () => deferManagerHubLoad(() => ensureFantasyCriticData(2025), 250));
+    trackManagerHubCardLoad("notifications", "fantasy-critic-2026", () => deferManagerHubLoad(() => ensureFantasyCriticData(2026), 250));
+    const managerId = String(getCurrentManagerId() || "");
+    window.setTimeout(() => {
+      if (String(getCurrentManagerId() || "") === managerId) ensureManagerHubResultsForYear(getManagerSummarySelectedYear());
+    }, 100);
     renderManagerHub();
     return true;
+  });
+}
+
+function deferManagerHubLoad(loader, delay) {
+  const managerId = String(getCurrentManagerId() || "");
+  return wait(delay).then(() => {
+    if (!managerId || String(getCurrentManagerId() || "") !== managerId) return null;
+    return loader();
+  });
+}
+
+function ensureManagerHubResultsForYear(year) {
+  const years = year === "all" ? ["2024", "2025", "2026"] : [String(year || "2026")];
+  if (years.includes("2026")) {
+    trackManagerHubCardLoad("results", "world-cup-2026", ensureWorldCupStandingsData);
+  }
+  years.forEach((yearKey) => {
+    if (["2025", "2026"].includes(yearKey)) {
+      trackManagerHubCardLoad("results", `fantasy-critic-${yearKey}`, () => ensureFantasyCriticData(yearKey));
+      trackManagerHubCardLoad("results", `fantasy-office-${yearKey}`, () => ensureFantasyOfficeData(yearKey, "results"));
+    }
+    trackManagerHubCardLoad("results", `formula-one-${yearKey}`, () => ensureFormulaOneData(yearKey, "questions"));
+    if (["2025", "2026"].includes(yearKey)) {
+      trackManagerHubCardLoad("results", `formula-one-weekly-${yearKey}`, () => ensureFormulaOneData(yearKey, "weekly-results"));
+    }
   });
 }
 
@@ -19527,8 +18780,9 @@ async function ensureFootyMissingNotesData() {
     ensureFootyData(),
   ]);
   await ensureFootyMatchNotes({ force: shouldRefreshFootyMatchNotes() });
+  const fixtures = await ensureFootyMissingNotesFixtures();
   renderFootyMissingNotesPage();
-  return getFootyMissingNotesFixtures(siteData.footySchedule);
+  return fixtures;
 }
 
 syncTestScoringUi();

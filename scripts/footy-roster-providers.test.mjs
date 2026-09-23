@@ -40,6 +40,47 @@ test("configured provider IDs include both squad and media sources", () => {
   });
 });
 
+test("TheSportsDB fixtures retain canonical national-team provider IDs", () => {
+  const schedule = {
+    teamSchedules: [{
+      team: { id: "4", name: "USMNT" },
+      fixtures: [{
+        home: "USA",
+        homeProviderTeamId: "134514",
+        homeTeamId: "4",
+        away: "Peru",
+        awayProviderTeamId: "134511",
+        awayTeamId: "team:peru",
+        source: "TheSportsDB",
+      }],
+    }],
+  };
+  const index = buildRosterProviderIndex(schedule);
+  assert.deepEqual(getRosterProviderIds(index, schedule.teamSchedules[0].team), { TheSportsDB: "134514" });
+});
+
+test("merged fixtures use source-specific TheSportsDB IDs", () => {
+  const team = { id: "4", name: "USMNT" };
+  const index = buildRosterProviderIndex({
+    teamSchedules: [{
+      team,
+      fixtures: [{
+        home: "USMNT",
+        homeProviderTeamId: "official-us-id",
+        homeSportDbTeamId: "134514",
+        homeTeamId: "4",
+        away: "Peru",
+        awayProviderTeamId: "official-peru-id",
+        awaySportDbTeamId: "134511",
+        awayTeamId: "team:peru",
+        source: "U.S. Soccer + TheSportsDB",
+        sources: ["U.S. Soccer", "TheSportsDB"],
+      }],
+    }],
+  });
+  assert.deepEqual(getRosterProviderIds(index, team), { TheSportsDB: "134514" });
+});
+
 test("club-name matching ignores common suffixes and accents", () => {
   assert.equal(normalizeRosterClubName("Málaga CF"), "malaga");
   assert.equal(normalizeRosterClubName("Manchester City FC"), normalizeRosterClubName("Manchester City"));

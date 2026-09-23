@@ -22,10 +22,15 @@ export function buildRosterProviderIndex(schedule = {}) {
       const sources = [fixture.source, ...(Array.isArray(fixture.sources) ? fixture.sources : [])]
         .map((value) => String(value || "").toLowerCase());
       const isFootballData = sources.some((value) => value.includes("football-data.org"));
+      const isSportDb = sources.some((value) => value.includes("thesportsdb"));
+      const hasOtherSource = sources.some((value) => value && !value.includes("thesportsdb"));
       for (const side of ["home", "away"]) {
         const providerIds = normalizeProviderIds({
           ...(isFootballData && fixture[`${side}ProviderTeamId`]
             ? { "football-data.org": fixture[`${side}ProviderTeamId`] }
+            : {}),
+          ...(isSportDb && !hasOtherSource && fixture[`${side}ProviderTeamId`]
+            ? { TheSportsDB: fixture[`${side}ProviderTeamId`] }
             : {}),
           ...(fixture[`${side}SportDbTeamId`] ? { TheSportsDB: fixture[`${side}SportDbTeamId`] } : {}),
         });

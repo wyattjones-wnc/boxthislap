@@ -364,11 +364,40 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       },
     );
     pageCache.clear();
-    featuredLoaded = false;
-    await Promise.all([loadFeatured(true), load(true)]);
+    if (replace) {
+      featuredItems = featuredItems.filter(
+        (entry) => !sameTrophy(entry, replace),
+      );
+    }
+    featuredItems = featured
+      ? [
+          ...featuredItems.filter((entry) => !sameTrophy(entry, item)),
+          { ...item, featured: true },
+        ]
+      : featuredItems.filter((entry) => !sameTrophy(entry, item));
+    featuredLoaded = true;
+    syncFeaturedControls();
     window.dispatchEvent(
       new CustomEvent("boxthislap:featured-platinums-changed"),
     );
+  }
+
+  function syncFeaturedControls() {
+    const featuredKeys = new Set(
+      featuredItems.map((entry) => trophyKey(entry.gameId, entry.id)),
+    );
+    state.items.forEach((entry) => {
+      entry.featured = featuredKeys.has(trophyKey(entry.gameId, entry.id));
+    });
+    grid?.querySelectorAll("[data-game-id][data-trophy-id]").forEach((card) => {
+      const item = state.items.find(
+        (entry) =>
+          trophyKey(entry.gameId, entry.id) ===
+          trophyKey(card.dataset.gameId, card.dataset.trophyId),
+      );
+      const actions = card.querySelector(".trophy-log-actions");
+      if (item && actions) actions.innerHTML = renderActions(item, state.view);
+    });
   }
 
   function openSwapDialog(item) {
@@ -402,6 +431,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       closeSwapDialog();
     } catch (error) {
       await loadFeatured(true).catch(() => {});
+      syncFeaturedControls();
       swapStatus.textContent = `${error.message} Close this dialog and try again.`;
     } finally {
       if (swapConfirm) swapConfirm.disabled = !swapReplacement;
@@ -502,6 +532,17 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
   }
 
   return { renderPage };
+}
+
+function sameTrophy(first, second) {
+  return (
+    trophyKey(first?.gameId, first?.id ?? first?.trophyId) ===
+    trophyKey(second?.gameId, second?.id ?? second?.trophyId)
+  );
+}
+
+function trophyKey(gameId, trophyId) {
+  return `${String(gameId || "")}:${Number(trophyId)}`;
 }
 
 function loading(label) {

@@ -11,6 +11,7 @@ type Column = {
 };
 type Table = { name: string; rowCount: number; columns: Column[] };
 type Row = Record<string, unknown>;
+type ActiveCell = { rowIndex: number; columnName: string } | null;
 
 declare global {
   interface Window {
@@ -66,6 +67,7 @@ export function DatabaseAdminPage() {
   const [drafts, setDrafts] = useState<Record<number, Record<string, string>>>(
     {},
   );
+  const [activeCell, setActiveCell] = useState<ActiveCell>(null);
   const [page, setPage] = useState(1);
   const [rowCount, setRowCount] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -84,6 +86,7 @@ export function DatabaseAdminPage() {
     setTableName("");
     setRows([]);
     setColumns([]);
+    setActiveCell(null);
     setPage(1);
     if (!databaseId) return;
     setBusy(true);
@@ -111,6 +114,7 @@ export function DatabaseAdminPage() {
           setRowCount(value.rowCount);
           setPage(value.page);
           setDrafts({});
+          setActiveCell(null);
           setMessage(
             `${value.rowCount.toLocaleString()} rows · showing ${value.rows.length ? (value.page - 1) * value.pageSize + 1 : 0}–${Math.min(value.page * value.pageSize, value.rowCount)}`,
           );
@@ -170,6 +174,7 @@ export function DatabaseAdminPage() {
         delete next[rowIndex];
         return next;
       });
+      setActiveCell(null);
       setMessage("Row saved.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Row save failed.");
@@ -192,7 +197,9 @@ export function DatabaseAdminPage() {
         <h1>Database Explorer</h1>
         <p>
           Browse every application database and make targeted row corrections.
-          Values are edited as JSON so types and nulls remain explicit.
+          Click a value once to activate its editor, then click the editor to
+          place the cursor. Values are edited as JSON so types and nulls remain
+          explicit.
         </p>
       </div>
       <div className="database-admin-controls">
@@ -286,24 +293,47 @@ export function DatabaseAdminPage() {
                       const value =
                         drafts[rowIndex]?.[column.name] ??
                         jsonValue(row[column.name]);
+                      const active =
+                        !locked &&
+                        activeCell?.rowIndex === rowIndex &&
+                        activeCell.columnName === column.name;
                       return (
                         <td key={column.name}>
-                          <textarea
-                            aria-label={`${column.name}, row ${rowIndex + 1}`}
-                            value={value}
-                            readOnly={locked}
-                            rows={Math.min(
-                              4,
-                              Math.max(1, value.split("\n").length),
-                            )}
-                            onChange={(event) =>
-                              changeCell(
-                                rowIndex,
-                                column.name,
-                                event.target.value,
-                              )
-                            }
-                          />
+                          {active ? (
+                            <textarea
+                              aria-label={`${column.name}, row ${rowIndex + 1} editor`}
+                              value={value}
+                              rows={Math.min(
+                                4,
+                                Math.max(1, value.split("\n").length),
+                              )}
+                              onChange={(event) =>
+                                changeCell(
+                                  rowIndex,
+                                  column.name,
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          ) : locked ? (
+                            <span className="database-admin-cell-value is-locked">
+                              {value}
+                            </span>
+                          ) : (
+                            <button
+                              className="database-admin-cell-value"
+                              type="button"
+                              aria-label={`Edit ${column.name}, row ${rowIndex + 1}`}
+                              onClick={() =>
+                                setActiveCell({
+                                  rowIndex,
+                                  columnName: column.name,
+                                })
+                              }
+                            >
+                              {value}
+                            </button>
+                          )}
                         </td>
                       );
                     })}

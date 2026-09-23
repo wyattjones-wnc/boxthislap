@@ -1349,7 +1349,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 .database-admin-table th { position: sticky; top: 0; z-index: 1; }
 .database-admin-table th small { display: block; font-weight: 400; opacity: 0.65; }
 .database-admin-table textarea { width: clamp(128px, 15vw, 288px); resize: vertical; font: 0.8rem/1.35 ui-monospace, monospace; }
-.database-admin-table textarea[readonly] { opacity: 0.65; }
+.database-admin-cell-value { display: block; width: clamp(128px, 15vw, 288px); min-height: 34px; padding: 7px; overflow: hidden; border: 1px solid transparent; border-radius: 4px; background: transparent; color: inherit; font: 0.8rem/1.35 ui-monospace, monospace; text-align: left; text-overflow: ellipsis; white-space: pre; }
+button.database-admin-cell-value { cursor: text; }
+button.database-admin-cell-value:hover,
+button.database-admin-cell-value:focus-visible { border-color: var(--line); background: var(--panel); }
+.database-admin-cell-value.is-locked { opacity: 0.65; }
 .database-admin-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
 
 @media (max-width: 640px) {

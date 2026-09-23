@@ -5,7 +5,8 @@
 - The canonical checkout is `C:\Users\Vhyatt\Documents\ChatGPT\boxthislap` with remote `https://github.com/wyattjones-wnc/boxthislap.git`.
 - Use `dev` unless the user explicitly requests another branch. Do not switch branches when unrelated work could be affected.
 - Preserve unrelated local changes. Never reset, discard, stash, overwrite, commit, or push them without explicit user authorization.
-- Implementation requests authorize local edits and validation, not commits or remote pushes. Push only after the user explicitly confirms completion and authorizes it.
+- Implementation requests authorize local edits and validation, not commits or remote pushes, unless the user explicitly names the remote destination.
+- Phrases such as “include on dev,” “put this on dev,” “make these changes to dev,” “send this to `origin/dev`,” or equivalent wording explicitly authorize validating the task, committing only its scoped changes on `dev`, and pushing them to `origin/dev`. They do not authorize including unrelated changes or pushing to `main`.
 
 ## Context Discipline
 

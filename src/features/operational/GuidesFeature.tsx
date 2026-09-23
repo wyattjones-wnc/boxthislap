@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
   Check,
+  Circle,
+  CircleCheckBig,
   ChevronRight,
   ExternalLink,
   Filter,
@@ -136,7 +138,7 @@ export function GuidesFeature() {
   const [guideId, setGuideId] = useState(readGuideId);
   const guides = useQuery({ queryKey: ["guides"], queryFn: loadGuides });
   const progress = useQuery({
-    enabled: Boolean(managerId && guideId),
+    enabled: Boolean(managerId),
     queryKey: ["guide-progress", managerId],
     queryFn: () => loadProgress(managerId),
   });
@@ -166,10 +168,7 @@ export function GuidesFeature() {
   const visibleGuides = (guides.data?.guides || []).filter(
     (guide) => isAdmin || !guide.isAdmin,
   );
-  if (!guideId)
-    return <GuideIndex guides={visibleGuides} navigate={navigate} />;
   const guide = visibleGuides.find((entry) => entry.id === guideId);
-  if (!guide) return <GuideNotFound navigate={navigate} />;
   if (!managerId)
     return (
       <GuidesError
@@ -177,7 +176,8 @@ export function GuidesFeature() {
         retry={() => undefined}
       />
     );
-  if (progress.isLoading) return <GuidesLoading detail title={guide.name} />;
+  if (progress.isLoading)
+    return <GuidesLoading detail={Boolean(guideId)} title={guide?.name} />;
   if (progress.isError)
     return (
       <GuidesError
@@ -185,6 +185,16 @@ export function GuidesFeature() {
         retry={() => void progress.refetch()}
       />
     );
+  if (!guideId)
+    return (
+      <GuideIndex
+        guides={visibleGuides}
+        navigate={navigate}
+        progress={progress.data || new Set()}
+        steps={guides.data?.steps || []}
+      />
+    );
+  if (!guide) return <GuideNotFound navigate={navigate} />;
 
   return (
     <GuideDetail
@@ -202,10 +212,28 @@ export function GuidesFeature() {
 function GuideIndex({
   guides,
   navigate,
+  progress,
+  steps,
 }: {
   guides: Guide[];
   navigate: (id: string) => void;
+  progress: Set<string>;
+  steps: GuideStep[];
 }) {
+  const [showCompleted, setShowCompleted] = useState(false);
+  const guideSteps = (guideId: string) =>
+    steps.filter((step) => step.guideId === guideId);
+  const isComplete = (guide: Guide) => {
+    const entries = guideSteps(guide.id);
+    return (
+      entries.length > 0 &&
+      entries.every((step) => progress.has(`${step.guideId}::${step.stepId}`))
+    );
+  };
+  const filteredGuides = guides.filter(
+    (guide) => isComplete(guide) === showCompleted,
+  );
+
   return (
     <>
       <div className="section-heading page-heading-with-action footy-heading">
@@ -214,10 +242,23 @@ function GuideIndex({
           <h1>Guides</h1>
           <p className="guides-intro">Pick a guide. We’ll save your place.</p>
         </div>
+        <div className="heading-actions">
+          <IconButton
+            className={`icon-action-button guides-completion-toggle${showCompleted ? " is-active" : ""}`}
+            icon={showCompleted ? <Circle /> : <CircleCheckBig />}
+            label={
+              showCompleted
+                ? "Show uncompleted guides"
+                : "Show completed guides"
+            }
+            aria-pressed={showCompleted}
+            onClick={() => setShowCompleted((value) => !value)}
+          />
+        </div>
       </div>
       <div className="guides-grid">
-        {guides.length ? (
-          guides.map((guide) => (
+        {filteredGuides.length ? (
+          filteredGuides.map((guide) => (
             <a
               className="guide-card"
               href={`?guide=${encodeURIComponent(guide.id)}#guides`}
@@ -235,7 +276,11 @@ function GuideIndex({
             </a>
           ))
         ) : (
-          <p className="table-message">No guides are available yet.</p>
+          <p className="table-message">
+            {showCompleted
+              ? "No completed guides yet."
+              : "No uncompleted guides are available."}
+          </p>
         )}
       </div>
     </>

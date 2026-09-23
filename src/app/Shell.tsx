@@ -241,12 +241,7 @@ export function SiteShell() {
                   <Shield aria-hidden="true" />
                   TheMonsterManiac
                 </a>
-                <a
-                  href="#guides"
-                  data-page-link="guides"
-                  data-non-admin-only
-                  hidden={isAdmin}
-                >
+                <a href="#guides" data-page-link="guides">
                   <BookOpen aria-hidden="true" />
                   Guides
                 </a>

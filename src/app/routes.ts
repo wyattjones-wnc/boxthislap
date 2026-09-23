@@ -29,7 +29,6 @@ export const navItems: Record<NavScope, NavItem[]> = {
     { label: "Home", route: "the-monster-maniac" },
     { label: "To Do", route: "todo" },
     { label: "Want", route: "want" },
-    { label: "Guides", route: "guides" },
     { label: "YouTube", route: "youtube" },
   ],
   "world-cup": [

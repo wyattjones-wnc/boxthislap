@@ -19,4 +19,10 @@ describe("getNavScope", () => {
       ),
     ).toBe(false);
   });
+
+  it("keeps Guides out of the TheMonsterManiac tab strip", () => {
+    expect(
+      navItems["the-monster-maniac"].some((item) => item.route === "guides"),
+    ).toBe(false);
+  });
 });

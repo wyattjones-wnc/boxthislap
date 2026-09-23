@@ -1,4 +1,12 @@
-import { BarChart3, Filter, List, X } from "lucide-react";
+import {
+  BarChart3,
+  Boxes,
+  Database,
+  Filter,
+  Gamepad2,
+  List,
+  X,
+} from "lucide-react";
 import { IconButton } from "../../components/IconButton/IconButton";
 
 function Skeletons({ count }: { count: number }) {
@@ -10,10 +18,81 @@ function Skeletons({ count }: { count: number }) {
 export function AdminHomePage() {
   return (
     <>
+      <div className="admin-home-title">
+        <p className="eyebrow">TheMonsterManiac</p>
+        <h1>Admin Home</h1>
+      </div>
+      <section
+        className="admin-trophy-case"
+        aria-labelledby="admin-trophy-case-heading"
+      >
+        <div className="admin-section-heading">
+          <h2 id="admin-trophy-case-heading">Trophy Case</h2>
+          <a href="#trophy-log" data-page-link="trophy-log">
+            Manage
+          </a>
+        </div>
+        <div
+          className="admin-trophy-case-grid"
+          id="admin-featured-platinums-grid"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <Skeletons count={3} />
+        </div>
+      </section>
+      <section className="admin-tools" aria-labelledby="admin-tools-heading">
+        <h2 id="admin-tools-heading">Tools</h2>
+        <div className="admin-tools-grid">
+          <a className="admin-tool-card" href="#psn" data-page-link="psn">
+            <Gamepad2 aria-hidden="true" />
+            <span>
+              <strong>PSN</strong>
+              <small>Trophies, stats, and PlayStation access</small>
+            </span>
+          </a>
+          <a
+            className="admin-tool-card"
+            href="#collectibles"
+            data-page-link="collectibles"
+          >
+            <Boxes aria-hidden="true" />
+            <span>
+              <strong>Collectibles</strong>
+              <small>Collection checklist and catalog</small>
+            </span>
+          </a>
+          <a
+            className="admin-tool-card"
+            href="#database-admin"
+            data-page-link="database-admin"
+          >
+            <Database aria-hidden="true" />
+            <span>
+              <strong>Database Explorer</strong>
+              <small>Inspect schemas, browse rows, and make corrections</small>
+            </span>
+          </a>
+        </div>
+      </section>
+    </>
+  );
+}
+
+export function PsnPage() {
+  return (
+    <>
       <div className="section-heading page-heading-with-action admin-home-heading">
         <div>
-          <p className="eyebrow">TheMonsterManiac</p>
-          <h1>Home</h1>
+          <a
+            className="back-link"
+            href="#the-monster-maniac"
+            data-page-link="the-monster-maniac"
+          >
+            Admin Home
+          </a>
+          <p className="eyebrow">PlayStation Network</p>
+          <h1>PSN</h1>
         </div>
         <div className="admin-home-actions">
           <a
@@ -86,12 +165,8 @@ export function AdminHomePage() {
 export function TrophyStatsPage() {
   return (
     <>
-      <a
-        className="back-link"
-        href="#the-monster-maniac"
-        data-page-link="the-monster-maniac"
-      >
-        Home
+      <a className="back-link" href="#psn" data-page-link="psn">
+        PSN
       </a>
       <div className="section-heading">
         <p className="eyebrow">PlayStation Network</p>
@@ -277,12 +352,8 @@ export function TrophyLogPage() {
   return (
     <>
       <div className="section-heading">
-        <a
-          className="back-link"
-          href="#the-monster-maniac"
-          data-page-link="the-monster-maniac"
-        >
-          Home
+        <a className="back-link" href="#psn" data-page-link="psn">
+          PSN
         </a>
         <p className="eyebrow">PlayStation Network</p>
         <h1>Trophy Log</h1>
@@ -363,6 +434,45 @@ export function TrophyLogPage() {
         </p>
       </div>
       <div className="trophy-log-pagination" id="trophy-log-pagination" />
+      <dialog
+        className="featured-platinum-swap-dialog"
+        id="featured-platinum-swap-dialog"
+      >
+        <button
+          className="dialog-close"
+          type="button"
+          data-featured-swap-close
+          aria-label="Close featured platinum swap"
+        >
+          <X aria-hidden="true" />
+        </button>
+        <h2>Swap Trophy Case platinum</h2>
+        <p id="featured-platinum-swap-intro" />
+        <div
+          className="featured-platinum-swap-options"
+          id="featured-platinum-swap-options"
+          role="radiogroup"
+          aria-label="Platinum to replace"
+        />
+        <p
+          className="featured-platinum-swap-status"
+          id="featured-platinum-swap-status"
+          role="status"
+        />
+        <div className="featured-platinum-swap-actions">
+          <button type="button" data-featured-swap-close>
+            Cancel
+          </button>
+          <button
+            className="action-button"
+            id="featured-platinum-swap-confirm"
+            type="button"
+            disabled
+          >
+            Swap
+          </button>
+        </div>
+      </dialog>
       <PsnAuthentication />
     </>
   );

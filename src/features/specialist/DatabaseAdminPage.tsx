@@ -1,0 +1,604 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DATABASE_ADMIN_ENDPOINT } from "../../../modules/siteConfig";
+
+type Database = { id: string; label: string };
+type Column = {
+  name: string;
+  type: string;
+  notNull: boolean;
+  primaryKey: number;
+  defaultValue: unknown;
+};
+type Table = { name: string; rowCount: number; columns: Column[] };
+type Row = Record<string, unknown>;
+type ActiveCell = { rowIndex: number; columnName: string } | null;
+type Filter = {
+  column: string;
+  operator: string;
+  value: string;
+  value2: string;
+};
+
+declare global {
+  interface Window {
+    boxThisLapGetManagerAccessToken?: () => Promise<string>;
+  }
+}
+
+async function getAccessTokenBridge() {
+  if (!window.boxThisLapGetManagerAccessToken) {
+    await new Promise<void>((resolve) => {
+      const timeout = window.setTimeout(resolve, 5000);
+      window.addEventListener(
+        "boxthislap:manager-auth-ready",
+        () => {
+          window.clearTimeout(timeout);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+  }
+  return window.boxThisLapGetManagerAccessToken?.();
+}
+
+async function request(path: string, options: RequestInit = {}) {
+  const token = await getAccessTokenBridge();
+  if (!token) throw new Error("Sign in again to open Database Explorer.");
+  const response = await fetch(`${DATABASE_ADMIN_ENDPOINT}${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  const value = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(value.error || "Database request failed.");
+  return value;
+}
+
+function jsonValue(value: unknown) {
+  return JSON.stringify(value) ?? "null";
+}
+
+function isDateColumn(column: Column | undefined) {
+  return Boolean(
+    column &&
+    (/DATE|TIME/i.test(column.type) ||
+      /(^|_)(date|time|submitted|created|updated)(_|$)/i.test(column.name)),
+  );
+}
+
+export function DatabaseAdminPage() {
+  const [databases, setDatabases] = useState<Database[]>([]);
+  const [databaseId, setDatabaseId] = useState("");
+  const [tables, setTables] = useState<Table[]>([]);
+  const [tableName, setTableName] = useState("");
+  const [columns, setColumns] = useState<Column[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [drafts, setDrafts] = useState<Record<number, Record<string, string>>>(
+    {},
+  );
+  const [activeCell, setActiveCell] = useState<ActiveCell>(null);
+  const [filters, setFilters] = useState<Filter[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<Filter[]>([]);
+  const [sort, setSort] = useState<{
+    column: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+  const [page, setPage] = useState(1);
+  const [rowCount, setRowCount] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(
+    "Choose a database to inspect its tables and schema.",
+  );
+
+  useEffect(() => {
+    void request("/api/databases")
+      .then((value) => setDatabases(value.databases))
+      .catch((error) => setMessage(error.message));
+  }, []);
+
+  useEffect(() => {
+    setTables([]);
+    setTableName("");
+    setRows([]);
+    setColumns([]);
+    setActiveCell(null);
+    setFilters([]);
+    setAppliedFilters([]);
+    setSort(null);
+    setPage(1);
+    if (!databaseId) return;
+    setBusy(true);
+    setMessage("Loading tables…");
+    void request(`/api/databases/${encodeURIComponent(databaseId)}/tables`)
+      .then((value) => {
+        setTables(value.tables);
+        setMessage(`${value.tables.length} tables found.`);
+      })
+      .catch((error) => setMessage(error.message))
+      .finally(() => setBusy(false));
+  }, [databaseId]);
+
+  const loadRows = useCallback(
+    (nextPage: number) => {
+      if (!databaseId || !tableName) return;
+      setBusy(true);
+      setMessage("Loading rows…");
+      const query = new URLSearchParams({ page: String(nextPage) });
+      if (sort) {
+        query.set("sort", sort.column);
+        query.set("direction", sort.direction);
+      }
+      if (appliedFilters.length)
+        query.set("filters", JSON.stringify(appliedFilters));
+      void request(
+        `/api/databases/${encodeURIComponent(databaseId)}/tables/${encodeURIComponent(tableName)}/rows?${query}`,
+      )
+        .then((value) => {
+          setColumns(value.columns);
+          setRows(value.rows);
+          setRowCount(value.rowCount);
+          setPage(value.page);
+          setDrafts({});
+          setActiveCell(null);
+          setMessage(
+            `${value.rowCount.toLocaleString()} rows · showing ${value.rows.length ? (value.page - 1) * value.pageSize + 1 : 0}–${Math.min(value.page * value.pageSize, value.rowCount)}`,
+          );
+        })
+        .catch((error) => setMessage(error.message))
+        .finally(() => setBusy(false));
+    },
+    [appliedFilters, databaseId, sort, tableName],
+  );
+
+  useEffect(() => {
+    loadRows(1);
+  }, [loadRows]);
+  const selectedTable = tables.find((table) => table.name === tableName);
+  const primaryKeys = useMemo(
+    () => columns.filter((column) => column.primaryKey),
+    [columns],
+  );
+
+  function changeCell(rowIndex: number, name: string, value: string) {
+    setDrafts((current) => ({
+      ...current,
+      [rowIndex]: { ...(current[rowIndex] || {}), [name]: value },
+    }));
+  }
+
+  function changeFilter(index: number, changes: Partial<Filter>) {
+    setFilters((current) =>
+      current.map((filter, filterIndex) =>
+        filterIndex === index ? { ...filter, ...changes } : filter,
+      ),
+    );
+  }
+
+  function toggleSort(column: string) {
+    setSort((current) => ({
+      column,
+      direction:
+        current?.column === column && current.direction === "asc"
+          ? "desc"
+          : "asc",
+    }));
+    setPage(1);
+  }
+
+  async function saveRow(rowIndex: number) {
+    const draft = drafts[rowIndex];
+    if (!draft) return;
+    let changes: Row;
+    try {
+      changes = Object.fromEntries(
+        Object.entries(draft).map(([name, value]) => [name, JSON.parse(value)]),
+      );
+    } catch {
+      setMessage(
+        "Every edited value must be valid JSON. Use quoted text, a number, true, false, or null.",
+      );
+      return;
+    }
+    const row = rows[rowIndex];
+    const key = Object.fromEntries(
+      primaryKeys.map((column) => [column.name, row[column.name]]),
+    );
+    setBusy(true);
+    setMessage("Saving row…");
+    try {
+      const value = await request(
+        `/api/databases/${encodeURIComponent(databaseId)}/tables/${encodeURIComponent(tableName)}/rows`,
+        { method: "PATCH", body: JSON.stringify({ key, changes }) },
+      );
+      setRows((current) =>
+        current.map((item, index) => (index === rowIndex ? value.row : item)),
+      );
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[rowIndex];
+        return next;
+      });
+      setActiveCell(null);
+      setMessage("Row saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Row save failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="section-heading">
+        <a
+          className="back-link"
+          href="#the-monster-maniac"
+          data-page-link="the-monster-maniac"
+        >
+          Admin Home
+        </a>
+        <p className="eyebrow">Administration</p>
+        <h1>Database Explorer</h1>
+        <p>
+          Browse every application database and make targeted row corrections.
+          Click a value once to activate its editor, then click the editor to
+          place the cursor. Values are edited as JSON so types and nulls remain
+          explicit.
+        </p>
+      </div>
+      <div className="database-admin-controls">
+        <label>
+          <span>Database</span>
+          <select
+            value={databaseId}
+            onChange={(event) => setDatabaseId(event.target.value)}
+          >
+            <option value="">Choose a database</option>
+            {databases.map((database) => (
+              <option value={database.id} key={database.id}>
+                {database.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Table</span>
+          <select
+            value={tableName}
+            disabled={!tables.length}
+            onChange={(event) => {
+              setTableName(event.target.value);
+              setFilters([]);
+              setAppliedFilters([]);
+              setSort(null);
+              setPage(1);
+            }}
+          >
+            <option value="">Choose a table</option>
+            {tables.map((table) => (
+              <option value={table.name} key={table.name}>
+                {table.name} ({table.rowCount.toLocaleString()})
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {selectedTable && (
+        <details className="database-schema">
+          <summary>
+            Table structure · {selectedTable.columns.length} columns
+          </summary>
+          <dl>
+            {selectedTable.columns.map((column) => (
+              <div key={column.name}>
+                <dt>
+                  {column.name}
+                  {column.primaryKey ? " 🔑" : ""}
+                </dt>
+                <dd>
+                  {column.type || "ANY"}
+                  {column.notNull ? " · required" : " · nullable"}
+                  {column.defaultValue !== null
+                    ? ` · default ${String(column.defaultValue)}`
+                    : ""}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+      )}
+      {!!columns.length && (
+        <section
+          className="database-admin-filters"
+          aria-labelledby="database-admin-filters-heading"
+        >
+          <div className="database-admin-filter-heading">
+            <h2 id="database-admin-filters-heading">Filters</h2>
+            <button
+              type="button"
+              onClick={() => {
+                const column = columns[0];
+                setFilters((current) => [
+                  ...current,
+                  {
+                    column: column.name,
+                    operator: isDateColumn(column)
+                      ? "date_between"
+                      : "contains",
+                    value: "",
+                    value2: "",
+                  },
+                ]);
+              }}
+              disabled={filters.length >= 8}
+            >
+              Add filter
+            </button>
+          </div>
+          {filters.map((filter, index) => {
+            const filterColumn = columns.find(
+              (column) => column.name === filter.column,
+            );
+            const dateFilter = filter.operator.startsWith("date_");
+            const noValue = ["is_null", "is_not_null"].includes(
+              filter.operator,
+            );
+            return (
+              <div className="database-admin-filter-row" key={index}>
+                <label>
+                  <span>Column</span>
+                  <select
+                    value={filter.column}
+                    onChange={(event) => {
+                      const column = columns.find(
+                        (item) => item.name === event.target.value,
+                      );
+                      changeFilter(index, {
+                        column: event.target.value,
+                        operator: isDateColumn(column)
+                          ? "date_between"
+                          : "contains",
+                        value: "",
+                        value2: "",
+                      });
+                    }}
+                  >
+                    {columns.map((column) => (
+                      <option value={column.name} key={column.name}>
+                        {column.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Condition</span>
+                  <select
+                    value={filter.operator}
+                    onChange={(event) =>
+                      changeFilter(index, {
+                        operator: event.target.value,
+                        value: "",
+                        value2: "",
+                      })
+                    }
+                  >
+                    <option value="contains">Contains</option>
+                    <option value="equals">Equals</option>
+                    <option value="is_null">Is null</option>
+                    <option value="is_not_null">Is not null</option>
+                    {isDateColumn(filterColumn) && (
+                      <>
+                        <option value="date_between">Date is between</option>
+                        <option value="date_on_or_after">
+                          Date is on or after
+                        </option>
+                        <option value="date_on_or_before">
+                          Date is on or before
+                        </option>
+                      </>
+                    )}
+                  </select>
+                </label>
+                {!noValue && (
+                  <label>
+                    <span>
+                      {filter.operator === "date_between" ? "From" : "Value"}
+                    </span>
+                    <input
+                      type={dateFilter ? "date" : "text"}
+                      value={filter.value}
+                      onChange={(event) =>
+                        changeFilter(index, { value: event.target.value })
+                      }
+                    />
+                  </label>
+                )}
+                {filter.operator === "date_between" && (
+                  <label>
+                    <span>Through</span>
+                    <input
+                      type="date"
+                      value={filter.value2}
+                      onChange={(event) =>
+                        changeFilter(index, { value2: event.target.value })
+                      }
+                    />
+                  </label>
+                )}
+                <button
+                  type="button"
+                  aria-label={`Remove filter ${index + 1}`}
+                  onClick={() =>
+                    setFilters((current) =>
+                      current.filter((_, filterIndex) => filterIndex !== index),
+                    )
+                  }
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+          {!!filters.length && (
+            <div className="database-admin-filter-actions">
+              <button
+                className="action-button"
+                type="button"
+                onClick={() => {
+                  setAppliedFilters(filters.map((filter) => ({ ...filter })));
+                  setPage(1);
+                }}
+              >
+                Apply filters
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters([]);
+                  setAppliedFilters([]);
+                  setPage(1);
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+      <p className="database-admin-status" role="status">
+        {busy ? "Working… " : ""}
+        {message}
+      </p>
+      {!!columns.length && (
+        <>
+          <div className="table-wrap database-admin-table-wrap">
+            <table className="database-admin-table">
+              <thead>
+                <tr>
+                  {columns.map((column) => (
+                    <th key={column.name}>
+                      <button
+                        className="database-admin-sort"
+                        type="button"
+                        aria-label={`Sort by ${column.name}${sort?.column === column.name ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
+                        onClick={() => toggleSort(column.name)}
+                      >
+                        {column.name}
+                        <span aria-hidden="true">
+                          {sort?.column === column.name
+                            ? sort.direction === "asc"
+                              ? " ↑"
+                              : " ↓"
+                            : " ↕"}
+                        </span>
+                      </button>
+                      <small>{column.type || "ANY"}</small>
+                    </th>
+                  ))}
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr
+                    key={
+                      primaryKeys
+                        .map((column) => String(row[column.name]))
+                        .join(":") || rowIndex
+                    }
+                  >
+                    {columns.map((column) => {
+                      const locked = Boolean(column.primaryKey);
+                      const value =
+                        drafts[rowIndex]?.[column.name] ??
+                        jsonValue(row[column.name]);
+                      const active =
+                        !locked &&
+                        activeCell?.rowIndex === rowIndex &&
+                        activeCell.columnName === column.name;
+                      return (
+                        <td key={column.name}>
+                          {active ? (
+                            <textarea
+                              aria-label={`${column.name}, row ${rowIndex + 1} editor`}
+                              value={value}
+                              rows={Math.min(
+                                4,
+                                Math.max(1, value.split("\n").length),
+                              )}
+                              onChange={(event) =>
+                                changeCell(
+                                  rowIndex,
+                                  column.name,
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          ) : locked ? (
+                            <span className="database-admin-cell-value is-locked">
+                              {value}
+                            </span>
+                          ) : (
+                            <button
+                              className="database-admin-cell-value"
+                              type="button"
+                              aria-label={`Edit ${column.name}, row ${rowIndex + 1}`}
+                              onClick={() =>
+                                setActiveCell({
+                                  rowIndex,
+                                  columnName: column.name,
+                                })
+                              }
+                            >
+                              {value}
+                            </button>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td>
+                      <button
+                        className="action-button"
+                        type="button"
+                        disabled={
+                          busy || !drafts[rowIndex] || !primaryKeys.length
+                        }
+                        onClick={() => void saveRow(rowIndex)}
+                      >
+                        Save
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="database-admin-pagination">
+            <button
+              type="button"
+              disabled={busy || page <= 1}
+              onClick={() => loadRows(page - 1)}
+            >
+              Previous
+            </button>
+            <span>
+              Page {page} of {Math.max(1, Math.ceil(rowCount / 50))}
+            </span>
+            <button
+              type="button"
+              disabled={busy || page * 50 >= rowCount}
+              onClick={() => loadRows(page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}

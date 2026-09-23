@@ -1,6 +1,5 @@
 import {
   BookOpen,
-  Boxes,
   CalendarDays,
   Calculator,
   ChartNoAxesColumnIncreasing,
@@ -241,27 +240,13 @@ export function SiteShell() {
                   <Shield aria-hidden="true" />
                   TheMonsterManiac
                 </a>
-                <a
-                  href="#guides"
-                  data-page-link="guides"
-                  data-non-admin-only
-                  hidden={isAdmin}
-                >
+                <a href="#guides" data-page-link="guides">
                   <BookOpen aria-hidden="true" />
                   Guides
                 </a>
                 <a href="#manager-hub" data-page-link="manager-hub">
                   <LayoutDashboard aria-hidden="true" />
                   Manager Hub
-                </a>
-                <a
-                  href="#collectibles"
-                  data-page-link="collectibles"
-                  data-admin-only
-                  hidden={!isAdmin}
-                >
-                  <Boxes aria-hidden="true" />
-                  Collectibles
                 </a>
                 <a href="#account-settings" data-page-link="account-settings">
                   <Settings aria-hidden="true" />

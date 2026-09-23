@@ -29,7 +29,6 @@ export const navItems: Record<NavScope, NavItem[]> = {
     { label: "Home", route: "the-monster-maniac" },
     { label: "To Do", route: "todo" },
     { label: "Want", route: "want" },
-    { label: "Guides", route: "guides" },
     { label: "YouTube", route: "youtube" },
   ],
   "world-cup": [
@@ -74,12 +73,14 @@ export const navItems: Record<NavScope, NavItem[]> = {
 
 const personalRoutes = new Set([
   "the-monster-maniac",
+  "psn",
   "trophy-stats",
   "trophy-log",
   "todo",
   "want",
   "youtube",
   "collectibles",
+  "database-admin",
 ]);
 
 const worldCupRoutes = new Set([

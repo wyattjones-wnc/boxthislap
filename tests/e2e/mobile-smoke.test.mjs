@@ -1906,4 +1906,14 @@ async function prepareAuthenticatedSecondaryRoutes(page) {
       });
     },
   );
+  await page.route(
+    "https://box-this-lap-guides.boxthislap.workers.dev/**",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({ ok: true, progress: [] }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
 }

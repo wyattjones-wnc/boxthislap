@@ -8,10 +8,48 @@ const PAGE_ALIASES = {
   "player-scores": "standings",
 };
 
-const HOME_PAGES = ["footy", "footy-team", "footy-custom-schedule", "footy-missing-notes", "next", "rankings", "guides", "footy-goal-assists", "leagues", "login", "manager-hub", "manager-awards", "draft-list"];
-const THE_MONSTER_MANIAC_PAGES = ["the-monster-maniac", "trophy-stats", "trophy-log", "todo", "want", "youtube", "collectibles"];
-const STANDINGS_TABS = ["players-championship", "nations-league", "manager-results"];
-const WORLD_CUP_PAGES = ["today", "tomorrow", "results", "draft", "standings", "rules", "matches", "bracket", "testing"];
+const HOME_PAGES = [
+  "footy",
+  "footy-team",
+  "footy-custom-schedule",
+  "footy-missing-notes",
+  "next",
+  "rankings",
+  "guides",
+  "footy-goal-assists",
+  "leagues",
+  "login",
+  "manager-hub",
+  "manager-awards",
+  "draft-list",
+];
+const THE_MONSTER_MANIAC_PAGES = [
+  "the-monster-maniac",
+  "psn",
+  "trophy-stats",
+  "trophy-log",
+  "todo",
+  "want",
+  "youtube",
+  "collectibles",
+  "database-admin",
+];
+const STANDINGS_TABS = [
+  "players-championship",
+  "nations-league",
+  "manager-results",
+];
+const WORLD_CUP_PAGES = [
+  "today",
+  "tomorrow",
+  "results",
+  "draft",
+  "standings",
+  "rules",
+  "matches",
+  "bracket",
+  "testing",
+];
 
 export function createRouter({
   draftPanels,
@@ -30,22 +68,34 @@ export function createRouter({
   function showPage(pageName, options = {}) {
     const allowedPageName = PAGE_ALIASES[pageName] || pageName;
     const renderedPageName = getRenderedPageName(allowedPageName);
-    const testRulesBlocked = allowedPageName === "rules" && shouldBlockRulesPage();
+    const testRulesBlocked =
+      allowedPageName === "rules" && shouldBlockRulesPage();
     const pageBlocked = testRulesBlocked || shouldBlockPage(allowedPageName);
-    const pageExists = !pageBlocked && [...pages].some((page) => page.dataset.page === renderedPageName);
+    const pageExists =
+      !pageBlocked &&
+      [...pages].some((page) => page.dataset.page === renderedPageName);
     const activePageName = pageExists ? allowedPageName : "footy";
     const activeRenderedPageName = pageExists ? renderedPageName : "footy";
 
     pages.forEach((page) => {
-      page.classList.toggle("is-active", page.dataset.page === activeRenderedPageName);
+      page.classList.toggle(
+        "is-active",
+        page.dataset.page === activeRenderedPageName,
+      );
     });
 
     pageLinks.forEach((link) => {
-      link.classList.toggle("is-active", link.dataset.pageLink === activePageName);
+      link.classList.toggle(
+        "is-active",
+        link.dataset.pageLink === activePageName,
+      );
     });
 
     headerArt.forEach((art) => {
-      art.classList.toggle("is-active", art.dataset.headerArt === getHeaderArtName(activePageName));
+      art.classList.toggle(
+        "is-active",
+        art.dataset.headerArt === getHeaderArtName(activePageName),
+      );
     });
 
     rememberNavScope(activePageName);
@@ -94,7 +144,10 @@ export function createRouter({
     });
 
     draftPanels.forEach((panel) => {
-      panel.classList.toggle("is-active", panel.dataset.draftPanel === activeView);
+      panel.classList.toggle(
+        "is-active",
+        panel.dataset.draftPanel === activeView,
+      );
     });
   }
 
@@ -258,5 +311,7 @@ function isWorldCupPage(pageName) {
 }
 
 function getRenderedPageName(pageName) {
-  return String(pageName || "").startsWith("footy-team-") ? "footy-team" : pageName;
+  return String(pageName || "").startsWith("footy-team-")
+    ? "footy-team"
+    : pageName;
 }

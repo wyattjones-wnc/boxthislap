@@ -1314,10 +1314,11 @@ body.has-shell-stale-warning .stale-shell-alert {
 .admin-tool-card > svg {
   background: var(--soft);
   border-radius: 8px;
+  box-sizing: content-box;
   flex: 0 0 auto;
-  height: 24px;
-  padding: 8px;
-  width: 24px;
+  height: 26px;
+  padding: 9px;
+  width: 26px;
 }
 
 .admin-tool-card > span {

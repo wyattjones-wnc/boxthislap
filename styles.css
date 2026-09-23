@@ -1180,6 +1180,30 @@ body.has-shell-stale-warning .stale-shell-alert {
   justify-self: end;
 }
 
+.admin-home-title {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+
+.admin-home-title .eyebrow {
+  flex: 0 1 auto;
+  font-size: 0.7rem;
+  margin: 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.admin-home-title h1 {
+  flex: 0 0 auto;
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+  line-height: 1.1;
+  margin: 0;
+  white-space: nowrap;
+}
+
 .admin-trophy-case,
 .admin-tools {
   margin-bottom: 22px;

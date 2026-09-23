@@ -10,7 +10,7 @@ function Skeletons({ count }: { count: number }) {
 export function AdminHomePage() {
   return (
     <>
-      <div className="section-heading">
+      <div className="admin-home-title">
         <p className="eyebrow">TheMonsterManiac</p>
         <h1>Admin Home</h1>
       </div>

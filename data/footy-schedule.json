@@ -1,19 +1,18 @@
 {
-  "generatedAt": "2026-09-22T23:45:10.362Z",
+  "generatedAt": "2026-09-23T00:24:30.570Z",
   "schemaVersion": 4,
-  "source": "football-data.org + TheSportsDB + Arsenal.com + iCalendar",
+  "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-09-22T23:45:10.362Z",
-    "attemptedAt": "2026-09-22T23:45:10.362Z",
-    "updatedAt": "2026-09-22T23:45:10.362Z",
-    "oldestTeamUpdatedAt": "2026-09-22T23:45:10.362Z",
+    "generatedAt": "2026-09-23T00:24:30.570Z",
+    "attemptedAt": "2026-09-23T00:24:30.570Z",
+    "updatedAt": "2026-09-23T00:24:30.570Z",
+    "oldestTeamUpdatedAt": "2026-09-23T00:24:30.570Z",
     "competitionCount": 9,
     "competitionFixtureCount": 2113,
     "teamCount": 7,
-    "fixtureCount": 212,
+    "fixtureCount": 219,
     "statuses": {
-      "updated": 5,
-      "no-fixtures": 2
+      "updated": 7
     }
   },
   "prioritySets": [
@@ -41,18 +40,18 @@
     }
   ],
   "footyMatchRegistry": {
-    "matchCount": 249,
+    "matchCount": 256,
     "sync": {
       "status": "synced",
-      "rows": 249,
-      "syncedAt": "2026-09-22T23:45:10.362Z",
-      "appended": 0,
+      "rows": 256,
+      "syncedAt": "2026-09-23T00:24:30.570Z",
+      "appended": 7,
       "updated": 249
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-09-22T23:49:50.626Z",
+      "attemptedAt": "2026-09-23T00:29:23.913Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -13905,15 +13904,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:17.213Z",
+      "attemptedAt": "2026-09-23T00:29:50.109Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -13934,10 +13933,12 @@
           "away": "Rochdale",
           "awayBadge": "",
           "awayProviderTeamId": "134364",
+          "awaySportDbTeamId": "134364",
           "date": "2026-08-01",
           "home": "Tranmere Rovers",
           "homeBadge": "",
           "homeProviderTeamId": "134267",
+          "homeSportDbTeamId": "134267",
           "id": "TheSportsDB:2491635",
           "leagueId": "4570",
           "league": "EFL Cup",
@@ -13971,10 +13972,12 @@
           "away": "Crawley Town",
           "awayBadge": "",
           "awayProviderTeamId": "134363",
+          "awaySportDbTeamId": "134363",
           "date": "2026-08-03",
           "home": "York City",
           "homeBadge": "",
           "homeProviderTeamId": "134383",
+          "homeSportDbTeamId": "134383",
           "id": "TheSportsDB:2491636",
           "leagueId": "4570",
           "league": "EFL Cup",
@@ -14008,10 +14011,12 @@
           "away": "Walsall",
           "awayBadge": "",
           "awayProviderTeamId": "134240",
+          "awaySportDbTeamId": "134240",
           "date": "2026-08-06",
           "home": "Bristol City",
           "homeBadge": "",
           "homeProviderTeamId": "133621",
+          "homeSportDbTeamId": "133621",
           "id": "TheSportsDB:2503736",
           "leagueId": "4570",
           "league": "EFL Cup",
@@ -14045,10 +14050,12 @@
           "away": "Port Vale",
           "awayBadge": "",
           "awayProviderTeamId": "134375",
+          "awaySportDbTeamId": "134375",
           "date": "2026-08-07",
           "home": "Wolverhampton Wanderers",
           "homeBadge": "",
           "homeProviderTeamId": "133599",
+          "homeSportDbTeamId": "133599",
           "id": "TheSportsDB:2503731",
           "leagueId": "4570",
           "league": "EFL Cup",
@@ -14082,10 +14089,12 @@
           "away": "Wrexham",
           "awayBadge": "",
           "awayProviderTeamId": "134775",
+          "awaySportDbTeamId": "134775",
           "date": "2026-08-07",
           "home": "Middlesbrough",
           "homeBadge": "",
           "homeProviderTeamId": "133628",
+          "homeSportDbTeamId": "133628",
           "id": "TheSportsDB:2503739",
           "leagueId": "4570",
           "league": "EFL Cup",
@@ -14121,15 +14130,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:03.720Z",
+      "attemptedAt": "2026-09-23T00:29:36.766Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19393,15 +19402,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:10.836Z",
+      "attemptedAt": "2026-09-23T00:29:43.332Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -33294,15 +33303,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:17.210Z",
+      "attemptedAt": "2026-09-23T00:29:50.105Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -53336,15 +53345,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:17.214Z",
+      "attemptedAt": "2026-09-23T00:29:50.109Z",
       "competition": {
         "code": "SDE",
         "followedTeamNames": [
@@ -53365,10 +53374,12 @@
           "away": "Atlético Madrid",
           "awayBadge": "",
           "awayProviderTeamId": "133729",
+          "awaySportDbTeamId": "133729",
           "date": "2027-02-02",
           "home": "Barcelona",
           "homeBadge": "",
           "homeProviderTeamId": "133739",
+          "homeSportDbTeamId": "133739",
           "id": "TheSportsDB:2546487",
           "leagueId": "4511",
           "league": "Supercopa de Espana",
@@ -53405,10 +53416,12 @@
           "away": "Real Madrid",
           "awayBadge": "",
           "awayProviderTeamId": "133738",
+          "awaySportDbTeamId": "133738",
           "date": "2027-02-02",
           "home": "Real Sociedad",
           "homeBadge": "",
           "homeProviderTeamId": "133724",
+          "homeSportDbTeamId": "133724",
           "id": "TheSportsDB:2546488",
           "leagueId": "4511",
           "league": "Supercopa de Espana",
@@ -53442,15 +53455,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:22.893Z",
+      "attemptedAt": "2026-09-23T00:29:56.080Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -71456,15 +71469,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:22.900Z",
+      "attemptedAt": "2026-09-23T00:29:56.087Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -74223,15 +74236,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     },
     {
-      "attemptedAt": "2026-09-22T23:50:22.904Z",
+      "attemptedAt": "2026-09-23T00:29:56.092Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -76435,12 +76448,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-22T23:45:10.362Z"
+      "updatedAt": "2026-09-23T00:24:30.570Z"
     }
   ],
   "teamCatalog": [
@@ -76523,7 +76536,8 @@
       "name": "Arsenal",
       "prettyName": "Arsenal Football Club",
       "providerTeamIds": {
-        "football-data.org": "57"
+        "football-data.org": "57",
+        "TheSportsDB": "133604"
       }
     },
     {
@@ -76706,7 +76720,9 @@
       ],
       "name": "Atlético Madrid",
       "prettyName": "Atlético Madrid",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "133729"
+      }
     },
     {
       "active": true,
@@ -76817,7 +76833,8 @@
       "name": "Barcelona",
       "prettyName": "Futbol Club Barcelona",
       "providerTeamIds": {
-        "football-data.org": "81"
+        "football-data.org": "81",
+        "TheSportsDB": "133739"
       }
     },
     {
@@ -77001,7 +77018,8 @@
       "name": "Bristol City",
       "prettyName": "Bristol City",
       "providerTeamIds": {
-        "football-data.org": "387"
+        "football-data.org": "387",
+        "TheSportsDB": "133621"
       }
     },
     {
@@ -77021,7 +77039,8 @@
       "name": "Bristol City FC",
       "prettyName": "Bristol City FC",
       "providerTeamIds": {
-        "football-data.org": "387"
+        "football-data.org": "387",
+        "TheSportsDB": "133621"
       }
     },
     {
@@ -77063,6 +77082,20 @@
       "providerTeamIds": {
         "football-data.org": "79"
       }
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:canada",
+      "leagues": [
+        {
+          "id": "cesdwwnxbc5fmajgroc0hqzy2",
+          "name": "International Friendly"
+        }
+      ],
+      "name": "Canada",
+      "prettyName": "Canada",
+      "providerTeamIds": {}
     },
     {
       "active": true,
@@ -77302,6 +77335,20 @@
       ],
       "name": "Chicago Fire FC*",
       "prettyName": "Chicago Fire FC*",
+      "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:chile",
+      "leagues": [
+        {
+          "id": "cesdwwnxbc5fmajgroc0hqzy2",
+          "name": "International Friendly"
+        }
+      ],
+      "name": "Chile",
+      "prettyName": "Chile",
       "providerTeamIds": {}
     },
     {
@@ -77648,7 +77695,9 @@
       ],
       "name": "Crawley Town",
       "prettyName": "Crawley Town",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134363"
+      }
     },
     {
       "active": true,
@@ -77775,7 +77824,8 @@
       "name": "Derby County FC",
       "prettyName": "Derby County FC",
       "providerTeamIds": {
-        "football-data.org": "342"
+        "football-data.org": "342",
+        "TheSportsDB": "133627"
       }
     },
     {
@@ -77832,6 +77882,20 @@
       ],
       "name": "El Paso Locomotive",
       "prettyName": "El Paso Locomotive",
+      "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:el-salvador-women",
+      "leagues": [
+        {
+          "id": "ecgvhmaf0m808fxsry941v8ak",
+          "name": "Concacaf W Championship"
+        }
+      ],
+      "name": "El Salvador Women",
+      "prettyName": "El Salvador Women",
       "providerTeamIds": {}
     },
     {
@@ -78235,7 +78299,8 @@
       "name": "Getafe CF",
       "prettyName": "Getafe CF",
       "providerTeamIds": {
-        "football-data.org": "82"
+        "football-data.org": "82",
+        "TheSportsDB": "133731"
       }
     },
     {
@@ -78495,7 +78560,8 @@
       "name": "Leeds United",
       "prettyName": "Leeds United",
       "providerTeamIds": {
-        "football-data.org": "341"
+        "football-data.org": "341",
+        "TheSportsDB": "133635"
       }
     },
     {
@@ -78515,7 +78581,8 @@
       "name": "Leeds United FC",
       "prettyName": "Leeds United FC",
       "providerTeamIds": {
-        "football-data.org": "341"
+        "football-data.org": "341",
+        "TheSportsDB": "133635"
       }
     },
     {
@@ -78787,6 +78854,20 @@
     {
       "active": true,
       "badge": "",
+      "id": "team:mexico",
+      "leagues": [
+        {
+          "id": "cesdwwnxbc5fmajgroc0hqzy2",
+          "name": "International Friendly"
+        }
+      ],
+      "name": "Mexico",
+      "prettyName": "Mexico",
+      "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
       "id": "team:michigan-rangers-fc",
       "leagues": [
         {
@@ -78815,7 +78896,8 @@
       "name": "Middlesbrough",
       "prettyName": "Middlesbrough",
       "providerTeamIds": {
-        "football-data.org": "343"
+        "football-data.org": "343",
+        "TheSportsDB": "133628"
       }
     },
     {
@@ -78835,7 +78917,8 @@
       "name": "Middlesbrough FC",
       "prettyName": "Middlesbrough FC",
       "providerTeamIds": {
-        "football-data.org": "343"
+        "football-data.org": "343",
+        "TheSportsDB": "133628"
       }
     },
     {
@@ -79161,6 +79244,22 @@
     {
       "active": true,
       "badge": "",
+      "id": "team:peru",
+      "leagues": [
+        {
+          "id": "cesdwwnxbc5fmajgroc0hqzy2",
+          "name": "International Friendly"
+        }
+      ],
+      "name": "Peru",
+      "prettyName": "Peru",
+      "providerTeamIds": {
+        "TheSportsDB": "136162"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
       "id": "team:philadelphia-union",
       "leagues": [
         {
@@ -79220,7 +79319,9 @@
       ],
       "name": "Port Vale",
       "prettyName": "Port Vale",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134375"
+      }
     },
     {
       "active": true,
@@ -79519,7 +79620,8 @@
       "name": "Real Madrid",
       "prettyName": "Real Madrid",
       "providerTeamIds": {
-        "football-data.org": "86"
+        "football-data.org": "86",
+        "TheSportsDB": "133738"
       }
     },
     {
@@ -79547,7 +79649,8 @@
       "name": "Real Madrid CF",
       "prettyName": "Real Madrid CF",
       "providerTeamIds": {
-        "football-data.org": "86"
+        "football-data.org": "86",
+        "TheSportsDB": "133738"
       }
     },
     {
@@ -79600,7 +79703,9 @@
       ],
       "name": "Real Sociedad",
       "prettyName": "Real Sociedad",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "133724"
+      }
     },
     {
       "active": true,
@@ -79712,7 +79817,9 @@
       ],
       "name": "Rochdale",
       "prettyName": "Rochdale",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134364"
+      }
     },
     {
       "active": true,
@@ -79961,6 +80068,22 @@
       "name": "Southern Indiana FC",
       "prettyName": "Southern Indiana FC",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:spain-women",
+      "leagues": [
+        {
+          "id": "dvtl8sf1262pd2aqgu641qa7u",
+          "name": "International Friendly"
+        }
+      ],
+      "name": "Spain Women",
+      "prettyName": "Spain Women",
+      "providerTeamIds": {
+        "TheSportsDB": "136807"
+      }
     },
     {
       "active": true,
@@ -80220,7 +80343,9 @@
       ],
       "name": "Tranmere Rovers",
       "prettyName": "Tranmere Rovers",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134267"
+      }
     },
     {
       "active": true,
@@ -80244,11 +80369,17 @@
         {
           "id": "international",
           "name": "International"
+        },
+        {
+          "id": "cesdwwnxbc5fmajgroc0hqzy2",
+          "name": "International Friendly"
         }
       ],
       "name": "USMNT",
       "prettyName": "United States Men's National Team",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134514"
+      }
     },
     {
       "active": true,
@@ -80256,13 +80387,23 @@
       "id": "5",
       "leagues": [
         {
+          "id": "ecgvhmaf0m808fxsry941v8ak",
+          "name": "Concacaf W Championship"
+        },
+        {
           "id": "international",
           "name": "International"
+        },
+        {
+          "id": "dvtl8sf1262pd2aqgu641qa7u",
+          "name": "International Friendly"
         }
       ],
       "name": "USWNT",
       "prettyName": "United States Women's National Team",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "136819"
+      }
     },
     {
       "active": true,
@@ -80426,7 +80567,9 @@
       ],
       "name": "Walsall",
       "prettyName": "Walsall",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134240"
+      }
     },
     {
       "active": true,
@@ -80529,7 +80672,8 @@
       "name": "Wolverhampton Wanderers",
       "prettyName": "Wolverhampton Wanderers",
       "providerTeamIds": {
-        "football-data.org": "76"
+        "football-data.org": "76",
+        "TheSportsDB": "133599"
       }
     },
     {
@@ -80549,7 +80693,8 @@
       "name": "Wolverhampton Wanderers FC",
       "prettyName": "Wolverhampton Wanderers FC",
       "providerTeamIds": {
-        "football-data.org": "76"
+        "football-data.org": "76",
+        "TheSportsDB": "133599"
       }
     },
     {
@@ -80581,7 +80726,8 @@
       "name": "Wrexham",
       "prettyName": "Wrexham Association Football Club",
       "providerTeamIds": {
-        "football-data.org": "404"
+        "football-data.org": "404",
+        "TheSportsDB": "134775"
       }
     },
     {
@@ -80596,14 +80742,16 @@
       ],
       "name": "York City",
       "prettyName": "York City",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134383"
+      }
     }
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -81160,6 +81308,8 @@
           "venue": "Emirates Stadium",
           "awayProviderTeamId": "341",
           "homeProviderTeamId": "57",
+          "awaySportDbTeamId": "133635",
+          "homeSportDbTeamId": "133604",
           "lastSeen": "",
           "matchId": "footy_de2b62cce9c3",
           "isFriendly": false,
@@ -82806,19 +82956,19 @@
         }
       ],
       "notes": [
-        "Loaded 40 SCHEDULED matches from 2026-09-22 through 2027-09-22.",
+        "Loaded 40 SCHEDULED matches from 2026-09-23 through 2027-09-23.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 41 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-09-22.",
+        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-09-23.",
         "Preserved 7 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -83381,7 +83531,9 @@
           "timestamp": "2026-10-10T16:30:00Z",
           "venue": "Spotify Camp Nou",
           "awayProviderTeamId": "82",
+          "awaySportDbTeamId": "133731",
           "homeProviderTeamId": "81",
+          "homeSportDbTeamId": "133739",
           "lastSeen": "",
           "matchId": "footy_d41e6d566583",
           "isFriendly": false,
@@ -84269,7 +84421,9 @@
           "timestamp": "2027-02-02T19:00:00Z",
           "venue": "Atatürk Olimpiyat Stadyumu",
           "awayProviderTeamId": "133729",
+          "awaySportDbTeamId": "133729",
           "homeProviderTeamId": "133739",
+          "homeSportDbTeamId": "133739",
           "lastSeen": "",
           "matchId": "footy_a5b59cc4e61f",
           "isFriendly": false,
@@ -84932,18 +85086,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-09-22 through 2027-09-22.",
+        "Loaded 38 SCHEDULED matches from 2026-09-23 through 2027-09-23.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-22.",
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-23.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -85469,7 +85623,9 @@
           "timestamp": "2026-10-10T14:00:00Z",
           "venue": "Pride Park Stadium",
           "awayProviderTeamId": "404",
+          "awaySportDbTeamId": "134775",
           "homeProviderTeamId": "342",
+          "homeSportDbTeamId": "133627",
           "lastSeen": "",
           "matchId": "footy_279354acac55",
           "isFriendly": false,
@@ -86921,19 +87077,19 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-09-22 through 2027-09-22.",
+        "Loaded 38 SCHEDULED matches from 2026-09-23 through 2027-09-23.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 43 iCalendar fixtures from 2026-07-01 through 2027-09-22.",
+        "Loaded 43 iCalendar fixtures from 2026-07-01 through 2027-09-23.",
         "Preserved 7 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
-      "status": "no-fixtures",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
+      "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
         "id": "4",
@@ -86942,20 +87098,168 @@
         "prettyName": "United States Men's National Team",
         "priority": "4"
       },
-      "sources": [],
-      "fixtureCount": 0,
-      "fixtures": [],
+      "sources": [
+        "TheSportsDB",
+        "U.S. Soccer"
+      ],
+      "fixtureCount": 4,
+      "fixtures": [
+        {
+          "away": "Peru",
+          "awayBadge": "",
+          "awayProviderTeamId": "a9sendamrqqz1uv4jc89mfum8",
+          "awaySportDbTeamId": "136162",
+          "date": "2026-09-26",
+          "home": "USMNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
+          "homeSportDbTeamId": "134514",
+          "id": "",
+          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
+          "isHome": true,
+          "league": "International Friendly",
+          "opponent": "Peru",
+          "priority": "4",
+          "round": "0",
+          "season": "2026",
+          "source": "U.S. Soccer + TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2578507"
+          },
+          "sources": [
+            "U.S. Soccer",
+            "TheSportsDB"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/usmnt.svg",
+          "teamId": "4",
+          "teamName": "USMNT",
+          "time": "20:30:00",
+          "timestamp": "2026-09-26T20:30:00.000Z",
+          "venue": "Inter.co Stadium",
+          "lastSeen": "",
+          "matchId": "footy_comp_thesportsdb_2578507",
+          "isFriendly": true,
+          "homeTeamId": "4",
+          "awayTeamId": "team:peru"
+        },
+        {
+          "away": "Chile",
+          "awayBadge": "",
+          "awayProviderTeamId": "4etj58jfe5zmfspk9pl7jfzr3",
+          "date": "2026-09-30",
+          "home": "USMNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
+          "id": "",
+          "isHome": true,
+          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
+          "league": "International Friendly",
+          "opponent": "Chile",
+          "priority": "4",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/usmnt.svg",
+          "teamId": "4",
+          "teamName": "USMNT",
+          "time": "00:00:00",
+          "timestamp": "2026-09-30T00:00:00.000Z",
+          "venue": "Energizer Park",
+          "isFriendly": true,
+          "matchId": "footy_a73f0d623665",
+          "homeTeamId": "4",
+          "awayTeamId": "team:chile"
+        },
+        {
+          "away": "Mexico",
+          "awayBadge": "",
+          "awayProviderTeamId": "4vofb84dzb5fyc81n2ssws6ah",
+          "date": "2026-10-04",
+          "home": "USMNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
+          "id": "",
+          "isHome": true,
+          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
+          "league": "International Friendly",
+          "opponent": "Mexico",
+          "priority": "4",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/usmnt.svg",
+          "teamId": "4",
+          "teamName": "USMNT",
+          "time": "02:00:00",
+          "timestamp": "2026-10-04T02:00:00.000Z",
+          "venue": "State Farm Stadium",
+          "isFriendly": true,
+          "matchId": "footy_76fb8c43567a",
+          "homeTeamId": "4",
+          "awayTeamId": "team:mexico"
+        },
+        {
+          "away": "Canada",
+          "awayBadge": "",
+          "awayProviderTeamId": "eg7vduna0h3vis1wd47s41za7",
+          "date": "2026-10-07",
+          "home": "USMNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
+          "id": "",
+          "isHome": true,
+          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
+          "league": "International Friendly",
+          "opponent": "Canada",
+          "priority": "4",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/usmnt.svg",
+          "teamId": "4",
+          "teamName": "USMNT",
+          "time": "00:00:00",
+          "timestamp": "2026-10-07T00:00:00.000Z",
+          "venue": "Allianz Field",
+          "isFriendly": true,
+          "matchId": "footy_fc1b01ee7f10",
+          "homeTeamId": "4",
+          "awayTeamId": "team:canada"
+        }
+      ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
-        "Skipped TheSportsDB; no SportDB Team ID configured."
+        "No TheSportsDB League IDs configured; team-upcoming matches still checked.",
+        "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
+        "Loaded 4 U.S. Soccer fixtures."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
-      "status": "no-fixtures",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
+      "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
         "id": "5",
@@ -86964,19 +87268,133 @@
         "prettyName": "United States Women's National Team",
         "priority": "5"
       },
-      "sources": [],
-      "fixtureCount": 0,
-      "fixtures": [],
+      "sources": [
+        "TheSportsDB",
+        "U.S. Soccer"
+      ],
+      "fixtureCount": 3,
+      "fixtures": [
+        {
+          "away": "Spain Women",
+          "awayBadge": "",
+          "awayProviderTeamId": "70yx9y5zxeojm8sde0qyolzpl",
+          "awaySportDbTeamId": "136807",
+          "date": "2026-10-10",
+          "home": "USWNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "e70zl10x0ayu7y10ry0wi465a",
+          "homeSportDbTeamId": "136819",
+          "id": "",
+          "leagueId": "dvtl8sf1262pd2aqgu641qa7u",
+          "isHome": true,
+          "league": "International Friendly",
+          "opponent": "Spain Women",
+          "priority": "5",
+          "round": "0",
+          "season": "2026",
+          "source": "U.S. Soccer + TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2549112"
+          },
+          "sources": [
+            "U.S. Soccer",
+            "TheSportsDB"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/uswnt.svg",
+          "teamId": "5",
+          "teamName": "USWNT",
+          "time": "18:30:00",
+          "timestamp": "2026-10-10T18:30:00.000Z",
+          "venue": "Audi Field",
+          "lastSeen": "",
+          "matchId": "footy_comp_thesportsdb_2549112",
+          "isFriendly": true,
+          "homeTeamId": "5",
+          "awayTeamId": "team:spain-women"
+        },
+        {
+          "away": "Spain Women",
+          "awayBadge": "",
+          "awayProviderTeamId": "70yx9y5zxeojm8sde0qyolzpl",
+          "date": "2026-10-13",
+          "home": "USWNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "e70zl10x0ayu7y10ry0wi465a",
+          "id": "",
+          "isHome": true,
+          "leagueId": "dvtl8sf1262pd2aqgu641qa7u",
+          "league": "International Friendly",
+          "opponent": "Spain Women",
+          "priority": "5",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/uswnt.svg",
+          "teamId": "5",
+          "teamName": "USWNT",
+          "time": "23:00:00",
+          "timestamp": "2026-10-13T23:00:00.000Z",
+          "venue": "Subaru Park",
+          "isFriendly": true,
+          "matchId": "footy_07622a13ce8d",
+          "homeTeamId": "5",
+          "awayTeamId": "team:spain-women"
+        },
+        {
+          "away": "El Salvador Women",
+          "awayBadge": "",
+          "awayProviderTeamId": "5ri638ndnnz9ju4lbeg33uvsc",
+          "date": "2026-11-27",
+          "home": "USWNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "e70zl10x0ayu7y10ry0wi465a",
+          "id": "",
+          "isHome": true,
+          "leagueId": "ecgvhmaf0m808fxsry941v8ak",
+          "league": "Concacaf W Championship",
+          "opponent": "El Salvador Women",
+          "priority": "5",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/uswnt.svg",
+          "teamId": "5",
+          "teamName": "USWNT",
+          "time": "19:30:00",
+          "timestamp": "2026-11-27T19:30:00.000Z",
+          "venue": "Texas Health Mansfield Stadium",
+          "isFriendly": false,
+          "matchId": "footy_2aeb5e8d8c53",
+          "homeTeamId": "5",
+          "awayTeamId": "team:el-salvador-women"
+        }
+      ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
-        "Skipped TheSportsDB; no SportDB Team ID configured."
+        "No TheSportsDB League IDs configured; team-upcoming matches still checked.",
+        "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
+        "Loaded 3 U.S. Soccer fixtures."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -88010,15 +88428,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-09-22.",
+        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-09-23.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-22T23:45:10.362Z",
-      "updatedAt": "2026-09-22T23:45:10.362Z",
-      "previousUpdatedAt": "2026-09-17T17:24:07.617Z",
+      "attemptedAt": "2026-09-23T00:24:30.570Z",
+      "updatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-22T23:45:10.362Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -88946,7 +89364,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-09-22.",
+        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-09-23.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

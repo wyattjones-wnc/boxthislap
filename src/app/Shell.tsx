@@ -1,6 +1,5 @@
 import {
   BookOpen,
-  Boxes,
   CalendarDays,
   Calculator,
   ChartNoAxesColumnIncreasing,
@@ -248,15 +247,6 @@ export function SiteShell() {
                 <a href="#manager-hub" data-page-link="manager-hub">
                   <LayoutDashboard aria-hidden="true" />
                   Manager Hub
-                </a>
-                <a
-                  href="#collectibles"
-                  data-page-link="collectibles"
-                  data-admin-only
-                  hidden={!isAdmin}
-                >
-                  <Boxes aria-hidden="true" />
-                  Collectibles
                 </a>
                 <a href="#account-settings" data-page-link="account-settings">
                   <Settings aria-hidden="true" />

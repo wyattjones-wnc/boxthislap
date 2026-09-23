@@ -2,11 +2,20 @@ export function createPlatinumsController({ endpoint, getAccessToken }) {
   const favoriteDetails = document.querySelector("#favorite-trophies-card");
   const request = async (path) => {
     const token = await getAccessToken();
-    const response = await fetch(`${String(endpoint).replace(/\/$/, "")}${path}`, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-    });
+    const response = await fetch(
+      `${String(endpoint).replace(/\/$/, "")}${path}`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
     const value = await response.json().catch(() => null);
-    if (!response.ok || !value?.ok) throw new Error(value?.error || `Trophy request failed (${response.status}).`);
+    if (!response.ok || !value?.ok)
+      throw new Error(
+        value?.error || `Trophy request failed (${response.status}).`,
+      );
     return value;
   };
   const platinums = createTrophyListController({
@@ -15,7 +24,10 @@ export function createPlatinumsController({ endpoint, getAccessToken }) {
     errorLabel: "Platinums",
     grid: document.querySelector("#admin-platinums-grid"),
     initialItemLimit: 6,
-    loadItems: () => request("/api/psn/platinums?limit=250").then((value) => value.items || []),
+    loadItems: () =>
+      request("/api/psn/platinums?limit=250").then(
+        (value) => value.items || [],
+      ),
     showMoreButton: document.querySelector("#admin-platinums-show-more"),
     sortItems: comparePlatinums,
   });
@@ -23,13 +35,26 @@ export function createPlatinumsController({ endpoint, getAccessToken }) {
     emptyMessage: "No favorite trophies are available yet.",
     errorLabel: "Favorite Trophies",
     grid: document.querySelector("#favorite-trophies-grid"),
-    loadItems: () => request("/api/psn/trophy-log?view=favorites&limit=250").then((value) => value.items || []),
+    loadItems: () =>
+      request("/api/psn/trophy-log?view=favorites&limit=250").then(
+        (value) => value.items || [],
+      ),
     showDescription: true,
     sortItems: compareEarnedDates,
+  });
+  const featured = createFeaturedCaseController({
+    grid: document.querySelector("#admin-featured-platinums-grid"),
+    loadItems: () =>
+      request("/api/psn/featured-platinums").then((value) => value.items || []),
   });
 
   window.addEventListener("boxthislap:trophy-preferences-changed", () => {
     favorites.invalidate();
+  });
+  window.addEventListener("boxthislap:featured-platinums-changed", () => {
+    featured.invalidate();
+    if (window.location.hash === "#the-monster-maniac")
+      void featured.renderPage().catch(() => {});
   });
 
   favoriteDetails?.addEventListener("toggle", () => {
@@ -38,13 +63,74 @@ export function createPlatinumsController({ endpoint, getAccessToken }) {
     }
   });
 
-  function renderPage() {
+  function renderPsnPage() {
     const loads = [platinums.renderPage()];
     if (favoriteDetails?.open) loads.push(favorites.renderPage());
     return Promise.all(loads);
   }
 
-  return { renderPage };
+  return { renderAdminHome: featured.renderPage, renderPsnPage };
+}
+
+function createFeaturedCaseController({ grid, loadItems }) {
+  let items = null;
+  let loadPromise = null;
+
+  grid?.addEventListener("click", (event) => {
+    if (event.target.closest(".admin-trophy-case-empty")) {
+      sessionStorage.setItem("boxThisLapTrophyLogView", "platinums");
+    }
+  });
+
+  function renderPage() {
+    if (!grid) return Promise.resolve([]);
+    if (items) {
+      renderItems();
+      return Promise.resolve(items);
+    }
+    grid.setAttribute("aria-busy", "true");
+    if (!loadPromise) {
+      loadPromise = loadItems()
+        .then((rows) => {
+          items = rows
+            .map(normalizeTrophy)
+            .filter((item) => item.id && item.imageUrl)
+            .sort(comparePlatinums);
+          renderItems();
+          return items;
+        })
+        .catch((error) => {
+          loadPromise = null;
+          grid.setAttribute("aria-busy", "false");
+          grid.innerHTML = `<p class="table-message">Unable to load the Trophy Case: ${escapeHtml(error?.message || "Please try again.")}</p>`;
+          throw error;
+        });
+    }
+    return loadPromise;
+  }
+
+  function renderItems() {
+    grid.setAttribute("aria-busy", "false");
+    const cards = items.slice(0, 3).map((item) => {
+      const label =
+        [item.platinumName, item.gameName].filter(Boolean).join(" - ") ||
+        `Platinum ${item.number}`;
+      return `<article class="admin-trophy-case-item"><span class="platinum-image-frame"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span><strong>${escapeHtml(item.gameName || item.platinumName)}</strong><small>#${escapeHtml(item.number)}</small><span class="sr-only">${escapeHtml(label)}</span></article>`;
+    });
+    while (cards.length < 3) {
+      cards.push(
+        `<a class="admin-trophy-case-empty" href="#trophy-log" data-page-link="trophy-log"><span aria-hidden="true">+</span><strong>Feature a platinum</strong></a>`,
+      );
+    }
+    grid.innerHTML = cards.join("");
+  }
+
+  function invalidate() {
+    items = null;
+    loadPromise = null;
+  }
+
+  return { invalidate, renderPage };
 }
 
 function createTrophyListController({
@@ -108,20 +194,27 @@ function createTrophyListController({
       return;
     }
 
-    const visibleItems = initialItemLimit && !showAll ? items.slice(0, initialItemLimit) : items;
-    grid.innerHTML = visibleItems.map((item) => {
-      const expanded = item.id === expandedId;
-      const label = [item.platinumName, item.gameName].filter(Boolean).join(" - ") || `Trophy ${item.trophyNumber || item.id}`;
-      const metadata = [
-        item.number ? `Platinum Number: ${item.number}` : "",
-        item.trophyNumber ? `Trophy Number: ${item.trophyNumber}` : "",
-        item.completionSeconds !== null ? `Time to Platinum: ${formatElapsed(item.completionSeconds)}` : "",
-      ].filter(Boolean);
-      const accessibleLabel = [label, ...metadata].join(", ");
-      const description = showDescription && item.description
-        ? `<span class="platinum-description">${escapeHtml(item.description)}</span>`
-        : "";
-      return `
+    const visibleItems =
+      initialItemLimit && !showAll ? items.slice(0, initialItemLimit) : items;
+    grid.innerHTML = visibleItems
+      .map((item) => {
+        const expanded = item.id === expandedId;
+        const label =
+          [item.platinumName, item.gameName].filter(Boolean).join(" - ") ||
+          `Trophy ${item.trophyNumber || item.id}`;
+        const metadata = [
+          item.number ? `Platinum Number: ${item.number}` : "",
+          item.trophyNumber ? `Trophy Number: ${item.trophyNumber}` : "",
+          item.completionSeconds !== null
+            ? `Time to Platinum: ${formatElapsed(item.completionSeconds)}`
+            : "",
+        ].filter(Boolean);
+        const accessibleLabel = [label, ...metadata].join(", ");
+        const description =
+          showDescription && item.description
+            ? `<span class="platinum-description">${escapeHtml(item.description)}</span>`
+            : "";
+        return `
         <button class="platinum-tile${expanded ? " is-expanded" : ""}" type="button" data-trophy-id="${escapeAttribute(item.id)}" aria-expanded="${expanded}" aria-label="${expanded ? "Hide" : "Show"} ${escapeAttribute(accessibleLabel)}">
           <span class="platinum-image-frame"><img src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>
           <span class="platinum-caption"${expanded ? "" : " hidden"}>
@@ -131,7 +224,8 @@ function createTrophyListController({
           </span>
         </button>
       `;
-    }).join("");
+      })
+      .join("");
 
     renderShowMoreButton();
   }
@@ -139,7 +233,10 @@ function createTrophyListController({
   function renderLoading() {
     grid.setAttribute("aria-busy", "true");
     const skeletonCount = initialItemLimit || 8;
-    grid.innerHTML = Array.from({ length: skeletonCount }, () => `<span class="platinum-skeleton"></span>`).join("");
+    grid.innerHTML = Array.from(
+      { length: skeletonCount },
+      () => `<span class="platinum-skeleton"></span>`,
+    ).join("");
   }
 
   function renderError(error) {
@@ -164,7 +261,12 @@ function createTrophyListController({
     const previousExpandedId = expandedId;
     expandedId = expandedId === itemId ? "" : itemId;
     if (previousExpandedId && previousExpandedId !== itemId) {
-      setTileExpanded(grid.querySelector(`[data-trophy-id="${CSS.escape(previousExpandedId)}"]`), false);
+      setTileExpanded(
+        grid.querySelector(
+          `[data-trophy-id="${CSS.escape(previousExpandedId)}"]`,
+        ),
+        false,
+      );
     }
     setTileExpanded(tile, expandedId === itemId);
     tile.focus();
@@ -174,8 +276,14 @@ function createTrophyListController({
     if (!tile) return;
     tile.classList.toggle("is-expanded", expanded);
     tile.setAttribute("aria-expanded", String(expanded));
-    const accessibleLabel = (tile.getAttribute("aria-label") || "").replace(/^(?:Hide|Show) /, "");
-    tile.setAttribute("aria-label", `${expanded ? "Hide" : "Show"} ${accessibleLabel}`);
+    const accessibleLabel = (tile.getAttribute("aria-label") || "").replace(
+      /^(?:Hide|Show) /,
+      "",
+    );
+    tile.setAttribute(
+      "aria-label",
+      `${expanded ? "Hide" : "Show"} ${accessibleLabel}`,
+    );
     const caption = tile.querySelector(".platinum-caption");
     if (caption) caption.hidden = !expanded;
   }
@@ -188,7 +296,9 @@ function createTrophyListController({
 
   function renderShowMoreButton() {
     if (!showMoreButton) return;
-    const hasMoreItems = Boolean(initialItemLimit && items?.length > initialItemLimit);
+    const hasMoreItems = Boolean(
+      initialItemLimit && items?.length > initialItemLimit,
+    );
     showMoreButton.hidden = !hasMoreItems;
     showMoreButton.textContent = showAll ? "Show Less" : "Show More";
     showMoreButton.setAttribute("aria-expanded", String(showAll));
@@ -213,7 +323,10 @@ function normalizeTrophy(row) {
     number: String(row.platinumNumber || "").trim(),
     platinumName: String(row.name || "").trim(),
     trophyNumber: String(row.trophyNumber || "").trim(),
-    completionSeconds: row.completionSeconds === null || row.completionSeconds === undefined ? null : Number(row.completionSeconds),
+    completionSeconds:
+      row.completionSeconds === null || row.completionSeconds === undefined
+        ? null
+        : Number(row.completionSeconds),
   };
 }
 
@@ -223,7 +336,11 @@ function formatElapsed(seconds) {
   const years = Math.floor(totalDays / 365);
   const months = Math.floor((totalDays % 365) / 30);
   const days = (totalDays % 365) % 30;
-  const parts = [[years, "year"], [months, "month"], [days, "day"]]
+  const parts = [
+    [years, "year"],
+    [months, "month"],
+    [days, "day"],
+  ]
     .filter(([amount]) => amount)
     .map(([amount, unit]) => `${amount} ${unit}${amount === 1 ? "" : "s"}`);
   if (parts.length) return parts.join(", ");
@@ -234,17 +351,25 @@ function formatElapsed(seconds) {
 }
 
 function comparePlatinums(first, second) {
-  return compareNumericDescending(first.number, second.number) || compareIdsDescending(first, second);
+  return (
+    compareNumericDescending(first.number, second.number) ||
+    compareIdsDescending(first, second)
+  );
 }
 
 function compareEarnedDates(first, second) {
-  return String(second.earnedAt || "").localeCompare(String(first.earnedAt || "")) || compareIdsDescending(first, second);
+  return (
+    String(second.earnedAt || "").localeCompare(String(first.earnedAt || "")) ||
+    compareIdsDescending(first, second)
+  );
 }
 
 function compareNumericDescending(first, second) {
   const firstNumber = Number(first);
   const secondNumber = Number(second);
-  return Number.isFinite(firstNumber) && Number.isFinite(secondNumber) ? secondNumber - firstNumber : 0;
+  return Number.isFinite(firstNumber) && Number.isFinite(secondNumber)
+    ? secondNumber - firstNumber
+    : 0;
 }
 
 function compareIdsDescending(first, second) {

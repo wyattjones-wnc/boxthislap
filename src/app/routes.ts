@@ -73,6 +73,7 @@ export const navItems: Record<NavScope, NavItem[]> = {
 
 const personalRoutes = new Set([
   "the-monster-maniac",
+  "psn",
   "trophy-stats",
   "trophy-log",
   "todo",

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   AdminHomePage,
   CollectiblesPage,
+  PsnPage,
   TrophyLogPage,
   TrophyStatsPage,
   YouTubePage,
@@ -16,9 +17,18 @@ function renderPage(page: React.ReactNode) {
 }
 
 describe("specialist React pages", () => {
-  it("renders the admin home navigation and trophy targets", () => {
+  it("renders Admin Home with its Trophy Case and domain tools", () => {
     const { container } = renderPage(<AdminHomePage />);
 
+    expect(screen.getByRole("heading", { name: "Admin Home" })).not.toBeNull();
+    expect(screen.getByRole("link", { name: /PSN/ })).not.toBeNull();
+    expect(
+      container.querySelector("#admin-featured-platinums-grid"),
+    ).not.toBeNull();
+  });
+
+  it("moves the existing trophy presentation to PSN", () => {
+    const { container } = renderPage(<PsnPage />);
     expect(
       screen.getByRole("link", { name: "Open Trophy Log" }),
     ).not.toBeNull();
@@ -30,6 +40,7 @@ describe("specialist React pages", () => {
     const { container } = renderPage(
       <>
         <TrophyStatsPage />
+        <PsnPage />
         <CollectiblesPage />
         <TrophyLogPage />
         <YouTubePage />

@@ -703,7 +703,7 @@ const router = createRouter({
     (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -757,7 +757,7 @@ const loadDraftListsController = createLazyControllerLoader(async () => {
   return activeDraftListsController;
 });
 const loadPlatinumsController = createLazyControllerLoader(async () => {
-  const { createPlatinumsController } = await import("./modules/platinums.js?v=202608301400");
+  const { createPlatinumsController } = await import("./modules/platinums.js?v=202609230900");
   return createPlatinumsController({
     endpoint: PSN_TROPHIES_ENDPOINT,
     getAccessToken: ensureRankingAuthorization,
@@ -768,7 +768,7 @@ const loadTrophyStatsController = createLazyControllerLoader(async () => {
   return createTrophyStatsController({ endpoint: PSN_TROPHIES_ENDPOINT });
 });
 const loadTrophyLogController = createLazyControllerLoader(async () => {
-  const { createTrophyLogController } = await import("./modules/trophyLog.js?v=202609091449");
+  const { createTrophyLogController } = await import("./modules/trophyLog.js?v=202609230900");
   return createTrophyLogController({
     endpoint: PSN_TROPHIES_ENDPOINT,
     getAccessToken: ensureRankingAuthorization,
@@ -853,8 +853,12 @@ function createLazyControllerLoader(factory) {
   };
 }
 
-async function renderPlatinumsPage() {
-  return (await loadPlatinumsController()).renderPage();
+async function renderAdminHomePage() {
+  return (await loadPlatinumsController()).renderAdminHome();
+}
+
+async function renderPsnPage() {
+  return (await loadPlatinumsController()).renderPsnPage();
 }
 
 async function renderGuidesPage() {
@@ -11219,7 +11223,11 @@ function renderActivePageContent(pageName = "") {
     return;
   }
   if (pageName === "the-monster-maniac") {
-    startLazyPageRender("platinums", renderPlatinumsPage);
+    startLazyPageRender("featured platinums", renderAdminHomePage);
+    return;
+  }
+  if (pageName === "psn") {
+    startLazyPageRender("platinums", renderPsnPage);
     return;
   }
   if (pageName === "footy") {
@@ -15271,7 +15279,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -17782,6 +17790,10 @@ function getPageDataScope(pageName = "") {
     return "the-monster-maniac";
   }
 
+  if (page === "psn") {
+    return "psn";
+  }
+
   if (page === "trophy-stats") {
     return "trophy-stats";
   }
@@ -17925,7 +17937,11 @@ function loadPageData(scope) {
   }
 
   if (scope === "the-monster-maniac") {
-    return renderPlatinumsPage();
+    return renderAdminHomePage();
+  }
+
+  if (scope === "psn") {
+    return renderPsnPage();
   }
 
   if (scope === "trophy-stats") {

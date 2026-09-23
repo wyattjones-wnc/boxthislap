@@ -46,6 +46,7 @@ import {
 import {
   AdminHomePage,
   CollectiblesPage,
+  PsnPage,
   TrophyLogPage,
   TrophyStatsPage,
   YouTubePage,
@@ -54,6 +55,7 @@ import {
 export interface SpecialistRoots {
   adminHome: Element;
   collectibles: Element;
+  psn: Element;
   trophyLog: Element;
   trophyStats: Element;
   youtube: Element;
@@ -162,6 +164,7 @@ export function App({
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
         {createPortal(<AdminHomePage />, specialistRoots.adminHome)}
+        {createPortal(<PsnPage />, specialistRoots.psn)}
         {createPortal(<TrophyStatsPage />, specialistRoots.trophyStats)}
         {createPortal(<CollectiblesPage />, specialistRoots.collectibles)}
         {createPortal(<TrophyLogPage />, specialistRoots.trophyLog)}

@@ -25,6 +25,7 @@ const SPORTDB_COMPETITION_FALLBACKS = [
   { code: "FACS", id: "4571", key: "community shield", name: "FA Community Shield", seasonType: "calendar", type: "SUPER_CUP" },
   { code: "ELC", id: "4570", key: "efl cup", name: "EFL Cup", seasonType: "split", type: "CUP" },
   { code: "SDE", id: "4511", key: "supercopa de espana", name: "Supercopa de España", seasonType: "split", type: "SUPER_CUP" },
+  { alwaysInclude: true, category: "international", code: "UNL", id: "4490", key: "uefa nations league", name: "UEFA Nations League", seasonType: "split", type: "INTERNATIONAL_CUP" },
 ];
 const SOURCE_PRIORITY = {
   [PRIMARY_PROVIDER_NAME]: 40,
@@ -839,7 +840,7 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
   const teamPriority = Math.min(...teams.map((team) => Number.parseInt(String(team.priority || "").trim(), 10)).filter(Number.isFinite));
   const schedules = [];
 
-  for (const competition of SPORTDB_COMPETITION_FALLBACKS.filter((record) => relevantKeys.has(record.key))) {
+  for (const competition of SPORTDB_COMPETITION_FALLBACKS.filter((record) => record.alwaysInclude || relevantKeys.has(record.key))) {
     const season = competition.seasonType === "calendar" ? String(new Date().getUTCFullYear()) : getCurrentSeason();
 
     try {
@@ -849,6 +850,7 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
       schedules.push({
         attemptedAt: new Date().toISOString(),
         competition: {
+          category: competition.category || "",
           code: competition.code,
           followedTeamNames: teams
             .filter((team) => followedFixtures.some((fixture) => (
@@ -871,6 +873,7 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
       schedules.push({
         attemptedAt: new Date().toISOString(),
         competition: {
+          category: competition.category || "",
           code: competition.code,
           followedTeamNames: [],
           id: competition.id,
@@ -2623,6 +2626,7 @@ function getCompetitionScheduleDisplayName(name) {
     mls: "MLS",
     "premier league": "Premier League",
     "supercopa de espana": "Supercopa de España",
+    "uefa nations league": "UEFA Nations League",
   };
 
   return displayNames[key] || String(name || "").trim();

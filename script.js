@@ -703,7 +703,7 @@ const router = createRouter({
     (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -8862,6 +8862,8 @@ async function ensureRankingAuthorization({ forceRefresh = false } = {}) {
   return rankingAuthorizationPromise;
 }
 
+window.boxThisLapGetManagerAccessToken = ensureRankingAuthorization;
+
 async function renewRankingAuthorization(session, auth) {
   let response;
   if (auth.refreshToken && Date.parse(auth.refreshExpiresAt || "") > Date.now() + 30000) {
@@ -15279,7 +15281,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }

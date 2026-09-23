@@ -1,4 +1,12 @@
-import { BarChart3, Boxes, Filter, Gamepad2, List, X } from "lucide-react";
+import {
+  BarChart3,
+  Boxes,
+  Database,
+  Filter,
+  Gamepad2,
+  List,
+  X,
+} from "lucide-react";
 import { IconButton } from "../../components/IconButton/IconButton";
 
 function Skeletons({ count }: { count: number }) {
@@ -52,6 +60,17 @@ export function AdminHomePage() {
             <span>
               <strong>Collectibles</strong>
               <small>Collection checklist and catalog</small>
+            </span>
+          </a>
+          <a
+            className="admin-tool-card"
+            href="#database-admin"
+            data-page-link="database-admin"
+          >
+            <Database aria-hidden="true" />
+            <span>
+              <strong>Database Explorer</strong>
+              <small>Inspect schemas, browse rows, and make corrections</small>
             </span>
           </a>
         </div>

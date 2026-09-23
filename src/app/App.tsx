@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AccountSettingsPage, LoginPage, SiteFooter } from "./FoundationPages";
 import { AppErrorBoundary } from "./AppErrorBoundary";
@@ -52,9 +53,36 @@ import {
   YouTubePage,
 } from "../features/specialist/SpecialistPages";
 
+const DatabaseAdminPage = lazy(() =>
+  import("../features/specialist/DatabaseAdminPage").then((module) => ({
+    default: module.DatabaseAdminPage,
+  })),
+);
+
+function DeferredDatabaseAdminPage() {
+  const [active, setActive] = useState(
+    () => window.location.hash.split("?")[0] === "#database-admin",
+  );
+  useEffect(() => {
+    const update = () =>
+      setActive(window.location.hash.split("?")[0] === "#database-admin");
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, []);
+  if (!active) return null;
+  return (
+    <Suspense
+      fallback={<p className="table-message">Loading Database Explorer…</p>}
+    >
+      <DatabaseAdminPage />
+    </Suspense>
+  );
+}
+
 export interface SpecialistRoots {
   adminHome: Element;
   collectibles: Element;
+  databaseAdmin: Element;
   psn: Element;
   trophyLog: Element;
   trophyStats: Element;
@@ -167,6 +195,10 @@ export function App({
         {createPortal(<PsnPage />, specialistRoots.psn)}
         {createPortal(<TrophyStatsPage />, specialistRoots.trophyStats)}
         {createPortal(<CollectiblesPage />, specialistRoots.collectibles)}
+        {createPortal(
+          <DeferredDatabaseAdminPage />,
+          specialistRoots.databaseAdmin,
+        )}
         {createPortal(<TrophyLogPage />, specialistRoots.trophyLog)}
         {createPortal(<YouTubePage />, specialistRoots.youtube)}
         {createPortal(<TodayPage />, competitionRoots.today)}

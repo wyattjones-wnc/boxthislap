@@ -1,18 +1,32 @@
 export const WORKFLOW_LOOKAHEAD_DAYS = 7;
 export const THEME_STORAGE_KEY = "boxThisLapTheme";
 export const MANAGER_SESSION_STORAGE_KEY = "boxThisLapManagerSession";
-export const MANAGER_PORTAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
-export const FOOTY_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
-export const FOOTY_MATCH_NOTES_ENDPOINT = "https://box-this-lap-footy-notes.boxthislap.workers.dev";
-export const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
-export const NEXT_DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
-export const NEXT_ITEMS_ENDPOINT = "https://box-this-lap-next.boxthislap.workers.dev";
-export const GUIDES_PROGRESS_ENDPOINT = "https://box-this-lap-guides.boxthislap.workers.dev";
-export const RANKINGS_ENDPOINT = "https://box-this-lap-rankings.boxthislap.workers.dev";
-export const FORMULA_ONE_ENDPOINT = "https://box-this-lap-formula-one.boxthislap.workers.dev";
-export const PSN_TROPHIES_ENDPOINT = "https://box-this-lap-psn.boxthislap.workers.dev";
-export const YOUTUBE_INBOX_ENDPOINT = "https://box-this-lap-youtube.boxthislap.workers.dev";
-export const COLLECTIBLES_ENDPOINT = "https://box-this-lap-collectibles.boxthislap.workers.dev";
+export const MANAGER_PORTAL_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
+export const FOOTY_DATA_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
+export const FOOTY_MATCH_NOTES_ENDPOINT =
+  "https://box-this-lap-footy-notes.boxthislap.workers.dev";
+export const FOOTY_PUSH_ENDPOINT =
+  "https://box-this-lap-footy-push.boxthislap.workers.dev";
+export const NEXT_DATA_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycby-gmghq1bBK7MakQQ4xjDxK5FbSdoIc9DZcu26bvupWpVo61meNizhcZ-goaLsx2Vn/exec";
+export const NEXT_ITEMS_ENDPOINT =
+  "https://box-this-lap-next.boxthislap.workers.dev";
+export const GUIDES_PROGRESS_ENDPOINT =
+  "https://box-this-lap-guides.boxthislap.workers.dev";
+export const RANKINGS_ENDPOINT =
+  "https://box-this-lap-rankings.boxthislap.workers.dev";
+export const FORMULA_ONE_ENDPOINT =
+  "https://box-this-lap-formula-one.boxthislap.workers.dev";
+export const PSN_TROPHIES_ENDPOINT =
+  "https://box-this-lap-psn.boxthislap.workers.dev";
+export const YOUTUBE_INBOX_ENDPOINT =
+  "https://box-this-lap-youtube.boxthislap.workers.dev";
+export const COLLECTIBLES_ENDPOINT =
+  "https://box-this-lap-collectibles.boxthislap.workers.dev";
+export const DATABASE_ADMIN_ENDPOINT =
+  "https://box-this-lap-database-admin.boxthislap.workers.dev";
 export const AWARD_DEFINITIONS = [
   {
     abbreviation: "PC",
@@ -88,7 +102,8 @@ export const AWARD_DEFINITIONS = [
 export const BEST_STANDING_PERFORMANCE_VALUE = "best";
 export const BRACKET_STORAGE_KEY = "boxThisLapBracketPicks";
 export const BRACKET_SUBMITTER_STORAGE_KEY = "boxThisLapBracketSubmitter";
-export const BRACKET_SUBMISSION_ENDPOINT = "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
+export const BRACKET_SUBMISSION_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycbznezN6cszNORJTi4pFqHj0vTkFAl3bY1e0ZG9ey0M9SeDyJQ5WNSoBBsUSMPdEQ94eng/exec";
 export const BRACKET_MANUAL_PICK_VALUE = "";
 export const NATION_POT_RANKS = {
   a: 1,
@@ -106,7 +121,11 @@ export const TEST_KNOCKOUT_POT_BONUSES = {
   g: 10,
 };
 export const BRACKET_ROUNDS = [
-  { id: "4", label: "Round 4", matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] },
+  {
+    id: "4",
+    label: "Round 4",
+    matchIds: [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88],
+  },
   { id: "5", label: "Round 5", matchIds: [89, 90, 91, 92, 93, 94, 95, 96] },
   { id: "6", label: "Round 6", matchIds: [97, 98, 99, 100] },
   { id: "7", label: "Round 7", matchIds: [101, 102] },
@@ -142,12 +161,48 @@ export const MANAGER_COLORS = {
 };
 
 export const DEFAULT_PORTAL_MANAGERS = [
-  { "Manager ID": "1", Name: "Jonathan Ramos", "Display Name": "Jonathan", Color: "000000", IsActive: "TRUE" },
-  { "Manager ID": "2", Name: "Jordan Swiezy", "Display Name": "Jordan", Color: "B4A7D6", IsActive: "TRUE" },
-  { "Manager ID": "3", Name: "Luisa Mauch", "Display Name": "Luisa", Color: "C10201", IsActive: "TRUE" },
-  { "Manager ID": "4", Name: "Michael Vargas", "Display Name": "Michael", Color: "003173", IsActive: "TRUE" },
-  { "Manager ID": "5", Name: "Sean Anderson", "Display Name": "Sean", Color: "FE9BCC", IsActive: "TRUE" },
-  { "Manager ID": "6", Name: "Wyatt Jones", "Display Name": "Wyatt", Color: "96DE77", IsActive: "TRUE" },
+  {
+    "Manager ID": "1",
+    Name: "Jonathan Ramos",
+    "Display Name": "Jonathan",
+    Color: "000000",
+    IsActive: "TRUE",
+  },
+  {
+    "Manager ID": "2",
+    Name: "Jordan Swiezy",
+    "Display Name": "Jordan",
+    Color: "B4A7D6",
+    IsActive: "TRUE",
+  },
+  {
+    "Manager ID": "3",
+    Name: "Luisa Mauch",
+    "Display Name": "Luisa",
+    Color: "C10201",
+    IsActive: "TRUE",
+  },
+  {
+    "Manager ID": "4",
+    Name: "Michael Vargas",
+    "Display Name": "Michael",
+    Color: "003173",
+    IsActive: "TRUE",
+  },
+  {
+    "Manager ID": "5",
+    Name: "Sean Anderson",
+    "Display Name": "Sean",
+    Color: "FE9BCC",
+    IsActive: "TRUE",
+  },
+  {
+    "Manager ID": "6",
+    Name: "Wyatt Jones",
+    "Display Name": "Wyatt",
+    Color: "96DE77",
+    IsActive: "TRUE",
+  },
 ];
 
 export const FANTASY_LEAGUES_BY_YEAR = {
@@ -159,7 +214,8 @@ export const FANTASY_LEAGUES_BY_YEAR = {
 const FANTASY_CRITIC_2025 = {
   title: "Fantasy Critic",
   subtitle: "Best of the Rest",
-  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2025",
+  sourceUrl:
+    "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2025",
   standings: [
     {
       rank: 1,
@@ -259,7 +315,8 @@ const FANTASY_CRITIC_2025 = {
 const FANTASY_CRITIC_2026 = {
   title: "Fantasy Critic",
   subtitle: "Best of the Rest",
-  sourceUrl: "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2026",
+  sourceUrl:
+    "https://www.fantasycritic.games/league/f29fddba-fa80-40bf-aa71-d062e6e80635/2026",
   standings: [
     {
       rank: 1,
@@ -382,7 +439,8 @@ const FANTASY_CRITIC_2026 = {
 };
 
 export const FANTASY_CRITIC_LEAGUE_ID = "f29fddba-fa80-40bf-aa71-d062e6e80635";
-export const FANTASY_CRITIC_PROXY_URL = "https://script.google.com/macros/s/AKfycbwEs1gaKGBOc6D21nm761YZsmEXh51b86J_XUUg_J_7YUUSaZt5JRzUWEjV2WzvJD6GHA/exec";
+export const FANTASY_CRITIC_PROXY_URL =
+  "https://script.google.com/macros/s/AKfycbwEs1gaKGBOc6D21nm761YZsmEXh51b86J_XUUg_J_7YUUSaZt5JRzUWEjV2WzvJD6GHA/exec";
 export const FANTASY_CRITIC_LEAGUE_METADATA = {
   2025: {
     sourceUrl: FANTASY_CRITIC_2025.sourceUrl,
@@ -401,7 +459,7 @@ export const FANTASY_CRITIC_PUBLISHER_MANAGERS = {
   "emo girl! emergencies": "Jonathan",
   "hispan!c games": "Jonathan",
   "jones public investment fund": "Wyatt",
-  "jonessoft": "Wyatt",
+  jonessoft: "Wyatt",
   "microhaed studios": "Sean",
   "microhard artisanal studios": "Sean",
   "microhard studios": "Sean",

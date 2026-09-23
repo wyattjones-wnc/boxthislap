@@ -1330,6 +1330,32 @@ body.has-shell-stale-warning .stale-shell-alert {
   color: var(--muted);
 }
 
+.database-admin-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.database-admin-controls label { display: grid; gap: 7px; }
+.database-schema { margin: 16px 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+.database-schema dl { display: grid; gap: 8px; }
+.database-schema dl > div { display: grid; grid-template-columns: minmax(160px, 0.5fr) 1fr; gap: 16px; }
+.database-schema dt { font-weight: 800; }
+.database-schema dd { margin: 0; color: var(--muted); }
+.database-admin-status { min-height: 24px; }
+.database-admin-table-wrap { overflow: auto; max-height: 70vh; }
+.database-admin-table { min-width: max-content; }
+.database-admin-table th { position: sticky; top: 0; z-index: 1; }
+.database-admin-table th small { display: block; font-weight: 400; opacity: 0.65; }
+.database-admin-table textarea { width: clamp(128px, 15vw, 288px); resize: vertical; font: 0.8rem/1.35 ui-monospace, monospace; }
+.database-admin-table textarea[readonly] { opacity: 0.65; }
+.database-admin-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
+
+@media (max-width: 640px) {
+  .database-admin-controls { grid-template-columns: 1fr; }
+}
+
 .admin-home-heading .eyebrow,
 .trophy-stats-page .eyebrow {
   margin-bottom: 7px;

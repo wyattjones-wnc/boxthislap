@@ -4,9 +4,9 @@
 
 - The canonical checkout is `C:\Users\Vhyatt\Documents\ChatGPT\boxthislap` with remote `https://github.com/wyattjones-wnc/boxthislap.git`.
 - Use `dev` unless the user explicitly requests another branch. Do not switch branches when unrelated work could be affected.
-- Preserve unrelated local changes. Never reset, discard, stash, overwrite, commit, or push them without explicit user authorization.
-- Implementation requests authorize local edits and validation, not commits or remote pushes, unless the user explicitly names the remote destination.
-- Phrases such as “include on dev,” “put this on dev,” “make these changes to dev,” “send this to `origin/dev`,” or equivalent wording explicitly authorize validating the task, committing only its scoped changes on `dev`, and pushing them to `origin/dev`. They do not authorize including unrelated changes or pushing to `main`.
+- Preserve unrelated local changes. Never reset, discard, stash, overwrite, commit, or push them.
+- A request to implement, change, add, fix, update, or remove project files authorizes completing the scoped work, validating it, committing it on `dev`, and pushing it to `origin/dev` without a separate confirmation. The task is not complete until local `dev` and `origin/dev` contain the finished change.
+- Do not commit or push for read-only questions, investigation, diagnosis, review, or planning unless the user also requests changes. Honor explicit instructions to keep work local, avoid a push, or use another branch. Never include unrelated work or push to `main` without explicit authorization.
 
 ## Task Startup and Concurrency
 
@@ -25,5 +25,5 @@
 ## Delivery
 
 - Do not change application behavior for workflow-only tasks.
-- Before an explicitly authorized user-visible push, run `node scripts\bump-version.mjs`.
+- Before a user-visible push, run `node scripts\bump-version.mjs`.
 - Report any remaining Worker deployment, D1 migration, Apps Script publication, secret, or manual configuration separately; a source change does not perform those operations.

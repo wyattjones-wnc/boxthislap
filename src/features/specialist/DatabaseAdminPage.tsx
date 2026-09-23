@@ -12,6 +12,12 @@ type Column = {
 type Table = { name: string; rowCount: number; columns: Column[] };
 type Row = Record<string, unknown>;
 type ActiveCell = { rowIndex: number; columnName: string } | null;
+type Filter = {
+  column: string;
+  operator: string;
+  value: string;
+  value2: string;
+};
 
 declare global {
   interface Window {
@@ -57,6 +63,14 @@ function jsonValue(value: unknown) {
   return JSON.stringify(value) ?? "null";
 }
 
+function isDateColumn(column: Column | undefined) {
+  return Boolean(
+    column &&
+    (/DATE|TIME/i.test(column.type) ||
+      /(^|_)(date|time|submitted|created|updated)(_|$)/i.test(column.name)),
+  );
+}
+
 export function DatabaseAdminPage() {
   const [databases, setDatabases] = useState<Database[]>([]);
   const [databaseId, setDatabaseId] = useState("");
@@ -68,6 +82,12 @@ export function DatabaseAdminPage() {
     {},
   );
   const [activeCell, setActiveCell] = useState<ActiveCell>(null);
+  const [filters, setFilters] = useState<Filter[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<Filter[]>([]);
+  const [sort, setSort] = useState<{
+    column: string;
+    direction: "asc" | "desc";
+  } | null>(null);
   const [page, setPage] = useState(1);
   const [rowCount, setRowCount] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -87,6 +107,9 @@ export function DatabaseAdminPage() {
     setRows([]);
     setColumns([]);
     setActiveCell(null);
+    setFilters([]);
+    setAppliedFilters([]);
+    setSort(null);
     setPage(1);
     if (!databaseId) return;
     setBusy(true);
@@ -105,8 +128,15 @@ export function DatabaseAdminPage() {
       if (!databaseId || !tableName) return;
       setBusy(true);
       setMessage("Loading rows…");
+      const query = new URLSearchParams({ page: String(nextPage) });
+      if (sort) {
+        query.set("sort", sort.column);
+        query.set("direction", sort.direction);
+      }
+      if (appliedFilters.length)
+        query.set("filters", JSON.stringify(appliedFilters));
       void request(
-        `/api/databases/${encodeURIComponent(databaseId)}/tables/${encodeURIComponent(tableName)}/rows?page=${nextPage}`,
+        `/api/databases/${encodeURIComponent(databaseId)}/tables/${encodeURIComponent(tableName)}/rows?${query}`,
       )
         .then((value) => {
           setColumns(value.columns);
@@ -122,7 +152,7 @@ export function DatabaseAdminPage() {
         .catch((error) => setMessage(error.message))
         .finally(() => setBusy(false));
     },
-    [databaseId, tableName],
+    [appliedFilters, databaseId, sort, tableName],
   );
 
   useEffect(() => {
@@ -139,6 +169,25 @@ export function DatabaseAdminPage() {
       ...current,
       [rowIndex]: { ...(current[rowIndex] || {}), [name]: value },
     }));
+  }
+
+  function changeFilter(index: number, changes: Partial<Filter>) {
+    setFilters((current) =>
+      current.map((filter, filterIndex) =>
+        filterIndex === index ? { ...filter, ...changes } : filter,
+      ),
+    );
+  }
+
+  function toggleSort(column: string) {
+    setSort((current) => ({
+      column,
+      direction:
+        current?.column === column && current.direction === "asc"
+          ? "desc"
+          : "asc",
+    }));
+    setPage(1);
   }
 
   async function saveRow(rowIndex: number) {
@@ -224,6 +273,9 @@ export function DatabaseAdminPage() {
             disabled={!tables.length}
             onChange={(event) => {
               setTableName(event.target.value);
+              setFilters([]);
+              setAppliedFilters([]);
+              setSort(null);
               setPage(1);
             }}
           >
@@ -260,6 +312,164 @@ export function DatabaseAdminPage() {
           </dl>
         </details>
       )}
+      {!!columns.length && (
+        <section
+          className="database-admin-filters"
+          aria-labelledby="database-admin-filters-heading"
+        >
+          <div className="database-admin-filter-heading">
+            <h2 id="database-admin-filters-heading">Filters</h2>
+            <button
+              type="button"
+              onClick={() => {
+                const column = columns[0];
+                setFilters((current) => [
+                  ...current,
+                  {
+                    column: column.name,
+                    operator: isDateColumn(column)
+                      ? "date_between"
+                      : "contains",
+                    value: "",
+                    value2: "",
+                  },
+                ]);
+              }}
+              disabled={filters.length >= 8}
+            >
+              Add filter
+            </button>
+          </div>
+          {filters.map((filter, index) => {
+            const filterColumn = columns.find(
+              (column) => column.name === filter.column,
+            );
+            const dateFilter = filter.operator.startsWith("date_");
+            const noValue = ["is_null", "is_not_null"].includes(
+              filter.operator,
+            );
+            return (
+              <div className="database-admin-filter-row" key={index}>
+                <label>
+                  <span>Column</span>
+                  <select
+                    value={filter.column}
+                    onChange={(event) => {
+                      const column = columns.find(
+                        (item) => item.name === event.target.value,
+                      );
+                      changeFilter(index, {
+                        column: event.target.value,
+                        operator: isDateColumn(column)
+                          ? "date_between"
+                          : "contains",
+                        value: "",
+                        value2: "",
+                      });
+                    }}
+                  >
+                    {columns.map((column) => (
+                      <option value={column.name} key={column.name}>
+                        {column.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Condition</span>
+                  <select
+                    value={filter.operator}
+                    onChange={(event) =>
+                      changeFilter(index, {
+                        operator: event.target.value,
+                        value: "",
+                        value2: "",
+                      })
+                    }
+                  >
+                    <option value="contains">Contains</option>
+                    <option value="equals">Equals</option>
+                    <option value="is_null">Is null</option>
+                    <option value="is_not_null">Is not null</option>
+                    {isDateColumn(filterColumn) && (
+                      <>
+                        <option value="date_between">Date is between</option>
+                        <option value="date_on_or_after">
+                          Date is on or after
+                        </option>
+                        <option value="date_on_or_before">
+                          Date is on or before
+                        </option>
+                      </>
+                    )}
+                  </select>
+                </label>
+                {!noValue && (
+                  <label>
+                    <span>
+                      {filter.operator === "date_between" ? "From" : "Value"}
+                    </span>
+                    <input
+                      type={dateFilter ? "date" : "text"}
+                      value={filter.value}
+                      onChange={(event) =>
+                        changeFilter(index, { value: event.target.value })
+                      }
+                    />
+                  </label>
+                )}
+                {filter.operator === "date_between" && (
+                  <label>
+                    <span>Through</span>
+                    <input
+                      type="date"
+                      value={filter.value2}
+                      onChange={(event) =>
+                        changeFilter(index, { value2: event.target.value })
+                      }
+                    />
+                  </label>
+                )}
+                <button
+                  type="button"
+                  aria-label={`Remove filter ${index + 1}`}
+                  onClick={() =>
+                    setFilters((current) =>
+                      current.filter((_, filterIndex) => filterIndex !== index),
+                    )
+                  }
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+          {!!filters.length && (
+            <div className="database-admin-filter-actions">
+              <button
+                className="action-button"
+                type="button"
+                onClick={() => {
+                  setAppliedFilters(filters.map((filter) => ({ ...filter })));
+                  setPage(1);
+                }}
+              >
+                Apply filters
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters([]);
+                  setAppliedFilters([]);
+                  setPage(1);
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </section>
+      )}
       <p className="database-admin-status" role="status">
         {busy ? "Working… " : ""}
         {message}
@@ -272,7 +482,21 @@ export function DatabaseAdminPage() {
                 <tr>
                   {columns.map((column) => (
                     <th key={column.name}>
-                      {column.name}
+                      <button
+                        className="database-admin-sort"
+                        type="button"
+                        aria-label={`Sort by ${column.name}${sort?.column === column.name ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
+                        onClick={() => toggleSort(column.name)}
+                      >
+                        {column.name}
+                        <span aria-hidden="true">
+                          {sort?.column === column.name
+                            ? sort.direction === "asc"
+                              ? " ↑"
+                              : " ↓"
+                            : " ↕"}
+                        </span>
+                      </button>
                       <small>{column.type || "ANY"}</small>
                     </th>
                   ))}

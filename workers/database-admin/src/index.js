@@ -63,7 +63,14 @@ export default {
           Number.parseInt(url.searchParams.get("page") || "1", 10) || 1,
         );
         return json(
-          { ok: true, ...(await readRows(db, table, schema, page)) },
+          {
+            ok: true,
+            ...(await readRows(db, table, schema, page, {
+              direction: url.searchParams.get("direction"),
+              filters: url.searchParams.get("filters"),
+              sort: url.searchParams.get("sort"),
+            })),
+          },
           200,
           headers,
         );
@@ -150,21 +157,68 @@ async function tableSchema(db, table) {
   }));
 }
 
-async function readRows(db, table, schema, page) {
+async function readRows(db, table, schema, page, options = {}) {
   const offset = (page - 1) * PAGE_SIZE;
-  const order = schema
+  const primaryKeys = schema
     .filter((column) => column.primaryKey)
     .sort((a, b) => a.primaryKey - b.primaryKey);
-  const orderSql = order.length
-    ? ` ORDER BY ${order.map((column) => quote(column.name)).join(", ")}`
+  const columnNames = new Set(schema.map((column) => column.name));
+  const filters = parseFilters(options.filters, columnNames);
+  const whereParts = [];
+  const bindings = [];
+  for (const filter of filters) {
+    const column = quote(filter.column);
+    if (filter.operator === "equals") {
+      whereParts.push(`CAST(${column} AS TEXT) = ?`);
+      bindings.push(filter.value);
+    } else if (filter.operator === "contains") {
+      whereParts.push(`CAST(${column} AS TEXT) LIKE ? ESCAPE '\\'`);
+      bindings.push(`%${escapeLike(filter.value)}%`);
+    } else if (filter.operator === "is_null") {
+      whereParts.push(`${column} IS NULL`);
+    } else if (filter.operator === "is_not_null") {
+      whereParts.push(`${column} IS NOT NULL`);
+    } else if (filter.operator === "date_on_or_after") {
+      whereParts.push(`date(${column}) >= date(?)`);
+      bindings.push(filter.value);
+    } else if (filter.operator === "date_on_or_before") {
+      whereParts.push(`date(${column}) <= date(?)`);
+      bindings.push(filter.value);
+    } else if (filter.operator === "date_between") {
+      whereParts.push(`date(${column}) BETWEEN date(?) AND date(?)`);
+      bindings.push(filter.value, filter.value2);
+    }
+  }
+  const whereSql = whereParts.length
+    ? ` WHERE ${whereParts.join(" AND ")}`
+    : "";
+  const requestedSort = String(options.sort || "");
+  const sortColumn = columnNames.has(requestedSort) ? requestedSort : "";
+  const direction =
+    String(options.direction || "").toLowerCase() === "desc" ? "DESC" : "ASC";
+  const orderColumns = sortColumn
+    ? [
+        `${quote(sortColumn)} ${direction}`,
+        ...primaryKeys
+          .filter((column) => column.name !== sortColumn)
+          .map((column) => `${quote(column.name)} ASC`),
+      ]
+    : primaryKeys.map((column) => `${quote(column.name)} ASC`);
+  const orderSql = orderColumns.length
+    ? ` ORDER BY ${orderColumns.join(", ")}`
     : "";
   const result = await db
-    .prepare(`SELECT * FROM ${quote(table)}${orderSql} LIMIT ? OFFSET ?`)
-    .bind(PAGE_SIZE, offset)
+    .prepare(
+      `SELECT * FROM ${quote(table)}${whereSql}${orderSql} LIMIT ? OFFSET ?`,
+    )
+    .bind(...bindings, PAGE_SIZE, offset)
     .all();
-  const count = await db
-    .prepare(`SELECT COUNT(*) AS count FROM ${quote(table)}`)
-    .first();
+  const countStatement = db.prepare(
+    `SELECT COUNT(*) AS count FROM ${quote(table)}${whereSql}`,
+  );
+  const count = bindings.length
+    ? await countStatement.bind(...bindings).first()
+    : await countStatement.first();
   return {
     columns: schema,
     page,
@@ -172,6 +226,49 @@ async function readRows(db, table, schema, page) {
     rowCount: Number(count?.count || 0),
     rows: result.results || [],
   };
+}
+
+function parseFilters(rawFilters, columnNames) {
+  if (!rawFilters) return [];
+  let filters;
+  try {
+    filters = JSON.parse(rawFilters);
+  } catch {
+    throw httpError(400, "Filters must be valid JSON.");
+  }
+  if (!Array.isArray(filters) || filters.length > 8)
+    throw httpError(400, "Up to eight filters may be applied.");
+  const operators = new Set([
+    "contains",
+    "equals",
+    "is_null",
+    "is_not_null",
+    "date_on_or_after",
+    "date_on_or_before",
+    "date_between",
+  ]);
+  return filters.map((filter) => {
+    const column = String(filter?.column || "");
+    const operator = String(filter?.operator || "");
+    if (!columnNames.has(column) || !operators.has(operator))
+      throw httpError(400, "A filter column or operator is invalid.");
+    const needsValue = !["is_null", "is_not_null"].includes(operator);
+    const value = needsValue ? String(filter.value ?? "").trim() : "";
+    const value2 =
+      operator === "date_between" ? String(filter.value2 ?? "").trim() : "";
+    if (needsValue && !value)
+      throw httpError(400, "A filter value is required.");
+    if (operator === "date_between" && !value2)
+      throw httpError(400, "Both dates are required for a date range.");
+    return { column, operator, value, value2 };
+  });
+}
+
+function escapeLike(value) {
+  return String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_");
 }
 
 async function updateRow(db, table, schema, body) {

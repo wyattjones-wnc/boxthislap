@@ -1344,10 +1344,20 @@ body.has-shell-stale-warning .stale-shell-alert {
 .database-schema dt { font-weight: 800; }
 .database-schema dd { margin: 0; color: var(--muted); }
 .database-admin-status { min-height: 24px; }
+.database-admin-filters { margin: 16px 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
+.database-admin-filter-heading,
+.database-admin-filter-actions { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.database-admin-filter-heading h2 { margin: 0; font-size: 1rem; }
+.database-admin-filter-row { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(150px, 1fr) minmax(140px, 1fr) minmax(140px, 1fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
+.database-admin-filter-row label { display: grid; gap: 5px; }
+.database-admin-filter-row label span { color: var(--muted); font-size: 0.75rem; font-weight: 800; }
+.database-admin-filter-actions { justify-content: flex-start; margin-top: 14px; }
 .database-admin-table-wrap { overflow: auto; max-height: 70vh; }
 .database-admin-table { min-width: max-content; }
 .database-admin-table th { position: sticky; top: 0; z-index: 1; }
 .database-admin-table th small { display: block; font-weight: 400; opacity: 0.65; }
+.database-admin-sort { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+.database-admin-sort span { color: var(--muted); }
 .database-admin-table textarea { width: clamp(128px, 15vw, 288px); resize: vertical; font: 0.8rem/1.35 ui-monospace, monospace; }
 .database-admin-cell-value { display: block; width: clamp(128px, 15vw, 288px); min-height: 34px; padding: 7px; overflow: hidden; border: 1px solid transparent; border-radius: 4px; background: transparent; color: inherit; font: 0.8rem/1.35 ui-monospace, monospace; text-align: left; text-overflow: ellipsis; white-space: pre; }
 button.database-admin-cell-value { cursor: text; }
@@ -1358,6 +1368,7 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
 
 @media (max-width: 640px) {
   .database-admin-controls { grid-template-columns: 1fr; }
+  .database-admin-filter-row { grid-template-columns: 1fr; }
 }
 
 .admin-home-heading .eyebrow,

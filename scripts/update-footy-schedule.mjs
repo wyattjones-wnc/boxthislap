@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { attachCanonicalFootyTeams } from "./footy-team-catalog.mjs";
 import { isSameFootballClubName, normalizeFootballClubName } from "./footy-club-names.mjs";
 import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
+import { loadUsSoccerSchedule } from "./ussoccer-schedule-provider.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -18,15 +19,18 @@ const PRIMARY_PROVIDER_NAME = "football-data.org";
 const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
 const ICALENDAR_PROVIDER_NAME = "iCalendar";
+const US_SOCCER_PROVIDER_NAME = "U.S. Soccer";
 const FULL_MLS_CALENDAR_URL = "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/mls.ics";
 const SPORTDB_COMPETITION_FALLBACKS = [
   { code: "FACS", id: "4571", key: "community shield", name: "FA Community Shield", seasonType: "calendar", type: "SUPER_CUP" },
   { code: "ELC", id: "4570", key: "efl cup", name: "EFL Cup", seasonType: "split", type: "CUP" },
   { code: "SDE", id: "4511", key: "supercopa de espana", name: "Supercopa de España", seasonType: "split", type: "SUPER_CUP" },
+  { alwaysInclude: true, category: "international", code: "UNL", id: "4490", key: "uefa nations league", name: "UEFA Nations League", seasonType: "split", type: "INTERNATIONAL_CUP" },
 ];
 const SOURCE_PRIORITY = {
   [PRIMARY_PROVIDER_NAME]: 40,
   [ARSENAL_PROVIDER_NAME]: 30,
+  [US_SOCCER_PROVIDER_NAME]: 35,
   [SPORTDB_PROVIDER_NAME]: 20,
   [ICALENDAR_PROVIDER_NAME]: 10,
 };
@@ -67,6 +71,19 @@ const FALLBACK_FOOTBALL_DATA_TEAM_IDS = {
   arsenal: "57",
   barcelona: "81",
   wrexham: "404",
+};
+const FALLBACK_SPORTDB_TEAM_IDS = {
+  usmnt: "134514",
+  uswmt: "136819",
+  uswnt: "136819",
+};
+const US_SOCCER_TEAM_SLUGS = {
+  "4": "usmnt",
+  "5": "uswnt",
+};
+const US_SOCCER_TEAM_IDS = {
+  "4": "9vh2u1p4ppm597tjfahst2m3n",
+  "5": "e70zl10x0ayu7y10ry0wi465a",
 };
 const FALLBACK_TEAM_BADGES = {
   "charlotte fc": "assets/teams/charlotte-fc.svg",
@@ -238,6 +255,11 @@ async function main() {
   errors.push(...sportDbSchedules.errors);
   fixtures.push(...sportDbSchedules.fixtures);
 
+  const usSoccerSchedules = await loadUsSoccerSchedules({ dateFrom, dateTo, teams });
+  coverageNotes.push(...usSoccerSchedules.notes);
+  errors.push(...usSoccerSchedules.errors);
+  fixtures.push(...usSoccerSchedules.fixtures);
+
   const arsenalSchedules = await loadArsenalSchedules({ dateFrom, dateTo, teamRowsById, teams });
   coverageNotes.push(...arsenalSchedules.notes);
   errors.push(...arsenalSchedules.errors);
@@ -298,7 +320,7 @@ async function main() {
   const payload = {
     generatedAt,
     schemaVersion: 4,
-    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
+    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${US_SOCCER_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
     updateTracker: buildFileUpdateTracker({ competitionSchedules, generatedAt, teamSchedules }),
     prioritySets,
     footyMatchRegistry: {
@@ -818,7 +840,7 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
   const teamPriority = Math.min(...teams.map((team) => Number.parseInt(String(team.priority || "").trim(), 10)).filter(Number.isFinite));
   const schedules = [];
 
-  for (const competition of SPORTDB_COMPETITION_FALLBACKS.filter((record) => relevantKeys.has(record.key))) {
+  for (const competition of SPORTDB_COMPETITION_FALLBACKS.filter((record) => record.alwaysInclude || relevantKeys.has(record.key))) {
     const season = competition.seasonType === "calendar" ? String(new Date().getUTCFullYear()) : getCurrentSeason();
 
     try {
@@ -828,6 +850,7 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
       schedules.push({
         attemptedAt: new Date().toISOString(),
         competition: {
+          category: competition.category || "",
           code: competition.code,
           followedTeamNames: teams
             .filter((team) => followedFixtures.some((fixture) => (
@@ -850,6 +873,7 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
       schedules.push({
         attemptedAt: new Date().toISOString(),
         competition: {
+          category: competition.category || "",
           code: competition.code,
           followedTeamNames: [],
           id: competition.id,
@@ -1007,10 +1031,12 @@ function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
     away: awayTeam,
     awayBadge: "",
     awayProviderTeamId: String(event.idAwayTeam || ""),
+    awaySportDbTeamId: String(event.idAwayTeam || ""),
     date,
     home: homeTeam,
     homeBadge: "",
     homeProviderTeamId: String(event.idHomeTeam || ""),
+    homeSportDbTeamId: String(event.idHomeTeam || ""),
     id: event.idEvent ? `${SPORTDB_PROVIDER_NAME}:${event.idEvent}` : "",
     leagueId: String(event.idLeague || ""),
     isHome,
@@ -1785,13 +1811,97 @@ async function resolveTeamBadge(team) {
 }
 
 function getSportDbTeamId(team) {
-  return getField(
+  const explicitId = getField(
     team,
     "SportDB Team ID",
     "TheSportsDB Team ID",
     "SportsDB Team ID",
     "SportDbTeamID",
   ).trim();
+
+  return explicitId || FALLBACK_SPORTDB_TEAM_IDS[normalizeText(getField(team, "Name", "Team"))] || "";
+}
+
+async function loadUsSoccerSchedules({ dateFrom, dateTo, teams }) {
+  const errors = [];
+  const fixtures = [];
+  const notes = [];
+
+  for (const team of teams) {
+    const teamSlug = US_SOCCER_TEAM_SLUGS[String(team.id || "")];
+    if (!teamSlug) continue;
+    try {
+      const events = await loadUsSoccerSchedule(teamSlug);
+      const matches = events
+        .filter((event) => isUsSoccerEventInRange(event, dateFrom, dateTo))
+        .filter((event) => isUsSoccerTeamEvent(event, team))
+        .map((event) => normalizeUsSoccerMatch(event, team));
+      fixtures.push(...matches);
+      notes.push(`${team.name}: Loaded ${matches.length} ${US_SOCCER_PROVIDER_NAME} fixtures.`);
+    } catch (error) {
+      errors.push(`${team.name}: Unable to load ${US_SOCCER_PROVIDER_NAME} fixtures: ${error.message}`);
+    }
+  }
+
+  return { errors, fixtures, notes };
+}
+
+function isUsSoccerEventInRange(event, dateFrom, dateTo) {
+  const date = String(event?.date || "").slice(0, 10);
+  const contestants = Array.isArray(event?.contestants) ? event.contestants : [];
+  return Boolean(date && date >= dateFrom && date <= dateTo && event?.cancelled !== true &&
+    contestants.length >= 2 && contestants.every((contestant) => contestant?.name || contestant?.officialName));
+}
+
+function isUsSoccerTeamEvent(event, team) {
+  const providerTeamId = US_SOCCER_TEAM_IDS[String(team?.id || "")];
+  return Boolean(providerTeamId && (event?.contestants || []).some((contestant) => String(contestant?.id || "") === providerTeamId));
+}
+
+function normalizeUsSoccerMatch(event, team) {
+  const contestants = Array.isArray(event?.contestants) ? event.contestants : [];
+  const home = contestants.find((contestant) => contestant?.position === "home") || contestants[0] || {};
+  const away = contestants.find((contestant) => contestant?.position === "away") || contestants[1] || {};
+  const timestamp = String(event.date || "");
+  const providerTeamId = US_SOCCER_TEAM_IDS[String(team?.id || "")];
+  const isHome = String(home.id || "") === providerTeamId;
+  const homeName = formatUsSoccerTeamName(home, team, isHome);
+  const awayName = formatUsSoccerTeamName(away, team, !isHome && String(away.id || "") === providerTeamId);
+
+  return {
+    away: awayName,
+    awayBadge: "",
+    awayProviderTeamId: String(away.id || ""),
+    date: timestamp.slice(0, 10),
+    home: homeName,
+    homeBadge: "",
+    homeProviderTeamId: String(home.id || ""),
+    id: event.id ? `${US_SOCCER_PROVIDER_NAME}:${event.id}` : "",
+    isHome,
+    leagueId: String(event.competition?.id || ""),
+    league: String(event.competition?.name || "International"),
+    opponent: isHome ? awayName : homeName,
+    priority: team.priority || "",
+    round: "",
+    season: timestamp.slice(0, 4),
+    source: US_SOCCER_PROVIDER_NAME,
+    sourceIds: buildSourceIds(US_SOCCER_PROVIDER_NAME, event.id),
+    sources: [US_SOCCER_PROVIDER_NAME],
+    sourceDetail: "official-schedule",
+    status: "SCHEDULED",
+    teamBadge: team.badge || "",
+    teamId: team.id,
+    teamName: team.name,
+    time: timestamp.slice(11, 19),
+    timestamp,
+    venue: String(event.venue?.longName || event.venue?.shortName || ""),
+  };
+}
+
+function formatUsSoccerTeamName(contestant, team, isFollowedTeam) {
+  if (isFollowedTeam) return team.name;
+  const name = String(contestant?.name || contestant?.officialName || "");
+  return String(team?.id || "") === "5" && name && !/\bwomen\b/i.test(name) ? `${name} Women` : name;
 }
 
 function getSportDbLeagueId(league) {
@@ -2516,6 +2626,7 @@ function getCompetitionScheduleDisplayName(name) {
     mls: "MLS",
     "premier league": "Premier League",
     "supercopa de espana": "Supercopa de España",
+    "uefa nations league": "UEFA Nations League",
   };
 
   return displayNames[key] || String(name || "").trim();

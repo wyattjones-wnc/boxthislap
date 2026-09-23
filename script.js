@@ -11,7 +11,6 @@ import {
 import {
   compareFootyFixturesAscending,
   compareFootyFixturesDescending,
-  getDefaultFootyTeams,
   getFootyFilterTeams,
   getFootyFixtureComparableTime,
   getFootyFixtureDateKey,
@@ -2762,13 +2761,15 @@ function syncFootyCompetitionControls(fixtures = [], competitionSchedules = []) 
 
   if (footyCompetitionSelect) {
     const leagueRecords = records.filter((record) => record.isLeague);
-    const otherRecords = records.filter((record) => !record.isLeague);
+    const internationalRecords = records.filter((record) => record.isInternational);
+    const otherRecords = records.filter((record) => !record.isLeague && !record.isInternational);
     const renderOptions = (items) => items.map((record) => (
       `<option value="${escapeHtml(record.key)}">${escapeHtml(record.name)} (${escapeHtml(String(record.matchCount))})</option>`
     )).join("");
 
     footyCompetitionSelect.innerHTML = [
       leagueRecords.length > 0 ? `<optgroup label="Leagues">${renderOptions(leagueRecords)}</optgroup>` : "",
+      internationalRecords.length > 0 ? `<optgroup label="Internationals">${renderOptions(internationalRecords)}</optgroup>` : "",
       otherRecords.length > 0 ? `<optgroup label="Cups & other competitions">${renderOptions(otherRecords)}</optgroup>` : "",
     ].join("");
     footyCompetitionSelect.value = activeFootyCompetitionKey;
@@ -2786,6 +2787,7 @@ function getFootyCompetitionRecords(fixtures = [], competitionSchedules = []) {
         const priority = Number.parseInt(String(competition.priority ?? "").trim(), 10);
 
         return {
+          isInternational: normalizeLookupName(competition.category) === "international",
           isLeague: /league/i.test(String(competition.type || "")) || ["premier league", "la liga", "championship", "mls"].includes(canonicalCompetition.key),
           key: competition.key || canonicalCompetition.key,
           matchCount: Number(schedule.fixtureCount) || (Array.isArray(schedule.fixtures) ? schedule.fixtures.length : 0),
@@ -2796,6 +2798,7 @@ function getFootyCompetitionRecords(fixtures = [], competitionSchedules = []) {
       .filter((record) => record.key && record.matchCount > 0)
       .sort((first, second) => (
         Number(second.isLeague) - Number(first.isLeague) ||
+        Number(second.isInternational) - Number(first.isInternational) ||
         first.priority - second.priority ||
         first.name.localeCompare(second.name)
       ));
@@ -2814,6 +2817,7 @@ function getFootyCompetitionRecords(fixtures = [], competitionSchedules = []) {
     const isLeague = Boolean(teamCompetition.key && teamCompetition.key === competition.key);
     const existing = recordsByKey.get(competition.key) || {
       fixtures: [],
+      isInternational: false,
       isLeague: false,
       key: competition.key,
       name: competition.name,
@@ -2838,6 +2842,7 @@ function getFootyCompetitionRecords(fixtures = [], competitionSchedules = []) {
     }))
     .sort((first, second) => (
       Number(second.isLeague) - Number(first.isLeague) ||
+      Number(second.isInternational) - Number(first.isInternational) ||
       first.priority - second.priority ||
       first.name.localeCompare(second.name)
     ));
@@ -2877,6 +2882,10 @@ function getFootyCanonicalCompetition(name) {
 
   if (["spanish super cup", "supercopa de espana"].includes(normalizedName)) {
     return { key: "supercopa de espana", name: "Supercopa de España" };
+  }
+
+  if (["nations league", "uefa nations league"].includes(normalizedName)) {
+    return { key: "uefa nations league", name: "UEFA Nations League" };
   }
 
   return { key: normalizedName, name: rawName };
@@ -3035,7 +3044,6 @@ function getFilteredFootyFixtures(fixtures) {
   const matchPeriodKey = String(footyMatchPeriodFilter?.value || "").trim();
   const shouldShowCompetitionPastFixtures = Boolean(footyCompetitionPastFilter?.checked);
   const selectedTeams = getSelectedFootyTeams();
-  const defaultPrioritySet = getDefaultFootyPrioritySet();
 
   return fixtures.filter((fixture) => {
     if (footyFriendliesFilter && !footyFriendliesFilter.checked && isFootyFriendlyFixture(fixture)) {
@@ -3055,10 +3063,6 @@ function getFilteredFootyFixtures(fixtures) {
     }
 
     if (activeFootyScheduleMode !== "competitions" && selectedTeams.size > 0 && !selectedTeams.has(getFootyTeamFilterKey(fixture.teamName))) {
-      return false;
-    }
-
-    if (activeFootyScheduleMode !== "competitions" && selectedTeams.size === 0 && defaultPrioritySet.size > 0 && !defaultPrioritySet.has(normalizeFootyPriority(fixture.priority))) {
       return false;
     }
 
@@ -3101,17 +3105,6 @@ function getSelectedFootyTeams() {
   );
 }
 
-function getDefaultFootyPrioritySet() {
-  const setRecord = (siteData.footySchedule?.prioritySets || []).find((prioritySet) => {
-    return normalizeLookupName(prioritySet?.set) === "1";
-  });
-  const priorities = Array.isArray(setRecord?.priorities) && setRecord.priorities.length > 0
-    ? setRecord.priorities
-    : ["1"];
-
-  return new Set(priorities.map(normalizeFootyPriority).filter(Boolean));
-}
-
 function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
   if (footyFilters) {
     footyFilters.hidden = !shouldShowFootyFilters;
@@ -3147,9 +3140,8 @@ function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
   }
 
   const selectedTeams = getSelectedFootyTeams();
-  const defaultPrioritySet = getDefaultFootyPrioritySet();
-  const defaultTeams = getDefaultFootyTeams(fixtures, defaultPrioritySet);
   const teams = getFootyFilterTeams(fixtures);
+  const defaultTeams = new Set(teams.map(getFootyTeamFilterKey).filter(Boolean));
   const button = footyTeamFilter.querySelector(".multi-filter-button");
   const options = footyTeamFilter.querySelector(".multi-filter-options");
 
@@ -3161,7 +3153,7 @@ function syncFootyFilters(fixtures = [], matchPeriodFixtures = fixtures) {
   button.textContent = teams.length === 0
     ? "No teams loaded"
     : selectedCount === 0
-    ? "Default priority teams"
+    ? "All followed teams"
     : selectedCount === 1
     ? teams.find((team) => selectedTeams.has(getFootyTeamFilterKey(team))) || "1 team selected"
     : `${selectedCount} teams selected`;

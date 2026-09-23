@@ -1,13 +1,15 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
+import { loadUsSoccerRoster } from "./ussoccer-roster-provider.mjs";
 
 const FOOTY_DATA_ENDPOINT = process.env.FOOTY_DATA_ENDPOINT || "https://script.google.com/macros/s/AKfycby8dGLrEIZjonAowrIAUAhU7FtSMRh6MODmZ6Nb86IU-JjFWMuhBkax00czlpEYKbGs/exec";
 const ROSTER_ENDPOINT = process.env.FOOTY_ROSTER_SYNC_ENDPOINT || "";
 const SYNC_TOKEN = process.env.FOOTY_ROSTER_SYNC_TOKEN || "";
 const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const FOOTBALL_DATA_TEAM_IDS = { "1": "57", "2": "81", "3": "404" };
-const SPORTDB_TEAM_IDS = { "1": "133604", "2": "133739", "3": "134775", "6": "140078", "7": "137699" };
+const SPORTDB_TEAM_IDS = { "1": "133604", "2": "133739", "3": "134775", "4": "134514", "5": "136819", "6": "140078", "7": "137699" };
+const US_SOCCER_TEAM_SLUGS = { "4": "usmnt", "5": "uswnt" };
 const DEFAULT_TEAM_IDS = ["1", "2", "3", "4", "5", "6", "7"];
 const SHOULD_SEED_LEGACY = process.argv.includes("--seed-legacy");
 
@@ -21,11 +23,14 @@ for (const target of rosterTargets) {
   const sportDbTeamId = target.sportDbTeamId || await discoverSportDbTeamId(target.teamName, target.leagueNames);
   const legacy = legacyRosters.find((roster) => String(roster.teamId) === teamId);
   const season = target.season || currentSeason(teamId);
+  const usSoccerTeamSlug = US_SOCCER_TEAM_SLUGS[teamId] || "";
   const refreshedProviders = [
+    usSoccerTeamSlug ? "ussoccer.com" : "",
     footballDataTeamId && FOOTBALL_DATA_API_KEY ? "football-data.org" : "",
-    sportDbTeamId ? "TheSportsDB" : "",
+    sportDbTeamId && !usSoccerTeamSlug ? "TheSportsDB" : "",
   ].filter(Boolean);
-  const [footballPlayers, sportDbPlayers] = await Promise.all([
+  const [usSoccerPlayers, footballPlayers, sportDbPlayers] = await Promise.all([
+    loadUsSoccerRoster(usSoccerTeamSlug),
     loadFootballDataPlayers(footballDataTeamId),
     loadSportDbPlayers(sportDbTeamId),
   ]);
@@ -35,7 +40,22 @@ for (const target of rosterTargets) {
   const players = [];
   const matchedLegacy = new Set();
 
-  for (const player of footballPlayers) {
+  for (const player of usSoccerPlayers) {
+    const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
+    if (legacyPlayer) matchedLegacy.add(legacyPlayer);
+    players.push({
+      playerKey: `ussoccer.com:${player.id}`,
+      provider: "ussoccer.com",
+      providerPlayerId: player.id,
+      providerData: {
+        ...player,
+        position: normalizePosition(player.position),
+      },
+      seedOverrides: legacyPlayer ? await legacyOverrides(legacyPlayer, legacy?.season || season) : {},
+    });
+  }
+
+  for (const player of usSoccerPlayers.length ? [] : footballPlayers) {
     const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
     const media = sportDbMedia.get(String(player.id)) || {};
     if (legacyPlayer) matchedLegacy.add(legacyPlayer);
@@ -56,7 +76,7 @@ for (const target of rosterTargets) {
     });
   }
 
-  if (!footballPlayers.length) {
+  if (!usSoccerPlayers.length && !footballPlayers.length) {
     for (const player of sportDbPlayers) {
       const legacyPlayer = findIdentityMatch(player, legacy?.players || [], matchedLegacy);
       if (legacyPlayer) matchedLegacy.add(legacyPlayer);
@@ -100,8 +120,8 @@ for (const target of rosterTargets) {
     teamId,
     season,
     active: true,
-    provider: footballDataTeamId && footballPlayers.length ? "football-data.org" : sportDbTeamId ? "TheSportsDB" : "",
-    providerTeamId: String(footballDataTeamId && footballPlayers.length ? footballDataTeamId : sportDbTeamId || ""),
+    provider: usSoccerPlayers.length ? "ussoccer.com" : footballDataTeamId && footballPlayers.length ? "football-data.org" : sportDbTeamId ? "TheSportsDB" : "",
+    providerTeamId: String(usSoccerPlayers.length ? usSoccerTeamSlug : footballDataTeamId && footballPlayers.length ? footballDataTeamId : sportDbTeamId || ""),
     refreshedProviders,
     players,
   });

@@ -3,6 +3,10 @@ const FOOTBALL_CLUB_NAME_ALIASES = Object.freeze({
   "slavia prague": "slavia praha",
   "sporting clube de portugal": "sporting",
   "sporting cp": "sporting",
+  usmnt: "united states",
+  uswnt: "united states women",
+  usa: "united states",
+  "usa women": "united states women",
 });
 
 export function isSameFootballClubName(firstName, secondName) {
@@ -14,6 +18,7 @@ export function isSameFootballClubName(firstName, secondName) {
 
   const firstTokens = getFootballClubIdentityTokens(first);
   const secondTokens = getFootballClubIdentityTokens(second);
+  if (firstTokens.includes("women") !== secondTokens.includes("women")) return false;
   const shorterTokens = firstTokens.length <= secondTokens.length ? firstTokens : secondTokens;
   const longerTokens = new Set(firstTokens.length <= secondTokens.length ? secondTokens : firstTokens);
 

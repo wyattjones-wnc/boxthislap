@@ -319,6 +319,12 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await page.goto("/#footy", { waitUntil: "networkidle" });
   const fixture = page.locator("[data-footy-match-id][role=button]").first();
   await expect(fixture).toBeVisible();
+  await expect(
+    page
+      .locator("#footy-schedule-list")
+      .getByText("USMNT", { exact: true })
+      .first(),
+  ).toBeVisible();
 
   await page.locator("#footy-filter-toggle").click();
   await expect(page.locator("#footy-filters")).toBeVisible();
@@ -335,6 +341,16 @@ test("Footy filters and fixture expansion remain interactive", async ({
   await restoredFixture.click();
   await expect(restoredFixture).toHaveAttribute("aria-expanded", "true");
   await expect(restoredFixture.locator(".footy-fixture-details")).toBeVisible();
+
+  await page.locator("#footy-competition-toggle").click();
+  await expect(
+    page.locator('#footy-competition-select optgroup[label="Internationals"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      '#footy-competition-select option[value="uefa nations league"]',
+    ),
+  ).toHaveText("UEFA Nations League (1)");
 });
 
 test("Match Notes dialog contains its populated mobile form", async ({
@@ -930,7 +946,38 @@ async function prepareFootyFixture(page) {
   await page.route("**/data/footy-schedule.json*", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
-        competitionSchedules: [],
+        competitionSchedules: [
+          {
+            competition: {
+              category: "international",
+              code: "UNL",
+              id: "4490",
+              key: "uefa nations league",
+              name: "UEFA Nations League",
+              priority: 1,
+              season: "2098",
+              source: "TheSportsDB",
+              type: "INTERNATIONAL_CUP",
+            },
+            fixtureCount: 1,
+            fixtures: [
+              {
+                away: "Germany",
+                date: "2099-01-03",
+                home: "Netherlands",
+                id: "test-nations-league-match",
+                isCompetitionFixture: true,
+                league: "UEFA Nations League",
+                leagueId: "4490",
+                matchId: "test-nations-league-match",
+                source: "TheSportsDB",
+                status: "NS",
+                time: "18:45",
+                timestamp: "2099-01-03T18:45:00.000Z",
+              },
+            ],
+          },
+        ],
         generatedAt: "2098-12-31T00:00:00.000Z",
         prioritySets: [{ priorities: ["1"], set: "1" }],
         schemaVersion: 4,
@@ -943,6 +990,15 @@ async function prepareFootyFixture(page) {
             name: "Arsenal",
             prettyName: "Arsenal",
             priority: "1",
+          },
+          {
+            active: true,
+            badge: "",
+            id: "4",
+            league: "International",
+            name: "USMNT",
+            prettyName: "United States Men's National Team",
+            priority: "4",
           },
         ],
         teamSchedules: [
@@ -972,6 +1028,32 @@ async function prepareFootyFixture(page) {
               priority: "1",
             },
           },
+          {
+            fixtures: [
+              {
+                away: "Mexico",
+                date: "2099-01-02",
+                home: "USMNT",
+                isHome: true,
+                league: "International Friendly",
+                matchId: "test-usmnt-match",
+                opponent: "Mexico",
+                priority: "4",
+                teamId: "4",
+                teamName: "USMNT",
+                time: "20:00",
+                timestamp: "2099-01-03T01:00:00.000Z",
+                venue: "Test National Stadium",
+              },
+            ],
+            team: {
+              badge: "",
+              id: "4",
+              league: "International",
+              name: "USMNT",
+              priority: "4",
+            },
+          },
         ],
       }),
       contentType: "application/json",
@@ -983,7 +1065,7 @@ async function prepareFootyFixture(page) {
     async (route) => {
       await route.fulfill({
         body: JSON.stringify({
-          defaultTeamIds: ["1"],
+          defaultTeamIds: ["1", "4"],
           leagues: [],
           ok: true,
           teams: [
@@ -993,6 +1075,13 @@ async function prepareFootyFixture(page) {
               id: "1",
               name: "Arsenal",
               prettyName: "Arsenal",
+            },
+            {
+              active: true,
+              badge: "",
+              id: "4",
+              name: "USMNT",
+              prettyName: "United States Men's National Team",
             },
           ],
         }),

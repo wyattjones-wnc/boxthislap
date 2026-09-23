@@ -18,8 +18,25 @@ declare global {
   }
 }
 
+async function getAccessTokenBridge() {
+  if (!window.boxThisLapGetManagerAccessToken) {
+    await new Promise<void>((resolve) => {
+      const timeout = window.setTimeout(resolve, 5000);
+      window.addEventListener(
+        "boxthislap:manager-auth-ready",
+        () => {
+          window.clearTimeout(timeout);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+  }
+  return window.boxThisLapGetManagerAccessToken?.();
+}
+
 async function request(path: string, options: RequestInit = {}) {
-  const token = await window.boxThisLapGetManagerAccessToken?.();
+  const token = await getAccessTokenBridge();
   if (!token) throw new Error("Sign in again to open Database Explorer.");
   const response = await fetch(`${DATABASE_ADMIN_ENDPOINT}${path}`, {
     ...options,

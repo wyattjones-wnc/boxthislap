@@ -105,14 +105,19 @@ function database(env, id) {
 }
 
 async function listTables(db) {
-  const result = await db
-    .prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-    )
-    .all();
+  const result = await db.prepare("PRAGMA table_list").all();
   const tables = [];
-  for (const row of result.results || []) {
-    if (HIDDEN_TABLES.has(row.name)) continue;
+  const applicationTables = (result.results || [])
+    .filter(
+      (row) =>
+        row.schema === "main" &&
+        row.type === "table" &&
+        !String(row.name || "").startsWith("sqlite_") &&
+        !String(row.name || "").startsWith("_cf_"),
+    )
+    .sort((left, right) => String(left.name).localeCompare(String(right.name)));
+  for (const row of applicationTables) {
+    if (HIDDEN_TABLES.has(String(row.name))) continue;
     const schema = await tableSchema(db, row.name);
     const count = await db
       .prepare(`SELECT COUNT(*) AS count FROM ${quote(row.name)}`)

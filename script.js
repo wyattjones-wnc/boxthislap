@@ -8863,6 +8863,7 @@ async function ensureRankingAuthorization({ forceRefresh = false } = {}) {
 }
 
 window.boxThisLapGetManagerAccessToken = ensureRankingAuthorization;
+window.dispatchEvent(new Event("boxthislap:manager-auth-ready"));
 
 async function renewRankingAuthorization(session, auth) {
   let response;

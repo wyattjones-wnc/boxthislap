@@ -414,6 +414,12 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       )
       .join("");
     swapDialog.showModal();
+    swapDialog.scrollTop = 0;
+    requestAnimationFrame(() => {
+      swapOptions
+        .querySelector("[data-featured-replacement]")
+        ?.focus({ preventScroll: true });
+    });
   }
 
   function closeSwapDialog() {

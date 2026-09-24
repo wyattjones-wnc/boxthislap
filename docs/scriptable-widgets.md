@@ -19,6 +19,8 @@ Run the loader again at any time to update the installed widget scripts. It conf
 
 The loader uses an explicit version identifier when checking itself, so harmless file-formatting differences cannot trigger repeated updates. After an update check, it returns to the same loader options so you can install or update widgets, check the loader again, or share it.
 
+If a development loader was copied directly but still points at the stable channel, it automatically corrects itself to `dev` when the requested loader or widget is not available on `main`. The corrected channel is saved in the installed loader.
+
 Loader copies installed before self-updating was added must be replaced manually this one last time. Every loader shared or installed afterward can update itself.
 
 If you update a widget that is already on the Home Screen, remove that Home Screen widget and add it again once. iOS can otherwise retain the tap action from the previously rendered widget until a later automatic refresh.

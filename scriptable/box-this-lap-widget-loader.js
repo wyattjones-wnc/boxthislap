@@ -60,14 +60,13 @@ async function updateInstaller() {
     const storage = getScriptStorage();
     const currentSource = storage.manager.readString(module.filename);
 
-    if (currentSource === nextSource) {
+    if (normalizeSource(currentSource) === normalizeSource(nextSource)) {
       await showInstallerCurrent();
       return;
     }
 
     storage.manager.writeString(module.filename, nextSource);
     await showInstallerUpdated();
-    Safari.open(URLScheme.forRunningScript());
   } catch (error) {
     console.warn(`Unable to update the widget installer: ${error}`);
     await showInstallerUpdateError(error);
@@ -84,9 +83,13 @@ function setDefaultSourceBranch(source, branch) {
 async function showInstallerUpdated() {
   const alert = new Alert();
   alert.title = "Installer updated";
-  alert.message = "The latest Box This Lap widget installer is ready. Tap Continue to reopen it.";
-  alert.addAction("Continue");
+  alert.message = "The latest Box This Lap widget installer is ready. Close this screen, then run the loader again.";
+  alert.addAction("Done");
   await alert.presentAlert();
+}
+
+function normalizeSource(source) {
+  return String(source || "").replace(/\r\n/g, "\n").trim();
 }
 
 async function showInstallerCurrent() {

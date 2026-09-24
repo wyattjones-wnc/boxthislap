@@ -17,7 +17,7 @@ On the iPhone:
 
 Run the loader again at any time to update the installed widget scripts. It confirms before replacing an existing copy. Choose **Update this loader** to check for and install a newer copy of the loader itself; it reports when the installed copy is already current.
 
-When the loader installs a newer copy of itself, tap **Continue** and it reopens automatically with the new version.
+When the loader installs a newer copy of itself, tap **Done**, then run the loader again. It intentionally does not reopen itself automatically, which avoids Scriptable repeatedly executing its previously loaded source.
 
 Loader copies installed before self-updating was added must be replaced manually this one last time. Every loader shared or installed afterward can update itself.
 

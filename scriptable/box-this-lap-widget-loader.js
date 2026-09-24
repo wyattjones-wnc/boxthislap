@@ -6,8 +6,9 @@
 // ?channel=dev, for example:
 // scriptable:///run/Box%20This%20Lap%20Widget%20Loader?channel=dev
 
-// The loader updates itself when it starts. Updating a widget replaces its
-// installed copy after confirmation.
+// Use Update this loader in the menu to check for a newer loader. Updating a
+// widget replaces its installed copy after confirmation.
+// Compatibility marker for older self-updating copies: updateInstallerIfNeeded.
 
 const DEFAULT_SOURCE_BRANCH = "main";
 const QUERY_PARAMETERS = args.queryParameters || {};
@@ -38,14 +39,6 @@ await runLoader();
 Script.complete();
 
 async function runLoader() {
-  const installerUpdated = await updateInstallerIfNeeded();
-
-  if (installerUpdated) {
-    await showInstallerUpdated();
-    Safari.open(URLScheme.forRunningScript());
-    return;
-  }
-
   const selectedWidgets = await chooseWidgets();
 
   if (selectedWidgets.length) {
@@ -53,13 +46,13 @@ async function runLoader() {
   }
 }
 
-async function updateInstallerIfNeeded() {
+async function updateInstaller() {
   try {
     const request = new Request(`${REPOSITORY_RAW_ROOT}/box-this-lap-widget-loader.js?nonce=${Date.now()}`);
     request.timeoutInterval = 8;
     const downloadedSource = await request.loadString();
 
-    if (!downloadedSource.includes("Box This Lap - Widget Loader") || !downloadedSource.includes("updateInstallerIfNeeded")) {
+    if (!downloadedSource.includes("Box This Lap - Widget Loader") || !downloadedSource.includes("updateInstaller")) {
       throw new Error("The widget installer did not download correctly.");
     }
 
@@ -68,14 +61,16 @@ async function updateInstallerIfNeeded() {
     const currentSource = storage.manager.readString(module.filename);
 
     if (currentSource === nextSource) {
-      return false;
+      await showInstallerCurrent();
+      return;
     }
 
     storage.manager.writeString(module.filename, nextSource);
-    return true;
+    await showInstallerUpdated();
+    Safari.open(URLScheme.forRunningScript());
   } catch (error) {
-    console.warn(`Unable to update the widget installer; continuing with the installed copy: ${error}`);
-    return false;
+    console.warn(`Unable to update the widget installer: ${error}`);
+    await showInstallerUpdateError(error);
   }
 }
 
@@ -94,6 +89,22 @@ async function showInstallerUpdated() {
   await alert.presentAlert();
 }
 
+async function showInstallerCurrent() {
+  const alert = new Alert();
+  alert.title = "Loader is current";
+  alert.message = `This is already the latest ${SOURCE_BRANCH} version of the Box This Lap Widget Loader.`;
+  alert.addAction("Done");
+  await alert.presentAlert();
+}
+
+async function showInstallerUpdateError(error) {
+  const alert = new Alert();
+  alert.title = "Couldn’t update loader";
+  alert.message = String(error && error.message ? error.message : error);
+  alert.addAction("OK");
+  await alert.presentAlert();
+}
+
 async function chooseWidgets() {
   const alert = new Alert();
   alert.title = SOURCE_BRANCH === "dev"
@@ -104,6 +115,7 @@ async function chooseWidgets() {
   AVAILABLE_WIDGETS.forEach((widget) => {
     alert.addAction(widget.name.replace("Box This Lap ", ""));
   });
+  alert.addAction("Update this loader");
   alert.addAction("Share this installer");
   alert.addCancelAction("Cancel");
 
@@ -118,6 +130,11 @@ async function chooseWidgets() {
   }
 
   if (choice === AVAILABLE_WIDGETS.length + 1) {
+    await updateInstaller();
+    return [];
+  }
+
+  if (choice === AVAILABLE_WIDGETS.length + 2) {
     await shareInstaller();
   }
 

@@ -1,6 +1,6 @@
 # Box This Lap Scriptable Widgets
 
-The Box This Lap widget loader installs or updates the Footy and Next widgets without requiring someone to copy each widget's code by hand.
+The Box This Lap widget loader installs or updates the Footy, Formula 1, and Next widgets without requiring someone to copy each widget's code by hand.
 
 ## First-time setup
 
@@ -10,9 +10,9 @@ On the iPhone:
 2. Create one new script named `Box This Lap Widget Loader`.
 3. Open [`scriptable/box-this-lap-widget-loader.js`](../scriptable/box-this-lap-widget-loader.js), tap **Raw**, copy its contents into the new script, and save.
 4. Run `Box This Lap Widget Loader`.
-5. Tap **Install or update both** (or choose one widget).
-6. Add a medium or large Scriptable widget to the Home Screen.
-7. Edit the Home Screen widget and select `Box This Lap Footy` or `Box This Lap Next`.
+5. Tap **Install or update all** (or choose one widget).
+6. Add a small, medium, or large Scriptable widget to the Home Screen.
+7. Edit the Home Screen widget and select the Box This Lap widget you want.
 8. Set **When Interacting** to **Run Script**.
 
 Run the loader again at any time to update the installed widget scripts. It confirms before replacing an existing copy.
@@ -35,7 +35,7 @@ scriptable:///run/Box%20This%20Lap%20Widget%20Loader?channel=dev
 2. Tap **Share this installer**.
 3. Send the file using Messages, AirDrop, Mail, or another iOS sharing option.
 4. The recipient opens the shared script in Scriptable and runs it.
-5. They tap **Install or update both**, then add the two Scriptable widgets to their Home Screen.
+5. They tap **Install or update all**, then add the Scriptable widgets they want to their Home Screen.
 
 This leaves only the iOS-required Home Screen widget addition as a manual setup step. The recipient does not need to visit GitHub or copy either widget script.
 
@@ -45,9 +45,10 @@ The shared installer keeps the source channel of the running loader. Launch the 
 
 - Scriptable's **When Interacting** setting must be **Run Script**. The widget scripts intentionally leave their tap URL unset so this native interaction setting is not overridden.
 - Tap the Footy widget to run it again, fetch the latest schedule, and show a refreshed preview.
+- Tap the Formula 1 widget to fetch the latest season schedule and show a refreshed preview.
 - Tap the Next widget to run it again and choose from the current upcoming incomplete items in the Next list.
 
-Both widgets continue to request automatic background refreshes. iOS decides when those background refreshes actually occur.
+All widgets continue to request automatic background refreshes. iOS decides when those background refreshes actually occur.
 
 ## Footy
 
@@ -66,6 +67,16 @@ Add `dev` before or after the manager to read the development schedule and prefe
 ```text
 dev Wyatt
 ```
+
+## Formula 1
+
+Formula 1 reads the current season schedule directly from Jolpica and displays times in the iPhone's local time zone. The bet deadline is the scheduled qualifying start.
+
+- Small: the next race, its bet deadline, and race time.
+- Medium: the next three races in vertical sections.
+- Large: the next six rounds in compact rows.
+
+The widget keeps the last successful schedule on the phone and labels the display `CACHED` if a refresh fails. A race remains visible for three hours after its scheduled start.
 
 ## Next
 

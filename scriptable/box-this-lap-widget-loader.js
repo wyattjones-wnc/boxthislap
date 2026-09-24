@@ -1,7 +1,7 @@
 // Box This Lap - Widget Loader for Scriptable
 //
 // Paste this one script into Scriptable and run it. It can install or update
-// the Footy and Next widgets in the same Scriptable library as this loader.
+// the Footy, Formula 1, and Next widgets in the same Scriptable library as this loader.
 // Stable versions come from main. To test dev, run the loader from a URL with
 // ?channel=dev, for example:
 // scriptable:///run/Box%20This%20Lap%20Widget%20Loader?channel=dev
@@ -21,6 +21,11 @@ const AVAILABLE_WIDGETS = [
     name: "Box This Lap Footy",
     description: "The next three or eight Footy matches",
     sourceFile: "box-this-lap-footy-widget.js",
+  },
+  {
+    name: "Box This Lap Formula 1",
+    description: "The next one, three, or six Formula 1 rounds",
+    sourceFile: "box-this-lap-formula-one-widget.js",
   },
   {
     name: "Box This Lap Next",
@@ -95,7 +100,7 @@ async function chooseWidgets() {
     ? "Box This Lap Widgets (Dev)"
     : "Box This Lap Widgets";
   alert.message = "Install new widgets or update ones you already have.";
-  alert.addAction("Install or update both");
+  alert.addAction("Install or update all");
   AVAILABLE_WIDGETS.forEach((widget) => {
     alert.addAction(widget.name.replace("Box This Lap ", ""));
   });

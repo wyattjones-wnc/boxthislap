@@ -128,6 +128,8 @@ import {
   footyCompetitionSelect,
   footyNotificationToggle,
   footyNotificationStatus,
+  formulaOneNotificationToggle,
+  formulaOneNotificationStatus,
   footyFilterToggle,
   footyFilters,
   footySearchInput,
@@ -524,6 +526,7 @@ const FOOTY_MATCH_NOTES_FRESH_MS = 5 * 60 * 1000;
 const FOOTY_NOTIFICATION_STORAGE_KEY = "boxthislap-footy-start-notifications";
 const FOOTY_NOTIFICATION_SENT_STORAGE_KEY = "boxthislap-footy-start-notifications-sent";
 const FOOTY_PUSH_SUBSCRIPTION_STORAGE_KEY = "boxthislap-footy-push-subscription";
+const FORMULA_ONE_NOTIFICATION_STORAGE_KEY = "boxthislap-formula-one-deadline-notifications";
 const FOOTY_NOTIFICATION_CHECK_INTERVAL_MS = 60 * 1000;
 const FOOTY_NOTIFICATION_WINDOW_MS = 10 * 60 * 1000;
 const MANAGER_HUB_DRAFTS_CACHE_KEY = "boxthislap-manager-hub-drafts";
@@ -536,6 +539,7 @@ const FOOTY_NOTIFICATION_OFFSETS = [
 ];
 let footyNotificationTimer = null;
 let isFootyNotificationBusy = false;
+let isFormulaOneNotificationBusy = false;
 let footyMatchNotificationsLoadPromise = null;
 const pendingFootyMatchNotificationIds = new Set();
 let footyMissingNotesFixturesCache = null;
@@ -3240,6 +3244,71 @@ function syncFootyNotificationToggle() {
   );
 }
 
+function syncFormulaOneNotificationToggle() {
+  if (!formulaOneNotificationToggle) return;
+  const supported = isFootyPushNotificationSupported();
+  const enabled = getStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY) &&
+    typeof Notification !== "undefined" && Notification.permission === "granted";
+  const managerReady = Boolean(getCurrentManagerId());
+  formulaOneNotificationToggle.hidden = !managerReady;
+  formulaOneNotificationToggle.disabled = !managerReady || !supported || isFormulaOneNotificationBusy;
+  formulaOneNotificationToggle.classList.toggle("is-active", enabled);
+  formulaOneNotificationToggle.classList.toggle("is-loading", isFormulaOneNotificationBusy);
+  formulaOneNotificationToggle.setAttribute("aria-pressed", String(enabled));
+  const label = isFormulaOneNotificationBusy
+    ? "Updating Formula 1 deadline alerts"
+    : enabled ? "Turn off Formula 1 deadline alerts" : "Subscribe to Formula 1 deadline alerts";
+  formulaOneNotificationToggle.setAttribute("aria-label", label);
+  formulaOneNotificationToggle.setAttribute("title", enabled
+    ? "Formula 1 deadline alerts on"
+    : "Notify 24 hours, 12 hours, 1 hour, and at the deadline");
+}
+
+function setFormulaOneNotificationStatus(message = "", state = "") {
+  if (!formulaOneNotificationStatus) return;
+  formulaOneNotificationStatus.textContent = message;
+  formulaOneNotificationStatus.classList.toggle("is-error", state === "error");
+  formulaOneNotificationStatus.classList.toggle("is-success", state === "success");
+}
+
+async function toggleFormulaOneNotifications() {
+  if (isFormulaOneNotificationBusy) return;
+  if (!isFootyPushNotificationSupported()) {
+    setFormulaOneNotificationStatus(
+      "Push notifications are unavailable here. On iPhone or iPad, add Box This Lap to the Home Screen, then open it from there.",
+      "error",
+    );
+    syncFormulaOneNotificationToggle();
+    return;
+  }
+  isFormulaOneNotificationBusy = true;
+  syncFormulaOneNotificationToggle();
+  const wasEnabled = getStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY);
+  try {
+    if (!wasEnabled) {
+      setFormulaOneNotificationStatus("Requesting notification permission...");
+      const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Notification permission was not granted.");
+      setFormulaOneNotificationStatus("Subscribing this device...");
+      await subscribeFootyPushNotifications("formula-one");
+      setStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY, true);
+      setFormulaOneNotificationStatus("Formula 1 deadline alerts are on for this device.", "success");
+    } else {
+      setFormulaOneNotificationStatus("Turning off Formula 1 deadline alerts...");
+      await setPushNotificationTopic("formula-one", false);
+      setStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY, false);
+      setFormulaOneNotificationStatus("Formula 1 deadline alerts are off.", "success");
+    }
+  } catch (error) {
+    setStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY, wasEnabled);
+    recordDiagnostic("Formula 1 notification toggle failed", error);
+    setFormulaOneNotificationStatus(`Unable to update alerts: ${getErrorMessage(error)}`, "error");
+  } finally {
+    isFormulaOneNotificationBusy = false;
+    syncFormulaOneNotificationToggle();
+  }
+}
+
 function setFootyNotificationStatus(message = "", state = "") {
   if (!footyNotificationStatus) {
     return;
@@ -3285,9 +3354,7 @@ async function toggleFootyNotifications() {
     if (isFootyNotificationEnabled()) {
       setFootyNotificationStatus("Turning off match alerts...");
 
-      if (supportsPush) {
-        await unsubscribeFootyPushNotifications();
-      }
+      if (supportsPush) await setPushNotificationTopic("footy", false);
 
       setStoredBoolean(FOOTY_NOTIFICATION_STORAGE_KEY, false);
       stopFootyNotificationMonitor();
@@ -3310,7 +3377,7 @@ async function toggleFootyNotifications() {
 
     if (supportsPush) {
       setFootyNotificationStatus("Subscribing this device...");
-      await subscribeFootyPushNotifications();
+      await subscribeFootyPushNotifications("footy");
       stopFootyNotificationMonitor();
       setFootyNotificationStatus("Match alerts are on for this device.", "success");
     } else {
@@ -3470,7 +3537,7 @@ function formatFileSize(bytes) {
   return `${megabytes.toFixed(megabytes >= 10 ? 0 : 1)} MB`;
 }
 
-async function subscribeFootyPushNotifications() {
+async function subscribeFootyPushNotifications(topic = "footy") {
   const endpoint = getFootyPushEndpoint();
 
   if (!endpoint) {
@@ -3513,6 +3580,7 @@ async function subscribeFootyPushNotifications() {
     body: JSON.stringify({
       pageUrl: window.location.href,
       subscription: subscription.toJSON(),
+      topic,
       userAgent: navigator.userAgent,
     }),
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
@@ -3528,6 +3596,20 @@ async function subscribeFootyPushNotifications() {
     publicKey,
     savedAt: new Date().toISOString(),
   });
+}
+
+async function setPushNotificationTopic(topic, enabled) {
+  const endpoint = getFootyPushEndpoint();
+  const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
+  const subscription = registration?.pushManager ? await registration.pushManager.getSubscription() : null;
+  if (!endpoint || !subscription?.endpoint) return;
+  const accessToken = await ensureRankingAuthorization();
+  const response = await fetch(`${endpoint}/preferences`, {
+    body: JSON.stringify({ enabled, endpoint: subscription.endpoint, topic }),
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    method: "POST",
+  });
+  if (!response.ok) throw new Error(`Unable to save notification preference (${response.status}).`);
 }
 
 async function unsubscribeFootyPushNotifications() {
@@ -13573,6 +13655,10 @@ footyNotificationToggle?.addEventListener("click", () => {
   void toggleFootyNotifications();
 });
 
+formulaOneNotificationToggle?.addEventListener("click", () => {
+  void toggleFormulaOneNotifications();
+});
+
 window.addEventListener("focus", () => {
   checkFootyMatchNotifications();
   refreshFootyMatchNotesIfNeeded();
@@ -15119,6 +15205,7 @@ function hydrateManagerSession() {
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
+  syncFormulaOneNotificationToggle();
   refreshManagerAuthorizationInBackground();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
@@ -15159,6 +15246,7 @@ function saveManagerSession(session) {
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
+  syncFormulaOneNotificationToggle();
   scheduleRankingAuthorizationRefresh();
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
@@ -15198,6 +15286,7 @@ function signOutManager() {
   renderLoginState();
   renderManagerHub();
   syncFootyNotificationToggle();
+  syncFormulaOneNotificationToggle();
   void followedTeamsController.load().catch((error) => recordDiagnostic("default followed teams failed to load", error));
   showPage("footy", { scrollToTop: true });
   window.location.hash = "footy";

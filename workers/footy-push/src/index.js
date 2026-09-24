@@ -3,6 +3,12 @@ const OFFSETS = [
   { key: "1h", label: "in 1 hour", minutes: 60 },
   { key: "start", label: "now", minutes: 0 },
 ];
+const FORMULA_ONE_OFFSETS = [
+  { key: "24h", label: "24 hours", minutes: 1440 },
+  { key: "12h", label: "12 hours", minutes: 720 },
+  { key: "1h", label: "1 hour", minutes: 60 },
+  { key: "deadline", label: "", minutes: 0 },
+];
 const SUBSCRIPTION_PREFIX = "sub:";
 const PENDING_PREFIX = "pending:";
 const SENT_PREFIX = "sent:";
@@ -31,6 +37,10 @@ export default {
 
       if (request.method === "POST" && url.pathname === "/unsubscribe") {
         return json(await unsubscribe(request, env), env);
+      }
+
+      if (request.method === "POST" && url.pathname === "/preferences") {
+        return json(await updatePreference(request, env), env);
       }
 
       if (request.method === "POST" && url.pathname === "/pending") {
@@ -65,6 +75,8 @@ async function subscribe(request, env) {
   const body = await request.json();
   const subscription = normalizeSubscription(body.subscription || body);
   const subscriptionHash = await hashText(subscription.endpoint);
+  const existing = await getJson(env.FOOTY_PUSH_KV, `${SUBSCRIPTION_PREFIX}${subscriptionHash}`, null);
+  const topic = normalizeTopic(body.topic || "footy");
   const record = {
     active: true,
     createdAt: new Date().toISOString(),
@@ -74,11 +86,42 @@ async function subscribe(request, env) {
     pageUrl: String(body.pageUrl || "").trim(),
     updatedAt: new Date().toISOString(),
     userAgent: String(body.userAgent || "").trim(),
+    topics: { ...getSubscriptionTopics(existing), [topic]: true },
   };
 
   await env.FOOTY_PUSH_KV.put(`${SUBSCRIPTION_PREFIX}${subscriptionHash}`, JSON.stringify(record));
 
   return { ok: true, subscriptionHash };
+}
+
+async function updatePreference(request, env) {
+  assertEnv(env, ["FOOTY_PUSH_KV", "AUTH_SECRET"]);
+  const manager = await requireManager(request, env);
+  const body = await request.json();
+  const endpoint = String(body.endpoint || "").trim();
+  if (!endpoint) throw httpError(400, "Missing subscription endpoint.");
+  const subscriptionHash = await hashText(endpoint);
+  const key = `${SUBSCRIPTION_PREFIX}${subscriptionHash}`;
+  const record = await getJson(env.FOOTY_PUSH_KV, key, null);
+  if (!record || String(record.managerId) !== String(manager.sub)) {
+    throw httpError(404, "Push subscription not found.");
+  }
+  const topic = normalizeTopic(body.topic);
+  record.topics = { ...getSubscriptionTopics(record), [topic]: Boolean(body.enabled) };
+  record.updatedAt = new Date().toISOString();
+  await env.FOOTY_PUSH_KV.put(key, JSON.stringify(record));
+  return { ok: true, topics: record.topics };
+}
+
+function normalizeTopic(value) {
+  const topic = String(value || "").trim();
+  if (!new Set(["footy", "formula-one"]).has(topic)) throw httpError(400, "Unknown notification topic.");
+  return topic;
+}
+
+function getSubscriptionTopics(record) {
+  if (record?.topics && typeof record.topics === "object") return record.topics;
+  return record ? { footy: true, "formula-one": false } : { footy: false, "formula-one": false };
 }
 
 async function unsubscribe(request, env) {
@@ -152,7 +195,8 @@ async function sendDueFootyAlerts(env) {
     main: getDueFootyAlerts(schedules.main, env),
     dev: getDueFootyAlerts(schedules.dev, env),
   };
-  const dueAlertCount = dueAlertsByChannel.main.length + dueAlertsByChannel.dev.length;
+  const formulaOneAlerts = await getDueFormulaOneAlertsFromEnvironment(env);
+  const dueAlertCount = dueAlertsByChannel.main.length + dueAlertsByChannel.dev.length + formulaOneAlerts.length;
 
   if (dueAlertCount === 0) {
     return {
@@ -187,12 +231,16 @@ async function sendDueFootyAlerts(env) {
     const followedTeamIds = followedTeamIdsByManager.get(managerId);
     const matchNotificationIds = matchNotificationIdsByManager.get(managerId);
     const channel = getFootySubscriptionChannel(subscription.record);
-    const dueAlerts = dueAlertsByChannel[channel];
+    const topics = getSubscriptionTopics(subscription.record);
+    const dueAlerts = [
+      ...(topics.footy ? dueAlertsByChannel[channel] : []),
+      ...(topics["formula-one"] ? formulaOneAlerts : []),
+    ];
     const pendingNotifications = [];
     const pendingSentKeys = [];
 
     for (const alert of dueAlerts) {
-      if (!isFootyAlertSelected(alert, followedTeamIds, matchNotificationIds)) {
+      if (alert.topic !== "formula-one" && !isFootyAlertSelected(alert, followedTeamIds, matchNotificationIds)) {
         skipped += 1;
         continue;
       }
@@ -206,9 +254,11 @@ async function sendDueFootyAlerts(env) {
 
       pendingNotifications.push({
         body: alert.body,
-        tag: `box-this-lap-footy-${alert.key}`,
+        tag: `box-this-lap-${alert.topic || "footy"}-${alert.key}`,
         title: alert.title,
-        url: getFootyNotificationUrl(channel, env),
+        url: alert.topic === "formula-one"
+          ? getFormulaOneNotificationUrl(channel, env)
+          : getFootyNotificationUrl(channel, env),
       });
       pendingSentKeys.push(sentKey);
     }
@@ -255,6 +305,73 @@ async function sendDueFootyAlerts(env) {
     skippedAlreadySent: skipped,
     subscriptions: subscriptions.length,
   };
+}
+
+function getFormulaOneNotificationUrl(channel, env) {
+  if (channel === "dev") {
+    return String(env.FORMULA_ONE_DEV_NOTIFICATION_URL || env.FORMULA_ONE_NOTIFICATION_URL || "./#formula-1-2026-weekly").trim();
+  }
+  return String(env.FORMULA_ONE_NOTIFICATION_URL || "./#formula-1-2026-weekly").trim();
+}
+
+async function getDueFormulaOneAlertsFromEnvironment(env) {
+  if (!env.FORMULA_ONE_DB) return [];
+  const year = Math.max(2026, Number(env.FORMULA_ONE_YEAR || 2026));
+  const result = await env.FORMULA_ONE_DB.prepare(
+    "SELECT year, round, name, race_date, deadline_at FROM f1_rounds WHERE year = ? AND deadline_at <> '' ORDER BY round",
+  ).bind(year).all();
+  const rounds = result.results || [];
+  const dueWithoutSchedule = getDueFormulaOneAlerts(rounds, [], env);
+  if (!dueWithoutSchedule.length) return [];
+  let races = [];
+  try {
+    const schedule = await fetchJson(String(env.FORMULA_ONE_SCHEDULE_URL || "").trim());
+    races = schedule?.MRData?.RaceTable?.Races || [];
+  } catch (error) {
+    console.warn("Unable to load Formula 1 race times", error);
+  }
+  return getDueFormulaOneAlerts(rounds, races, env);
+}
+
+export function getDueFormulaOneAlerts(rounds = [], races = [], env = {}, now = Date.now()) {
+  const lookbackMs = Math.max(1, Number(env.NOTIFICATION_LOOKBACK_MINUTES || 16)) * 60 * 1000;
+  const raceByRound = new Map(races.map((race) => [Number(race.round), race]));
+  const alerts = [];
+  for (const round of rounds) {
+    const deadline = Date.parse(round.deadline_at || "");
+    if (!Number.isFinite(deadline)) continue;
+    for (const offset of FORMULA_ONE_OFFSETS) {
+      const alertTime = deadline - offset.minutes * 60 * 1000;
+      if (now < alertTime || now - alertTime > lookbackMs) continue;
+      const race = raceByRound.get(Number(round.round));
+      const raceTime = getFormulaOneRaceTime(race, round.race_date);
+      const name = String(round.name || race?.raceName || `Round ${round.round}`).trim();
+      alerts.push({
+        body: offset.key === "deadline"
+          ? `${name} picks are closed.${raceTime ? ` Race: ${formatFormulaOneRaceTime(raceTime)}` : ""}`
+          : `${name} picks close ${offset.label === "1 hour" ? "in 1 hour" : `in ${offset.label}`}.`,
+        key: `f1-${round.year || env.FORMULA_ONE_YEAR || 2026}-${round.round}:${offset.key}`,
+        title: offset.key === "deadline" ? "Formula 1 deadline has passed" : `Formula 1 deadline in ${offset.label}`,
+        topic: "formula-one",
+      });
+    }
+  }
+  return alerts;
+}
+
+function getFormulaOneRaceTime(race, fallbackDate = "") {
+  const date = String(race?.date || fallbackDate || "").trim();
+  const time = String(race?.time || "").trim();
+  if (!date || !time) return NaN;
+  return Date.parse(`${date}T${time}`);
+}
+
+function formatFormulaOneRaceTime(timestamp) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/New_York",
+  }).format(new Date(timestamp));
 }
 
 async function loadFootySchedulesByChannel(env, subscriptions) {

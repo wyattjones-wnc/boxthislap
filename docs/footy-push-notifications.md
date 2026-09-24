@@ -1,11 +1,12 @@
 # Footy Push Notifications
 
-This setup uses a Cloudflare Worker with KV and the shared Rankings D1 database so manager-specific Footy match notifications can be delivered even when the site is not open.
+This setup uses a Cloudflare Worker with KV and the shared Rankings D1 database so manager-specific Footy match notifications can be delivered even when the site is not open. The same browser push subscription also carries opt-in Formula 1 weekly deadline alerts, backed by the Formula 1 D1 database.
 
 ## Pieces
 
 - `service-worker.js`: receives push events and displays pending notifications.
 - `workers/footy-push`: Cloudflare Worker that stores authenticated manager push subscriptions, checks the Footy schedule, resolves current followed-team and match-specific recipients from D1, and sends Web Push wakeups.
+- Formula 1 subscribers receive alerts 24 hours, 12 hours, and 1 hour before the weekly deadline, plus a deadline-passed alert containing the race start time.
 - `FOOTY_PUSH_ENDPOINT` in `modules/siteConfig.js`: the deployed Worker URL used by the site.
 - `FOOTY_PUSH_ENDPOINT` in `service-worker.js`: the same deployed Worker URL used by the background service worker.
 - `FOOTY_SCHEDULE_URL` / `NOTIFICATION_URL`: production schedule and destination.

@@ -111,6 +111,11 @@ export function createRouter({
       scrollToPageTop();
     }
 
+    window.dispatchEvent(
+      new CustomEvent("boxthislap:page-shown", {
+        detail: { pageName: activePageName },
+      }),
+    );
     onPageShown(activePageName);
   }
 

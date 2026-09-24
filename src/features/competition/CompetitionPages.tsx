@@ -1,4 +1,5 @@
-import { CalendarDays } from "lucide-react";
+import type { ReactNode } from "react";
+import { Bell, CalendarDays } from "lucide-react";
 
 const positions = [
   ["all", "All positions"],
@@ -17,18 +18,23 @@ function LoadingCard({ text }: { text: string }) {
 }
 
 function LeagueHeading({
+  action,
   subtitle,
   title,
 }: {
+  action?: ReactNode;
   subtitle: string;
   title: string;
 }) {
   return (
-    <div className="league-detail-heading">
+    <div
+      className={`league-detail-heading${action ? " page-heading-with-action" : ""}`}
+    >
       <div>
         <h2>{title}</h2>
         <p>{subtitle}</p>
       </div>
+      {action}
     </div>
   );
 }
@@ -679,7 +685,29 @@ export function FormulaOne2025WeeklyPage() {
 export function FormulaOne2026WeeklyPage() {
   return (
     <>
-      <LeagueHeading title="Formula 1" subtitle="2026 Weekly" />
+      <LeagueHeading
+        title="Formula 1"
+        subtitle="2026 Weekly"
+        action={
+          <div className="heading-actions heading-actions-right">
+            <button
+              className="icon-action-button formula-one-notification-toggle"
+              id="formula-one-notification-toggle"
+              type="button"
+              aria-label="Subscribe to Formula 1 deadline alerts"
+              aria-pressed="false"
+            >
+              <Bell aria-hidden="true" />
+            </button>
+          </div>
+        }
+      />
+      <p
+        className="footy-notification-status formula-one-notification-status"
+        id="formula-one-notification-status"
+        role="status"
+        aria-live="polite"
+      />
       <div
         className="tabs formula-one-tabs"
         role="tablist"

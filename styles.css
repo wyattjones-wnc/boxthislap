@@ -2627,6 +2627,24 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   color: var(--success);
 }
 
+.formula-one-weekly-heading .heading-actions {
+  align-self: center;
+}
+
+.formula-one-notification-toggle {
+  height: 48px;
+  width: 48px;
+}
+
+.formula-one-notification-toggle svg {
+  height: 24px;
+  width: 24px;
+}
+
+.formula-one-notification-status {
+  margin-top: -12px;
+}
+
 .footy-competition-controls {
   display: flex;
   justify-content: flex-end;

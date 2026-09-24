@@ -15,6 +15,11 @@ binding = "DB"
 database_name = "rankings"
 database_id = "45c405ab-a0cd-442a-b135-b7ffe4b7d933"
 
+[[d1_databases]]
+binding = "FORMULA_ONE_DB"
+database_name = "formula-one"
+database_id = "b3e28ed0-a9c9-43d1-a6cb-ae22b8a181a6"
+
 [vars]
 ALLOWED_ORIGIN = "https://wyattjones-wnc.github.io"
 FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/data/footy-schedule.json"
@@ -23,4 +28,8 @@ DEFAULT_FOOTY_MANAGER_ID = "6"
 NOTIFICATION_LOOKBACK_MINUTES = "16"
 NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/#footy"
 DEV_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#footy"
+FORMULA_ONE_YEAR = "2026"
+FORMULA_ONE_SCHEDULE_URL = "https://api.jolpi.ca/ergast/f1/2026.json"
+FORMULA_ONE_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/#formula-1-2026-weekly"
+FORMULA_ONE_DEV_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#formula-1-2026-weekly"
 VAPID_SUBJECT = "mailto:boxthislap@example.com"

@@ -59,15 +59,24 @@ const DatabaseAdminPage = lazy(() =>
   })),
 );
 
-function DeferredDatabaseAdminPage() {
+export function DeferredDatabaseAdminPage() {
   const [active, setActive] = useState(
     () => window.location.hash.split("?")[0] === "#database-admin",
   );
   useEffect(() => {
-    const update = () =>
-      setActive(window.location.hash.split("?")[0] === "#database-admin");
+    const update = (event?: Event) => {
+      const shownPage =
+        event instanceof CustomEvent
+          ? String(event.detail?.pageName || "")
+          : window.location.hash.slice(1).split("?")[0];
+      setActive(shownPage === "database-admin");
+    };
     window.addEventListener("hashchange", update);
-    return () => window.removeEventListener("hashchange", update);
+    window.addEventListener("boxthislap:page-shown", update);
+    return () => {
+      window.removeEventListener("hashchange", update);
+      window.removeEventListener("boxthislap:page-shown", update);
+    };
   }, []);
   if (!active) return null;
   return (

@@ -34,6 +34,11 @@ describe("competition React pages", () => {
       container.querySelector("#formula-one-2026-weekly-form"),
     ).not.toBeNull();
     expect(
+      screen.getByRole("button", {
+        name: "Subscribe to Formula 1 deadline alerts",
+      }),
+    ).not.toBeNull();
+    expect(
       screen.getByRole("tab", { name: "Managers' Championship" }),
     ).not.toBeNull();
   });

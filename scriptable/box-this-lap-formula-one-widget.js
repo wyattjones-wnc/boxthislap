@@ -4,20 +4,24 @@
 // in vertical sections. Large widgets show the next six rounds.
 
 const SCHEDULE_URL = "https://api.jolpi.ca/ergast/f1/current.json";
+const OPENF1_MEETINGS_URL = "https://api.openf1.org/v1/meetings";
+const FORMULA_ONE_FLAG_ROOT = "https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/Flags%2016x9";
 const SCHEDULE_CACHE_FILE = "box-this-lap-formula-one-schedule.json";
+const MEETINGS_CACHE_FILE = "box-this-lap-formula-one-meetings.json";
 const RACE_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 const COLORS = {
   background: new Color("#101820"),
   card: new Color("#16212d"),
-  border: new Color("#2b3a4e"),
+  border: new Color("#40536b"),
   text: new Color("#f4f7fb"),
   muted: new Color("#aab4c5"),
-  accent: new Color("#e10600"),
+  accent: new Color("#67d4ff"),
   deadline: new Color("#f1c65b"),
 };
 
 const result = await loadSchedule();
+if (result.ok) await enrichUpcomingRaceVisuals(result.races);
 const widget = createWidget(result);
 
 if (config.runsInWidget) {
@@ -59,9 +63,123 @@ function normalizeSchedule(data) {
   return races.map((race) => ({
     round: Number(race.round),
     name: String(race.raceName || `Round ${race.round || ""}`).trim(),
+    country: String(race.Circuit && race.Circuit.Location && race.Circuit.Location.country || "").trim(),
     raceAt: parseUtcDateTime(race.date, race.time),
     deadlineAt: parseUtcDateTime(race.Qualifying && race.Qualifying.date, race.Qualifying && race.Qualifying.time),
   })).filter((race) => race.round && race.name && race.raceAt);
+}
+
+async function enrichUpcomingRaceVisuals(races) {
+  const limit = config.widgetFamily === "large" ? 6 : config.widgetFamily === "small" ? 1 : 3;
+  const visibleRaces = races.slice(0, limit);
+  if (!visibleRaces.length) return;
+
+  const year = visibleRaces[0].raceAt.getUTCFullYear();
+  const meetings = await loadMeetings(year);
+  for (const race of visibleRaces) {
+    const meeting = findRaceMeeting(race, meetings);
+    if (!meeting) continue;
+    race.countryFlagUrl = getCountryFlagUrl(race, meeting);
+    race.trackImageUrl = String(meeting.circuit_image || "");
+    race.countryKey = normalizeCountryName(race.country).replace(/\s+/g, "-") || String(meeting.country_key || meeting.country_code || "country");
+    race.circuitKey = String(meeting.circuit_key || "circuit");
+  }
+
+  await Promise.all(visibleRaces.map(async (race) => {
+    const [flagImage, trackImage] = await Promise.all([
+      loadCachedImage(race.countryFlagUrl, `box-this-lap-f1-flag-${race.countryKey}.png`),
+      loadCachedImage(race.trackImageUrl, `box-this-lap-f1-track-${race.circuitKey}.png`),
+    ]);
+    race.flagImage = flagImage;
+    race.trackImage = trackImage;
+  }));
+}
+
+function getCountryFlagUrl(race, meeting) {
+  const scheduleCountry = normalizeCountryName(race.country);
+  const meetingCountry = normalizeCountryName(meeting.country_name);
+  if (!scheduleCountry || scheduleCountry === meetingCountry) {
+    return String(meeting.country_flag || "");
+  }
+
+  const aliases = {
+    uk: "united-kingdom",
+    usa: "united-states",
+    uae: "united-arab-emirates",
+  };
+  const slug = aliases[scheduleCountry] || scheduleCountry.replace(/\s+/g, "-");
+  return `${FORMULA_ONE_FLAG_ROOT}/${slug}-flag.png`;
+}
+
+function normalizeCountryName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+async function loadMeetings(year) {
+  try {
+    const request = new Request(`${OPENF1_MEETINGS_URL}?year=${year}&nonce=${Date.now()}`);
+    request.timeoutInterval = 20;
+    const meetings = await request.loadJSON();
+    if (!Array.isArray(meetings)) throw new Error("OpenF1 did not return meetings.");
+    writeJsonCache(MEETINGS_CACHE_FILE, { year, meetings });
+    return meetings;
+  } catch (error) {
+    const cached = readJsonCache(MEETINGS_CACHE_FILE);
+    if (Number(cached && cached.year) === year && Array.isArray(cached.meetings)) {
+      console.warn(`Unable to refresh Formula 1 artwork data; using the saved cache: ${error}`);
+      return cached.meetings;
+    }
+    console.warn(`Unable to load Formula 1 artwork data: ${error}`);
+    return [];
+  }
+}
+
+function findRaceMeeting(race, meetings) {
+  const raceDay = race.raceAt.toISOString().slice(0, 10);
+  const sameDay = meetings.filter((meeting) => String(meeting.date_end || "").slice(0, 10) === raceDay);
+  if (sameDay.length === 1) return sameDay[0];
+
+  const raceName = normalizeRaceName(race.name);
+  return meetings.find((meeting) => normalizeRaceName(meeting.meeting_name) === raceName) || sameDay[0] || null;
+}
+
+function normalizeRaceName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/formula 1|grand prix|gp/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+async function loadCachedImage(url, fileName) {
+  if (!url) return null;
+  const manager = FileManager.local();
+  const path = manager.joinPath(manager.documentsDirectory(), fileName);
+  if (manager.fileExists(path)) {
+    try {
+      return manager.readImage(path);
+    } catch (error) {
+      console.warn(`Unable to read ${fileName}: ${error}`);
+    }
+  }
+
+  try {
+    const request = new Request(url);
+    request.timeoutInterval = 15;
+    const image = await request.loadImage();
+    manager.writeImage(path, image);
+    return image;
+  } catch (error) {
+    console.warn(`Unable to load Formula 1 artwork from ${url}: ${error}`);
+    return null;
+  }
 }
 
 function parseUtcDateTime(dateValue, timeValue) {
@@ -108,20 +226,18 @@ function createWidget(result) {
 }
 
 function buildSmallWidget(widget, race) {
-  widget.setPadding(12, 12, 12, 12);
-  addHeader(widget, `Round ${race.round}`);
-  widget.addSpacer(8);
-
-  const name = widget.addText(shortRaceName(race.name));
-  name.font = Font.boldSystemFont(17);
-  name.textColor = COLORS.text;
-  name.lineLimit = 2;
-  name.minimumScaleFactor = 0.75;
-  widget.addSpacer();
-
-  addTimeBlock(widget, "BET", race.deadlineAt, COLORS.deadline, 11, 12);
-  widget.addSpacer(5);
-  addTimeBlock(widget, "RACE", race.raceAt, COLORS.accent, 11, 12);
+  widget.setPadding(11, 11, 11, 11);
+  applyRaceCardBackground(widget, race, 300, 300);
+  addRaceCardContent(widget, race, {
+    roundSize: 11,
+    flagWidth: 23,
+    flagHeight: 14,
+    nameSize: 17,
+    labelSize: 10,
+    valueSize: 12,
+    topGap: 6,
+    timeGap: 4,
+  });
   return widget;
 }
 
@@ -146,21 +262,85 @@ function buildMediumWidget(widget, races, cached) {
     column.borderColor = COLORS.border;
     column.borderWidth = 1;
     column.setPadding(6, 7, 6, 7);
-
-    const round = column.addText(`R${race.round}`);
-    round.font = Font.boldSystemFont(9);
-    round.textColor = COLORS.accent;
-    const name = column.addText(shortRaceName(race.name));
-    name.font = Font.boldSystemFont(11);
-    name.textColor = COLORS.text;
-    name.lineLimit = 2;
-    name.minimumScaleFactor = 0.75;
-    column.addSpacer();
-    addTimeBlock(column, "BET", race.deadlineAt, COLORS.deadline, 8, 9);
-    column.addSpacer(3);
-    addTimeBlock(column, "RACE", race.raceAt, COLORS.accent, 8, 9);
+    applyRaceCardBackground(column, race, 196, 224);
+    addRaceCardContent(column, race, {
+      roundSize: 9,
+      flagWidth: 18,
+      flagHeight: 11,
+      nameSize: 11,
+      labelSize: 8,
+      valueSize: 9,
+      topGap: 3,
+      timeGap: 2,
+    });
   });
   return widget;
+}
+
+function addRaceCardContent(container, race, sizes) {
+  const roundRow = container.addStack();
+  roundRow.layoutHorizontally();
+  roundRow.centerAlignContent();
+  const round = roundRow.addText(`R${race.round}`);
+  round.font = Font.boldSystemFont(sizes.roundSize);
+  round.textColor = COLORS.accent;
+  roundRow.addSpacer();
+  if (race.flagImage) {
+    const flag = roundRow.addImage(race.flagImage);
+    flag.imageSize = new Size(sizes.flagWidth, sizes.flagHeight);
+    flag.cornerRadius = 2;
+    flag.applyFillingContentMode();
+  }
+
+  container.addSpacer(sizes.topGap);
+  const name = container.addText(shortRaceName(race.name));
+  name.font = Font.boldSystemFont(sizes.nameSize);
+  name.textColor = COLORS.text;
+  name.lineLimit = 2;
+  name.minimumScaleFactor = 0.72;
+  applyTextShadow(name);
+
+  container.addSpacer();
+  addTimeBlock(container, "BET", race.deadlineAt, COLORS.deadline, sizes.labelSize, sizes.valueSize);
+  container.addSpacer(sizes.timeGap);
+  addTimeBlock(container, "RACE", race.raceAt, COLORS.accent, sizes.labelSize, sizes.valueSize);
+}
+
+function applyRaceCardBackground(container, race, width, height) {
+  if (!race.trackImage) return;
+  container.backgroundImage = makeTrackBackground(race.trackImage, width, height);
+}
+
+function makeTrackBackground(trackImage, width, height) {
+  const context = new DrawContext();
+  context.size = new Size(width, height);
+  context.opaque = false;
+  context.respectScreenScale = true;
+  context.setFillColor(COLORS.card);
+  context.fillRect(new Rect(0, 0, width, height));
+
+  const bandTop = height * 0.22;
+  const bandHeight = height * 0.54;
+  const imageSize = trackImage.size;
+  const scale = Math.min((width * 0.9) / imageSize.width, bandHeight / imageSize.height);
+  const imageWidth = imageSize.width * scale;
+  const imageHeight = imageSize.height * scale;
+  const imageRect = new Rect(
+    (width - imageWidth) / 2,
+    bandTop + (bandHeight - imageHeight) / 2,
+    imageWidth,
+    imageHeight
+  );
+  context.drawImageInRect(trackImage, imageRect);
+  context.setFillColor(new Color("#101820", 0.34));
+  context.fillRect(new Rect(0, 0, width, height));
+  return context.getImage();
+}
+
+function applyTextShadow(text) {
+  text.shadowColor = new Color("#000000", 0.95);
+  text.shadowOffset = new Point(0, 1);
+  text.shadowRadius = 2;
 }
 
 function buildLargeWidget(widget, races, cached) {
@@ -239,7 +419,7 @@ function formatRaceTime(date) {
 function shortRaceName(value) {
   return String(value || "")
     .replace(/ Formula 1 Grand Prix$/i, " GP")
-    .replace(/ Grand Prix$/i, " GP");
+    .replace(/Grand Prix/ig, "GP");
 }
 
 function addState(widget, titleText, detailText, detailColor) {

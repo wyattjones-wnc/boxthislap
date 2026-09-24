@@ -78,6 +78,8 @@ Formula 1 reads the current season schedule directly from Jolpica and displays t
 - Medium: the next three races in vertical sections.
 - Large: the next six rounds in compact rows.
 
+Small and medium race cards include the country flag and a translucent circuit map behind the race details. Schedule and timing remain sourced from Jolpica; OpenF1 supplies the matching visual metadata. The widget caches downloaded flags and circuit maps on the phone.
+
 The widget keeps the last successful schedule on the phone and labels the display `CACHED` if a refresh fails. A race remains visible for three hours after its scheduled start.
 
 ## Next

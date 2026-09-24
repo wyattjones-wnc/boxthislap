@@ -11,11 +11,13 @@
 // Compatibility marker for older self-updating copies: updateInstallerIfNeeded.
 
 const DEFAULT_SOURCE_BRANCH = "main";
+const LOADER_VERSION = "2026.09.24.1";
 const QUERY_PARAMETERS = args.queryParameters || {};
 const SOURCE_BRANCH = String(QUERY_PARAMETERS.channel || DEFAULT_SOURCE_BRANCH).trim().toLowerCase() === "dev"
   ? "dev"
   : "main";
 const REPOSITORY_RAW_ROOT = `https://raw.githubusercontent.com/wyattjones-wnc/boxthislap/${SOURCE_BRANCH}/scriptable`;
+let activeLoaderVersion = LOADER_VERSION;
 
 const AVAILABLE_WIDGETS = [
   {
@@ -52,20 +54,20 @@ async function updateInstaller() {
     request.timeoutInterval = 8;
     const downloadedSource = await request.loadString();
 
-    if (!downloadedSource.includes("Box This Lap - Widget Loader") || !downloadedSource.includes("updateInstaller")) {
+    const downloadedVersion = getLoaderVersion(downloadedSource);
+    if (!downloadedSource.includes("Box This Lap - Widget Loader") || !downloadedVersion) {
       throw new Error("The widget installer did not download correctly.");
     }
 
     const nextSource = setDefaultSourceBranch(downloadedSource, SOURCE_BRANCH);
     const storage = getScriptStorage();
-    const currentSource = storage.manager.readString(module.filename);
-
-    if (normalizeSource(currentSource) === normalizeSource(nextSource)) {
+    if (downloadedVersion === activeLoaderVersion) {
       await showInstallerCurrent();
       return;
     }
 
     storage.manager.writeString(module.filename, nextSource);
+    activeLoaderVersion = downloadedVersion;
     await showInstallerUpdated();
   } catch (error) {
     console.warn(`Unable to update the widget installer: ${error}`);
@@ -83,13 +85,13 @@ function setDefaultSourceBranch(source, branch) {
 async function showInstallerUpdated() {
   const alert = new Alert();
   alert.title = "Installer updated";
-  alert.message = "The latest Box This Lap widget installer is ready. Close this screen, then run the loader again.";
-  alert.addAction("Done");
+  alert.message = "The latest Box This Lap widget installer is ready. Continue to return to the loader options.";
+  alert.addAction("Continue");
   await alert.presentAlert();
 }
 
-function normalizeSource(source) {
-  return String(source || "").replace(/\r\n/g, "\n").trim();
+function getLoaderVersion(source) {
+  return String(source || "").match(/const LOADER_VERSION = "([^"]+)";/)?.[1] || "";
 }
 
 async function showInstallerCurrent() {
@@ -134,7 +136,7 @@ async function chooseWidgets() {
 
   if (choice === AVAILABLE_WIDGETS.length + 1) {
     await updateInstaller();
-    return [];
+    return chooseWidgets();
   }
 
   if (choice === AVAILABLE_WIDGETS.length + 2) {

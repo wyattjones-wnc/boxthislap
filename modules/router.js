@@ -20,6 +20,7 @@ const HOME_PAGES = [
   "leagues",
   "login",
   "manager-hub",
+  "workouts",
   "manager-awards",
   "draft-list",
 ];

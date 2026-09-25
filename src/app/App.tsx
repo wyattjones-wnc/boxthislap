@@ -59,6 +59,39 @@ const DatabaseAdminPage = lazy(() =>
   })),
 );
 
+const WorkoutFeature = lazy(() =>
+  import("../features/operational/WorkoutFeature").then((module) => ({
+    default: module.WorkoutFeature,
+  })),
+);
+
+function DeferredWorkoutFeature() {
+  const [active, setActive] = useState(
+    () => window.location.hash.split("?")[0] === "#workouts",
+  );
+  useEffect(() => {
+    const update = (event?: Event) => {
+      const shownPage =
+        event instanceof CustomEvent
+          ? String(event.detail?.pageName || "")
+          : window.location.hash.slice(1).split("?")[0];
+      setActive(shownPage === "workouts");
+    };
+    window.addEventListener("hashchange", update);
+    window.addEventListener("boxthislap:page-shown", update);
+    return () => {
+      window.removeEventListener("hashchange", update);
+      window.removeEventListener("boxthislap:page-shown", update);
+    };
+  }, []);
+  if (!active) return null;
+  return (
+    <Suspense fallback={<p className="table-message">Loading Workouts…</p>}>
+      <WorkoutFeature />
+    </Suspense>
+  );
+}
+
 export function DeferredDatabaseAdminPage() {
   const [active, setActive] = useState(
     () => window.location.hash.split("?")[0] === "#database-admin",
@@ -147,6 +180,7 @@ export interface OperationalRoots {
   rankings: Element;
   todo: Element;
   want: Element;
+  workouts: Element;
 }
 
 interface AppProps {
@@ -200,6 +234,7 @@ export function App({
         )}
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
+        {createPortal(<DeferredWorkoutFeature />, operationalRoots.workouts)}
         {createPortal(<AdminHomePage />, specialistRoots.adminHome)}
         {createPortal(<PsnPage />, specialistRoots.psn)}
         {createPortal(<TrophyStatsPage />, specialistRoots.trophyStats)}

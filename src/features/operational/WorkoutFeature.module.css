@@ -1,0 +1,441 @@
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.error {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  padding: 0.75rem 1rem;
+}
+.managerSelect {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin: 0 0 1rem auto;
+  width: fit-content;
+}
+.managerSelect select,
+.form input,
+.moreControls input {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  min-height: 44px;
+  padding: 0.6rem 0.75rem;
+}
+.calendarCard,
+.stats,
+.results,
+.moreControls {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+  padding: 1rem;
+}
+.calendarHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.calendarHeader h2 {
+  margin: 0;
+  text-align: center;
+}
+.calendarGrid {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(7, 1fr);
+}
+.weekday {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.35rem 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+.day {
+  align-items: center;
+  aspect-ratio: 1;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  font-weight: 750;
+  justify-content: center;
+  min-height: 44px;
+}
+.day:disabled {
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+.day:not(:disabled) {
+  cursor: pointer;
+}
+.day:not(:disabled):hover,
+.day:not(:disabled):focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--focus-ring);
+}
+.day svg {
+  height: 1rem;
+  width: 1rem;
+}
+.today {
+  border-color: var(--accent);
+}
+.done {
+  background: var(--accent-surface);
+  color: var(--accent-strong);
+}
+.workout {
+  display: grid;
+  gap: 1rem;
+}
+.timer {
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    var(--surface-panel),
+    var(--surface-raised)
+  );
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr auto auto;
+  padding: 1.25rem;
+}
+.timer > span {
+  color: var(--text-muted);
+  font-weight: 750;
+  grid-column: 1 / -1;
+  text-transform: uppercase;
+}
+.timer strong {
+  font-size: clamp(3rem, 12vw, 6rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.expired {
+  animation: time-up 1.3s ease-in-out 3;
+  background: color-mix(in srgb, var(--accent) 24%, var(--surface-panel));
+  border-color: var(--accent-strong);
+}
+.expired > span,
+.expired strong {
+  color: var(--accent-strong);
+}
+@keyframes time-up {
+  50% {
+    box-shadow: 0 0 0 6px var(--focus-ring);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .expired {
+    animation: none;
+  }
+}
+.moreControls {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.moreControls label,
+.form label {
+  display: grid;
+  gap: 0.35rem;
+}
+.sets {
+  align-items: center;
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  padding: 0.5rem;
+}
+.sets div {
+  display: grid;
+  min-width: 7rem;
+  text-align: center;
+}
+.sets span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.sets strong {
+  font-size: 3rem;
+}
+.exerciseList {
+  display: grid;
+  gap: 0.65rem;
+}
+.exerciseToggle {
+  align-items: center;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 750;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.exerciseToggle > span:first-child {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+}
+.exerciseToggle small {
+  align-items: center;
+  background: var(--surface-raised);
+  border-radius: 50%;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+.exerciseToggle.checked {
+  background: var(--accent-surface);
+  border-color: var(--accent);
+}
+.switch {
+  background: var(--border-subtle);
+  border-radius: 999px;
+  height: 1.75rem;
+  padding: 0.2rem;
+  transition: background 0.2s;
+  width: 3.1rem;
+}
+.switch span {
+  background: var(--text-primary);
+  border-radius: 50%;
+  display: block;
+  height: 1.35rem;
+  transition: transform 0.2s;
+  width: 1.35rem;
+}
+.checked .switch {
+  background: var(--accent);
+}
+.checked .switch span {
+  transform: translateX(1.35rem);
+}
+.complete {
+  justify-self: stretch;
+  min-height: 54px;
+}
+.results {
+  text-align: center;
+}
+.results > svg {
+  color: var(--accent-strong);
+  height: 3rem;
+  width: 3rem;
+}
+.resultSummary,
+.statCards {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 1rem 0;
+}
+.resultSummary div,
+.statCards div {
+  background: var(--surface-raised);
+  border-radius: var(--radius-control);
+  display: grid;
+  padding: 0.85rem;
+}
+.resultSummary span,
+.statCards span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.resultSummary strong,
+.statCards strong {
+  font-size: 1.5rem;
+}
+.results ol {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+}
+.results li {
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem;
+  text-align: left;
+}
+.resultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.stats {
+  margin-bottom: 1rem;
+}
+.statCards {
+  grid-template-columns: repeat(4, 1fr);
+}
+.metricTabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.metricTabs button {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.45rem 0.8rem;
+}
+.metricTabs button[aria-pressed="true"] {
+  background: var(--accent-surface);
+  border-color: var(--accent);
+}
+.chart {
+  align-items: end;
+  display: flex;
+  gap: 0.25rem;
+  height: 180px;
+  overflow-x: auto;
+  padding-top: 1rem;
+}
+.chart > div {
+  align-items: center;
+  display: flex;
+  flex: 1 0 26px;
+  flex-direction: column;
+  height: 100%;
+  justify-content: end;
+}
+.chart span {
+  background: linear-gradient(var(--accent-strong), var(--accent));
+  border-radius: 0.25rem 0.25rem 0 0;
+  min-height: 4px;
+  width: 72%;
+}
+.chart small {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  margin-top: 0.3rem;
+  writing-mode: vertical-rl;
+}
+.modalBackdrop {
+  align-items: center;
+  background: rgb(0 0 0 / 65%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 1000;
+}
+.modal {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+  max-height: min(85vh, 720px);
+  max-width: 560px;
+  overflow: auto;
+  padding: 1rem;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  width: 100%;
+}
+.modal > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.modal h2 {
+  margin: 0;
+}
+.helpList,
+.manageList {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+}
+.helpList {
+  list-style: none;
+}
+.helpList li,
+.manageList button {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+}
+.manageList button {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.manageList button span {
+  display: grid;
+}
+.manageList small,
+.helpList small {
+  color: var(--text-muted);
+}
+.form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.checkbox {
+  align-items: center;
+  display: flex !important;
+}
+.timeInputs {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 620px) {
+  .calendarGrid {
+    gap: 0.2rem;
+  }
+  .day {
+    border-radius: 0.5rem;
+  }
+  .timer {
+    grid-template-columns: 1fr auto;
+  }
+  .timer strong {
+    grid-column: 1 / -1;
+  }
+  .statCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

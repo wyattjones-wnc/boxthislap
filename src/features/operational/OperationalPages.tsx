@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Dices,
+  Dumbbell,
   Eye,
   ExternalLink,
   Film,
@@ -1833,6 +1834,13 @@ export function ManagerHubPage() {
           />
         </div>
         <div className="heading-actions manager-hub-actions">
+          <IconLink
+            className="manager-workouts-button"
+            href="#workouts"
+            label="Open Daily Workouts"
+            icon={<Dumbbell />}
+            loginOnly
+          />
           <IconLink
             className="manager-draft-list-button"
             href="#draft-list"

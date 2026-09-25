@@ -36,6 +36,7 @@ const operationalRoots = {
   rankings: document.querySelector('[data-page="rankings"]'),
   todo: document.querySelector('[data-page="todo"]'),
   want: document.querySelector('[data-page="want"]'),
+  workouts: document.querySelector('[data-page="workouts"]'),
 };
 const competitionRoots = {
   bracket: document.querySelector('[data-page="bracket"]'),

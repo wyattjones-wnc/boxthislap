@@ -7615,7 +7615,7 @@ function normalizeWantItem(row) {
     id: String(row?.ID || row?.Id || row?.id || "").trim(),
     imageUrl: String(row?.["Image URL"] || row?.imageUrl || "").trim(),
     name,
-    order: normalizeTodoOrder(row.Order),
+    order: normalizeTodoOrder(row.Order ?? row.order),
     price: rawPrice && Number.isFinite(price) && price >= 0 ? price : null,
     raw: row,
   };
@@ -7735,48 +7735,34 @@ async function ensureWantItemDialogController() {
   return wantItemDialogControllerPromise;
 }
 
-function saveWantItemFromForm(values = {}) {
+async function saveWantItemFromForm(values = {}) {
   const name = String(values.name || "").trim();
   if (!name) return setWantItemStatus("Name is required.", true);
   const existingId = String(values.id || "").trim();
   const existing = existingId ? getWantItems().find((row) => String(row.ID || row.id || "") === existingId) : null;
+  const normalizedExisting = normalizeWantItem(existing);
   const item = {
-    ID: existingId || createWantItemId(),
-    Order: String(clampTodoOrder(values.order, getWantOrderItems().length + 1)),
-    Name: name,
-    Price: String(values.price ?? "").trim(),
-    Archived: values.archived ? "TRUE" : "FALSE",
-    Completed: values.completed ? "TRUE" : "FALSE",
-    IsDeleted: existing?.IsDeleted || existing?.isDeleted || "FALSE",
-    "Image URL": String(values.imageUrl || "").trim(),
+    archived: Boolean(values.archived),
+    completed: Boolean(values.completed),
+    deleted: Boolean(normalizedExisting?.deleted),
+    imageUrl: String(values.imageUrl || "").trim(),
+    name,
+    order: clampTodoOrder(values.order, getWantOrderItems().length + 1),
+    price: String(values.price ?? "").trim(),
+    revision: normalizedExisting?.raw?.revision,
   };
-  upsertWantItemLocally(item);
-  normalizeWantOrdersLocally(item.ID, Number(item.Order));
-  renderWantList();
-  submitNextItemPayload({ action: "saveWantItem", item, sheetName: "Want" });
-  closeWantItemDialog();
-}
-
-function createWantItemId() {
-  return String(getWantItems().map((row) => Number(row.ID || row.id)).filter((id) => Number.isInteger(id) && id > 0).reduce((max, id) => Math.max(max, id), 0) + 1);
-}
-
-function upsertWantItemLocally(item) {
-  const id = String(item.ID || "");
-  siteData.wantItems = [...getWantItems().filter((row) => String(row.ID || row.id || "") !== id), item];
-}
-
-function normalizeWantOrdersLocally(movedId = "", requestedOrder = 1) {
-  const rows = getWantItems().map(normalizeWantItem).filter(Boolean);
-  let orderable = getWantOrderItems(rows).filter((item) => item.id !== String(movedId));
-  const moved = rows.find((item) => item.id === String(movedId));
-  if (moved && !moved.archived && !moved.completed && !moved.deleted) orderable.splice(clampTodoOrder(requestedOrder, orderable.length + 1) - 1, 0, moved);
-  const orderById = new Map(orderable.map((item, index) => [item.id, String(index + 1)]));
-  siteData.wantItems = rows.map((item) => ({
-    ID: item.id, Order: orderById.get(item.id) || formatWantOrder(item).replace("-", ""), Name: item.name,
-    Price: item.raw.Price ?? "", Archived: item.archived ? "TRUE" : "FALSE", Completed: item.completed ? "TRUE" : "FALSE",
-    IsDeleted: item.deleted ? "TRUE" : "FALSE", "Image URL": item.imageUrl,
-  })).sort((a, b) => compareWantItems(normalizeWantItem(a), normalizeWantItem(b)));
+  setWantItemStatus("Saving...");
+  try {
+    await nextItemsApiRequest(existingId ? `/api/want-items/${encodeURIComponent(existingId)}` : "/api/want-items", {
+      body: JSON.stringify(item),
+      method: existingId ? "PATCH" : "POST",
+    });
+    await reloadWantItemsFromApi();
+    closeWantItemDialog();
+  } catch (error) {
+    recordDiagnostic("Want item save failed", error, { id: existingId });
+    setWantItemStatus(error.message || "The Want item was not saved.", true);
+  }
 }
 
 function moveWantItem(draggedId, targetId, options = {}) {
@@ -7818,18 +7804,34 @@ function applyWantOrder(itemIds) {
   submitWantOrder();
 }
 
-function submitWantOrder() {
-  submitNextItemPayload({ action: "saveWantOrder", items: siteData.wantItems, sheetName: "Want" });
+async function submitWantOrder() {
+  try {
+    const itemIds = getWantOrderItems().map((item) => item.id);
+    const response = await nextItemsApiRequest("/api/want-items/order", {
+      body: JSON.stringify({ itemIds }),
+      method: "PUT",
+    });
+    siteData.wantItems = response.items || [];
+    renderWantList();
+  } catch (error) {
+    recordDiagnostic("Want order save failed", error);
+    await reloadWantItemsFromApi().catch(() => {});
+  }
 }
 
-function deleteWantItem(itemId) {
+async function deleteWantItem(itemId) {
   const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === String(itemId));
   if (!item) return;
-  const next = { ...item.raw, ID: item.id, IsDeleted: "TRUE" };
-  upsertWantItemLocally(next);
-  normalizeWantOrdersLocally(item.id, item.order);
-  renderWantList();
-  submitNextItemPayload({ action: "saveWantItem", item: next, sheetName: "Want" });
+  try {
+    await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(item.id)}`, {
+      body: JSON.stringify(wantItemApiPayload(item, { deleted: true })),
+      method: "PATCH",
+    });
+    await reloadWantItemsFromApi();
+  } catch (error) {
+    recordDiagnostic("Want item delete failed", error, { id: item.id });
+    await reloadWantItemsFromApi().catch(() => {});
+  }
 }
 
 function openWantMoveDialog(itemId) {
@@ -7847,18 +7849,46 @@ function closeWantMoveDialog() {
   typeof wantMoveDialog.close === "function" ? wantMoveDialog.close() : wantMoveDialog.removeAttribute("open");
 }
 
-function confirmWantMove() {
+async function confirmWantMove() {
   const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === pendingWantMoveItemId);
   if (!item) return closeWantMoveDialog();
-  const next = { ...item.raw, ID: item.id, Completed: "TRUE" };
-  upsertWantItemLocally(next);
-  normalizeWantOrdersLocally(item.id, item.order);
+  if (wantMoveStatus) wantMoveStatus.textContent = "Moving...";
+  try {
+    await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(item.id)}`, {
+      body: JSON.stringify(wantItemApiPayload(item, { completed: true })),
+      method: "PATCH",
+    });
+    submitNextItemPayload({ action: "moveWantToTodo", itemId: item.id });
+    await reloadWantItemsFromApi();
+    delete siteData.todoItems;
+    sharedDataPromises.delete("todo");
+    pageDataPromises.delete("todo");
+    closeWantMoveDialog();
+  } catch (error) {
+    recordDiagnostic("Want item move failed", error, { id: item.id });
+    if (wantMoveStatus) wantMoveStatus.textContent = error.message || "The item could not be moved.";
+  }
+}
+
+function wantItemApiPayload(item, overrides = {}) {
+  return {
+    archived: item.archived,
+    completed: item.completed,
+    deleted: item.deleted,
+    imageUrl: item.imageUrl,
+    name: item.name,
+    order: item.order,
+    price: item.price,
+    revision: item.raw?.revision,
+    ...overrides,
+  };
+}
+
+async function reloadWantItemsFromApi() {
+  const response = await nextItemsApiRequest("/api/want-items", { auth: false });
+  siteData.wantItems = response.items || [];
   renderWantList();
-  submitNextItemPayload({ action: "moveWantToTodo", itemId: item.id });
-  delete siteData.todoItems;
-  sharedDataPromises.delete("todo");
-  pageDataPromises.delete("todo");
-  closeWantMoveDialog();
+  return siteData.wantItems;
 }
 
 function setWantItemStatus(message, isError = false) {
@@ -18306,8 +18336,8 @@ function ensureTodoData() {
 
 function ensureWantData() {
   return ensureSharedData("want", async () => {
-    const response = await loadNextDataEndpoint("listWantItems");
-    const items = response.items || response.wantItems || [];
+    const response = await nextItemsApiRequest("/api/want-items", { auth: false });
+    const items = response.items || [];
     siteData.wantItems = items;
     renderWantList(items);
     console.info("Box This Lap Want data loaded", items);

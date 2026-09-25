@@ -4,7 +4,7 @@
 
 - Manager validation and league data gateway: [scripts/manager-portal-webapp.gs](../scripts/manager-portal-webapp.gs).
 - Footy schedule source: [scripts/footy-data-webapp.gs](../scripts/footy-data-webapp.gs).
-- Next/To Do/Want source: [scripts/next-data-webapp.gs](../scripts/next-data-webapp.gs).
+- To Do and legacy ranking source: [scripts/next-data-webapp.gs](../scripts/next-data-webapp.gs). Next and Want item storage lives in the `next-items` D1 Worker.
 - Fantasy Critic proxy: [scripts/fantasy-critic-proxy-webapp.gs](../scripts/fantasy-critic-proxy-webapp.gs).
 - Formula 1 export target: [scripts/formula-one-export-webapp.gs](../scripts/formula-one-export-webapp.gs).
 - Static snapshot generators: [scripts/generate-guides-data.mjs](../scripts/generate-guides-data.mjs) and [scripts/generate-rankings-data.mjs](../scripts/generate-rankings-data.mjs).
@@ -16,6 +16,7 @@
 - Published JSON snapshots must be validated before replacement; a failed fetch or validation keeps the last known-good file.
 - Preserve JSONP callback validation and origin restrictions where browser clients depend on them.
 - Footy Match Notes and roster data are Worker-owned after cutover; their former Sheet tabs are migration/rollback sources, not live truth.
+- The Next and Want item tabs are migration/rollback sources after D1 cutover, not live item truth.
 - Formula 1 exports are full-season writes to year-prefixed tabs; they must not overwrite another season.
 
 ## Detailed Reference

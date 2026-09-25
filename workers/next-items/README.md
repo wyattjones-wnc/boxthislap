@@ -1,8 +1,8 @@
 # Next Items Worker
 
-Stores the Next page in D1. Reads are public; writes require an existing Box This Lap manager access token and admin manager ID. IDs are assigned by D1 as ordinary sequential integers, and revision checks reject stale edits.
+Stores the Next and Want pages in D1. Reads are public; writes require an existing Box This Lap manager access token and admin manager ID. IDs are assigned by D1 as ordinary sequential integers, and revision checks reject stale edits.
 
-Dev and production intentionally share this Worker and database. The Google Sheet remains a rollback source after cutover, but editing its Next tab no longer changes the site.
+Dev and production intentionally share this Worker and database. The Google Sheet remains a rollback source after cutover, but editing its Next or Want item tabs no longer changes the site.
 
 ## Initial cutover
 
@@ -24,3 +24,11 @@ npx wrangler deploy --config workers\next-items\wrangler.toml
 ```
 
 Migration `0002_source_match.sql` records the stable Footy match ID on exported fixtures and prevents the same match from being added twice.
+
+Migration `0003_want_items.sql` moves the Want catalog, ordering, prices, and status fields into D1. For the initial import:
+
+```powershell
+node scripts\migrate-want-items.mjs --output workers\next-items\legacy-want-import.sql
+npx wrangler d1 execute DB --remote --config workers\next-items\wrangler.toml --file workers\next-items\legacy-want-import.sql
+node scripts\migrate-want-items.mjs --verify https://box-this-lap-next.boxthislap.workers.dev
+```

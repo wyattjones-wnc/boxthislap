@@ -804,6 +804,19 @@ test("To Do form uses the shared contained React dialog", async ({
 test("Want form uses the shared contained React dialog", async ({ page }) => {
   /** @type {string[]} */
   const dialogBundleRequests = [];
+  const wantItems = [
+    {
+      archived: false,
+      completed: false,
+      deleted: false,
+      id: "1",
+      imageUrl: "",
+      name: "Existing want",
+      order: 1,
+      price: 15,
+      revision: 1,
+    },
+  ];
   page.on("request", (request) => {
     if (/\/wantItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       dialogBundleRequests.push(request.url());
@@ -820,15 +833,10 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     const url = new URL(route.request().url());
     const callback = url.searchParams.get("callback");
     const callbackId = url.searchParams.get("callbackId");
-    const action = url.searchParams.get("action");
-    const items =
-      action === "listWantItems"
-        ? [{ ID: "1", Name: "Existing want", Order: "1", Price: "15" }]
-        : [];
     await route.fulfill({
       body: `${callback}(${JSON.stringify({
         callbackId,
-        items,
+        items: [],
         ok: true,
         source: "boxthislap-next-data",
       })});`,
@@ -836,6 +844,19 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
       status: 200,
     });
   });
+  await page.route(
+    "https://box-this-lap-next.boxthislap.workers.dev/api/want-items**",
+    async (route) => {
+      const request = route.request();
+      if (request.method() === "POST") {
+        const body = request.postDataJSON();
+        wantItems.push({ ...body, id: "2", revision: 1 });
+        await route.fulfill({ json: { item: wantItems.at(-1), ok: true }, status: 201 });
+        return;
+      }
+      await route.fulfill({ json: { items: wantItems, ok: true }, status: 200 });
+    },
+  );
   await page.goto("/#want", { waitUntil: "networkidle" });
 
   expect(dialogBundleRequests).toEqual([]);

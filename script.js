@@ -3612,6 +3612,13 @@ async function setPushNotificationTopic(topic, enabled) {
   if (!response.ok) throw new Error(`Unable to save notification preference (${response.status}).`);
 }
 
+async function reconcileStoredPushNotificationTopics() {
+  if (!isFootyPushNotificationSupported() || Notification.permission !== "granted" || !getCurrentManagerId()) return;
+  if (getStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY)) {
+    await subscribeFootyPushNotifications("formula-one");
+  }
+}
+
 async function unsubscribeFootyPushNotifications() {
   const endpoint = getFootyPushEndpoint();
   const registration = "serviceWorker" in navigator
@@ -15207,6 +15214,9 @@ function hydrateManagerSession() {
   syncFootyNotificationToggle();
   syncFormulaOneNotificationToggle();
   refreshManagerAuthorizationInBackground();
+  void reconcileStoredPushNotificationTopics().catch((error) =>
+    recordDiagnostic("stored push notification reconciliation failed", error)
+  );
   void followedTeamsController.load().catch((error) => recordDiagnostic("followed teams failed to load", error));
   void loadFootyMatchNotifications().catch((error) => recordDiagnostic("match notifications failed to load", error));
 }

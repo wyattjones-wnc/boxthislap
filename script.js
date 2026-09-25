@@ -15490,7 +15490,7 @@ function renderLoginState() {
   }
 
   if (session && managerMeta) {
-    siteData.managerSession = {
+    const enrichedSession = {
       ...session,
       isAdmin: managerMeta.isAdmin,
       manager: {
@@ -15498,6 +15498,17 @@ function renderLoginState() {
         isAdmin: managerMeta.isAdmin,
       },
     };
+    const adminStatusChanged =
+      session.isAdmin !== enrichedSession.isAdmin ||
+      session.manager?.isAdmin !== enrichedSession.manager.isAdmin;
+    siteData.managerSession = enrichedSession;
+
+    if (adminStatusChanged) {
+      try {
+        localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(enrichedSession));
+      } catch {}
+      window.dispatchEvent(new Event("boxthislap:session-changed"));
+    }
   }
 
   syncSiteVersionDisplay(managerMeta);

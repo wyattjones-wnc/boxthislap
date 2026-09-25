@@ -50,6 +50,55 @@ afterEach(() => {
 });
 
 describe("Daily Workouts", () => {
+  it("lets an administrator add an exercise from the calendar page", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        isAdmin: true,
+        manager: { isAdmin: true, name: "Wyatt" },
+        managerId: "6",
+      }),
+    );
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/managers"))
+          return response({
+            managers: [{ displayName: "Wyatt", id: "6", name: "Wyatt" }],
+          });
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        disconnect() {}
+        observe() {}
+        unobserve() {}
+      },
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add exercise" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Add Exercise" }),
+    ).not.toBeNull();
+    expect(screen.getByLabelText("Name")).not.toBeNull();
+    expect(screen.getByLabelText(/Video URL/)).not.toBeNull();
+  });
+
   it("keeps a normal partial set in the final exercise totals", async () => {
     let exercises = baseExercises.map((exercise) => ({ ...exercise }));
     const response = (value: Record<string, unknown>) =>

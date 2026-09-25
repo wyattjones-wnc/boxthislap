@@ -164,9 +164,16 @@ async function loadCachedImage(url, fileName) {
   const path = manager.joinPath(manager.documentsDirectory(), fileName);
   if (manager.fileExists(path)) {
     try {
-      return manager.readImage(path);
+      const cachedImage = manager.readImage(path);
+      if (cachedImage) return cachedImage;
+      manager.remove(path);
     } catch (error) {
       console.warn(`Unable to read ${fileName}: ${error}`);
+      try {
+        manager.remove(path);
+      } catch {
+        // A failed cache cleanup should not prevent a fresh download.
+      }
     }
   }
 
@@ -361,7 +368,7 @@ function buildLargeWidget(widget, races, cached) {
   widget.addSpacer(7);
 
   races.forEach((race, index) => {
-    if (index > 0) widget.addSpacer(6);
+    if (index > 0) widget.addSpacer(7);
     const row = widget.addStack();
     row.layoutHorizontally();
     row.centerAlignContent();
@@ -384,30 +391,29 @@ function buildLargeWidget(widget, races, cached) {
       roundRow.addSpacer(3);
     }
     const round = roundRow.addText(`ROUND ${race.round}`);
-    round.font = Font.boldSystemFont(8);
+    round.font = Font.boldSystemFont(9);
     round.textColor = COLORS.accent;
     roundRow.addSpacer();
     const name = identity.addText(shortRaceName(race.name));
-    name.font = Font.boldSystemFont(10);
+    name.font = Font.boldSystemFont(11);
     name.textColor = COLORS.text;
     name.lineLimit = 2;
     name.minimumScaleFactor = 0.78;
 
-    row.addSpacer(4);
+    row.addSpacer();
     const trackArea = row.addStack();
-    trackArea.size = new Size(48, 34);
+    trackArea.size = new Size(52, 36);
     trackArea.centerAlignContent();
     if (race.trackImage) {
       const track = trackArea.addImage(race.trackImage);
-      track.imageSize = new Size(48, 34);
+      track.imageSize = new Size(52, 36);
       track.applyFittingContentMode();
     }
 
-    row.addSpacer(5);
-    addSizedTimeBlock(row, 70, "BET", race.deadlineAt, COLORS.deadline);
-    row.addSpacer(5);
-    addSizedTimeBlock(row, 70, "RACE", race.raceAt, COLORS.accent);
     row.addSpacer();
+    addSizedTimeBlock(row, 72, "BET", race.deadlineAt, COLORS.deadline);
+    row.addSpacer();
+    addSizedTimeBlock(row, 72, "RACE", race.raceAt, COLORS.accent);
   });
   return widget;
 }
@@ -415,7 +421,7 @@ function buildLargeWidget(widget, races, cached) {
 function addSizedTimeBlock(container, width, label, date, color) {
   const area = container.addStack();
   area.size = new Size(width, 0);
-  addTimeBlock(area, label, date, color, 8, 10);
+  addTimeBlock(area, label, date, color, 9, 10.5);
 }
 
 function addHeader(container, titleText) {

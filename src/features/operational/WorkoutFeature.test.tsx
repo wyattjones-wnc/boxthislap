@@ -16,16 +16,21 @@ const today = (() => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 })();
 
-const baseExercises = ["Push ups", "Squats", "Plank", "Lunges", "Burpees"].map(
-  (name, index) => ({
-    checked: false,
-    completionCount: null,
-    id: `exercise-${index + 1}`,
-    name,
-    position: index + 1,
-    videoUrl: index === 0 ? "https://example.com/push-ups" : "",
-  }),
-);
+const baseExercises = [
+  "Push ups",
+  "Squats",
+  "Plank",
+  "Lunges",
+  "Burpees",
+  "Mountain climbers",
+].map((name, index) => ({
+  checked: false,
+  completionCount: null,
+  id: `exercise-${index + 1}`,
+  name,
+  position: index + 1,
+  videoUrl: index === 0 ? "https://example.com/push-ups" : "",
+}));
 
 beforeEach(() => {
   window.history.replaceState(null, "", "#workouts");
@@ -94,6 +99,9 @@ describe("Daily Workouts", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /start workout/i }),
     );
+    expect(
+      await screen.findByRole("button", { name: /Mountain climbers/ }),
+    ).not.toBeNull();
     const pushUps = await screen.findByRole("button", { name: /Push ups/ });
     fireEvent.click(pushUps);
     await waitFor(() =>

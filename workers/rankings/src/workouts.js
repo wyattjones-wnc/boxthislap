@@ -1,3 +1,5 @@
+const DAILY_EXERCISE_COUNT = 6;
+
 export async function handleWorkoutRequest({
   env,
   readBody,
@@ -208,8 +210,8 @@ async function updateWorkoutExercise(env, id, body) {
     const count = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM workout_exercises WHERE is_active = 1",
     ).first();
-    if (Number(count?.count || 0) <= 5)
-      throw httpError(409, "At least five exercises must remain active.");
+    if (Number(count?.count || 0) <= DAILY_EXERCISE_COUNT)
+      throw httpError(409, "At least six exercises must remain active.");
   }
   if (
     await env.DB.prepare(
@@ -278,15 +280,15 @@ async function ensureWorkoutAssignment(env, date) {
     const active = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM workout_exercises WHERE is_active = 1",
     ).first();
-    if (Number(active?.count || 0) < 5)
+    if (Number(active?.count || 0) < DAILY_EXERCISE_COUNT)
       throw httpError(
         409,
-        "At least five active exercises are needed before a workout can start.",
+        "At least six active exercises are needed before a workout can start.",
       );
     await env.DB.prepare(
       `INSERT OR IGNORE INTO workout_day_exercises (workout_date, position, exercise_id, exercise_name, video_url)
       SELECT ?, ROW_NUMBER() OVER (ORDER BY RANDOM()), exercise_id, name, video_url
-      FROM (SELECT exercise_id, name, video_url FROM workout_exercises WHERE is_active = 1 ORDER BY RANDOM() LIMIT 5)`,
+      FROM (SELECT exercise_id, name, video_url FROM workout_exercises WHERE is_active = 1 ORDER BY RANDOM() LIMIT ${DAILY_EXERCISE_COUNT})`,
     )
       .bind(date)
       .run();
@@ -296,7 +298,7 @@ async function ensureWorkoutAssignment(env, date) {
   )
     .bind(date)
     .all();
-  if ((rows.results || []).length !== 5)
+  if (![5, DAILY_EXERCISE_COUNT].includes((rows.results || []).length))
     throw new Error("Daily exercises could not be prepared.");
   return rows.results;
 }
@@ -411,7 +413,11 @@ async function updateWorkout(env, managerId, date, body) {
       .run();
   } else if (action === "toggle") {
     const position = Number(body.position);
-    if (!Number.isInteger(position) || position < 1 || position > 5)
+    if (
+      !Number.isInteger(position) ||
+      position < 1 ||
+      position > DAILY_EXERCISE_COUNT
+    )
       throw httpError(400, "Exercise position is invalid.");
     await env.DB.prepare(
       "UPDATE manager_workout_checks SET checked = ? WHERE manager_id = ? AND workout_date = ? AND position = ?",
@@ -419,11 +425,14 @@ async function updateWorkout(env, managerId, date, body) {
       .bind(body.checked ? 1 : 0, managerId, date, position)
       .run();
     const checked = await env.DB.prepare(
-      "SELECT COUNT(*) AS count FROM manager_workout_checks WHERE manager_id = ? AND workout_date = ? AND checked = 1",
+      "SELECT COUNT(*) AS total, SUM(checked) AS count FROM manager_workout_checks WHERE manager_id = ? AND workout_date = ?",
     )
       .bind(managerId, date)
       .first();
-    if (Number(checked?.count || 0) === 5)
+    if (
+      Number(checked?.total || 0) > 0 &&
+      Number(checked?.count || 0) === Number(checked?.total || 0)
+    )
       await env.DB.batch([
         env.DB.prepare(
           "UPDATE manager_workouts SET sets = sets + 1, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
@@ -510,13 +519,18 @@ async function correctWorkoutResult(env, managerId, date, body) {
   const counts = Array.isArray(body?.completionCounts)
     ? body.completionCounts.map(Number)
     : [];
+  const exerciseCount = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM manager_workout_checks WHERE manager_id = ? AND workout_date = ?",
+  )
+    .bind(managerId, date)
+    .first();
   if (
     !Number.isInteger(elapsed) ||
     elapsed < 0 ||
     elapsed > 10800 ||
     !Number.isInteger(sets) ||
     sets < 0 ||
-    counts.length !== 5 ||
+    counts.length !== Number(exerciseCount?.count || 0) ||
     counts.some(
       (count) =>
         !Number.isInteger(count) || (count !== sets && count !== sets + 1),

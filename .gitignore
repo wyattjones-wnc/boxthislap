@@ -8,4 +8,5 @@ node_modules/
 .wrangler-config/
 .wrangler/
 workers/next-items/legacy-import.sql
+workers/next-items/legacy-want-import.sql
 workers/psn-trophies/.dev.vars*

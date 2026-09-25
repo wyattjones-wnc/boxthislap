@@ -636,6 +636,7 @@ interface WantItemView {
   draggable: boolean;
   expanded: boolean;
   id: string;
+  imageUrl: string;
   meta: string[];
   name: string;
   orderLabel: string;
@@ -1051,7 +1052,7 @@ function WantItems() {
           moveWithKeyboard={sortable.moveWithKeyboard}
           orderLabel={String(index + 1)}
           startDrag={sortable.start}
-          key={item.id || item.name}
+          key={item.id}
         />
       ))}
     </div>
@@ -1097,6 +1098,9 @@ function WantCard({
     >
       <div className="next-card-main">
         <span className="todo-order-number">{orderLabel}</span>
+        {item.imageUrl ? (
+          <img alt="" src={item.imageUrl} />
+        ) : null}
         <div>
           <h2>{item.name}</h2>
           {item.priceLabel ? (

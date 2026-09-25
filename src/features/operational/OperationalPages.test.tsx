@@ -160,6 +160,7 @@ describe("operational React pages", () => {
               draggable: true,
               expanded: false,
               id: "want-1",
+              imageUrl: "https://example.com/want.jpg",
               meta: ["Games"],
               name: "React Want card",
               orderLabel: "1",
@@ -172,6 +173,9 @@ describe("operational React pages", () => {
 
     expect(await screen.findByText("React To Do card")).not.toBeNull();
     expect(await screen.findByText("React Want card")).not.toBeNull();
+    expect(
+      document.querySelector<HTMLImageElement>("[data-want-id] img")?.src,
+    ).toBe("https://example.com/want.jpg");
     expect(
       screen.getByRole("button", { name: "Edit React To Do card" }),
     ).not.toBeNull();

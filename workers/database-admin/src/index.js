@@ -1,6 +1,6 @@
 const DATABASES = Object.freeze({
   rankings: { binding: "RANKINGS_DB", label: "Rankings & managers" },
-  next: { binding: "NEXT_DB", label: "Next items" },
+  next: { binding: "NEXT_DB", label: "Next & Want items" },
   guides: { binding: "GUIDES_DB", label: "Guide progress" },
   footy: { binding: "FOOTY_NOTES_DB", label: "Footy notes & rosters" },
   psn: { binding: "PSN_DB", label: "PSN trophies" },

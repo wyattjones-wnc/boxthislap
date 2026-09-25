@@ -372,22 +372,48 @@ function buildLargeWidget(widget, races, cached) {
 
     const identity = row.addStack();
     identity.layoutVertically();
-    identity.size = new Size(132, 0);
-    const round = identity.addText(`ROUND ${race.round}`);
+    identity.size = new Size(92, 0);
+    const roundRow = identity.addStack();
+    roundRow.layoutHorizontally();
+    roundRow.centerAlignContent();
+    const round = roundRow.addText(`ROUND ${race.round}`);
     round.font = Font.boldSystemFont(8);
     round.textColor = COLORS.accent;
+    roundRow.addSpacer();
+    if (race.flagImage) {
+      const flag = roundRow.addImage(race.flagImage);
+      flag.imageSize = new Size(17, 10);
+      flag.cornerRadius = 2;
+      flag.applyFillingContentMode();
+    }
     const name = identity.addText(shortRaceName(race.name));
-    name.font = Font.boldSystemFont(11);
+    name.font = Font.boldSystemFont(10);
     name.textColor = COLORS.text;
-    name.lineLimit = 1;
-    name.minimumScaleFactor = 0.7;
+    name.lineLimit = 2;
+    name.minimumScaleFactor = 0.78;
 
-    row.addSpacer(7);
-    addTimeBlock(row, "BET", race.deadlineAt, COLORS.deadline, 8, 10);
-    row.addSpacer(10);
-    addTimeBlock(row, "RACE", race.raceAt, COLORS.accent, 8, 10);
+    row.addSpacer(4);
+    const trackArea = row.addStack();
+    trackArea.size = new Size(38, 30);
+    trackArea.centerAlignContent();
+    if (race.trackImage) {
+      const track = trackArea.addImage(race.trackImage);
+      track.imageSize = new Size(38, 30);
+      track.applyFittingContentMode();
+    }
+
+    row.addSpacer(6);
+    addSizedTimeBlock(row, 72, "BET", race.deadlineAt, COLORS.deadline);
+    row.addSpacer(6);
+    addSizedTimeBlock(row, 72, "RACE", race.raceAt, COLORS.accent);
   });
   return widget;
+}
+
+function addSizedTimeBlock(container, width, label, date, color) {
+  const area = container.addStack();
+  area.size = new Size(width, 0);
+  addTimeBlock(area, label, date, color, 8, 10);
 }
 
 function addHeader(container, titleText) {

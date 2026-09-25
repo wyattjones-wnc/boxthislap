@@ -1202,7 +1202,7 @@ export function TodoPage() {
 export function WantPage() {
   return (
     <>
-      <PageHeading title="Want" actionsClassName="page-heading-actions">
+      <PageHeading title="Want">
         <IconButton
           className="icon-action-button todo-random-button"
           icon={<Dices />}

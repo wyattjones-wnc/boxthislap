@@ -473,7 +473,6 @@ async function addFixture(widget, fixture) {
     const badge = badgeSlot.addImage(badgeImage);
     const badgeSize = 24;
     badge.imageSize = new Size(badgeSize, badgeSize);
-    badge.cornerRadius = badgeSize / 2;
   } else {
     const placeholder = badgeSlot.addImage(SFSymbol.named("soccerball").image);
     placeholder.imageSize = new Size(22, 22);

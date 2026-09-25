@@ -122,7 +122,7 @@ function normalizeCountryName(value) {
 
 async function loadMeetings(year) {
   try {
-    const request = new Request(`${OPENF1_MEETINGS_URL}?year=${year}&nonce=${Date.now()}`);
+    const request = new Request(`${OPENF1_MEETINGS_URL}?year=${year}`);
     request.timeoutInterval = 20;
     const meetings = await request.loadJSON();
     if (!Array.isArray(meetings)) throw new Error("OpenF1 did not return meetings.");
@@ -332,7 +332,7 @@ function makeTrackBackground(trackImage, width, height) {
     imageHeight
   );
   context.drawImageInRect(trackImage, imageRect);
-  context.setFillColor(new Color("#101820", 0.34));
+  context.setFillColor(new Color("#101820", 0.12));
   context.fillRect(new Rect(0, 0, width, height));
   return context.getImage();
 }
@@ -347,17 +347,17 @@ function buildLargeWidget(widget, races, cached) {
   widget.setPadding(10, 12, 10, 12);
   const header = widget.addStack();
   header.centerAlignContent();
-  addHeader(header, "Next 6 F1 Rounds");
+  addHeader(header, "Next F1 Races");
   header.addSpacer();
   addCacheLabel(header, cached);
   widget.addSpacer(7);
 
   races.forEach((race, index) => {
-    if (index > 0) widget.addSpacer(4);
+    if (index > 0) widget.addSpacer(6);
     const row = widget.addStack();
     row.layoutHorizontally();
     row.centerAlignContent();
-    row.size = new Size(0, 45);
+    row.size = new Size(0, 46);
     row.backgroundColor = COLORS.card;
     row.cornerRadius = 8;
     row.setPadding(5, 7, 5, 7);

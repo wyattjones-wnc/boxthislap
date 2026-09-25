@@ -105,6 +105,12 @@ describe("operational React pages", () => {
       </>,
     );
 
+    expect(
+      screen
+        .getByRole("button", { name: "Show Want filters" })
+        .parentElement?.classList.contains("heading-actions"),
+    ).toBe(true);
+
     window.dispatchEvent(
       new CustomEvent("boxthislap:todo-list", {
         detail: {

@@ -7755,10 +7755,25 @@ async function saveWantItemFromForm(values = {}) {
   };
   setWantItemStatus("Saving...");
   try {
-    await nextItemsApiRequest(existingId ? `/api/want-items/${encodeURIComponent(existingId)}` : "/api/want-items", {
+    const path = existingId ? `/api/want-items/${encodeURIComponent(existingId)}` : "/api/want-items";
+    const options = {
       body: JSON.stringify(item),
       method: existingId ? "PATCH" : "POST",
-    });
+    };
+    try {
+      await nextItemsApiRequest(path, options);
+    } catch (error) {
+      if (error.status !== 409 || !normalizedExisting) throw error;
+      await reloadWantItemsFromApi();
+      const latest = getWantItems().map(normalizeWantItem).find((row) => row?.id === existingId);
+      if (!latest) throw error;
+      if (!wantItemMatchesPayload(latest, item)) {
+        if (!wantItemMatchesPayload(latest, wantItemApiPayload(normalizedExisting))) throw error;
+        item.revision = latest.raw?.revision;
+        options.body = JSON.stringify(item);
+        await nextItemsApiRequest(path, options);
+      }
+    }
     await reloadWantItemsFromApi();
     closeWantItemDialog();
   } catch (error) {
@@ -7884,6 +7899,16 @@ function wantItemApiPayload(item, overrides = {}) {
     revision: item.raw?.revision,
     ...overrides,
   };
+}
+
+function wantItemMatchesPayload(item, payload) {
+  return item.archived === Boolean(payload.archived)
+    && item.completed === Boolean(payload.completed)
+    && item.deleted === Boolean(payload.deleted)
+    && item.imageUrl === String(payload.imageUrl || "").trim()
+    && item.name === String(payload.name || "").trim()
+    && item.order === Number(payload.order)
+    && Number(item.price ?? 0) === Number(payload.price || 0);
 }
 
 async function reloadWantItemsFromApi() {

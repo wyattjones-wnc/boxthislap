@@ -227,7 +227,11 @@ function createWidget(result) {
 
 function buildSmallWidget(widget, race) {
   widget.setPadding(11, 11, 11, 11);
-  applyRaceCardBackground(widget, race, 300, 300);
+  applyRaceCardBackground(widget, race, 300, 300, {
+    top: 0.28,
+    height: 0.36,
+    width: 0.76,
+  });
   addRaceCardContent(widget, race, {
     roundSize: 11,
     flagWidth: 23,
@@ -253,7 +257,7 @@ function buildMediumWidget(widget, races, cached) {
   const columns = widget.addStack();
   columns.layoutHorizontally();
   races.forEach((race, index) => {
-    if (index > 0) columns.addSpacer(6);
+    if (index > 0) columns.addSpacer();
     const column = columns.addStack();
     column.layoutVertically();
     column.size = new Size(98, 112);
@@ -262,7 +266,11 @@ function buildMediumWidget(widget, races, cached) {
     column.borderColor = COLORS.border;
     column.borderWidth = 1;
     column.setPadding(6, 7, 6, 7);
-    applyRaceCardBackground(column, race, 196, 224);
+    applyRaceCardBackground(column, race, 196, 224, {
+      top: 0.3,
+      height: 0.32,
+      width: 0.72,
+    });
     addRaceCardContent(column, race, {
       roundSize: 9,
       flagWidth: 18,
@@ -306,12 +314,12 @@ function addRaceCardContent(container, race, sizes) {
   addTimeBlock(container, "RACE", race.raceAt, COLORS.accent, sizes.labelSize, sizes.valueSize);
 }
 
-function applyRaceCardBackground(container, race, width, height) {
+function applyRaceCardBackground(container, race, width, height, artworkLayout) {
   if (!race.trackImage) return;
-  container.backgroundImage = makeTrackBackground(race.trackImage, width, height);
+  container.backgroundImage = makeTrackBackground(race.trackImage, width, height, artworkLayout);
 }
 
-function makeTrackBackground(trackImage, width, height) {
+function makeTrackBackground(trackImage, width, height, artworkLayout) {
   const context = new DrawContext();
   context.size = new Size(width, height);
   context.opaque = false;
@@ -319,10 +327,10 @@ function makeTrackBackground(trackImage, width, height) {
   context.setFillColor(COLORS.card);
   context.fillRect(new Rect(0, 0, width, height));
 
-  const bandTop = height * 0.22;
-  const bandHeight = height * 0.54;
+  const bandTop = height * artworkLayout.top;
+  const bandHeight = height * artworkLayout.height;
   const imageSize = trackImage.size;
-  const scale = Math.min((width * 0.9) / imageSize.width, bandHeight / imageSize.height);
+  const scale = Math.min((width * artworkLayout.width) / imageSize.width, bandHeight / imageSize.height);
   const imageWidth = imageSize.width * scale;
   const imageHeight = imageSize.height * scale;
   const imageRect = new Rect(

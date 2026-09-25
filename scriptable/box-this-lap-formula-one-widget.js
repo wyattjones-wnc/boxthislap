@@ -160,6 +160,7 @@ function normalizeRaceName(value) {
 
 async function loadCachedImage(url, fileName) {
   if (!url) return null;
+  const requestUrl = String(url).replace(/ /g, "%20");
   const manager = FileManager.local();
   const path = manager.joinPath(manager.documentsDirectory(), fileName);
   if (manager.fileExists(path)) {
@@ -178,13 +179,13 @@ async function loadCachedImage(url, fileName) {
   }
 
   try {
-    const request = new Request(url);
+    const request = new Request(requestUrl);
     request.timeoutInterval = 15;
     const image = await request.loadImage();
     manager.writeImage(path, image);
     return image;
   } catch (error) {
-    console.warn(`Unable to load Formula 1 artwork from ${url}: ${error}`);
+    console.warn(`Unable to load Formula 1 artwork from ${requestUrl}: ${error}`);
     return null;
   }
 }

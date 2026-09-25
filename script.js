@@ -7570,6 +7570,7 @@ function renderWantList(items = siteData.wantItems || []) {
           draggable: false,
           expanded: false,
           id: String(item.id || ""),
+          imageUrl: normalizedItems.find((row) => row.id === String(item.id || ""))?.imageUrl || "",
           meta: [
             `${Math.round(item.rating || RANKING_BASE_RATING)} ELO`,
             `${item.wins || 0}-${item.losses || 0}`,
@@ -7595,6 +7596,7 @@ function renderWantList(items = siteData.wantItems || []) {
       draggable: shouldShowWantEditMode,
       expanded: shouldShowWantEditMode && activeWantItemId === item.id,
       id: item.id,
+      imageUrl: item.imageUrl,
       meta: [],
       name: item.name,
       orderLabel: formatWantOrder(item),

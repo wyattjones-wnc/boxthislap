@@ -30,9 +30,8 @@ type SourceHealth = {
   status: string;
 };
 type Feed = {
-  counts: Record<View, number>;
   items: Product[];
-  pagination: { page: number; pages: number; total: number };
+  pagination: { hasMore: boolean; page: number };
   sources: SourceHealth[];
 };
 
@@ -198,7 +197,6 @@ export function MerchandiseFeature() {
               onClick={() => setView(item)}
             >
               {item[0].toUpperCase() + item.slice(1)}
-              {feed ? ` (${feed.counts[item]})` : ""}
             </button>
           ))}
         </div>
@@ -253,9 +251,7 @@ export function MerchandiseFeature() {
           </label>
         </div>
         <span className={styles.resultCount}>
-          {feed
-            ? `${feed.pagination.total.toLocaleString()} matching products`
-            : ""}
+          {feed ? `${feed.items.length.toLocaleString()} shown` : ""}
         </span>
       </div>
       <p
@@ -366,7 +362,7 @@ export function MerchandiseFeature() {
           </article>
         ))}
       </div>
-      {feed && feed.pagination.pages > 1 ? (
+      {feed && (page > 1 || feed.pagination.hasMore) ? (
         <div className={styles.pagination}>
           <button
             className="action-button"
@@ -376,13 +372,11 @@ export function MerchandiseFeature() {
           >
             Previous
           </button>
-          <span>
-            Page {page} of {feed.pagination.pages}
-          </span>
+          <span>Page {page}</span>
           <button
             className="action-button"
             type="button"
-            disabled={page >= feed.pagination.pages || busy}
+            disabled={!feed.pagination.hasMore || busy}
             onClick={() => setPage((value) => value + 1)}
           >
             Next

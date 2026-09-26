@@ -103,8 +103,7 @@ export async function listProducts(env, managerId, searchParams) {
   const { where, params } = feedScope({ category, managerId, team, view });
   const result = await env.DB.prepare(
     `
-    SELECT p.*, s.seen_at, s.wishlisted_at,
-      COUNT(*) OVER () AS filtered_total
+    SELECT p.*, s.seen_at, s.wishlisted_at
     FROM merch_products p
     LEFT JOIN merch_manager_state s ON s.product_id = p.id AND s.manager_id = ?
     WHERE ${where.join(" AND ")}
@@ -112,36 +111,14 @@ export async function listProducts(env, managerId, searchParams) {
     LIMIT ? OFFSET ?
   `,
   )
-    .bind(managerId, ...params, limit, (page - 1) * limit)
+    .bind(managerId, ...params, limit + 1, (page - 1) * limit)
     .all();
   const rows = result.results || [];
-  const total = Number(rows[0]?.filtered_total || 0);
-  const countsRow = await env.DB.prepare(
-    `
-    SELECT
-      SUM(CASE WHEN p.in_scope = 1 AND s.seen_at IS NULL THEN 1 ELSE 0 END) AS unseen,
-      SUM(CASE WHEN p.in_scope = 1 THEN 1 ELSE 0 END) AS all_count,
-      SUM(CASE WHEN s.wishlisted_at IS NOT NULL THEN 1 ELSE 0 END) AS wishlist
-    FROM merch_products p
-    LEFT JOIN merch_manager_state s ON s.product_id = p.id AND s.manager_id = ?
-  `,
-  )
-    .bind(managerId)
-    .first();
+  const hasMore = rows.length > limit;
   return {
-    counts: {
-      all: Number(countsRow?.all_count || 0),
-      unseen: Number(countsRow?.unseen || 0),
-      wishlist: Number(countsRow?.wishlist || 0),
-    },
     filters: { category, team },
-    items: rows.map(mapProduct),
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.max(1, Math.ceil(total / limit)),
-    },
+    items: rows.slice(0, limit).map(mapProduct),
+    pagination: { hasMore, page, limit },
     sources: await sourceHealth(env),
     view,
   };

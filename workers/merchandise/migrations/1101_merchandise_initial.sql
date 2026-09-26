@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS merch_scans (
   new_count INTEGER NOT NULL DEFAULT 0,
   page_count INTEGER NOT NULL DEFAULT 0,
   complete INTEGER NOT NULL DEFAULT 0 CHECK (complete IN (0, 1)),
+  content_hash TEXT,
   error_summary TEXT
 );
 

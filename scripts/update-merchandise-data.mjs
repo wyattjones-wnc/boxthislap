@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { scanArsenal, scanBarcelona } from "./merchandise/catalog.mjs";
 
 const REPORT_PATH = new URL("../.tmp/merchandise-report.json", import.meta.url);
@@ -56,9 +56,10 @@ export async function runMerchandiseUpdate({
             });
       let baseline = true;
       let priorCount = 0;
+      let previous = null;
       if (d1) {
-        const previous = await d1.first(
-          `SELECT item_count FROM merch_scans WHERE source = ? AND status = 'succeeded' ORDER BY finished_at DESC LIMIT 1`,
+        previous = await d1.first(
+          `SELECT item_count, content_hash FROM merch_scans WHERE source = ? AND status = 'succeeded' ORDER BY finished_at DESC LIMIT 1`,
           [source],
         );
         baseline = !previous;
@@ -77,14 +78,27 @@ export async function runMerchandiseUpdate({
           });
         throw Object.assign(new Error(message), { recorded: true });
       }
+      const contentHash = scanContentHash(scan.products);
+      const unchanged = Boolean(
+        previous?.content_hash && previous.content_hash === contentHash,
+      );
       const newCount = d1
-        ? await importScan(d1, {
-            id: scanId,
-            source,
-            startedAt: sourceStartedAt,
-            scan,
-            baseline,
-          })
+        ? unchanged
+          ? await recordSuccessfulScan(d1, {
+              contentHash,
+              id: scanId,
+              scan,
+              source,
+              startedAt: sourceStartedAt,
+            })
+          : await importScan(d1, {
+              baseline,
+              contentHash,
+              id: scanId,
+              scan,
+              source,
+              startedAt: sourceStartedAt,
+            })
         : 0;
       report.outcomes.push({
         baseline,
@@ -94,6 +108,7 @@ export async function runMerchandiseUpdate({
         pageCount: scan.pageCount,
         source,
         status: "succeeded",
+        unchanged,
       });
     } catch (error) {
       const message = sanitizeError(error);
@@ -128,10 +143,31 @@ export async function runMerchandiseUpdate({
   return report;
 }
 
-async function importScan(d1, { id, source, startedAt, scan, baseline }) {
+async function importScan(
+  d1,
+  { baseline, contentHash, id, scan, source, startedAt },
+) {
   const observedAt = new Date().toISOString();
+  const existingRows = await d1.rows(
+    `SELECT id, title, canonical_url, image_url, category, price_minor, currency,
+      availability, in_scope, source_metadata, first_published_at
+     FROM merch_products WHERE source = ?`,
+    [source],
+  );
+  const existing = new Map(existingRows.map((row) => [String(row.id), row]));
+  const currentIds = new Set(scan.products.map((product) => product.id));
+  const changedProducts = scan.products.filter((product) =>
+    productChanged(existing.get(product.id), product),
+  );
+  const activateIds = scan.products
+    .filter((product) => !existing.get(product.id)?.in_scope)
+    .map((product) => product.id);
+  const missingIds = existingRows
+    .filter((row) => row.in_scope && !currentIds.has(String(row.id)))
+    .map((row) => String(row.id));
+
   await d1.batch(
-    scan.products.map((product) => ({
+    changedProducts.map((product) => ({
       sql: `INSERT INTO merch_products (
       id, source, source_product_id, team, title, canonical_url, image_url, category,
       price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata
@@ -160,31 +196,32 @@ async function importScan(d1, { id, source, startedAt, scan, baseline }) {
     })),
     50,
   );
+
   const unpublished = baseline
     ? 0
-    : Number(
-        (
-          await d1.first(
-            "SELECT COUNT(*) AS count FROM merch_products WHERE source = ? AND first_published_at IS NULL AND id IN (SELECT value FROM json_each(?))",
-            [
-              source,
-              JSON.stringify(scan.products.map((product) => product.id)),
-            ],
-          )
-        )?.count || 0,
-      );
+    : scan.products.filter(
+        (product) => !existing.get(product.id)?.first_published_at,
+      ).length;
   const newCount = baseline ? 0 : unpublished;
-  await d1.batch([
-    {
-      sql: "UPDATE merch_products SET in_scope = 0 WHERE source = ?",
-      params: [source],
-    },
+  const finalStatements = [];
+  if (missingIds.length) {
+    finalStatements.push({
+      sql: "UPDATE merch_products SET in_scope = 0 WHERE source = ? AND id IN (SELECT value FROM json_each(?))",
+      params: [source, JSON.stringify(missingIds)],
+    });
+  }
+  if (activateIds.length) {
+    finalStatements.push({
+      sql: "UPDATE merch_products SET in_scope = 1 WHERE source = ? AND id IN (SELECT value FROM json_each(?))",
+      params: [source, JSON.stringify(activateIds)],
+    });
+  }
+  finalStatements.push(
     {
       sql: `UPDATE merch_products SET
-        in_scope = 1,
-        new_since = CASE WHEN first_published_at IS NULL AND ? = 0 THEN ? ELSE new_since END,
-        first_published_at = COALESCE(first_published_at, ?)
-        WHERE source = ? AND id IN (SELECT value FROM json_each(?))`,
+        new_since = CASE WHEN ? = 0 THEN ? ELSE new_since END,
+        first_published_at = ?
+        WHERE source = ? AND first_published_at IS NULL AND id IN (SELECT value FROM json_each(?))`,
       params: [
         baseline ? 1 : 0,
         observedAt,
@@ -194,8 +231,8 @@ async function importScan(d1, { id, source, startedAt, scan, baseline }) {
       ],
     },
     {
-      sql: `INSERT INTO merch_scans (id, source, started_at, finished_at, status, scope, item_count, new_count, page_count, complete)
-      VALUES (?, ?, ?, ?, 'succeeded', 'full-store', ?, ?, ?, 1)`,
+      sql: `INSERT INTO merch_scans (id, source, started_at, finished_at, status, scope, item_count, new_count, page_count, complete, content_hash)
+      VALUES (?, ?, ?, ?, 'succeeded', 'full-store', ?, ?, ?, 1, ?)`,
       params: [
         id,
         source,
@@ -204,10 +241,67 @@ async function importScan(d1, { id, source, startedAt, scan, baseline }) {
         scan.products.length,
         newCount,
         scan.pageCount || 0,
+        contentHash,
+      ],
+    },
+  );
+  await d1.batch(finalStatements);
+  return newCount;
+}
+
+async function recordSuccessfulScan(
+  d1,
+  { contentHash, id, scan, source, startedAt },
+) {
+  await d1.batch([
+    {
+      sql: `INSERT INTO merch_scans (id, source, started_at, finished_at, status, scope, item_count, new_count, page_count, complete, content_hash)
+      VALUES (?, ?, ?, ?, 'succeeded', 'full-store', ?, 0, ?, 1, ?)`,
+      params: [
+        id,
+        source,
+        startedAt,
+        new Date().toISOString(),
+        scan.products.length,
+        scan.pageCount || 0,
+        contentHash,
       ],
     },
   ]);
-  return newCount;
+  return 0;
+}
+
+export function productChanged(row, product) {
+  if (!row) return true;
+  return (
+    row.title !== product.title ||
+    row.canonical_url !== product.canonicalUrl ||
+    (row.image_url || null) !== product.imageUrl ||
+    row.category !== product.category ||
+    (row.price_minor === null ? null : Number(row.price_minor)) !==
+      product.priceMinor ||
+    (row.currency || null) !== product.currency ||
+    row.availability !== product.availability ||
+    String(row.source_metadata || "{}") !==
+      JSON.stringify(product.sourceMetadata || {})
+  );
+}
+
+export function scanContentHash(products) {
+  const stable = [...products]
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .map((product) => ({
+      availability: product.availability,
+      canonicalUrl: product.canonicalUrl,
+      category: product.category,
+      currency: product.currency,
+      id: product.id,
+      imageUrl: product.imageUrl,
+      priceMinor: product.priceMinor,
+      sourceMetadata: product.sourceMetadata,
+      title: product.title,
+    }));
+  return createHash("sha256").update(JSON.stringify(stable)).digest("hex");
 }
 
 async function recordScan(d1, { id, source, startedAt, status, scan, error }) {

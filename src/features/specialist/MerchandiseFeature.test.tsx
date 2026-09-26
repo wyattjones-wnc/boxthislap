@@ -7,7 +7,6 @@ import { AppProviders } from "../../app/providers";
 import { MerchandiseFeature } from "./MerchandiseFeature";
 
 const feed = {
-  counts: { all: 2, unseen: 2, wishlist: 0 },
   items: [
     {
       availability: "in_stock",
@@ -27,7 +26,7 @@ const feed = {
       wishlisted: false,
     },
   ],
-  pagination: { page: 1, pages: 1, total: 2 },
+  pagination: { hasMore: false, page: 1 },
   sources: [
     {
       checkedAt: "2026-09-26T00:00:00Z",

@@ -707,7 +707,7 @@ const router = createRouter({
     (["rankings", "draft-list", "account-settings", "workouts"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -15439,7 +15439,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "workouts") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }

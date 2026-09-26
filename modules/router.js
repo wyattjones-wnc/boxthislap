@@ -34,6 +34,7 @@ const THE_MONSTER_MANIAC_PAGES = [
   "youtube",
   "collectibles",
   "database-admin",
+  "merchandise",
 ];
 const STANDINGS_TABS = [
   "players-championship",

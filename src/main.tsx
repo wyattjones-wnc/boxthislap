@@ -114,6 +114,7 @@ const specialistRoots = {
   adminHome: document.querySelector('[data-page="the-monster-maniac"]'),
   collectibles: document.querySelector('[data-page="collectibles"]'),
   databaseAdmin: document.querySelector('[data-page="database-admin"]'),
+  merchandise: document.querySelector('[data-page="merchandise"]'),
   psn: document.querySelector('[data-page="psn"]'),
   trophyLog: document.querySelector('[data-page="trophy-log"]'),
   trophyStats: document.querySelector('[data-page="trophy-stats"]'),

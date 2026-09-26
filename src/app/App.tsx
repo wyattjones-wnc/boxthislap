@@ -59,6 +59,12 @@ const DatabaseAdminPage = lazy(() =>
   })),
 );
 
+const MerchandiseFeature = lazy(() =>
+  import("../features/specialist/MerchandiseFeature").then((module) => ({
+    default: module.MerchandiseFeature,
+  })),
+);
+
 const WorkoutFeature = lazy(() =>
   import("../features/operational/WorkoutFeature").then((module) => ({
     default: module.WorkoutFeature,
@@ -143,10 +149,23 @@ export function DeferredDatabaseAdminPage() {
   );
 }
 
+function DeferredMerchandiseFeature() {
+  const { route } = useAppState();
+  if (route !== "merchandise") return null;
+  return (
+    <Suspense
+      fallback={<p className="table-message">Loading Merchandise…</p>}
+    >
+      <MerchandiseFeature />
+    </Suspense>
+  );
+}
+
 export interface SpecialistRoots {
   adminHome: Element;
   collectibles: Element;
   databaseAdmin: Element;
+  merchandise: Element;
   psn: Element;
   trophyLog: Element;
   trophyStats: Element;
@@ -265,6 +284,10 @@ export function App({
         {createPortal(
           <DeferredDatabaseAdminPage />,
           specialistRoots.databaseAdmin,
+        )}
+        {createPortal(
+          <DeferredMerchandiseFeature />,
+          specialistRoots.merchandise,
         )}
         {createPortal(<TrophyLogPage />, specialistRoots.trophyLog)}
         {createPortal(<YouTubePage />, specialistRoots.youtube)}

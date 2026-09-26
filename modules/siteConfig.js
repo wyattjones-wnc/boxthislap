@@ -27,6 +27,8 @@ export const COLLECTIBLES_ENDPOINT =
   "https://box-this-lap-collectibles.boxthislap.workers.dev";
 export const DATABASE_ADMIN_ENDPOINT =
   "https://box-this-lap-database-admin.boxthislap.workers.dev";
+export const MERCHANDISE_ENDPOINT =
+  "https://box-this-lap-merchandise.boxthislap.workers.dev";
 export const AWARD_DEFINITIONS = [
   {
     abbreviation: "PC",

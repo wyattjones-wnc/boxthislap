@@ -81,6 +81,7 @@ const personalRoutes = new Set([
   "youtube",
   "collectibles",
   "database-admin",
+  "merchandise",
 ]);
 
 const worldCupRoutes = new Set([

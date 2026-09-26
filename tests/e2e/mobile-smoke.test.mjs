@@ -852,7 +852,10 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
       if (request.method() === "POST") {
         const body = request.postDataJSON();
         wantItems.push({ ...body, id: "2", revision: 1 });
-        await route.fulfill({ json: { item: wantItems.at(-1), ok: true }, status: 201 });
+        await route.fulfill({
+          json: { item: wantItems.at(-1), ok: true },
+          status: 201,
+        });
         return;
       }
       if (request.method() === "PATCH") {
@@ -862,14 +865,20 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
         if (!item) throw new Error("Mock Want item was not created.");
         if (wantPatchRequests === 1) {
           item.revision = 2;
-          await route.fulfill({ json: { error: "Stale Want item", ok: false }, status: 409 });
+          await route.fulfill({
+            json: { error: "Stale Want item", ok: false },
+            status: 409,
+          });
           return;
         }
         Object.assign(item, body, { revision: 3 });
         await route.fulfill({ json: { item, ok: true }, status: 200 });
         return;
       }
-      await route.fulfill({ json: { items: wantItems, ok: true }, status: 200 });
+      await route.fulfill({
+        json: { items: wantItems, ok: true },
+        status: 200,
+      });
     },
   );
   await page.goto("/#want", { waitUntil: "networkidle" });
@@ -913,10 +922,14 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
   await expect(
     editDialog.getByRole("spinbutton", { name: "Price" }),
   ).toHaveValue("24.99");
-  await editDialog.getByRole("textbox", { name: "Name" }).fill("Updated Want check");
+  await editDialog
+    .getByRole("textbox", { name: "Name" })
+    .fill("Updated Want check");
   await editDialog.getByRole("button", { name: "Save" }).click();
   await expect(editDialog).toBeHidden();
-  await expect(page.getByText("Updated Want check", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Updated Want check", { exact: true }),
+  ).toBeVisible();
   expect(wantPatchRequests).toBe(2);
 
   await page.getByRole("button", { name: "Add Want item" }).click();

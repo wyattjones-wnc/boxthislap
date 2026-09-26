@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AccountSettingsPage, LoginPage, SiteFooter } from "./FoundationPages";
 import { AppErrorBoundary } from "./AppErrorBoundary";
-import { AppProviders } from "./providers";
+import { AppProviders, useAppState } from "./providers";
 import { SiteShell } from "./Shell";
 import {
   DraftListPage,

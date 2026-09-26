@@ -2,6 +2,9 @@ name = "box-this-lap-fantasy-office"
 main = "src/index.js"
 compatibility_date = "2026-09-18"
 
+[triggers]
+crons = ["17 1,7,13,19 * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "formula-one"

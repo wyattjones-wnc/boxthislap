@@ -2,6 +2,16 @@ import {
   buildFantasyOfficeStandings,
   scoreFantasyOfficeMovie,
 } from "./scoring.js";
+import {
+  countNumberOneWeekends,
+  discoverMovieSources,
+  extractDomesticGross,
+  extractLetterboxdRating,
+  extractTomatometer,
+  extractWeekendWinners,
+  fetchSource,
+  releaseIdFromUrl,
+} from "../../../scripts/fantasy-office-sources.mjs";
 
 const METRICS = new Set([
   "domestic_gross",
@@ -17,6 +27,9 @@ const METRIC_FIELDS = {
 };
 
 export default {
+  async scheduled(_controller, env, context) {
+    context.waitUntil(runScheduledUpdate(env, 2026));
+  },
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin, env);
@@ -401,6 +414,197 @@ async function ingestSourceDiscoveries(env, year, body) {
     if (result.meta?.changes) applied += 1;
   }
   return { applied };
+}
+
+async function runScheduledUpdate(env, year) {
+  const startedAt = new Date().toISOString();
+  const config = await readSyncConfig(env, year);
+  if (!config.movies.length) return;
+  const stateKey = `scheduled-cursor-${year}`;
+  const state = await env.DB.prepare(
+    "SELECT value FROM fantasy_office_sync_state WHERE key = ?",
+  )
+    .bind(stateKey)
+    .first();
+  const cursor = Math.max(0, Number(state?.value) || 0) % config.movies.length;
+  const { movies, nextCursor } = scheduledBatch(config.movies, cursor);
+  const discoveries = [];
+  for (const movie of movies) {
+    if (
+      !movie.letterboxdUrl ||
+      !movie.rottenTomatoesUrl ||
+      !movie.boxOfficeMojoUrl
+    ) {
+      const sources = await discoverMovieSources(movie, year);
+      discoveries.push({ movieId: movie.id, sources });
+      applyDiscoveredSources(movie, sources);
+    }
+  }
+  if (discoveries.length) {
+    await ingestSourceDiscoveries(env, year, {
+      discoveredAt: new Date().toISOString(),
+      discoveries,
+    });
+  }
+  const weekendUrl = `https://www.boxofficemojo.com/weekend/by-year/${year}/`;
+  let weekendWinners = null;
+  let weekendError = null;
+  try {
+    weekendWinners = extractWeekendWinners(await fetchSource(weekendUrl), year);
+  } catch (error) {
+    weekendError = error;
+  }
+  const observations = [];
+  for (const movie of movies) {
+    observations.push(
+      await scheduledObservation(
+        movie,
+        "letterboxd_rating",
+        movie.letterboxdUrl,
+        extractLetterboxdRating,
+      ),
+      await scheduledObservation(
+        movie,
+        "tomatometer",
+        movie.rottenTomatoesUrl,
+        extractTomatometer,
+      ),
+      await scheduledObservation(
+        movie,
+        "domestic_gross",
+        movie.boxOfficeMojoUrl,
+        extractDomesticGross,
+      ),
+    );
+    const fetchedAt = new Date().toISOString();
+    const releaseId =
+      movie.boxOfficeMojoReleaseId || releaseIdFromUrl(movie.boxOfficeMojoUrl);
+    if (!releaseId) {
+      observations.push(
+        scheduledFailure(
+          movie.id,
+          "number_one_weekends",
+          fetchedAt,
+          weekendUrl,
+          "CONFIG_ERROR",
+          "Box Office Mojo release ID has not been discovered.",
+        ),
+      );
+    } else if (!weekendWinners) {
+      observations.push(
+        scheduledFailure(
+          movie.id,
+          "number_one_weekends",
+          fetchedAt,
+          weekendUrl,
+          weekendError?.sourceType || "PARSE_ERROR",
+          weekendError?.message || "Weekend winners could not be loaded.",
+        ),
+      );
+    } else {
+      observations.push({
+        fetchedAt,
+        metric: "number_one_weekends",
+        movieId: movie.id,
+        sourceUrl: weekendUrl,
+        state: "available",
+        success: true,
+        value: countNumberOneWeekends(weekendWinners, releaseId),
+      });
+    }
+  }
+  await ingestObservations(env, year, {
+    completedAt: new Date().toISOString(),
+    observations,
+    runId: `scheduled-${startedAt}-${crypto.randomUUID()}`,
+    startedAt,
+  });
+  await env.DB.prepare(
+    "INSERT INTO fantasy_office_sync_state (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+  )
+    .bind(stateKey, String(nextCursor))
+    .run();
+}
+
+export function scheduledBatch(movies, cursor) {
+  const selected = [];
+  let cost = 1;
+  for (let offset = 0; offset < movies.length; offset += 1) {
+    const movie = movies[(cursor + offset) % movies.length];
+    const needsDiscovery =
+      !movie.letterboxdUrl ||
+      !movie.rottenTomatoesUrl ||
+      !movie.boxOfficeMojoUrl;
+    const movieCost = needsDiscovery ? 8 : 3;
+    if (selected.length && cost + movieCost > 44) break;
+    selected.push(movie);
+    cost += movieCost;
+  }
+  return {
+    movies: selected,
+    nextCursor: (cursor + selected.length) % movies.length,
+  };
+}
+
+function applyDiscoveredSources(movie, sources) {
+  movie.letterboxdUrl ||= sources.letterboxd?.url || "";
+  movie.rottenTomatoesUrl ||= sources.rottenTomatoes?.url || "";
+  movie.boxOfficeMojoUrl ||= sources.boxOfficeMojo?.url || "";
+  movie.boxOfficeMojoReleaseId ||= sources.boxOfficeMojo?.releaseId || "";
+}
+
+async function scheduledObservation(movie, metric, url, parser) {
+  const fetchedAt = new Date().toISOString();
+  if (!url) {
+    return scheduledFailure(
+      movie.id,
+      metric,
+      fetchedAt,
+      "",
+      "CONFIG_ERROR",
+      "Source has not been discovered.",
+    );
+  }
+  try {
+    const result = parser(await fetchSource(url));
+    return {
+      fetchedAt,
+      metric,
+      movieId: movie.id,
+      sourceUrl: url,
+      state: result.state,
+      success: true,
+      value: result.value,
+    };
+  } catch (error) {
+    return scheduledFailure(
+      movie.id,
+      metric,
+      fetchedAt,
+      url,
+      error.sourceType ||
+        (error.name === "TimeoutError" ? "TIMEOUT" : "NETWORK_ERROR"),
+      error.message,
+    );
+  }
+}
+
+function scheduledFailure(
+  movieId,
+  metric,
+  fetchedAt,
+  sourceUrl,
+  type,
+  message,
+) {
+  return {
+    error: { message, type },
+    fetchedAt,
+    metric,
+    movieId,
+    sourceUrl,
+    success: false,
+  };
 }
 
 async function ingestObservations(env, year, body) {

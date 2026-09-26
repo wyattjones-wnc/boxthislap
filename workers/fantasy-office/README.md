@@ -4,7 +4,7 @@ This Worker and its D1 database are the source of truth for Fantasy Office 2026 
 
 ## Provisioning
 
-1. Create the database with `npx wrangler d1 create fantasy-office` and put its ID in `wrangler.toml`.
+1. Create the database with `npx wrangler d1 create fantasy-office` and put its ID in `wrangler.toml`. If the account is at its D1 limit, bind an existing shared database instead; all application tables are prefixed `fantasy_office_`, and the binding must set a dedicated `migrations_table` so migration histories remain isolated.
 2. Apply `migrations/0001_initial.sql` locally and remotely.
 3. Set the Worker secret with `npx wrangler secret put SYNC_SECRET --config workers/fantasy-office/wrangler.toml`.
 4. Add the same value as the repository secret `FANTASY_OFFICE_SYNC_SECRET`.

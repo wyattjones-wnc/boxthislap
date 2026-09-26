@@ -4,8 +4,9 @@ compatibility_date = "2026-09-18"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "fantasy-office"
-database_id = "replace-with-fantasy-office-d1-id"
+database_name = "formula-one"
+database_id = "b3e28ed0-a9c9-43d1-a6cb-ae22b8a181a6"
+migrations_table = "fantasy_office_d1_migrations"
 
 [[services]]
 binding = "AUTH_SERVICE"

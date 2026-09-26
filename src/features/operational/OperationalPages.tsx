@@ -1098,9 +1098,7 @@ function WantCard({
     >
       <div className="next-card-main">
         <span className="todo-order-number">{orderLabel}</span>
-        {item.imageUrl ? (
-          <img alt="" src={item.imageUrl} />
-        ) : null}
+        {item.imageUrl ? <img alt="" src={item.imageUrl} /> : null}
         <div>
           <h2>{item.name}</h2>
           {item.priceLabel ? (

@@ -98,9 +98,7 @@ function DeferredMerchandiseFeature() {
   const { route } = useAppState();
   if (route !== "merchandise") return null;
   return (
-    <Suspense
-      fallback={<p className="table-message">Loading Merchandise…</p>}
-    >
+    <Suspense fallback={<p className="table-message">Loading Merchandise…</p>}>
       <MerchandiseFeature />
     </Suspense>
   );

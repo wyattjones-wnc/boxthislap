@@ -260,6 +260,12 @@ async function readSeason(env, year, options = {}) {
       score: scoreFantasyOfficeMovie(movie),
     };
   });
+  movies.sort(
+    (left, right) =>
+      left.manager.localeCompare(right.manager) ||
+      draftSlotOrder(left.draftNumber, left.substitute) -
+        draftSlotOrder(right.draftNumber, right.substitute),
+  );
   const standings = buildFantasyOfficeStandings(movies);
   const draft = buildDraft(movies);
   const latestVerification =
@@ -318,6 +324,12 @@ function buildDraft(movies) {
     managers.set(movie.manager, entry);
   }
   return [...managers.values()];
+}
+
+export function draftSlotOrder(draftNumber, substitute = false) {
+  if (substitute || String(draftNumber).toLowerCase() === "sub") return 11;
+  const match = String(draftNumber).match(/^D(10|[1-9])$/i);
+  return match ? Number(match[1]) : 99;
 }
 
 function effectiveMetricValue(metric) {
@@ -852,16 +864,21 @@ async function importRoster(env, year, body, managerId) {
 function normalizeImportedMovie(movie, year) {
   const manager = String(movie.manager || "").trim();
   const title = String(movie.title || movie.movie || "").trim();
-  const draftNumber = String(movie.draftNumber || movie.pick || "").trim();
+  const rawDraftNumber = String(movie.draftNumber || movie.pick || "").trim();
+  const substitute = Boolean(
+    movie.substitute || rawDraftNumber.toLowerCase() === "sub",
+  );
+  const draftNumber = substitute
+    ? "Sub"
+    : /^D(10|[1-9])$/i.test(rawDraftNumber)
+      ? `D${Number(rawDraftNumber.slice(1))}`
+      : "";
   if (!manager || !title || !draftNumber) {
     throw httpError(
       400,
-      "Every imported movie needs manager, title, and draftNumber.",
+      "Every imported movie needs a manager, title, and draftNumber from D1 through D10 or Sub.",
     );
   }
-  const substitute = Boolean(
-    movie.substitute || draftNumber.toLowerCase() === "sub",
-  );
   return {
     active: substitute ? Boolean(movie.active) : movie.active !== false,
     draftNumber,

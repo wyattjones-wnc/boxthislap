@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { scheduledBatch } from "../src/index.js";
+import { draftSlotOrder, scheduledBatch } from "../src/index.js";
 
 function movie(index, configured = false) {
   return {
@@ -33,4 +33,13 @@ test("configured sources rotate through fourteen movies per run", () => {
   assert.equal(batch.movies[0].id, "movie-50");
   assert.equal(batch.movies[5].id, "movie-0");
   assert.equal(batch.nextCursor, 9);
+});
+
+test("draft slots sort D1 through D10 before Sub", () => {
+  assert.deepEqual(
+    ["D1", "D10", "D2", "Sub"].sort(
+      (left, right) => draftSlotOrder(left) - draftSlotOrder(right),
+    ),
+    ["D1", "D2", "D10", "Sub"],
+  );
 });

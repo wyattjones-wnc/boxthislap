@@ -48,7 +48,7 @@ export function parseLegacyDraft(csvText) {
   const managerIndex = rows.indexOf(managerRow);
   const picks = rows.slice(managerIndex + 1).filter((row) => {
     const pick = row[0]?.trim().toLowerCase();
-    return /^\d+$/.test(pick) || pick === "sub";
+    return /^(?:[1-9]|10)$/.test(pick) || pick === "sub";
   });
   return managerRow.slice(1).flatMap((manager, offset) => {
     const name = manager.trim();

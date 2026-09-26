@@ -42,16 +42,20 @@ interface FantasyOfficeMovie {
   awardPoints: number;
   boxOfficeMojoReleaseId?: string;
   boxOfficeMojoUrl?: string;
+  boxOfficeMojoVerified?: boolean;
   domesticGross: number | null;
   draftNumber: string;
   health: Record<MetricName, MetricHealth>;
   id: string;
   letterboxdRating: number | null;
   letterboxdUrl?: string;
+  letterboxdVerified?: boolean;
   manager: string;
   movie: string;
   numberOneWeekends: number | null;
   rottenTomatoesUrl?: string;
+  rottenTomatoesVerified?: boolean;
+  sourceDiscoveredAt?: string;
   score: MovieScore;
   substitute: boolean;
   tomatometer: number | null;
@@ -328,6 +332,12 @@ function ResultsView({ data }: { data: SeasonData }) {
 function ManageView({ data }: { data: SeasonData }) {
   return (
     <div className={styles.manage}>
+      <p className={styles.notice}>
+        Source pages are discovered automatically from each movie title and the
+        season year. Review the suggested matches below and mark each one as
+        verified; you only need to edit a URL when discovery picked the wrong
+        film.
+      </p>
       <section className={styles.healthSummary}>
         <h3>Update health</h3>
         <p>
@@ -395,9 +405,12 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
       awardPoints: Number(form.get("awardPoints") || 0),
       boxOfficeMojoReleaseId: form.get("boxOfficeMojoReleaseId"),
       boxOfficeMojoUrl: form.get("boxOfficeMojoUrl"),
+      boxOfficeMojoVerified: form.get("boxOfficeMojoVerified") === "on",
       letterboxdUrl: form.get("letterboxdUrl"),
+      letterboxdVerified: form.get("letterboxdVerified") === "on",
       overrides,
       rottenTomatoesUrl: form.get("rottenTomatoesUrl"),
+      rottenTomatoesVerified: form.get("rottenTomatoesVerified") === "on",
       title: form.get("title"),
     });
   };
@@ -427,6 +440,11 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
             name="letterboxdUrl"
             type="url"
           />
+          <SourceVerification
+            available={Boolean(movie.letterboxdUrl)}
+            defaultChecked={movie.letterboxdVerified}
+            name="letterboxdVerified"
+          />
         </label>
         <label>
           Rotten Tomatoes URL
@@ -435,6 +453,11 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
             name="rottenTomatoesUrl"
             type="url"
           />
+          <SourceVerification
+            available={Boolean(movie.rottenTomatoesUrl)}
+            defaultChecked={movie.rottenTomatoesVerified}
+            name="rottenTomatoesVerified"
+          />
         </label>
         <label>
           Box Office Mojo URL
@@ -442,6 +465,11 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
             defaultValue={movie.boxOfficeMojoUrl}
             name="boxOfficeMojoUrl"
             type="url"
+          />
+          <SourceVerification
+            available={Boolean(movie.boxOfficeMojoUrl)}
+            defaultChecked={movie.boxOfficeMojoVerified}
+            name="boxOfficeMojoVerified"
           />
         </label>
         <label>
@@ -520,6 +548,26 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
         )}
       </footer>
     </form>
+  );
+}
+
+function SourceVerification({
+  available,
+  defaultChecked,
+  name,
+}: {
+  available: boolean;
+  defaultChecked?: boolean;
+  name: string;
+}) {
+  if (!available) {
+    return <small className={styles.unhealthy}>Awaiting discovery</small>;
+  }
+  return (
+    <span className={styles.verification}>
+      <input defaultChecked={defaultChecked} name={name} type="checkbox" />
+      {defaultChecked ? "Administrator verified" : "Verify this match"}
+    </span>
   );
 }
 

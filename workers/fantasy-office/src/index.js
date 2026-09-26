@@ -64,6 +64,25 @@ export default {
         );
       }
 
+      const sourceDiscoveryMatch = url.pathname.match(
+        /^\/api\/sync\/seasons\/(\d{4})\/sources$/,
+      );
+      if (sourceDiscoveryMatch && request.method === "POST") {
+        requireSync(request, env);
+        return json(
+          {
+            ok: true,
+            ...(await ingestSourceDiscoveries(
+              env,
+              parseYear(sourceDiscoveryMatch[1]),
+              await readBody(request),
+            )),
+          },
+          200,
+          cors,
+        );
+      }
+
       const ingestMatch = url.pathname.match(
         /^\/api\/sync\/seasons\/(\d{4})\/observations$/,
       );
@@ -171,7 +190,7 @@ async function readSeason(env, year, options = {}) {
       .bind(year)
       .first(),
     env.DB.prepare(
-      "SELECT id, year, manager_name, draft_number, title, active, substitute, letterboxd_url, rotten_tomatoes_url, box_office_mojo_url, box_office_mojo_release_id, award_points, updated_at FROM fantasy_office_movies WHERE year = ? ORDER BY manager_name, substitute, draft_number",
+      "SELECT id, year, manager_name, draft_number, title, active, substitute, letterboxd_url, letterboxd_verified, rotten_tomatoes_url, rotten_tomatoes_verified, box_office_mojo_url, box_office_mojo_release_id, box_office_mojo_verified, source_discovery_json, source_discovered_at, award_points, updated_at FROM fantasy_office_movies WHERE year = ? ORDER BY manager_name, substitute, draft_number",
     )
       .bind(year)
       .all(),
@@ -208,12 +227,17 @@ async function readSeason(env, year, options = {}) {
       awardPoints: record.award_points,
       boxOfficeMojoReleaseId: record.box_office_mojo_release_id,
       boxOfficeMojoUrl: record.box_office_mojo_url,
+      boxOfficeMojoVerified: Boolean(record.box_office_mojo_verified),
       draftNumber: record.draft_number,
       id: record.id,
       letterboxdUrl: record.letterboxd_url,
+      letterboxdVerified: Boolean(record.letterboxd_verified),
       manager: record.manager_name,
       movie: record.title,
       rottenTomatoesUrl: record.rotten_tomatoes_url,
+      rottenTomatoesVerified: Boolean(record.rotten_tomatoes_verified),
+      sourceDiscoveredAt: record.source_discovered_at,
+      sourceDiscovery: parseJson(record.source_discovery_json, {}),
       substitute: Boolean(record.substitute),
       ...values,
     };
@@ -256,6 +280,11 @@ function sanitizePublicMovie(movie) {
   delete movie.rottenTomatoesUrl;
   delete movie.boxOfficeMojoUrl;
   delete movie.boxOfficeMojoReleaseId;
+  delete movie.letterboxdVerified;
+  delete movie.rottenTomatoesVerified;
+  delete movie.boxOfficeMojoVerified;
+  delete movie.sourceDiscoveredAt;
+  delete movie.sourceDiscovery;
   delete movie.health;
 }
 
@@ -312,7 +341,7 @@ function normalizeMetricHealth(metric) {
 
 async function readSyncConfig(env, year) {
   const query = await env.DB.prepare(
-    "SELECT id, title, letterboxd_url, rotten_tomatoes_url, box_office_mojo_url, box_office_mojo_release_id FROM fantasy_office_movies WHERE year = ? ORDER BY id",
+    "SELECT id, title, letterboxd_url, letterboxd_verified, rotten_tomatoes_url, rotten_tomatoes_verified, box_office_mojo_url, box_office_mojo_release_id, box_office_mojo_verified FROM fantasy_office_movies WHERE year = ? ORDER BY id",
   )
     .bind(year)
     .all();
@@ -320,13 +349,58 @@ async function readSyncConfig(env, year) {
     movies: (query.results || []).map((movie) => ({
       boxOfficeMojoReleaseId: movie.box_office_mojo_release_id,
       boxOfficeMojoUrl: movie.box_office_mojo_url,
+      boxOfficeMojoVerified: Boolean(movie.box_office_mojo_verified),
       id: movie.id,
       letterboxdUrl: movie.letterboxd_url,
+      letterboxdVerified: Boolean(movie.letterboxd_verified),
       rottenTomatoesUrl: movie.rotten_tomatoes_url,
+      rottenTomatoesVerified: Boolean(movie.rotten_tomatoes_verified),
       title: movie.title,
     })),
     year,
   };
+}
+
+async function ingestSourceDiscoveries(env, year, body) {
+  const discoveries = Array.isArray(body.discoveries) ? body.discoveries : [];
+  const discoveredAt = String(body.discoveredAt || new Date().toISOString());
+  let applied = 0;
+  for (const discovery of discoveries) {
+    const movieId = String(discovery.movieId || "");
+    const sources = discovery.sources || {};
+    const letterboxdUrl = sources.letterboxd?.url
+      ? validateSourceUrl(sources.letterboxd.url, "letterboxd.com")
+      : "";
+    const rottenTomatoesUrl = sources.rottenTomatoes?.url
+      ? validateSourceUrl(sources.rottenTomatoes.url, "rottentomatoes.com")
+      : "";
+    const boxOfficeMojoUrl = sources.boxOfficeMojo?.url
+      ? validateSourceUrl(sources.boxOfficeMojo.url, "boxofficemojo.com")
+      : "";
+    const boxOfficeMojoReleaseId = boxOfficeMojoUrl
+      ? String(sources.boxOfficeMojo?.releaseId || "").trim()
+      : "";
+    const result = await env.DB.prepare(
+      "UPDATE fantasy_office_movies SET letterboxd_url = CASE WHEN letterboxd_verified = 0 AND ? <> '' THEN ? ELSE letterboxd_url END, rotten_tomatoes_url = CASE WHEN rotten_tomatoes_verified = 0 AND ? <> '' THEN ? ELSE rotten_tomatoes_url END, box_office_mojo_url = CASE WHEN box_office_mojo_verified = 0 AND ? <> '' THEN ? ELSE box_office_mojo_url END, box_office_mojo_release_id = CASE WHEN box_office_mojo_verified = 0 AND ? <> '' THEN ? ELSE box_office_mojo_release_id END, source_discovery_json = ?, source_discovered_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND year = ?",
+    )
+      .bind(
+        letterboxdUrl,
+        letterboxdUrl,
+        rottenTomatoesUrl,
+        rottenTomatoesUrl,
+        boxOfficeMojoUrl,
+        boxOfficeMojoUrl,
+        boxOfficeMojoUrl,
+        boxOfficeMojoReleaseId,
+        JSON.stringify(sources),
+        discoveredAt,
+        movieId,
+        year,
+      )
+      .run();
+    if (result.meta?.changes) applied += 1;
+  }
+  return { applied };
 }
 
 async function ingestObservations(env, year, body) {
@@ -615,18 +689,39 @@ async function updateMovie(env, year, movieId, body, managerId) {
       body.boxOfficeMojoUrl === undefined
         ? existing.box_office_mojo_url
         : validateSourceUrl(body.boxOfficeMojoUrl, "boxofficemojo.com"),
+    boxOfficeMojoVerified:
+      body.boxOfficeMojoVerified === undefined
+        ? existing.box_office_mojo_verified
+        : body.boxOfficeMojoVerified
+          ? 1
+          : 0,
     letterboxdUrl:
       body.letterboxdUrl === undefined
         ? existing.letterboxd_url
         : validateSourceUrl(body.letterboxdUrl, "letterboxd.com"),
+    letterboxdVerified:
+      body.letterboxdVerified === undefined
+        ? existing.letterboxd_verified
+        : body.letterboxdVerified
+          ? 1
+          : 0,
     rottenTomatoesUrl:
       body.rottenTomatoesUrl === undefined
         ? existing.rotten_tomatoes_url
         : validateSourceUrl(body.rottenTomatoesUrl, "rottentomatoes.com"),
+    rottenTomatoesVerified:
+      body.rottenTomatoesVerified === undefined
+        ? existing.rotten_tomatoes_verified
+        : body.rottenTomatoesVerified
+          ? 1
+          : 0,
     title:
       body.title === undefined ? existing.title : String(body.title).trim(),
   };
   if (!next.title) throw httpError(400, "Movie title is required.");
+  if (!next.letterboxdUrl) next.letterboxdVerified = 0;
+  if (!next.rottenTomatoesUrl) next.rottenTomatoesVerified = 0;
+  if (!next.boxOfficeMojoUrl) next.boxOfficeMojoVerified = 0;
   if (next.active && !existing.active) {
     const activeCount = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM fantasy_office_movies WHERE year = ? AND manager_name = ? AND active = 1 AND id <> ?",
@@ -641,16 +736,19 @@ async function updateMovie(env, year, movieId, body, managerId) {
     }
   }
   await env.DB.prepare(
-    "UPDATE fantasy_office_movies SET title = ?, active = ?, award_points = ?, letterboxd_url = ?, rotten_tomatoes_url = ?, box_office_mojo_url = ?, box_office_mojo_release_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND year = ?",
+    "UPDATE fantasy_office_movies SET title = ?, active = ?, award_points = ?, letterboxd_url = ?, letterboxd_verified = ?, rotten_tomatoes_url = ?, rotten_tomatoes_verified = ?, box_office_mojo_url = ?, box_office_mojo_release_id = ?, box_office_mojo_verified = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND year = ?",
   )
     .bind(
       next.title,
       next.active,
       next.awardPoints,
       next.letterboxdUrl,
+      next.letterboxdVerified,
       next.rottenTomatoesUrl,
+      next.rottenTomatoesVerified,
       next.boxOfficeMojoUrl,
       next.boxOfficeMojoReleaseId,
+      next.boxOfficeMojoVerified,
       movieId,
       year,
     )
@@ -663,6 +761,14 @@ async function updateMovie(env, year, movieId, body, managerId) {
     movieId,
   });
   return { id: movieId, ...next };
+}
+
+function parseJson(value, fallback) {
+  try {
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 async function saveMetricControls(env, movieId, controls) {

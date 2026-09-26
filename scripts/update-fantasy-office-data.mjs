@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import {
   countNumberOneWeekends,
+  discoverMovieSources,
   extractDomesticGross,
   extractLetterboxdRating,
   extractTomatometer,
@@ -127,6 +128,17 @@ async function main() {
   const startedAt = new Date().toISOString();
   const runId = `${startedAt.slice(0, 10)}-${randomUUID()}`;
   const config = await api(`/api/sync/seasons/${YEAR}/config`);
+  const discoveries = await discoverMissingSources(config.movies);
+  if (discoveries.length) {
+    await api(`/api/sync/seasons/${YEAR}/sources`, {
+      method: "POST",
+      body: JSON.stringify({
+        discoveredAt: new Date().toISOString(),
+        discoveries,
+      }),
+    });
+    applyDiscoveries(config.movies, discoveries);
+  }
   const weekend = await loadWeekendWinners();
   const observations = [];
 
@@ -212,6 +224,41 @@ async function main() {
     `Fantasy Office ${YEAR}: ${result.succeeded} succeeded, ${result.failed} failed.`,
   );
   if (result.failed) process.exitCode = 1;
+}
+
+async function discoverMissingSources(movies) {
+  const pending = movies.filter(
+    (movie) =>
+      !movie.letterboxdUrl ||
+      !movie.rottenTomatoesUrl ||
+      !movie.boxOfficeMojoUrl,
+  );
+  const discoveries = [];
+  for (let index = 0; index < pending.length; index += 3) {
+    const batch = pending.slice(index, index + 3);
+    discoveries.push(
+      ...(await Promise.all(
+        batch.map(async (movie) => ({
+          movieId: movie.id,
+          sources: await discoverMovieSources(movie, YEAR),
+        })),
+      )),
+    );
+  }
+  return discoveries;
+}
+
+function applyDiscoveries(movies, discoveries) {
+  const moviesById = new Map(movies.map((movie) => [movie.id, movie]));
+  for (const discovery of discoveries) {
+    const movie = moviesById.get(discovery.movieId);
+    if (!movie) continue;
+    const sources = discovery.sources || {};
+    movie.letterboxdUrl ||= sources.letterboxd?.url || "";
+    movie.rottenTomatoesUrl ||= sources.rottenTomatoes?.url || "";
+    movie.boxOfficeMojoUrl ||= sources.boxOfficeMojo?.url || "";
+    movie.boxOfficeMojoReleaseId ||= sources.boxOfficeMojo?.releaseId || "";
+  }
 }
 
 main().catch(async (error) => {

@@ -3,10 +3,15 @@ import test from "node:test";
 import {
   countNumberOneWeekends,
   extractDomesticGross,
+  extractBoxOfficeMojoCandidates,
+  extractBoxOfficeMojoIdentity,
+  extractLetterboxdIdentity,
   extractLetterboxdRating,
+  extractRottenTomatoesCandidates,
   extractTomatometer,
   extractWeekendWinners,
   releaseIdFromUrl,
+  sourceConfidence,
 } from "./fantasy-office-sources.mjs";
 
 test("extracts the three source metrics", () => {
@@ -26,6 +31,63 @@ test("extracts the three source metrics", () => {
       state: "available",
       value: 344_050_007,
     },
+  );
+});
+
+test("discovers provider identities from title and year metadata", () => {
+  assert.deepEqual(
+    extractLetterboxdIdentity(
+      '<meta property="og:title" content="Dune: Part Two (2024)">',
+      "https://letterboxd.com/film/dune-part-two/",
+    ),
+    {
+      title: "Dune: Part Two",
+      url: "https://letterboxd.com/film/dune-part-two/",
+      year: 2024,
+    },
+  );
+  assert.deepEqual(
+    extractRottenTomatoesCandidates(`
+      <search-page-media-row release-year="2024">
+        <a href="https://www.rottentomatoes.com/m/dune_part_two" data-qa="info-name" slot="title">Dune: Part Two</a>
+      </search-page-media-row>`),
+    [
+      {
+        title: "Dune: Part Two",
+        url: "https://www.rottentomatoes.com/m/dune_part_two",
+        year: 2024,
+      },
+    ],
+  );
+  assert.deepEqual(
+    extractBoxOfficeMojoCandidates(`
+      <tr><td><a href="/title/tt15239678/">Dune: Part Two</a></td><td>2024</td></tr>`),
+    [
+      {
+        title: "Dune: Part Two",
+        url: "https://www.boxofficemojo.com/title/tt15239678/",
+        year: 2024,
+      },
+    ],
+  );
+  assert.deepEqual(
+    extractBoxOfficeMojoIdentity(`
+      <h1>Dune: Part Two (2024)</h1>
+      <span>Domestic Opening</span><a href="/release/rl68715265/weekend">$82m</a>
+      <span>Earliest Release Date</span><span>Feb 28, 2024</span>`),
+    {
+      releaseId: "rl68715265",
+      title: "Dune: Part Two",
+      url: "https://www.boxofficemojo.com/release/rl68715265/",
+      year: 2024,
+    },
+  );
+  assert.equal(
+    sourceConfidence("Dune Part Two", 2024, {
+      title: "Dune: Part Two",
+      year: 2024,
+    }),
+    1,
   );
 });
 

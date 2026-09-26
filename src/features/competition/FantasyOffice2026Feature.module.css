@@ -136,6 +136,17 @@
   min-height: var(--control-touch);
   padding: 0 var(--space-3);
 }
+.sourceGrid .verification {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: var(--font-size-sm);
+  gap: var(--space-2);
+}
+.sourceGrid .verification input {
+  height: auto;
+  width: auto;
+}
 .metricGrid fieldset {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-control);

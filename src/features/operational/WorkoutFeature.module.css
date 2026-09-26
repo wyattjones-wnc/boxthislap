@@ -2,6 +2,33 @@
   max-width: 920px;
   margin: 0 auto;
 }
+.pageHeader {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.pageHeader h1 {
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  line-height: 1.2;
+  margin: 0;
+}
+.pageHeader time {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.pageIntro {
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+.pageActions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
 .error {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border: 1px solid var(--accent);
@@ -97,7 +124,7 @@
 }
 .workout {
   display: grid;
-  gap: 1rem;
+  gap: 0.6rem;
 }
 .timer {
   align-items: center;
@@ -108,29 +135,38 @@
   );
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-panel);
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: 1fr auto auto;
-  padding: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
 }
-.timer > span {
+.timerReadout {
+  display: grid;
+  gap: 0.1rem;
+}
+.timerReadout > span {
   color: var(--text-muted);
+  font-size: 0.7rem;
   font-weight: 750;
-  grid-column: 1 / -1;
   text-transform: uppercase;
 }
-.timer strong {
-  font-size: clamp(3rem, 12vw, 6rem);
+.timerReadout strong {
+  font-size: clamp(2rem, 9vw, 3.25rem);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+.timerActions {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
 }
 .expired {
   animation: time-up 1.3s ease-in-out 3;
   background: color-mix(in srgb, var(--accent) 24%, var(--surface-panel));
   border-color: var(--accent-strong);
 }
-.expired > span,
-.expired strong {
+.expired .timerReadout > span,
+.expired .timerReadout strong {
   color: var(--accent-strong);
 }
 @keyframes time-up {
@@ -157,13 +193,16 @@
 .sets {
   align-items: center;
   display: flex;
-  gap: 1.25rem;
+  gap: 0.75rem;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 0.1rem;
 }
 .sets div {
-  display: grid;
-  min-width: 7rem;
+  align-items: baseline;
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  min-width: 5rem;
   text-align: center;
 }
 .sets span {
@@ -173,11 +212,12 @@
   text-transform: uppercase;
 }
 .sets strong {
-  font-size: 3rem;
+  font-size: 2rem;
+  line-height: 1;
 }
 .exerciseList {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.4rem;
 }
 .exerciseToggle {
   align-items: center;
@@ -191,8 +231,8 @@
   font-size: 1.05rem;
   font-weight: 750;
   justify-content: space-between;
-  min-height: 64px;
-  padding: 0.75rem 1rem;
+  min-height: 50px;
+  padding: 0.45rem 0.75rem;
   text-align: left;
 }
 .exerciseToggle > span:first-child {
@@ -205,9 +245,9 @@
   background: var(--surface-raised);
   border-radius: 50%;
   display: inline-flex;
-  height: 2rem;
+  height: 1.75rem;
   justify-content: center;
-  width: 2rem;
+  width: 1.75rem;
 }
 .exerciseToggle.checked {
   background: var(--accent-surface);
@@ -216,28 +256,28 @@
 .switch {
   background: var(--border-subtle);
   border-radius: 999px;
-  height: 1.75rem;
+  height: 1.55rem;
   padding: 0.2rem;
   transition: background 0.2s;
-  width: 3.1rem;
+  width: 2.8rem;
 }
 .switch span {
   background: var(--text-primary);
   border-radius: 50%;
   display: block;
-  height: 1.35rem;
+  height: 1.15rem;
   transition: transform 0.2s;
-  width: 1.35rem;
+  width: 1.15rem;
 }
 .checked .switch {
   background: var(--accent);
 }
 .checked .switch span {
-  transform: translateX(1.35rem);
+  transform: translateX(1.25rem);
 }
 .complete {
   justify-self: stretch;
-  min-height: 54px;
+  min-height: 48px;
 }
 .results {
   text-align: center;
@@ -423,17 +463,23 @@
   grid-template-columns: 1fr 1fr;
 }
 @media (max-width: 620px) {
+  .pageHeader {
+    gap: 0.55rem;
+  }
+  .pageHeader :global(.back-link) {
+    font-size: 0.85rem;
+  }
+  .pageHeader time {
+    font-size: 0.7rem;
+  }
   .calendarGrid {
     gap: 0.2rem;
   }
   .day {
     border-radius: 0.5rem;
   }
-  .timer {
-    grid-template-columns: 1fr auto;
-  }
-  .timer strong {
-    grid-column: 1 / -1;
+  .timerActions {
+    gap: 0.25rem;
   }
   .statCards {
     grid-template-columns: repeat(2, 1fr);

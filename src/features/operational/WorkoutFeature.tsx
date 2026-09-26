@@ -244,40 +244,36 @@ export function WorkoutFeature() {
 
   return (
     <div className={styles.page}>
-      <a className="back-link" href="#manager-hub" data-page-link="manager-hub">
-        Manager Hub
-      </a>
-      <div className="section-heading page-heading-with-action">
-        <div>
-          <h1>Daily Workouts</h1>
-          <p className="body-copy">
-            {workout
-              ? prettyDate(workout.date)
-              : "Choose today or revisit a completed workout."}
-          </p>
-        </div>
-        <div className="heading-actions">
-          {!workout || workout.completedAt ? (
-            <IconButton
-              className="icon-action-button"
-              icon={<BarChart3 />}
-              label={
-                statsOpen
-                  ? "Hide workout statistics"
-                  : "Show workout statistics"
-              }
-              aria-pressed={statsOpen}
-              onClick={() => setStatsOpen((value) => !value)}
-            />
-          ) : (
-            <IconButton
-              className="icon-action-button"
-              icon={<CircleHelp />}
-              label="Exercise videos"
-              onClick={() => setHelpOpen(true)}
-            />
-          )}
-          {isAdmin ? (
+      <header className={styles.pageHeader}>
+        <a
+          className="back-link"
+          href="#manager-hub"
+          data-page-link="manager-hub"
+        >
+          Manager Hub
+        </a>
+        <h1>Daily Workouts</h1>
+        {workout ? (
+          <time dateTime={workout.date}>{prettyDate(workout.date)}</time>
+        ) : null}
+      </header>
+      {!workout ? (
+        <p className={styles.pageIntro}>
+          Choose today or revisit a completed workout.
+        </p>
+      ) : null}
+      {!workout || workout.completedAt ? (
+        <div className={styles.pageActions}>
+          <IconButton
+            className="icon-action-button"
+            icon={<BarChart3 />}
+            label={
+              statsOpen ? "Hide workout statistics" : "Show workout statistics"
+            }
+            aria-pressed={statsOpen}
+            onClick={() => setStatsOpen((value) => !value)}
+          />
+          {isAdmin && !workout ? (
             <>
               <IconButton
                 className="icon-action-button"
@@ -294,7 +290,7 @@ export function WorkoutFeature() {
             </>
           ) : null}
         </div>
-      </div>
+      ) : null}
       {error ? (
         <p className={styles.error} role="alert">
           {error}
@@ -314,6 +310,7 @@ export function WorkoutFeature() {
             busy={busy}
             action={action}
             complete={complete}
+            openHelp={() => setHelpOpen(true)}
           />
         )
       ) : (
@@ -511,11 +508,13 @@ function ActiveWorkout({
   action,
   busy,
   complete,
+  openHelp,
   workout,
 }: {
   action: (body: unknown) => Promise<Workout | null> | null;
   busy: boolean;
   complete: () => void;
+  openHelp: () => void;
   workout: Workout;
 }) {
   const [more, setMore] = useState(false);
@@ -530,34 +529,43 @@ function ActiveWorkout({
         className={`${styles.timer}${expired ? ` ${styles.expired}` : ""}`}
         aria-live="polite"
       >
-        <span>
-          {expired
-            ? "Time’s up"
-            : workout.running
-              ? "Time remaining"
-              : workout.elapsedSeconds
-                ? "Timer paused"
-                : "Ready"}
-        </span>
-        <strong>{formatTime(workout.remainingSeconds)}</strong>
-        <button
-          className="action-button"
-          disabled={busy || expired}
-          onClick={() =>
-            void action({
-              action: workout.running ? "timer-pause" : "timer-start",
-            })
-          }
-          type="button"
-        >
-          {workout.running ? "Pause" : "Start"}
-        </button>
-        <IconButton
-          icon={<Settings2 />}
-          label="More timer controls"
-          aria-expanded={more}
-          onClick={() => setMore((value) => !value)}
-        />
+        <div className={styles.timerReadout}>
+          <span>
+            {expired
+              ? "Time’s up"
+              : workout.running
+                ? "Time remaining"
+                : workout.elapsedSeconds
+                  ? "Timer paused"
+                  : "Ready"}
+          </span>
+          <strong>{formatTime(workout.remainingSeconds)}</strong>
+        </div>
+        <div className={styles.timerActions}>
+          <button
+            className="action-button"
+            disabled={busy || expired}
+            onClick={() =>
+              void action({
+                action: workout.running ? "timer-pause" : "timer-start",
+              })
+            }
+            type="button"
+          >
+            {workout.running ? "Pause" : "Start"}
+          </button>
+          <IconButton
+            icon={<CircleHelp />}
+            label="Exercise videos"
+            onClick={openHelp}
+          />
+          <IconButton
+            icon={<Settings2 />}
+            label="More timer controls"
+            aria-expanded={more}
+            onClick={() => setMore((value) => !value)}
+          />
+        </div>
       </section>
       {more ? (
         <section className={styles.moreControls}>

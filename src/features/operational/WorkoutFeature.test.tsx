@@ -39,6 +39,14 @@ beforeEach(() => {
     JSON.stringify({ managerId: "8", isAdmin: false }),
   );
   window.boxThisLapGetManagerAccessToken = async () => "token";
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+    },
+  );
 });
 
 afterEach(() => {
@@ -74,15 +82,6 @@ describe("Daily Workouts", () => {
         throw new Error(`Unexpected request: ${url}`);
       }) as unknown as typeof fetch,
     );
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        disconnect() {}
-        observe() {}
-        unobserve() {}
-      },
-    );
-
     render(
       <AppProviders>
         <WorkoutFeature />
@@ -150,6 +149,12 @@ describe("Daily Workouts", () => {
     );
     expect(
       await screen.findByRole("button", { name: /Mountain climbers/ }),
+    ).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Add exercise" })).toBeNull();
+    expect(
+      screen
+        .getByRole("button", { name: "Exercise videos" })
+        .closest('[aria-live="polite"]'),
     ).not.toBeNull();
     const pushUps = await screen.findByRole("button", { name: /Push ups/ });
     fireEvent.click(pushUps);

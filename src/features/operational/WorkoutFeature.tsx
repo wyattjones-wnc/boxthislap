@@ -244,14 +244,29 @@ export function WorkoutFeature() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.pageHeader}>
-        <a
-          className="back-link"
-          href="#manager-hub"
-          data-page-link="manager-hub"
-        >
-          Manager Hub
-        </a>
+      <header
+        className={`${styles.pageHeader}${!workout ? ` ${styles.calendarPageHeader}` : ""}`}
+      >
+        {workout ? (
+          <a
+            className="back-link"
+            href="#workouts"
+            onClick={(event) => {
+              event.preventDefault();
+              setWorkout(null);
+            }}
+          >
+            Calendar
+          </a>
+        ) : (
+          <a
+            className="back-link"
+            href="#manager-hub"
+            data-page-link="manager-hub"
+          >
+            Manager Hub
+          </a>
+        )}
         <h1>Daily Workouts</h1>
         {workout ? (
           <time dateTime={workout.date}>{prettyDate(workout.date)}</time>
@@ -264,31 +279,53 @@ export function WorkoutFeature() {
       ) : null}
       {!workout || workout.completedAt ? (
         <div className={styles.pageActions}>
-          <IconButton
-            className="icon-action-button"
-            icon={<BarChart3 />}
-            label={
-              statsOpen ? "Hide workout statistics" : "Show workout statistics"
-            }
-            aria-pressed={statsOpen}
-            onClick={() => setStatsOpen((value) => !value)}
-          />
           {isAdmin && !workout ? (
-            <>
-              <IconButton
-                className="icon-action-button"
-                icon={<Plus />}
-                label="Add exercise"
-                onClick={() => setExerciseEditor("new")}
-              />
-              <IconButton
-                className="icon-action-button"
-                icon={<Pencil />}
-                label="Manage exercises"
-                onClick={() => setManageOpen(true)}
-              />
-            </>
+            <label className={styles.managerSelect}>
+              <span>Manager</span>
+              <select
+                value={selectedManager}
+                onChange={(event) => {
+                  setSelectedManager(event.target.value);
+                  setWorkout(null);
+                }}
+              >
+                {(managers.data?.managers || []).map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.displayName || manager.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : null}
+          <div className={styles.pageActionButtons}>
+            <IconButton
+              className="icon-action-button"
+              icon={<BarChart3 />}
+              label={
+                statsOpen
+                  ? "Hide workout statistics"
+                  : "Show workout statistics"
+              }
+              aria-pressed={statsOpen}
+              onClick={() => setStatsOpen((value) => !value)}
+            />
+            {isAdmin && !workout ? (
+              <>
+                <IconButton
+                  className="icon-action-button"
+                  icon={<Plus />}
+                  label="Add exercise"
+                  onClick={() => setExerciseEditor("new")}
+                />
+                <IconButton
+                  className="icon-action-button"
+                  icon={<Pencil />}
+                  label="Manage exercises"
+                  onClick={() => setManageOpen(true)}
+                />
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {error ? (
@@ -315,24 +352,6 @@ export function WorkoutFeature() {
         )
       ) : (
         <>
-          {isAdmin ? (
-            <label className={styles.managerSelect}>
-              <span>Manager</span>
-              <select
-                value={selectedManager}
-                onChange={(event) => {
-                  setSelectedManager(event.target.value);
-                  setWorkout(null);
-                }}
-              >
-                {(managers.data?.managers || []).map((manager) => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.displayName || manager.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
           {statsOpen && ownView ? (
             history.isError ? (
               <RetryMessage
@@ -542,6 +561,17 @@ function ActiveWorkout({
           <strong>{formatTime(workout.remainingSeconds)}</strong>
         </div>
         <div className={styles.timerActions}>
+          <IconButton
+            icon={<CircleHelp />}
+            label="Exercise videos"
+            onClick={openHelp}
+          />
+          <IconButton
+            icon={<Settings2 />}
+            label="More timer controls"
+            aria-expanded={more}
+            onClick={() => setMore((value) => !value)}
+          />
           <button
             className="action-button"
             disabled={busy || expired}
@@ -554,17 +584,6 @@ function ActiveWorkout({
           >
             {workout.running ? "Pause" : "Start"}
           </button>
-          <IconButton
-            icon={<CircleHelp />}
-            label="Exercise videos"
-            onClick={openHelp}
-          />
-          <IconButton
-            icon={<Settings2 />}
-            label="More timer controls"
-            aria-expanded={more}
-            onClick={() => setMore((value) => !value)}
-          />
         </div>
       </section>
       {more ? (

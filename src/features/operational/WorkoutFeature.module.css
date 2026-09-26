@@ -9,13 +9,23 @@
   margin-bottom: 0.35rem;
 }
 .pageHeader h1 {
-  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  font-size: 1rem;
   line-height: 1.2;
   margin: 0;
 }
+.calendarPageHeader {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.calendarPageHeader h1 {
+  flex-basis: 100%;
+  font-size: clamp(2rem, 8vw, 3rem);
+  order: 2;
+}
 .pageHeader time {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 1rem;
+  font-weight: 750;
   margin-left: auto;
   white-space: nowrap;
 }
@@ -24,10 +34,16 @@
   margin: 0 0 0.75rem;
 }
 .pageActions {
+  align-items: center;
   display: flex;
   gap: 0.65rem;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 0.75rem;
+}
+.pageActionButtons {
+  display: flex;
+  gap: 0.65rem;
+  margin-left: auto;
 }
 .error {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
@@ -39,7 +55,7 @@
   align-items: center;
   display: flex;
   gap: 0.75rem;
-  margin: 0 0 1rem auto;
+  margin: 0;
   width: fit-content;
 }
 .managerSelect select,
@@ -470,7 +486,23 @@
     font-size: 0.85rem;
   }
   .pageHeader time {
-    font-size: 0.7rem;
+    font-size: 1rem;
+  }
+  .calendarPageHeader h1 {
+    font-size: 2rem;
+  }
+  .managerSelect {
+    gap: 0.4rem;
+  }
+  .managerSelect span {
+    font-size: 0.8rem;
+  }
+  .managerSelect select {
+    max-width: 7.5rem;
+  }
+  .pageActions,
+  .pageActionButtons {
+    gap: 0.4rem;
   }
   .calendarGrid {
     gap: 0.2rem;

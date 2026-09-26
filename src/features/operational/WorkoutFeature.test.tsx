@@ -88,9 +88,15 @@ describe("Daily Workouts", () => {
       </AppProviders>,
     );
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Add exercise" }),
-    );
+    const addExercise = await screen.findByRole("button", {
+      name: "Add exercise",
+    });
+    expect(
+      addExercise.parentElement?.parentElement?.contains(
+        screen.getByLabelText("Manager"),
+      ),
+    ).toBe(true);
+    fireEvent.click(addExercise);
     expect(
       await screen.findByRole("heading", { name: "Add Exercise" }),
     ).not.toBeNull();
@@ -151,11 +157,14 @@ describe("Daily Workouts", () => {
       await screen.findByRole("button", { name: /Mountain climbers/ }),
     ).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Add exercise" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Calendar" })).not.toBeNull();
     expect(
       screen
         .getByRole("button", { name: "Exercise videos" })
         .closest('[aria-live="polite"]'),
     ).not.toBeNull();
+    const start = screen.getByRole("button", { name: "Start" });
+    expect(start.parentElement?.lastElementChild).toBe(start);
     const pushUps = await screen.findByRole("button", { name: /Push ups/ });
     fireEvent.click(pushUps);
     await waitFor(() =>

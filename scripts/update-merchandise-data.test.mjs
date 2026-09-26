@@ -1,10 +1,41 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildBaselineSql,
   productChanged,
   runMerchandiseUpdate,
   scanContentHash,
 } from "./update-merchandise-data.mjs";
+
+test("baseline SQL preserves unseen state and safely escapes catalog data", () => {
+  const sql = buildBaselineSql(
+    {
+      pageCount: 1,
+      products: [
+        {
+          availability: "in_stock",
+          canonicalUrl: "https://example.com/shirt",
+          category: "kits",
+          currency: "USD",
+          id: "barcelona:1",
+          imageUrl: null,
+          priceMinor: 10000,
+          source: "barcelona",
+          sourceMetadata: { handle: "manager-shirt" },
+          sourceProductId: "1",
+          team: "barcelona",
+          title: "Manager's Shirt",
+        },
+      ],
+      source: "barcelona",
+    },
+    "2026-09-26T12:00:00.000Z",
+  );
+  assert.match(sql, /Manager''s Shirt/);
+  assert.match(sql, /new_since, in_scope/);
+  assert.match(sql, /NULL, 1/);
+  assert.match(sql, /content_hash/);
+});
 
 test("a blocked Arsenal scan does not prevent a healthy Barcelona scan", async () => {
   const fetchImpl = async (url) => {

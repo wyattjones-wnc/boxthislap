@@ -304,6 +304,69 @@ export function scanContentHash(products) {
   return createHash("sha256").update(JSON.stringify(stable)).digest("hex");
 }
 
+export function buildBaselineSql(scan, observedAt = new Date().toISOString()) {
+  const statements = [];
+  const columns = `id, source, source_product_id, team, title, canonical_url, image_url, category, price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata`;
+  for (let offset = 0; offset < scan.products.length; offset += 40) {
+    const values = scan.products
+      .slice(offset, offset + 40)
+      .map((product) =>
+        [
+          product.id,
+          product.source,
+          product.sourceProductId,
+          product.team,
+          product.title,
+          product.canonicalUrl,
+          product.imageUrl,
+          product.category,
+          product.priceMinor,
+          product.currency,
+          product.availability,
+          observedAt,
+          product.sourceMetadata?.publishedAt || null,
+          observedAt,
+          null,
+          1,
+          JSON.stringify(product.sourceMetadata || {}),
+        ]
+          .map(sqlLiteral)
+          .join(", "),
+      );
+    statements.push(
+      `INSERT INTO merch_products (${columns}) VALUES\n  (${values.join("),\n  (")});`,
+    );
+  }
+  statements.push(
+    `INSERT INTO merch_scans (id, source, started_at, finished_at, status, scope, item_count, new_count, page_count, complete, content_hash) VALUES (${[
+      randomUUID(),
+      scan.source,
+      observedAt,
+      observedAt,
+      "succeeded",
+      "full-store",
+      scan.products.length,
+      0,
+      scan.pageCount || 0,
+      1,
+      scanContentHash(scan.products),
+    ]
+      .map(sqlLiteral)
+      .join(", ")});`,
+    "",
+  );
+  return statements.join("\n");
+}
+
+function sqlLiteral(value) {
+  if (value === null || value === undefined) return "NULL";
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return "NULL";
+    return String(value);
+  }
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
 async function recordScan(d1, { id, source, startedAt, status, scan, error }) {
   await d1.batch([
     {
@@ -384,20 +447,35 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const dryRun = process.argv.includes("--dry-run");
-  const sourceArg = process.argv
-    .find((argument) => argument.startsWith("--source="))
-    ?.split("=")[1];
-  const sources = sourceArg ? [sourceArg] : undefined;
-  const report = await runMerchandiseUpdate({ dryRun, sources });
-  console.log(
-    JSON.stringify({
-      healthy: report.healthy,
-      outcomes: report.outcomes.map(({ source, status, itemCount }) => ({
-        source,
-        status,
-        itemCount,
-      })),
-    }),
-  );
+  if (process.argv.includes("--write-baseline-sql")) {
+    const scan = await scanBarcelona({
+      baseUrl: process.env.BARCELONA_STORE_URL || undefined,
+    });
+    const output = new URL("../.tmp/merchandise-baseline.sql", import.meta.url);
+    await mkdir(new URL(".", output), { recursive: true });
+    await writeFile(output, buildBaselineSql(scan), "utf8");
+    console.log(
+      JSON.stringify({
+        itemCount: scan.products.length,
+        output: ".tmp/merchandise-baseline.sql",
+      }),
+    );
+  } else {
+    const dryRun = process.argv.includes("--dry-run");
+    const sourceArg = process.argv
+      .find((argument) => argument.startsWith("--source="))
+      ?.split("=")[1];
+    const sources = sourceArg ? [sourceArg] : undefined;
+    const report = await runMerchandiseUpdate({ dryRun, sources });
+    console.log(
+      JSON.stringify({
+        healthy: report.healthy,
+        outcomes: report.outcomes.map(({ source, status, itemCount }) => ({
+          source,
+          status,
+          itemCount,
+        })),
+      }),
+    );
+  }
 }

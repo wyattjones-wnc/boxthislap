@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import { useAppState } from "../../app/providers";
-import { FANTASY_OFFICE_ENDPOINT } from "../../../modules/siteConfig.js";
+import {
+  FANTASY_OFFICE_ENDPOINT,
+  MANAGER_COLORS,
+} from "../../../modules/siteConfig.js";
 import styles from "./FantasyOffice2026Feature.module.css";
 
 declare global {
@@ -224,7 +227,9 @@ function DraftView({ draft }: { draft: DraftManager[] }) {
     <div className={styles.draftGrid}>
       {draft.map((entry) => (
         <article className={styles.card} key={entry.manager}>
-          <h3>{entry.manager}</h3>
+          <h3>
+            <ManagerChip name={entry.manager} />
+          </h3>
           <ol className={styles.pickList}>
             {entry.picks.map((pick) => (
               <li
@@ -268,7 +273,9 @@ function MoviesView({ movies }: { movies: FantasyOfficeMovie[] }) {
                 <strong>{movie.movie}</strong>
                 <small>{movie.draftNumber}</small>
               </td>
-              <td>{movie.manager}</td>
+              <td>
+                <ManagerChip name={movie.manager} />
+              </td>
               <td>{formatGross(movie.domesticGross)}</td>
               <td>{movie.numberOneWeekends ?? "N/A"}</td>
               <td>{movie.letterboxdRating?.toFixed(1) ?? "N/A"}</td>
@@ -301,7 +308,9 @@ function ResultsView({ data }: { data: SeasonData }) {
         <article className={styles.resultCard} key={standing.manager}>
           <header>
             <span>#{standing.rank}</span>
-            <h3>{standing.manager}</h3>
+            <h3>
+              <ManagerChip name={standing.manager} />
+            </h3>
             <strong>{standing.points} pts</strong>
           </header>
           <div className={styles.breakdown}>
@@ -420,7 +429,7 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
         <div>
           <h3>{movie.movie}</h3>
           <p>
-            {movie.manager} · {movie.draftNumber}
+            <ManagerChip name={movie.manager} /> · {movie.draftNumber}
           </p>
         </div>
         <label>
@@ -548,6 +557,22 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
         )}
       </footer>
     </form>
+  );
+}
+
+function ManagerChip({ name }: { name: string }) {
+  const displayName = String(name).trim().split(/\s+/)[0] || "Manager";
+  const color =
+    MANAGER_COLORS[displayName.toLowerCase() as keyof typeof MANAGER_COLORS] ||
+    "#5f6978";
+  return (
+    <span
+      className="manager-chip"
+      style={{ "--manager-color": color } as CSSProperties}
+    >
+      <span aria-hidden="true" className="manager-dot" />
+      <span className="manager-name">{displayName}</span>
+    </span>
   );
 }
 

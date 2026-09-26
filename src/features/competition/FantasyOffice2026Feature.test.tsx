@@ -50,7 +50,8 @@ describe("FantasyOffice2026Page", () => {
       </AppProviders>,
     );
 
-    await waitFor(() => expect(screen.getByText("Manager One")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Manager")).toBeTruthy());
+    expect(document.querySelector(".manager-chip .manager-dot")).toBeTruthy();
     expect(screen.getByText("610 pts")).toBeTruthy();
     expect(screen.getByText(/Standings are provisional/)).toBeTruthy();
   });

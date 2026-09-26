@@ -71,11 +71,12 @@ export async function handleWorkoutRequest({
   if (operationMatch && request.method === "POST") {
     const manager = await requireManager(request, env);
     const date = parseWorkoutDate(operationMatch[1]);
-    const body = await readBody(request);
+    const operation = operationMatch[2];
+    const body = operation === "complete" ? undefined : await readBody(request);
     const workout =
-      operationMatch[2] === "start"
+      operation === "start"
         ? await startWorkout(env, manager.sub, date, body.timeZone)
-        : operationMatch[2] === "action"
+        : operation === "action"
           ? await updateWorkout(env, manager.sub, date, body)
           : await completeWorkout(env, manager.sub, date);
     return { workout };

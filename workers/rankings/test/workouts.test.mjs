@@ -1,10 +1,60 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  handleWorkoutRequest,
   normalizeWorkoutExercise,
   parseWorkoutDate,
   workoutElapsed,
 } from "../src/workouts.js";
+
+test("completing a workout does not require a JSON request body", async () => {
+  let readBodyCalled = false;
+  const workoutRow = {
+    completed_at: null,
+    elapsed_seconds: 300,
+    sets: 2,
+    time_zone: "America/New_York",
+    timer_duration_seconds: 1200,
+    timer_started_at: null,
+  };
+  const env = {
+    DB: {
+      batch: async () => {
+        workoutRow.completed_at = "2026-09-25T12:05:00Z";
+        return [];
+      },
+      prepare: (sql) => ({
+        bind: () => ({
+          all: async () => ({ results: [] }),
+          first: async () =>
+            sql.includes("FROM manager_workouts") ? workoutRow : null,
+          run: async () => ({}),
+        }),
+      }),
+    },
+  };
+
+  const result = await handleWorkoutRequest({
+    env,
+    readBody: async () => {
+      readBodyCalled = true;
+      throw new Error("body should not be read");
+    },
+    readManagerCatalog: async () => [],
+    request: new Request(
+      "https://example.com/api/me/workouts/2026-09-25/complete",
+      { method: "POST" },
+    ),
+    requireManager: async () => ({ sub: "8" }),
+    url: new URL(
+      "https://example.com/api/me/workouts/2026-09-25/complete",
+    ),
+  });
+
+  assert.equal(readBodyCalled, false);
+  assert.equal(result.workout.completedAt, "2026-09-25T12:05:00Z");
+  assert.equal(result.workout.sets, 2);
+});
 
 test("workout exercise input trims fields and accepts an optional video", () => {
   assert.deepEqual(

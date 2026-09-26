@@ -1,0 +1,49 @@
+name: Update Fantasy Office data
+
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: update-fantasy-office-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.event_name == 'workflow_dispatch' || vars.FANTASY_OFFICE_AUTOMATION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Collect and ingest movie data
+        id: update
+        continue-on-error: true
+        env:
+          FANTASY_OFFICE_SYNC_SECRET: ${{ secrets.FANTASY_OFFICE_SYNC_SECRET }}
+        run: node scripts/update-fantasy-office-data.mjs
+      - name: Retain failed source responses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fantasy-office-update-${{ github.run_id }}
+          path: |
+            .tmp/fantasy-office-report.json
+            .tmp/fantasy-office-debug/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Update incident issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/report-fantasy-office-failure.mjs
+      - name: Fail unhealthy run
+        if: steps.update.outcome == 'failure'
+        run: exit 1

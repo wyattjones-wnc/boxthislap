@@ -18866,8 +18866,8 @@ function ensureFantasyOfficeData(year, view) {
   const yearKey = String(year);
   const sourceName = view === "draft" ? `fantasyOffice${yearKey}Draft` : `fantasyOffice${yearKey}Results`;
 
-  if (yearKey === "2026" && view !== "draft") {
-    return Promise.resolve([]);
+  if (yearKey === "2026") {
+    return Promise.resolve(siteData.fantasyOffice2026);
   }
 
   return ensureSharedData(`fantasy-office:${yearKey}:${view}`, async () => {

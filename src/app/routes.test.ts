@@ -26,4 +26,12 @@ describe("getNavScope", () => {
       navItems["the-monster-maniac"].some((item) => item.route === "guides"),
     ).toBe(false);
   });
+
+  it("restricts Fantasy Office management to administrators", () => {
+    expect(
+      navItems["fantasy-office-2026"].find(
+        (item) => item.route === "fantasy-office-2026-manage",
+      )?.adminOnly,
+    ).toBe(true);
+  });
 });

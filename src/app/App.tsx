@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AccountSettingsPage, LoginPage, SiteFooter } from "./FoundationPages";
 import { AppErrorBoundary } from "./AppErrorBoundary";
-import { AppProviders } from "./providers";
+import { AppProviders, useAppState } from "./providers";
 import { SiteShell } from "./Shell";
 import {
   DraftListPage,
@@ -64,6 +64,28 @@ const WorkoutFeature = lazy(() =>
     default: module.WorkoutFeature,
   })),
 );
+
+const FantasyOffice2026Page = lazy(() =>
+  import("../features/competition/FantasyOffice2026Feature").then((module) => ({
+    default: module.FantasyOffice2026Page,
+  })),
+);
+
+function DeferredFantasyOffice2026Page({
+  mode,
+}: {
+  mode: "draft" | "manage" | "movies" | "results";
+}) {
+  const { route } = useAppState();
+  if (route !== `fantasy-office-2026-${mode}`) return null;
+  return (
+    <Suspense
+      fallback={<p className="table-message">Loading Fantasy Office…</p>}
+    >
+      <FantasyOffice2026Page mode={mode} />
+    </Suspense>
+  );
+}
 
 function DeferredWorkoutFeature() {
   const [active, setActive] = useState(
@@ -142,6 +164,7 @@ export interface CompetitionRoots {
   fantasyOffice2026Draft: Element;
   fantasyOffice2026Movies: Element;
   fantasyOffice2026Results: Element;
+  fantasyOffice2026Manage: Element;
   formulaOne2024Questions: Element;
   formulaOne2024Results: Element;
   formulaOne2025Questions: Element;
@@ -320,16 +343,20 @@ export function App({
           competitionRoots.fantasyOffice2025Results,
         )}
         {createPortal(
-          <FantasyOfficePage year={2026} mode="draft" />,
+          <DeferredFantasyOffice2026Page mode="draft" />,
           competitionRoots.fantasyOffice2026Draft,
         )}
         {createPortal(
-          <FantasyOfficePage year={2026} mode="movies" />,
+          <DeferredFantasyOffice2026Page mode="movies" />,
           competitionRoots.fantasyOffice2026Movies,
         )}
         {createPortal(
-          <FantasyOfficePage year={2026} mode="results" />,
+          <DeferredFantasyOffice2026Page mode="results" />,
           competitionRoots.fantasyOffice2026Results,
+        )}
+        {createPortal(
+          <DeferredFantasyOffice2026Page mode="manage" />,
+          competitionRoots.fantasyOffice2026Manage,
         )}
         {createPortal(<SiteFooter />, footerRoot)}
       </AppErrorBoundary>

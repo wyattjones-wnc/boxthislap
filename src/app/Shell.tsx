@@ -102,6 +102,7 @@ const navIcons: Record<string, LucideIcon> = {
   "fantasy-office-2026-draft": ClipboardList,
   "fantasy-office-2026-movies": Clapperboard,
   "fantasy-office-2026-results": Medal,
+  "fantasy-office-2026-manage": Settings,
   "formula-1-2024-questions": CircleHelp,
   "formula-1-2024-results": Medal,
   "formula-1-2025-questions": CircleHelp,

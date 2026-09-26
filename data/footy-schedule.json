@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-09-23T05:52:19.876Z",
+  "generatedAt": "2026-09-25T15:19:26.603Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-09-23T05:52:19.876Z",
-    "attemptedAt": "2026-09-23T05:52:19.876Z",
-    "updatedAt": "2026-09-23T05:52:19.876Z",
-    "oldestTeamUpdatedAt": "2026-09-23T05:52:19.876Z",
-    "competitionCount": 9,
-    "competitionFixtureCount": 2113,
+    "generatedAt": "2026-09-25T15:19:26.603Z",
+    "attemptedAt": "2026-09-25T15:19:26.603Z",
+    "updatedAt": "2026-09-25T15:19:26.603Z",
+    "oldestTeamUpdatedAt": "2026-09-25T15:19:26.603Z",
+    "competitionCount": 10,
+    "competitionFixtureCount": 2118,
     "teamCount": 7,
     "fixtureCount": 219,
     "statuses": {
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 256,
-      "syncedAt": "2026-09-23T05:52:19.876Z",
+      "syncedAt": "2026-09-25T15:19:26.603Z",
       "appended": 0,
       "updated": 256
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-09-23T05:57:12.993Z",
+      "attemptedAt": "2026-09-25T15:24:19.894Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -1132,10 +1132,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560570",
-            "iCalendar": "6a3507b354aa884dbc65d2bb",
-            "Arsenal.com": "434k88c48bhwdqrkp8muqp1jo",
-            "TheSportsDB": "2494022"
+            "football-data.org": "560570"
           },
           "sources": [
             "football-data.org"
@@ -1144,7 +1141,7 @@
           "time": "15:30:00",
           "timestamp": "2026-09-06T15:30:00Z",
           "venue": "",
-          "matchId": "footy_338d98d726b7",
+          "matchId": "footy_comp_football_data_org_560570",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -13904,16 +13901,17 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:39.239Z",
+      "attemptedAt": "2026-09-25T15:24:49.070Z",
       "competition": {
+        "category": "",
         "code": "ELC",
         "followedTeamNames": [
           "Arsenal"
@@ -14130,15 +14128,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:25.912Z",
+      "attemptedAt": "2026-09-25T15:24:33.153Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -14536,10 +14534,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "575333",
-            "Arsenal.com": "5b9qzpngqafnmsz619l3t73f8",
-            "iCalendar": "6a92eae554aa8848aa16f117",
-            "TheSportsDB": "2594603"
+            "football-data.org": "575333"
           },
           "sources": [
             "football-data.org"
@@ -14548,7 +14543,7 @@
           "time": "19:00:00",
           "timestamp": "2026-09-09T19:00:00Z",
           "venue": "",
-          "matchId": "footy_comp_arsenal_com_5b9qzpngqafnmsz619l3t73f8",
+          "matchId": "footy_comp_football_data_org_575333",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -19402,15 +19397,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:32.749Z",
+      "attemptedAt": "2026-09-25T15:24:39.759Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -33303,15 +33298,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:39.235Z",
+      "attemptedAt": "2026-09-25T15:24:49.067Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -34934,9 +34929,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "561806",
-            "iCalendar": "6a3d100c54aa884dc434f527",
-            "TheSportsDB": "2501294"
+            "football-data.org": "561806"
           },
           "sources": [
             "football-data.org"
@@ -34945,7 +34938,7 @@
           "time": "18:45:00",
           "timestamp": "2026-09-02T18:45:00Z",
           "venue": "",
-          "matchId": "footy_be40a774c3fe",
+          "matchId": "footy_comp_football_data_org_561806",
           "followedTeamNames": [
             "Wrexham"
           ],
@@ -35442,9 +35435,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "561811",
-            "iCalendar": "6a3d100c54aa884dc434f528",
-            "TheSportsDB": "2501306"
+            "football-data.org": "561811"
           },
           "sources": [
             "football-data.org"
@@ -35453,7 +35444,7 @@
           "time": "19:00:00",
           "timestamp": "2026-09-05T19:00:00Z",
           "venue": "",
-          "matchId": "footy_1c02c9a7294f",
+          "matchId": "footy_comp_football_data_org_561811",
           "followedTeamNames": [
             "Wrexham"
           ],
@@ -35662,9 +35653,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "561830",
-            "iCalendar": "6a3d100c54aa884dc434f529",
-            "TheSportsDB": "2501320"
+            "football-data.org": "561830"
           },
           "sources": [
             "football-data.org"
@@ -35673,7 +35662,7 @@
           "time": "18:45:00",
           "timestamp": "2026-09-08T18:45:00Z",
           "venue": "",
-          "matchId": "footy_55de26f98aac",
+          "matchId": "footy_comp_football_data_org_561830",
           "followedTeamNames": [
             "Wrexham"
           ],
@@ -53345,16 +53334,17 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:39.241Z",
+      "attemptedAt": "2026-09-25T15:24:49.071Z",
       "competition": {
+        "category": "",
         "code": "SDE",
         "followedTeamNames": [
           "Barcelona"
@@ -53383,7 +53373,7 @@
           "id": "TheSportsDB:2546487",
           "leagueId": "4511",
           "league": "Supercopa de Espana",
-          "round": "0",
+          "round": "150",
           "season": "2026-2027",
           "source": "TheSportsDB",
           "sourceIds": {
@@ -53397,7 +53387,7 @@
           "status": "NS",
           "time": "19:00:00",
           "timestamp": "2027-02-02T19:00:00Z",
-          "venue": "Atatürk Olimpiyat Stadyumu",
+          "venue": "Chobani Stadyumu",
           "isCompetitionFixture": true,
           "matchId": "footy_a5b59cc4e61f",
           "followedTeamNames": [
@@ -53425,7 +53415,7 @@
           "id": "TheSportsDB:2546488",
           "leagueId": "4511",
           "league": "Supercopa de Espana",
-          "round": "0",
+          "round": "150",
           "season": "2026-2027",
           "source": "TheSportsDB",
           "sourceIds": {
@@ -53438,7 +53428,7 @@
           "status": "NS",
           "time": "19:00:00",
           "timestamp": "2027-02-02T19:00:00Z",
-          "venue": "Atatürk Olimpiyat Stadyumu",
+          "venue": "Tüpraş Stadyumu",
           "isCompetitionFixture": true,
           "matchId": "footy_comp_thesportsdb_2546488",
           "followedTeamNames": [],
@@ -53455,15 +53445,238 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:45.364Z",
+      "attemptedAt": "2026-09-25T15:24:51.979Z",
+      "competition": {
+        "category": "international",
+        "code": "UNL",
+        "followedTeamNames": [],
+        "id": "4490",
+        "key": "uefa nations league",
+        "name": "UEFA Nations League",
+        "priority": 1,
+        "season": "2026",
+        "source": "TheSportsDB",
+        "type": "INTERNATIONAL_CUP"
+      },
+      "errors": [],
+      "fixtureCount": 5,
+      "fixtures": [
+        {
+          "away": "Germany",
+          "awayBadge": "",
+          "awayProviderTeamId": "133907",
+          "awaySportDbTeamId": "133907",
+          "date": "2026-09-24",
+          "home": "Netherlands",
+          "homeBadge": "",
+          "homeProviderTeamId": "133905",
+          "homeSportDbTeamId": "133905",
+          "id": "TheSportsDB:2442738",
+          "leagueId": "4490",
+          "league": "UEFA Nations League",
+          "round": "1",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2442738"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-09-24T18:45:00Z",
+          "venue": "Johan Cruijff ArenA",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2442738",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:netherlands",
+          "awayTeamId": "team:germany"
+        },
+        {
+          "away": "Greece",
+          "awayBadge": "",
+          "awayProviderTeamId": "133902",
+          "awaySportDbTeamId": "133902",
+          "date": "2026-09-24",
+          "home": "Serbia",
+          "homeBadge": "",
+          "homeProviderTeamId": "136140",
+          "homeSportDbTeamId": "136140",
+          "id": "TheSportsDB:2442739",
+          "leagueId": "4490",
+          "league": "UEFA Nations League",
+          "round": "1",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2442739"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-09-24T18:45:00Z",
+          "venue": "Stadion Rajko Mitić",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2442739",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:serbia",
+          "awayTeamId": "team:greece"
+        },
+        {
+          "away": "Wales",
+          "awayBadge": "",
+          "awayProviderTeamId": "135982",
+          "awaySportDbTeamId": "135982",
+          "date": "2026-09-24",
+          "home": "Portugal",
+          "homeBadge": "",
+          "homeProviderTeamId": "133908",
+          "homeSportDbTeamId": "133908",
+          "id": "TheSportsDB:2442740",
+          "leagueId": "4490",
+          "league": "UEFA Nations League",
+          "round": "1",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2442740"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-09-24T18:45:00Z",
+          "venue": "Estádio José Alvalade",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2442740",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:portugal",
+          "awayTeamId": "team:wales"
+        },
+        {
+          "away": "Denmark",
+          "awayBadge": "",
+          "awayProviderTeamId": "133906",
+          "awaySportDbTeamId": "133906",
+          "date": "2026-09-24",
+          "home": "Norway",
+          "homeBadge": "",
+          "homeProviderTeamId": "136516",
+          "homeSportDbTeamId": "136516",
+          "id": "TheSportsDB:2442741",
+          "leagueId": "4490",
+          "league": "UEFA Nations League",
+          "round": "1",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2442741"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-09-24T18:45:00Z",
+          "venue": "Ullevaal Stadion",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2442741",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:norway",
+          "awayTeamId": "team:denmark"
+        },
+        {
+          "away": "Israel",
+          "awayBadge": "",
+          "awayProviderTeamId": "135931",
+          "awaySportDbTeamId": "135931",
+          "date": "2026-09-24",
+          "home": "Austria",
+          "homeBadge": "",
+          "homeProviderTeamId": "135986",
+          "homeSportDbTeamId": "135986",
+          "id": "TheSportsDB:2442742",
+          "leagueId": "4490",
+          "league": "UEFA Nations League",
+          "round": "1",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2442742"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-09-24T18:45:00Z",
+          "venue": "Raiffeisen Arena Linz",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2442742",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:austria",
+          "awayTeamId": "team:israel"
+        }
+      ],
+      "notes": [
+        "Loaded all 5 currently published UEFA Nations League matches from TheSportsDB."
+      ],
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
+      "sources": [
+        "TheSportsDB"
+      ],
+      "status": "updated",
+      "updatedAt": "2026-09-25T15:19:26.603Z"
+    },
+    {
+      "attemptedAt": "2026-09-25T15:24:58.527Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -71469,15 +71682,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:45.371Z",
+      "attemptedAt": "2026-09-25T15:24:58.531Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -74236,15 +74449,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     },
     {
-      "attemptedAt": "2026-09-23T05:57:45.376Z",
+      "attemptedAt": "2026-09-25T15:24:58.533Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -76448,12 +76661,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-23T05:52:19.876Z"
+      "updatedAt": "2026-09-25T15:19:26.603Z"
     }
   ],
   "teamCatalog": [
@@ -76759,6 +76972,22 @@
       "name": "Austin FC",
       "prettyName": "Austin FC",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:austria",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Austria",
+      "prettyName": "Austria",
+      "providerTeamIds": {
+        "TheSportsDB": "135986"
+      }
     },
     {
       "active": true,
@@ -77775,6 +78004,22 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:denmark",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Denmark",
+      "prettyName": "Denmark",
+      "providerTeamIds": {
+        "TheSportsDB": "133906"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/263.png",
       "id": "team:deportivo-alaves",
       "leagues": [
@@ -78284,6 +78529,22 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:germany",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Germany",
+      "prettyName": "Germany",
+      "providerTeamIds": {
+        "TheSportsDB": "133907"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/82.png",
       "id": "team:getafe-cf",
       "leagues": [
@@ -78316,6 +78577,22 @@
       "name": "Girona",
       "prettyName": "Girona",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:greece",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Greece",
+      "prettyName": "Greece",
+      "providerTeamIds": {
+        "TheSportsDB": "133902"
+      }
     },
     {
       "active": true,
@@ -78469,6 +78746,22 @@
       "prettyName": "Ipswich Town FC",
       "providerTeamIds": {
         "football-data.org": "349"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:israel",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Israel",
+      "prettyName": "Israel",
+      "providerTeamIds": {
+        "TheSportsDB": "135931"
       }
     },
     {
@@ -78988,6 +79281,22 @@
     {
       "active": true,
       "badge": "",
+      "id": "team:netherlands",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Netherlands",
+      "prettyName": "Netherlands",
+      "providerTeamIds": {
+        "TheSportsDB": "133905"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
       "id": "team:new-england-revolution",
       "leagues": [
         {
@@ -79080,6 +79389,22 @@
       "name": "Northern Virginia FC",
       "prettyName": "Northern Virginia FC",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:norway",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Norway",
+      "prettyName": "Norway",
+      "providerTeamIds": {
+        "TheSportsDB": "136516"
+      }
     },
     {
       "active": true,
@@ -79377,6 +79702,22 @@
       "prettyName": "Portsmouth FC",
       "providerTeamIds": {
         "football-data.org": "325"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:portugal",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Portugal",
+      "prettyName": "Portugal",
+      "providerTeamIds": {
+        "TheSportsDB": "133908"
       }
     },
     {
@@ -79958,6 +80299,22 @@
       "name": "Seattle Sounders FC",
       "prettyName": "Seattle Sounders FC",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:serbia",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Serbia",
+      "prettyName": "Serbia",
+      "providerTeamIds": {
+        "TheSportsDB": "136140"
+      }
     },
     {
       "active": true,
@@ -80558,6 +80915,22 @@
     {
       "active": true,
       "badge": "",
+      "id": "team:wales",
+      "leagues": [
+        {
+          "id": "uefa nations league",
+          "name": "UEFA Nations League"
+        }
+      ],
+      "name": "Wales",
+      "prettyName": "Wales",
+      "providerTeamIds": {
+        "TheSportsDB": "135982"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
       "id": "team:walsall",
       "leagues": [
         {
@@ -80749,9 +81122,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -81757,11 +82130,11 @@
           "time": "16:30:00",
           "timestamp": "2026-11-29T16:30:00Z",
           "venue": "Emirates Stadium",
-          "isFriendly": false,
-          "matchId": "footy_f1d43f044a8d",
           "awayProviderTeamId": "65",
           "homeProviderTeamId": "57",
           "lastSeen": "",
+          "matchId": "footy_f1d43f044a8d",
+          "isFriendly": false,
           "homeTeamId": "1",
           "awayTeamId": "team:manchester-city-fc"
         },
@@ -82956,19 +83329,19 @@
         }
       ],
       "notes": [
-        "Loaded 40 SCHEDULED matches from 2026-09-23 through 2027-09-23.",
+        "Loaded 40 SCHEDULED matches from 2026-09-25 through 2027-09-25.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 41 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 46 iCalendar fixtures from 2026-07-01 through 2027-09-23.",
-        "Preserved 7 registered fixtures that were not returned by providers this run."
+        "Loaded 44 iCalendar fixtures from 2026-07-01 through 2027-09-25.",
+        "Preserved 9 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -84401,7 +84774,7 @@
           "league": "Supercopa de Espana",
           "opponent": "Atlético Madrid",
           "priority": "2",
-          "round": "0",
+          "round": "150",
           "season": "2026-2027",
           "source": "TheSportsDB + iCalendar",
           "sourceIds": {
@@ -84419,7 +84792,7 @@
           "teamName": "Barcelona",
           "time": "19:00:00",
           "timestamp": "2027-02-02T19:00:00Z",
-          "venue": "Atatürk Olimpiyat Stadyumu",
+          "venue": "Chobani Stadyumu",
           "awayProviderTeamId": "133729",
           "awaySportDbTeamId": "133729",
           "homeProviderTeamId": "133739",
@@ -85086,25 +85459,25 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-09-23 through 2027-09-23.",
+        "Loaded 38 SCHEDULED matches from 2026-09-25 through 2027-09-25.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-23.",
+        "Loaded 47 iCalendar fixtures from 2026-07-01 through 2027-09-25.",
         "Preserved 5 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
         "id": "3",
         "league": "Championship",
         "leagueGames": 46,
-        "projectedPoints": 131,
+        "projectedPoints": 135,
         "name": "Wrexham",
         "prettyName": "Wrexham Association Football Club",
         "priority": "3"
@@ -87077,18 +87450,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-09-23 through 2027-09-23.",
+        "Loaded 38 SCHEDULED matches from 2026-09-25 through 2027-09-25.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 43 iCalendar fixtures from 2026-07-01 through 2027-09-23.",
-        "Preserved 7 registered fixtures that were not returned by providers this run."
+        "Loaded 40 iCalendar fixtures from 2026-07-01 through 2027-09-25.",
+        "Preserved 10 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -87256,9 +87629,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -87392,9 +87765,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -88428,15 +88801,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-09-23.",
+        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-09-25.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-23T05:52:19.876Z",
-      "updatedAt": "2026-09-23T05:52:19.876Z",
-      "previousUpdatedAt": "2026-09-23T00:24:30.570Z",
+      "attemptedAt": "2026-09-25T15:19:26.603Z",
+      "updatedAt": "2026-09-25T15:19:26.603Z",
+      "previousUpdatedAt": "2026-09-24T15:12:49.307Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -89364,7 +89737,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-09-23.",
+        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-09-25.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

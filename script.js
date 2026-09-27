@@ -2896,6 +2896,10 @@ function getFootyCanonicalCompetition(name) {
     return { key: "uefa nations league", name: "UEFA Nations League" };
   }
 
+  if (/^international friendl(?:y|ies)/.test(normalizedName)) {
+    return { key: "international friendlies", name: "International Friendlies" };
+  }
+
   return { key: normalizedName, name: rawName };
 }
 

@@ -248,26 +248,77 @@ function DraftView({ draft }: { draft: DraftManager[] }) {
 }
 
 function MoviesView({ movies }: { movies: FantasyOfficeMovie[] }) {
+  type SortColumn =
+    | "movie"
+    | "manager"
+    | "domesticGross"
+    | "numberOneWeekends"
+    | "letterboxdRating"
+    | "tomatometer"
+    | "awardPoints"
+    | "points";
+  const [sort, setSort] = useState<{
+    column: SortColumn;
+    direction: "asc" | "desc";
+  }>({ column: "movie", direction: "asc" });
   const active = movies.filter((movie) => movie.active);
   if (!active.length)
     return <Loading text="No active Fantasy Office movies are available." />;
+  const sorted = [...active].sort((left, right) => {
+    const value = (movie: FantasyOfficeMovie) =>
+      sort.column === "points" ? movie.score.points : movie[sort.column];
+    const leftValue = value(left);
+    const rightValue = value(right);
+    if (leftValue == null) return rightValue == null ? 0 : 1;
+    if (rightValue == null) return -1;
+    const comparison =
+      typeof leftValue === "string"
+        ? leftValue.localeCompare(String(rightValue))
+        : Number(leftValue) - Number(rightValue);
+    return sort.direction === "asc" ? comparison : -comparison;
+  });
+  const header = (label: string, column: SortColumn) => (
+    <button
+      className={styles.sortButton}
+      type="button"
+      aria-label={`Sort by ${label}${sort.column === column ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
+      onClick={() =>
+        setSort((current) => ({
+          column,
+          direction:
+            current.column === column && current.direction === "asc"
+              ? "desc"
+              : "asc",
+        }))
+      }
+    >
+      {label}
+      <span aria-hidden="true">
+        {sort.column === column
+          ? sort.direction === "asc"
+            ? " ↑"
+            : " ↓"
+          : " ↕"}
+      </span>
+    </button>
+  );
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Movie</th>
-            <th>Manager</th>
-            <th>Domestic</th>
-            <th>#1</th>
-            <th>Letterboxd</th>
-            <th>RT</th>
-            <th>Awards</th>
-            <th>Total</th>
+            <th>{header("Movie", "movie")}</th>
+            <th>{header("Manager", "manager")}</th>
+            <th>{header("Domestic", "domesticGross")}</th>
+            <th>{header("#1", "numberOneWeekends")}</th>
+            <th>{header("Letterboxd", "letterboxdRating")}</th>
+            <th>{header("RT", "tomatometer")}</th>
+            <th>{header("Awards", "awardPoints")}</th>
+            <th>{header("Total", "points")}</th>
           </tr>
         </thead>
         <tbody>
-          {active.map((movie) => (
+          {sorted.map((movie) => (
             <tr key={movie.id}>
               <td>
                 <strong>{movie.movie}</strong>

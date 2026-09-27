@@ -58,6 +58,18 @@
   padding: var(--space-3);
   text-align: left;
 }
+.sortButton {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+}
+.sortButton span {
+  color: var(--text-muted);
+}
 .table td small {
   display: block;
   margin-top: var(--space-1);

@@ -110,7 +110,7 @@
   overflow: hidden;
 }
 .image {
-  background: var(--image-bg);
+  background: #fff;
   display: grid;
   height: 220px;
   overflow: hidden;
@@ -120,9 +120,12 @@
 }
 .image img {
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   width: 100%;
+}
+.image img[data-fit="cover"] {
+  object-fit: cover;
 }
 .image span {
   color: var(--muted);

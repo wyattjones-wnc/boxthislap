@@ -286,6 +286,12 @@ export function MerchandiseFeature() {
                   loading="lazy"
                   decoding="async"
                   referrerPolicy="no-referrer"
+                  onLoad={(event) => {
+                    event.currentTarget.dataset.fit = merchandiseImageFit(
+                      event.currentTarget.naturalWidth,
+                      event.currentTarget.naturalHeight,
+                    );
+                  }}
                 />
               ) : (
                 <span>No image</span>
@@ -388,4 +394,9 @@ function formatPrice(value: number | null, currency: string | null) {
   } catch {
     return `${currency} ${(value / 100).toFixed(2)}`;
   }
+}
+
+export function merchandiseImageFit(width: number, height: number) {
+  if (!width || !height) return "contain";
+  return width / height >= 1.65 ? "cover" : "contain";
 }

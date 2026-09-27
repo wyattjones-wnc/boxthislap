@@ -4,7 +4,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
-import { MerchandiseFeature } from "./MerchandiseFeature";
+import { MerchandiseFeature, merchandiseImageFit } from "./MerchandiseFeature";
 
 const feed = {
   items: [
@@ -50,6 +50,12 @@ afterEach(() => {
 });
 
 describe("MerchandiseFeature", () => {
+  it("contains normal product images and crops only wide source canvases", () => {
+    expect(merchandiseImageFit(900, 900)).toBe("contain");
+    expect(merchandiseImageFit(700, 1000)).toBe("contain");
+    expect(merchandiseImageFit(1800, 900)).toBe("cover");
+  });
+
   it("confirms and submits Seen through here with the active filters", async () => {
     const requests = [] as Array<{ url: string; options?: RequestInit }>;
     vi.stubGlobal(

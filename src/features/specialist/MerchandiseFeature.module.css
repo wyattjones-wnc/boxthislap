@@ -111,9 +111,10 @@
   overflow: hidden;
 }
 .image {
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 3;
   background: var(--image-bg);
   display: grid;
+  max-height: 240px;
   place-items: center;
 }
 .image img {
@@ -207,5 +208,9 @@
 @media (max-width: 440px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+  .image {
+    aspect-ratio: 16 / 9;
+    max-height: 190px;
   }
 }

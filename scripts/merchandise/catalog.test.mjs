@@ -4,6 +4,7 @@ import {
   normalizeArsenalProduct,
   normalizeBarcelonaProduct,
   normalizeCategory,
+  scanArsenal,
   scanBarcelona,
   validateScan,
 } from "./catalog.mjs";
@@ -62,6 +63,35 @@ test("normalizes Arsenal JSON-LD using the product code", () => {
   assert.equal(product.id, "arsenal:A123");
   assert.equal(product.priceMinor, 8000);
   assert.equal(product.category, "kits");
+});
+
+test("Arsenal scanner follows the bounded paginated product grid", async () => {
+  const productGrid = (code, pages) =>
+    `<div data-plp-pagination='{"numberOfPages":"${pages}"}'><a href="/Clothing/Home-Shirt-${code}/p/${code}?searchUrl=/search" title="Arsenal Home Shirt ${code}"><img src="https://cdn.example/${code}.jpg"><span class="">£80.00</span></a></div>`;
+  const responses = new Map([
+    ["https://arsenaldirect.arsenal.com/robots.txt", "User-agent: *\nAllow: /"],
+    [
+      "https://arsenaldirect.arsenal.com/search?text=*&page=0",
+      productGrid("A123", 2),
+    ],
+    [
+      "https://arsenaldirect.arsenal.com/search?text=*&page=1",
+      productGrid("B456", 2),
+    ],
+  ]);
+  const requested = [];
+  const scan = await scanArsenal({
+    fetchImpl: async (url) => {
+      requested.push(String(url));
+      return { ok: true, text: async () => responses.get(String(url)) || "" };
+    },
+  });
+  assert.equal(scan.products.length, 2);
+  assert.equal(scan.products[0].id, "arsenal:A123");
+  assert.equal(scan.products[0].priceMinor, 8000);
+  assert.equal(scan.products[0].currency, "GBP");
+  assert.equal(scan.pageCount, 2);
+  assert.equal(requested.filter((url) => url.includes("/search?")).length, 2);
 });
 
 test("category normalization covers simple merchandise groups", () => {

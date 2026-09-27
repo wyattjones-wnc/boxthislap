@@ -94,7 +94,6 @@ export function normalizeBarcelonaProduct(
 export async function scanArsenal({
   fetchImpl = fetch,
   baseUrl = "https://arsenaldirect.arsenal.com",
-  concurrency = 3,
 } = {}) {
   const robotsResponse = await fetchPage(fetchImpl, `${baseUrl}/robots.txt`);
   const robots = await robotsResponse.text();
@@ -102,36 +101,94 @@ export async function scanArsenal({
     throw new Error(
       "Arsenal robots policy disallows automated catalog access.",
     );
-  const sitemapUrls = await collectSitemapUrls(
-    fetchImpl,
-    `${baseUrl}/sitemap.xml`,
-    baseUrl,
-  );
-  const productUrls = [
-    ...new Set(
-      sitemapUrls.filter((url) => /\/p\/[^/?#]+(?:[?#]|$)/i.test(url)),
-    ),
-  ];
-  if (!productUrls.length)
-    throw new Error("Arsenal sitemap did not expose product URLs.");
-  const products = await mapWithConcurrency(
-    productUrls,
-    concurrency,
-    async (url) => {
-      const response = await fetchPage(fetchImpl, url);
-      return normalizeArsenalProduct(url, await response.text());
-    },
-  );
+  const products = [];
+  let numberOfPages = 1;
+  for (let page = 0; page < numberOfPages; page += 1) {
+    if (page >= 100)
+      throw new Error("Arsenal catalog exceeded the 100-page safety limit.");
+    const response = await fetchPage(
+      fetchImpl,
+      `${baseUrl}/search?text=*&page=${page}`,
+    );
+    const listing = parseArsenalListing(await response.text(), baseUrl);
+    if (page === 0) numberOfPages = listing.numberOfPages;
+    products.push(...listing.products);
+  }
   return validateScan({
     source: "arsenal",
-    pageCount: sitemapUrls.length,
-    products,
+    pageCount: numberOfPages,
+    products: [
+      ...new Map(products.map((product) => [product.id, product])).values(),
+    ],
   });
 }
 
+export function parseArsenalListing(html, baseUrl) {
+  const pagination = html.match(/data-plp-pagination='([\s\S]*?)'/i)?.[1];
+  let numberOfPages = 1;
+  try {
+    numberOfPages = Math.max(
+      1,
+      Number.parseInt(JSON.parse(pagination || "{}").numberOfPages, 10) || 1,
+    );
+  } catch {
+    throw new Error("Arsenal catalog returned invalid pagination metadata.");
+  }
+  const products = [];
+  const anchors = html.matchAll(
+    /<a\b[^>]*href=["']([^"']*\/p\/[^"']+)["'][^>]*title=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+  );
+  for (const match of anchors) {
+    const canonicalUrl = new URL(decodeHtml(match[1]), baseUrl);
+    canonicalUrl.search = "";
+    const sourceProductId = decodeURIComponent(
+      canonicalUrl.pathname.match(/\/p\/([^/]+)/i)?.[1] || "",
+    ).trim();
+    if (!sourceProductId) continue;
+    const block = match[3];
+    const imageUrl = decodeHtml(
+      block.match(/<img\b[^>]*src=["']([^"']+)["']/i)?.[1] || "",
+    );
+    const displayedPrice = decodeHtml(
+      block.match(/<span[^>]*>\s*([^<]*[\d.,]+)\s*<\/span>/i)?.[1] || "",
+    );
+    const currency = displayedPrice.includes("£")
+      ? "GBP"
+      : displayedPrice.includes("€")
+        ? "EUR"
+        : displayedPrice.includes("$")
+          ? "USD"
+          : null;
+    const title = decodeHtml(match[2]).trim();
+    products.push({
+      availability: "in_stock",
+      canonicalUrl: canonicalUrl.href,
+      category: normalizeCategory(canonicalUrl.pathname, title),
+      currency,
+      id: `arsenal:${sourceProductId}`,
+      imageUrl: cleanImage(imageUrl),
+      priceMinor: displayedMoneyToMinor(displayedPrice),
+      source: "arsenal",
+      sourceMetadata: { productCode: sourceProductId },
+      sourceProductId,
+      team: "arsenal",
+      title,
+    });
+  }
+  if (!products.length)
+    throw new Error("Arsenal catalog page did not expose product cards.");
+  return { numberOfPages, products };
+}
+
 export function normalizeArsenalProduct(url, html) {
+  const canonicalUrl =
+    String(
+      html.match(
+        /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i,
+      )?.[1] || "",
+    ).trim() || url;
   const code = decodeURIComponent(
-    new URL(url).pathname.match(/\/p\/([^/]+)/i)?.[1] || "",
+    new URL(canonicalUrl, url).pathname.match(/\/p\/([^/]+)/i)?.[1] || "",
   ).trim();
   const records = [
     ...String(html).matchAll(
@@ -140,8 +197,11 @@ export function normalizeArsenalProduct(url, html) {
   ].flatMap((match) => parseJsonLd(match[1]));
   const product = records.find(
     (record) =>
-      record?.["@type"] === "Product" ||
-      (Array.isArray(record?.["@type"]) && record["@type"].includes("Product")),
+      String(record?.["@type"] || "").toLowerCase() === "product" ||
+      (Array.isArray(record?.["@type"]) &&
+        record["@type"].some(
+          (type) => String(type).toLowerCase() === "product",
+        )),
   );
   const title = String(product?.name || "").trim();
   if (!code || !title)
@@ -157,7 +217,7 @@ export function normalizeArsenalProduct(url, html) {
   const image = Array.isArray(product.image) ? product.image[0] : product.image;
   return {
     availability,
-    canonicalUrl: new URL(url).href,
+    canonicalUrl: new URL(canonicalUrl, url).href,
     category: normalizeCategory(product.category, title),
     currency: String(offers.priceCurrency || "GBP").toUpperCase(),
     id: `arsenal:${code}`,
@@ -190,32 +250,6 @@ export function validateScan(scan) {
     ids.add(product.id);
   }
   return { ...scan, complete: true, scope: "full-store" };
-}
-
-async function collectSitemapUrls(fetchImpl, url, baseUrl, seen = new Set()) {
-  if (seen.has(url) || seen.size >= 50) return [];
-  seen.add(url);
-  const response = await fetchPage(fetchImpl, url);
-  const xml = await response.text();
-  const locations = [...xml.matchAll(/<loc>([\s\S]*?)<\/loc>/gi)].map((match) =>
-    decodeXml(match[1].trim()),
-  );
-  const nested = locations.filter(
-    (location) => /sitemap/i.test(location) && !/\/p\//i.test(location),
-  );
-  if (!nested.length)
-    return locations.map((location) => new URL(location, baseUrl).href);
-  const results = [];
-  for (const nestedUrl of nested)
-    results.push(
-      ...(await collectSitemapUrls(
-        fetchImpl,
-        new URL(nestedUrl, baseUrl).href,
-        baseUrl,
-        seen,
-      )),
-    );
-  return results;
 }
 
 async function fetchPage(fetchImpl, url) {
@@ -257,27 +291,20 @@ function moneyToMinor(value) {
   const number = Number.parseFloat(String(value ?? "").replace(",", "."));
   return Number.isFinite(number) ? Math.round(number * 100) : null;
 }
+function displayedMoneyToMinor(value) {
+  const match = String(value).match(/[\d,.]+/);
+  if (!match) return null;
+  return moneyToMinor(match[0].replaceAll(",", ""));
+}
 function cleanImage(value) {
   const url = String(value || "").trim();
   return url ? (url.startsWith("//") ? `https:${url}` : url) : null;
 }
-function decodeXml(value) {
+function decodeHtml(value) {
   return value
     .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
     .replaceAll("&lt;", "<")
     .replaceAll("&gt;", ">");
-}
-async function mapWithConcurrency(values, concurrency, callback) {
-  const results = new Array(values.length);
-  let next = 0;
-  async function worker() {
-    while (next < values.length) {
-      const index = next++;
-      results[index] = await callback(values[index], index);
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, values.length) }, worker),
-  );
-  return results;
 }

@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
 import { FantasyOffice2026Page } from "./FantasyOffice2026Feature";
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
+  localStorage.clear();
   window.location.hash = "";
 });
 
@@ -54,5 +56,75 @@ describe("FantasyOffice2026Page", () => {
     expect(document.querySelector(".manager-chip .manager-dot")).toBeTruthy();
     expect(screen.getByText("610 pts")).toBeTruthy();
     expect(screen.getByText(/Standings are provisional/)).toBeTruthy();
+  });
+
+  it("separates pending movies from missing-source failures in Manage", async () => {
+    window.location.hash = "#fantasy-office-2026-manage";
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ isAdmin: true, managerId: "6" }),
+    );
+    window.boxThisLapGetManagerAccessToken = async () => "admin-token";
+    const emptyHealth = {
+      domestic_gross: {
+        lastAttemptAt: "",
+        lastSuccessAt: "",
+        status: "not_available",
+      },
+      letterboxd_rating: {
+        lastAttemptAt: "",
+        lastSuccessAt: "",
+        status: "not_available",
+      },
+      number_one_weekends: {
+        lastAttemptAt: "",
+        lastSuccessAt: "",
+        status: "not_available",
+      },
+      tomatometer: {
+        lastAttemptAt: "",
+        lastSuccessAt: "",
+        status: "not_available",
+      },
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          draft: [],
+          generatedAt: "2026-09-25T12:00:00Z",
+          latestVerification: "",
+          movies: [
+            {
+              active: true,
+              awardPoints: 0,
+              draftNumber: "D1",
+              health: emptyHealth,
+              id: "movie-one",
+              manager: "Manager One",
+              movie: "Movie One",
+              score: { points: 0 },
+            },
+          ],
+          ok: true,
+          provisional: true,
+          runs: [],
+          standings: [],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 },
+      ),
+    );
+
+    render(
+      <AppProviders>
+        <FantasyOffice2026Page mode="manage" />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText("Movie diagnostics")).toBeTruthy();
+    expect(screen.getByText("1 pending")).toBeTruthy();
+    expect(
+      screen.getByText(/rotating collector has not attempted this movie yet/i),
+    ).toBeTruthy();
+    delete window.boxThisLapGetManagerAccessToken;
   });
 });

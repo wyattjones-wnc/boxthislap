@@ -339,6 +339,25 @@ function ResultsView({ data }: { data: SeasonData }) {
 }
 
 function ManageView({ data }: { data: SeasonData }) {
+  const [issueFilter, setIssueFilter] = useState("attention");
+  const diagnostics = data.movies.map((movie) => ({
+    movie,
+    ...movieDiagnostic(movie),
+  }));
+  const counts = diagnostics.reduce<Record<string, number>>(
+    (result, diagnostic) => {
+      result[diagnostic.category] = (result[diagnostic.category] || 0) + 1;
+      return result;
+    },
+    {},
+  );
+  const visibleMovies = diagnostics.filter(({ category }) =>
+    issueFilter === "all"
+      ? true
+      : issueFilter === "attention"
+        ? ["pending", "source", "error"].includes(category)
+        : category === issueFilter,
+  );
   return (
     <div className={styles.manage}>
       <p className={styles.notice}>
@@ -362,14 +381,139 @@ function ManageView({ data }: { data: SeasonData }) {
           </div>
         ))}
       </section>
-      {data.movies.map((movie) => (
-        <MovieAdminForm key={movie.id} movie={movie} />
+      <section className={styles.issueQueue}>
+        <header>
+          <div>
+            <h3>Movie diagnostics</h3>
+            <p>
+              Pending movies have not been visited by the rotating collector.
+              Missing source and collection error movies need review. Expected
+              unavailable means the source page exists but has no value yet.
+            </p>
+          </div>
+          <label>
+            Show
+            <select
+              value={issueFilter}
+              onChange={(event) => setIssueFilter(event.target.value)}
+            >
+              <option value="attention">Everything needing attention</option>
+              <option value="pending">
+                Pending first collection ({counts.pending || 0})
+              </option>
+              <option value="source">
+                Missing source ({counts.source || 0})
+              </option>
+              <option value="error">
+                Collection error ({counts.error || 0})
+              </option>
+              <option value="unavailable">
+                Expected unavailable ({counts.unavailable || 0})
+              </option>
+              <option value="healthy">Healthy ({counts.healthy || 0})</option>
+              <option value="all">All movies ({data.movies.length})</option>
+            </select>
+          </label>
+        </header>
+        <div className={styles.diagnosticCounts}>
+          {(
+            ["pending", "source", "error", "unavailable", "healthy"] as const
+          ).map((category) => (
+            <span className={styles[category]} key={category}>
+              {counts[category] || 0} {diagnosticLabel(category)}
+            </span>
+          ))}
+        </div>
+      </section>
+      {visibleMovies.map(({ movie, category, details }) => (
+        <MovieAdminForm
+          category={category}
+          details={details}
+          key={movie.id}
+          movie={movie}
+        />
       ))}
+      {!visibleMovies.length ? (
+        <p className={styles.notice}>No movies match this diagnostic filter.</p>
+      ) : null}
     </div>
   );
 }
 
-function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
+type DiagnosticCategory =
+  "pending" | "source" | "error" | "unavailable" | "healthy";
+
+function diagnosticLabel(category: DiagnosticCategory) {
+  return {
+    error: "collection errors",
+    healthy: "healthy",
+    pending: "pending",
+    source: "missing sources",
+    unavailable: "expected unavailable",
+  }[category];
+}
+
+function movieDiagnostic(movie: FantasyOfficeMovie): {
+  category: DiagnosticCategory;
+  details: string[];
+} {
+  const health = Object.entries(movie.health) as Array<
+    [MetricName, MetricHealth]
+  >;
+  if (health.every(([, metric]) => !metric.lastAttemptAt)) {
+    return {
+      category: "pending",
+      details: ["The rotating collector has not attempted this movie yet."],
+    };
+  }
+  const missing = [
+    !movie.letterboxdUrl ? "Letterboxd" : "",
+    !movie.rottenTomatoesUrl ? "Rotten Tomatoes" : "",
+    !movie.boxOfficeMojoUrl ? "Box Office Mojo" : "",
+  ].filter(Boolean);
+  const sourceDetails = missing.length
+    ? [`No discovered source: ${missing.join(", ")}.`]
+    : [];
+  const errors = health.filter(([, metric]) =>
+    ["error", "warning", "stale"].includes(metric.status),
+  );
+  if (errors.length) {
+    return {
+      category: "error",
+      details: [
+        ...sourceDetails,
+        ...errors.map(
+          ([name, metric]) =>
+            `${name.replaceAll("_", " ")}: ${metric.lastErrorType || metric.status}${metric.lastErrorMessage ? ` — ${metric.lastErrorMessage}` : ""}`,
+        ),
+      ],
+    };
+  }
+  if (missing.length) return { category: "source", details: sourceDetails };
+  const unavailable = health
+    .filter(([, metric]) => metric.status === "not_available")
+    .map(([name]) => name.replaceAll("_", " "));
+  if (unavailable.length) {
+    return {
+      category: "unavailable",
+      details: [`No published value yet: ${unavailable.join(", ")}.`],
+    };
+  }
+  return {
+    category: "healthy",
+    details: ["All automatic sources are healthy."],
+  };
+}
+
+function MovieAdminForm({
+  category,
+  details,
+  movie,
+}: {
+  category: DiagnosticCategory;
+  details: string[];
+  movie: FantasyOfficeMovie;
+}) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
   const mutation = useMutation({
@@ -424,7 +568,11 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
     });
   };
   return (
-    <form className={styles.adminCard} onSubmit={submit}>
+    <form
+      className={styles.adminCard}
+      id={`movie-admin-${movie.id}`}
+      onSubmit={submit}
+    >
       <header>
         <div>
           <h3>{movie.movie}</h3>
@@ -437,6 +585,16 @@ function MovieAdminForm({ movie }: { movie: FantasyOfficeMovie }) {
           Active
         </label>
       </header>
+      <div className={styles.diagnosticStatus}>
+        <strong className={styles[category]}>
+          {diagnosticLabel(category)}
+        </strong>
+        <ul>
+          {details.map((detail) => (
+            <li key={detail}>{detail}</li>
+          ))}
+        </ul>
+      </div>
       <div className={styles.sourceGrid}>
         <label>
           Movie title

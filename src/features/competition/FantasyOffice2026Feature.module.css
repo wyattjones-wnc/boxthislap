@@ -10,7 +10,8 @@
 .card,
 .resultCard,
 .adminCard,
-.healthSummary {
+.healthSummary,
+.issueQueue {
   background: var(--surface-panel);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-panel);
@@ -103,6 +104,68 @@
   justify-content: space-between;
   padding: var(--space-2) 0;
 }
+.issueQueue header {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+.issueQueue header p {
+  color: var(--text-muted);
+  margin-bottom: 0;
+  max-width: 70ch;
+}
+.issueQueue label {
+  display: grid;
+  gap: var(--space-1);
+}
+.issueQueue select {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  min-height: var(--control-touch);
+  padding: 0 var(--space-3);
+}
+.diagnosticCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.diagnosticCounts span,
+.diagnosticStatus > strong {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  padding: var(--space-1) var(--space-2);
+}
+.diagnosticStatus {
+  align-items: start;
+  background: var(--surface-raised);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+}
+.diagnosticStatus ul {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.pending,
+.unavailable {
+  color: var(--text-muted);
+}
+.source,
+.error {
+  color: var(--accent-strong);
+}
+.healthy {
+  color: #47b881;
+}
 .adminCard header,
 .adminCard footer {
   align-items: center;
@@ -155,9 +218,6 @@
 }
 .metricGrid legend {
   text-transform: capitalize;
-}
-.healthy {
-  color: #47b881;
 }
 .unhealthy,
 .error {

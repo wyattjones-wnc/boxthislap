@@ -704,7 +704,7 @@ const router = createRouter({
   pageLinks,
   pages,
   shouldBlockPage: (pageName) =>
-    (["rankings", "draft-list", "account-settings"].includes(pageName) && !siteData.managerSession) ||
+    (["rankings", "draft-list", "account-settings", "workouts"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
     (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
@@ -15437,6 +15437,7 @@ function renderLoginState() {
   if (
     (!managerMeta && activePageName === "rankings") ||
     (!managerMeta && activePageName === "draft-list") ||
+    (!managerMeta && activePageName === "workouts") ||
     (!managerMeta && activePageName === "guides") ||
     (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
@@ -15489,7 +15490,7 @@ function renderLoginState() {
   }
 
   if (session && managerMeta) {
-    siteData.managerSession = {
+    const enrichedSession = {
       ...session,
       isAdmin: managerMeta.isAdmin,
       manager: {
@@ -15497,6 +15498,17 @@ function renderLoginState() {
         isAdmin: managerMeta.isAdmin,
       },
     };
+    const adminStatusChanged =
+      session.isAdmin !== enrichedSession.isAdmin ||
+      session.manager?.isAdmin !== enrichedSession.manager.isAdmin;
+    siteData.managerSession = enrichedSession;
+
+    if (adminStatusChanged) {
+      try {
+        localStorage.setItem(MANAGER_SESSION_STORAGE_KEY, JSON.stringify(enrichedSession));
+      } catch {}
+      window.dispatchEvent(new Event("boxthislap:session-changed"));
+    }
   }
 
   syncSiteVersionDisplay(managerMeta);
@@ -18854,8 +18866,8 @@ function ensureFantasyOfficeData(year, view) {
   const yearKey = String(year);
   const sourceName = view === "draft" ? `fantasyOffice${yearKey}Draft` : `fantasyOffice${yearKey}Results`;
 
-  if (yearKey === "2026" && view !== "draft") {
-    return Promise.resolve([]);
+  if (yearKey === "2026") {
+    return Promise.resolve(siteData.fantasyOffice2026);
   }
 
   return ensureSharedData(`fantasy-office:${yearKey}:${view}`, async () => {

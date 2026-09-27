@@ -5,7 +5,10 @@ const DATABASES = Object.freeze({
   footy: { binding: "FOOTY_NOTES_DB", label: "Footy notes & rosters" },
   psn: { binding: "PSN_DB", label: "PSN trophies" },
   youtube: { binding: "YOUTUBE_DB", label: "YouTube inbox" },
-  formulaOne: { binding: "FORMULA_ONE_DB", label: "Formula One" },
+  formulaOne: {
+    binding: "FORMULA_ONE_DB",
+    label: "Formula One & Fantasy Office",
+  },
 });
 
 // Authentication material may be inspected in its owning workflow, but must never be

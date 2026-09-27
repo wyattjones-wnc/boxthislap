@@ -19,6 +19,8 @@ export const RANKINGS_ENDPOINT =
   "https://box-this-lap-rankings.boxthislap.workers.dev";
 export const FORMULA_ONE_ENDPOINT =
   "https://box-this-lap-formula-one.boxthislap.workers.dev";
+export const FANTASY_OFFICE_ENDPOINT =
+  "https://box-this-lap-fantasy-office.boxthislap.workers.dev";
 export const PSN_TROPHIES_ENDPOINT =
   "https://box-this-lap-psn.boxthislap.workers.dev";
 export const YOUTUBE_INBOX_ENDPOINT =

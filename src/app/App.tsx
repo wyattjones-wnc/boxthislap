@@ -65,6 +65,61 @@ const MerchandiseFeature = lazy(() =>
   })),
 );
 
+const WorkoutFeature = lazy(() =>
+  import("../features/operational/WorkoutFeature").then((module) => ({
+    default: module.WorkoutFeature,
+  })),
+);
+
+const FantasyOffice2026Page = lazy(() =>
+  import("../features/competition/FantasyOffice2026Feature").then((module) => ({
+    default: module.FantasyOffice2026Page,
+  })),
+);
+
+function DeferredFantasyOffice2026Page({
+  mode,
+}: {
+  mode: "draft" | "manage" | "movies" | "results";
+}) {
+  const { route } = useAppState();
+  if (route !== `fantasy-office-2026-${mode}`) return null;
+  return (
+    <Suspense
+      fallback={<p className="table-message">Loading Fantasy Office…</p>}
+    >
+      <FantasyOffice2026Page mode={mode} />
+    </Suspense>
+  );
+}
+
+function DeferredWorkoutFeature() {
+  const [active, setActive] = useState(
+    () => window.location.hash.split("?")[0] === "#workouts",
+  );
+  useEffect(() => {
+    const update = (event?: Event) => {
+      const shownPage =
+        event instanceof CustomEvent
+          ? String(event.detail?.pageName || "")
+          : window.location.hash.slice(1).split("?")[0];
+      setActive(shownPage === "workouts");
+    };
+    window.addEventListener("hashchange", update);
+    window.addEventListener("boxthislap:page-shown", update);
+    return () => {
+      window.removeEventListener("hashchange", update);
+      window.removeEventListener("boxthislap:page-shown", update);
+    };
+  }, []);
+  if (!active) return null;
+  return (
+    <Suspense fallback={<p className="table-message">Loading Workouts…</p>}>
+      <WorkoutFeature />
+    </Suspense>
+  );
+}
+
 export function DeferredDatabaseAdminPage() {
   const [active, setActive] = useState(
     () => window.location.hash.split("?")[0] === "#database-admin",
@@ -126,6 +181,7 @@ export interface CompetitionRoots {
   fantasyOffice2026Draft: Element;
   fantasyOffice2026Movies: Element;
   fantasyOffice2026Results: Element;
+  fantasyOffice2026Manage: Element;
   formulaOne2024Questions: Element;
   formulaOne2024Results: Element;
   formulaOne2025Questions: Element;
@@ -164,6 +220,7 @@ export interface OperationalRoots {
   rankings: Element;
   todo: Element;
   want: Element;
+  workouts: Element;
 }
 
 interface AppProps {
@@ -217,6 +274,7 @@ export function App({
         )}
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
+        {createPortal(<DeferredWorkoutFeature />, operationalRoots.workouts)}
         {createPortal(<AdminHomePage />, specialistRoots.adminHome)}
         {createPortal(<PsnPage />, specialistRoots.psn)}
         {createPortal(<TrophyStatsPage />, specialistRoots.trophyStats)}
@@ -306,16 +364,20 @@ export function App({
           competitionRoots.fantasyOffice2025Results,
         )}
         {createPortal(
-          <FantasyOfficePage year={2026} mode="draft" />,
+          <DeferredFantasyOffice2026Page mode="draft" />,
           competitionRoots.fantasyOffice2026Draft,
         )}
         {createPortal(
-          <FantasyOfficePage year={2026} mode="movies" />,
+          <DeferredFantasyOffice2026Page mode="movies" />,
           competitionRoots.fantasyOffice2026Movies,
         )}
         {createPortal(
-          <FantasyOfficePage year={2026} mode="results" />,
+          <DeferredFantasyOffice2026Page mode="results" />,
           competitionRoots.fantasyOffice2026Results,
+        )}
+        {createPortal(
+          <DeferredFantasyOffice2026Page mode="manage" />,
+          competitionRoots.fantasyOffice2026Manage,
         )}
         {createPortal(<SiteFooter />, footerRoot)}
       </AppErrorBoundary>

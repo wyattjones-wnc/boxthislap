@@ -36,6 +36,7 @@ const operationalRoots = {
   rankings: document.querySelector('[data-page="rankings"]'),
   todo: document.querySelector('[data-page="todo"]'),
   want: document.querySelector('[data-page="want"]'),
+  workouts: document.querySelector('[data-page="workouts"]'),
 };
 const competitionRoots = {
   bracket: document.querySelector('[data-page="bracket"]'),
@@ -63,6 +64,9 @@ const competitionRoots = {
   ),
   fantasyOffice2026Results: document.querySelector(
     '[data-page="fantasy-office-2026-results"]',
+  ),
+  fantasyOffice2026Manage: document.querySelector(
+    '[data-page="fantasy-office-2026-manage"]',
   ),
   formulaOne2024Questions: document.querySelector(
     '[data-page="formula-1-2024-questions"]',

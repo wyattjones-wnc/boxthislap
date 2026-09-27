@@ -1,4 +1,5 @@
 import { buildRosterProviderIndex, getRosterProviderIds } from "../../../scripts/footy-roster-providers.mjs";
+import { handleWorkoutRequest } from "./workouts.js";
 
 const TYPES = new Set(["games", "movies", "tv", "mcu"]);
 const ACCESS_TTL_SECONDS = 15 * 60;
@@ -69,6 +70,9 @@ export default {
           : await setMatchNotification(env, manager.sub, await readBody(request));
         return json({ ok: true, ...result }, 200, cors);
       }
+
+      const workoutResult = await handleWorkoutRequest({ env, readBody, readManagerCatalog, request, requireManager, url });
+      if (workoutResult) return json({ ok: true, ...workoutResult }, 200, cors);
 
       const draftListsMatch = url.pathname.match(/^\/api\/managers\/([^/]+)\/draft-lists$/);
       if (draftListsMatch && ["GET", "POST"].includes(request.method)) {

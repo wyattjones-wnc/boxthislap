@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   FootyPage,
+  ManagerHubPage,
   NextPage,
   RankingsPage,
   TodoPage,
@@ -27,6 +28,15 @@ function renderWithTooltips(component: React.ReactNode) {
 }
 
 describe("operational React pages", () => {
+  it("places Daily Workouts first in the Manager Hub actions", () => {
+    renderWithTooltips(<ManagerHubPage />);
+    const actions = document.querySelector(".manager-hub-actions");
+    expect(actions?.firstElementChild?.getAttribute("aria-label")).toBe(
+      "Open Daily Workouts",
+    );
+    expect(actions?.firstElementChild?.getAttribute("href")).toBe("#workouts");
+  });
+
   it("keeps the Ranking heading actions grouped for consistent sizing", () => {
     renderWithTooltips(<RankingsPage />);
 

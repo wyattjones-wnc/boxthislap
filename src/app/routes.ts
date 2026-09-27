@@ -67,6 +67,7 @@ export const navItems: Record<NavScope, NavItem[]> = {
     { label: "Draft", route: "fantasy-office-2026-draft" },
     { label: "Movies", route: "fantasy-office-2026-movies" },
     { label: "Results", route: "fantasy-office-2026-results" },
+    { adminOnly: true, label: "Manage", route: "fantasy-office-2026-manage" },
     { label: "Leagues", route: "leagues" },
   ],
 };

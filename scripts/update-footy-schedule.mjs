@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { attachCanonicalFootyTeams } from "./footy-team-catalog.mjs";
 import { isSameFootballClubName, normalizeFootballClubName } from "./footy-club-names.mjs";
 import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
+import { parseUefaNationsLeagueFixtures } from "./uefa-nations-league-provider.mjs";
 import { loadUsSoccerSchedule } from "./ussoccer-schedule-provider.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
@@ -20,17 +21,19 @@ const SPORTDB_PROVIDER_NAME = "TheSportsDB";
 const ARSENAL_PROVIDER_NAME = "Arsenal.com";
 const ICALENDAR_PROVIDER_NAME = "iCalendar";
 const US_SOCCER_PROVIDER_NAME = "U.S. Soccer";
+const UEFA_PROVIDER_NAME = "UEFA.com";
 const FULL_MLS_CALENDAR_URL = "https://raw.githubusercontent.com/jbaranski/majorleaguesoccer-ical/refs/heads/main/calendars/mls.ics";
+const UEFA_NATIONS_LEAGUE_FIXTURES_URL = "https://www.uefa.com/uefanationsleague/news/02a2-1fea18abbcbc-456e846509e7-1000--2026-27-uefa-nations-league-all-the-league-phase-fixtures/";
 const SPORTDB_COMPETITION_FALLBACKS = [
   { code: "FACS", id: "4571", key: "community shield", name: "FA Community Shield", seasonType: "calendar", type: "SUPER_CUP" },
   { code: "ELC", id: "4570", key: "efl cup", name: "EFL Cup", seasonType: "split", type: "CUP" },
   { code: "SDE", id: "4511", key: "supercopa de espana", name: "Supercopa de España", seasonType: "split", type: "SUPER_CUP" },
-  { alwaysInclude: true, category: "international", code: "UNL", id: "4490", key: "uefa nations league", name: "UEFA Nations League", seasonType: "split", type: "INTERNATIONAL_CUP" },
 ];
 const SOURCE_PRIORITY = {
   [PRIMARY_PROVIDER_NAME]: 40,
   [ARSENAL_PROVIDER_NAME]: 30,
   [US_SOCCER_PROVIDER_NAME]: 35,
+  [UEFA_PROVIDER_NAME]: 35,
   [SPORTDB_PROVIDER_NAME]: 20,
   [ICALENDAR_PROVIDER_NAME]: 10,
 };
@@ -290,6 +293,7 @@ async function main() {
   });
   const loadedCompetitionSchedules = [
     ...applySportDbCompetitionFallbacks(footballDataCompetitionSchedules, sportDbCompetitionFallbackSchedules),
+    await loadUefaNationsLeagueCompetitionSchedule({ teams }),
     ...await loadMlsCompetitionSchedules({
       dateFrom,
       dateTo,
@@ -320,7 +324,7 @@ async function main() {
   const payload = {
     generatedAt,
     schemaVersion: 4,
-    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${US_SOCCER_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
+    source: `${PRIMARY_PROVIDER_NAME} + ${SPORTDB_PROVIDER_NAME} + ${ARSENAL_PROVIDER_NAME} + ${US_SOCCER_PROVIDER_NAME} + ${UEFA_PROVIDER_NAME} + ${ICALENDAR_PROVIDER_NAME}`,
     updateTracker: buildFileUpdateTracker({ competitionSchedules, generatedAt, teamSchedules }),
     prioritySets,
     footyMatchRegistry: {
@@ -892,6 +896,45 @@ async function loadSportDbCompetitionFallbackSchedules({ followedFixtures = [], 
   }
 
   return schedules;
+}
+
+async function loadUefaNationsLeagueCompetitionSchedule({ teams = [] } = {}) {
+  const attemptedAt = new Date().toISOString();
+  const season = getCurrentSeason();
+  const teamPriority = Math.min(...teams.map((team) => Number.parseInt(String(team.priority || "").trim(), 10)).filter(Number.isFinite));
+  const competition = {
+    category: "international",
+    code: "UNL",
+    followedTeamNames: [],
+    id: "4490",
+    key: "uefa nations league",
+    name: "UEFA Nations League",
+    priority: Number.isFinite(teamPriority) ? teamPriority : null,
+    season: season.slice(0, 4),
+    source: UEFA_PROVIDER_NAME,
+    type: "INTERNATIONAL_CUP",
+  };
+
+  try {
+    const html = await loadText(UEFA_NATIONS_LEAGUE_FIXTURES_URL, { extension: "html" });
+    const fixtures = parseUefaNationsLeagueFixtures(html, { seasonYear: Number(season.slice(0, 4)) });
+
+    return {
+      attemptedAt,
+      competition,
+      errors: fixtures.length > 0 ? [] : [`${UEFA_PROVIDER_NAME} returned no UEFA Nations League fixtures for ${season}.`],
+      fixtures,
+      notes: fixtures.length > 0 ? [`Loaded all ${fixtures.length} published UEFA Nations League matches from ${UEFA_PROVIDER_NAME}.`] : [],
+    };
+  } catch (error) {
+    return {
+      attemptedAt,
+      competition,
+      errors: [error.message],
+      fixtures: [],
+      notes: [],
+    };
+  }
 }
 
 function normalizeSportDbCompetitionMatch(event = {}) {

@@ -280,19 +280,26 @@ export function MerchandiseFeature() {
               }}
             >
               {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                  onLoad={(event) => {
-                    event.currentTarget.dataset.fit = merchandiseImageFit(
-                      event.currentTarget.naturalWidth,
-                      event.currentTarget.naturalHeight,
-                    );
-                  }}
-                />
+                <>
+                  <img
+                    className={styles.imageBackdrop}
+                    src={product.imageUrl}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                  />
+                  <img
+                    className={styles.productImage}
+                    src={product.imageUrl}
+                    alt=""
+                    data-product-image=""
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                  />
+                </>
               ) : (
                 <span>No image</span>
               )}
@@ -394,9 +401,4 @@ function formatPrice(value: number | null, currency: string | null) {
   } catch {
     return `${currency} ${(value / 100).toFixed(2)}`;
   }
-}
-
-export function merchandiseImageFit(width: number, height: number) {
-  if (!width || !height) return "contain";
-  return width / height >= 1.65 ? "cover" : "contain";
 }

@@ -4,7 +4,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
-import { MerchandiseFeature, merchandiseImageFit } from "./MerchandiseFeature";
+import { MerchandiseFeature } from "./MerchandiseFeature";
 
 const feed = {
   items: [
@@ -15,7 +15,7 @@ const feed = {
       currency: "USD",
       firstObservedAt: "2026-09-26T00:00:00Z",
       id: "barcelona:2",
-      imageUrl: null,
+      imageUrl: "https://cdn.example/item.jpg",
       inScope: true,
       newSince: "2026-09-26T00:00:00Z",
       priceMinor: 9999,
@@ -50,12 +50,6 @@ afterEach(() => {
 });
 
 describe("MerchandiseFeature", () => {
-  it("contains normal product images and crops only wide source canvases", () => {
-    expect(merchandiseImageFit(900, 900)).toBe("contain");
-    expect(merchandiseImageFit(700, 1000)).toBe("contain");
-    expect(merchandiseImageFit(1800, 900)).toBe("cover");
-  });
-
   it("confirms and submits Seen through here with the active filters", async () => {
     const requests = [] as Array<{ url: string; options?: RequestInit }>;
     vi.stubGlobal(
@@ -77,6 +71,7 @@ describe("MerchandiseFeature", () => {
     expect(
       await screen.findByRole("heading", { name: "Home shirt" }),
     ).not.toBeNull();
+    expect(document.querySelectorAll("[data-product-image]")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Seen" })).toBeNull();
     await user.selectOptions(screen.getByLabelText("Category"), "kits");
     const first = await screen.findByRole("button", {

@@ -71,6 +71,7 @@ describe("MerchandiseFeature", () => {
     expect(
       await screen.findByRole("heading", { name: "Home shirt" }),
     ).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Seen" })).toBeNull();
     await user.selectOptions(screen.getByLabelText("Category"), "kits");
     const first = await screen.findByRole("button", {
       name: "Seen through here",

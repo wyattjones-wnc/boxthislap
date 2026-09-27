@@ -335,15 +335,6 @@ export function MerchandiseFeature() {
                 >
                   {product.wishlisted ? "Remove wishlist" : "Wishlist"}
                 </button>
-                <button
-                  className="action-button"
-                  type="button"
-                  onClick={() =>
-                    void updateState(product, { seen: !product.seen })
-                  }
-                >
-                  {product.seen ? "Mark unseen" : "Seen"}
-                </button>
                 {view === "unseen" ? (
                   <button
                     className={`action-button ${styles.seenThrough}`}

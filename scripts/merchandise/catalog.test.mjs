@@ -18,12 +18,18 @@ test("normalizes Barcelona parent products and ignores size variants for identit
     image: { src: "//cdn.example/shirt.jpg" },
     variants: [
       { id: 1, price: "124.99", available: false },
-      { id: 2, price: "124.99", available: true },
+      {
+        id: 2,
+        price: "99.99",
+        compare_at_price: "124.99",
+        available: true,
+      },
     ],
   });
   assert.equal(product.id, "barcelona:42");
   assert.equal(product.category, "kits");
-  assert.equal(product.priceMinor, 12499);
+  assert.equal(product.priceMinor, 9999);
+  assert.equal(product.regularPriceMinor, 12499);
   assert.equal(product.availability, "in_stock");
   assert.equal(product.imageUrl, "https://cdn.example/shirt.jpg");
 });
@@ -92,6 +98,19 @@ test("Arsenal scanner follows the bounded paginated product grid", async () => {
   assert.equal(scan.products[0].currency, "GBP");
   assert.equal(scan.pageCount, 2);
   assert.equal(requested.filter((url) => url.includes("/search?")).length, 2);
+});
+
+test("Arsenal listing preserves current and struck-through sale prices", async () => {
+  const grid = `<div data-plp-pagination='{"numberOfPages":"1"}'><a href="/Clothing/Sale-Shirt/p/A123" title="Arsenal Sale Shirt"><img src="https://cdn.example/a.jpg"><span class="line-through">$100.00</span><span class="text-red">$75.00</span></a></div>`;
+  const scan = await scanArsenal({
+    fetchImpl: async (url) => ({
+      ok: true,
+      text: async () =>
+        String(url).endsWith("robots.txt") ? "User-agent: *\nAllow: /" : grid,
+    }),
+  });
+  assert.equal(scan.products[0].priceMinor, 7500);
+  assert.equal(scan.products[0].regularPriceMinor, 10000);
 });
 
 test("category normalization covers simple merchandise groups", () => {

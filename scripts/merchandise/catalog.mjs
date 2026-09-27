@@ -79,6 +79,10 @@ export function normalizeBarcelonaProduct(
     id: `barcelona:${sourceProductId}`,
     imageUrl: cleanImage(product.image?.src || product.images?.[0]?.src),
     priceMinor: moneyToMinor(selectedVariant.price),
+    regularPriceMinor: saleRegularPrice(
+      selectedVariant.price,
+      selectedVariant.compare_at_price,
+    ),
     source: "barcelona",
     sourceMetadata: {
       handle,
@@ -149,9 +153,19 @@ export function parseArsenalListing(html, baseUrl) {
     const imageUrl = decodeHtml(
       block.match(/<img\b[^>]*src=["']([^"']+)["']/i)?.[1] || "",
     );
-    const displayedPrice = decodeHtml(
-      block.match(/<span[^>]*>\s*([^<]*[\d.,]+)\s*<\/span>/i)?.[1] || "",
-    );
+    const priceSpans = [
+      ...block.matchAll(/<span\b([^>]*)>\s*([^<]*[\d.,]+)\s*<\/span>/gi),
+    ].map((priceMatch) => ({
+      attributes: priceMatch[1],
+      text: decodeHtml(priceMatch[2]).trim(),
+    }));
+    const regularPrice = priceSpans.find((price) =>
+      /line-through/i.test(price.attributes),
+    )?.text;
+    const displayedPrice =
+      [...priceSpans]
+        .reverse()
+        .find((price) => !/line-through/i.test(price.attributes))?.text || "";
     const currency = displayedPrice.includes("£")
       ? "GBP"
       : displayedPrice.includes("€")
@@ -168,6 +182,7 @@ export function parseArsenalListing(html, baseUrl) {
       id: `arsenal:${sourceProductId}`,
       imageUrl: cleanImage(imageUrl),
       priceMinor: displayedMoneyToMinor(displayedPrice),
+      regularPriceMinor: saleRegularPrice(displayedPrice, regularPrice),
       source: "arsenal",
       sourceMetadata: { productCode: sourceProductId },
       sourceProductId,
@@ -223,12 +238,21 @@ export function normalizeArsenalProduct(url, html) {
     id: `arsenal:${code}`,
     imageUrl: cleanImage(typeof image === "object" ? image.url : image),
     priceMinor: moneyToMinor(offers.price),
+    regularPriceMinor: null,
     source: "arsenal",
     sourceMetadata: { productCode: code },
     sourceProductId: code,
     team: "arsenal",
     title,
   };
+}
+
+function saleRegularPrice(currentPrice, possibleRegularPrice) {
+  const current = displayedMoneyToMinor(String(currentPrice || ""));
+  const regular = displayedMoneyToMinor(String(possibleRegularPrice || ""));
+  return current !== null && regular !== null && regular > current
+    ? regular
+    : null;
 }
 
 export function validateScan(scan) {

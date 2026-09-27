@@ -19,6 +19,7 @@ const feed = {
       inScope: true,
       newSince: "2026-09-26T00:00:00Z",
       priceMinor: 9999,
+      regularPriceMinor: 12999,
       seen: false,
       source: "barcelona",
       team: "barcelona",
@@ -73,6 +74,8 @@ describe("MerchandiseFeature", () => {
     ).not.toBeNull();
     expect(document.querySelectorAll("[data-product-image]")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Seen" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Sale" })).not.toBeNull();
+    expect(screen.getByText("$129.99").tagName).toBe("DEL");
     await user.selectOptions(screen.getByLabelText("Category"), "kits");
     const first = await screen.findByRole("button", {
       name: "Seen through here",

@@ -1,4 +1,4 @@
-const VIEWS = new Set(["unseen", "all", "wishlist"]);
+const VIEWS = new Set(["unseen", "all", "wishlist", "sale"]);
 const TEAMS = new Set(["arsenal", "barcelona"]);
 const CATEGORIES = new Set([
   "kits",
@@ -130,6 +130,10 @@ function feedScope({ category, managerId, team, view }) {
   if (view === "wishlist") where.push("s.wishlisted_at IS NOT NULL");
   else where.push("p.in_scope = 1");
   if (view === "unseen") where.push("s.seen_at IS NULL");
+  if (view === "sale")
+    where.push(
+      "p.regular_price_minor IS NOT NULL AND p.price_minor IS NOT NULL AND p.regular_price_minor > p.price_minor",
+    );
   if (team) {
     where.push("p.team = ?");
     params.push(team);
@@ -310,6 +314,8 @@ function mapProduct(row) {
     inScope: Boolean(row.in_scope),
     newSince: row.new_since,
     priceMinor: row.price_minor === null ? null : Number(row.price_minor),
+    regularPriceMinor:
+      row.regular_price_minor === null ? null : Number(row.regular_price_minor),
     seen: Boolean(row.seen_at),
     source: row.source,
     team: row.team,

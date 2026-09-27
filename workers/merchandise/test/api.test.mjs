@@ -70,6 +70,7 @@ test("product listing reads one bounded page without full-feed counts", async ()
     in_scope: 1,
     new_since: null,
     price_minor: 100,
+    regular_price_minor: null,
     seen_at: null,
     source: "barcelona",
     team: "barcelona",
@@ -103,4 +104,23 @@ test("product listing reads one bounded page without full-feed counts", async ()
   assert.equal(result.items.length, 48);
   assert.equal(result.pagination.hasMore, true);
   assert.ok(bindings[0].includes(49));
+});
+
+test("sale listing is paginated and remains independent of seen state", async () => {
+  let productQuery = "";
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.includes("FROM merch_products")) productQuery = sql;
+        return {
+          bind: () => ({ all: async () => ({ results: [] }) }),
+          all: async () => ({ results: [] }),
+        };
+      },
+    },
+  };
+  await listProducts(env, "6", new URLSearchParams("view=sale&limit=24"));
+  assert.match(productQuery, /regular_price_minor > p\.price_minor/);
+  assert.doesNotMatch(productQuery, /seen_at IS NULL/);
+  assert.match(productQuery, /LIMIT \? OFFSET \?/);
 });

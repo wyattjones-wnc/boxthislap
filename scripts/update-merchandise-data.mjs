@@ -149,7 +149,7 @@ async function importScan(
 ) {
   const observedAt = new Date().toISOString();
   const existingRows = await d1.rows(
-    `SELECT id, title, canonical_url, image_url, category, price_minor, currency,
+    `SELECT id, title, canonical_url, image_url, category, price_minor, regular_price_minor, currency,
       availability, in_scope, source_metadata, first_published_at
      FROM merch_products WHERE source = ?`,
     [source],
@@ -170,12 +170,13 @@ async function importScan(
     changedProducts.map((product) => ({
       sql: `INSERT INTO merch_products (
       id, source, source_product_id, team, title, canonical_url, image_url, category,
-      price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, 0, ?)
+      price_minor, regular_price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, 0, ?)
     ON CONFLICT(id) DO UPDATE SET
       source_product_id = excluded.source_product_id, team = excluded.team, title = excluded.title,
       canonical_url = excluded.canonical_url, image_url = excluded.image_url, category = excluded.category,
-      price_minor = excluded.price_minor, currency = excluded.currency, availability = excluded.availability,
+      price_minor = excluded.price_minor, regular_price_minor = excluded.regular_price_minor,
+      currency = excluded.currency, availability = excluded.availability,
       last_observed_at = excluded.last_observed_at, source_metadata = excluded.source_metadata`,
       params: [
         product.id,
@@ -187,6 +188,7 @@ async function importScan(
         product.imageUrl,
         product.category,
         product.priceMinor,
+        product.regularPriceMinor ?? null,
         product.currency,
         product.availability,
         observedAt,
@@ -280,6 +282,10 @@ export function productChanged(row, product) {
     row.category !== product.category ||
     (row.price_minor === null ? null : Number(row.price_minor)) !==
       product.priceMinor ||
+    (row.regular_price_minor == null
+      ? null
+      : Number(row.regular_price_minor)) !==
+      (product.regularPriceMinor ?? null) ||
     (row.currency || null) !== product.currency ||
     row.availability !== product.availability ||
     String(row.source_metadata || "{}") !==
@@ -298,6 +304,7 @@ export function scanContentHash(products) {
       id: product.id,
       imageUrl: product.imageUrl,
       priceMinor: product.priceMinor,
+      regularPriceMinor: product.regularPriceMinor ?? null,
       sourceMetadata: product.sourceMetadata,
       title: product.title,
     }));
@@ -306,7 +313,7 @@ export function scanContentHash(products) {
 
 export function buildBaselineSql(scan, observedAt = new Date().toISOString()) {
   const statements = [];
-  const columns = `id, source, source_product_id, team, title, canonical_url, image_url, category, price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata`;
+  const columns = `id, source, source_product_id, team, title, canonical_url, image_url, category, price_minor, regular_price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata`;
   for (let offset = 0; offset < scan.products.length; offset += 40) {
     const values = scan.products
       .slice(offset, offset + 40)
@@ -321,6 +328,7 @@ export function buildBaselineSql(scan, observedAt = new Date().toISOString()) {
           product.imageUrl,
           product.category,
           product.priceMinor,
+          product.regularPriceMinor ?? null,
           product.currency,
           product.availability,
           observedAt,

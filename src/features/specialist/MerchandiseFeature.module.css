@@ -170,8 +170,19 @@
   color: var(--accent-dark);
 }
 .price {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
   font-weight: 900;
   margin: 0;
+}
+.price del {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.price span[data-sale="true"] {
+  color: #c72c35;
 }
 .badges {
   display: flex;
@@ -183,6 +194,14 @@
   background: var(--soft-strong);
   border-radius: 999px;
   color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 4px 7px;
+}
+.saleBadge {
+  background: #c72c35;
+  border-radius: 999px;
+  color: #fff;
   font-size: 0.68rem;
   font-weight: 900;
   padding: 4px 7px;

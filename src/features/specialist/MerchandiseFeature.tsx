@@ -3,7 +3,7 @@ import { MERCHANDISE_ENDPOINT } from "../../../modules/siteConfig";
 import { useAppState } from "../../app/providers";
 import styles from "./MerchandiseFeature.module.css";
 
-type View = "unseen" | "all" | "wishlist";
+type View = "unseen" | "all" | "wishlist" | "sale";
 type Product = {
   availability: "in_stock" | "out_of_stock" | "unknown";
   canonicalUrl: string;
@@ -15,6 +15,7 @@ type Product = {
   inScope: boolean;
   newSince: string | null;
   priceMinor: number | null;
+  regularPriceMinor: number | null;
   seen: boolean;
   source: string;
   team: string;
@@ -189,7 +190,7 @@ export function MerchandiseFeature() {
           <h1>Merchandise</h1>
         </div>
         <div className={styles.viewTabs} aria-label="Merchandise view">
-          {(["unseen", "all", "wishlist"] as View[]).map((item) => (
+          {(["unseen", "all", "wishlist", "sale"] as View[]).map((item) => (
             <button
               key={item}
               type="button"
@@ -323,11 +324,21 @@ export function MerchandiseFeature() {
                 </a>
               </h2>
               <p className={styles.price}>
-                {formatPrice(product.priceMinor, product.currency)}
+                {product.regularPriceMinor ? (
+                  <del>
+                    {formatPrice(product.regularPriceMinor, product.currency)}
+                  </del>
+                ) : null}
+                <span data-sale={Boolean(product.regularPriceMinor)}>
+                  {formatPrice(product.priceMinor, product.currency)}
+                </span>
               </p>
               <div className={styles.badges}>
                 {product.newSince ? (
                   <span className={styles.badge}>New</span>
+                ) : null}
+                {product.regularPriceMinor ? (
+                  <span className={styles.saleBadge}>Sale</span>
                 ) : null}
                 {product.availability === "out_of_stock" ? (
                   <span className={styles.badge}>Out of stock</span>

@@ -118,14 +118,24 @@
   position: relative;
   width: 100%;
 }
-.image img {
+.imageBackdrop,
+.productImage {
   height: 100%;
-  object-fit: contain;
   object-position: center;
+  position: absolute;
   width: 100%;
 }
-.image img[data-fit="cover"] {
+.imageBackdrop {
+  filter: blur(18px);
+  inset: 0;
+  opacity: 0.18;
   object-fit: cover;
+  transform: scale(1.08);
+}
+.productImage {
+  inset: 0;
+  object-fit: contain;
+  z-index: 1;
 }
 .image span {
   color: var(--muted);

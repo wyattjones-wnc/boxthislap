@@ -73,9 +73,17 @@ describe("MerchandiseFeature", () => {
       await screen.findByRole("heading", { name: "Home shirt" }),
     ).not.toBeNull();
     expect(document.querySelectorAll("[data-product-image]")).toHaveLength(1);
-    expect(screen.queryByRole("button", { name: "Seen" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Seen" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Sale" })).not.toBeNull();
     expect(screen.getByText("$129.99").tagName).toBe("DEL");
+    await user.click(screen.getByRole("link", { name: "Home shirt" }));
+    expect(
+      requests.some(
+        (request) =>
+          request.options?.method === "PATCH" &&
+          String(request.options.body).includes('"seen"'),
+      ),
+    ).toBe(false);
     await user.selectOptions(screen.getByLabelText("Category"), "kits");
     const first = await screen.findByRole("button", {
       name: "Seen through here",

@@ -1,4 +1,4 @@
-const VIEWS = new Set(["unseen", "all", "wishlist", "sale"]);
+const VIEWS = new Set(["unseen", "all", "seen", "wishlist", "sale"]);
 const TEAMS = new Set(["arsenal", "barcelona"]);
 const CATEGORIES = new Set([
   "kits",
@@ -128,6 +128,7 @@ function feedScope({ category, managerId, team, view }) {
   const where = [];
   const params = [];
   if (view === "wishlist") where.push("s.wishlisted_at IS NOT NULL");
+  else if (view === "seen") where.push("s.seen_at IS NOT NULL");
   else where.push("p.in_scope = 1");
   if (view === "unseen") where.push("s.seen_at IS NULL");
   if (view === "sale")
@@ -187,14 +188,13 @@ async function sourceHealth(env) {
 }
 
 export async function saveState(env, managerId, productId, body) {
-  if (!("seen" in body) && !("wishlisted" in body))
-    throw httpError(400, "Seen or wishlist state is required.");
-  if (
-    ("seen" in body && typeof body.seen !== "boolean") ||
-    ("wishlisted" in body && typeof body.wishlisted !== "boolean")
-  ) {
-    throw httpError(400, "State values must be boolean.");
-  }
+  if ("seen" in body)
+    throw httpError(
+      400,
+      "Seen state can only be changed with Seen through here.",
+    );
+  if (typeof body.wishlisted !== "boolean")
+    throw httpError(400, "Wishlist state must be boolean.");
   const product = await env.DB.prepare(
     "SELECT id FROM merch_products WHERE id = ?",
   )
@@ -209,14 +209,8 @@ export async function saveState(env, managerId, productId, body) {
     .bind(managerId, productId)
     .first();
   const now = new Date().toISOString();
-  const seenAt =
-    "seen" in body ? (body.seen ? now : null) : current?.seen_at || null;
-  const wishlistedAt =
-    "wishlisted" in body
-      ? body.wishlisted
-        ? now
-        : null
-      : current?.wishlisted_at || null;
+  const seenAt = current?.seen_at || null;
+  const wishlistedAt = body.wishlisted ? now : null;
   await env.DB.prepare(
     `
     INSERT INTO merch_manager_state (manager_id, product_id, seen_at, wishlisted_at, updated_at)

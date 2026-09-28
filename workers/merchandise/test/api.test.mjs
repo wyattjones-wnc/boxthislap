@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import worker, { listProducts, markSeenThrough } from "../src/index.js";
+import worker, {
+  listProducts,
+  markSeenThrough,
+  saveState,
+} from "../src/index.js";
 
 test("all merchandise endpoints require admin authentication", async () => {
   const response = await worker.fetch(
@@ -123,4 +127,30 @@ test("sale listing is paginated and remains independent of seen state", async ()
   assert.match(productQuery, /regular_price_minor > p\.price_minor/);
   assert.doesNotMatch(productQuery, /seen_at IS NULL/);
   assert.match(productQuery, /LIMIT \? OFFSET \?/);
+});
+
+test("seen listing is paginated and includes explicitly seen products", async () => {
+  let productQuery = "";
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.includes("FROM merch_products")) productQuery = sql;
+        return {
+          bind: () => ({ all: async () => ({ results: [] }) }),
+          all: async () => ({ results: [] }),
+        };
+      },
+    },
+  };
+  await listProducts(env, "6", new URLSearchParams("view=seen&limit=24"));
+  assert.match(productQuery, /s\.seen_at IS NOT NULL/);
+  assert.doesNotMatch(productQuery, /p\.in_scope = 1/);
+  assert.match(productQuery, /LIMIT \? OFFSET \?/);
+});
+
+test("individual state updates cannot mark products seen", async () => {
+  await assert.rejects(
+    saveState({}, "6", "barcelona:1", { seen: true }),
+    (error) => error.status === 400 && /Seen through here/.test(error.message),
+  );
 });

@@ -3,7 +3,7 @@ import { MERCHANDISE_ENDPOINT } from "../../../modules/siteConfig";
 import { useAppState } from "../../app/providers";
 import styles from "./MerchandiseFeature.module.css";
 
-type View = "unseen" | "all" | "wishlist" | "sale";
+type View = "unseen" | "all" | "seen" | "wishlist" | "sale";
 type Product = {
   availability: "in_stock" | "out_of_stock" | "unknown";
   canonicalUrl: string;
@@ -117,7 +117,7 @@ export function MerchandiseFeature() {
 
   const updateState = async (
     product: Product,
-    state: { seen?: boolean; wishlisted?: boolean },
+    state: { wishlisted: boolean },
   ) => {
     setError("");
     try {
@@ -190,16 +190,18 @@ export function MerchandiseFeature() {
           <h1>Merchandise</h1>
         </div>
         <div className={styles.viewTabs} aria-label="Merchandise view">
-          {(["unseen", "all", "wishlist", "sale"] as View[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={view === item}
-              onClick={() => setView(item)}
-            >
-              {item[0].toUpperCase() + item.slice(1)}
-            </button>
-          ))}
+          {(["unseen", "all", "seen", "wishlist", "sale"] as View[]).map(
+            (item) => (
+              <button
+                key={item}
+                type="button"
+                aria-pressed={view === item}
+                onClick={() => setView(item)}
+              >
+                {item[0].toUpperCase() + item.slice(1)}
+              </button>
+            ),
+          )}
         </div>
       </div>
       {feed?.sources?.length ? (
@@ -276,9 +278,6 @@ export function MerchandiseFeature() {
               href={product.canonicalUrl}
               target="_blank"
               rel="noopener"
-              onClick={() => {
-                if (!product.seen) void updateState(product, { seen: true });
-              }}
             >
               {product.imageUrl ? (
                 <>
@@ -311,15 +310,7 @@ export function MerchandiseFeature() {
                 {CATEGORY_LABELS[product.category] || "Other"}
               </p>
               <h2>
-                <a
-                  href={product.canonicalUrl}
-                  target="_blank"
-                  rel="noopener"
-                  onClick={() => {
-                    if (!product.seen)
-                      void updateState(product, { seen: true });
-                  }}
-                >
+                <a href={product.canonicalUrl} target="_blank" rel="noopener">
                   {product.title}
                 </a>
               </h2>

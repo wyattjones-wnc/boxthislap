@@ -286,7 +286,7 @@ async function updateWantItem(env, id, body, managerId) {
   )
     .bind(...wantItemValues(item), managerId, id, expectedRevision)
     .run();
-  if (!result.success || Number(result.meta?.changes || 0) !== 1) {
+  if (!result.success || Number(result.meta?.changes || 0) < 1) {
     throw httpError(
       409,
       "This Want item changed while it was being saved. Reopen it and apply the edit again.",
@@ -417,7 +417,7 @@ async function updateTodoItem(env, id, body, managerId) {
   )
     .bind(...todoItemValues(item), managerId, id, expectedRevision)
     .run();
-  if (!result.success || Number(result.meta?.changes || 0) !== 1) {
+  if (!result.success || Number(result.meta?.changes || 0) < 1) {
     throw httpError(
       409,
       "This To Do item changed while it was being saved. Reopen it and apply the edit again.",
@@ -543,8 +543,8 @@ async function moveWantToTodo(env, wantId, body, managerId) {
   ]);
   if (
     results.some((result) => !result.success) ||
-    Number(results[0]?.meta?.changes || 0) !== 1 ||
-    Number(results[1]?.meta?.changes || 0) !== 1
+    Number(results[0]?.meta?.changes || 0) < 1 ||
+    Number(results[1]?.meta?.changes || 0) < 1
   ) {
     throw httpError(
       409,

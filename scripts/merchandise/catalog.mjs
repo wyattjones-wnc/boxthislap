@@ -139,12 +139,15 @@ export function parseArsenalListing(html, baseUrl) {
     throw new Error("Arsenal catalog returned invalid pagination metadata.");
   }
   const products = [];
+  let productCardCount = 0;
   const anchors = html.matchAll(
     /<a\b[^>]*href=["']([^"']*\/p\/[^"']+)["'][^>]*title=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
   );
   for (const match of anchors) {
+    productCardCount += 1;
     const canonicalUrl = new URL(decodeHtml(match[1]), baseUrl);
     canonicalUrl.search = "";
+    if (canonicalUrl.pathname.toLowerCase().includes("/tour/")) continue;
     const sourceProductId = decodeURIComponent(
       canonicalUrl.pathname.match(/\/p\/([^/]+)/i)?.[1] || "",
     ).trim();
@@ -190,7 +193,7 @@ export function parseArsenalListing(html, baseUrl) {
       title,
     });
   }
-  if (!products.length)
+  if (!productCardCount)
     throw new Error("Arsenal catalog page did not expose product cards.");
   return { numberOfPages, products };
 }

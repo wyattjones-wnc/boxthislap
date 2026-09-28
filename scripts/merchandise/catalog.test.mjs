@@ -113,6 +113,38 @@ test("Arsenal listing preserves current and struck-through sale prices", async (
   assert.equal(scan.products[0].regularPriceMinor, 10000);
 });
 
+test("Arsenal scanner excludes ticketed tours without excluding merchandise named Tour", async () => {
+  const grid = `<div data-plp-pagination='{"numberOfPages":"1"}'>
+    <a href="/Tours-Matchday-category/Match-Day/tour/p/MATCHDAY-1" title="Match Day Tour"><span>$50.00</span></a>
+    <a href="/Clothing/Arsenal-Golf-Tour-Polo/p/POLO-1" title="Arsenal Golf Tour Polo"><span>$75.00</span></a>
+  </div>`;
+  const scan = await scanArsenal({
+    fetchImpl: async (url) => ({
+      ok: true,
+      text: async () =>
+        String(url).endsWith("robots.txt") ? "User-agent: *\nAllow: /" : grid,
+    }),
+  });
+  assert.deepEqual(
+    scan.products.map((product) => product.id),
+    ["arsenal:POLO-1"],
+  );
+});
+
+test("Arsenal scanner accepts a catalog page containing only excluded tours", async () => {
+  const grid = `<div data-plp-pagination='{"numberOfPages":"1"}'><a href="/Tours-Audio/Audio-Tour/tour/p/STADIUM" title="Audio Tour"><span>$30.00</span></a></div>`;
+  await assert.rejects(
+    scanArsenal({
+      fetchImpl: async (url) => ({
+        ok: true,
+        text: async () =>
+          String(url).endsWith("robots.txt") ? "User-agent: *\nAllow: /" : grid,
+      }),
+    }),
+    /returned no products/,
+  );
+});
+
 test("category normalization covers simple merchandise groups", () => {
   assert.equal(normalizeCategory("Nike Shoes"), "footwear");
   assert.equal(normalizeCategory("Signed memorabilia"), "gifts-collectibles");

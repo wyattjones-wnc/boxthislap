@@ -460,6 +460,9 @@ let activeFootyCompetitionKey = "";
 let shouldSuppressNextFootyDropdownClick = false;
 let activeFootyTeamViewMode = "schedule";
 const footyTeamFixtureLimits = new Map();
+let activeFootyTeamScheduleMode = "overview";
+let activeFootyTeamScheduleSlug = "";
+const footyTeamPastFilters = { competition: "", kit: "", result: "" };
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
 let activeNextItemId = "";
@@ -1690,6 +1693,15 @@ function renderFootyTeamPage(pageName = activePageName) {
   const pastFixtures = fixtures.filter((fixture) => isFootyFixturePast(fixture)).sort(compareVisibleFootyFixtures).reverse();
   const competitivePastFixtureCount = pastFixtures.filter((fixture) => !isFootyFriendlyFixture(fixture)).length;
   const teamSlug = getFootyTeamSlug(team.name);
+
+  if (activeFootyTeamScheduleSlug !== teamSlug) {
+    activeFootyTeamScheduleSlug = teamSlug;
+    activeFootyTeamScheduleMode = "overview";
+    footyTeamPastFilters.competition = "";
+    footyTeamPastFilters.kit = "";
+    footyTeamPastFilters.result = "";
+  }
+
   const nextFixtureLimit = footyTeamFixtureLimits.get(teamSlug) || 5;
   const nextFixtures = upcomingFixtures.slice(0, nextFixtureLimit);
   const recentFixtures = pastFixtures.slice(0, 3);
@@ -1713,6 +1725,11 @@ function renderFootyTeamPage(pageName = activePageName) {
 
   if (activeFootyTeamViewMode === "team") {
     renderFootyTeamPlayers(team);
+    return;
+  }
+
+  if (activeFootyTeamScheduleMode === "past") {
+    footyTeamContent.innerHTML = renderFootyTeamPastSchedule(team, pastFixtures);
     return;
   }
 
@@ -1741,8 +1758,88 @@ function renderFootyTeamPage(pageName = activePageName) {
       hiddenCount: Math.max(0, upcomingFixtures.length - nextFixtures.length),
       teamSlug,
     })}
-    ${renderFootyTeamFixtureSection("Recent Matches", recentFixtures)}
+    ${renderFootyTeamFixtureSection("Recent Matches", recentFixtures, {
+      pastMatchCount: pastFixtures.length,
+    })}
   `;
+}
+
+function renderFootyTeamPastSchedule(team, fixtures = []) {
+  const competitions = [...new Set(fixtures.map(getFootyTeamFixtureCompetition).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second));
+  const visibleFixtures = fixtures.filter((fixture) => {
+    if (footyTeamPastFilters.competition && getFootyTeamFixtureCompetition(fixture) !== footyTeamPastFilters.competition) {
+      return false;
+    }
+    if (footyTeamPastFilters.kit && String(fixture.matchNote?.kit || "") !== footyTeamPastFilters.kit) {
+      return false;
+    }
+    if (footyTeamPastFilters.result && getFootyFixtureResultClass(fixture) !== `footy-fixture-card--${footyTeamPastFilters.result}`) {
+      return false;
+    }
+    return true;
+  });
+  const hasFilters = Object.values(footyTeamPastFilters).some(Boolean);
+
+  return `
+    <section class="footy-team-past-schedule" aria-labelledby="footy-team-past-title">
+      <div class="footy-team-past-heading">
+        <div>
+          <p>${escapeHtml(team.name)}</p>
+          <h2 id="footy-team-past-title">Past Matches</h2>
+        </div>
+        <button class="action-button" type="button" data-footy-team-past-back>Back to schedule</button>
+      </div>
+      <div class="footy-team-past-filters" aria-label="Past match filters">
+        <label>
+          <span>Competition</span>
+          <select data-footy-team-past-filter="competition">
+            <option value="">All competitions</option>
+            ${competitions.map((competition) => `<option value="${escapeHtml(competition)}"${footyTeamPastFilters.competition === competition ? " selected" : ""}>${escapeHtml(competition)}</option>`).join("")}
+          </select>
+        </label>
+        <label>
+          <span>Result</span>
+          <select data-footy-team-past-filter="result">
+            <option value="">All results</option>
+            <option value="win"${footyTeamPastFilters.result === "win" ? " selected" : ""}>Wins</option>
+            <option value="draw"${footyTeamPastFilters.result === "draw" ? " selected" : ""}>Draws</option>
+            <option value="loss"${footyTeamPastFilters.result === "loss" ? " selected" : ""}>Losses</option>
+          </select>
+        </label>
+        <label>
+          <span>Kit</span>
+          <select data-footy-team-past-filter="kit">
+            <option value="">All kits</option>
+            <option value="home"${footyTeamPastFilters.kit === "home" ? " selected" : ""}>Home</option>
+            <option value="away"${footyTeamPastFilters.kit === "away" ? " selected" : ""}>Away</option>
+            <option value="third"${footyTeamPastFilters.kit === "third" ? " selected" : ""}>Third</option>
+          </select>
+        </label>
+      </div>
+      <p class="footy-team-past-summary">${escapeHtml(String(visibleFixtures.length))} of ${escapeHtml(String(fixtures.length))} ${fixtures.length === 1 ? "match" : "matches"}</p>
+      ${visibleFixtures.length
+        ? `<div class="footy-list footy-team-fixture-list">${visibleFixtures.map(renderFootyFixture).join("")}</div>`
+        : `<p class="table-message">${hasFilters ? "No past matches match these filters." : "No past matches loaded."}</p>`}
+    </section>
+  `;
+}
+
+function getFootyTeamFixtureCompetition(fixture) {
+  return String(fixture?.league || fixture?.competition || fixture?.teamLeague || "").trim();
+}
+
+function transitionFootyTeamSchedule(mode) {
+  const render = () => {
+    activeFootyTeamScheduleMode = mode;
+    renderFootyTeamPage();
+  };
+
+  if (typeof document.startViewTransition === "function") {
+    document.startViewTransition(render);
+  } else {
+    render();
+  }
 }
 
 function syncFootyTeamViewToggle(isDisabled = false) {
@@ -2529,7 +2626,7 @@ function slugifyFileName(value) {
     .replace(/^-+|-+$/g, "") || "card";
 }
 
-function renderFootyTeamFixtureSection(title, fixtures = [], { hiddenCount = 0, teamSlug = "" } = {}) {
+function renderFootyTeamFixtureSection(title, fixtures = [], { hiddenCount = 0, pastMatchCount = 0, teamSlug = "" } = {}) {
   return `
     <section class="footy-team-fixture-section">
       <h2>${escapeHtml(title)}</h2>
@@ -2540,6 +2637,13 @@ function renderFootyTeamFixtureSection(title, fixtures = [], { hiddenCount = 0, 
         <div class="footy-team-fixture-actions">
           <button class="action-button" type="button" data-footy-team-show-more="${escapeHtml(teamSlug)}">
             Show more (${escapeHtml(String(hiddenCount))} remaining)
+          </button>
+        </div>
+      ` : ""}
+      ${pastMatchCount > 0 ? `
+        <div class="footy-team-fixture-actions">
+          <button class="action-button" type="button" data-footy-team-show-past>
+            Past Matches (${escapeHtml(String(pastMatchCount))})
           </button>
         </div>
       ` : ""}
@@ -13621,6 +13725,16 @@ function handleFootyFixtureListKeydown(event) {
 });
 
 footyTeamContent?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-footy-team-show-past]")) {
+    transitionFootyTeamSchedule("past");
+    return;
+  }
+
+  if (event.target.closest("[data-footy-team-past-back]")) {
+    transitionFootyTeamSchedule("overview");
+    return;
+  }
+
   const showMoreButton = event.target.closest("[data-footy-team-show-more]");
 
   if (showMoreButton) {
@@ -13687,6 +13801,16 @@ footyTeamContent?.addEventListener("click", (event) => {
 });
 
 footyTeamContent?.addEventListener("change", (event) => {
+  const pastFilter = event.target.closest("[data-footy-team-past-filter]");
+  if (pastFilter) {
+    const key = pastFilter.getAttribute("data-footy-team-past-filter");
+    if (["competition", "kit", "result"].includes(key)) {
+      footyTeamPastFilters[key] = pastFilter.value;
+      renderFootyTeamPage();
+    }
+    return;
+  }
+
   const select = event.target.closest("[data-footy-roster-season]");
   if (!select) return;
   const team = getActiveFootyTeam();

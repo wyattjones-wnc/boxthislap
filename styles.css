@@ -6236,6 +6236,98 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   padding-top: 2px;
 }
 
+#footy-team-content {
+  view-transition-name: footy-team-schedule;
+}
+
+.footy-team-past-schedule {
+  display: grid;
+  gap: 16px;
+}
+
+.footy-team-past-heading {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.footy-team-past-heading h2,
+.footy-team-past-heading p,
+.footy-team-past-summary {
+  margin: 0;
+}
+
+.footy-team-past-heading p,
+.footy-team-past-summary {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.footy-team-past-heading p {
+  margin-bottom: 4px;
+}
+
+.footy-team-past-filters {
+  align-items: end;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 12px;
+}
+
+.footy-team-past-filters label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 6px;
+}
+
+.footy-team-past-filters select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 14px center / 7px 7px no-repeat,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) right 9px center / 7px 7px no-repeat,
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  min-height: 42px;
+  padding: 9px 34px 9px 14px;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(footy-team-schedule) {
+    animation: 140ms ease both footy-team-fade-out;
+  }
+
+  ::view-transition-new(footy-team-schedule) {
+    animation: 180ms ease both footy-team-fade-in;
+  }
+}
+
+@keyframes footy-team-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes footy-team-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 .footy-team-player-section {
   display: grid;
   gap: 14px;
@@ -10964,6 +11056,15 @@ html.has-contained-dialog body {
 
   .footy-team-stat-grid {
     grid-column: 1 / -1;
+  }
+
+  .footy-team-past-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .footy-team-past-filters {
+    grid-template-columns: 1fr;
   }
 
   .brand {

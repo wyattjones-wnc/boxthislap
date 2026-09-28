@@ -688,6 +688,7 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
     { id: "1", name: "Parent task", order: 1, revision: 1 },
     { id: "2", name: "Existing task", order: 2, revision: 1 },
   ];
+  let todoPatchRequests = 0;
   page.on("request", (request) => {
     if (/\/todoItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       dialogBundleRequests.push(request.url());
@@ -704,6 +705,20 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
     "https://box-this-lap-next.boxthislap.workers.dev/api/todo-items**",
     async (route) => {
       const request = route.request();
+      if (request.method() === "PATCH") {
+        todoPatchRequests += 1;
+        const id = new URL(request.url()).pathname.split("/").at(-1);
+        const item = todoItems.find((entry) => entry.id === id);
+        if (!item) throw new Error("Mock To Do item was not found.");
+        if (todoPatchRequests === 1) {
+          item.revision += 1;
+          await route.fulfill({ json: { error: "Stale To Do item", ok: false }, status: 409 });
+          return;
+        }
+        Object.assign(item, request.postDataJSON(), { revision: item.revision + 1 });
+        await route.fulfill({ json: { item, ok: true }, status: 200 });
+        return;
+      }
       if (request.method() === "POST") {
         todoItems.push({ ...request.postDataJSON(), id: "3", revision: 1 });
         await route.fulfill({
@@ -785,7 +800,16 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
   await expect(
     editDialog.getByRole("combobox", { name: "Parent" }),
   ).toHaveValue("Parent task");
-  await editDialog.getByRole("button", { name: "Cancel" }).click();
+  await editDialog
+    .getByRole("textbox", { name: "Name" })
+    .fill("Updated To Do check");
+  await editDialog.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => todoPatchRequests).toBe(2);
+  await expect(editDialog).toBeHidden();
+  expect(todoPatchRequests).toBe(2);
+  await expect(
+    page.getByText("Updated To Do check", { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Add To Do item" }).click();
   await expect(dialog).toBeVisible();

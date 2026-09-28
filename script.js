@@ -8400,7 +8400,9 @@ async function openTodoItemDialogForItem(itemId) {
   const normalizedRows = rows.map(normalizeTodoItem).filter(Boolean);
   const defaultOrderRows = getTodoDefaultOrderItems(normalizedRows);
   const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : defaultOrderRows.length + 1;
-  const maxOrder = editingItem ? Math.max(defaultOrderRows.length, 1) : defaultOrderRows.length + 1;
+  const maxOrder = editingItem
+    ? Math.max(defaultOrderRows.length, Number(editingItem.order) || 1, 1)
+    : defaultOrderRows.length + 1;
   setTodoItemStatus("");
   isTodoItemDialogOpen = true;
   try {
@@ -8506,10 +8508,23 @@ async function saveTodoItemFromForm(values = {}) {
 
   setTodoItemStatus("Saving...");
   try {
-    await nextItemsApiRequest(itemId ? `/api/todo-items/${encodeURIComponent(itemId)}` : "/api/todo-items", {
+    const path = itemId ? `/api/todo-items/${encodeURIComponent(itemId)}` : "/api/todo-items";
+    const options = {
       body: JSON.stringify(item),
       method: itemId ? "PATCH" : "POST",
-    });
+    };
+    try {
+      await nextItemsApiRequest(path, options);
+    } catch (error) {
+      if (error.status !== 409 || !normalizedExisting) throw error;
+      await reloadTodoItemsFromApi();
+      const latest = getTodoItems().map(normalizeTodoItem).find((row) => row?.id === itemId);
+      if (!latest) throw error;
+      item.order = latest.order;
+      item.revision = latest.raw?.revision;
+      options.body = JSON.stringify(item);
+      await nextItemsApiRequest(path, options);
+    }
     await reloadTodoItemsFromApi();
     closeTodoItemDialog();
   } catch (error) {

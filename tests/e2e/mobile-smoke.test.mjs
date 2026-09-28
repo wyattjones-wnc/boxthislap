@@ -818,6 +818,7 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     },
   ];
   let wantPatchRequests = 0;
+  let wantMoveConflictTriggered = false;
   page.on("request", (request) => {
     if (/\/wantItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       dialogBundleRequests.push(request.url());
@@ -865,6 +866,15 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
         if (!item) throw new Error("Mock Want item was not created.");
         if (wantPatchRequests === 1) {
           item.revision = 2;
+          await route.fulfill({
+            json: { error: "Stale Want item", ok: false },
+            status: 409,
+          });
+          return;
+        }
+        if (body.completed && !wantMoveConflictTriggered) {
+          wantMoveConflictTriggered = true;
+          item.revision += 1;
           await route.fulfill({
             json: { error: "Stale Want item", ok: false },
             status: 409,
@@ -946,7 +956,7 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     button.click();
   });
   await expect(moveDialog).toBeHidden();
-  expect(wantPatchRequests).toBe(3);
+  expect(wantPatchRequests).toBe(4);
   await expect(updatedWantCard).toBeHidden();
 
   await page.getByRole("button", { name: "Add Want item" }).click();

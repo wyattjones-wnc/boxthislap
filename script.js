@@ -7899,10 +7899,7 @@ async function confirmWantMove() {
   if (wantMoveStatus) wantMoveStatus.textContent = "Moving...";
   try {
     await submitNextItemPayloadAndWait({ action: "moveWantToTodo", itemId: item.id });
-    await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(item.id)}`, {
-      body: JSON.stringify(wantItemApiPayload(item, { completed: true })),
-      method: "PATCH",
-    });
+    await completeWantItemAfterMove(item);
     await reloadWantItemsFromApi();
     delete siteData.todoItems;
     sharedDataPromises.delete("todo");
@@ -7917,6 +7914,25 @@ async function confirmWantMove() {
   } finally {
     wantMoveInFlight = false;
     if (wantMoveConfirm) wantMoveConfirm.disabled = false;
+  }
+}
+
+async function completeWantItemAfterMove(item) {
+  let currentItem = item;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(currentItem.id)}`, {
+        body: JSON.stringify(wantItemApiPayload(currentItem, { completed: true })),
+        method: "PATCH",
+      });
+      return;
+    } catch (error) {
+      if (error?.status !== 409 || attempt > 0) throw error;
+      const rows = await reloadWantItemsFromApi();
+      currentItem = rows.map(normalizeWantItem).filter(Boolean).find((row) => row.id === item.id);
+      if (!currentItem || currentItem.completed) return;
+    }
   }
 }
 

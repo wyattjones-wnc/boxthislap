@@ -293,6 +293,12 @@ async function main() {
   });
   const loadedCompetitionSchedules = [
     ...applySportDbCompetitionFallbacks(footballDataCompetitionSchedules, sportDbCompetitionFallbackSchedules),
+    buildInternationalFriendlyCompetitionSchedule({
+      currentFixtures: enrichedFixtures,
+      previousCompetitionSchedules: previousPayload?.competitionSchedules,
+      previousTeamSchedules: previousPayload?.teamSchedules,
+      teams,
+    }),
     await loadUefaNationsLeagueCompetitionSchedule({ teams }),
     ...await loadMlsCompetitionSchedules({
       dateFrom,
@@ -935,6 +941,54 @@ async function loadUefaNationsLeagueCompetitionSchedule({ teams = [] } = {}) {
       notes: [],
     };
   }
+}
+
+function buildInternationalFriendlyCompetitionSchedule({
+  currentFixtures = [],
+  previousCompetitionSchedules = [],
+  previousTeamSchedules = [],
+  teams = [],
+} = {}) {
+  const nationalTeamIds = new Set(Object.keys(US_SOCCER_TEAM_SLUGS));
+  const isTrackedInternationalFriendly = (fixture) => (
+    nationalTeamIds.has(String(fixture?.teamId || "")) &&
+    isFriendlyCompetition(fixture?.leagueId, fixture?.league)
+  );
+  const previousArchive = (Array.isArray(previousCompetitionSchedules) ? previousCompetitionSchedules : [])
+    .find((schedule) => getCompetitionScheduleKey(schedule?.competition?.name) === "international friendlies");
+  const previousTeamFixtures = (Array.isArray(previousTeamSchedules) ? previousTeamSchedules : [])
+    .flatMap((schedule) => Array.isArray(schedule?.fixtures) ? schedule.fixtures : [])
+    .filter(isTrackedInternationalFriendly);
+  const fixtures = mergeFixtures([
+    ...(Array.isArray(previousArchive?.fixtures) ? previousArchive.fixtures : []),
+    ...previousTeamFixtures,
+    ...currentFixtures.filter(isTrackedInternationalFriendly),
+  ]).sort(compareFixtures);
+  const priority = Math.min(...teams
+    .filter((team) => nationalTeamIds.has(String(team?.id || "")))
+    .map((team) => Number.parseInt(String(team?.priority || "").trim(), 10))
+    .filter(Number.isFinite));
+
+  return {
+    attemptedAt: new Date().toISOString(),
+    competition: {
+      category: "international",
+      code: "INT-FRIENDLY",
+      followedTeamNames: teams
+        .filter((team) => nationalTeamIds.has(String(team?.id || "")))
+        .map((team) => team.name),
+      id: "international-friendlies",
+      key: "international friendlies",
+      name: "International Friendlies",
+      priority: Number.isFinite(priority) ? priority : null,
+      season: "",
+      source: US_SOCCER_PROVIDER_NAME,
+      type: "INTERNATIONAL_FRIENDLY",
+    },
+    errors: [],
+    fixtures,
+    notes: [`Preserved ${fixtures.length} USMNT and USWNT international friendlies.`],
+  };
 }
 
 function normalizeSportDbCompetitionMatch(event = {}) {
@@ -2656,6 +2710,10 @@ function getCompetitionScheduleKey(name) {
     return "supercopa de espana";
   }
 
+  if (/^international friendl(?:y|ies)/.test(normalizedName)) {
+    return "international friendlies";
+  }
+
   return normalizedName;
 }
 
@@ -2669,6 +2727,7 @@ function getCompetitionScheduleDisplayName(name) {
     mls: "MLS",
     "premier league": "Premier League",
     "supercopa de espana": "Supercopa de España",
+    "international friendlies": "International Friendlies",
     "uefa nations league": "UEFA Nations League",
   };
 

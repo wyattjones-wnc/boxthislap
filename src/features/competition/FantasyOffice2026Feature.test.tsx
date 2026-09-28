@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
 import { FantasyOffice2026Page } from "./FantasyOffice2026Feature";
@@ -20,7 +27,34 @@ describe("FantasyOffice2026Page", () => {
           draft: [],
           generatedAt: "2026-09-25T12:00:00Z",
           latestVerification: "2026-09-25T12:00:00Z",
-          movies: [],
+          movies: [
+            {
+              active: true,
+              awardPoints: 0,
+              domesticGross: 10,
+              draftNumber: "D1",
+              id: "alpha",
+              letterboxdRating: 3,
+              manager: "Jonathan",
+              movie: "Alpha",
+              numberOneWeekends: 0,
+              score: { points: 10, provisional: false },
+              tomatometer: 60,
+            },
+            {
+              active: true,
+              awardPoints: 0,
+              domesticGross: 20,
+              draftNumber: "D2",
+              id: "zulu",
+              letterboxdRating: 4,
+              manager: "Wyatt",
+              movie: "Zulu",
+              numberOneWeekends: 1,
+              score: { points: 20, provisional: false },
+              tomatometer: 80,
+            },
+          ],
           ok: true,
           provisional: true,
           standings: [
@@ -126,5 +160,67 @@ describe("FantasyOffice2026Page", () => {
       screen.getByText(/rotating collector has not attempted this movie yet/i),
     ).toBeTruthy();
     delete window.boxThisLapGetManagerAccessToken;
+  });
+
+  it("sorts the Movies table from every column header", async () => {
+    const user = userEvent.setup();
+    window.location.hash = "#fantasy-office-2026-movies";
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          draft: [],
+          generatedAt: "2026-09-27T12:00:00Z",
+          latestVerification: "2026-09-27T12:00:00Z",
+          movies: [
+            {
+              active: true,
+              awardPoints: 0,
+              domesticGross: 10,
+              draftNumber: "D1",
+              id: "alpha",
+              letterboxdRating: 3,
+              manager: "Jonathan",
+              movie: "Alpha",
+              numberOneWeekends: 0,
+              score: { points: 10, provisional: false },
+              tomatometer: 60,
+            },
+            {
+              active: true,
+              awardPoints: 0,
+              domesticGross: 20,
+              draftNumber: "D2",
+              id: "zulu",
+              letterboxdRating: 4,
+              manager: "Wyatt",
+              movie: "Zulu",
+              numberOneWeekends: 1,
+              score: { points: 20, provisional: false },
+              tomatometer: 80,
+            },
+          ],
+          ok: true,
+          provisional: false,
+          standings: [],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 },
+      ),
+    );
+    render(
+      <AppProviders>
+        <FantasyOffice2026Page mode="movies" />
+      </AppProviders>,
+    );
+
+    const table = await screen.findByRole("table");
+    await user.click(screen.getByRole("button", { name: "Sort by Total" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Sort by Total, currently ascending",
+      }),
+    );
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(within(rows[0]).getByText("Zulu")).toBeTruthy();
+    expect(screen.getAllByRole("columnheader")).toHaveLength(8);
   });
 });

@@ -482,6 +482,7 @@ let todoItemDialogControllerPromise = null;
 let todoItemDialogMessage = "";
 let todoItemDialogMessageIsError = false;
 let didMoveTodoPointer = false;
+let wantMoveInFlight = false;
 let activeTradingCardExportUrls = [];
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
@@ -2894,6 +2895,10 @@ function getFootyCanonicalCompetition(name) {
 
   if (["nations league", "uefa nations league"].includes(normalizedName)) {
     return { key: "uefa nations league", name: "UEFA Nations League" };
+  }
+
+  if (/^international friendl(?:y|ies)/.test(normalizedName)) {
+    return { key: "international friendlies", name: "International Friendlies" };
   }
 
   return { key: normalizedName, name: rawName };
@@ -7867,15 +7872,14 @@ function closeWantMoveDialog() {
 }
 
 async function confirmWantMove() {
+  if (wantMoveInFlight) return;
   const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === pendingWantMoveItemId);
   if (!item) return closeWantMoveDialog();
+  wantMoveInFlight = true;
+  if (wantMoveConfirm) wantMoveConfirm.disabled = true;
   if (wantMoveStatus) wantMoveStatus.textContent = "Moving...";
   try {
-    await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(item.id)}`, {
-      body: JSON.stringify(wantItemApiPayload(item, { completed: true })),
-      method: "PATCH",
-    });
-    submitNextItemPayload({ action: "moveWantToTodo", itemId: item.id });
+    await moveWantToTodoInApi(item);
     await reloadWantItemsFromApi();
     delete siteData.todoItems;
     sharedDataPromises.delete("todo");
@@ -7883,7 +7887,32 @@ async function confirmWantMove() {
     closeWantMoveDialog();
   } catch (error) {
     recordDiagnostic("Want item move failed", error, { id: item.id });
+    if (error?.status === 409) {
+      await reloadWantItemsFromApi().catch(() => {});
+    }
     if (wantMoveStatus) wantMoveStatus.textContent = error.message || "The item could not be moved.";
+  } finally {
+    wantMoveInFlight = false;
+    if (wantMoveConfirm) wantMoveConfirm.disabled = false;
+  }
+}
+
+async function moveWantToTodoInApi(item) {
+  let currentItem = item;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(currentItem.id)}/move-to-todo`, {
+        body: JSON.stringify({ revision: currentItem.raw?.revision }),
+        method: "POST",
+      });
+    } catch (error) {
+      if (error?.status !== 409 || attempt > 0) throw error;
+      const rows = await reloadWantItemsFromApi();
+      currentItem = rows.map(normalizeWantItem).filter(Boolean).find((row) => row.id === item.id);
+      if (!currentItem) throw error;
+      if (currentItem.completed) return;
+    }
   }
 }
 
@@ -8171,7 +8200,7 @@ function normalizeTodoItem(row) {
     imageUrl: String(row?.["Image URL"] || row?.imageUrl || "").trim(),
     lowHour: normalizeTodoHour(row["Low Hour"] ?? row.lowHour),
     name,
-    order: normalizeTodoOrder(row.Order),
+    order: normalizeTodoOrder(row.Order ?? row.order),
     parentId: String(row["Parent ID"] || row.parentId || "").trim(),
     platinumCleanup: isTrueValue(row["Platinum Cleanup"] || row.platinumCleanup),
     raw: row,
@@ -8371,7 +8400,9 @@ async function openTodoItemDialogForItem(itemId) {
   const normalizedRows = rows.map(normalizeTodoItem).filter(Boolean);
   const defaultOrderRows = getTodoDefaultOrderItems(normalizedRows);
   const nextOrder = editingItem?.order && editingItem.order !== Number.MAX_SAFE_INTEGER ? editingItem.order : defaultOrderRows.length + 1;
-  const maxOrder = editingItem ? Math.max(defaultOrderRows.length, 1) : defaultOrderRows.length + 1;
+  const maxOrder = editingItem
+    ? Math.max(defaultOrderRows.length, Number(editingItem.order) || 1, 1)
+    : defaultOrderRows.length + 1;
   setTodoItemStatus("");
   isTodoItemDialogOpen = true;
   try {
@@ -8381,10 +8412,10 @@ async function openTodoItemDialogForItem(itemId) {
       initialValues: {
         archived: Boolean(editingItem?.archived),
         completed: Boolean(editingItem?.completed),
-        highHour: editingItem?.raw["High Hour"] || "",
+        highHour: editingItem?.highHour ?? "",
         id: editingItem?.id || "",
         imageUrl: editingItem?.imageUrl || "",
-        lowHour: editingItem?.raw["Low Hour"] || "",
+        lowHour: editingItem?.lowHour ?? "",
         maxOrder,
         name: editingItem?.name || "",
         order: nextOrder,
@@ -8432,7 +8463,7 @@ async function ensureTodoItemDialogController() {
   return todoItemDialogControllerPromise;
 }
 
-function saveTodoItemFromForm(values = {}) {
+async function saveTodoItemFromForm(values = {}) {
   const name = String(values.name || "").trim();
 
   if (!name) {
@@ -8454,35 +8485,52 @@ function saveTodoItemFromForm(values = {}) {
     ? rows.find((row) => String(row.ID || row.Id || row.id || "").trim() === itemId)
     : null;
   const requestedOrder = clampTodoOrder(values.order, getTodoDefaultOrderItems(rows.map(normalizeTodoItem).filter(Boolean)).length + 1);
+  const normalizedExisting = normalizeTodoItem(existingItem);
   const item = {
-    ID: itemId || createTodoItemId(),
-    Order: String(requestedOrder),
-    Name: name,
-    "Low Hour": String(values.lowHour ?? "").trim(),
-    "High Hour": String(values.highHour ?? "").trim(),
-    "Parent ID": parentId,
-    Started: values.started ? "TRUE" : "FALSE",
-    Archived: values.archived ? "TRUE" : "FALSE",
-    "Platinum Cleanup": values.platinumCleanup ? "TRUE" : "FALSE",
-    Completed: values.completed ? "TRUE" : "FALSE",
-    IsDeleted: existingItem?.IsDeleted || existingItem?.isDeleted || "FALSE",
-    Unpurchased: values.unpurchased ? "TRUE" : "FALSE",
-    "Image URL": String(values.imageUrl || "").trim(),
+    archived: Boolean(values.archived),
+    completed: Boolean(values.completed),
+    deleted: Boolean(normalizedExisting?.deleted),
+    highHour: String(values.highHour ?? "").trim(),
+    imageUrl: String(values.imageUrl || "").trim(),
+    lowHour: String(values.lowHour ?? "").trim(),
+    name,
+    order: requestedOrder,
+    parentId,
+    platinumCleanup: Boolean(values.platinumCleanup),
+    revision: normalizedExisting?.raw?.revision,
+    started: Boolean(values.started),
+    unpurchased: Boolean(values.unpurchased),
   };
 
-  if (item["Parent ID"] === item.ID) {
-    item["Parent ID"] = "";
+  if (item.parentId === itemId) {
+    item.parentId = "";
   }
 
-  upsertTodoItemLocally(item);
-  normalizeTodoOrdersLocally({ movedItemId: item.ID, requestedOrder });
-  renderTodoList();
-  submitNextItemPayload({
-    action: "saveTodoItem",
-    item,
-    sheetName: "To Do",
-  });
-  closeTodoItemDialog();
+  setTodoItemStatus("Saving...");
+  try {
+    const path = itemId ? `/api/todo-items/${encodeURIComponent(itemId)}` : "/api/todo-items";
+    const options = {
+      body: JSON.stringify(item),
+      method: itemId ? "PATCH" : "POST",
+    };
+    try {
+      await nextItemsApiRequest(path, options);
+    } catch (error) {
+      if (error.status !== 409 || !normalizedExisting) throw error;
+      await reloadTodoItemsFromApi();
+      const latest = getTodoItems().map(normalizeTodoItem).find((row) => row?.id === itemId);
+      if (!latest) throw error;
+      item.order = latest.order;
+      item.revision = latest.raw?.revision;
+      options.body = JSON.stringify(item);
+      await nextItemsApiRequest(path, options);
+    }
+    await reloadTodoItemsFromApi();
+    closeTodoItemDialog();
+  } catch (error) {
+    recordDiagnostic("To Do item save failed", error, { id: itemId });
+    setTodoItemStatus(error.message || "The To Do item was not saved.", true);
+  }
 }
 
 function getTodoItems() {
@@ -8540,8 +8588,8 @@ function normalizeTodoOrdersLocally(options = {}) {
       ID: item.id,
       Order: orderById.get(item.id) || String(item.order === Number.MAX_SAFE_INTEGER ? "" : item.order),
       Name: item.name,
-      "Low Hour": item.raw["Low Hour"] ?? "",
-      "High Hour": item.raw["High Hour"] ?? "",
+      "Low Hour": item.lowHour ?? "",
+      "High Hour": item.highHour ?? "",
       "Parent ID": item.parentId || "",
       Started: item.started ? "TRUE" : "FALSE",
       Archived: item.archived ? "TRUE" : "FALSE",
@@ -8550,6 +8598,7 @@ function normalizeTodoOrdersLocally(options = {}) {
       IsDeleted: item.deleted ? "TRUE" : "FALSE",
       Unpurchased: item.unpurchased ? "TRUE" : "FALSE",
       "Image URL": item.imageUrl || "",
+      revision: item.raw?.revision,
     }))
     .sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
 }
@@ -8575,8 +8624,8 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     ID: row.id,
     Order: orderById.get(row.id) || String(row.order === Number.MAX_SAFE_INTEGER ? "" : row.order),
     Name: row.name,
-    "Low Hour": row.raw["Low Hour"] ?? "",
-    "High Hour": row.raw["High Hour"] ?? "",
+    "Low Hour": row.lowHour ?? "",
+    "High Hour": row.highHour ?? "",
     "Parent ID": row.parentId || "",
     Started: row.started ? "TRUE" : "FALSE",
     Archived: row.archived ? "TRUE" : "FALSE",
@@ -8585,6 +8634,7 @@ function moveTodoItem(draggedId, targetId, options = {}) {
     IsDeleted: row.deleted ? "TRUE" : "FALSE",
     Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
     "Image URL": row.imageUrl || "",
+    revision: row.raw?.revision,
   })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
   renderTodoList();
 
@@ -8605,8 +8655,8 @@ function applyTodoOrder(itemIds) {
     ID: row.id,
     Order: orderById.get(row.id) || String(row.order === Number.MAX_SAFE_INTEGER ? "" : row.order),
     Name: row.name,
-    "Low Hour": row.raw["Low Hour"] ?? "",
-    "High Hour": row.raw["High Hour"] ?? "",
+    "Low Hour": row.lowHour ?? "",
+    "High Hour": row.highHour ?? "",
     "Parent ID": row.parentId || "",
     Started: row.started ? "TRUE" : "FALSE",
     Archived: row.archived ? "TRUE" : "FALSE",
@@ -8615,54 +8665,70 @@ function applyTodoOrder(itemIds) {
     IsDeleted: row.deleted ? "TRUE" : "FALSE",
     Unpurchased: row.unpurchased ? "TRUE" : "FALSE",
     "Image URL": row.imageUrl || "",
+    revision: row.raw?.revision,
   })).sort((first, second) => compareTodoItems(normalizeTodoItem(first), normalizeTodoItem(second)));
   renderTodoList();
   submitTodoOrder();
 }
 
-function submitTodoOrder() {
-  submitNextItemPayload({
-    action: "saveTodoOrder",
-    items: getTodoItems().map((item) => ({
-      ID: item.ID,
-      Order: item.Order,
-      Name: item.Name,
-      "Low Hour": item["Low Hour"] ?? "",
-      "High Hour": item["High Hour"] ?? "",
-      "Parent ID": item["Parent ID"] || "",
-      Started: item.Started || "FALSE",
-      Archived: item.Archived || "FALSE",
-      "Platinum Cleanup": item["Platinum Cleanup"] || "FALSE",
-      Completed: item.Completed || "FALSE",
-      IsDeleted: item.IsDeleted || "FALSE",
-      Unpurchased: item.Unpurchased || "FALSE",
-      "Image URL": item["Image URL"] || item.imageUrl || "",
-    })),
-    sheetName: "To Do",
-  });
+async function submitTodoOrder() {
+  try {
+    const itemIds = getTodoDefaultOrderItems(getTodoItems().map(normalizeTodoItem).filter(Boolean)).map((item) => item.id);
+    const response = await nextItemsApiRequest("/api/todo-items/order", {
+      body: JSON.stringify({ itemIds }),
+      method: "PUT",
+    });
+    siteData.todoItems = response.items || [];
+    renderTodoList();
+  } catch (error) {
+    recordDiagnostic("To Do order save failed", error);
+    await reloadTodoItemsFromApi().catch(() => {});
+  }
 }
 
-function deleteTodoItem(itemId) {
+async function deleteTodoItem(itemId) {
   const item = getTodoItems().map(normalizeTodoItem).filter(Boolean).find((row) => row.id === String(itemId));
 
   if (!item) {
     return;
   }
 
-  const nextItem = {
-    ...item.raw,
-    ID: item.id,
-    IsDeleted: "TRUE",
-  };
+  try {
+    await nextItemsApiRequest(`/api/todo-items/${encodeURIComponent(item.id)}`, {
+      body: JSON.stringify(todoItemApiPayload(item, { deleted: true })),
+      method: "PATCH",
+    });
+    await reloadTodoItemsFromApi();
+  } catch (error) {
+    recordDiagnostic("To Do item delete failed", error, { id: item.id });
+    await reloadTodoItemsFromApi().catch(() => {});
+  }
+}
 
-  upsertTodoItemLocally(nextItem);
-  normalizeTodoOrdersLocally({ movedItemId: item.id, requestedOrder: item.order });
+function todoItemApiPayload(item, overrides = {}) {
+  return {
+    archived: item.archived,
+    completed: item.completed,
+    deleted: item.deleted,
+    highHour: item.highHour ?? "",
+    imageUrl: item.imageUrl,
+    lowHour: item.lowHour ?? "",
+    name: item.name,
+    order: item.order,
+    parentId: item.parentId,
+    platinumCleanup: item.platinumCleanup,
+    revision: item.raw?.revision,
+    started: item.started,
+    unpurchased: item.unpurchased,
+    ...overrides,
+  };
+}
+
+async function reloadTodoItemsFromApi() {
+  const response = await nextItemsApiRequest("/api/todo-items", { auth: false });
+  siteData.todoItems = response.items || [];
   renderTodoList();
-  submitNextItemPayload({
-    action: "saveTodoItem",
-    item: nextItem,
-    sheetName: "To Do",
-  });
+  return siteData.todoItems;
 }
 
 function syncTodoControls() {
@@ -18360,8 +18426,8 @@ function ensureNextData() {
 
 function ensureTodoData() {
   return ensureSharedData("todo", async () => {
-    const response = await loadNextDataEndpoint("listTodoItems");
-    const items = response.items || response.todoItems || [];
+    const response = await nextItemsApiRequest("/api/todo-items", { auth: false });
+    const items = response.items || [];
 
     siteData.todoItems = items;
     renderTodoList(items);

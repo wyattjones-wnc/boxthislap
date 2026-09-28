@@ -29,6 +29,10 @@ export default {
         return json({ ok: true, items: await listWantItems(env) }, 200, cors);
       }
 
+      if (request.method === "GET" && url.pathname === "/api/todo-items") {
+        return json({ ok: true, items: await listTodoItems(env) }, 200, cors);
+      }
+
       if (request.method === "POST" && url.pathname === "/api/items") {
         const managerId = await requireAdmin(request, env);
         return json(
@@ -53,6 +57,18 @@ export default {
         );
       }
 
+      if (request.method === "POST" && url.pathname === "/api/todo-items") {
+        const managerId = await requireAdmin(request, env);
+        return json(
+          {
+            ok: true,
+            item: await addTodoItem(env, await readBody(request), managerId),
+          },
+          201,
+          cors,
+        );
+      }
+
       if (
         request.method === "PUT" &&
         url.pathname === "/api/want-items/order"
@@ -62,6 +78,25 @@ export default {
           {
             ok: true,
             items: await reorderWantItems(
+              env,
+              await readBody(request),
+              managerId,
+            ),
+          },
+          200,
+          cors,
+        );
+      }
+
+      if (
+        request.method === "PUT" &&
+        url.pathname === "/api/todo-items/order"
+      ) {
+        const managerId = await requireAdmin(request, env);
+        return json(
+          {
+            ok: true,
+            items: await reorderTodoItems(
               env,
               await readBody(request),
               managerId,
@@ -93,6 +128,27 @@ export default {
 
       const wantItemMatch = url.pathname.match(/^\/api\/want-items\/(\d+)$/);
 
+      const wantMoveMatch = url.pathname.match(
+        /^\/api\/want-items\/(\d+)\/move-to-todo$/,
+      );
+
+      if (request.method === "POST" && wantMoveMatch) {
+        const managerId = await requireAdmin(request, env);
+        return json(
+          {
+            ok: true,
+            ...(await moveWantToTodo(
+              env,
+              parseItemId(wantMoveMatch[1]),
+              await readBody(request),
+              managerId,
+            )),
+          },
+          200,
+          cors,
+        );
+      }
+
       if (request.method === "PATCH" && wantItemMatch) {
         const managerId = await requireAdmin(request, env);
         return json(
@@ -101,6 +157,25 @@ export default {
             item: await updateWantItem(
               env,
               parseItemId(wantItemMatch[1]),
+              await readBody(request),
+              managerId,
+            ),
+          },
+          200,
+          cors,
+        );
+      }
+
+      const todoItemMatch = url.pathname.match(/^\/api\/todo-items\/(\d+)$/);
+
+      if (request.method === "PATCH" && todoItemMatch) {
+        const managerId = await requireAdmin(request, env);
+        return json(
+          {
+            ok: true,
+            item: await updateTodoItem(
+              env,
+              parseItemId(todoItemMatch[1]),
               await readBody(request),
               managerId,
             ),
@@ -211,7 +286,7 @@ async function updateWantItem(env, id, body, managerId) {
   )
     .bind(...wantItemValues(item), managerId, id, expectedRevision)
     .run();
-  if (!result.success || Number(result.meta?.changes || 0) !== 1) {
+  if (!result.success || Number(result.meta?.changes || 0) < 1) {
     throw httpError(
       409,
       "This Want item changed while it was being saved. Reopen it and apply the edit again.",
@@ -274,6 +349,217 @@ async function normalizeWantOrder(env, managerId, movedId, requestedOrder) {
       ).bind(index + 1, managerId, Number(item.id)),
     );
   if (statements.length) await env.DB.batch(statements);
+}
+
+async function listTodoItems(env) {
+  const result = await env.DB.prepare(
+    `SELECT id, sort_order, name, low_hour, high_hour, parent_id, started,
+      archived, platinum_cleanup, completed, deleted, unpurchased, image_url,
+      source_want_id, revision, created_at, updated_at
+    FROM todo_items
+    ORDER BY sort_order, id`,
+  ).all();
+  return (result.results || []).map(mapTodoItem);
+}
+
+async function getTodoItem(env, id) {
+  const row = await env.DB.prepare(
+    `SELECT id, sort_order, name, low_hour, high_hour, parent_id, started,
+      archived, platinum_cleanup, completed, deleted, unpurchased, image_url,
+      source_want_id, revision, created_at, updated_at
+    FROM todo_items WHERE id = ?`,
+  )
+    .bind(id)
+    .first();
+  return row ? mapTodoItem(row) : null;
+}
+
+async function addTodoItem(env, body, managerId) {
+  const item = normalizeTodoItem(body);
+  const result = await env.DB.prepare(
+    `INSERT INTO todo_items (
+      sort_order, name, low_hour, high_hour, parent_id, started, archived,
+      platinum_cleanup, completed, deleted, unpurchased, image_url,
+      source_want_id, revision, updated_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, ?)`,
+  )
+    .bind(...todoItemValues(item), managerId)
+    .run();
+  const id = Number(result.meta?.last_row_id);
+  if (!result.success || !Number.isSafeInteger(id) || id < 1) {
+    throw new Error("D1 did not return the new To Do item ID.");
+  }
+  await normalizeTodoOrder(env, managerId, id, item.order);
+  return getTodoItem(env, id);
+}
+
+async function updateTodoItem(env, id, body, managerId) {
+  const existing = await getTodoItem(env, id);
+  if (!existing) throw httpError(404, "To Do item was not found.");
+  const expectedRevision = Number(body.revision || 0);
+  if (
+    !Number.isInteger(expectedRevision) ||
+    expectedRevision !== existing.revision
+  ) {
+    throw httpError(
+      409,
+      "This To Do item changed after it was opened. Reopen it and apply the edit again.",
+    );
+  }
+  const item = normalizeTodoItem(body);
+  if (item.parentId === id) item.parentId = null;
+  const result = await env.DB.prepare(
+    `UPDATE todo_items SET sort_order = ?, name = ?, low_hour = ?, high_hour = ?,
+      parent_id = ?, started = ?, archived = ?, platinum_cleanup = ?, completed = ?,
+      deleted = ?, unpurchased = ?, image_url = ?, revision = revision + 1,
+      updated_at = CURRENT_TIMESTAMP, updated_by = ?
+    WHERE id = ? AND revision = ?`,
+  )
+    .bind(...todoItemValues(item), managerId, id, expectedRevision)
+    .run();
+  if (!result.success || Number(result.meta?.changes || 0) < 1) {
+    throw httpError(
+      409,
+      "This To Do item changed while it was being saved. Reopen it and apply the edit again.",
+    );
+  }
+  await normalizeTodoOrder(env, managerId, id, item.order);
+  return getTodoItem(env, id);
+}
+
+async function reorderTodoItems(env, body, managerId) {
+  const ids = Array.isArray(body?.itemIds) ? body.itemIds.map(parseItemId) : [];
+  const items = await listTodoItems(env);
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const activeIds = items
+    .filter((item) => isTodoOrderable(item, byId))
+    .map((item) => Number(item.id));
+  if (
+    ids.length !== activeIds.length ||
+    new Set(ids).size !== ids.length ||
+    ids.some((id) => !activeIds.includes(id))
+  ) {
+    throw httpError(
+      409,
+      "The To Do list changed before its order could be saved. Reload it and try again.",
+    );
+  }
+  await env.DB.batch(
+    ids.map((id, index) =>
+      env.DB.prepare(
+        `UPDATE todo_items SET sort_order = ?, revision = revision + 1,
+          updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?`,
+      ).bind(index + 1, managerId, id),
+    ),
+  );
+  return listTodoItems(env);
+}
+
+async function normalizeTodoOrder(env, managerId, movedId, requestedOrder) {
+  const items = await listTodoItems(env);
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const active = items.filter((item) => isTodoOrderable(item, byId));
+  const movedIndex = active.findIndex((item) => item.id === String(movedId));
+  if (movedIndex >= 0) {
+    const [moved] = active.splice(movedIndex, 1);
+    active.splice(
+      Math.min(Math.max(Number(requestedOrder) - 1, 0), active.length),
+      0,
+      moved,
+    );
+  }
+  const statements = active
+    .filter((item, index) => item.order !== index + 1)
+    .map((item, index) =>
+      env.DB.prepare(
+        `UPDATE todo_items SET sort_order = ?, revision = revision + 1,
+          updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?`,
+      ).bind(index + 1, managerId, Number(item.id)),
+    );
+  if (statements.length) await env.DB.batch(statements);
+}
+
+function isTodoOrderable(item, byId) {
+  if (
+    item.archived ||
+    item.deleted ||
+    item.unpurchased ||
+    (item.completed && !item.platinumCleanup)
+  )
+    return false;
+  const parent = item.parentId ? byId.get(item.parentId) : null;
+  return (
+    !parent ||
+    parent.completed ||
+    parent.archived ||
+    parent.deleted ||
+    parent.unpurchased
+  );
+}
+
+async function moveWantToTodo(env, wantId, body, managerId) {
+  const want = await getWantItem(env, wantId);
+  if (!want) throw httpError(404, "Want item was not found.");
+  const existing = await env.DB.prepare(
+    "SELECT id FROM todo_items WHERE source_want_id = ?",
+  )
+    .bind(wantId)
+    .first();
+  if (existing) {
+    return {
+      todoItem: await getTodoItem(env, Number(existing.id)),
+      wantItem: want,
+    };
+  }
+  const expectedRevision = Number(body.revision || 0);
+  if (
+    !Number.isInteger(expectedRevision) ||
+    expectedRevision !== want.revision
+  ) {
+    throw httpError(
+      409,
+      "This Want item changed before it could be moved. Reload it and try again.",
+    );
+  }
+  const orderRow = await env.DB.prepare(
+    `SELECT COUNT(*) AS count FROM todo_items
+    WHERE archived = 0 AND deleted = 0 AND unpurchased = 0
+      AND (completed = 0 OR platinum_cleanup = 1) AND parent_id IS NULL`,
+  ).first();
+  const todoOrder = Number(orderRow?.count || 0) + 1;
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO todo_items (
+        sort_order, name, image_url, source_want_id, revision, updated_by
+      )
+      SELECT ?, name, image_url, id, 1, ? FROM want_items
+      WHERE id = ? AND revision = ? AND completed = 0`,
+    ).bind(todoOrder, managerId, wantId, expectedRevision),
+    env.DB.prepare(
+      `UPDATE want_items SET completed = 1, revision = revision + 1,
+        updated_at = CURRENT_TIMESTAMP, updated_by = ?
+      WHERE id = ? AND revision = ?`,
+    ).bind(managerId, wantId, expectedRevision),
+  ]);
+  if (
+    results.some((result) => !result.success) ||
+    Number(results[0]?.meta?.changes || 0) < 1 ||
+    Number(results[1]?.meta?.changes || 0) < 1
+  ) {
+    throw httpError(
+      409,
+      "The Want item changed while it was being moved. Reload it and try again.",
+    );
+  }
+  const movedTodo = await env.DB.prepare(
+    "SELECT id FROM todo_items WHERE source_want_id = ?",
+  )
+    .bind(wantId)
+    .first();
+  return {
+    todoItem: await getTodoItem(env, Number(movedTodo.id)),
+    wantItem: await getWantItem(env, wantId),
+  };
 }
 
 async function getItem(env, id) {
@@ -452,6 +738,62 @@ function wantItemValues(item) {
   ];
 }
 
+function normalizeTodoItem(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw httpError(400, "A To Do item is required.");
+  }
+  const order = Number(body.order);
+  if (!Number.isInteger(order) || order < 1) {
+    throw httpError(400, "Order must be a positive whole number.");
+  }
+  const lowHour = cleanOptionalNumber(body.lowHour, "Low hour");
+  const highHour = cleanOptionalNumber(body.highHour, "High hour");
+  if (lowHour !== null && highHour !== null && highHour < lowHour) {
+    throw httpError(400, "High hour cannot be less than low hour.");
+  }
+  const parentId = body.parentId ? parseItemId(body.parentId) : null;
+  return {
+    archived: Boolean(body.archived),
+    completed: Boolean(body.completed),
+    deleted: Boolean(body.deleted),
+    highHour,
+    imageUrl: cleanOptionalUrl(body.imageUrl),
+    lowHour,
+    name: cleanText(body.name, 300, "Name", true),
+    order,
+    parentId,
+    platinumCleanup: Boolean(body.platinumCleanup),
+    started: Boolean(body.started),
+    unpurchased: Boolean(body.unpurchased),
+  };
+}
+
+function todoItemValues(item) {
+  return [
+    item.order,
+    item.name,
+    item.lowHour,
+    item.highHour,
+    item.parentId,
+    Number(item.started),
+    Number(item.archived),
+    Number(item.platinumCleanup),
+    Number(item.completed),
+    Number(item.deleted),
+    Number(item.unpurchased),
+    item.imageUrl,
+  ];
+}
+
+function cleanOptionalNumber(value, label) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0 || number > 1000000) {
+    throw httpError(400, `${label} must be a positive number.`);
+  }
+  return number;
+}
+
 async function requireAdmin(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   if (!authorization.startsWith("Bearer "))
@@ -560,6 +902,28 @@ function mapWantItem(row) {
         ? null
         : Number(row.price_cents) / 100,
     revision: Number(row.revision || 0),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+function mapTodoItem(row) {
+  return {
+    archived: Boolean(row.archived),
+    completed: Boolean(row.completed),
+    createdAt: String(row.created_at || ""),
+    deleted: Boolean(row.deleted),
+    highHour: row.high_hour === null ? null : Number(row.high_hour),
+    id: String(row.id),
+    imageUrl: String(row.image_url || ""),
+    lowHour: row.low_hour === null ? null : Number(row.low_hour),
+    name: String(row.name || ""),
+    order: Number(row.sort_order),
+    parentId: row.parent_id === null ? "" : String(row.parent_id),
+    platinumCleanup: Boolean(row.platinum_cleanup),
+    revision: Number(row.revision || 0),
+    sourceWantId: row.source_want_id === null ? "" : String(row.source_want_id),
+    started: Boolean(row.started),
+    unpurchased: Boolean(row.unpurchased),
     updatedAt: String(row.updated_at || ""),
   };
 }

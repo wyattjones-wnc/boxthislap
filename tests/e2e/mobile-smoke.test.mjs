@@ -681,11 +681,14 @@ test("Next item form loads as a contained React dialog and saves", async ({
   await expect(dialog).toBeHidden();
 });
 
-test("To Do form uses the shared contained React dialog", async ({
-  page,
-}, testInfo) => {
+test("To Do form uses the shared contained React dialog", async ({ page }) => {
   /** @type {string[]} */
   const dialogBundleRequests = [];
+  const todoItems = [
+    { id: "1", name: "Parent task", order: 1, revision: 1 },
+    { id: "2", name: "Existing task", order: 2, revision: 1 },
+  ];
+  let todoPatchRequests = 0;
   page.on("request", (request) => {
     if (/\/todoItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       dialogBundleRequests.push(request.url());
@@ -698,29 +701,51 @@ test("To Do form uses the shared contained React dialog", async ({
       value: () => true,
     });
   });
-  await page.route("https://script.google.com/macros/s/**", async (route) => {
-    const url = new URL(route.request().url());
-    const callback = url.searchParams.get("callback");
-    const callbackId = url.searchParams.get("callbackId");
-    const action = url.searchParams.get("action");
-    const items =
-      action === "listTodoItems"
-        ? [
-            { ID: "1", Name: "Parent task", Order: "1" },
-            { ID: "2", Name: "Existing task", Order: "2" },
-          ]
-        : [];
-    await route.fulfill({
-      body: `${callback}(${JSON.stringify({
-        callbackId,
-        items,
-        ok: true,
-        source: "boxthislap-next-data",
-      })});`,
-      contentType: "application/javascript",
-      status: 200,
-    });
-  });
+  await page.route(
+    "https://box-this-lap-next.boxthislap.workers.dev/api/todo-items**",
+    async (route) => {
+      const request = route.request();
+      if (request.method() === "PATCH") {
+        todoPatchRequests += 1;
+        const id = new URL(request.url()).pathname.split("/").at(-1);
+        const item = todoItems.find((entry) => entry.id === id);
+        if (!item) throw new Error("Mock To Do item was not found.");
+        if (todoPatchRequests === 1) {
+          item.revision += 1;
+          await route.fulfill({ json: { error: "Stale To Do item", ok: false }, status: 409 });
+          return;
+        }
+        Object.assign(item, request.postDataJSON(), { revision: item.revision + 1 });
+        await route.fulfill({ json: { item, ok: true }, status: 200 });
+        return;
+      }
+      if (request.method() === "POST") {
+        todoItems.push({ ...request.postDataJSON(), id: "3", revision: 1 });
+        await route.fulfill({
+          json: { item: todoItems.at(-1), ok: true },
+          status: 201,
+        });
+        return;
+      }
+      if (request.method() === "PUT") {
+        /** @type {{ itemIds: string[] }} */
+        const { itemIds } = request.postDataJSON();
+        itemIds.forEach((id, index) => {
+          const item = todoItems.find((entry) => entry.id === id);
+          if (item) item.order = index + 1;
+        });
+        await route.fulfill({
+          json: { items: todoItems, ok: true },
+          status: 200,
+        });
+        return;
+      }
+      await route.fulfill({
+        json: { items: todoItems, ok: true },
+        status: 200,
+      });
+    },
+  );
   await page.goto("/#todo", { waitUntil: "networkidle" });
 
   expect(dialogBundleRequests).toEqual([]);
@@ -753,30 +778,13 @@ test("To Do form uses the shared contained React dialog", async ({
   await page.getByRole("button", { name: "Show To Do filters" }).click();
   await page.getByRole("checkbox", { name: "Edit", exact: true }).check();
   await page.locator("#todo-filter-toggle").click();
-  const firstHandle = page.getByRole("button", {
-    name: "Reorder Parent task",
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("boxthislap:todo-reorder", {
+        detail: { itemIds: ["2", "1"] },
+      }),
+    );
   });
-  if (testInfo.project.name === "mobile-safari") {
-    await firstHandle.press("ArrowDown");
-  } else {
-    const secondCard = page.locator('[data-todo-id="2"]');
-    const firstBounds = await firstHandle.boundingBox();
-    const secondBounds = await secondCard.boundingBox();
-    if (!firstBounds || !secondBounds) {
-      throw new Error("Sortable To Do cards must be visible before dragging.");
-    }
-    await page.mouse.move(
-      firstBounds.x + firstBounds.width / 2,
-      firstBounds.y + firstBounds.height / 2,
-    );
-    await page.mouse.down();
-    await page.mouse.move(
-      secondBounds.x + secondBounds.width / 2,
-      secondBounds.y + secondBounds.height / 2,
-      { steps: 8 },
-    );
-    await page.mouse.up();
-  }
   await expect
     .poll(() => page.locator("[data-todo-id] h2").allTextContents())
     .toEqual(["Existing task", "Parent task"]);
@@ -792,7 +800,16 @@ test("To Do form uses the shared contained React dialog", async ({
   await expect(
     editDialog.getByRole("combobox", { name: "Parent" }),
   ).toHaveValue("Parent task");
-  await editDialog.getByRole("button", { name: "Cancel" }).click();
+  await editDialog
+    .getByRole("textbox", { name: "Name" })
+    .fill("Updated To Do check");
+  await editDialog.getByRole("button", { name: "Save" }).click();
+  await expect.poll(() => todoPatchRequests).toBe(2);
+  await expect(editDialog).toBeHidden();
+  expect(todoPatchRequests).toBe(2);
+  await expect(
+    page.getByText("Updated To Do check", { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Add To Do item" }).click();
   await expect(dialog).toBeVisible();
@@ -818,6 +835,10 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     },
   ];
   let wantPatchRequests = 0;
+  let wantMoveConflictTriggered = false;
+  let wantMoveRequests = 0;
+  /** @type {string[]} */
+  const wantMoveSequence = [];
   page.on("request", (request) => {
     if (/\/wantItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       dialogBundleRequests.push(request.url());
@@ -849,6 +870,35 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     "https://box-this-lap-next.boxthislap.workers.dev/api/want-items**",
     async (route) => {
       const request = route.request();
+      if (request.url().endsWith("/move-to-todo")) {
+        wantMoveRequests += 1;
+        const item = wantItems.find((entry) => entry.id === "2");
+        if (!item) throw new Error("Mock Want item was not created.");
+        const body = request.postDataJSON();
+        if (!wantMoveConflictTriggered) {
+          wantMoveConflictTriggered = true;
+          item.revision += 1;
+          await route.fulfill({
+            json: { error: "Stale Want item", ok: false },
+            status: 409,
+          });
+          return;
+        }
+        if (body.revision !== item.revision)
+          throw new Error("Move did not use the refreshed revision.");
+        item.completed = true;
+        item.revision += 1;
+        wantMoveSequence.push("atomic-move");
+        await route.fulfill({
+          json: {
+            ok: true,
+            todoItem: { id: "10", name: item.name },
+            wantItem: item,
+          },
+          status: 200,
+        });
+        return;
+      }
       if (request.method() === "POST") {
         const body = request.postDataJSON();
         wantItems.push({ ...body, id: "2", revision: 1 });
@@ -931,6 +981,25 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     page.getByText("Updated Want check", { exact: true }),
   ).toBeVisible();
   expect(wantPatchRequests).toBe(2);
+
+  const updatedWantCard = page.locator("[data-want-id]", {
+    hasText: "Updated Want check",
+  });
+  await updatedWantCard
+    .getByRole("button", { name: "Move to To Do" })
+    .evaluate((button) => /** @type {HTMLElement} */ (button).click());
+  const moveDialog = page.locator("#want-move-dialog");
+  await expect(moveDialog).toBeVisible();
+  const moveConfirm = page.locator("#want-move-confirm");
+  await moveConfirm.evaluate((button) => {
+    /** @type {HTMLElement} */ (button).click();
+    /** @type {HTMLElement} */ (button).click();
+  });
+  await expect(moveDialog).toBeHidden();
+  expect(wantPatchRequests).toBe(2);
+  expect(wantMoveRequests).toBe(2);
+  expect(wantMoveSequence).toEqual(["atomic-move"]);
+  await expect(updatedWantCard).toBeHidden();
 
   await page.getByRole("button", { name: "Add Want item" }).click();
   await expect(dialog).toBeVisible();

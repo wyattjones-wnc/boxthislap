@@ -486,7 +486,7 @@ function FootyNoteDialog() {
               autoComplete="off"
             />
           </label>
-          <label id="footy-note-kit-field">
+          <label className="footy-note-kit-field" id="footy-note-kit-field">
             <span>Followed Team Kit</span>
             <select id="footy-note-kit">
               <option value="">Not set</option>

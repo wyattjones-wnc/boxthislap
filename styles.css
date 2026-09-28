@@ -5356,6 +5356,35 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   grid-column: 1 / -1;
 }
 
+.footy-note-kit-field {
+  justify-self: start;
+}
+
+.footy-note-kit-field select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 14px center / 7px 7px no-repeat,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) right 9px center / 7px 7px no-repeat,
+    var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  min-height: 42px;
+  min-width: 132px;
+  padding: 9px 34px 9px 14px;
+  width: auto;
+}
+
+.footy-note-kit-field select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-shadow);
+  outline: none;
+}
+
 .footy-match-kit span {
   color: var(--muted);
   font-size: 0.78rem;

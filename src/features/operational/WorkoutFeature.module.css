@@ -60,7 +60,9 @@
 }
 .managerSelect select,
 .form input,
-.moreControls input {
+.moreControls input,
+.cardioEntryForm input,
+.cardioEntryForm select {
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-control);
@@ -137,6 +139,127 @@
 .done {
   background: var(--accent-surface);
   color: var(--accent-strong);
+}
+.typeChooser {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+.typeChooser > button {
+  align-items: center;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto 1fr auto;
+  min-height: 96px;
+  padding: 1rem;
+  text-align: left;
+}
+.typeChooser > button:hover,
+.typeChooser > button:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--focus-ring);
+}
+.typeChooser > button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.typeChooser > button > svg:first-child {
+  color: var(--accent-strong);
+  height: 2rem;
+  width: 2rem;
+}
+.typeChooser > button span {
+  display: grid;
+  gap: 0.2rem;
+}
+.typeChooser > button strong {
+  font-size: 1.1rem;
+}
+.typeChooser > button small {
+  color: var(--text-muted);
+}
+.cardioWorkout {
+  display: grid;
+  gap: 0.75rem;
+}
+.mileageTotal {
+  align-items: baseline;
+  background: linear-gradient(
+    135deg,
+    var(--surface-panel),
+    var(--surface-raised)
+  );
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+}
+.mileageTotal span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.mileageTotal strong {
+  font-size: 2rem;
+  line-height: 1;
+  margin-left: auto;
+}
+.mileageTotal small {
+  color: var(--text-muted);
+  font-weight: 750;
+}
+.cardioEntryForm {
+  align-items: end;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr 1fr auto;
+}
+.cardioEntryForm label {
+  display: grid;
+  gap: 0.25rem;
+}
+.cardioEntryForm label > span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.cardioEntryForm .action-button {
+  min-height: 44px;
+}
+.cardioEntryForm .action-button svg {
+  height: 1rem;
+  vertical-align: middle;
+  width: 1rem;
+}
+.cardioEntries {
+  display: grid;
+  gap: 0.4rem;
+}
+.cardioEntries > div {
+  align-items: center;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  display: flex;
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+}
+.cardioEntries > div > span {
+  align-items: baseline;
+  display: flex;
+  gap: 0.6rem;
+}
+.cardioEntries small {
+  color: var(--text-muted);
 }
 .workout {
   display: grid;
@@ -506,6 +629,12 @@
   }
   .calendarGrid {
     gap: 0.2rem;
+  }
+  .typeChooser {
+    grid-template-columns: 1fr;
+  }
+  .typeChooser > button {
+    min-height: 82px;
   }
   .day {
     border-radius: 0.5rem;

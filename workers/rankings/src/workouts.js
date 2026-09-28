@@ -65,6 +65,52 @@ export async function handleWorkoutRequest({
     return { workouts: await readWorkoutHistory(env, manager.sub) };
   }
 
+  const cardioReadMatch = url.pathname.match(
+    /^\/api\/me\/workouts\/(\d{4}-\d{2}-\d{2})\/cardio$/,
+  );
+  if (cardioReadMatch && request.method === "GET") {
+    const manager = await requireManager(request, env);
+    return {
+      cardio: await readCardioWorkout(
+        env,
+        manager.sub,
+        parseWorkoutDate(cardioReadMatch[1]),
+      ),
+    };
+  }
+
+  const cardioOperationMatch = url.pathname.match(
+    /^\/api\/me\/workouts\/(\d{4}-\d{2}-\d{2})\/cardio\/(start|entries|complete)$/,
+  );
+  if (cardioOperationMatch && request.method === "POST") {
+    const manager = await requireManager(request, env);
+    const date = parseWorkoutDate(cardioOperationMatch[1]);
+    const operation = cardioOperationMatch[2];
+    const body = operation === "complete" ? undefined : await readBody(request);
+    const cardio =
+      operation === "start"
+        ? await startCardioWorkout(env, manager.sub, date, body.timeZone)
+        : operation === "entries"
+          ? await addCardioEntry(env, manager.sub, date, body)
+          : await completeCardioWorkout(env, manager.sub, date);
+    return { cardio };
+  }
+
+  const cardioEntryMatch = url.pathname.match(
+    /^\/api\/me\/workouts\/(\d{4}-\d{2}-\d{2})\/cardio\/entries\/([^/]+)$/,
+  );
+  if (cardioEntryMatch && request.method === "DELETE") {
+    const manager = await requireManager(request, env);
+    return {
+      cardio: await deleteCardioEntry(
+        env,
+        manager.sub,
+        parseWorkoutDate(cardioEntryMatch[1]),
+        parseId(cardioEntryMatch[2], "cardio entry ID"),
+      ),
+    };
+  }
+
   const operationMatch = url.pathname.match(
     /^\/api\/me\/workouts\/(\d{4}-\d{2}-\d{2})\/(start|action|complete)$/,
   );
@@ -111,6 +157,20 @@ export async function handleWorkoutRequest({
   const adminResultMatch = url.pathname.match(
     /^\/api\/admin\/managers\/([^/]+)\/workouts\/(\d{4}-\d{2}-\d{2})$/,
   );
+  const adminCardioMatch = url.pathname.match(
+    /^\/api\/admin\/managers\/([^/]+)\/workouts\/(\d{4}-\d{2}-\d{2})\/cardio$/,
+  );
+  if (adminCardioMatch && request.method === "GET") {
+    await authorizeAdmin();
+    return {
+      cardio: await readCardioWorkout(
+        env,
+        parseId(adminCardioMatch[1], "manager ID"),
+        parseWorkoutDate(adminCardioMatch[2]),
+      ),
+    };
+  }
+
   if (adminResultMatch && ["GET", "PATCH"].includes(request.method)) {
     await authorizeAdmin();
     const managerId = parseId(adminResultMatch[1], "manager ID");
@@ -480,17 +540,146 @@ async function completeWorkout(env, managerId, date) {
 async function readWorkoutMonth(env, managerId, value) {
   const month = parseWorkoutMonth(value);
   const rows = await env.DB.prepare(
-    "SELECT workout_date, completed_at FROM manager_workouts WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month') ORDER BY workout_date",
+    `SELECT workout_date,
+      MAX(kettlebell_completed) AS kettlebell_completed,
+      MAX(cardio_completed) AS cardio_completed
+    FROM (
+      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed
+      FROM manager_workouts
+      WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
+      UNION ALL
+      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed
+      FROM manager_cardio_workouts
+      WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
+    ) GROUP BY workout_date ORDER BY workout_date`,
   )
-    .bind(managerId, `${month}-01`, `${month}-01`)
+    .bind(
+      managerId,
+      `${month}-01`,
+      `${month}-01`,
+      managerId,
+      `${month}-01`,
+      `${month}-01`,
+    )
     .all();
   return {
     days: (rows.results || []).map((row) => ({
-      completed: Boolean(row.completed_at),
+      cardioCompleted: Boolean(row.cardio_completed),
+      completed: Boolean(row.kettlebell_completed || row.cardio_completed),
       date: String(row.workout_date),
+      kettlebellCompleted: Boolean(row.kettlebell_completed),
     })),
     month,
   };
+}
+
+async function startCardioWorkout(env, managerId, date, timeZone) {
+  const zone = String(timeZone || "").trim();
+  if (dateInTimeZone(zone) !== date)
+    throw httpError(400, "Only today's cardio workout can be started.");
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO manager_cardio_workouts (manager_id, workout_date, time_zone) VALUES (?, ?, ?)",
+  )
+    .bind(managerId, date, zone)
+    .run();
+  return readCardioWorkout(env, managerId, date);
+}
+
+async function readCardioWorkout(env, managerId, date) {
+  const row = await env.DB.prepare(
+    "SELECT completed_at FROM manager_cardio_workouts WHERE manager_id = ? AND workout_date = ?",
+  )
+    .bind(managerId, date)
+    .first();
+  const entries = row
+    ? await env.DB.prepare(
+        "SELECT entry_id, activity_type, miles FROM manager_cardio_entries WHERE manager_id = ? AND workout_date = ? ORDER BY created_at, entry_id",
+      )
+        .bind(managerId, date)
+        .all()
+    : { results: [] };
+  const values = (entries.results || []).map((entry) => ({
+    id: String(entry.entry_id),
+    miles: Number(entry.miles),
+    type: String(entry.activity_type),
+  }));
+  return {
+    completedAt: row?.completed_at || null,
+    date,
+    entries: values,
+    started: Boolean(row),
+    totalMiles: roundMiles(
+      values.reduce((total, entry) => total + entry.miles, 0),
+    ),
+  };
+}
+
+async function addCardioEntry(env, managerId, date, body) {
+  await requireEditableCardioWorkout(env, managerId, date);
+  const entry = normalizeCardioEntry(body);
+  await env.DB.prepare(
+    "INSERT INTO manager_cardio_entries (entry_id, manager_id, workout_date, activity_type, miles) VALUES (?, ?, ?, ?, ?)",
+  )
+    .bind(crypto.randomUUID(), managerId, date, entry.type, entry.miles)
+    .run();
+  return readCardioWorkout(env, managerId, date);
+}
+
+async function deleteCardioEntry(env, managerId, date, entryId) {
+  await requireEditableCardioWorkout(env, managerId, date);
+  const result = await env.DB.prepare(
+    "DELETE FROM manager_cardio_entries WHERE entry_id = ? AND manager_id = ? AND workout_date = ?",
+  )
+    .bind(entryId, managerId, date)
+    .run();
+  if (Number(result.meta?.changes || 0) === 0)
+    throw httpError(404, "Cardio entry was not found.");
+  return readCardioWorkout(env, managerId, date);
+}
+
+async function completeCardioWorkout(env, managerId, date) {
+  await requireEditableCardioWorkout(env, managerId, date);
+  const count = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM manager_cardio_entries WHERE manager_id = ? AND workout_date = ?",
+  )
+    .bind(managerId, date)
+    .first();
+  if (Number(count?.count || 0) === 0)
+    throw httpError(409, "Add at least one cardio entry before completing.");
+  await env.DB.prepare(
+    "UPDATE manager_cardio_workouts SET completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
+  )
+    .bind(managerId, date)
+    .run();
+  return readCardioWorkout(env, managerId, date);
+}
+
+async function requireEditableCardioWorkout(env, managerId, date) {
+  const row = await env.DB.prepare(
+    "SELECT completed_at FROM manager_cardio_workouts WHERE manager_id = ? AND workout_date = ?",
+  )
+    .bind(managerId, date)
+    .first();
+  if (!row) throw httpError(404, "Cardio workout was not found.");
+  if (row.completed_at)
+    throw httpError(409, "Completed cardio workouts are read-only.");
+}
+
+export function normalizeCardioEntry(value) {
+  const type = String(value?.type || "").toLowerCase();
+  const miles = Number(value?.miles);
+  if (!["walk", "run"].includes(type))
+    throw httpError(400, "Cardio type must be walk or run.");
+  if (!Number.isFinite(miles) || miles <= 0 || miles > 1000)
+    throw httpError(
+      400,
+      "Mileage must be greater than 0 and no more than 1000.",
+    );
+  return { miles: roundMiles(miles), type };
+}
+
+function roundMiles(value) {
+  return Math.round(value * 1000) / 1000;
 }
 
 async function readWorkoutHistory(env, managerId) {

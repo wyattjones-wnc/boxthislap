@@ -2,10 +2,26 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   handleWorkoutRequest,
+  normalizeCardioEntry,
   normalizeWorkoutExercise,
   parseWorkoutDate,
   workoutElapsed,
 } from "../src/workouts.js";
+
+test("cardio entries accept walks and runs with bounded mileage", () => {
+  assert.deepEqual(normalizeCardioEntry({ miles: 1.2345, type: "WALK" }), {
+    miles: 1.235,
+    type: "walk",
+  });
+  assert.throws(
+    () => normalizeCardioEntry({ miles: 0, type: "run" }),
+    /Mileage/,
+  );
+  assert.throws(
+    () => normalizeCardioEntry({ miles: 1, type: "bike" }),
+    /walk or run/,
+  );
+});
 
 test("completing a workout does not require a JSON request body", async () => {
   let readBodyCalled = false;
@@ -46,9 +62,7 @@ test("completing a workout does not require a JSON request body", async () => {
       { method: "POST" },
     ),
     requireManager: async () => ({ sub: "8" }),
-    url: new URL(
-      "https://example.com/api/me/workouts/2026-09-25/complete",
-    ),
+    url: new URL("https://example.com/api/me/workouts/2026-09-25/complete"),
   });
 
   assert.equal(readBodyCalled, false);

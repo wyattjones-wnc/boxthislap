@@ -7,11 +7,13 @@ import {
   ChevronRight,
   CircleHelp,
   Dumbbell,
+  HeartPulse,
   Minus,
   Pencil,
   Plus,
   RotateCcw,
   Settings2,
+  Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -56,8 +58,24 @@ interface ExerciseRecord {
 }
 
 interface WorkoutDay {
+  cardioCompleted: boolean;
   completed: boolean;
   date: string;
+  kettlebellCompleted: boolean;
+}
+
+interface CardioEntry {
+  id: string;
+  miles: number;
+  type: "run" | "walk";
+}
+
+interface CardioWorkout {
+  completedAt: string | null;
+  date: string;
+  entries: CardioEntry[];
+  started: boolean;
+  totalMiles: number;
 }
 
 interface HistoryRow {
@@ -99,6 +117,10 @@ function formatTime(seconds: number) {
   return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
 }
 
+function formatMiles(miles: number) {
+  return miles.toLocaleString(undefined, { maximumFractionDigits: 3 });
+}
+
 function prettyDate(value: string) {
   return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, {
     day: "numeric",
@@ -115,7 +137,9 @@ export function WorkoutFeature() {
   const today = localDate();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selectedManager, setSelectedManager] = useState(ownManagerId);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [workout, setWorkout] = useState<Workout | null>(null);
+  const [cardio, setCardio] = useState<CardioWorkout | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [statsOpen, setStatsOpen] = useState(false);
@@ -206,18 +230,81 @@ export function WorkoutFeature() {
     }
   };
 
-  const openDay = async (date: string, completed: boolean) => {
+  const openDay = (date: string, completed: boolean) => {
     if (!completed && (date !== today || !ownView)) return;
+    setSelectedDate(date);
+    setWorkout(null);
+    setCardio(null);
+  };
+
+  const selectedDay = calendar.data?.days.find(
+    (day) => day.date === selectedDate,
+  );
+
+  const openKettlebell = async () => {
+    if (!selectedDate) return;
+    const completed = Boolean(selectedDay?.kettlebellCompleted);
     const path = completed
       ? ownView
-        ? `/api/me/workouts/${date}`
-        : `/api/admin/managers/${encodeURIComponent(selectedManager)}/workouts/${date}`
-      : `/api/me/workouts/${date}/start`;
+        ? `/api/me/workouts/${selectedDate}`
+        : `/api/admin/managers/${encodeURIComponent(selectedManager)}/workouts/${selectedDate}`
+      : `/api/me/workouts/${selectedDate}/start`;
     if (completed) await mutate(path, undefined, "GET");
     else
       await mutate(path, {
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
+  };
+
+  const changeCardio = async (
+    path: string,
+    body?: unknown,
+    method = "POST",
+  ) => {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<{ cardio: CardioWorkout }>(path, {
+        body: body === undefined ? undefined : JSON.stringify(body),
+        method,
+      });
+      setCardio(result.cardio);
+      return result.cardio;
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The cardio workout could not be saved.",
+      );
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openCardio = async () => {
+    if (!selectedDate) return;
+    const completed = Boolean(selectedDay?.cardioCompleted);
+    const path = completed
+      ? ownView
+        ? `/api/me/workouts/${selectedDate}/cardio`
+        : `/api/admin/managers/${encodeURIComponent(selectedManager)}/workouts/${selectedDate}/cardio`
+      : `/api/me/workouts/${selectedDate}/cardio/start`;
+    await changeCardio(
+      path,
+      completed
+        ? undefined
+        : { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      completed ? "GET" : "POST",
+    );
+  };
+
+  const completeCardio = async () => {
+    if (!cardio) return;
+    const saved = await changeCardio(
+      `/api/me/workouts/${cardio.date}/cardio/complete`,
+    );
+    if (saved) void queryClient.invalidateQueries({ queryKey: ["workouts"] });
   };
 
   const action = (body: unknown) =>
@@ -245,15 +332,27 @@ export function WorkoutFeature() {
   return (
     <div className={styles.page}>
       <header
-        className={`${styles.pageHeader}${!workout ? ` ${styles.calendarPageHeader}` : ""}`}
+        className={`${styles.pageHeader}${!selectedDate ? ` ${styles.calendarPageHeader}` : ""}`}
       >
-        {workout ? (
+        {workout || cardio ? (
           <a
             className="back-link"
             href="#workouts"
             onClick={(event) => {
               event.preventDefault();
               setWorkout(null);
+              setCardio(null);
+            }}
+          >
+            Workout Types
+          </a>
+        ) : selectedDate ? (
+          <a
+            className="back-link"
+            href="#workouts"
+            onClick={(event) => {
+              event.preventDefault();
+              setSelectedDate(null);
             }}
           >
             Calendar
@@ -268,25 +367,27 @@ export function WorkoutFeature() {
           </a>
         )}
         <h1>Daily Workouts</h1>
-        {workout ? (
-          <time dateTime={workout.date}>{prettyDate(workout.date)}</time>
+        {selectedDate ? (
+          <time dateTime={selectedDate}>{prettyDate(selectedDate)}</time>
         ) : null}
       </header>
-      {!workout ? (
+      {!selectedDate ? (
         <p className={styles.pageIntro}>
           Choose today or revisit a completed workout.
         </p>
       ) : null}
-      {!workout || workout.completedAt ? (
+      {!selectedDate ? (
         <div className={styles.pageActions}>
-          {isAdmin && !workout ? (
+          {isAdmin ? (
             <label className={styles.managerSelect}>
               <span>Manager</span>
               <select
                 value={selectedManager}
                 onChange={(event) => {
                   setSelectedManager(event.target.value);
+                  setSelectedDate(null);
                   setWorkout(null);
+                  setCardio(null);
                 }}
               >
                 {(managers.data?.managers || []).map((manager) => (
@@ -309,7 +410,7 @@ export function WorkoutFeature() {
               aria-pressed={statsOpen}
               onClick={() => setStatsOpen((value) => !value)}
             />
-            {isAdmin && !workout ? (
+            {isAdmin ? (
               <>
                 <IconButton
                   className="icon-action-button"
@@ -338,7 +439,10 @@ export function WorkoutFeature() {
           <WorkoutResults
             workout={workout}
             canCorrect={isAdmin}
-            onBack={() => setWorkout(null)}
+            onBack={() => {
+              setWorkout(null);
+              setSelectedDate(null);
+            }}
             onCorrect={() => setCorrectionOpen(true)}
           />
         ) : (
@@ -350,6 +454,33 @@ export function WorkoutFeature() {
             openHelp={() => setHelpOpen(true)}
           />
         )
+      ) : cardio ? (
+        <CardioWorkoutView
+          cardio={cardio}
+          busy={busy}
+          add={(entry) =>
+            changeCardio(
+              `/api/me/workouts/${cardio.date}/cardio/entries`,
+              entry,
+            )
+          }
+          complete={completeCardio}
+          remove={(entryId) =>
+            changeCardio(
+              `/api/me/workouts/${cardio.date}/cardio/entries/${encodeURIComponent(entryId)}`,
+              undefined,
+              "DELETE",
+            )
+          }
+        />
+      ) : selectedDate ? (
+        <WorkoutTypeChooser
+          cardioCompleted={Boolean(selectedDay?.cardioCompleted)}
+          canStart={ownView && selectedDate === today}
+          kettlebellCompleted={Boolean(selectedDay?.kettlebellCompleted)}
+          openCardio={() => void openCardio()}
+          openKettlebell={() => void openKettlebell()}
+        />
       ) : (
         <>
           {statsOpen && ownView ? (
@@ -519,6 +650,162 @@ function WorkoutCalendar({
           })}
         </div>
       )}
+    </section>
+  );
+}
+
+function WorkoutTypeChooser({
+  cardioCompleted,
+  canStart,
+  kettlebellCompleted,
+  openCardio,
+  openKettlebell,
+}: {
+  cardioCompleted: boolean;
+  canStart: boolean;
+  kettlebellCompleted: boolean;
+  openCardio: () => void;
+  openKettlebell: () => void;
+}) {
+  return (
+    <section className={styles.typeChooser} aria-label="Choose workout type">
+      <button
+        disabled={!canStart && !kettlebellCompleted}
+        onClick={openKettlebell}
+        type="button"
+      >
+        <Dumbbell aria-hidden="true" />
+        <span>
+          <strong>Kettlebell</strong>
+          <small>
+            {kettlebellCompleted
+              ? "Completed — view results"
+              : canStart
+                ? "Six exercises and timer"
+                : "Not completed"}
+          </small>
+        </span>
+        {kettlebellCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
+      </button>
+      <button
+        disabled={!canStart && !cardioCompleted}
+        onClick={openCardio}
+        type="button"
+      >
+        <HeartPulse aria-hidden="true" />
+        <span>
+          <strong>Cardio</strong>
+          <small>
+            {cardioCompleted
+              ? "Completed — view entries"
+              : canStart
+                ? "Track walks and runs"
+                : "Not completed"}
+          </small>
+        </span>
+        {cardioCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
+      </button>
+    </section>
+  );
+}
+
+function CardioWorkoutView({
+  add,
+  busy,
+  cardio,
+  complete,
+  remove,
+}: {
+  add: (entry: {
+    miles: number;
+    type: "run" | "walk";
+  }) => Promise<CardioWorkout | null>;
+  busy: boolean;
+  cardio: CardioWorkout;
+  complete: () => void;
+  remove: (entryId: string) => Promise<CardioWorkout | null>;
+}) {
+  const [type, setType] = useState<"run" | "walk">("walk");
+  const [miles, setMiles] = useState("");
+  const completed = Boolean(cardio.completedAt);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const saved = await add({ miles: Number(miles), type });
+    if (saved) setMiles("");
+  };
+  return (
+    <section className={styles.cardioWorkout}>
+      <div className={styles.mileageTotal} aria-live="polite">
+        <span>{completed ? "Cardio complete" : "Total mileage"}</span>
+        <strong>{formatMiles(cardio.totalMiles)}</strong>
+        <small>miles</small>
+      </div>
+      {!completed ? (
+        <form className={styles.cardioEntryForm} onSubmit={submit}>
+          <label>
+            <span>Type</span>
+            <select
+              value={type}
+              onChange={(event) =>
+                setType(event.target.value as "run" | "walk")
+              }
+            >
+              <option value="walk">Walk</option>
+              <option value="run">Run</option>
+            </select>
+          </label>
+          <label>
+            <span>Miles</span>
+            <input
+              required
+              inputMode="decimal"
+              min="0.001"
+              max="1000"
+              step="0.001"
+              type="number"
+              value={miles}
+              onChange={(event) => setMiles(event.target.value)}
+            />
+          </label>
+          <button className="action-button" disabled={busy} type="submit">
+            <Plus aria-hidden="true" /> Add
+          </button>
+        </form>
+      ) : null}
+      <div className={styles.cardioEntries}>
+        {cardio.entries.length ? (
+          cardio.entries.map((entry) => (
+            <div key={entry.id}>
+              <span>
+                <strong>{entry.type === "walk" ? "Walk" : "Run"}</strong>
+                <small>{formatMiles(entry.miles)} mi</small>
+              </span>
+              {!completed ? (
+                <IconButton
+                  disabled={busy}
+                  icon={<Trash2 />}
+                  label={`Remove ${entry.type} of ${formatMiles(entry.miles)} miles`}
+                  onClick={() => void remove(entry.id)}
+                />
+              ) : (
+                <Check aria-hidden="true" />
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="table-message">Add a walk or run to begin.</p>
+        )}
+      </div>
+      {!completed ? (
+        <button
+          className={`action-button ${styles.complete}`}
+          disabled={busy || cardio.entries.length === 0}
+          onClick={complete}
+          type="button"
+        >
+          Complete Cardio
+        </button>
+      ) : null}
     </section>
   );
 }

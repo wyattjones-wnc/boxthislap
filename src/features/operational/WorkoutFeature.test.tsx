@@ -153,11 +153,12 @@ describe("Daily Workouts", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /start workout/i }),
     );
+    fireEvent.click(await screen.findByRole("button", { name: /Kettlebell/ }));
     expect(
       await screen.findByRole("button", { name: /Mountain climbers/ }),
     ).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Add exercise" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Calendar" })).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Workout Types" })).not.toBeNull();
     expect(
       screen
         .getByRole("button", { name: "Exercise videos" })
@@ -189,6 +190,82 @@ describe("Daily Workouts", () => {
     expect(resultRows[1]?.textContent).toContain("Squats1");
     expect(resultRows[2]?.textContent).toContain("Plank0");
     await waitFor(() => expect(screen.getByText("Full sets")).not.toBeNull());
+  });
+
+  it("adds multiple walk and run entries and completes cardio", async () => {
+    let cardio = {
+      completedAt: null as string | null,
+      date: today,
+      entries: [] as Array<{ id: string; miles: number; type: string }>,
+      started: true,
+      totalMiles: 0,
+    };
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith(`/api/me/workouts/${today}/cardio/start`))
+          return response({ cardio });
+        if (url.endsWith(`/api/me/workouts/${today}/cardio/entries`)) {
+          const entry = JSON.parse(String(init?.body || "{}")) as {
+            miles: number;
+            type: string;
+          };
+          cardio = {
+            ...cardio,
+            entries: [
+              ...cardio.entries,
+              { ...entry, id: `entry-${cardio.entries.length + 1}` },
+            ],
+            totalMiles: cardio.totalMiles + entry.miles,
+          };
+          return response({ cardio });
+        }
+        if (url.endsWith(`/api/me/workouts/${today}/cardio/complete`)) {
+          cardio = { ...cardio, completedAt: "2026-09-28T12:00:00Z" };
+          return response({ cardio });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /start workout/i }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /Cardio/ }));
+    await screen.findByText("Total mileage");
+
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "1.25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Add/ }));
+    await screen.findByText("1.25 mi");
+
+    fireEvent.change(screen.getByLabelText("Type"), {
+      target: { value: "run" },
+    });
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "2.5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Add/ }));
+    await screen.findByText("2.5 mi");
+    expect(
+      screen.getByText("Total mileage").parentElement?.textContent,
+    ).toContain("3.75");
+
+    fireEvent.click(screen.getByRole("button", { name: "Complete Cardio" }));
+    expect(await screen.findByText("Cardio complete")).not.toBeNull();
+    expect(screen.queryByLabelText("Miles")).toBeNull();
   });
 });
 

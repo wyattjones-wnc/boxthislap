@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { HelpPage, SiteFooter } from "./FoundationPages";
+import { SiteFooter } from "./FoundationPages";
+import HelpPage from "./HelpPage";
 
 afterEach(cleanup);
 
@@ -19,17 +20,33 @@ describe("help experience", () => {
     ).toBe("#help");
   });
 
-  it("explains and links to non-admin manager features", () => {
+  it("opens specific instructions for manager features", () => {
     render(<HelpPage />);
 
+    expect(screen.getByRole("heading", { name: "Site Guide" })).not.toBeNull();
+    expect(screen.queryByText("Site guide")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Manager Hub/ }));
     expect(
-      screen.getByRole("heading", { name: "How can we help?" }),
+      screen.getByText(/select your name in the upper-right corner/i),
     ).not.toBeNull();
     expect(
-      document
-        .querySelector('[data-page-link="manager-hub"]')
-        ?.getAttribute("href"),
+      screen
+        .getByRole("link", { name: "Open Manager Hub" })
+        .getAttribute("href"),
     ).toBe("#manager-hub");
-    expect(screen.getAllByText(/login required/i).length).toBeGreaterThan(0);
+  });
+
+  it("documents all three Home Screen widgets", () => {
+    render(<HelpPage />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Home Screen Widgets/ }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Footy widget" }),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Formula 1 widget" }),
+    ).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Next widget" })).not.toBeNull();
   });
 });

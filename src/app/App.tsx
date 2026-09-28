@@ -1,11 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  AccountSettingsPage,
-  HelpPage,
-  LoginPage,
-  SiteFooter,
-} from "./FoundationPages";
+import { AccountSettingsPage, LoginPage, SiteFooter } from "./FoundationPages";
 import { AppErrorBoundary } from "./AppErrorBoundary";
 import { AppProviders, useAppState } from "./providers";
 import { SiteShell } from "./Shell";
@@ -81,6 +76,8 @@ const FantasyOffice2026Page = lazy(() =>
     default: module.FantasyOffice2026Page,
   })),
 );
+
+const HelpPage = lazy(() => import("./HelpPage"));
 
 function DeferredFantasyOffice2026Page({
   mode,
@@ -253,7 +250,14 @@ export function App({
         <SiteShell />
         {createPortal(<LoginPage />, loginRoot)}
         {createPortal(<AccountSettingsPage />, accountRoot)}
-        {createPortal(<HelpPage />, helpRoot)}
+        {createPortal(
+          <Suspense
+            fallback={<p className="table-message">Loading Site Guide…</p>}
+          >
+            <HelpPage />
+          </Suspense>,
+          helpRoot,
+        )}
         {createPortal(<NextPage />, operationalRoots.next)}
         {createPortal(<RankingsPage />, operationalRoots.rankings)}
         {createPortal(<TodoPage />, operationalRoots.todo)}

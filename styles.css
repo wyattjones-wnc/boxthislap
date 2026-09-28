@@ -6252,6 +6252,12 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   justify-content: space-between;
 }
 
+.footy-team-past-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
 .footy-team-past-heading h2,
 .footy-team-past-heading p,
 .footy-team-past-summary {
@@ -11061,6 +11067,10 @@ html.has-contained-dialog body {
   .footy-team-past-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .footy-team-past-actions {
+    justify-content: space-between;
   }
 
   .footy-team-past-filters {

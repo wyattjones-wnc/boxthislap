@@ -462,6 +462,7 @@ let activeFootyTeamViewMode = "schedule";
 const footyTeamFixtureLimits = new Map();
 let activeFootyTeamScheduleMode = "overview";
 let activeFootyTeamScheduleSlug = "";
+let shouldShowFootyTeamPastFilters = false;
 const footyTeamPastFilters = { competition: "", kit: "", result: "" };
 let shouldExportFootyTradingCards = false;
 let shouldShowNextFilters = false;
@@ -1697,6 +1698,7 @@ function renderFootyTeamPage(pageName = activePageName) {
   if (activeFootyTeamScheduleSlug !== teamSlug) {
     activeFootyTeamScheduleSlug = teamSlug;
     activeFootyTeamScheduleMode = "overview";
+    shouldShowFootyTeamPastFilters = false;
     footyTeamPastFilters.competition = "";
     footyTeamPastFilters.kit = "";
     footyTeamPastFilters.result = "";
@@ -1788,9 +1790,22 @@ function renderFootyTeamPastSchedule(team, fixtures = []) {
           <p>${escapeHtml(team.name)}</p>
           <h2 id="footy-team-past-title">Past Matches</h2>
         </div>
-        <button class="action-button" type="button" data-footy-team-past-back>Back to schedule</button>
+        <div class="footy-team-past-actions">
+          <button
+            class="icon-action-button${shouldShowFootyTeamPastFilters ? " is-active" : ""}"
+            type="button"
+            data-footy-team-past-filter-toggle
+            aria-label="${shouldShowFootyTeamPastFilters ? "Hide" : "Show"} past match filters"
+            title="${shouldShowFootyTeamPastFilters ? "Hide" : "Show"} past match filters"
+            aria-controls="footy-team-past-filters"
+            aria-expanded="${String(shouldShowFootyTeamPastFilters)}"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"></path></svg>
+          </button>
+          <button class="action-button" type="button" data-footy-team-past-back>Back to schedule</button>
+        </div>
       </div>
-      <div class="footy-team-past-filters" aria-label="Past match filters">
+      <div class="footy-team-past-filters" id="footy-team-past-filters" aria-label="Past match filters"${shouldShowFootyTeamPastFilters ? "" : " hidden"}>
         <label>
           <span>Competition</span>
           <select data-footy-team-past-filter="competition">
@@ -1832,6 +1847,7 @@ function getFootyTeamFixtureCompetition(fixture) {
 function transitionFootyTeamSchedule(mode) {
   const render = () => {
     activeFootyTeamScheduleMode = mode;
+    if (mode !== "past") shouldShowFootyTeamPastFilters = false;
     renderFootyTeamPage();
   };
 
@@ -13725,6 +13741,12 @@ function handleFootyFixtureListKeydown(event) {
 });
 
 footyTeamContent?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-footy-team-past-filter-toggle]")) {
+    shouldShowFootyTeamPastFilters = !shouldShowFootyTeamPastFilters;
+    renderFootyTeamPage();
+    return;
+  }
+
   if (event.target.closest("[data-footy-team-show-past]")) {
     transitionFootyTeamSchedule("past");
     return;

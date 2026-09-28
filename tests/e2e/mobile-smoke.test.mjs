@@ -932,6 +932,23 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
   ).toBeVisible();
   expect(wantPatchRequests).toBe(2);
 
+  const updatedWantCard = page.locator("[data-want-id]", {
+    hasText: "Updated Want check",
+  });
+  await updatedWantCard
+    .getByRole("button", { name: "Move to To Do" })
+    .evaluate((button) => button.click());
+  const moveDialog = page.locator("#want-move-dialog");
+  await expect(moveDialog).toBeVisible();
+  const moveConfirm = page.locator("#want-move-confirm");
+  await moveConfirm.evaluate((button) => {
+    button.click();
+    button.click();
+  });
+  await expect(moveDialog).toBeHidden();
+  expect(wantPatchRequests).toBe(3);
+  await expect(updatedWantCard).toBeHidden();
+
   await page.getByRole("button", { name: "Add Want item" }).click();
   await expect(dialog).toBeVisible();
   await expect(name).toHaveValue("");

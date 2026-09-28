@@ -482,6 +482,7 @@ let todoItemDialogControllerPromise = null;
 let todoItemDialogMessage = "";
 let todoItemDialogMessageIsError = false;
 let didMoveTodoPointer = false;
+let wantMoveInFlight = false;
 let activeTradingCardExportUrls = [];
 let activeRankingKind = "games";
 let activeRankingViewMode = "manual";
@@ -7363,6 +7364,25 @@ function submitNextItemPayload(payload) {
   });
 }
 
+async function submitNextItemPayloadAndWait(payload) {
+  if (!NEXT_DATA_ENDPOINT) {
+    throw new Error("Next data endpoint is not configured.");
+  }
+
+  const body = new URLSearchParams();
+  body.set("payload", JSON.stringify(payload));
+
+  await window.fetch(NEXT_DATA_ENDPOINT, {
+    body,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+    },
+    method: "POST",
+    mode: "no-cors",
+    signal: AbortSignal.timeout(12000),
+  });
+}
+
 function submitNextItemPayloadWithForm(payload) {
   const iframeName = "next-data-frame";
   let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
@@ -7871,15 +7891,18 @@ function closeWantMoveDialog() {
 }
 
 async function confirmWantMove() {
+  if (wantMoveInFlight) return;
   const item = getWantItems().map(normalizeWantItem).filter(Boolean).find((row) => row.id === pendingWantMoveItemId);
   if (!item) return closeWantMoveDialog();
+  wantMoveInFlight = true;
+  if (wantMoveConfirm) wantMoveConfirm.disabled = true;
   if (wantMoveStatus) wantMoveStatus.textContent = "Moving...";
   try {
+    await submitNextItemPayloadAndWait({ action: "moveWantToTodo", itemId: item.id });
     await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(item.id)}`, {
       body: JSON.stringify(wantItemApiPayload(item, { completed: true })),
       method: "PATCH",
     });
-    submitNextItemPayload({ action: "moveWantToTodo", itemId: item.id });
     await reloadWantItemsFromApi();
     delete siteData.todoItems;
     sharedDataPromises.delete("todo");
@@ -7887,7 +7910,13 @@ async function confirmWantMove() {
     closeWantMoveDialog();
   } catch (error) {
     recordDiagnostic("Want item move failed", error, { id: item.id });
+    if (error?.status === 409) {
+      await reloadWantItemsFromApi().catch(() => {});
+    }
     if (wantMoveStatus) wantMoveStatus.textContent = error.message || "The item could not be moved.";
+  } finally {
+    wantMoveInFlight = false;
+    if (wantMoveConfirm) wantMoveConfirm.disabled = false;
   }
 }
 

@@ -679,10 +679,18 @@ function moveWantToTodo(itemId) {
     const wantRows = getWantRows(wantContext);
     const wantItem = wantRows.find((row) => row.ID === String(itemId || "").trim());
     if (!wantItem) throw new Error("Want item was not found.");
-    if (wantItem.Completed === "TRUE") throw new Error("Want item has already been moved or completed.");
 
     const todoContext = getSimpleTableContext("To Do", TODO_ITEM_COLUMNS, "ID");
     const todoRows = getTodoRows(todoContext);
+    if (wantItem.Completed === "TRUE") {
+      const existingTodo = todoRows.find((row) =>
+        row.Name === wantItem.Name && row["Image URL"] === wantItem["Image URL"]
+      );
+      if (existingTodo) {
+        return { ok: true, status: "already-moved", todoId: existingTodo.ID, wantId: wantItem.ID };
+      }
+      throw new Error("Want item is already completed.");
+    }
     const todoId = getNextNumericIdFromRows(todoRows, "ID");
     const todoItem = normalizeTodoItem({
       ID: todoId, Order: getTodoDefaultOrderRows(todoRows).length + 1, Name: wantItem.Name,

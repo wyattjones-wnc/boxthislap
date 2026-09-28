@@ -712,10 +712,15 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
         if (!item) throw new Error("Mock To Do item was not found.");
         if (todoPatchRequests === 1) {
           item.revision += 1;
-          await route.fulfill({ json: { error: "Stale To Do item", ok: false }, status: 409 });
+          await route.fulfill({
+            json: { error: "Stale To Do item", ok: false },
+            status: 409,
+          });
           return;
         }
-        Object.assign(item, request.postDataJSON(), { revision: item.revision + 1 });
+        Object.assign(item, request.postDataJSON(), {
+          revision: item.revision + 1,
+        });
         await route.fulfill({ json: { item, ok: true }, status: 200 });
         return;
       }

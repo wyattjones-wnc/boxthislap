@@ -185,6 +185,13 @@ function doGet(e) {
       return webResponse(e, { ok: true, items: listTodoItems() });
     }
 
+    if (action === "moveWantToTodo") {
+      return webResponse(e, moveWantToTodo(e.parameter.itemId, {
+        imageUrl: e.parameter.imageUrl,
+        name: e.parameter.name,
+      }));
+    }
+
     if (action === "listWantChoices") return webResponse(e, { ok: true, choices: listWantChoices() });
     if (action === "listWantElo") return webResponse(e, { ok: true, elo: listWantElo() });
     if (action === "listWantRankingMeta") return webResponse(e, { ok: true, seeds: listWantSeeds(), snapshotItems: listWantSnapshotItems(), snapshots: listWantSnapshots() });
@@ -671,18 +678,24 @@ function writeWantRows(context, rows) {
   if (extra > 0) context.sheet.getRange(context.headerRow + 1 + values.length, 1, extra, context.rowWidth).clearContent();
 }
 
-function moveWantToTodo(itemId) {
+function moveWantToTodo(itemId, fallbackItem) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
     const wantContext = getSimpleTableContext("Want", WANT_ITEM_COLUMNS, "ID");
     const wantRows = getWantRows(wantContext);
-    const wantItem = wantRows.find((row) => row.ID === String(itemId || "").trim());
-    if (!wantItem) throw new Error("Want item was not found.");
+    const normalizedItemId = String(itemId || "").trim();
+    const storedWantItem = wantRows.find((row) => row.ID === normalizedItemId);
+    const wantItem = storedWantItem || normalizeWantItem({
+      ID: normalizedItemId,
+      Name: fallbackItem && fallbackItem.name,
+      "Image URL": fallbackItem && fallbackItem.imageUrl,
+    });
+    if (!wantItem.ID || !wantItem.Name) throw new Error("Want item was not found.");
 
     const todoContext = getSimpleTableContext("To Do", TODO_ITEM_COLUMNS, "ID");
     const todoRows = getTodoRows(todoContext);
-    if (wantItem.Completed === "TRUE") {
+    if (storedWantItem && wantItem.Completed === "TRUE") {
       const existingTodo = todoRows.find((row) =>
         row.Name === wantItem.Name && row["Image URL"] === wantItem["Image URL"]
       );
@@ -697,7 +710,9 @@ function moveWantToTodo(itemId) {
       Archived: "FALSE", Completed: "FALSE", IsDeleted: "FALSE", "Image URL": wantItem["Image URL"],
     });
     writeTodoRows(todoContext, normalizeTodoOrder(todoRows.concat([todoItem]), { movedId: todoId, requestedOrder: todoItem.Order }));
-    writeWantRows(wantContext, normalizeWantOrder(wantRows.map((row) => row.ID === wantItem.ID ? { ...row, Completed: "TRUE" } : row), wantItem.ID, wantItem.Order));
+    if (storedWantItem) {
+      writeWantRows(wantContext, normalizeWantOrder(wantRows.map((row) => row.ID === wantItem.ID ? { ...row, Completed: "TRUE" } : row), wantItem.ID, wantItem.Order));
+    }
     return { ok: true, status: "moved", todoId, wantId: wantItem.ID };
   } finally { lock.releaseLock(); }
 }

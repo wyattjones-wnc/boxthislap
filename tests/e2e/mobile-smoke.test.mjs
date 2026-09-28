@@ -819,6 +819,7 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
   ];
   let wantPatchRequests = 0;
   let wantMoveConflictTriggered = false;
+  const wantMoveSequence = [];
   page.on("request", (request) => {
     if (/\/wantItemDialog-[^/]+\.js$/.test(new URL(request.url()).pathname)) {
       dialogBundleRequests.push(request.url());
@@ -835,6 +836,9 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
     const url = new URL(route.request().url());
     const callback = url.searchParams.get("callback");
     const callbackId = url.searchParams.get("callbackId");
+    if (url.searchParams.get("action") === "moveWantToTodo") {
+      wantMoveSequence.push("todo-created");
+    }
     await route.fulfill({
       body: `${callback}(${JSON.stringify({
         callbackId,
@@ -882,6 +886,7 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
           return;
         }
         Object.assign(item, body, { revision: 3 });
+        if (body.completed) wantMoveSequence.push("want-completed");
         await route.fulfill({ json: { item, ok: true }, status: 200 });
         return;
       }
@@ -957,6 +962,7 @@ test("Want form uses the shared contained React dialog", async ({ page }) => {
   });
   await expect(moveDialog).toBeHidden();
   expect(wantPatchRequests).toBe(4);
+  expect(wantMoveSequence).toEqual(["want-completed", "todo-created"]);
   await expect(updatedWantCard).toBeHidden();
 
   await page.getByRole("button", { name: "Add Want item" }).click();

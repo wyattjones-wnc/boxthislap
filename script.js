@@ -7364,25 +7364,6 @@ function submitNextItemPayload(payload) {
   });
 }
 
-async function submitNextItemPayloadAndWait(payload) {
-  if (!NEXT_DATA_ENDPOINT) {
-    throw new Error("Next data endpoint is not configured.");
-  }
-
-  const body = new URLSearchParams();
-  body.set("payload", JSON.stringify(payload));
-
-  await window.fetch(NEXT_DATA_ENDPOINT, {
-    body,
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-    method: "POST",
-    mode: "no-cors",
-    signal: AbortSignal.timeout(12000),
-  });
-}
-
 function submitNextItemPayloadWithForm(payload) {
   const iframeName = "next-data-frame";
   let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
@@ -7898,8 +7879,19 @@ async function confirmWantMove() {
   if (wantMoveConfirm) wantMoveConfirm.disabled = true;
   if (wantMoveStatus) wantMoveStatus.textContent = "Moving...";
   try {
-    await submitNextItemPayloadAndWait({ action: "moveWantToTodo", itemId: item.id });
-    await completeWantItemAfterMove(item);
+    const completedItem = await updateWantCompletion(item, true);
+    try {
+      await loadNextDataEndpoint("moveWantToTodo", {
+        imageUrl: item.imageUrl,
+        itemId: item.id,
+        name: item.name,
+      });
+    } catch (moveError) {
+      await updateWantCompletion(completedItem, false).catch((rollbackError) => {
+        recordDiagnostic("Want move rollback failed", rollbackError, { id: item.id });
+      });
+      throw moveError;
+    }
     await reloadWantItemsFromApi();
     delete siteData.todoItems;
     sharedDataPromises.delete("todo");
@@ -7917,21 +7909,21 @@ async function confirmWantMove() {
   }
 }
 
-async function completeWantItemAfterMove(item) {
+async function updateWantCompletion(item, completed) {
   let currentItem = item;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(currentItem.id)}`, {
-        body: JSON.stringify(wantItemApiPayload(currentItem, { completed: true })),
+      const response = await nextItemsApiRequest(`/api/want-items/${encodeURIComponent(currentItem.id)}`, {
+        body: JSON.stringify(wantItemApiPayload(currentItem, { completed })),
         method: "PATCH",
       });
-      return;
+      return normalizeWantItem(response.item) || currentItem;
     } catch (error) {
       if (error?.status !== 409 || attempt > 0) throw error;
       const rows = await reloadWantItemsFromApi();
       currentItem = rows.map(normalizeWantItem).filter(Boolean).find((row) => row.id === item.id);
-      if (!currentItem || currentItem.completed) return;
+      if (!currentItem || currentItem.completed === completed) return currentItem;
     }
   }
 }

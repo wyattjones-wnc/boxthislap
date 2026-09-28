@@ -11,6 +11,7 @@ import "./styles/tokens.css";
 const shellRoot = document.querySelector(".site-header");
 const loginRoot = document.querySelector('[data-page="login"]');
 const accountRoot = document.querySelector('[data-page="account-settings"]');
+const helpRoot = document.querySelector('[data-page="help"]');
 const footerRoot = document.querySelector(".site-footer");
 const footyDialogsRoot = document.createElement("div");
 footyDialogsRoot.id = "footy-operational-dialog-root";
@@ -128,6 +129,7 @@ if (
   !shellRoot ||
   !loginRoot ||
   !accountRoot ||
+  !helpRoot ||
   !footerRoot ||
   !hasOperationalRoots ||
   !hasCompetitionRoots ||
@@ -140,6 +142,7 @@ if (
 
 loginRoot.replaceChildren();
 accountRoot.replaceChildren();
+helpRoot.replaceChildren();
 footerRoot.replaceChildren();
 Object.values(operationalRoots).forEach((root) => root?.replaceChildren());
 Object.values(competitionRoots).forEach((root) => root?.replaceChildren());
@@ -161,6 +164,7 @@ flushSync(() => {
       accountRoot={accountRoot}
       competitionRoots={competitionRoots as CompetitionRoots}
       footerRoot={footerRoot}
+      helpRoot={helpRoot}
       loginRoot={loginRoot}
       operationalRoots={operationalRoots as OperationalRoots}
       specialistRoots={specialistRoots as SpecialistRoots}
@@ -171,6 +175,7 @@ flushSync(() => {
 const initialRoute = window.location.hash.slice(1).split("?")[0];
 if (
   [
+    helpRoot,
     ...Object.values(operationalRoots),
     ...Object.values(competitionRoots),
     ...Object.values(specialistRoots),

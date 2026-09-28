@@ -16,6 +16,7 @@ const HOME_PAGES = [
   "next",
   "rankings",
   "guides",
+  "help",
   "footy-goal-assists",
   "leagues",
   "login",

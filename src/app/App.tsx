@@ -1,6 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AccountSettingsPage, LoginPage, SiteFooter } from "./FoundationPages";
+import {
+  AccountSettingsPage,
+  HelpPage,
+  LoginPage,
+  SiteFooter,
+} from "./FoundationPages";
 import { AppErrorBoundary } from "./AppErrorBoundary";
 import { AppProviders, useAppState } from "./providers";
 import { SiteShell } from "./Shell";
@@ -227,6 +232,7 @@ interface AppProps {
   accountRoot: Element;
   competitionRoots: CompetitionRoots;
   footerRoot: Element;
+  helpRoot: Element;
   loginRoot: Element;
   operationalRoots: OperationalRoots;
   specialistRoots: SpecialistRoots;
@@ -236,6 +242,7 @@ export function App({
   accountRoot,
   competitionRoots,
   footerRoot,
+  helpRoot,
   loginRoot,
   operationalRoots,
   specialistRoots,
@@ -246,6 +253,7 @@ export function App({
         <SiteShell />
         {createPortal(<LoginPage />, loginRoot)}
         {createPortal(<AccountSettingsPage />, accountRoot)}
+        {createPortal(<HelpPage />, helpRoot)}
         {createPortal(<NextPage />, operationalRoots.next)}
         {createPortal(<RankingsPage />, operationalRoots.rankings)}
         {createPortal(<TodoPage />, operationalRoots.todo)}

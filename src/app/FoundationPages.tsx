@@ -1,4 +1,16 @@
-import { memo } from "react";
+import {
+  Bell,
+  BookOpen,
+  CalendarDays,
+  ChartNoAxesColumnIncreasing,
+  CircleHelp,
+  Dumbbell,
+  LayoutDashboard,
+  ListTodo,
+  Settings,
+  Trophy,
+} from "lucide-react";
+import { memo, type ReactNode } from "react";
 import styles from "./Shell.module.css";
 
 export const LoginPage = memo(function LoginPage() {
@@ -208,6 +220,132 @@ export const AccountSettingsPage = memo(function AccountSettingsPage() {
   );
 });
 
+const helpFeatures = [
+  {
+    icon: CalendarDays,
+    title: "Footy",
+    location: "Footy in the main navigation",
+    href: "#footy",
+    description:
+      "See upcoming and recent matches for the teams you follow. Open a team shortcut for its schedule, roster, and player details, or build a custom schedule from multiple teams.",
+  },
+  {
+    icon: ListTodo,
+    title: "Next",
+    location: "Next in the main navigation",
+    href: "#next",
+    description:
+      "Check the shared list of what is coming up next across the site, including dates and priority items intended for managers.",
+  },
+  {
+    icon: ChartNoAxesColumnIncreasing,
+    title: "Rankings",
+    location: "Rankings in the main navigation · login required",
+    href: "#rankings",
+    description:
+      "Browse your game and movie rankings, compare snapshots, and use the head-to-head ranking flow to make choices.",
+  },
+  {
+    icon: Trophy,
+    title: "Leagues and competitions",
+    location: "Leagues in the main navigation",
+    href: "#leagues",
+    description:
+      "Open World Cup, Formula 1, Fantasy Critic, and Fantasy Office competitions. Each competition has its own tabs for entries, schedules, standings, or results when available.",
+  },
+  {
+    icon: LayoutDashboard,
+    title: "Manager Hub",
+    location: "Profile menu → Manager Hub · login required",
+    href: "#manager-hub",
+    description:
+      "Use your personal dashboard to find open tasks, submissions, drafts, results, and shortcuts that need your attention.",
+  },
+  {
+    icon: Dumbbell,
+    title: "Workouts",
+    location: "Manager Hub → Workouts · login required",
+    href: "#workouts",
+    description:
+      "Record workouts and review your recent activity and personal statistics from the Manager Hub.",
+  },
+  {
+    icon: BookOpen,
+    title: "Guides",
+    location: "Profile menu → Guides · login required",
+    href: "#guides",
+    description:
+      "Open the game guides shared with managers and track the information you need without leaving the site.",
+  },
+  {
+    icon: Bell,
+    title: "Followed teams and alerts",
+    location: "Profile menu → Account Settings · login required",
+    href: "#account-settings",
+    description:
+      "Choose the teams shown in your Footy shortcuts and turn on match alerts from the Footy page. Alerts apply to the device where you enable them.",
+  },
+  {
+    icon: Settings,
+    title: "Preferences and offline use",
+    location: "Profile menu → Account Settings",
+    href: "#account-settings",
+    description:
+      "Switch the site theme, save images for offline use, clear saved images, manage followed teams, and check the current site version.",
+  },
+] as const;
+
+export const HelpPage = memo(function HelpPage() {
+  return (
+    <>
+      <div
+        className={`section-heading ${styles.modernPageHeading} ${styles.helpHeading}`}
+      >
+        <p className="eyebrow">Site guide</p>
+        <h1>How can we help?</h1>
+        <p>
+          A quick map of the features available to managers and where to find
+          them. Sign in to unlock the personal tools marked below.
+        </p>
+      </div>
+      <div className={styles.helpGrid}>
+        {helpFeatures.map(
+          ({ description, href, icon: Icon, location, title }) => (
+            <HelpFeatureCard href={href} key={title}>
+              <span className={styles.helpFeatureIcon} aria-hidden="true">
+                <Icon />
+              </span>
+              <span className={styles.helpFeatureCopy}>
+                <strong>{title}</strong>
+                <span className={styles.helpFeatureLocation}>{location}</span>
+                <span>{description}</span>
+              </span>
+            </HelpFeatureCard>
+          ),
+        )}
+      </div>
+    </>
+  );
+});
+
+function HelpFeatureCard({
+  children,
+  href,
+}: {
+  children: ReactNode;
+  href: string;
+}) {
+  return (
+    <a
+      className={styles.helpFeatureCard}
+      href={href}
+      data-page-link={href.slice(1)}
+    >
+      {children}
+    </a>
+  );
+}
+
 export const SiteFooter = memo(function SiteFooter() {
   return (
     <>
@@ -219,14 +357,25 @@ export const SiteFooter = memo(function SiteFooter() {
           loading="lazy"
         />
       </div>
-      <button
-        className="footer-copy-link"
-        type="button"
-        id="copy-current-page-link"
-        hidden
-      >
-        Copy URL
-      </button>
+      <div className={styles.footerActions}>
+        <a
+          className={styles.footerHelpLink}
+          href="#help"
+          data-page-link="help"
+          aria-label="Help and frequently asked questions"
+          title="Help"
+        >
+          <CircleHelp aria-hidden="true" />
+        </a>
+        <button
+          className="footer-copy-link"
+          type="button"
+          id="copy-current-page-link"
+          hidden
+        >
+          Copy URL
+        </button>
+      </div>
     </>
   );
 });

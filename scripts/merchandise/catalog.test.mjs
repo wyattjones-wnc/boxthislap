@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  arsenalListingImage,
   normalizeArsenalProduct,
   normalizeBarcelonaProduct,
   normalizeCategory,
@@ -8,6 +9,23 @@ import {
   scanBarcelona,
   validateScan,
 } from "./catalog.mjs";
+
+test("replaces Arsenal's generic coming-soon image with its product-code image", () => {
+  assert.equal(
+    arsenalListingImage(
+      "https://cdn.media.amplience.net/i/ArsenalDirect/4903ComingSoon?$plpImagesMobile$",
+      "U07060",
+    ),
+    "https://cdn.media.amplience.net/i/ArsenalDirect/u07060_f1?$810x810$&.jpg",
+  );
+  assert.equal(
+    arsenalListingImage(
+      "https://cdn.media.amplience.net/i/ArsenalDirect/a123_f.jpg",
+      "A123",
+    ),
+    "https://cdn.media.amplience.net/i/ArsenalDirect/a123_f.jpg",
+  );
+});
 
 test("normalizes Barcelona parent products and ignores size variants for identity", () => {
   const product = normalizeBarcelonaProduct({

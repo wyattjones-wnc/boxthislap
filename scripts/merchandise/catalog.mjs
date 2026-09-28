@@ -153,7 +153,7 @@ export function parseArsenalListing(html, baseUrl) {
     ).trim();
     if (!sourceProductId) continue;
     const block = match[3];
-    const imageUrl = decodeHtml(
+    const listedImageUrl = decodeHtml(
       block.match(/<img\b[^>]*src=["']([^"']+)["']/i)?.[1] || "",
     );
     const priceSpans = [
@@ -183,7 +183,9 @@ export function parseArsenalListing(html, baseUrl) {
       category: normalizeCategory(canonicalUrl.pathname, title),
       currency,
       id: `arsenal:${sourceProductId}`,
-      imageUrl: cleanImage(imageUrl),
+      imageUrl: cleanImage(
+        arsenalListingImage(listedImageUrl, sourceProductId),
+      ),
       priceMinor: displayedMoneyToMinor(displayedPrice),
       regularPriceMinor: saleRegularPrice(displayedPrice, regularPrice),
       source: "arsenal",
@@ -196,6 +198,17 @@ export function parseArsenalListing(html, baseUrl) {
   if (!productCardCount)
     throw new Error("Arsenal catalog page did not expose product cards.");
   return { numberOfPages, products };
+}
+
+export function arsenalListingImage(imageUrl, sourceProductId) {
+  if (!/\/4903ComingSoon(?:[?$]|$)/i.test(String(imageUrl || "")))
+    return imageUrl;
+  const code = String(sourceProductId || "")
+    .trim()
+    .toLowerCase();
+  return code
+    ? `https://cdn.media.amplience.net/i/ArsenalDirect/${encodeURIComponent(code)}_f1?$810x810$&.jpg`
+    : imageUrl;
 }
 
 export function normalizeArsenalProduct(url, html) {

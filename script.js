@@ -225,6 +225,8 @@ import {
   footyNoteTitle,
   footyNoteHomeScore,
   footyNoteAwayScore,
+  footyNoteKitField,
+  footyNoteKit,
   footyNoteText,
   footyNoteHighlightLink,
   footyNoteStatus,
@@ -5004,6 +5006,14 @@ function openFootyNoteDialog(matchId) {
     footyNoteAwayScore.value = String(note.awayScore ?? "");
   }
 
+  if (footyNoteKitField) {
+    footyNoteKitField.hidden = !fixture.teamName;
+  }
+
+  if (footyNoteKit) {
+    footyNoteKit.value = fixture.teamName ? String(note.kit || "") : "";
+  }
+
   footyNoteGoalAssistEntries.follow = normalizeFootyGoalAssistList(note.followGoalAssists);
   footyNoteGoalAssistEntries.opponent = normalizeFootyGoalAssistList(note.opponentGoalAssists);
   clearFootyNoteGoalAssistInputs("follow");
@@ -5140,6 +5150,7 @@ function buildFootyMatchNoteFromDialog() {
     revision: Number(getFootyFixtureByMatchId(activeFootyNoteMatchId)?.matchNote?.revision || 0),
     homeScore: String(footyNoteHomeScore?.value ?? "").trim(),
     awayScore: String(footyNoteAwayScore?.value ?? "").trim(),
+    kit: footyNoteKitField?.hidden ? "" : String(footyNoteKit?.value ?? "").trim(),
     followGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.follow),
     opponentGoalAssists: normalizeFootyGoalAssistList(footyNoteGoalAssistEntries.opponent),
     note: String(footyNoteText?.value ?? "").trim(),
@@ -6406,6 +6417,7 @@ function applyFootyMatchNoteToFixtures(note, fixturesByMatchId) {
       followGoalAssists: note.followGoalAssists,
       highlightLink: note.highlightLink,
       homeScore: note.homeScore,
+      kit: note.kit,
       note: note.note,
       opponentGoalAssists: note.opponentGoalAssists,
       revision: Number(note.revision || 0),
@@ -6432,9 +6444,12 @@ function renderFootyMatchNote(fixture) {
 
   const followEventsMarkup = renderFootyGoalAssistEvents(getFootyFollowedSideName(fixture), note.followGoalAssists);
   const opponentEventsMarkup = renderFootyGoalAssistEvents(getFootyOpponentSideName(fixture), note.opponentGoalAssists);
+  const kitMarkup = note.kit
+    ? `<p class="footy-match-kit"><span>Kit</span> ${escapeHtml(getFootyKitLabel(note.kit))}</p>`
+    : "";
   const noteMarkup = note.note ? `<p>${escapeHtml(note.note)}</p>` : "";
 
-  if (!followEventsMarkup && !opponentEventsMarkup && !noteMarkup) {
+  if (!followEventsMarkup && !opponentEventsMarkup && !kitMarkup && !noteMarkup) {
     return "";
   }
 
@@ -6442,9 +6457,14 @@ function renderFootyMatchNote(fixture) {
     <div class="footy-match-note">
       ${followEventsMarkup}
       ${opponentEventsMarkup}
+      ${kitMarkup}
       ${noteMarkup}
     </div>
   `;
+}
+
+function getFootyKitLabel(kit) {
+  return { home: "Home", away: "Away", third: "Third" }[kit] || "";
 }
 
 function renderFootyGoalAssistEvents(label, events = []) {

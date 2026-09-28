@@ -5356,6 +5356,13 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   grid-column: 1 / -1;
 }
 
+.footy-match-kit span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .next-item-wide,
 .next-dialog-checks {
   grid-column: 1 / -1;

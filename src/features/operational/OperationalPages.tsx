@@ -486,6 +486,15 @@ function FootyNoteDialog() {
               autoComplete="off"
             />
           </label>
+          <label id="footy-note-kit-field">
+            <span>Followed Team Kit</span>
+            <select id="footy-note-kit">
+              <option value="">Not set</option>
+              <option value="home">Home</option>
+              <option value="away">Away</option>
+              <option value="third">Third</option>
+            </select>
+          </label>
           <GoalAssistBuilder
             side="follow"
             title="Follow G/A"

@@ -952,7 +952,7 @@ function parsePerformanceId(value) {
 
 async function listMatchNotes(env) {
   const result = await env.DB.prepare(`
-    SELECT match_id, home_score, away_score, follow_goal_assists,
+    SELECT match_id, home_score, away_score, kit, follow_goal_assists,
       opponent_goal_assists, note, highlight_link, revision, updated_at
     FROM footy_match_notes
     ORDER BY match_id
@@ -963,7 +963,7 @@ async function listMatchNotes(env) {
 
 async function getMatchNote(env, matchId) {
   const row = await env.DB.prepare(`
-    SELECT match_id, home_score, away_score, follow_goal_assists,
+    SELECT match_id, home_score, away_score, kit, follow_goal_assists,
       opponent_goal_assists, note, highlight_link, revision, updated_at
     FROM footy_match_notes
     WHERE match_id = ?
@@ -987,6 +987,7 @@ async function saveMatchNote(env, matchId, body, managerId) {
     nextRevision,
     note.homeScore,
     note.awayScore,
+    note.kit,
     JSON.stringify(note.followGoalAssists),
     JSON.stringify(note.opponentGoalAssists),
     note.note,
@@ -998,12 +999,13 @@ async function saveMatchNote(env, matchId, body, managerId) {
     const results = await env.DB.batch([
       env.DB.prepare(`
     INSERT INTO footy_match_notes (
-      match_id, home_score, away_score, follow_goal_assists,
+      match_id, home_score, away_score, kit, follow_goal_assists,
       opponent_goal_assists, note, highlight_link, revision, updated_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(match_id) DO UPDATE SET
       home_score = excluded.home_score,
       away_score = excluded.away_score,
+      kit = excluded.kit,
       follow_goal_assists = excluded.follow_goal_assists,
       opponent_goal_assists = excluded.opponent_goal_assists,
       note = excluded.note,
@@ -1015,6 +1017,7 @@ async function saveMatchNote(env, matchId, body, managerId) {
         note.matchId,
         note.homeScore,
         note.awayScore,
+        note.kit,
         JSON.stringify(note.followGoalAssists),
         JSON.stringify(note.opponentGoalAssists),
         note.note,
@@ -1024,9 +1027,9 @@ async function saveMatchNote(env, matchId, body, managerId) {
       ),
       env.DB.prepare(`
         INSERT INTO footy_match_note_history (
-          match_id, revision, home_score, away_score, follow_goal_assists,
+          match_id, revision, home_score, away_score, kit, follow_goal_assists,
           opponent_goal_assists, note, highlight_link, changed_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(...values),
     ]);
 
@@ -1077,11 +1080,20 @@ function normalizeMatchNote(note) {
     matchId: parseMatchId(note.matchId),
     homeScore: cleanText(note.homeScore, 20, "Home score"),
     awayScore: cleanText(note.awayScore, 20, "Away score"),
+    kit: normalizeMatchKit(note.kit),
     followGoalAssists: normalizeGoalAssists(note.followGoalAssists),
     opponentGoalAssists: normalizeGoalAssists(note.opponentGoalAssists),
     note: cleanText(note.note, 10000, "Note"),
     highlightLink: cleanHighlightLink(note.highlightLink),
   };
+}
+
+function normalizeMatchKit(value) {
+  const kit = String(value || "").trim().toLowerCase();
+  if (!["", "home", "away", "third"].includes(kit)) {
+    throw httpError(400, "Kit must be Home, Away, or Third.");
+  }
+  return kit;
 }
 
 function normalizeGoalAssists(value) {
@@ -1144,6 +1156,7 @@ function mapMatchNote(row) {
     matchId: String(row.match_id || ""),
     homeScore: String(row.home_score || ""),
     awayScore: String(row.away_score || ""),
+    kit: String(row.kit || ""),
     followGoalAssists: parseStoredList(row.follow_goal_assists),
     opponentGoalAssists: parseStoredList(row.opponent_goal_assists),
     note: String(row.note || ""),

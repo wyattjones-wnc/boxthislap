@@ -88,6 +88,7 @@ test("sorts fixtures chronologically with stable team fallbacks", () => {
 test("classifies noted matches as past and labels current or imminent fixtures", () => {
   const now = Date.parse("2026-09-12T15:00:00Z");
   assert.equal(hasFootyMatchNoteData({ matchNote: { homeScore: "0" } }), true);
+  assert.equal(hasFootyMatchNoteData({ matchNote: { kit: "third" } }), true);
   assert.equal(
     isFootyFixturePast({ matchNote: { note: "Complete" } }, now),
     true,

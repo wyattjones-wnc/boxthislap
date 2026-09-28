@@ -181,6 +181,7 @@ export function hasFootyMatchNoteData(fixture) {
   return Boolean(
     String(note.homeScore ?? "").trim() ||
     String(note.awayScore ?? "").trim() ||
+    String(note.kit ?? "").trim() ||
     String(note.note ?? "").trim() ||
     String(note.highlightLink ?? "").trim() ||
     (Array.isArray(note.followGoalAssists) &&

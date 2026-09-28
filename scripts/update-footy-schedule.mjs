@@ -1436,6 +1436,7 @@ async function loadFootyMatchNotesSheet(url) {
       followGoalAssists: parseGoalAssistEvents(getField(row, "Follow G/A")),
       highlightLink: getField(row, "Highlight Link").trim(),
       homeScore: getField(row, "Home Score").trim(),
+      kit: getField(row, "Kit").trim().toLowerCase(),
       note: getField(row, "Note").trim(),
       opponentGoalAssists: parseGoalAssistEvents(getField(row, "Opp G/A", "Column 7")),
     });
@@ -1483,6 +1484,7 @@ async function loadFootyMatchNotesEndpoint(endpoint) {
       followGoalAssists: normalizeGoalAssistEvents(note.followGoalAssists ?? note["Follow G/A"]),
       highlightLink: String(note.highlightLink ?? note["Highlight Link"] ?? "").trim(),
       homeScore: String(note.homeScore ?? note["Home Score"] ?? "").trim(),
+      kit: String(note.kit ?? note.Kit ?? "").trim().toLowerCase(),
       note: String(note.note ?? note.Note ?? "").trim(),
       opponentGoalAssists: normalizeGoalAssistEvents(note.opponentGoalAssists ?? note["Opp G/A"]),
     });
@@ -2434,6 +2436,7 @@ function hasMatchNote(note) {
   return Boolean(note) && (
     note.homeScore ||
     note.awayScore ||
+    note.kit ||
     note.note ||
     note.highlightLink ||
     (Array.isArray(note.followGoalAssists) && note.followGoalAssists.length > 0) ||

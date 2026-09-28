@@ -74,10 +74,10 @@ async function verifyMigration(source, destination) {
 function buildImportSql(notes) {
   const statements = notes.map((note) => `INSERT INTO footy_match_notes (
   match_id, home_score, away_score, follow_goal_assists,
-  opponent_goal_assists, note, highlight_link, revision, updated_by
+  opponent_goal_assists, note, highlight_link, kit, revision, updated_by
 ) VALUES (
   ${sql(note.matchId)}, ${sql(note.homeScore)}, ${sql(note.awayScore)}, ${sql(JSON.stringify(note.followGoalAssists))},
-  ${sql(JSON.stringify(note.opponentGoalAssists))}, ${sql(note.note)}, ${sql(note.highlightLink)}, 1, 'legacy-import'
+  ${sql(JSON.stringify(note.opponentGoalAssists))}, ${sql(note.note)}, ${sql(note.highlightLink)}, ${sql(note.kit)}, 1, 'legacy-import'
 ) ON CONFLICT(match_id) DO UPDATE SET
   home_score = excluded.home_score,
   away_score = excluded.away_score,
@@ -85,15 +85,16 @@ function buildImportSql(notes) {
   opponent_goal_assists = excluded.opponent_goal_assists,
   note = excluded.note,
   highlight_link = excluded.highlight_link,
+  kit = excluded.kit,
   revision = excluded.revision,
   updated_at = CURRENT_TIMESTAMP,
   updated_by = excluded.updated_by;
 INSERT INTO footy_match_note_history (
   match_id, revision, home_score, away_score, follow_goal_assists,
-  opponent_goal_assists, note, highlight_link, changed_by
+  opponent_goal_assists, note, highlight_link, kit, changed_by
 ) VALUES (
   ${sql(note.matchId)}, 1, ${sql(note.homeScore)}, ${sql(note.awayScore)}, ${sql(JSON.stringify(note.followGoalAssists))},
-  ${sql(JSON.stringify(note.opponentGoalAssists))}, ${sql(note.note)}, ${sql(note.highlightLink)}, 'legacy-import'
+  ${sql(JSON.stringify(note.opponentGoalAssists))}, ${sql(note.note)}, ${sql(note.highlightLink)}, ${sql(note.kit)}, 'legacy-import'
 ) ON CONFLICT(match_id, revision) DO UPDATE SET
   home_score = excluded.home_score,
   away_score = excluded.away_score,
@@ -101,6 +102,7 @@ INSERT INTO footy_match_note_history (
   opponent_goal_assists = excluded.opponent_goal_assists,
   note = excluded.note,
   highlight_link = excluded.highlight_link,
+  kit = excluded.kit,
   changed_at = CURRENT_TIMESTAMP,
   changed_by = excluded.changed_by;`);
 
@@ -116,6 +118,7 @@ function normalizeNote(note) {
     opponentGoalAssists: normalizeGoalAssists(note?.opponentGoalAssists ?? note?.["Opp G/A"]),
     note: String(note?.note ?? note?.Note ?? "").trim(),
     highlightLink: String(note?.highlightLink ?? note?.["Highlight Link"] ?? "").trim(),
+    kit: String(note?.kit ?? note?.Kit ?? "").trim().toLowerCase(),
   };
 }
 

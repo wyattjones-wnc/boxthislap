@@ -87,6 +87,14 @@ describe("operational React pages", () => {
       screen.getByRole("link", { name: "Create a custom Footy schedule" }),
     ).not.toBeNull();
     expect(screen.getByRole("button", { name: "Show filters" })).not.toBeNull();
+    const kitSelect =
+      document.querySelector<HTMLSelectElement>("#footy-note-kit");
+    expect(kitSelect?.closest("label")?.textContent).toContain(
+      "Followed Team Kit",
+    );
+    expect(
+      Array.from(kitSelect?.options || []).map((option) => option.textContent),
+    ).toEqual(["Not set", "Home", "Away", "Third"]);
   });
 
   it("keeps Custom Schedule navigation and filters clear", () => {

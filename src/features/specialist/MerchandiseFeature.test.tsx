@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
@@ -59,7 +65,9 @@ describe("MerchandiseFeature", () => {
         requests.push({ url, options });
         const value = url.includes("seen-through")
           ? { ok: true, seen: 2 }
-          : { ok: true, ...feed };
+          : url.includes("/state")
+            ? { ok: true, state: { wishlisted: true } }
+            : { ok: true, ...feed };
         return { ok: true, json: async () => value } as Response;
       }),
     );
@@ -118,5 +126,48 @@ describe("MerchandiseFeature", () => {
       sort: "newest",
     });
     expect(await screen.findByText("2 products marked seen.")).not.toBeNull();
+  });
+
+  it("saves wishlist state once and updates the card without reloading the feed", async () => {
+    let finishSave: ((value: Response) => void) | undefined;
+    let getRequests = 0;
+    let patchRequests = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, options?: RequestInit) => {
+        if (options?.method === "PATCH") {
+          patchRequests += 1;
+          return new Promise<Response>((resolve) => {
+            finishSave = resolve;
+          });
+        }
+        getRequests += 1;
+        return {
+          ok: true,
+          json: async () => ({ ok: true, ...feed }),
+        } as Response;
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <AppProviders>
+        <MerchandiseFeature />
+      </AppProviders>,
+    );
+    const card = await screen.findByRole("article");
+    const wishlist = within(card).getByRole("button", { name: "Wishlist" });
+    await user.click(wishlist);
+    const saving = within(card).getByRole("button", { name: "Saving…" });
+    expect(saving.hasAttribute("disabled")).toBe(true);
+    await user.click(saving);
+    expect(patchRequests).toBe(1);
+    finishSave?.({
+      ok: true,
+      json: async () => ({ ok: true, state: { wishlisted: true } }),
+    } as Response);
+    expect(
+      await within(card).findByRole("button", { name: "Remove wishlist" }),
+    ).not.toBeNull();
+    expect(getRequests).toBe(1);
   });
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MERCHANDISE_ENDPOINT } from "../../../modules/siteConfig";
 import { useAppState } from "../../app/providers";
 import styles from "./MerchandiseFeature.module.css";
@@ -84,9 +84,14 @@ export function MerchandiseFeature() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [confirmingId, setConfirmingId] = useState("");
+  const [savingWishlistIds, setSavingWishlistIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const loadSequence = useRef(0);
 
   const load = useCallback(async () => {
     if (route !== "merchandise") return;
+    const sequence = ++loadSequence.current;
     setBusy(true);
     setError("");
     try {
@@ -98,43 +103,68 @@ export function MerchandiseFeature() {
       if (team) params.set("team", team);
       if (category) params.set("category", category);
       if (view === "seen") params.set("sort", seenSort);
-      setFeed(await api<Feed>(`/api/products?${params}`));
+      const nextFeed = await api<Feed>(`/api/products?${params}`);
+      if (sequence === loadSequence.current) setFeed(nextFeed);
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Merchandise could not be loaded.",
-      );
+      if (sequence === loadSequence.current)
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Merchandise could not be loaded.",
+        );
     } finally {
-      setBusy(false);
+      if (sequence === loadSequence.current) setBusy(false);
     }
   }, [category, page, route, seenSort, team, view]);
 
   useEffect(() => {
     void load();
+    return () => {
+      loadSequence.current += 1;
+    };
   }, [load]);
   useEffect(() => {
     setPage(1);
     setConfirmingId("");
   }, [category, seenSort, team, view]);
 
-  const updateState = async (
-    product: Product,
-    state: { wishlisted: boolean },
-  ) => {
+  const updateWishlist = async (product: Product) => {
+    if (savingWishlistIds.has(product.id)) return;
+    const wishlisted = !product.wishlisted;
+    setSavingWishlistIds((current) => new Set(current).add(product.id));
     setError("");
     try {
-      await api(`/api/products/${encodeURIComponent(product.id)}/state`, {
-        method: "PATCH",
-        body: JSON.stringify(state),
+      const value = await api<{ state: { wishlisted: boolean } }>(
+        `/api/products/${encodeURIComponent(product.id)}/state`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ wishlisted }),
+        },
+      );
+      setFeed((current) => {
+        if (!current) return current;
+        const items =
+          view === "wishlist" && !value.state.wishlisted
+            ? current.items.filter((item) => item.id !== product.id)
+            : current.items.map((item) =>
+                item.id === product.id
+                  ? { ...item, wishlisted: value.state.wishlisted }
+                  : item,
+              );
+        return { ...current, items };
       });
-      await load();
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : "Product state could not be saved.",
       );
+    } finally {
+      setSavingWishlistIds((current) => {
+        const next = new Set(current);
+        next.delete(product.id);
+        return next;
+      });
     }
   };
 
@@ -360,13 +390,14 @@ export function MerchandiseFeature() {
                 <button
                   className="action-button"
                   type="button"
-                  onClick={() =>
-                    void updateState(product, {
-                      wishlisted: !product.wishlisted,
-                    })
-                  }
+                  disabled={savingWishlistIds.has(product.id)}
+                  onClick={() => void updateWishlist(product)}
                 >
-                  {product.wishlisted ? "Remove wishlist" : "Wishlist"}
+                  {savingWishlistIds.has(product.id)
+                    ? "Saving…"
+                    : product.wishlisted
+                      ? "Remove wishlist"
+                      : "Wishlist"}
                 </button>
                 {view === "unseen" ? (
                   <button

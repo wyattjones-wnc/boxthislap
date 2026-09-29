@@ -30,6 +30,8 @@ function decodeHtml(value) {
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", '"')
     .replaceAll("&#39;", "'")
+    .replaceAll("\\u003d", "=")
+    .replaceAll("\\u0026", "&")
     .replaceAll("\\u002F", "/")
     .replaceAll("\\/", "/");
 }
@@ -256,11 +258,14 @@ export function parseGalleryImages(html, gallery) {
       parsed.searchParams.get("id") ||
       parsed.pathname.split("/").filter(Boolean).at(-1) ||
       stableMediaId("image", sourceImageUrl);
+    const normalizedUrl = new URL(`${parsed.origin}${parsed.pathname}`);
+    if (gallery.source === "barcelona")
+      normalizedUrl.searchParams.set("width", "1200");
     return {
       id: stableMediaId("media", `${gallery.source}:${sourceImageKey}`),
       sourceImageKey,
       sourceImageUrl,
-      normalizedUrl: `${parsed.origin}${parsed.pathname}`,
+      normalizedUrl: normalizedUrl.href,
       originalPageUrl: gallery.sourceUrl,
       renderMode: "image",
       ordinal,

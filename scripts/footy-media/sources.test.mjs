@@ -23,6 +23,13 @@ test("Barcelona discovery and asset extraction normalize gallery data", () => {
     gallery,
   );
   assert.equal(images.length, 2);
+  assert.deepEqual(
+    new Set(images.map((image) => image.normalizedUrl)),
+    new Set([
+      "https://media.fcbarcelona.com/gallery/win-1.jpg?width=1200",
+      "https://media.fcbarcelona.com/gallery/win-2.webp?width=1200",
+    ]),
+  );
 });
 
 test("Arsenal discovery accepts gallery routes without relying on headline wording", () => {

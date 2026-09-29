@@ -1211,7 +1211,7 @@ export async function listMatchMedia(env, managerId, searchParams) {
   const images = (rows.results || []).map((row) => ({
     id: row.id,
     source: row.source,
-    sourceImageUrl: row.normalized_url || row.source_image_url || "",
+    sourceImageUrl: matchMediaSourceUrl(row),
     originalPageUrl: row.original_page_url,
     renderMode: row.render_mode,
     embedUrl: row.embed_url || "",
@@ -1330,6 +1330,22 @@ function assertPublicImageUrl(value) {
   return url;
 }
 
+function matchMediaSourceUrl(row) {
+  const value = String(row.normalized_url || row.source_image_url || "")
+    .replaceAll("\\u003d", "=")
+    .replaceAll("\\u0026", "&")
+    .replace(/,+$/, "");
+  if (row.source !== "barcelona") return value;
+  try {
+    const url = new URL(value);
+    if (!url.searchParams.has("width") && !url.searchParams.has("height"))
+      url.searchParams.set("width", "1200");
+    return url.href;
+  } catch {
+    return value;
+  }
+}
+
 export async function hardSaveMatchMedia(env, managerId, imageId) {
   if (!env.MATCH_MEDIA) throw new Error("Match image storage is not configured.");
   const image = await env.DB.prepare("SELECT * FROM footy_media_images WHERE id = ?").bind(imageId).first();
@@ -1337,7 +1353,7 @@ export async function hardSaveMatchMedia(env, managerId, imageId) {
   if (image.source === "getty" || image.render_mode !== "image") throw httpError(409, "Getty embeds cannot be copied to R2.");
   if (image.hard_asset_key) return mapHardSavedImage(image);
   try {
-  const sourceUrl = assertPublicImageUrl(image.normalized_url || image.source_image_url);
+  const sourceUrl = assertPublicImageUrl(matchMediaSourceUrl(image));
   const response = await fetch(sourceUrl, { redirect: "follow", headers: { Accept: "image/avif,image/webp,image/png,image/jpeg,image/*" } });
   if (!response.ok) throw httpError(502, `The source image returned HTTP ${response.status}.`);
   assertPublicImageUrl(response.url);

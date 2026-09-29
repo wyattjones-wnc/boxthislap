@@ -53,7 +53,7 @@ test("match media import is idempotent and preserves save state through Seen thr
     feed.images.every(
       (candidate) =>
         candidate.sourceImageUrl ===
-        `https://media.fcbarcelona.com/${candidate.id === "image-1" ? "one" : "two"}.jpg`,
+        `https://media.fcbarcelona.com/${candidate.id === "image-1" ? "one" : "two"}.jpg?width=1200`,
     ),
   );
   await saveMatchMediaState(env, "6", "image-1", { softSaved: true });

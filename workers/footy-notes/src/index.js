@@ -1197,7 +1197,7 @@ export async function listMatchMedia(env, managerId, searchParams) {
     ${predicate}`;
   const count = await env.DB.prepare(`SELECT COUNT(DISTINCT i.id) AS count ${base}`).bind(...bindings).first();
   const rows = await env.DB.prepare(`
-    SELECT i.id, i.source, i.source_image_url, i.original_page_url, i.render_mode, i.embed_url,
+    SELECT i.id, i.source, i.source_image_url, i.normalized_url, i.original_page_url, i.render_mode, i.embed_url,
       i.caption, i.photographer_credit, i.width, i.height, i.duplicate_of_image_id,
       i.first_observed_at, i.hard_saved_at, i.hard_save_error,
       s.seen_at, s.soft_saved_at,
@@ -1211,7 +1211,7 @@ export async function listMatchMedia(env, managerId, searchParams) {
   const images = (rows.results || []).map((row) => ({
     id: row.id,
     source: row.source,
-    sourceImageUrl: row.source_image_url || "",
+    sourceImageUrl: row.normalized_url || row.source_image_url || "",
     originalPageUrl: row.original_page_url,
     renderMode: row.render_mode,
     embedUrl: row.embed_url || "",
@@ -1337,7 +1337,7 @@ export async function hardSaveMatchMedia(env, managerId, imageId) {
   if (image.source === "getty" || image.render_mode !== "image") throw httpError(409, "Getty embeds cannot be copied to R2.");
   if (image.hard_asset_key) return mapHardSavedImage(image);
   try {
-  const sourceUrl = assertPublicImageUrl(image.source_image_url);
+  const sourceUrl = assertPublicImageUrl(image.normalized_url || image.source_image_url);
   const response = await fetch(sourceUrl, { redirect: "follow", headers: { Accept: "image/avif,image/webp,image/png,image/jpeg,image/*" } });
   if (!response.ok) throw httpError(502, `The source image returned HTTP ${response.status}.`);
   assertPublicImageUrl(response.url);
@@ -1515,7 +1515,7 @@ export async function importMatchMedia(env, scanId, body) {
       const renderMode = imported.renderMode === "getty_embed" ? "getty_embed" : "image";
       statements.push(env.DB.prepare(`INSERT INTO footy_media_images (id, source, source_image_key, source_image_url, original_page_url, render_mode, embed_url, caption, photographer_credit, width, height, normalized_url, first_observed_at, last_observed_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(source, source_image_key) DO UPDATE SET source_image_url = excluded.source_image_url, original_page_url = excluded.original_page_url, render_mode = excluded.render_mode, embed_url = excluded.embed_url, caption = COALESCE(excluded.caption, footy_media_images.caption), photographer_credit = COALESCE(excluded.photographer_credit, footy_media_images.photographer_credit), width = COALESCE(excluded.width, footy_media_images.width), height = COALESCE(excluded.height, footy_media_images.height), normalized_url = excluded.normalized_url, last_observed_at = excluded.last_observed_at`).bind(imageId, source, sourceImageKey, imported.sourceImageUrl || null, String(imported.originalPageUrl), renderMode, imported.embedUrl || null, imported.caption || null, imported.credit || null, imported.width || null, imported.height || null, imported.normalizedUrl || imported.sourceImageUrl || null, String(imported.firstObservedAt || now), now));
+      ON CONFLICT(source, source_image_key) DO UPDATE SET source_image_url = excluded.source_image_url, original_page_url = excluded.original_page_url, render_mode = excluded.render_mode, embed_url = excluded.embed_url, caption = COALESCE(excluded.caption, footy_media_images.caption), photographer_credit = COALESCE(excluded.photographer_credit, footy_media_images.photographer_credit), width = COALESCE(excluded.width, footy_media_images.width), height = COALESCE(excluded.height, footy_media_images.height), normalized_url = excluded.normalized_url, last_observed_at = excluded.last_observed_at`).bind(imageId, source, sourceImageKey, imported.normalizedUrl || imported.sourceImageUrl || null, String(imported.originalPageUrl), renderMode, imported.embedUrl || null, imported.caption || null, imported.credit || null, imported.width || null, imported.height || null, imported.normalizedUrl || imported.sourceImageUrl || null, String(imported.firstObservedAt || now), now));
       statements.push(env.DB.prepare(`INSERT INTO footy_media_gallery_images (gallery_id, image_id, ordinal) VALUES (?, ?, ?) ON CONFLICT(gallery_id, image_id) DO UPDATE SET ordinal = excluded.ordinal`).bind(id, imageId, Number(imported.ordinal ?? ordinal)));
     }
   }

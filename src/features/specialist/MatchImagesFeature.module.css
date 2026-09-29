@@ -27,8 +27,9 @@
 }
 .scan,
 .health {
-  background: var(--panel-bg, #fff);
-  border: 1px solid var(--border-color, #d7dce2);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
   border-radius: 0.75rem;
   padding: 0.85rem 1rem;
 }
@@ -97,8 +98,8 @@
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 .card {
-  background: var(--panel-bg, #fff);
-  border: 1px solid var(--border-color, #d7dce2);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 0.8rem;
   min-width: 0;
   overflow: hidden;

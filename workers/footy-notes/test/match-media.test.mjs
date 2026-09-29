@@ -49,6 +49,13 @@ test("match media import is idempotent and preserves save state through Seen thr
   await importMatchMedia(env, scanId, { galleries: [gallery], sourceRuns: [] });
   let feed = await listMatchMedia(env, "6", new URLSearchParams());
   assert.equal(feed.images.length, 2);
+  assert.ok(
+    feed.images.every(
+      (candidate) =>
+        candidate.sourceImageUrl ===
+        `https://media.fcbarcelona.com/${candidate.id === "image-1" ? "one" : "two"}.jpg`,
+    ),
+  );
   await saveMatchMediaState(env, "6", "image-1", { softSaved: true });
   const result = await markMatchMediaSeenThrough(env, "6", "image-2", {
     sort: "newest",
@@ -82,18 +89,22 @@ test("Hard Save copies an imported club image and applies Soft Save", async (con
   const DB = await worker.getD1Database("DB");
   await executeSql(DB, await readFile(schemaPath, "utf8"));
   await DB.prepare(
-    `INSERT INTO footy_media_images (id, source, source_image_key, source_image_url, original_page_url, render_mode, first_observed_at, last_observed_at)
-     VALUES ('club-1', 'arsenal', '1', 'https://media.arsenal.com/1.jpg', 'https://arsenal.com/gallery/1', 'image', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    `INSERT INTO footy_media_images (id, source, source_image_key, source_image_url, normalized_url, original_page_url, render_mode, first_observed_at, last_observed_at)
+     VALUES ('club-1', 'arsenal', '1', 'https://media.arsenal.com/1.jpg?width\\u003d1200,', 'https://media.arsenal.com/1.jpg', 'https://arsenal.com/gallery/1', 'image', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
   ).run();
   let stored = null;
+  let requestedUrl = "";
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => ({
-    ok: true,
-    status: 200,
-    url: "https://media.arsenal.com/1.jpg",
-    headers: new Headers({ "Content-Type": "image/jpeg" }),
-    arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
-  });
+  globalThis.fetch = async (url) => {
+    requestedUrl = String(url);
+    return {
+      ok: true,
+      status: 200,
+      url: "https://media.arsenal.com/1.jpg",
+      headers: new Headers({ "Content-Type": "image/jpeg" }),
+      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+    };
+  };
   context.after(() => {
     globalThis.fetch = originalFetch;
   });
@@ -111,6 +122,7 @@ test("Hard Save copies an imported club image and applies Soft Save", async (con
   );
   assert.equal(saved.hardSaved, true);
   assert.equal(saved.softSaved, true);
+  assert.equal(requestedUrl, "https://media.arsenal.com/1.jpg");
   assert.deepEqual(stored, { key: "match-images/club-1.jpg", size: 3 });
   const state = await DB.prepare(
     "SELECT soft_saved_at FROM footy_media_manager_state WHERE manager_id = '6' AND image_id = 'club-1'",
@@ -122,7 +134,7 @@ function image(id, key, firstObservedAt) {
   return {
     id,
     sourceImageKey: key,
-    sourceImageUrl: `https://media.fcbarcelona.com/${key}.jpg`,
+    sourceImageUrl: `https://media.fcbarcelona.com/${key}.jpg?width\\u003d1200,`,
     normalizedUrl: `https://media.fcbarcelona.com/${key}.jpg`,
     originalPageUrl: "https://www.fcbarcelona.com/gallery/123",
     renderMode: "image",

@@ -23,6 +23,7 @@ describe("specialist React pages", () => {
     expect(screen.getByRole("heading", { name: "Admin Home" })).not.toBeNull();
     expect(screen.getByRole("link", { name: /PSN/ })).not.toBeNull();
     expect(screen.getByRole("link", { name: /Merchandise/ })).not.toBeNull();
+    expect(screen.getByRole("link", { name: /Match Images/ })).not.toBeNull();
     expect(
       container.querySelector("#admin-featured-platinums-grid"),
     ).not.toBeNull();

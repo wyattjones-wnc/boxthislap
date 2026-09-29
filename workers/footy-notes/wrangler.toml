@@ -5,6 +5,9 @@ compatibility_date = "2026-08-22"
 [vars]
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000"
 ADMIN_MANAGER_IDS = "6"
+GITHUB_REPOSITORY = "wyattjones-wnc/boxthislap"
+GITHUB_MEDIA_REF = "dev"
+GITHUB_MEDIA_WORKFLOW = "update-footy-media.yml"
 
 [[services]]
 binding = "MANAGER_AUTH"
@@ -18,3 +21,7 @@ database_id = "af010919-5364-4324-8b89-72c832c215ed"
 [[r2_buckets]]
 binding = "ROSTER_MEDIA"
 bucket_name = "box-this-lap-footy-roster-media"
+
+[[r2_buckets]]
+binding = "MATCH_MEDIA"
+bucket_name = "box-this-lap-footy-match-media"

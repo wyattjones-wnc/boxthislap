@@ -83,6 +83,7 @@ const personalRoutes = new Set([
   "collectibles",
   "database-admin",
   "merchandise",
+  "match-images",
 ]);
 
 const worldCupRoutes = new Set([

@@ -6,6 +6,7 @@ import {
   Gamepad2,
   List,
   ShoppingBag,
+  Images,
   X,
 } from "lucide-react";
 import { IconButton } from "../../components/IconButton/IconButton";
@@ -83,6 +84,17 @@ export function AdminHomePage() {
             <span>
               <strong>Merchandise</strong>
               <small>Discover products and manage your wishlist</small>
+            </span>
+          </a>
+          <a
+            className="admin-tool-card"
+            href="#match-images"
+            data-page-link="match-images"
+          >
+            <Images aria-hidden="true" />
+            <span>
+              <strong>Match Images</strong>
+              <small>Discover, review, and save post-match photography</small>
             </span>
           </a>
         </div>

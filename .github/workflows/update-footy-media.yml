@@ -1,0 +1,44 @@
+name: Scan Footy Match Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Scan request created by the Match Images admin tool
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scan-footy-match-images
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser fallback
+        run: npx playwright install --with-deps chromium
+      - name: Discover and import match images
+        env:
+          FOOTY_MEDIA_REQUEST_ID: ${{ inputs.request_id }}
+          FOOTY_MEDIA_SYNC_ENDPOINT: ${{ secrets.FOOTY_MEDIA_SYNC_ENDPOINT }}
+          FOOTY_MEDIA_SYNC_TOKEN: ${{ secrets.FOOTY_MEDIA_SYNC_TOKEN }}
+        run: node scripts/update-footy-media.mjs
+      - name: Retain scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: footy-media-scan-${{ github.run_id }}
+          path: .tmp/footy-media-report.json
+          if-no-files-found: warn
+          retention-days: 14

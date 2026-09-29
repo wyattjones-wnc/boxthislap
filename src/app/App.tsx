@@ -65,6 +65,10 @@ const MerchandiseFeature = lazy(() =>
   })),
 );
 
+const MatchImagesFeature = lazy(
+  () => import("../features/specialist/MatchImagesFeature"),
+);
+
 const WorkoutFeature = lazy(() =>
   import("../features/operational/WorkoutFeature").then((module) => ({
     default: module.WorkoutFeature,
@@ -161,11 +165,22 @@ function DeferredMerchandiseFeature() {
   );
 }
 
+function DeferredMatchImagesFeature() {
+  const { route } = useAppState();
+  if (route !== "match-images") return null;
+  return (
+    <Suspense fallback={<p className="table-message">Loading Match Images…</p>}>
+      <MatchImagesFeature />
+    </Suspense>
+  );
+}
+
 export interface SpecialistRoots {
   adminHome: Element;
   collectibles: Element;
   databaseAdmin: Element;
   merchandise: Element;
+  matchImages: Element;
   psn: Element;
   trophyLog: Element;
   trophyStats: Element;
@@ -298,6 +313,10 @@ export function App({
         {createPortal(
           <DeferredMerchandiseFeature />,
           specialistRoots.merchandise,
+        )}
+        {createPortal(
+          <DeferredMatchImagesFeature />,
+          specialistRoots.matchImages,
         )}
         {createPortal(<TrophyLogPage />, specialistRoots.trophyLog)}
         {createPortal(<YouTubePage />, specialistRoots.youtube)}

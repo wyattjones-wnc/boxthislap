@@ -23,6 +23,69 @@ export default {
         return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), request, context);
       }
 
+      const matchMediaAssetRoute = url.pathname.match(/^\/media\/match-images\/([^/]+)$/);
+      if (request.method === "GET" && matchMediaAssetRoute) {
+        return getMatchMediaAsset(env, decodeURIComponent(matchMediaAssetRoute[1]), request, context);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/match-media") {
+        const managerId = await requireAdmin(request, env);
+        return json({ ok: true, ...(await listMatchMedia(env, managerId, url.searchParams)) }, 200, cors);
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/match-media/health") {
+        await requireAdmin(request, env);
+        return json({ ok: true, ...(await getMatchMediaHealth(env)) }, 200, cors);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/match-media/scans") {
+        const managerId = await requireAdmin(request, env);
+        const scan = await requestMatchMediaScan(env, managerId);
+        return json({ ok: true, scan }, 202, cors);
+      }
+
+      const matchMediaScanRoute = url.pathname.match(/^\/api\/match-media\/scans\/([^/]+)$/);
+      if (request.method === "GET" && matchMediaScanRoute) {
+        await requireAdmin(request, env);
+        const scan = await getMatchMediaScan(env, decodeURIComponent(matchMediaScanRoute[1]));
+        return json({ ok: true, scan }, 200, cors);
+      }
+
+      const matchMediaStateRoute = url.pathname.match(/^\/api\/match-media\/([^/]+)\/state$/);
+      if (request.method === "PATCH" && matchMediaStateRoute) {
+        const managerId = await requireAdmin(request, env);
+        const state = await saveMatchMediaState(env, managerId, decodeURIComponent(matchMediaStateRoute[1]), await readBody(request));
+        return json({ ok: true, state }, 200, cors);
+      }
+
+      const matchMediaSeenRoute = url.pathname.match(/^\/api\/match-media\/([^/]+)\/seen-through$/);
+      if (request.method === "PUT" && matchMediaSeenRoute) {
+        const managerId = await requireAdmin(request, env);
+        const result = await markMatchMediaSeenThrough(env, managerId, decodeURIComponent(matchMediaSeenRoute[1]), await readBody(request));
+        return json({ ok: true, ...result }, 200, cors);
+      }
+
+      const matchMediaHardSaveRoute = url.pathname.match(/^\/api\/match-media\/([^/]+)\/hard-save$/);
+      if (request.method === "POST" && matchMediaHardSaveRoute) {
+        const managerId = await requireAdmin(request, env);
+        const image = await hardSaveMatchMedia(env, managerId, decodeURIComponent(matchMediaHardSaveRoute[1]));
+        return json({ ok: true, image }, 200, cors);
+      }
+
+      const matchMediaGalleryRoute = url.pathname.match(/^\/api\/match-media\/galleries\/([^/]+)$/);
+      if (request.method === "PATCH" && matchMediaGalleryRoute) {
+        await requireAdmin(request, env);
+        const gallery = await reviewMatchMediaGallery(env, decodeURIComponent(matchMediaGalleryRoute[1]), await readBody(request));
+        return json({ ok: true, gallery }, 200, cors);
+      }
+
+      const matchMediaSyncRoute = url.pathname.match(/^\/api\/match-media\/sync\/scans\/([^/]+)\/(start|import|finish)$/);
+      if (request.method === "POST" && matchMediaSyncRoute) {
+        requireMatchMediaSync(request, env);
+        const scan = await syncMatchMediaScan(env, decodeURIComponent(matchMediaSyncRoute[1]), matchMediaSyncRoute[2], await readBody(request));
+        return json({ ok: true, scan }, 200, cors);
+      }
+
       if (request.method === "GET" && url.pathname === "/api/rosters") {
         return json({ ok: true, rosters: await listRosters(env, url.searchParams) }, 200, cors);
       }
@@ -1088,6 +1151,378 @@ function normalizeMatchNote(note) {
   };
 }
 
+const MATCH_MEDIA_SOURCES = new Set(["arsenal", "barcelona", "getty"]);
+const MATCH_MEDIA_CATEGORIES = new Set(["match", "celebration", "behind_scenes", "other"]);
+const MATCH_MEDIA_VIEWS = new Set(["unseen", "saved", "hard-saved", "seen", "needs-match", "all"]);
+const MATCH_MEDIA_ASSET_LIMIT = 15 * 1024 * 1024;
+
+function matchMediaChoice(value, allowed, fallback, label) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (!allowed.has(normalized)) throw httpError(400, `Invalid ${label}.`);
+  return normalized;
+}
+
+function matchMediaPage(value) {
+  const parsed = Number.parseInt(String(value || "1"), 10);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+export async function listMatchMedia(env, managerId, searchParams) {
+  const view = matchMediaChoice(searchParams.get("view"), MATCH_MEDIA_VIEWS, "unseen", "view");
+  const source = matchMediaChoice(searchParams.get("source"), MATCH_MEDIA_SOURCES, "", "source");
+  const category = matchMediaChoice(searchParams.get("category"), MATCH_MEDIA_CATEGORIES, "", "category");
+  const teamId = String(searchParams.get("teamId") || "").trim();
+  const matchId = String(searchParams.get("matchId") || "").trim();
+  const page = matchMediaPage(searchParams.get("page"));
+  const limit = 48;
+  const where = [];
+  const bindings = [managerId];
+  if (view === "unseen") where.push("s.seen_at IS NULL", "g.match_status IN ('auto', 'manual')");
+  if (view === "saved") where.push("s.soft_saved_at IS NOT NULL");
+  if (view === "hard-saved") where.push("i.hard_saved_at IS NOT NULL");
+  if (view === "seen") where.push("s.seen_at IS NOT NULL");
+  if (view === "needs-match") where.push("g.match_status = 'review'");
+  if (view === "all") where.push("g.match_status NOT IN ('rejected', 'unmatched')");
+  if (source) { where.push("i.source = ?"); bindings.push(source); }
+  if (category) { where.push("g.category = ?"); bindings.push(category); }
+  if (teamId) { where.push("g.team_id = ?"); bindings.push(teamId); }
+  if (matchId) { where.push("g.match_id = ?"); bindings.push(matchId); }
+  const predicate = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const base = `
+    FROM footy_media_images i
+    JOIN footy_media_gallery_images gi ON gi.image_id = i.id
+    JOIN footy_media_galleries g ON g.id = gi.gallery_id
+    LEFT JOIN footy_media_manager_state s ON s.image_id = i.id AND s.manager_id = ?
+    ${predicate}`;
+  const count = await env.DB.prepare(`SELECT COUNT(DISTINCT i.id) AS count ${base}`).bind(...bindings).first();
+  const rows = await env.DB.prepare(`
+    SELECT i.id, i.source, i.source_image_url, i.original_page_url, i.render_mode, i.embed_url,
+      i.caption, i.photographer_credit, i.width, i.height, i.duplicate_of_image_id,
+      i.first_observed_at, i.hard_saved_at, i.hard_save_error,
+      s.seen_at, s.soft_saved_at,
+      g.id AS gallery_id, g.team_id, g.match_id, g.source_url AS gallery_url, g.title AS gallery_title,
+      g.published_at, g.category, g.match_confidence, g.match_status, g.match_evidence
+    ${base}
+    GROUP BY i.id
+    ORDER BY COALESCE(g.published_at, i.first_observed_at) DESC, i.first_observed_at DESC, i.id ASC
+    LIMIT ? OFFSET ?
+  `).bind(...bindings, limit, (page - 1) * limit).all();
+  const images = (rows.results || []).map((row) => ({
+    id: row.id,
+    source: row.source,
+    sourceImageUrl: row.source_image_url || "",
+    originalPageUrl: row.original_page_url,
+    renderMode: row.render_mode,
+    embedUrl: row.embed_url || "",
+    caption: row.caption || "",
+    credit: row.photographer_credit || "",
+    width: row.width === null ? null : Number(row.width),
+    height: row.height === null ? null : Number(row.height),
+    duplicateOfImageId: row.duplicate_of_image_id || "",
+    firstObservedAt: row.first_observed_at,
+    seen: Boolean(row.seen_at),
+    softSaved: Boolean(row.soft_saved_at),
+    hardSaved: Boolean(row.hard_saved_at),
+    hardSaveEligible: row.source !== "getty" && row.render_mode === "image" && Boolean(row.source_image_url),
+    hardSaveError: row.hard_save_error || "",
+    assetUrl: row.hard_saved_at ? `/media/match-images/${encodeURIComponent(row.id)}` : "",
+    gallery: {
+      id: row.gallery_id,
+      sourceUrl: row.gallery_url,
+      title: row.gallery_title,
+      publishedAt: row.published_at || "",
+      category: row.category,
+      matchConfidence: Number(row.match_confidence || 0),
+      matchStatus: row.match_status,
+      matchEvidence: safeJsonValue(row.match_evidence, []),
+    },
+    teamId: row.team_id,
+    matchId: row.match_id || "",
+  }));
+  const facets = await env.DB.prepare(`
+    SELECT DISTINCT g.team_id, g.match_id, g.title, g.published_at
+    FROM footy_media_galleries g
+    WHERE g.match_status IN ('auto', 'manual', 'review')
+    ORDER BY g.published_at DESC
+  `).all();
+  return {
+    images,
+    pagination: { page, pageSize: limit, total: Number(count?.count || 0), hasMore: page * limit < Number(count?.count || 0) },
+    facets: facets.results || [],
+    filters: { view, source, category, teamId, matchId },
+  };
+}
+
+function safeJsonValue(value, fallback) {
+  try { return value ? JSON.parse(value) : fallback; } catch { return fallback; }
+}
+
+export async function saveMatchMediaState(env, managerId, imageId, body) {
+  if (typeof body.softSaved !== "boolean") throw httpError(400, "Soft Save state must be boolean.");
+  const image = await env.DB.prepare("SELECT id FROM footy_media_images WHERE id = ?").bind(imageId).first();
+  if (!image) throw httpError(404, "Match image was not found.");
+  const current = await env.DB.prepare("SELECT seen_at FROM footy_media_manager_state WHERE manager_id = ? AND image_id = ?").bind(managerId, imageId).first();
+  const now = new Date().toISOString();
+  const softSavedAt = body.softSaved ? now : null;
+  await env.DB.prepare(`
+    INSERT INTO footy_media_manager_state (manager_id, image_id, seen_at, soft_saved_at, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(manager_id, image_id) DO UPDATE SET soft_saved_at = excluded.soft_saved_at, updated_at = excluded.updated_at
+  `).bind(managerId, imageId, current?.seen_at || null, softSavedAt, now).run();
+  return { imageId, seen: Boolean(current?.seen_at), softSaved: Boolean(softSavedAt), softSavedAt };
+}
+
+function matchMediaFilterScope(body, alias = "") {
+  const prefix = alias ? `${alias}.` : "";
+  const filters = [];
+  const bindings = [];
+  const source = matchMediaChoice(body.source, MATCH_MEDIA_SOURCES, "", "source");
+  const category = matchMediaChoice(body.category, MATCH_MEDIA_CATEGORIES, "", "category");
+  const teamId = String(body.teamId || "").trim();
+  const matchId = String(body.matchId || "").trim();
+  if (source) { filters.push(`${prefix}source = ?`); bindings.push(source); }
+  if (category) { filters.push("g.category = ?"); bindings.push(category); }
+  if (teamId) { filters.push("g.team_id = ?"); bindings.push(teamId); }
+  if (matchId) { filters.push("g.match_id = ?"); bindings.push(matchId); }
+  return { filters, bindings };
+}
+
+export async function markMatchMediaSeenThrough(env, managerId, imageId, body) {
+  if (String(body.sort || "newest") !== "newest") throw httpError(400, "Seen through requires newest-first sorting.");
+  const scope = matchMediaFilterScope(body, "i");
+  const anchor = await env.DB.prepare(`
+    SELECT i.id, i.first_observed_at
+    FROM footy_media_images i
+    JOIN footy_media_gallery_images gi ON gi.image_id = i.id
+    JOIN footy_media_galleries g ON g.id = gi.gallery_id
+    LEFT JOIN footy_media_manager_state s ON s.image_id = i.id AND s.manager_id = ?
+    WHERE i.id = ? AND s.seen_at IS NULL AND g.match_status IN ('auto', 'manual')
+      ${scope.filters.length ? `AND ${scope.filters.join(" AND ")}` : ""}
+    LIMIT 1
+  `).bind(managerId, imageId, ...scope.bindings).first();
+  if (!anchor) throw httpError(409, "That image is no longer in the current unseen feed.");
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(`
+    INSERT INTO footy_media_manager_state (manager_id, image_id, seen_at, soft_saved_at, updated_at)
+    SELECT ?, i.id, ?, s.soft_saved_at, ?
+    FROM footy_media_images i
+    JOIN footy_media_gallery_images gi ON gi.image_id = i.id
+    JOIN footy_media_galleries g ON g.id = gi.gallery_id
+    LEFT JOIN footy_media_manager_state s ON s.image_id = i.id AND s.manager_id = ?
+    WHERE s.seen_at IS NULL AND g.match_status IN ('auto', 'manual')
+      AND (i.first_observed_at > ? OR (i.first_observed_at = ? AND i.id <= ?))
+      ${scope.filters.length ? `AND ${scope.filters.join(" AND ")}` : ""}
+    GROUP BY i.id
+    ON CONFLICT(manager_id, image_id) DO UPDATE SET seen_at = excluded.seen_at, updated_at = excluded.updated_at
+  `).bind(managerId, now, now, managerId, anchor.first_observed_at, anchor.first_observed_at, anchor.id, ...scope.bindings).run();
+  return { seen: Number(result.meta?.changes || 0) };
+}
+
+function assertPublicImageUrl(value) {
+  let url;
+  try { url = new URL(String(value || "")); } catch { throw httpError(400, "The source image URL is invalid."); }
+  if (url.protocol !== "https:") throw httpError(400, "The source image must use HTTPS.");
+  const host = url.hostname.toLowerCase();
+  if (!host || host === "localhost" || host.endsWith(".local") || /^(?:127\.|10\.|192\.168\.|169\.254\.)/.test(host) || /^172\.(?:1[6-9]|2\d|3[01])\./.test(host)) {
+    throw httpError(400, "The source image host is not allowed.");
+  }
+  return url;
+}
+
+export async function hardSaveMatchMedia(env, managerId, imageId) {
+  if (!env.MATCH_MEDIA) throw new Error("Match image storage is not configured.");
+  const image = await env.DB.prepare("SELECT * FROM footy_media_images WHERE id = ?").bind(imageId).first();
+  if (!image) throw httpError(404, "Match image was not found.");
+  if (image.source === "getty" || image.render_mode !== "image") throw httpError(409, "Getty embeds cannot be copied to R2.");
+  if (image.hard_asset_key) return mapHardSavedImage(image);
+  try {
+  const sourceUrl = assertPublicImageUrl(image.source_image_url);
+  const response = await fetch(sourceUrl, { redirect: "follow", headers: { Accept: "image/avif,image/webp,image/png,image/jpeg,image/*" } });
+  if (!response.ok) throw httpError(502, `The source image returned HTTP ${response.status}.`);
+  assertPublicImageUrl(response.url);
+  const mime = String(response.headers.get("Content-Type") || "").split(";", 1)[0].toLowerCase();
+  const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
+  if (!extensions[mime]) throw httpError(415, "The source did not return a supported image type.");
+  const contentLength = Number(response.headers.get("Content-Length") || 0);
+  if (contentLength > MATCH_MEDIA_ASSET_LIMIT) throw httpError(413, "The source image is larger than 15 MB.");
+  const bytes = await response.arrayBuffer();
+  if (bytes.byteLength > MATCH_MEDIA_ASSET_LIMIT) throw httpError(413, "The source image is larger than 15 MB.");
+  const hashBytes = await crypto.subtle.digest("SHA-256", bytes);
+  const contentHash = [...new Uint8Array(hashBytes)].map((value) => value.toString(16).padStart(2, "0")).join("");
+  const duplicate = await env.DB.prepare("SELECT id FROM footy_media_images WHERE content_hash = ? AND id <> ? LIMIT 1").bind(contentHash, imageId).first();
+  const key = `match-images/${imageId}.${extensions[mime]}`;
+  await env.MATCH_MEDIA.put(key, bytes, { httpMetadata: { contentType: mime, cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { source: image.source, sourceUrl: String(sourceUrl) } });
+  const now = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE footy_media_images SET content_hash = ?, duplicate_of_image_id = ?, hard_asset_key = ?, hard_asset_mime = ?, hard_asset_size = ?, hard_saved_at = ?, hard_save_error = NULL WHERE id = ?`).bind(contentHash, duplicate?.id || null, key, mime, bytes.byteLength, now, imageId),
+    env.DB.prepare(`INSERT INTO footy_media_manager_state (manager_id, image_id, seen_at, soft_saved_at, updated_at)
+      VALUES (?, ?, NULL, ?, ?) ON CONFLICT(manager_id, image_id) DO UPDATE SET soft_saved_at = COALESCE(footy_media_manager_state.soft_saved_at, excluded.soft_saved_at), updated_at = excluded.updated_at`).bind(managerId, imageId, now, now),
+  ]);
+  return mapHardSavedImage({ ...image, hard_asset_key: key, hard_asset_mime: mime, hard_asset_size: bytes.byteLength, hard_saved_at: now, duplicate_of_image_id: duplicate?.id || null });
+  } catch (error) {
+    await env.DB.prepare("UPDATE footy_media_images SET hard_save_error = ? WHERE id = ?").bind(String(error?.message || "Hard Save failed.").slice(0, 500), imageId).run();
+    throw error;
+  }
+}
+
+function mapHardSavedImage(row) {
+  return { id: row.id, hardSaved: Boolean(row.hard_saved_at), softSaved: true, assetUrl: row.hard_saved_at ? `/media/match-images/${encodeURIComponent(row.id)}` : "", duplicateOfImageId: row.duplicate_of_image_id || "", mime: row.hard_asset_mime || "", size: Number(row.hard_asset_size || 0) };
+}
+
+async function getMatchMediaAsset(env, imageId, request, context) {
+  if (!env.MATCH_MEDIA) return new Response("Not found.", { status: 404 });
+  const row = await env.DB.prepare("SELECT hard_asset_key FROM footy_media_images WHERE id = ?").bind(imageId).first();
+  if (!row?.hard_asset_key) return new Response("Not found.", { status: 404 });
+  const object = await env.MATCH_MEDIA.get(row.hard_asset_key);
+  if (!object) return new Response("Not found.", { status: 404 });
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("ETag", object.httpEtag);
+  if (request.headers.get("If-None-Match") === object.httpEtag) return new Response(null, { status: 304, headers });
+  context?.waitUntil?.(Promise.resolve());
+  return new Response(object.body, { headers });
+}
+
+export async function reviewMatchMediaGallery(env, galleryId, body) {
+  const current = await env.DB.prepare("SELECT * FROM footy_media_galleries WHERE id = ?").bind(galleryId).first();
+  if (!current) throw httpError(404, "Gallery was not found.");
+  const rejected = body.rejected === true;
+  const matchId = rejected ? null : String(body.matchId || "").trim();
+  if (!rejected && !matchId) throw httpError(400, "Choose a match or reject the gallery.");
+  const category = body.category === undefined ? current.category : matchMediaChoice(body.category, MATCH_MEDIA_CATEGORIES, "other", "category");
+  await env.DB.prepare("UPDATE footy_media_galleries SET match_id = ?, match_status = ?, category = ?, last_observed_at = ? WHERE id = ?").bind(matchId, rejected ? "rejected" : "manual", category, new Date().toISOString(), galleryId).run();
+  return { id: galleryId, matchId: matchId || "", matchStatus: rejected ? "rejected" : "manual", category };
+}
+
+function mapMatchMediaScan(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    status: row.status,
+    requestedAt: row.requested_at,
+    startedAt: row.started_at || "",
+    finishedAt: row.finished_at || "",
+    sourceCount: Number(row.source_count || 0),
+    galleryCount: Number(row.gallery_count || 0),
+    newImageCount: Number(row.new_image_count || 0),
+    existingImageCount: Number(row.existing_image_count || 0),
+    unmatchedGalleryCount: Number(row.unmatched_gallery_count || 0),
+    errorCount: Number(row.error_count || 0),
+    errorSummary: row.error_summary || "",
+    report: safeJsonValue(row.report_json, null),
+  };
+}
+
+export async function getMatchMediaScan(env, scanId) {
+  const row = await env.DB.prepare("SELECT * FROM footy_media_scans WHERE id = ?").bind(scanId).first();
+  if (!row) throw httpError(404, "Scan was not found.");
+  return mapMatchMediaScan(row);
+}
+
+export async function requestMatchMediaScan(env, managerId) {
+  const active = await env.DB.prepare("SELECT * FROM footy_media_scans WHERE status IN ('queued', 'running') ORDER BY requested_at DESC LIMIT 1").first();
+  if (active) throw httpError(409, "A match image scan is already active.");
+  if (!env.GITHUB_ACTIONS_TOKEN || !env.GITHUB_REPOSITORY) throw httpError(503, "Manual match image scanning is not configured.");
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO footy_media_scans (id, requested_by, requested_at, status) VALUES (?, ?, ?, 'queued')").bind(id, managerId, now).run();
+  const workflow = String(env.GITHUB_MEDIA_WORKFLOW || "update-footy-media.yml");
+  const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, {
+    method: "POST",
+    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${env.GITHUB_ACTIONS_TOKEN}`, "Content-Type": "application/json", "User-Agent": "box-this-lap-footy-media" },
+    body: JSON.stringify({ ref: String(env.GITHUB_MEDIA_REF || "dev"), inputs: { request_id: id } }),
+  });
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 300);
+    await env.DB.prepare("UPDATE footy_media_scans SET status = 'failed', finished_at = ?, error_count = 1, error_summary = ? WHERE id = ?").bind(new Date().toISOString(), `GitHub dispatch failed (${response.status}): ${detail}`, id).run();
+    throw httpError(502, "GitHub could not start the match image scan.");
+  }
+  return getMatchMediaScan(env, id);
+}
+
+export async function getMatchMediaHealth(env) {
+  const latestScan = await env.DB.prepare("SELECT * FROM footy_media_scans ORDER BY requested_at DESC LIMIT 1").first();
+  const runs = await env.DB.prepare(`
+    SELECT current.*,
+      (SELECT finished_at FROM footy_media_source_runs successful WHERE successful.source = current.source AND successful.status = 'completed' ORDER BY finished_at DESC LIMIT 1) AS last_success_at
+    FROM footy_media_source_runs current
+    WHERE started_at = (SELECT MAX(candidate.started_at) FROM footy_media_source_runs candidate WHERE candidate.source = current.source)
+    ORDER BY source
+  `).all();
+  const bySource = new Map((runs.results || []).map((row) => [row.source, row]));
+  return {
+    latestScan: mapMatchMediaScan(latestScan),
+    sources: ["arsenal", "barcelona", "getty"].map((source) => {
+      const row = bySource.get(source);
+      return { source, status: row?.status || "unavailable", lastCheckedAt: row?.finished_at || "", lastSuccessAt: row?.last_success_at || "", galleriesFound: Number(row?.galleries_found || 0), imagesFound: Number(row?.images_found || 0), error: row?.error_summary || "" };
+    }),
+  };
+}
+
+function requireMatchMediaSync(request, env) {
+  const supplied = request.headers.get("X-Media-Sync-Token") || "";
+  if (!env.MEDIA_SYNC_TOKEN || supplied !== env.MEDIA_SYNC_TOKEN) throw httpError(401, "Match media sync authorization is invalid.");
+}
+
+export async function syncMatchMediaScan(env, scanId, action, body) {
+  let row = await env.DB.prepare("SELECT * FROM footy_media_scans WHERE id = ?").bind(scanId).first();
+  const now = new Date().toISOString();
+  if (!row && action === "start") {
+    await env.DB.prepare("INSERT INTO footy_media_scans (id, requested_at, started_at, status) VALUES (?, ?, ?, 'running')").bind(scanId, now, now).run();
+  } else if (!row) {
+    throw httpError(404, "Scan was not found.");
+  } else if (action === "start") {
+    await env.DB.prepare("UPDATE footy_media_scans SET status = 'running', started_at = ?, finished_at = NULL, error_summary = NULL WHERE id = ?").bind(now, scanId).run();
+  }
+  if (action === "import") await importMatchMedia(env, scanId, body);
+  if (action === "finish") {
+    const status = ["completed", "partial", "failed"].includes(body.status) ? body.status : "failed";
+    const summary = body.summary || {};
+    await env.DB.prepare(`UPDATE footy_media_scans SET status = ?, finished_at = ?, source_count = ?, gallery_count = ?, new_image_count = ?, existing_image_count = ?, unmatched_gallery_count = ?, error_count = ?, error_summary = ?, report_json = ? WHERE id = ?`).bind(status, now, Number(summary.sourceCount || 0), Number(summary.galleryCount || 0), Number(summary.newImageCount || 0), Number(summary.existingImageCount || 0), Number(summary.unmatchedGalleryCount || 0), Number(summary.errorCount || 0), String(summary.errorSummary || ""), JSON.stringify(body.report || null), scanId).run();
+  }
+  row = await env.DB.prepare("SELECT * FROM footy_media_scans WHERE id = ?").bind(scanId).first();
+  return mapMatchMediaScan(row);
+}
+
+export async function importMatchMedia(env, scanId, body) {
+  const galleries = Array.isArray(body.galleries) ? body.galleries : [];
+  const sourceRuns = Array.isArray(body.sourceRuns) ? body.sourceRuns : [];
+  const now = new Date().toISOString();
+  const statements = [];
+  for (const run of sourceRuns) {
+    const source = matchMediaChoice(run.source, MATCH_MEDIA_SOURCES, "", "source");
+    statements.push(env.DB.prepare(`INSERT INTO footy_media_source_runs (id, scan_id, source, started_at, finished_at, status, pages_scanned, galleries_found, images_found, error_summary)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET finished_at = excluded.finished_at, status = excluded.status, pages_scanned = excluded.pages_scanned, galleries_found = excluded.galleries_found, images_found = excluded.images_found, error_summary = excluded.error_summary`).bind(String(run.id || `${scanId}:${source}`), scanId, source, String(run.startedAt || now), String(run.finishedAt || now), ["completed", "failed", "suspect"].includes(run.status) ? run.status : "failed", Number(run.pagesScanned || 0), Number(run.galleriesFound || 0), Number(run.imagesFound || 0), String(run.error || "")));
+  }
+  for (const gallery of galleries) {
+    const source = matchMediaChoice(gallery.source, MATCH_MEDIA_SOURCES, "", "source");
+    const id = String(gallery.id || "").trim();
+    const sourceGalleryId = String(gallery.sourceGalleryId || "").trim();
+    const teamId = String(gallery.teamId || "").trim();
+    if (!id || !sourceGalleryId || !teamId || !gallery.sourceUrl || !gallery.title) throw httpError(400, "Imported gallery metadata is incomplete.");
+    const category = matchMediaChoice(gallery.category, MATCH_MEDIA_CATEGORIES, "other", "category");
+    const matchStatus = ["auto", "review", "rejected", "unmatched"].includes(gallery.matchStatus) ? gallery.matchStatus : "unmatched";
+    statements.push(env.DB.prepare(`INSERT INTO footy_media_galleries (id, source, source_gallery_id, team_id, match_id, source_url, title, published_at, category, expected_image_count, match_confidence, match_status, match_evidence, first_observed_at, last_observed_at, last_extracted_at, extraction_status, extraction_error)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(source, source_gallery_id) DO UPDATE SET team_id = excluded.team_id, match_id = COALESCE(footy_media_galleries.match_id, excluded.match_id), source_url = excluded.source_url, title = excluded.title, published_at = excluded.published_at, category = excluded.category, expected_image_count = excluded.expected_image_count, match_confidence = MAX(footy_media_galleries.match_confidence, excluded.match_confidence), match_status = CASE WHEN footy_media_galleries.match_status = 'manual' THEN 'manual' ELSE excluded.match_status END, match_evidence = excluded.match_evidence, last_observed_at = excluded.last_observed_at, last_extracted_at = excluded.last_extracted_at, extraction_status = excluded.extraction_status, extraction_error = excluded.extraction_error`).bind(id, source, sourceGalleryId, teamId, gallery.matchId || null, String(gallery.sourceUrl), String(gallery.title), gallery.publishedAt || null, category, gallery.expectedImageCount === null || gallery.expectedImageCount === undefined ? null : Number(gallery.expectedImageCount), Number(gallery.matchConfidence || 0), matchStatus, JSON.stringify(gallery.matchEvidence || []), String(gallery.firstObservedAt || now), now, now, String(gallery.extractionStatus || "complete"), String(gallery.extractionError || "")));
+    for (const [ordinal, imported] of (Array.isArray(gallery.images) ? gallery.images : []).entries()) {
+      const imageId = String(imported.id || "").trim();
+      const sourceImageKey = String(imported.sourceImageKey || "").trim();
+      if (!imageId || !sourceImageKey || !imported.originalPageUrl) throw httpError(400, "Imported image metadata is incomplete.");
+      const renderMode = imported.renderMode === "getty_embed" ? "getty_embed" : "image";
+      statements.push(env.DB.prepare(`INSERT INTO footy_media_images (id, source, source_image_key, source_image_url, original_page_url, render_mode, embed_url, caption, photographer_credit, width, height, normalized_url, first_observed_at, last_observed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(source, source_image_key) DO UPDATE SET source_image_url = excluded.source_image_url, original_page_url = excluded.original_page_url, render_mode = excluded.render_mode, embed_url = excluded.embed_url, caption = COALESCE(excluded.caption, footy_media_images.caption), photographer_credit = COALESCE(excluded.photographer_credit, footy_media_images.photographer_credit), width = COALESCE(excluded.width, footy_media_images.width), height = COALESCE(excluded.height, footy_media_images.height), normalized_url = excluded.normalized_url, last_observed_at = excluded.last_observed_at`).bind(imageId, source, sourceImageKey, imported.sourceImageUrl || null, String(imported.originalPageUrl), renderMode, imported.embedUrl || null, imported.caption || null, imported.credit || null, imported.width || null, imported.height || null, imported.normalizedUrl || imported.sourceImageUrl || null, String(imported.firstObservedAt || now), now));
+      statements.push(env.DB.prepare(`INSERT INTO footy_media_gallery_images (gallery_id, image_id, ordinal) VALUES (?, ?, ?) ON CONFLICT(gallery_id, image_id) DO UPDATE SET ordinal = excluded.ordinal`).bind(id, imageId, Number(imported.ordinal ?? ordinal)));
+    }
+  }
+  for (let index = 0; index < statements.length; index += 80) await env.DB.batch(statements.slice(index, index + 80));
+  return { galleries: galleries.length };
+}
+
 function normalizeMatchKit(value) {
   const kit = String(value || "").trim().toLowerCase();
   if (!["", "home", "away", "third"].includes(kit)) {
@@ -1192,8 +1627,8 @@ function allowedOrigin(origin, env) {
 
 function corsHeaders(origin, env) {
   const headers = {
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Media-Sync-Token",
+    "Access-Control-Allow-Methods": "GET, PATCH, POST, PUT, DELETE, OPTIONS",
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     Vary: "Origin",

@@ -116,6 +116,7 @@ const specialistRoots = {
   collectibles: document.querySelector('[data-page="collectibles"]'),
   databaseAdmin: document.querySelector('[data-page="database-admin"]'),
   merchandise: document.querySelector('[data-page="merchandise"]'),
+  matchImages: document.querySelector('[data-page="match-images"]'),
   psn: document.querySelector('[data-page="psn"]'),
   trophyLog: document.querySelector('[data-page="trophy-log"]'),
   trophyStats: document.querySelector('[data-page="trophy-stats"]'),

@@ -140,7 +140,10 @@ export function matchGalleryToFixture(gallery, fixtures) {
       if (hours <= 12) {
         score += 25;
         evidence.push("published-within-12h");
-      } else if (hours <= 72) evidence.push("published-within-72h");
+      } else if (hours <= 72) {
+        score += 10;
+        evidence.push("published-within-72h");
+      }
       if (["match", "celebration", "behind_scenes"].includes(category)) {
         score += 15;
         evidence.push(`category:${category}`);

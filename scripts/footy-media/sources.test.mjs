@@ -64,6 +64,25 @@ test("fixture matching applies the documented confidence threshold", () => {
   assert.equal(result.matchStatus, "auto");
   assert.equal(result.matchId, "fixture-1");
   assert.ok(result.matchConfidence >= 90);
+
+  const nextDay = matchGalleryToFixture(
+    {
+      teamId: "2",
+      title: "Photos from the win over Sevilla",
+      publishedAt: "2026-09-20T20:00:00Z",
+      category: "match",
+    },
+    [
+      {
+        teamId: "2",
+        opponent: "Sevilla FC",
+        matchId: "fixture-2",
+        timestamp: "2026-09-19T19:00:00Z",
+      },
+    ],
+  );
+  assert.equal(nextDay.matchStatus, "auto");
+  assert.equal(nextDay.matchId, "fixture-2");
 });
 
 test("Getty ingestion only accepts explicit embed URLs", () => {

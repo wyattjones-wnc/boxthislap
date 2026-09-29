@@ -62,10 +62,11 @@ try {
   report.summary = {
     sourceCount: report.sources.length,
     galleryCount: report.galleries.length,
-    newImageCount: report.galleries.reduce(
-      (total, gallery) => total + gallery.images.length,
-      0,
-    ),
+    newImageCount: new Set(
+      report.galleries.flatMap((gallery) =>
+        gallery.images.map((image) => image.id),
+      ),
+    ).size,
     existingImageCount: 0,
     unmatchedGalleryCount: report.galleries.filter(
       (gallery) => gallery.matchStatus === "review",

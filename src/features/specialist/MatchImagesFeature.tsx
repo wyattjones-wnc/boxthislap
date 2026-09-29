@@ -123,6 +123,22 @@ function formatDate(value: string) {
     : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
+function isReviewableFixture(fixture: Fixture, now = Date.now()) {
+  const playedAt = Date.parse(fixture.timestamp);
+  if (!Number.isFinite(playedAt)) return false;
+  const status = String(fixture.status || "").toUpperCase();
+  if (
+    ["ABANDONED", "CANCELED", "CANCELLED", "POSTPONED", "SUSPENDED"].includes(
+      status,
+    )
+  )
+    return false;
+  return (
+    ["FT", "FINISHED", "AET", "PEN"].includes(status) ||
+    playedAt <= now - 4 * 60 * 60 * 1000
+  );
+}
+
 export default function MatchImagesFeature() {
   const [view, setView] = useState<View>("unseen");
   const [teamId, setTeamId] = useState("");
@@ -192,11 +208,7 @@ export default function MatchImagesFeature() {
           );
         setFixtures(
           rows
-            .filter((fixture: Fixture) =>
-              ["FT", "FINISHED", "AET", "PEN"].includes(
-                String(fixture.status).toUpperCase(),
-              ),
-            )
+            .filter((fixture: Fixture) => isReviewableFixture(fixture))
             .sort(
               (a: Fixture, b: Fixture) =>
                 Date.parse(b.timestamp) - Date.parse(a.timestamp),
@@ -627,7 +639,23 @@ export default function MatchImagesFeature() {
         <div className={styles.empty}>
           <Images aria-hidden="true" />
           <h2>No matching images</h2>
-          <p>Run a scan or change the current filters.</p>
+          <p>
+            {view === "unseen"
+              ? "You're caught up on matched images. Galleries awaiting a fixture are kept in Needs Match."
+              : "Run a scan or change the current filters."}
+          </p>
+          {view === "unseen" ? (
+            <button
+              type="button"
+              className="action-button"
+              onClick={() => {
+                setView("needs-match");
+                setPage(1);
+              }}
+            >
+              Review Needs Match
+            </button>
+          ) : null}
         </div>
       ) : null}
       {feed && (page > 1 || feed.pagination.hasMore) ? (

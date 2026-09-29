@@ -311,7 +311,8 @@ export function recentCompletedFixtures(schedule, now = Date.now(), days = 30) {
     )
     .filter((fixture) => {
       const value = Date.parse(fixture.timestamp || "");
-      if (!Number.isFinite(value) || value < minimum || value > now) return false;
+      if (!Number.isFinite(value) || value < minimum || value > now)
+        return false;
       const status = String(fixture.status || "").toUpperCase();
       return (
         COMPLETED_STATUSES.has(status) ||

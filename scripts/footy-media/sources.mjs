@@ -2,6 +2,14 @@ import { createHash } from "node:crypto";
 
 export const MEDIA_SOURCES = ["arsenal", "barcelona", "getty"];
 export const COMPLETED_STATUSES = new Set(["FT", "FINISHED", "AET", "PEN"]);
+const INACTIVE_STATUSES = new Set([
+  "ABANDONED",
+  "CANCELED",
+  "CANCELLED",
+  "POSTPONED",
+  "SUSPENDED",
+]);
+const COMPLETION_GRACE_MS = 4 * 60 * 60 * 1000;
 
 export function stableMediaId(prefix, value) {
   return `${prefix}_${createHash("sha256").update(String(value)).digest("hex").slice(0, 20)}`;
@@ -296,12 +304,14 @@ export function recentCompletedFixtures(schedule, now = Date.now(), days = 30) {
         teamName: entry.team.name,
       })),
     )
-    .filter((fixture) =>
-      COMPLETED_STATUSES.has(String(fixture.status || "").toUpperCase()),
-    )
     .filter((fixture) => {
       const value = Date.parse(fixture.timestamp || "");
-      return Number.isFinite(value) && value >= minimum && value <= now;
+      if (!Number.isFinite(value) || value < minimum || value > now) return false;
+      const status = String(fixture.status || "").toUpperCase();
+      return (
+        COMPLETED_STATUSES.has(status) ||
+        (!INACTIVE_STATUSES.has(status) && value <= now - COMPLETION_GRACE_MS)
+      );
     });
 }
 

@@ -78,6 +78,21 @@ test("recent completed fixtures selects only followed teams and final states", (
         fixtures: [
           { matchId: "done", status: "FT", timestamp: "2026-09-27T12:00:00Z" },
           {
+            matchId: "stale-status",
+            status: "TIMED",
+            timestamp: "2026-09-27T18:00:00Z",
+          },
+          {
+            matchId: "postponed",
+            status: "POSTPONED",
+            timestamp: "2026-09-27T18:00:00Z",
+          },
+          {
+            matchId: "still-playing",
+            status: "TIMED",
+            timestamp: "2026-09-28T10:00:00Z",
+          },
+          {
             matchId: "future",
             status: "TIMED",
             timestamp: "2026-09-29T12:00:00Z",
@@ -94,7 +109,7 @@ test("recent completed fixtures selects only followed teams and final states", (
   };
   assert.deepEqual(
     recentCompletedFixtures(schedule, now).map((fixture) => fixture.matchId),
-    ["done"],
+    ["done", "stale-status"],
   );
   assert.equal(
     classifyGallery("Behind the scenes after the final"),

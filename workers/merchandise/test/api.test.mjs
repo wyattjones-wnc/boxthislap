@@ -109,7 +109,6 @@ test("product listing reads one bounded page without full-feed counts", async ()
   assert.equal(result.pagination.hasMore, true);
   assert.ok(bindings[0].includes(49));
 });
-
 test("sale listing is paginated and remains independent of seen state", async () => {
   let productQuery = "";
   const env = {

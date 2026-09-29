@@ -342,6 +342,7 @@ export default function MatchImagesFeature() {
   const reviewGallery = async (
     image: ImageCandidate,
     nextMatchId: string,
+    nextCategory: string,
     rejected = false,
   ) => {
     setBusy(true);
@@ -351,13 +352,19 @@ export default function MatchImagesFeature() {
         `/api/match-media/galleries/${encodeURIComponent(image.gallery.id)}`,
         {
           method: "PATCH",
-          body: JSON.stringify({ matchId: nextMatchId, rejected }),
+          body: JSON.stringify({
+            matchId: nextMatchId,
+            category: nextCategory,
+            rejected,
+          }),
         },
       );
       setMessage(
         rejected
           ? "Gallery rejected."
-          : "Gallery linked to the selected match.",
+          : nextMatchId
+            ? "Gallery linked to the selected match."
+            : "Gallery kept without a match.",
       );
       await load();
     } catch (cause) {
@@ -480,6 +487,7 @@ export default function MatchImagesFeature() {
             <option value="">All categories</option>
             <option value="match">Match</option>
             <option value="celebration">Celebration</option>
+            <option value="training">Training</option>
             <option value="behind_scenes">Behind the scenes</option>
             <option value="other">Other</option>
           </select>
@@ -722,12 +730,30 @@ function GalleryReview({
   onSave: (
     image: ImageCandidate,
     matchId: string,
+    category: string,
     rejected?: boolean,
   ) => Promise<void>;
 }) {
   const [value, setValue] = useState("");
+  const [category, setCategory] = useState(image.gallery.category);
+  const mayRemainMatchless = ["training", "behind_scenes", "other"].includes(
+    category,
+  );
   return (
     <div className={styles.review}>
+      <label>
+        <span>Category</span>
+        <select
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+        >
+          <option value="match">Match</option>
+          <option value="celebration">Celebration</option>
+          <option value="training">Training</option>
+          <option value="behind_scenes">Behind the scenes</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
       <label>
         <span>Attach to match</span>
         <select
@@ -746,14 +772,21 @@ function GalleryReview({
       <button
         type="button"
         disabled={busy || !value}
-        onClick={() => void onSave(image, value)}
+        onClick={() => void onSave(image, value, category)}
       >
         Link gallery
       </button>
       <button
         type="button"
+        disabled={busy || !mayRemainMatchless}
+        onClick={() => void onSave(image, "", category)}
+      >
+        Keep without match
+      </button>
+      <button
+        type="button"
         disabled={busy}
-        onClick={() => void onSave(image, "", true)}
+        onClick={() => void onSave(image, "", category, true)}
       >
         Reject
       </button>

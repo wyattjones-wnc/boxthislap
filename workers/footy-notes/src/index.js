@@ -1152,7 +1152,7 @@ function normalizeMatchNote(note) {
 }
 
 const MATCH_MEDIA_SOURCES = new Set(["arsenal", "barcelona", "getty"]);
-const MATCH_MEDIA_CATEGORIES = new Set(["match", "celebration", "behind_scenes", "other"]);
+const MATCH_MEDIA_CATEGORIES = new Set(["match", "celebration", "training", "behind_scenes", "other"]);
 const MATCH_MEDIA_VIEWS = new Set(["unseen", "saved", "hard-saved", "seen", "needs-match", "all"]);
 const MATCH_MEDIA_ASSET_LIMIT = 15 * 1024 * 1024;
 
@@ -1405,10 +1405,11 @@ export async function reviewMatchMediaGallery(env, galleryId, body) {
   const current = await env.DB.prepare("SELECT * FROM footy_media_galleries WHERE id = ?").bind(galleryId).first();
   if (!current) throw httpError(404, "Gallery was not found.");
   const rejected = body.rejected === true;
-  const matchId = rejected ? null : String(body.matchId || "").trim();
-  if (!rejected && !matchId) throw httpError(400, "Choose a match or reject the gallery.");
   const category = body.category === undefined ? current.category : matchMediaChoice(body.category, MATCH_MEDIA_CATEGORIES, "other", "category");
-  await env.DB.prepare("UPDATE footy_media_galleries SET match_id = ?, match_status = ?, category = ?, last_observed_at = ? WHERE id = ?").bind(matchId, rejected ? "rejected" : "manual", category, new Date().toISOString(), galleryId).run();
+  const matchId = rejected ? null : String(body.matchId || "").trim();
+  const mayRemainMatchless = ["training", "behind_scenes", "other"].includes(category);
+  if (!rejected && !matchId && !mayRemainMatchless) throw httpError(400, "Choose a match, choose a non-match category, or reject the gallery.");
+  await env.DB.prepare("UPDATE footy_media_galleries SET match_id = ?, match_status = ?, category = ?, last_observed_at = ? WHERE id = ?").bind(matchId || null, rejected ? "rejected" : "manual", category, new Date().toISOString(), galleryId).run();
   return { id: galleryId, matchId: matchId || "", matchStatus: rejected ? "rejected" : "manual", category };
 }
 

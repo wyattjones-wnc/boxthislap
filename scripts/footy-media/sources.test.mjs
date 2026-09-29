@@ -3,6 +3,8 @@ import { test } from "node:test";
 import {
   classifyGallery,
   matchGalleryToFixture,
+  normalizeDiscoveredGallery,
+  parseArsenalSitemap,
   parseGalleryImages,
   parseGalleryLinks,
   parseGettyEmbeds,
@@ -40,6 +42,20 @@ test("Arsenal discovery accepts gallery routes without relying on headline wordi
   );
   assert.equal(galleries.length, 1);
   assert.equal(galleries[0].sourceGalleryId, "matchday-a1");
+});
+
+test("Arsenal discovery reads recent galleries from its article sitemap", () => {
+  const xml = `<urlset>
+    <url><loc>https://www.arsenal.com/photos/north-london-derby-action-a12345678901</loc><lastmod>2026-09-28T12:00:00Z</lastmod></url>
+    <url><loc>https://www.arsenal.com/news/gallery-training-session-a12345678902</loc><lastmod>2026-09-27T12:00:00Z</lastmod></url>
+    <url><loc>https://www.arsenal.com/news/ordinary-story-a12345678903</loc><lastmod>2026-09-27T12:00:00Z</lastmod></url>
+  </urlset>`;
+  const galleries = parseArsenalSitemap(
+    xml,
+    Date.parse("2026-09-29T12:00:00Z"),
+  );
+  assert.equal(galleries.length, 2);
+  assert.equal(galleries[0].title, "north london derby action");
 });
 
 test("fixture matching applies the documented confidence threshold", () => {
@@ -141,4 +157,20 @@ test("recent completed fixtures selects only followed teams and final states", (
     classifyGallery("Behind the scenes after the final"),
     "behind_scenes",
   );
+  assert.equal(classifyGallery("First-team training session"), "training");
+  const training = normalizeDiscoveredGallery(
+    {
+      source: "arsenal",
+      sourceGalleryId: "training",
+      sourceUrl: "https://www.arsenal.com/news/training",
+      title: "First-team training session",
+      publishedAt: new Date(now).toISOString(),
+    },
+    "1",
+    [],
+    [{ id: "training-image" }],
+    new Date(now).toISOString(),
+  );
+  assert.equal(training.matchStatus, "review");
+  assert.equal(training.images.length, 1);
 });

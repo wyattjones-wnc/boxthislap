@@ -85,6 +85,8 @@ function extractCount(value) {
 
 export function classifyGallery(title) {
   const text = normalizeMediaText(title);
+  if (/training|practice|workout|prepar|\bsession\b/.test(text))
+    return "training";
   if (/behind the scenes|dressing room|inside/.test(text))
     return "behind_scenes";
   if (/celebrat|trophy|victory/.test(text)) return "celebration";
@@ -216,6 +218,46 @@ export function parseGalleryLinks(html, baseUrl, source) {
   return galleries;
 }
 
+export function parseArsenalSitemap(
+  xml,
+  now = Date.now(),
+  maximumAgeDays = 45,
+) {
+  const minimum = now - maximumAgeDays * 86_400_000;
+  const galleries = [];
+  for (const match of String(xml).matchAll(/<url>([\s\S]*?)<\/url>/gi)) {
+    const sourceUrl = decodeHtml(match[1].match(/<loc>(.*?)<\/loc>/i)?.[1]);
+    const publishedAt = decodeHtml(
+      match[1].match(/<lastmod>(.*?)<\/lastmod>/i)?.[1],
+    );
+    let parsed;
+    try {
+      parsed = new URL(sourceUrl);
+    } catch {
+      continue;
+    }
+    const slug = decodeURIComponent(
+      parsed.pathname.split("/").filter(Boolean).at(-1) || "",
+    );
+    const isGallery =
+      /^\/(?:photos|gallery)\//.test(parsed.pathname) ||
+      (/^\/news\//.test(parsed.pathname) &&
+        /gallery|photos?|snaps?|training|inside-training/i.test(slug));
+    const timestamp = Date.parse(publishedAt);
+    if (!isGallery || !Number.isFinite(timestamp) || timestamp < minimum)
+      continue;
+    galleries.push({
+      source: "arsenal",
+      sourceGalleryId: slug || stableMediaId("arsenal", sourceUrl),
+      sourceUrl,
+      title: slug.replace(/-[a-zA-Z0-9]{12}$/, "").replaceAll("-", " "),
+      publishedAt: new Date(timestamp).toISOString(),
+      expectedImageCount: null,
+    });
+  }
+  return galleries;
+}
+
 function plausibleImageUrl(value, source) {
   let url;
   try {
@@ -255,7 +297,7 @@ export function parseGalleryImages(html, gallery) {
       if (plausibleImageUrl(url, gallery.source)) candidates.push(url);
     }
   }
-  return unique(candidates).map((sourceImageUrl, ordinal) => {
+  const images = unique(candidates).map((sourceImageUrl) => {
     const parsed = new URL(sourceImageUrl);
     const sourceImageKey =
       parsed.searchParams.get("id") ||
@@ -271,9 +313,28 @@ export function parseGalleryImages(html, gallery) {
       normalizedUrl: normalizedUrl.href,
       originalPageUrl: gallery.sourceUrl,
       renderMode: "image",
-      ordinal,
+      ordinal: 0,
     };
   });
+  const preferred = new Map();
+  for (const image of images) {
+    const current = preferred.get(image.sourceImageKey);
+    const score = /\/(?:xl_landscape|large|original)\//i.test(
+      image.sourceImageUrl,
+    )
+      ? 2
+      : /\/(?:hero_carousel|gm_preview|small|thumb)\//i.test(
+            image.sourceImageUrl,
+          )
+        ? 0
+        : 1;
+    if (!current || score > current.score)
+      preferred.set(image.sourceImageKey, { image, score });
+  }
+  return [...preferred.values()].map(({ image }, ordinal) => ({
+    ...image,
+    ordinal,
+  }));
 }
 
 export function parseGettyEmbeds(html, originalPageUrl) {
@@ -336,6 +397,10 @@ export function normalizeDiscoveredGallery(
     { ...gallery, teamId, category },
     fixtures,
   );
+  const reviewedMatch =
+    category === "training" && match.matchStatus === "rejected"
+      ? { ...match, matchStatus: "review" }
+      : match;
   return {
     id: stableMediaId(
       "gallery",
@@ -344,7 +409,7 @@ export function normalizeDiscoveredGallery(
     ...gallery,
     teamId,
     category,
-    ...match,
+    ...reviewedMatch,
     firstObservedAt: observedAt,
     extractionStatus:
       gallery.extractionStatus ||
@@ -352,6 +417,6 @@ export function normalizeDiscoveredGallery(
         ? "partial"
         : "complete"),
     extractionError: gallery.extractionError || "",
-    images: match.matchStatus === "rejected" ? [] : images,
+    images: reviewedMatch.matchStatus === "rejected" ? [] : images,
   };
 }

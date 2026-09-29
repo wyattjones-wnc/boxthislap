@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import process from "node:process";
 import {
   normalizeDiscoveredGallery,
+  parseArsenalSitemap,
   parseGalleryImages,
   parseGalleryLinks,
   parseGettyEmbeds,
@@ -127,10 +128,7 @@ async function scanClub(source) {
     const teamId = source === "arsenal" ? "1" : "2";
     const indexes =
       source === "arsenal"
-        ? [
-            "https://www.arsenal.com/news/men/1",
-            "https://www.arsenal.com/news/all/1",
-          ]
+        ? ["https://www.arsenal.com/sitemaps/articles/1/sitemap.xml"]
         : [
             "https://www.fcbarcelona.com/en/football/first-team/photos",
             "https://www.fcbarcelona.com/en/football/first-team/galleries",
@@ -141,7 +139,11 @@ async function scanClub(source) {
         browserFallback: source === "arsenal",
       });
       run.pagesScanned += 1;
-      for (const gallery of parseGalleryLinks(html, url, source)) {
+      const parsed =
+        source === "arsenal"
+          ? parseArsenalSitemap(html)
+          : parseGalleryLinks(html, url, source);
+      for (const gallery of parsed) {
         if (
           !discovered.some(
             (item) => item.sourceGalleryId === gallery.sourceGalleryId,
@@ -266,7 +268,11 @@ async function scanGetty() {
       (total, gallery) => total + gallery.images.length,
       0,
     );
-    run.status = "completed";
+    run.status = galleries.length ? "completed" : "suspect";
+    if (!galleries.length) {
+      run.error =
+        "Getty public search did not expose licensed embed URLs; Getty API access is required.";
+    }
     return { run: finishRun(run), galleries };
   } catch (error) {
     run.status = "failed";
@@ -280,7 +286,11 @@ function finishRun(run) {
   return run;
 }
 
-async function fetchText(url, { browserFallback = false } = {}) {
+async function fetchText(
+  url,
+  { browserFallback = false, browserRender = false } = {},
+) {
+  if (browserRender) return renderPage(url);
   const response = await fetch(url, {
     headers: {
       Accept: "text/html,application/xhtml+xml",
@@ -293,12 +303,16 @@ async function fetchText(url, { browserFallback = false } = {}) {
   if (response.ok) return response.text();
   if (!browserFallback || ![403, 429].includes(response.status))
     throw new Error(`${url} returned HTTP ${response.status}.`);
+  return renderPage(url);
+}
+
+async function renderPage(url) {
   const { chromium } = await import("playwright");
   browserState.browser ||= await chromium.launch({ headless: true });
   const page = await browserState.browser.newPage({ locale: "en-US" });
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
-    await page.waitForTimeout(2_000);
+    await page.waitForTimeout(3_000);
     return await page.content();
   } finally {
     await page.close();

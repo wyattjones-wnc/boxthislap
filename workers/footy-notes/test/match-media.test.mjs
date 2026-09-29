@@ -8,12 +8,16 @@ import {
   importMatchMedia,
   listMatchMedia,
   markMatchMediaSeenThrough,
+  reviewMatchMediaGallery,
   saveMatchMediaState,
   syncMatchMediaScan,
 } from "../src/index.js";
 
 const schemaPath = fileURLToPath(
   new URL("../migrations/0010_match_media.sql", import.meta.url),
+);
+const trainingMigrationPath = fileURLToPath(
+  new URL("../migrations/0011_match_media_training.sql", import.meta.url),
 );
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
@@ -81,6 +85,38 @@ test("Getty embeds cannot be hard saved", async (context) => {
     () => hardSaveMatchMedia({ DB, MATCH_MEDIA: {} }, "6", "getty-1"),
     (error) => error.status === 409,
   );
+});
+
+test("review can keep a training gallery without a match", async (context) => {
+  const worker = await createWorker();
+  context.after(() => worker.dispose());
+  const DB = await worker.getD1Database("DB");
+  await executeSql(DB, await readFile(schemaPath, "utf8"));
+  await executeSql(DB, await readFile(trainingMigrationPath, "utf8"));
+  await DB.prepare(
+    `INSERT INTO footy_media_galleries
+      (id, source, source_gallery_id, team_id, source_url, title, category, match_status, first_observed_at, last_observed_at)
+     VALUES ('training-1', 'barcelona', 'training-1', '2', 'https://example.com/training', 'Training session', 'other', 'review', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+  ).run();
+
+  const reviewed = await reviewMatchMediaGallery({ DB }, "training-1", {
+    category: "training",
+    matchId: "",
+  });
+  assert.deepEqual(reviewed, {
+    id: "training-1",
+    matchId: "",
+    matchStatus: "manual",
+    category: "training",
+  });
+  const stored = await DB.prepare(
+    "SELECT category, match_id, match_status FROM footy_media_galleries WHERE id = 'training-1'",
+  ).first();
+  assert.deepEqual(stored, {
+    category: "training",
+    match_id: null,
+    match_status: "manual",
+  });
 });
 
 test("Hard Save copies an imported club image and applies Soft Save", async (context) => {

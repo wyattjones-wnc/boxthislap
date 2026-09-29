@@ -141,9 +141,14 @@ test("seen listing is paginated and includes explicitly seen products", async ()
       },
     },
   };
-  await listProducts(env, "6", new URLSearchParams("view=seen&limit=24"));
+  await listProducts(
+    env,
+    "6",
+    new URLSearchParams("view=seen&sort=seen-oldest&limit=24"),
+  );
   assert.match(productQuery, /s\.seen_at IS NOT NULL/);
   assert.doesNotMatch(productQuery, /p\.in_scope = 1/);
+  assert.match(productQuery, /ORDER BY s\.seen_at ASC, p\.id ASC/);
   assert.match(productQuery, /LIMIT \? OFFSET \?/);
 });
 

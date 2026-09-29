@@ -9,6 +9,7 @@ const CATEGORIES = new Set([
   "home",
   "other",
 ]);
+const SEEN_SORTS = new Set(["seen-newest", "seen-oldest"]);
 
 export default {
   async fetch(request, env) {
@@ -100,14 +101,29 @@ export async function listProducts(env, managerId, searchParams) {
   );
   const page = positiveInteger(searchParams.get("page"), 1);
   const limit = Math.min(100, positiveInteger(searchParams.get("limit"), 48));
+  const sort =
+    view === "seen"
+      ? normalizedChoice(
+          searchParams.get("sort"),
+          SEEN_SORTS,
+          "seen-newest",
+          "sort",
+        )
+      : "newest";
   const { where, params } = feedScope({ category, managerId, team, view });
+  const orderBy =
+    sort === "seen-oldest"
+      ? "s.seen_at ASC, p.id ASC"
+      : sort === "seen-newest"
+        ? "s.seen_at DESC, p.id ASC"
+        : "p.first_observed_at DESC, p.id ASC";
   const result = await env.DB.prepare(
     `
     SELECT p.*, s.seen_at, s.wishlisted_at
     FROM merch_products p
     LEFT JOIN merch_manager_state s ON s.product_id = p.id AND s.manager_id = ?
     WHERE ${where.join(" AND ")}
-    ORDER BY p.first_observed_at DESC, p.id ASC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `,
   )
@@ -120,6 +136,7 @@ export async function listProducts(env, managerId, searchParams) {
     items: rows.slice(0, limit).map(mapProduct),
     pagination: { hasMore, page, limit },
     sources: await sourceHealth(env),
+    sort,
     view,
   };
 }

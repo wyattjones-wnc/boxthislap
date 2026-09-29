@@ -76,6 +76,19 @@ describe("MerchandiseFeature", () => {
     expect(screen.getByRole("button", { name: "Seen" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Sale" })).not.toBeNull();
     expect(screen.getByText("$129.99").tagName).toBe("DEL");
+    await user.click(screen.getByRole("button", { name: "Seen" }));
+    const sort = await screen.findByLabelText("Sort seen products");
+    await user.selectOptions(sort, "seen-oldest");
+    await waitFor(() =>
+      expect(
+        requests.some(
+          (request) =>
+            request.url.includes("view=seen") &&
+            request.url.includes("sort=seen-oldest"),
+        ),
+      ).toBe(true),
+    );
+    await user.click(screen.getByRole("button", { name: "Unseen" }));
     await user.click(screen.getByRole("link", { name: "Home shirt" }));
     expect(
       requests.some(

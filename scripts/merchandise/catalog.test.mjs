@@ -52,6 +52,17 @@ test("normalizes Barcelona parent products and ignores size variants for identit
   assert.equal(product.imageUrl, "https://cdn.example/shirt.jpg");
 });
 
+test("does not treat configurable Barcelona parent products as sold out", () => {
+  const product = normalizeBarcelonaProduct({
+    id: 43,
+    handle: "player-home-shirt",
+    title: "Player Home Jersey",
+    product_type: "Ficticious",
+    variants: [{ price: "235.00", available: false }],
+  });
+  assert.equal(product.availability, "unknown");
+});
+
 test("Barcelona scanner paginates until a short page", async () => {
   const pages = [
     [

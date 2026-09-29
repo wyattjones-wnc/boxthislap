@@ -4,6 +4,7 @@ import { useAppState } from "../../app/providers";
 import styles from "./MerchandiseFeature.module.css";
 
 type View = "unseen" | "all" | "seen" | "wishlist" | "sale";
+type SeenSort = "seen-newest" | "seen-oldest";
 type Product = {
   availability: "in_stock" | "out_of_stock" | "unknown";
   canonicalUrl: string;
@@ -76,6 +77,7 @@ export function MerchandiseFeature() {
   const [view, setView] = useState<View>("unseen");
   const [team, setTeam] = useState("");
   const [category, setCategory] = useState("");
+  const [seenSort, setSeenSort] = useState<SeenSort>("seen-newest");
   const [page, setPage] = useState(1);
   const [feed, setFeed] = useState<Feed | null>(null);
   const [busy, setBusy] = useState(false);
@@ -95,6 +97,7 @@ export function MerchandiseFeature() {
       });
       if (team) params.set("team", team);
       if (category) params.set("category", category);
+      if (view === "seen") params.set("sort", seenSort);
       setFeed(await api<Feed>(`/api/products?${params}`));
     } catch (cause) {
       setError(
@@ -105,7 +108,7 @@ export function MerchandiseFeature() {
     } finally {
       setBusy(false);
     }
-  }, [category, page, route, team, view]);
+  }, [category, page, route, seenSort, team, view]);
 
   useEffect(() => {
     void load();
@@ -113,7 +116,7 @@ export function MerchandiseFeature() {
   useEffect(() => {
     setPage(1);
     setConfirmingId("");
-  }, [category, team, view]);
+  }, [category, seenSort, team, view]);
 
   const updateState = async (
     product: Product,
@@ -252,6 +255,21 @@ export function MerchandiseFeature() {
               ))}
             </select>
           </label>
+          {view === "seen" ? (
+            <label>
+              Sort
+              <select
+                aria-label="Sort seen products"
+                value={seenSort}
+                onChange={(event) =>
+                  setSeenSort(event.target.value as SeenSort)
+                }
+              >
+                <option value="seen-newest">Most recently seen</option>
+                <option value="seen-oldest">Earliest seen</option>
+              </select>
+            </label>
+          ) : null}
         </div>
         <span className={styles.resultCount}>
           {feed ? `${feed.items.length.toLocaleString()} shown` : ""}

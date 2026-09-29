@@ -67,12 +67,16 @@ export function normalizeBarcelonaProduct(
     variants.find((variant) => variant.available !== false) ||
     variants[0] ||
     {};
+  const isConfigurableProduct =
+    String(product.product_type || "").toLowerCase() === "ficticious";
   return {
-    availability: variants.length
-      ? variants.some((variant) => variant.available !== false)
-        ? "in_stock"
-        : "out_of_stock"
-      : "unknown",
+    availability: isConfigurableProduct
+      ? "unknown"
+      : variants.length
+        ? variants.some((variant) => variant.available !== false)
+          ? "in_stock"
+          : "out_of_stock"
+        : "unknown",
     canonicalUrl: `${baseUrl.replace(/\/$/, "")}/products/${encodeURIComponent(handle)}`,
     category: normalizeCategory(product.product_type, product.tags, title),
     currency: String(selectedVariant.currency || "USD").toUpperCase(),

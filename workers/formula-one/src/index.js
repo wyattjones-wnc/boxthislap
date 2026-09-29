@@ -413,37 +413,42 @@ async function requireManager(request, env) {
 }
 
 async function readManagerWeekly(env, year, managerId) {
-  const [roundQuery, driverQuery, roundDriverQuery, entryQuery, submittedEntryQuery] =
-    await Promise.all([
-      env.DB.prepare(
-        "SELECT year, round, name, race_date, deadline_at, has_sprint FROM f1_rounds WHERE year = ? ORDER BY round",
-      )
-        .bind(year)
-        .all(),
-      env.DB.prepare(
-        "SELECT year, driver_id, display_name, constructor_name, active FROM f1_drivers WHERE year = ? ORDER BY display_name",
-      )
-        .bind(year)
-        .all(),
-      env.DB.prepare(
-        "SELECT year, round, driver_id, source FROM f1_round_drivers WHERE year = ? ORDER BY round, driver_id",
-      )
-        .bind(year)
-        .all(),
-      env.DB.prepare(
-        "SELECT year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at FROM f1_weekly_entries WHERE year = ? AND manager_id = ? ORDER BY round",
-      )
-        .bind(year, managerId)
-        .all(),
-      env.DB.prepare(
-        "SELECT year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at FROM f1_weekly_entries WHERE year = ? AND entry_status = 'submitted' ORDER BY round, manager_id",
-      )
-        .bind(year)
-        .all(),
-    ]);
+  const [
+    roundQuery,
+    driverQuery,
+    roundDriverQuery,
+    entryQuery,
+    submittedEntryQuery,
+  ] = await Promise.all([
+    env.DB.prepare(
+      "SELECT year, round, name, race_date, deadline_at, has_sprint FROM f1_rounds WHERE year = ? ORDER BY round",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      "SELECT year, driver_id, display_name, constructor_name, active FROM f1_drivers WHERE year = ? ORDER BY display_name",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      "SELECT year, round, driver_id, source FROM f1_round_drivers WHERE year = ? ORDER BY round, driver_id",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      "SELECT year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at FROM f1_weekly_entries WHERE year = ? AND manager_id = ? ORDER BY round",
+    )
+      .bind(year, managerId)
+      .all(),
+    env.DB.prepare(
+      "SELECT year, round, manager_id, p1_driver_id, p2_driver_id, p3_driver_id, wildcard_driver_id, entry_status, submitted_at, updated_at FROM f1_weekly_entries WHERE year = ? AND entry_status = 'submitted' ORDER BY round, manager_id",
+    )
+      .bind(year)
+      .all(),
+  ]);
   const rounds = roundQuery.results || [];
   const publicWeekly = await readPublicWeekly(env, year);
-  await backfillMissingQualifyingDeadlines(env, year, rounds);
+  await syncProviderSchedule(env, year, rounds);
   const closedRoundIds = new Set(
     rounds
       .filter((round) => {
@@ -517,7 +522,7 @@ async function readAdminWeekly(env, year) {
       .bind(year)
       .all(),
   ]);
-  await backfillMissingQualifyingDeadlines(env, year, roundQuery.results || []);
+  await syncProviderSchedule(env, year, roundQuery.results || []);
   const sessions = sessionQuery.results || [];
   const rounds = (roundQuery.results || []).map((round) => {
     const requiredSessions = [
@@ -691,13 +696,20 @@ async function readPublicWeekly(env, year) {
         wildcard: driverName(optimal.entry.wildcard_driver_id),
       },
       positions: {
-        p1: positions.get(`${race.id}:race:${optimal.entry.p1_driver_id}`) ?? "",
-        p2: positions.get(`${race.id}:race:${optimal.entry.p2_driver_id}`) ?? "",
-        p3: positions.get(`${race.id}:race:${optimal.entry.p3_driver_id}`) ?? "",
+        p1:
+          positions.get(`${race.id}:race:${optimal.entry.p1_driver_id}`) ?? "",
+        p2:
+          positions.get(`${race.id}:race:${optimal.entry.p2_driver_id}`) ?? "",
+        p3:
+          positions.get(`${race.id}:race:${optimal.entry.p3_driver_id}`) ?? "",
         wildcardQualifying:
-          positions.get(`${race.id}:qualifying:${optimal.entry.wildcard_driver_id}`) ?? "",
+          positions.get(
+            `${race.id}:qualifying:${optimal.entry.wildcard_driver_id}`,
+          ) ?? "",
         wildcardRace:
-          positions.get(`${race.id}:race:${optimal.entry.wildcard_driver_id}`) ?? "",
+          positions.get(
+            `${race.id}:race:${optimal.entry.wildcard_driver_id}`,
+          ) ?? "",
       },
       points: {
         p1: optimal.score.p1Points,
@@ -1043,37 +1055,63 @@ async function fetchRound(env, year, round, actorManagerId) {
   };
 }
 
-async function backfillMissingQualifyingDeadlines(env, year, rounds) {
-  const missingRounds = new Set(
-    rounds
-      .filter((round) => !String(round.deadline_at || "").trim())
-      .map((round) => Number(round.round)),
-  );
-  if (!missingRounds.size) return;
-
+async function syncProviderSchedule(env, year, rounds) {
   try {
     const races = await fetchProviderSchedule(env, year);
     const updates = [];
     for (const race of races) {
-      const round = Number(race?.round);
-      const deadlineAt = getQualifyingDeadline(race);
-      if (!missingRounds.has(round) || !deadlineAt) continue;
+      const providerRound = normalizeProviderRound(race);
+      if (!providerRound) continue;
       updates.push(
         env.DB.prepare(
-          `UPDATE f1_rounds SET deadline_at = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE year = ? AND round = ?`,
-        ).bind(deadlineAt, year, round),
+          `INSERT INTO f1_rounds (year, round, name, race_date, deadline_at, has_sprint, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(year, round) DO UPDATE SET name = excluded.name, race_date = excluded.race_date,
+            deadline_at = excluded.deadline_at, has_sprint = excluded.has_sprint, updated_at = CURRENT_TIMESTAMP`,
+        ).bind(
+          year,
+          providerRound.round,
+          providerRound.name,
+          providerRound.race_date,
+          providerRound.deadline_at,
+          providerRound.has_sprint,
+        ),
       );
-      const row = rounds.find((item) => Number(item.round) === round);
-      if (row) row.deadline_at = deadlineAt;
+      const row = rounds.find(
+        (item) => Number(item.round) === providerRound.round,
+      );
+      if (row) Object.assign(row, providerRound);
+      else rounds.push({ year, ...providerRound });
     }
-    if (updates.length) await env.DB.batch(updates);
+    if (updates.length) {
+      await env.DB.batch(updates);
+      rounds.sort(
+        (first, second) => Number(first.round) - Number(second.round),
+      );
+    }
   } catch (error) {
-    console.warn(
-      "Missing qualifying deadlines could not be backfilled.",
-      error,
-    );
+    console.warn("The Formula 1 schedule could not be synchronized.", error);
   }
+}
+
+export function normalizeProviderRound(race) {
+  const round = Number(race?.round);
+  const name = String(race?.raceName || "").trim();
+  const raceDate = String(race?.date || "").trim();
+  if (
+    !Number.isInteger(round) ||
+    round < 1 ||
+    !name ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(raceDate)
+  )
+    return null;
+  return {
+    round,
+    name,
+    race_date: raceDate,
+    deadline_at: getQualifyingDeadline(race),
+    has_sprint: race?.Sprint ? 1 : 0,
+  };
 }
 
 async function syncRoundQualifyingDeadline(env, year, round) {

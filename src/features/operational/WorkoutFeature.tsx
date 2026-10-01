@@ -886,19 +886,21 @@ function ActiveWorkout({
               onChange={(event) => setMinutes(event.target.value)}
             />
           </label>
-          <button
-            className="action-button"
-            disabled={durationLocked || busy}
-            onClick={() =>
-              void action({
-                action: "timer-duration",
-                seconds: Number(minutes) * 60,
-              })
-            }
-            type="button"
-          >
-            Save time
-          </button>
+          {!durationLocked ? (
+            <button
+              className="action-button"
+              disabled={busy}
+              onClick={() =>
+                void action({
+                  action: "timer-duration",
+                  seconds: Number(minutes) * 60,
+                })
+              }
+              type="button"
+            >
+              Update
+            </button>
+          ) : null}
           <button
             className="action-button"
             disabled={busy}

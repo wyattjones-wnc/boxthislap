@@ -4,6 +4,8 @@ import process from "node:process";
 import {
   normalizeDiscoveredGallery,
   parseArsenalSitemap,
+  parseArsenalGalleryId,
+  parseArsenalGalleryResponse,
   parseGalleryImages,
   parseGalleryLinks,
   parseGettyEmbeds,
@@ -153,7 +155,8 @@ async function scanClub(source) {
       }
     }
     const galleries = [];
-    for (const gallery of discovered.slice(0, 80)) {
+    const discoveryLimit = source === "arsenal" ? 250 : 80;
+    for (const gallery of discovered.slice(0, discoveryLimit)) {
       const preliminary = normalizeDiscoveredGallery(
         gallery,
         teamId,
@@ -167,7 +170,18 @@ async function scanClub(source) {
           browserFallback: source === "arsenal",
         });
         run.pagesScanned += 1;
-        const images = parseGalleryImages(html, gallery);
+        let images;
+        if (source === "arsenal") {
+          const arsenalGalleryId = parseArsenalGalleryId(html);
+          if (!arsenalGalleryId) continue;
+          const payload = await fetchArsenalGallery(arsenalGalleryId);
+          images = parseArsenalGalleryResponse(payload, gallery);
+          if (!images.length)
+            throw new Error("Arsenal gallery endpoint returned no images.");
+          gallery.expectedImageCount = images.length;
+        } else {
+          images = parseGalleryImages(html, gallery);
+        }
         const normalized = normalizeDiscoveredGallery(
           gallery,
           teamId,
@@ -317,6 +331,32 @@ async function renderPage(url) {
   } finally {
     await page.close();
   }
+}
+
+async function fetchArsenalGallery(id) {
+  const query = `query SingleGallery($id: String!) {
+    singleGallery(id: $id) { id title images }
+  }`;
+  const response = await fetch("https://afc-prd.graph.arsenal.com/graphql", {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      operationName: "SingleGallery",
+      query,
+      variables: { id: String(id) },
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok)
+    throw new Error(
+      `Arsenal gallery endpoint returned HTTP ${response.status}.`,
+    );
+  const payload = await response.json();
+  if (payload.errors?.length)
+    throw new Error(
+      `Arsenal gallery endpoint failed: ${payload.errors[0].message}`,
+    );
+  return payload;
 }
 
 async function sync(action, body) {

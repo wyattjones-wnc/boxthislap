@@ -120,8 +120,8 @@ describe("MatchImagesFeature", () => {
       request.url.includes("/seen-through"),
     );
     expect(JSON.parse(String(seen?.options?.body))).toMatchObject({
+      galleryId: "gallery-1",
       sort: "newest",
-      teamId: "2",
     });
     expect(await screen.findByText("3 images marked seen.")).not.toBeNull();
     await user.click(

@@ -4,6 +4,8 @@ import {
   classifyGallery,
   matchGalleryToFixture,
   normalizeDiscoveredGallery,
+  parseArsenalGalleryId,
+  parseArsenalGalleryResponse,
   parseArsenalSitemap,
   parseGalleryImages,
   parseGalleryLinks,
@@ -56,6 +58,45 @@ test("Arsenal discovery reads recent galleries from its article sitemap", () => 
   );
   assert.equal(galleries.length, 2);
   assert.equal(galleries[0].title, "north london derby action");
+});
+
+test("Arsenal extraction uses only the exact structured gallery images", () => {
+  const page = `<script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"article":{"articleBody":[{"type":"HEADER","image":"https://assets.arsenal.com/header.webp"},{"type":"GALLERY","id":"5603"}]}}}}</script>`;
+  assert.equal(parseArsenalGalleryId(page), "5603");
+  const gallery = {
+    sourceUrl: "https://www.arsenal.com/news/gallery-37-photos",
+  };
+  const images = parseArsenalGalleryResponse(
+    {
+      data: {
+        singleGallery: {
+          images: [
+            {
+              caption: "First photo",
+              copyright: "Arsenal FC",
+              url: "https://assets.arsenal.com/prod/images/large_landscape/first.jpg",
+              list: [
+                {
+                  type: "xxl_landscape",
+                  url: "https://assets.arsenal.com/prod/images/xxl_landscape/first.jpg",
+                },
+              ],
+            },
+            {
+              caption: "Second photo",
+              url: "https://assets.arsenal.com/prod/images/large_landscape/second.jpg",
+            },
+          ],
+        },
+      },
+    },
+    gallery,
+  );
+  assert.equal(images.length, 2);
+  assert.match(images[0].sourceImageUrl, /xxl_landscape\/first\.jpg$/);
+  assert.equal(images[0].caption, "First photo");
+  assert.equal(images[0].credit, "Arsenal FC");
+  assert.equal(images[1].ordinal, 1);
 });
 
 test("fixture matching applies the documented confidence threshold", () => {

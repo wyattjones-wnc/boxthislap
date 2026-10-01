@@ -316,9 +316,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
           state.replacement = value.items?.[0] || null;
           queuedReplacement = value.replacement || null;
           state.pagination.hasMore = Boolean(value.pagination?.hasMore);
-          state.pagination.hasMoreAfterReplacement = Boolean(
-            value.pagination?.hasMoreAfterReplacement,
-          );
+          if (typeof value.pagination?.hasMoreAfterReplacement === "boolean") {
+            state.pagination.hasMoreAfterReplacement =
+              value.pagination.hasMoreAfterReplacement;
+          }
         } catch {
           // The preference is already saved; an authoritative reload is the
           // safe fallback if the one-row refill cannot be retrieved.
@@ -332,7 +333,9 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         state.replacement = queuedReplacement;
         state.pagination.hasMore = queuedReplacement
           ? true
-          : Boolean(state.pagination.hasMoreAfterReplacement);
+          : typeof state.pagination.hasMoreAfterReplacement === "boolean"
+            ? state.pagination.hasMoreAfterReplacement
+            : state.pagination.hasMore;
         renderPagination(state.pagination);
       }
       if (resultLabel) resultLabel.textContent = `${state.items.length} shown`;

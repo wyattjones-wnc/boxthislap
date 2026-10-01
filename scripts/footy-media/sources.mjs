@@ -252,10 +252,56 @@ export function parseArsenalSitemap(
       sourceUrl,
       title: slug.replace(/-[a-zA-Z0-9]{12}$/, "").replaceAll("-", " "),
       publishedAt: new Date(timestamp).toISOString(),
-      expectedImageCount: null,
+      expectedImageCount: extractCount(slug),
     });
   }
   return galleries;
+}
+
+export function parseArsenalGalleryId(html) {
+  const match = String(html).match(
+    /["']type["']\s*:\s*["']GALLERY["'][^{}]{0,200}["']id["']\s*:\s*["'](\d+)["']|["']id["']\s*:\s*["'](\d+)["'][^{}]{0,200}["']type["']\s*:\s*["']GALLERY["']/i,
+  );
+  return match?.[1] || match?.[2] || "";
+}
+
+export function parseArsenalGalleryResponse(payload, gallery) {
+  const value = payload?.data?.singleGallery;
+  const images = Array.isArray(value?.images) ? value.images : [];
+  return images
+    .map((item, ordinal) => {
+      const renditions = Array.isArray(item?.list) ? item.list : [];
+      const preferred = [
+        "xxl_landscape",
+        "xl_landscape",
+        "large_landscape",
+        "original",
+      ];
+      const rendition = preferred
+        .map((type) => renditions.find((candidate) => candidate?.type === type))
+        .find(Boolean);
+      const sourceImageUrl = absoluteUrl(
+        rendition?.url || item?.url || item?.originalUrl,
+        gallery.sourceUrl,
+      );
+      if (!plausibleImageUrl(sourceImageUrl, "arsenal")) return null;
+      const parsed = new URL(sourceImageUrl);
+      const sourceImageKey =
+        parsed.pathname.split("/").filter(Boolean).at(-1) ||
+        stableMediaId("image", sourceImageUrl);
+      return {
+        id: stableMediaId("media", `arsenal:${sourceImageKey}`),
+        sourceImageKey,
+        sourceImageUrl,
+        normalizedUrl: `${parsed.origin}${parsed.pathname}`,
+        originalPageUrl: gallery.sourceUrl,
+        renderMode: "image",
+        caption: String(item?.caption || item?.alt || ""),
+        credit: String(item?.copyright || ""),
+        ordinal,
+      };
+    })
+    .filter(Boolean);
 }
 
 function plausibleImageUrl(value, source) {

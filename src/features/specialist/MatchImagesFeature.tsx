@@ -301,7 +301,7 @@ export default function MatchImagesFeature() {
     if (confirmingId !== image.id) {
       setConfirmingId(image.id);
       setMessage(
-        "Click again to mark this image and every newer matching image across all pages seen.",
+        "Click again to mark this image and the images above it in this gallery seen.",
       );
       return;
     }
@@ -313,11 +313,8 @@ export default function MatchImagesFeature() {
         {
           method: "PUT",
           body: JSON.stringify({
-            category,
-            matchId,
+            galleryId: image.gallery.id,
             sort: "newest",
-            source,
-            teamId,
           }),
         },
       );

@@ -51,21 +51,38 @@ test("match media import is idempotent and preserves save state through Seen thr
   };
   await importMatchMedia(env, scanId, { galleries: [gallery], sourceRuns: [] });
   await importMatchMedia(env, scanId, { galleries: [gallery], sourceRuns: [] });
+  await importMatchMedia(env, scanId, {
+    galleries: [
+      {
+        ...gallery,
+        id: "gallery-2",
+        sourceGalleryId: "456",
+        title: "Another gallery",
+        images: [image("image-3", "three", "2026-09-28T03:00:00Z")],
+      },
+    ],
+    sourceRuns: [],
+  });
   let feed = await listMatchMedia(env, "6", new URLSearchParams());
-  assert.equal(feed.images.length, 2);
+  assert.equal(feed.images.length, 3);
   assert.ok(
-    feed.images.every(
-      (candidate) =>
-        candidate.sourceImageUrl ===
-        `https://media.fcbarcelona.com/${candidate.id === "image-1" ? "one" : "two"}.jpg?width=1200`,
-    ),
+    feed.images
+      .filter((candidate) => candidate.gallery.id === "gallery-1")
+      .every(
+        (candidate) =>
+          candidate.sourceImageUrl ===
+          `https://media.fcbarcelona.com/${candidate.id === "image-1" ? "one" : "two"}.jpg?width=1200`,
+      ),
   );
   await saveMatchMediaState(env, "6", "image-1", { softSaved: true });
   const result = await markMatchMediaSeenThrough(env, "6", "image-2", {
     sort: "newest",
-    teamId: "2",
+    galleryId: "gallery-1",
   });
   assert.equal(result.seen, 2);
+  feed = await listMatchMedia(env, "6", new URLSearchParams());
+  assert.equal(feed.images.length, 1);
+  assert.equal(feed.images[0].id, "image-3");
   feed = await listMatchMedia(env, "6", new URLSearchParams("view=saved"));
   assert.equal(feed.images.length, 1);
   assert.equal(feed.images[0].id, "image-1");

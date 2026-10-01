@@ -1205,7 +1205,7 @@ export async function listMatchMedia(env, managerId, searchParams) {
       g.published_at, g.category, g.match_confidence, g.match_status, g.match_evidence
     ${base}
     GROUP BY i.id
-    ORDER BY COALESCE(g.published_at, i.first_observed_at) DESC, i.first_observed_at DESC, i.id ASC
+    ORDER BY COALESCE(g.published_at, i.first_observed_at) DESC, gi.ordinal ASC, i.id ASC
     LIMIT ? OFFSET ?
   `).bind(...bindings, limit, (page - 1) * limit).all();
   const images = (rows.results || []).map((row) => ({
@@ -1273,34 +1273,19 @@ export async function saveMatchMediaState(env, managerId, imageId, body) {
   return { imageId, seen: Boolean(current?.seen_at), softSaved: Boolean(softSavedAt), softSavedAt };
 }
 
-function matchMediaFilterScope(body, alias = "") {
-  const prefix = alias ? `${alias}.` : "";
-  const filters = [];
-  const bindings = [];
-  const source = matchMediaChoice(body.source, MATCH_MEDIA_SOURCES, "", "source");
-  const category = matchMediaChoice(body.category, MATCH_MEDIA_CATEGORIES, "", "category");
-  const teamId = String(body.teamId || "").trim();
-  const matchId = String(body.matchId || "").trim();
-  if (source) { filters.push(`${prefix}source = ?`); bindings.push(source); }
-  if (category) { filters.push("g.category = ?"); bindings.push(category); }
-  if (teamId) { filters.push("g.team_id = ?"); bindings.push(teamId); }
-  if (matchId) { filters.push("g.match_id = ?"); bindings.push(matchId); }
-  return { filters, bindings };
-}
-
 export async function markMatchMediaSeenThrough(env, managerId, imageId, body) {
   if (String(body.sort || "newest") !== "newest") throw httpError(400, "Seen through requires newest-first sorting.");
-  const scope = matchMediaFilterScope(body, "i");
+  const galleryId = String(body.galleryId || "").trim();
+  if (!galleryId) throw httpError(400, "Gallery is required.");
   const anchor = await env.DB.prepare(`
-    SELECT i.id, i.first_observed_at
+    SELECT i.id, gi.ordinal
     FROM footy_media_images i
     JOIN footy_media_gallery_images gi ON gi.image_id = i.id
     JOIN footy_media_galleries g ON g.id = gi.gallery_id
     LEFT JOIN footy_media_manager_state s ON s.image_id = i.id AND s.manager_id = ?
-    WHERE i.id = ? AND s.seen_at IS NULL AND g.match_status IN ('auto', 'manual')
-      ${scope.filters.length ? `AND ${scope.filters.join(" AND ")}` : ""}
+    WHERE i.id = ? AND g.id = ? AND s.seen_at IS NULL AND g.match_status IN ('auto', 'manual')
     LIMIT 1
-  `).bind(managerId, imageId, ...scope.bindings).first();
+  `).bind(managerId, imageId, galleryId).first();
   if (!anchor) throw httpError(409, "That image is no longer in the current unseen feed.");
   const now = new Date().toISOString();
   const result = await env.DB.prepare(`
@@ -1311,11 +1296,10 @@ export async function markMatchMediaSeenThrough(env, managerId, imageId, body) {
     JOIN footy_media_galleries g ON g.id = gi.gallery_id
     LEFT JOIN footy_media_manager_state s ON s.image_id = i.id AND s.manager_id = ?
     WHERE s.seen_at IS NULL AND g.match_status IN ('auto', 'manual')
-      AND (i.first_observed_at > ? OR (i.first_observed_at = ? AND i.id <= ?))
-      ${scope.filters.length ? `AND ${scope.filters.join(" AND ")}` : ""}
+      AND g.id = ? AND gi.ordinal <= ?
     GROUP BY i.id
     ON CONFLICT(manager_id, image_id) DO UPDATE SET seen_at = excluded.seen_at, updated_at = excluded.updated_at
-  `).bind(managerId, now, now, managerId, anchor.first_observed_at, anchor.first_observed_at, anchor.id, ...scope.bindings).run();
+  `).bind(managerId, now, now, managerId, galleryId, anchor.ordinal).run();
   return { seen: Number(result.meta?.changes || 0) };
 }
 
@@ -1525,6 +1509,9 @@ export async function importMatchMedia(env, scanId, body) {
     statements.push(env.DB.prepare(`INSERT INTO footy_media_galleries (id, source, source_gallery_id, team_id, match_id, source_url, title, published_at, category, expected_image_count, match_confidence, match_status, match_evidence, first_observed_at, last_observed_at, last_extracted_at, extraction_status, extraction_error)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(source, source_gallery_id) DO UPDATE SET team_id = excluded.team_id, match_id = COALESCE(footy_media_galleries.match_id, excluded.match_id), source_url = excluded.source_url, title = excluded.title, published_at = excluded.published_at, category = excluded.category, expected_image_count = excluded.expected_image_count, match_confidence = MAX(footy_media_galleries.match_confidence, excluded.match_confidence), match_status = CASE WHEN footy_media_galleries.match_status = 'manual' THEN 'manual' ELSE excluded.match_status END, match_evidence = excluded.match_evidence, last_observed_at = excluded.last_observed_at, last_extracted_at = excluded.last_extracted_at, extraction_status = excluded.extraction_status, extraction_error = excluded.extraction_error`).bind(id, source, sourceGalleryId, teamId, gallery.matchId || null, String(gallery.sourceUrl), String(gallery.title), gallery.publishedAt || null, category, gallery.expectedImageCount === null || gallery.expectedImageCount === undefined ? null : Number(gallery.expectedImageCount), Number(gallery.matchConfidence || 0), matchStatus, JSON.stringify(gallery.matchEvidence || []), String(gallery.firstObservedAt || now), now, now, String(gallery.extractionStatus || "complete"), String(gallery.extractionError || "")));
+    if (String(gallery.extractionStatus || "complete") === "complete") {
+      statements.push(env.DB.prepare("DELETE FROM footy_media_gallery_images WHERE gallery_id = ?").bind(id));
+    }
     for (const [ordinal, imported] of (Array.isArray(gallery.images) ? gallery.images : []).entries()) {
       const imageId = String(imported.id || "").trim();
       const sourceImageKey = String(imported.sourceImageKey || "").trim();

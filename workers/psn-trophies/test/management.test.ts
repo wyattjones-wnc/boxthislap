@@ -97,7 +97,50 @@ test("returns an authenticated unsorted trophy page", async () => {
   assert.doesNotMatch(sql, /p\.state IS NULL/);
   assert.doesNotMatch(sql, /ROW_NUMBER\(\)/);
   assert.doesNotMatch(sql, /t\.trophy_type <> 'platinum'/);
-  assert.deepEqual(bindings, [49, 0]);
+  assert.deepEqual(bindings, [50, 0]);
+});
+
+test("returns the next trophy as a replacement without another query", async () => {
+  let queryCount = 0;
+  const row = (id: number) => ({
+    game_id: `NPWR${id}_00`,
+    trophy_id: id,
+    trophy_name: `Trophy ${id}`,
+    trophy_type: "bronze",
+    title_name: `Game ${id}`,
+    earned_at: `2026-08-${30 - id}T00:00:00Z`,
+  });
+  const env = {
+    ADMIN_MANAGER_IDS: "6",
+    MANAGER_AUTH: managerAuth(),
+    DB: {
+      batch: async () => [],
+      prepare: () => {
+        queryCount += 1;
+        return {
+          bind: (...values: unknown[]) => ({
+            all: async () => {
+              assert.deepEqual(values, [3, 0]);
+              return { results: [row(1), row(2), row(3)] };
+            },
+          }),
+        };
+      },
+    },
+  } as any;
+  const response = await routeTrophyManagementApi(
+    new Request("https://example.com/api/psn/trophy-log?limit=1", {
+      headers: { Authorization: "Bearer token" },
+    }),
+    env,
+  );
+  assert.ok(response);
+  const body = (await response.json()) as any;
+  assert.equal(queryCount, 1);
+  assert.equal(body.items[0].name, "Trophy 1");
+  assert.equal(body.replacement.name, "Trophy 2");
+  assert.equal(body.pagination.hasMore, true);
+  assert.equal(body.pagination.hasMoreAfterReplacement, true);
 });
 
 test("stores every unsorted trophy through an anchor in the global sort", async () => {

@@ -321,7 +321,7 @@ async function listTrophyLog(
         ORDER BY ${inboxOrderBy}
         LIMIT ? OFFSET ?`,
       )
-        .bind(limit + 1, offset)
+        .bind(limit + 2, offset)
         .all<Record<string, unknown>>();
       return trophyLogResponse(result.results || [], {
         evergreen,
@@ -340,7 +340,7 @@ async function listTrophyLog(
         WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND p.state IS NULL
         ORDER BY ${orderBy}
         LIMIT ? OFFSET ?`);
-      bindings = [limit + 1, offset];
+      bindings = [limit + 2, offset];
     }
   } else if (view === "favorites" || view === "seen") {
     statement = env.DB.prepare(`${select}
@@ -351,7 +351,7 @@ async function listTrophyLog(
       WHERE p.state = ? AND t.earned = 1 AND t.earned_at IS NOT NULL
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?`);
-    bindings = [view === "favorites" ? "favorite" : "seen", limit + 1, offset];
+    bindings = [view === "favorites" ? "favorite" : "seen", limit + 2, offset];
   } else {
     const filters = ["t.earned = 1", "t.earned_at IS NOT NULL"];
     if (view === "platinums") filters.push("t.trophy_type = 'platinum'");
@@ -363,7 +363,7 @@ async function listTrophyLog(
       WHERE ${filters.join(" AND ")}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?`);
-    bindings = [limit + 1, offset];
+    bindings = [limit + 2, offset];
   }
   const result = await statement
     .bind(...bindings)
@@ -391,7 +391,13 @@ function trophyLogResponse(
   return noStoreJson({
     ok: true,
     items: rows.slice(0, limit).map(mapTrophy),
-    pagination: { hasMore: rows.length > limit, limit, page },
+    replacement: rows.length > limit ? mapTrophy(rows[limit]!) : null,
+    pagination: {
+      hasMore: rows.length > limit,
+      hasMoreAfterReplacement: rows.length > limit + 1,
+      limit,
+      page,
+    },
     view,
     sort,
     evergreen,

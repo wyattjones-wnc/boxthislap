@@ -26,6 +26,8 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     busy: false,
     syncing: false,
     items: [],
+    replacement: null,
+    pagination: {},
   };
   const pageCache = new Map();
   let featuredItems = [];
@@ -175,8 +177,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     state.view = value.view || state.view;
     syncFilters();
     state.items = value.items || [];
+    state.replacement = value.replacement || null;
+    state.pagination = value.pagination || {};
     renderItems(state.items);
-    renderPagination(value.pagination || {});
+    renderPagination(state.pagination);
   }
 
   function renderItems(items) {
@@ -185,32 +189,32 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       grid.innerHTML = `<div class="trophy-log-empty"><strong>${state.view === "unsorted" ? "You're caught up." : "No trophies in this view."}</strong><span>${state.view === "unsorted" ? "Newly earned trophies will appear here automatically." : "Choose another trophy-log view."}</span></div>`;
       return;
     }
-    grid.innerHTML = items
-      .map((item) => {
-        const current = item.state || "unsorted";
-        const details = [
-          capitalize(item.type),
-          item.earnedRate === null
-            ? ""
-            : `${Number(item.earnedRate).toFixed(1)}% earned`,
-          formatDate(item.earnedAt),
-        ]
-          .filter(Boolean)
-          .join(" · ");
-        const numbering = [
-          item.platinumNumber ? `Platinum Number: ${item.platinumNumber}` : "",
-          item.trophyNumber ? `Trophy Number: ${item.trophyNumber}` : "",
-          item.completionSeconds !== null
-            ? `Time to Platinum: ${formatElapsed(item.completionSeconds)}`
-            : "",
-        ].filter(Boolean);
-        return `<article class="trophy-log-card" data-game-id="${escapeHtml(item.gameId)}" data-trophy-id="${escapeHtml(item.id)}" data-preference-state="${escapeHtml(current)}">
+    grid.innerHTML = items.map(renderItem).join("");
+  }
+
+  function renderItem(item) {
+    const current = item.state || "unsorted";
+    const details = [
+      capitalize(item.type),
+      item.earnedRate === null
+        ? ""
+        : `${Number(item.earnedRate).toFixed(1)}% earned`,
+      formatDate(item.earnedAt),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const numbering = [
+      item.platinumNumber ? `Platinum Number: ${item.platinumNumber}` : "",
+      item.trophyNumber ? `Trophy Number: ${item.trophyNumber}` : "",
+      item.completionSeconds !== null
+        ? `Time to Platinum: ${formatElapsed(item.completionSeconds)}`
+        : "",
+    ].filter(Boolean);
+    return `<article class="trophy-log-card" data-game-id="${escapeHtml(item.gameId)}" data-trophy-id="${escapeHtml(item.id)}" data-preference-state="${escapeHtml(current)}">
         <div class="trophy-log-image">${item.iconUrl ? `<img src="${escapeHtml(item.iconUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : `<span aria-hidden="true">★</span>`}</div>
         <div class="trophy-log-copy"><p>${escapeHtml(item.gameName || "Unknown game")}</p><h2>${escapeHtml(item.name || "Unknown trophy")}</h2>${item.description ? `<span>${escapeHtml(item.description)}</span>` : ""}<small>${escapeHtml(details)}</small>${numbering.length ? `<div class="trophy-log-numbering">${numbering.map((value) => `<span class="trophy-metadata-chip">${escapeHtml(value)}</span>`).join("")}</div>` : ""}</div>
         <div class="trophy-log-actions" aria-label="Classify ${escapeHtml(item.name)}">${renderActions(item, state.view)}</div>
       </article>`;
-      })
-      .join("");
   }
 
   function renderPagination(value) {
@@ -240,7 +244,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
       window.dispatchEvent(
         new CustomEvent("boxthislap:trophy-preferences-changed"),
       );
-      updatePreferenceInPlace(card, nextState);
+      await updatePreferenceInPlace(card, nextState);
     } catch (error) {
       button.disabled = false;
       window.alert(error.message);
@@ -286,7 +290,7 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     }
   }
 
-  function updatePreferenceInPlace(card, nextState) {
+  async function updatePreferenceInPlace(card, nextState) {
     const gameId = card.dataset.gameId;
     const trophyId = Number(card.dataset.trophyId);
     const item = state.items.find(
@@ -302,6 +306,35 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
         (entry) => !(entry.gameId === gameId && Number(entry.id) === trophyId),
       );
       card.remove();
+      let queuedReplacement = null;
+      if (!state.replacement && state.pagination.hasMore) {
+        const pageLimit = Number(state.pagination.limit) || 48;
+        try {
+          const value = await request(
+            `/api/psn/trophy-log?view=${encodeURIComponent(state.view)}&sort=${encodeURIComponent(state.sort)}&evergreen=${state.evergreenSort}&page=${state.page * pageLimit}&limit=1`,
+          );
+          state.replacement = value.items?.[0] || null;
+          queuedReplacement = value.replacement || null;
+          state.pagination.hasMore = Boolean(value.pagination?.hasMore);
+          state.pagination.hasMoreAfterReplacement = Boolean(
+            value.pagination?.hasMoreAfterReplacement,
+          );
+        } catch {
+          // The preference is already saved; an authoritative reload is the
+          // safe fallback if the one-row refill cannot be retrieved.
+          await load(true);
+          return;
+        }
+      }
+      if (state.replacement) {
+        state.items.push(state.replacement);
+        grid.insertAdjacentHTML("beforeend", renderItem(state.replacement));
+        state.replacement = queuedReplacement;
+        state.pagination.hasMore = queuedReplacement
+          ? true
+          : Boolean(state.pagination.hasMoreAfterReplacement);
+        renderPagination(state.pagination);
+      }
       if (resultLabel) resultLabel.textContent = `${state.items.length} shown`;
       if (!state.items.length) renderItems([]);
       return;

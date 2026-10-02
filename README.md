@@ -8,17 +8,27 @@ persistent features.
 ## Frontend development
 
 The existing application is built with Vite without changing its current
-hash-based routes or runtime behavior.
+hash-based routes or runtime behavior. Use Node.js 22.13 or newer within the
+Node 22 release line and npm 10. The repository's lockfile is the source of
+truth for dependency installation.
 
-```powershell
-npm install
+```sh
+npm ci
 npm run build
 npm run preview
 ```
 
-Run the complete local quality gate with `npm run check`. Mobile browser smoke
-tests are available with `npm run test:e2e` after installing Playwright's
-Chromium and WebKit browsers.
+Run the complete local quality gate with `npm run check`. For mobile browser
+smoke tests, install the supported browsers once and then run the test command:
+
+```sh
+npx playwright install --with-deps chromium webkit
+npm run test:e2e:run
+```
+
+The normal install, quality gate, build, and browser smoke tests do not require
+project secrets. Feature-specific maintenance and deployment credentials are
+documented with their relevant scripts and Workers.
 
 The quality tooling currently covers the build configuration and new browser
 tests. Legacy application files will move under type checking and linting as

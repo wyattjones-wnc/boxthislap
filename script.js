@@ -1773,8 +1773,11 @@ function renderFootyTeamPastSchedule(team, fixtures = []) {
     if (footyTeamPastFilters.competition && getFootyTeamFixtureCompetition(fixture) !== footyTeamPastFilters.competition) {
       return false;
     }
-    if (footyTeamPastFilters.kit && String(fixture.matchNote?.kit || "") !== footyTeamPastFilters.kit) {
-      return false;
+    if (footyTeamPastFilters.kit) {
+      const fixtureKit = String(fixture.matchNote?.kit || "");
+      if (footyTeamPastFilters.kit === "not-set" ? fixtureKit : fixtureKit !== footyTeamPastFilters.kit) {
+        return false;
+      }
     }
     if (footyTeamPastFilters.result && getFootyFixtureResultClass(fixture) !== `footy-fixture-card--${footyTeamPastFilters.result}`) {
       return false;
@@ -1826,6 +1829,7 @@ function renderFootyTeamPastSchedule(team, fixtures = []) {
           <span>Kit</span>
           <select data-footy-team-past-filter="kit">
             <option value="">All kits</option>
+            <option value="not-set"${footyTeamPastFilters.kit === "not-set" ? " selected" : ""}>Not set</option>
             <option value="home"${footyTeamPastFilters.kit === "home" ? " selected" : ""}>Home</option>
             <option value="away"${footyTeamPastFilters.kit === "away" ? " selected" : ""}>Away</option>
             <option value="third"${footyTeamPastFilters.kit === "third" ? " selected" : ""}>Third</option>

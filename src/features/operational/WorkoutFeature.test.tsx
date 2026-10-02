@@ -118,9 +118,14 @@ describe("Daily Workouts", () => {
           return response({ workout: activeWorkout(exercises) });
         if (url.endsWith(`/api/me/workouts/${today}/action`)) {
           const body = JSON.parse(String(init?.body || "{}")) as {
+            action: string;
             checked: boolean;
             position: number;
           };
+          if (body.action === "timer-start")
+            return response({
+              workout: { ...activeWorkout(exercises), running: true },
+            });
           exercises = exercises.map((exercise) =>
             exercise.position === body.position
               ? { ...exercise, checked: body.checked }
@@ -166,6 +171,15 @@ describe("Daily Workouts", () => {
     ).not.toBeNull();
     const start = screen.getByRole("button", { name: "Start" });
     expect(start.parentElement?.lastElementChild).toBe(start);
+    fireEvent.click(
+      screen.getByRole("button", { name: "More timer controls" }),
+    );
+    expect(screen.getByRole("button", { name: "Update" })).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Save time" })).toBeNull();
+    fireEvent.click(start);
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Update" })).toBeNull(),
+    );
     const pushUps = await screen.findByRole("button", { name: /Push ups/ });
     fireEvent.click(pushUps);
     await waitFor(() =>

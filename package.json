@@ -2,6 +2,11 @@
   "name": "boxthislap",
   "private": true,
   "version": "2.5.0",
+  "packageManager": "npm@10.9.0",
+  "engines": {
+    "node": ">=22.13.0 <23",
+    "npm": ">=10 <11"
+  },
   "type": "module",
   "scripts": {
     "build": "node scripts/prepare-site-build.mjs && vite build --emptyOutDir false && node scripts/verify-site-build.mjs",

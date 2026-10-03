@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-10-02T16:17:28.902Z",
+  "generatedAt": "2026-10-03T14:45:17.368Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-10-02T16:17:28.902Z",
-    "attemptedAt": "2026-10-02T16:17:28.902Z",
-    "updatedAt": "2026-10-02T16:17:28.902Z",
-    "oldestTeamUpdatedAt": "2026-10-02T16:17:28.902Z",
+    "generatedAt": "2026-10-03T14:45:17.368Z",
+    "attemptedAt": "2026-10-03T14:45:17.368Z",
+    "updatedAt": "2026-10-03T14:45:17.368Z",
+    "oldestTeamUpdatedAt": "2026-10-03T14:45:17.368Z",
     "competitionCount": 11,
-    "competitionFixtureCount": 2275,
+    "competitionFixtureCount": 2285,
     "teamCount": 7,
     "fixtureCount": 218,
     "statuses": {
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 256,
-      "syncedAt": "2026-10-02T16:17:28.902Z",
+      "syncedAt": "2026-10-03T14:45:17.368Z",
       "appended": 0,
       "updated": 256
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-10-02T16:22:22.421Z",
+      "attemptedAt": "2026-10-03T14:50:10.770Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -13898,15 +13898,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:48.436Z",
+      "attemptedAt": "2026-10-03T14:50:36.991Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -13922,7 +13922,7 @@
         "type": "CUP"
       },
       "errors": [],
-      "fixtureCount": 5,
+      "fixtureCount": 15,
       "fixtures": [
         {
           "away": "Rochdale",
@@ -14081,6 +14081,45 @@
           "awayTeamId": "team:port-vale"
         },
         {
+          "away": "Stevenage",
+          "awayBadge": "",
+          "awayProviderTeamId": "134378",
+          "awaySportDbTeamId": "134378",
+          "date": "2026-08-07",
+          "home": "Wycombe Wanderers",
+          "homeBadge": "",
+          "homeProviderTeamId": "134382",
+          "homeSportDbTeamId": "134382",
+          "id": "TheSportsDB:2503753",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503753"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "18:45:00",
+          "timestamp": "2026-08-07T18:45:00Z",
+          "venue": "Adams Park",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503753",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:wycombe-wanderers",
+          "awayTeamId": "team:stevenage"
+        },
+        {
           "away": "Wrexham",
           "awayBadge": "",
           "awayProviderTeamId": "134775",
@@ -14120,20 +14159,371 @@
           "teamName": "Wrexham",
           "homeTeamId": "team:middlesbrough",
           "awayTeamId": "3"
+        },
+        {
+          "away": "Millwall",
+          "awayBadge": "",
+          "awayProviderTeamId": "133634",
+          "awaySportDbTeamId": "133634",
+          "date": "2026-08-08",
+          "home": "Queens Park Rangers",
+          "homeBadge": "",
+          "homeProviderTeamId": "133605",
+          "homeSportDbTeamId": "133605",
+          "id": "TheSportsDB:2503741",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503741"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "PEN",
+          "time": "13:00:00",
+          "timestamp": "2026-08-08T13:00:00Z",
+          "venue": "MATRADE Loftus Road",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503741",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:queens-park-rangers",
+          "awayTeamId": "team:millwall"
+        },
+        {
+          "away": "Swindon Town",
+          "awayBadge": "",
+          "awayProviderTeamId": "134379",
+          "awaySportDbTeamId": "134379",
+          "date": "2026-08-08",
+          "home": "Cardiff City",
+          "homeBadge": "",
+          "homeProviderTeamId": "133637",
+          "homeSportDbTeamId": "133637",
+          "id": "TheSportsDB:2503732",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503732"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "Cardiff City Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503732",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:cardiff-city",
+          "awayTeamId": "team:swindon-town"
+        },
+        {
+          "away": "Notts County",
+          "awayBadge": "",
+          "awayProviderTeamId": "134373",
+          "awaySportDbTeamId": "134373",
+          "date": "2026-08-08",
+          "home": "Burnley",
+          "homeBadge": "",
+          "homeProviderTeamId": "133623",
+          "homeSportDbTeamId": "133623",
+          "id": "TheSportsDB:2503733",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503733"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "PEN",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "Turf Moor",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503733",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:burnley",
+          "awayTeamId": "team:notts-county"
+        },
+        {
+          "away": "Northampton Town",
+          "awayBadge": "",
+          "awayProviderTeamId": "134370",
+          "awaySportDbTeamId": "134370",
+          "date": "2026-08-08",
+          "home": "Leicester City",
+          "homeBadge": "",
+          "homeProviderTeamId": "133626",
+          "homeSportDbTeamId": "133626",
+          "id": "TheSportsDB:2503734",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503734"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "King Power Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503734",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:leicester-city",
+          "awayTeamId": "team:northampton-town"
+        },
+        {
+          "away": "Portsmouth",
+          "awayBadge": "",
+          "awayProviderTeamId": "133629",
+          "awaySportDbTeamId": "133629",
+          "date": "2026-08-08",
+          "home": "West Ham United",
+          "homeBadge": "",
+          "homeProviderTeamId": "133636",
+          "homeSportDbTeamId": "133636",
+          "id": "TheSportsDB:2503735",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503735"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "London Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503735",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:west-ham-united",
+          "awayTeamId": "team:portsmouth"
+        },
+        {
+          "away": "Huddersfield Town",
+          "awayBadge": "",
+          "awayProviderTeamId": "133932",
+          "awaySportDbTeamId": "133932",
+          "date": "2026-08-08",
+          "home": "Preston North End",
+          "homeBadge": "",
+          "homeProviderTeamId": "133809",
+          "homeSportDbTeamId": "133809",
+          "id": "TheSportsDB:2503737",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503737"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "PEN",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "Goodison Park",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503737",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:preston-north-end",
+          "awayTeamId": "team:huddersfield-town"
+        },
+        {
+          "away": "Lincoln City",
+          "awayBadge": "",
+          "awayProviderTeamId": "135900",
+          "awaySportDbTeamId": "135900",
+          "date": "2026-08-08",
+          "home": "Derby County",
+          "homeBadge": "",
+          "homeProviderTeamId": "133627",
+          "homeSportDbTeamId": "133627",
+          "id": "TheSportsDB:2503738",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503738"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "Pride Park Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503738",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:derby-county",
+          "awayTeamId": "team:lincoln-city"
+        },
+        {
+          "away": "Milton Keynes Dons",
+          "awayBadge": "",
+          "awayProviderTeamId": "134371",
+          "awaySportDbTeamId": "134371",
+          "date": "2026-08-08",
+          "home": "Norwich City",
+          "homeBadge": "",
+          "homeProviderTeamId": "133608",
+          "homeSportDbTeamId": "133608",
+          "id": "TheSportsDB:2503740",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503740"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "14:00:00",
+          "timestamp": "2026-08-08T14:00:00Z",
+          "venue": "Carrow Road",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503740",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:norwich-city",
+          "awayTeamId": "team:milton-keynes-dons"
+        },
+        {
+          "away": "West Bromwich Albion",
+          "awayBadge": "",
+          "awayProviderTeamId": "133611",
+          "awaySportDbTeamId": "133611",
+          "date": "2026-08-08",
+          "home": "Rotherham United",
+          "homeBadge": "",
+          "homeProviderTeamId": "134231",
+          "homeSportDbTeamId": "134231",
+          "id": "TheSportsDB:2503742",
+          "leagueId": "4570",
+          "league": "EFL Cup",
+          "round": "128",
+          "season": "2026-2027",
+          "source": "TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2503742"
+          },
+          "sources": [
+            "TheSportsDB"
+          ],
+          "sourceDetail": "",
+          "status": "FT",
+          "time": "16:30:00",
+          "timestamp": "2026-08-08T16:30:00Z",
+          "venue": "AESSEAL New York Stadium",
+          "isCompetitionFixture": true,
+          "matchId": "footy_comp_thesportsdb_2503742",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:rotherham-united",
+          "awayTeamId": "team:west-bromwich-albion"
         }
       ],
       "notes": [
-        "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
+        "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:35.051Z",
+      "attemptedAt": "2026-10-03T14:50:23.493Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19392,15 +19782,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:41.767Z",
+      "attemptedAt": "2026-10-03T14:50:30.264Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -23066,46 +23456,10 @@
           "awayTeamId": "team:ca-osasuna"
         },
         {
-          "away": "Málaga CF",
-          "awayBadge": "https://crests.football-data.org/84.png",
-          "awayProviderTeamId": "84",
-          "date": "2026-11-01",
-          "home": "Real Betis Balompié",
-          "homeBadge": "https://crests.football-data.org/90.png",
-          "homeProviderTeamId": "90",
-          "id": "564736",
-          "isCompetitionFixture": true,
-          "leagueId": "2014",
-          "league": "Primera Division",
-          "round": "11",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "564736"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_564736",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:real-betis-balompie",
-          "awayTeamId": "team:malaga-cf"
-        },
-        {
           "away": "RCD Espanyol de Barcelona",
           "awayBadge": "https://crests.football-data.org/80.png",
           "awayProviderTeamId": "80",
-          "date": "2026-11-01",
+          "date": "2026-10-30",
           "home": "Villarreal CF",
           "homeBadge": "https://crests.football-data.org/94.png",
           "homeProviderTeamId": "94",
@@ -23122,9 +23476,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-10-30T20:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564737",
           "followedTeamNames": [
@@ -23140,82 +23494,10 @@
           "awayTeamId": "team:rcd-espanyol-de-barcelona"
         },
         {
-          "away": "Valencia CF",
-          "awayBadge": "https://crests.football-data.org/95.png",
-          "awayProviderTeamId": "95",
-          "date": "2026-11-01",
-          "home": "Elche CF",
-          "homeBadge": "https://crests.football-data.org/285.png",
-          "homeProviderTeamId": "285",
-          "id": "564728",
-          "isCompetitionFixture": true,
-          "leagueId": "2014",
-          "league": "Primera Division",
-          "round": "11",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "564728"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_564728",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:elche-cf",
-          "awayTeamId": "team:valencia-cf"
-        },
-        {
-          "away": "Real Sociedad de Fútbol",
-          "awayBadge": "https://crests.football-data.org/92.png",
-          "awayProviderTeamId": "92",
-          "date": "2026-11-01",
-          "home": "Athletic Club",
-          "homeBadge": "https://crests.football-data.org/77.png",
-          "homeProviderTeamId": "77",
-          "id": "564729",
-          "isCompetitionFixture": true,
-          "leagueId": "2014",
-          "league": "Primera Division",
-          "round": "11",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "564729"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_564729",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:athletic-club",
-          "awayTeamId": "team:real-sociedad-de-futbol"
-        },
-        {
           "away": "Club Atlético de Madrid",
           "awayBadge": "https://crests.football-data.org/78.png",
           "awayProviderTeamId": "78",
-          "date": "2026-11-01",
+          "date": "2026-10-31",
           "home": "Levante UD",
           "homeBadge": "https://crests.football-data.org/88.png",
           "homeProviderTeamId": "88",
@@ -23232,9 +23514,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "13:00:00",
+          "timestamp": "2026-10-31T13:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564730",
           "followedTeamNames": [],
@@ -23248,14 +23530,14 @@
           "awayTeamId": "team:club-atletico-de-madrid"
         },
         {
-          "away": "CA Osasuna",
-          "awayBadge": "https://crests.football-data.org/79.png",
-          "awayProviderTeamId": "79",
-          "date": "2026-11-01",
-          "home": "RC Deportivo La Coruña",
-          "homeBadge": "https://crests.football-data.org/560.png",
-          "homeProviderTeamId": "560",
-          "id": "564731",
+          "away": "RC Celta de Vigo",
+          "awayBadge": "https://crests.football-data.org/558.png",
+          "awayProviderTeamId": "558",
+          "date": "2026-10-31",
+          "home": "Rayo Vallecano de Madrid",
+          "homeBadge": "https://crests.football-data.org/87.png",
+          "homeProviderTeamId": "87",
+          "id": "564735",
           "isCompetitionFixture": true,
           "leagueId": "2014",
           "league": "Primera Division",
@@ -23263,16 +23545,16 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "564731"
+            "football-data.org": "564735"
           },
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:15:00",
+          "timestamp": "2026-10-31T15:15:00Z",
           "venue": "",
-          "matchId": "footy_comp_football_data_org_564731",
+          "matchId": "footy_comp_football_data_org_564735",
           "followedTeamNames": [],
           "isHome": null,
           "opponent": "",
@@ -23280,14 +23562,50 @@
           "teamBadge": "",
           "teamId": "",
           "teamName": "",
-          "homeTeamId": "team:rc-deportivo-la-coruna",
-          "awayTeamId": "team:ca-osasuna"
+          "homeTeamId": "team:rayo-vallecano-de-madrid",
+          "awayTeamId": "team:rc-celta-de-vigo"
+        },
+        {
+          "away": "Málaga CF",
+          "awayBadge": "https://crests.football-data.org/84.png",
+          "awayProviderTeamId": "84",
+          "date": "2026-10-31",
+          "home": "Real Betis Balompié",
+          "homeBadge": "https://crests.football-data.org/90.png",
+          "homeProviderTeamId": "90",
+          "id": "564736",
+          "isCompetitionFixture": true,
+          "leagueId": "2014",
+          "league": "Primera Division",
+          "round": "11",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "564736"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:30:00",
+          "timestamp": "2026-10-31T17:30:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_564736",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:real-betis-balompie",
+          "awayTeamId": "team:malaga-cf"
         },
         {
           "away": "Deportivo Alavés",
           "awayBadge": "https://crests.football-data.org/263.png",
           "awayProviderTeamId": "263",
-          "date": "2026-11-01",
+          "date": "2026-10-31",
           "home": "FC Barcelona",
           "homeBadge": "https://crests.football-data.org/81.png",
           "homeProviderTeamId": "81",
@@ -23305,9 +23623,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-10-31T20:00:00Z",
           "venue": "",
           "matchId": "footy_c1e303ae400b",
           "followedTeamNames": [
@@ -23343,9 +23661,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "13:00:00",
+          "timestamp": "2026-11-01T13:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564733",
           "followedTeamNames": [],
@@ -23379,9 +23697,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:15:00",
+          "timestamp": "2026-11-01T15:15:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564734",
           "followedTeamNames": [],
@@ -23395,14 +23713,14 @@
           "awayTeamId": "team:real-madrid-cf"
         },
         {
-          "away": "RC Celta de Vigo",
-          "awayBadge": "https://crests.football-data.org/558.png",
-          "awayProviderTeamId": "558",
+          "away": "Valencia CF",
+          "awayBadge": "https://crests.football-data.org/95.png",
+          "awayProviderTeamId": "95",
           "date": "2026-11-01",
-          "home": "Rayo Vallecano de Madrid",
-          "homeBadge": "https://crests.football-data.org/87.png",
-          "homeProviderTeamId": "87",
-          "id": "564735",
+          "home": "Elche CF",
+          "homeBadge": "https://crests.football-data.org/285.png",
+          "homeProviderTeamId": "285",
+          "id": "564728",
           "isCompetitionFixture": true,
           "leagueId": "2014",
           "league": "Primera Division",
@@ -23410,16 +23728,16 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "564735"
+            "football-data.org": "564728"
           },
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "17:30:00",
+          "timestamp": "2026-11-01T17:30:00Z",
           "venue": "",
-          "matchId": "footy_comp_football_data_org_564735",
+          "matchId": "footy_comp_football_data_org_564728",
           "followedTeamNames": [],
           "isHome": null,
           "opponent": "",
@@ -23427,8 +23745,80 @@
           "teamBadge": "",
           "teamId": "",
           "teamName": "",
-          "homeTeamId": "team:rayo-vallecano-de-madrid",
-          "awayTeamId": "team:rc-celta-de-vigo"
+          "homeTeamId": "team:elche-cf",
+          "awayTeamId": "team:valencia-cf"
+        },
+        {
+          "away": "Real Sociedad de Fútbol",
+          "awayBadge": "https://crests.football-data.org/92.png",
+          "awayProviderTeamId": "92",
+          "date": "2026-11-01",
+          "home": "Athletic Club",
+          "homeBadge": "https://crests.football-data.org/77.png",
+          "homeProviderTeamId": "77",
+          "id": "564729",
+          "isCompetitionFixture": true,
+          "leagueId": "2014",
+          "league": "Primera Division",
+          "round": "11",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "564729"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-01T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_564729",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:athletic-club",
+          "awayTeamId": "team:real-sociedad-de-futbol"
+        },
+        {
+          "away": "CA Osasuna",
+          "awayBadge": "https://crests.football-data.org/79.png",
+          "awayProviderTeamId": "79",
+          "date": "2026-11-02",
+          "home": "RC Deportivo La Coruña",
+          "homeBadge": "https://crests.football-data.org/560.png",
+          "homeProviderTeamId": "560",
+          "id": "564731",
+          "isCompetitionFixture": true,
+          "leagueId": "2014",
+          "league": "Primera Division",
+          "round": "11",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "564731"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-02T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_564731",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:rc-deportivo-la-coruna",
+          "awayTeamId": "team:ca-osasuna"
         },
         {
           "away": "Real Betis Balompié",
@@ -33283,15 +33673,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:48.434Z",
+      "attemptedAt": "2026-10-03T14:50:36.989Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -53317,15 +53707,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:48.438Z",
+      "attemptedAt": "2026-10-03T14:50:36.992Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53428,15 +53818,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:48.439Z",
+      "attemptedAt": "2026-10-03T14:50:36.994Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -53713,16 +54103,16 @@
       "notes": [
         "Preserved 6 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:22:48.439Z",
+      "attemptedAt": "2026-10-03T14:50:36.994Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -55789,7 +56179,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047967"
@@ -55797,9 +56187,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "16:00:00",
-          "timestamp": "2026-10-02T14:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047967",
           "followedTeamNames": [],
@@ -55823,7 +56213,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "2-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047966"
@@ -55831,9 +56221,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-02T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047966",
           "followedTeamNames": [],
@@ -55857,7 +56247,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047958"
@@ -55865,9 +56255,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-02T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047958",
           "followedTeamNames": [],
@@ -55891,7 +56281,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047961"
@@ -55899,7 +56289,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -55925,7 +56315,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047960"
@@ -55933,7 +56323,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -55959,7 +56349,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047962"
@@ -55967,7 +56357,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -55993,7 +56383,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "0-3",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047959"
@@ -56001,7 +56391,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56027,7 +56417,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047964"
@@ -56035,7 +56425,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56061,7 +56451,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "6-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047963"
@@ -56069,7 +56459,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56095,7 +56485,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047965"
@@ -56103,7 +56493,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -59046,15 +59436,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:23:00.972Z",
+      "attemptedAt": "2026-10-03T14:50:49.235Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -77060,15 +77450,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:23:00.979Z",
+      "attemptedAt": "2026-10-03T14:50:49.239Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -79827,15 +80217,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     },
     {
-      "attemptedAt": "2026-10-02T16:23:00.984Z",
+      "attemptedAt": "2026-10-03T14:50:49.242Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82039,12 +82429,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-02T16:17:28.902Z"
+      "updatedAt": "2026-10-03T14:45:17.368Z"
     }
   ],
   "teamCatalog": [
@@ -82762,6 +83152,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:burnley",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Burnley",
+      "prettyName": "Burnley",
+      "providerTeamIds": {
+        "football-data.org": "328",
+        "TheSportsDB": "133623"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/328.png",
       "id": "team:burnley-fc",
       "leagues": [
@@ -82777,7 +83184,8 @@
       "name": "Burnley FC",
       "prettyName": "Burnley FC",
       "providerTeamIds": {
-        "football-data.org": "328"
+        "football-data.org": "328",
+        "TheSportsDB": "133623"
       }
     },
     {
@@ -82820,6 +83228,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:cardiff-city",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Cardiff City",
+      "prettyName": "Cardiff City",
+      "providerTeamIds": {
+        "football-data.org": "715",
+        "TheSportsDB": "133637"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/715.png",
       "id": "team:cardiff-city-fc",
       "leagues": [
@@ -82835,7 +83260,8 @@
       "name": "Cardiff City FC",
       "prettyName": "Cardiff City FC",
       "providerTeamIds": {
-        "football-data.org": "715"
+        "football-data.org": "715",
+        "TheSportsDB": "133637"
       }
     },
     {
@@ -83588,6 +84014,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:derby-county",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Derby County",
+      "prettyName": "Derby County",
+      "providerTeamIds": {
+        "football-data.org": "342",
+        "TheSportsDB": "133627"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/342.png",
       "id": "team:derby-county-fc",
       "leagues": [
@@ -84274,6 +84717,22 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:huddersfield-town",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Huddersfield Town",
+      "prettyName": "Huddersfield Town",
+      "providerTeamIds": {
+        "TheSportsDB": "133932"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/322.png",
       "id": "team:hull-city-afc",
       "leagues": [
@@ -84590,6 +85049,22 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:leicester-city",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Leicester City",
+      "prettyName": "Leicester City",
+      "providerTeamIds": {
+        "TheSportsDB": "133626"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/88.png",
       "id": "team:levante-ud",
       "leagues": [
@@ -84658,6 +85133,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:lincoln-city",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Lincoln City",
+      "prettyName": "Lincoln City",
+      "providerTeamIds": {
+        "football-data.org": "1126",
+        "TheSportsDB": "135900"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/1126.png",
       "id": "team:lincoln-city-fc",
       "leagues": [
@@ -84673,7 +85165,8 @@
       "name": "Lincoln City FC",
       "prettyName": "Lincoln City FC",
       "providerTeamIds": {
-        "football-data.org": "1126"
+        "football-data.org": "1126",
+        "TheSportsDB": "135900"
       }
     },
     {
@@ -84988,6 +85481,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:millwall",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Millwall",
+      "prettyName": "Millwall",
+      "providerTeamIds": {
+        "football-data.org": "384",
+        "TheSportsDB": "133634"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/384.png",
       "id": "team:millwall-fc",
       "leagues": [
@@ -85003,7 +85513,24 @@
       "name": "Millwall FC",
       "prettyName": "Millwall FC",
       "providerTeamIds": {
-        "football-data.org": "384"
+        "football-data.org": "384",
+        "TheSportsDB": "133634"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:milton-keynes-dons",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Milton Keynes Dons",
+      "prettyName": "Milton Keynes Dons",
+      "providerTeamIds": {
+        "TheSportsDB": "134371"
       }
     },
     {
@@ -85191,6 +85718,22 @@
     {
       "active": true,
       "badge": "",
+      "id": "team:northampton-town",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Northampton Town",
+      "prettyName": "Northampton Town",
+      "providerTeamIds": {
+        "TheSportsDB": "134370"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
       "id": "team:northern-ireland",
       "leagues": [
         {
@@ -85232,6 +85775,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:norwich-city",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Norwich City",
+      "prettyName": "Norwich City",
+      "providerTeamIds": {
+        "football-data.org": "68",
+        "TheSportsDB": "133608"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/68.png",
       "id": "team:norwich-city-fc",
       "leagues": [
@@ -85247,7 +85807,8 @@
       "name": "Norwich City FC",
       "prettyName": "Norwich City FC",
       "providerTeamIds": {
-        "football-data.org": "68"
+        "football-data.org": "68",
+        "TheSportsDB": "133608"
       }
     },
     {
@@ -85284,6 +85845,22 @@
       "prettyName": "Nottingham Forest FC",
       "providerTeamIds": {
         "football-data.org": "351"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:notts-county",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Notts County",
+      "prettyName": "Notts County",
+      "providerTeamIds": {
+        "TheSportsDB": "134373"
       }
     },
     {
@@ -85528,6 +86105,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:portsmouth",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Portsmouth",
+      "prettyName": "Portsmouth",
+      "providerTeamIds": {
+        "football-data.org": "325",
+        "TheSportsDB": "133629"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/325.png",
       "id": "team:portsmouth-fc",
       "leagues": [
@@ -85543,7 +86137,8 @@
       "name": "Portsmouth FC",
       "prettyName": "Portsmouth FC",
       "providerTeamIds": {
-        "football-data.org": "325"
+        "football-data.org": "325",
+        "TheSportsDB": "133629"
       }
     },
     {
@@ -85562,6 +86157,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:preston-north-end",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Preston North End",
+      "prettyName": "Preston North End",
+      "providerTeamIds": {
+        "football-data.org": "1081",
+        "TheSportsDB": "133809"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/1081.png",
       "id": "team:preston-north-end-fc",
       "leagues": [
@@ -85577,7 +86189,8 @@
       "name": "Preston North End FC",
       "prettyName": "Preston North End FC",
       "providerTeamIds": {
-        "football-data.org": "1081"
+        "football-data.org": "1081",
+        "TheSportsDB": "133809"
       }
     },
     {
@@ -85616,6 +86229,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:queens-park-rangers",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Queens Park Rangers",
+      "prettyName": "Queens Park Rangers",
+      "providerTeamIds": {
+        "football-data.org": "69",
+        "TheSportsDB": "133605"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/69.png",
       "id": "team:queens-park-rangers-fc",
       "leagues": [
@@ -85631,7 +86261,8 @@
       "name": "Queens Park Rangers FC",
       "prettyName": "Queens Park Rangers FC",
       "providerTeamIds": {
-        "football-data.org": "69"
+        "football-data.org": "69",
+        "TheSportsDB": "133605"
       }
     },
     {
@@ -86029,6 +86660,22 @@
       "name": "Romania",
       "prettyName": "Romania",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:rotherham-united",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Rotherham United",
+      "prettyName": "Rotherham United",
+      "providerTeamIds": {
+        "TheSportsDB": "134231"
+      }
     },
     {
       "active": true,
@@ -86488,6 +87135,22 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:stevenage",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Stevenage",
+      "prettyName": "Stevenage",
+      "providerTeamIds": {
+        "TheSportsDB": "134378"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/70.png",
       "id": "team:stoke-city-fc",
       "leagues": [
@@ -86575,6 +87238,22 @@
       "name": "Sweden",
       "prettyName": "Sweden",
       "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:swindon-town",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Swindon Town",
+      "prettyName": "Swindon Town",
+      "providerTeamIds": {
+        "TheSportsDB": "134379"
+      }
     },
     {
       "active": true,
@@ -86968,6 +87647,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:west-bromwich-albion",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "West Bromwich Albion",
+      "prettyName": "West Bromwich Albion",
+      "providerTeamIds": {
+        "football-data.org": "74",
+        "TheSportsDB": "133611"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/74.png",
       "id": "team:west-bromwich-albion-fc",
       "leagues": [
@@ -86983,7 +87679,8 @@
       "name": "West Bromwich Albion FC",
       "prettyName": "West Bromwich Albion FC",
       "providerTeamIds": {
-        "football-data.org": "74"
+        "football-data.org": "74",
+        "TheSportsDB": "133611"
       }
     },
     {
@@ -87002,6 +87699,23 @@
     },
     {
       "active": true,
+      "badge": "",
+      "id": "team:west-ham-united",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "West Ham United",
+      "prettyName": "West Ham United",
+      "providerTeamIds": {
+        "football-data.org": "563",
+        "TheSportsDB": "133636"
+      }
+    },
+    {
+      "active": true,
       "badge": "https://crests.football-data.org/563.png",
       "id": "team:west-ham-united-fc",
       "leagues": [
@@ -87017,7 +87731,8 @@
       "name": "West Ham United FC",
       "prettyName": "West Ham United FC",
       "providerTeamIds": {
-        "football-data.org": "563"
+        "football-data.org": "563",
+        "TheSportsDB": "133636"
       }
     },
     {
@@ -87108,6 +87823,22 @@
     {
       "active": true,
       "badge": "",
+      "id": "team:wycombe-wanderers",
+      "leagues": [
+        {
+          "id": "efl cup",
+          "name": "EFL Cup"
+        }
+      ],
+      "name": "Wycombe Wanderers",
+      "prettyName": "Wycombe Wanderers",
+      "providerTeamIds": {
+        "TheSportsDB": "134382"
+      }
+    },
+    {
+      "active": true,
+      "badge": "",
       "id": "team:york-city",
       "leagues": [
         {
@@ -87124,9 +87855,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -89331,19 +90062,19 @@
         }
       ],
       "notes": [
-        "Loaded 40 SCHEDULED matches from 2026-10-02 through 2027-10-02.",
+        "Loaded 40 SCHEDULED matches from 2026-10-03 through 2027-10-03.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 41 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-10-02.",
+        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-10-03.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -90074,7 +90805,7 @@
         {
           "away": "Deportivo Alavés",
           "awayBadge": "",
-          "date": "2026-11-01",
+          "date": "2026-10-31",
           "home": "FC Barcelona",
           "homeBadge": "",
           "id": "564732",
@@ -90095,12 +90826,12 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2026-10-31T20:00:00Z",
           "venue": "Barcelona, Barcelona",
           "awayProviderTeamId": "263",
           "homeProviderTeamId": "81",
@@ -91461,18 +92192,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-10-02 through 2027-10-02.",
+        "Loaded 38 SCHEDULED matches from 2026-10-03 through 2027-10-03.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-02.",
+        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-03.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -93452,18 +94183,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-10-02 through 2027-10-02.",
+        "Loaded 38 SCHEDULED matches from 2026-10-03 through 2027-10-03.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-02.",
+        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-03.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -93604,9 +94335,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -93740,9 +94471,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -94777,15 +95508,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-10-02.",
+        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-10-03.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-02T16:17:28.902Z",
-      "updatedAt": "2026-10-02T16:17:28.902Z",
-      "previousUpdatedAt": "2026-10-01T17:03:02.407Z",
+      "attemptedAt": "2026-10-03T14:45:17.368Z",
+      "updatedAt": "2026-10-03T14:45:17.368Z",
+      "previousUpdatedAt": "2026-10-02T16:17:28.902Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -95714,7 +96445,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-10-02.",
+        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-10-03.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

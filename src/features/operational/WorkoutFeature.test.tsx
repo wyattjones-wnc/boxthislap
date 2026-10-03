@@ -239,6 +239,23 @@ describe("Daily Workouts", () => {
           };
           return response({ cardio });
         }
+        if (
+          url.endsWith(`/api/me/workouts/${today}/cardio/entries/entry-1`) &&
+          init?.method === "PATCH"
+        ) {
+          const entry = JSON.parse(String(init.body));
+          cardio = {
+            ...cardio,
+            entries: cardio.entries.map((value) =>
+              value.id === "entry-1" ? { ...value, ...entry } : value,
+            ),
+          };
+          cardio.totalMiles = cardio.entries.reduce(
+            (total, value) => total + value.miles,
+            0,
+          );
+          return response({ cardio });
+        }
         if (url.endsWith(`/api/me/workouts/${today}/cardio/complete`)) {
           cardio = { ...cardio, completedAt: "2026-09-28T12:00:00Z" };
           return response({ cardio });
@@ -277,8 +294,46 @@ describe("Daily Workouts", () => {
       screen.getByText("Total mileage").parentElement?.textContent,
     ).toContain("3.75");
 
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit walk of 1.25 miles" }),
+    );
+    expect((screen.getByLabelText("Miles") as HTMLInputElement).value).toBe(
+      "1.25",
+    );
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("1.25 mi")).not.toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit walk of 1.25 miles" }),
+    );
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("Type"), {
+      target: { value: "run" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("2 mi");
+    expect(
+      screen.getByText("Total mileage").parentElement?.textContent,
+    ).toContain("4.5");
+
     fireEvent.click(screen.getByRole("button", { name: "Complete Cardio" }));
     expect(await screen.findByText("Cardio complete")).not.toBeNull();
+    expect(screen.queryByLabelText("Miles")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit run of 2 miles" }),
+    );
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("3 mi");
+    expect(
+      screen.getByText("Cardio complete").parentElement?.textContent,
+    ).toContain("5.5");
     expect(screen.queryByLabelText("Miles")).toBeNull();
   });
 });

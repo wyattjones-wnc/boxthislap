@@ -119,3 +119,67 @@ test("running workout elapsed time excludes pauses and clamps at duration", () =
     1200,
   );
 });
+
+for (const completedAt of [null, "2026-09-25T12:00:00Z"]) {
+  test(`cardio edits update own entry and totals (${completedAt ? "completed" : "active"})`, async () => {
+    let entry = { entry_id: "entry-1", activity_type: "walk", miles: 1 };
+    const date = "2026-09-25";
+    const env = {
+      DB: {
+        prepare: (sql) => ({
+          bind: (...values) => ({
+            first: async () => ({ completed_at: completedAt }),
+            all: async () => ({ results: [entry] }),
+            run: async () => {
+              assert.match(sql, /UPDATE manager_cardio_entries/);
+              assert.deepEqual(values, ["run", 2.5, "entry-1", "8", date]);
+              assert.match(
+                sql,
+                /WHERE entry_id = \? AND manager_id = \? AND workout_date = \?/,
+              );
+              entry = { ...entry, activity_type: values[0], miles: values[1] };
+              return { meta: { changes: 1 } };
+            },
+          }),
+        }),
+      },
+    };
+    const url = new URL(
+      `https://example.com/api/me/workouts/${date}/cardio/entries/entry-1`,
+    );
+    const result = await handleWorkoutRequest({
+      env,
+      readBody: async () => ({ type: "run", miles: 2.5 }),
+      request: new Request(url, { method: "PATCH" }),
+      requireManager: async () => ({ sub: "8" }),
+      url,
+    });
+    assert.deepEqual(result.cardio.entries, [
+      { id: "entry-1", type: "run", miles: 2.5 },
+    ]);
+    assert.equal(result.cardio.totalMiles, 2.5);
+    assert.equal(result.cardio.completedAt, completedAt);
+  });
+}
+
+test("cardio edits reject missing or other managers' entries", async () => {
+  const url = new URL(
+    "https://example.com/api/me/workouts/2026-09-25/cardio/entries/missing",
+  );
+  await assert.rejects(
+    handleWorkoutRequest({
+      env: {
+        DB: {
+          prepare: () => ({
+            bind: () => ({ run: async () => ({ meta: { changes: 0 } }) }),
+          }),
+        },
+      },
+      readBody: async () => ({ type: "walk", miles: 1 }),
+      request: new Request(url, { method: "PATCH" }),
+      requireManager: async () => ({ sub: "8" }),
+      url,
+    }),
+    /Cardio entry was not found/,
+  );
+});

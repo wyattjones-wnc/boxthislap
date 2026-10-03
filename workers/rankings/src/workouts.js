@@ -99,6 +99,19 @@ export async function handleWorkoutRequest({
   const cardioEntryMatch = url.pathname.match(
     /^\/api\/me\/workouts\/(\d{4}-\d{2}-\d{2})\/cardio\/entries\/([^/]+)$/,
   );
+  if (cardioEntryMatch && request.method === "PATCH") {
+    const manager = await requireManager(request, env);
+    return {
+      cardio: await updateCardioEntry(
+        env,
+        manager.sub,
+        parseWorkoutDate(cardioEntryMatch[1]),
+        parseId(cardioEntryMatch[2], "cardio entry ID"),
+        await readBody(request),
+      ),
+    };
+  }
+
   if (cardioEntryMatch && request.method === "DELETE") {
     const manager = await requireManager(request, env);
     return {
@@ -622,6 +635,18 @@ async function addCardioEntry(env, managerId, date, body) {
   )
     .bind(crypto.randomUUID(), managerId, date, entry.type, entry.miles)
     .run();
+  return readCardioWorkout(env, managerId, date);
+}
+
+async function updateCardioEntry(env, managerId, date, entryId, body) {
+  const entry = normalizeCardioEntry(body);
+  const result = await env.DB.prepare(
+    "UPDATE manager_cardio_entries SET activity_type = ?, miles = ? WHERE entry_id = ? AND manager_id = ? AND workout_date = ?",
+  )
+    .bind(entry.type, entry.miles, entryId, managerId, date)
+    .run();
+  if (Number(result.meta?.changes || 0) === 0)
+    throw httpError(404, "Cardio entry was not found.");
   return readCardioWorkout(env, managerId, date);
 }
 

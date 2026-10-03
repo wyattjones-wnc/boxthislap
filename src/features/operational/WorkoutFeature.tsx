@@ -458,6 +458,14 @@ export function WorkoutFeature() {
         <CardioWorkoutView
           cardio={cardio}
           busy={busy}
+          canEdit={ownView}
+          edit={(entryId, entry) =>
+            changeCardio(
+              `/api/me/workouts/${cardio.date}/cardio/entries/${encodeURIComponent(entryId)}`,
+              entry,
+              "PATCH",
+            )
+          }
           add={(entry) =>
             changeCardio(
               `/api/me/workouts/${cardio.date}/cardio/entries`,
@@ -713,7 +721,9 @@ function CardioWorkoutView({
   add,
   busy,
   cardio,
+  canEdit,
   complete,
+  edit,
   remove,
 }: {
   add: (entry: {
@@ -722,16 +732,28 @@ function CardioWorkoutView({
   }) => Promise<CardioWorkout | null>;
   busy: boolean;
   cardio: CardioWorkout;
+  canEdit: boolean;
   complete: () => void;
+  edit: (
+    entryId: string,
+    entry: { miles: number; type: "run" | "walk" },
+  ) => Promise<CardioWorkout | null>;
   remove: (entryId: string) => Promise<CardioWorkout | null>;
 }) {
   const [type, setType] = useState<"run" | "walk">("walk");
   const [miles, setMiles] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const completed = Boolean(cardio.completedAt);
+  const cancelEdit = () => {
+    setEditingId(null);
+    setMiles("");
+    setType("walk");
+  };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const saved = await add({ miles: Number(miles), type });
-    if (saved) setMiles("");
+    const entry = { miles: Number(miles), type };
+    const saved = editingId ? await edit(editingId, entry) : await add(entry);
+    if (saved) cancelEdit();
   };
   return (
     <section className={styles.cardioWorkout}>
@@ -740,11 +762,12 @@ function CardioWorkoutView({
         <strong>{formatMiles(cardio.totalMiles)}</strong>
         <small>miles</small>
       </div>
-      {!completed ? (
+      {canEdit && (!completed || editingId) ? (
         <form className={styles.cardioEntryForm} onSubmit={submit}>
           <label>
             <span>Type</span>
             <select
+              disabled={busy}
               value={type}
               onChange={(event) =>
                 setType(event.target.value as "run" | "walk")
@@ -758,6 +781,7 @@ function CardioWorkoutView({
             <span>Miles</span>
             <input
               required
+              disabled={busy}
               inputMode="decimal"
               min="0.001"
               max="1000"
@@ -768,8 +792,24 @@ function CardioWorkoutView({
             />
           </label>
           <button className="action-button" disabled={busy} type="submit">
-            <Plus aria-hidden="true" /> Add
+            {editingId ? (
+              "Save changes"
+            ) : (
+              <>
+                <Plus aria-hidden="true" /> Add
+              </>
+            )}
           </button>
+          {editingId ? (
+            <button
+              className="action-button"
+              disabled={busy}
+              type="button"
+              onClick={cancelEdit}
+            >
+              Cancel
+            </button>
+          ) : null}
         </form>
       ) : null}
       <div className={styles.cardioEntries}>
@@ -780,12 +820,27 @@ function CardioWorkoutView({
                 <strong>{entry.type === "walk" ? "Walk" : "Run"}</strong>
                 <small>{formatMiles(entry.miles)} mi</small>
               </span>
-              {!completed ? (
+              {canEdit ? (
+                <IconButton
+                  disabled={busy}
+                  icon={<Pencil />}
+                  label={`Edit ${entry.type} of ${formatMiles(entry.miles)} miles`}
+                  onClick={() => {
+                    setEditingId(entry.id);
+                    setType(entry.type);
+                    setMiles(String(entry.miles));
+                  }}
+                />
+              ) : null}
+              {canEdit && !completed ? (
                 <IconButton
                   disabled={busy}
                   icon={<Trash2 />}
                   label={`Remove ${entry.type} of ${formatMiles(entry.miles)} miles`}
-                  onClick={() => void remove(entry.id)}
+                  onClick={async () => {
+                    const saved = await remove(entry.id);
+                    if (saved && editingId === entry.id) cancelEdit();
+                  }}
                 />
               ) : (
                 <Check aria-hidden="true" />
@@ -799,7 +854,7 @@ function CardioWorkoutView({
       {!completed ? (
         <button
           className={`action-button ${styles.complete}`}
-          disabled={busy || cardio.entries.length === 0}
+          disabled={busy || editingId !== null || cardio.entries.length === 0}
           onClick={complete}
           type="button"
         >

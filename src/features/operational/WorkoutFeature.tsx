@@ -820,31 +820,35 @@ function CardioWorkoutView({
                 <strong>{entry.type === "walk" ? "Walk" : "Run"}</strong>
                 <small>{formatMiles(entry.miles)} mi</small>
               </span>
-              {canEdit ? (
-                <IconButton
-                  disabled={busy}
-                  icon={<Pencil />}
-                  label={`Edit ${entry.type} of ${formatMiles(entry.miles)} miles`}
-                  onClick={() => {
-                    setEditingId(entry.id);
-                    setType(entry.type);
-                    setMiles(String(entry.miles));
-                  }}
-                />
-              ) : null}
-              {canEdit && !completed ? (
-                <IconButton
-                  disabled={busy}
-                  icon={<Trash2 />}
-                  label={`Remove ${entry.type} of ${formatMiles(entry.miles)} miles`}
-                  onClick={async () => {
-                    const saved = await remove(entry.id);
-                    if (saved && editingId === entry.id) cancelEdit();
-                  }}
-                />
-              ) : (
-                <Check aria-hidden="true" />
-              )}
+              <div className={styles.cardioEntryActions}>
+                {canEdit ? (
+                  <IconButton
+                    disabled={busy}
+                    icon={<Pencil />}
+                    label={`Edit ${entry.type} of ${formatMiles(entry.miles)} miles`}
+                    onClick={() => {
+                      setEditingId(entry.id);
+                      setType(entry.type);
+                      setMiles(String(entry.miles));
+                    }}
+                  />
+                ) : null}
+                {canEdit && !completed ? (
+                  <IconButton
+                    disabled={busy}
+                    icon={<Trash2 />}
+                    label={`Remove ${entry.type} of ${formatMiles(entry.miles)} miles`}
+                    onClick={async () => {
+                      const saved = await remove(entry.id);
+                      if (saved && editingId === entry.id) cancelEdit();
+                    }}
+                  />
+                ) : (
+                  <span className={styles.cardioEntryStatus}>
+                    <Check aria-hidden="true" />
+                  </span>
+                )}
+              </div>
             </div>
           ))
         ) : (

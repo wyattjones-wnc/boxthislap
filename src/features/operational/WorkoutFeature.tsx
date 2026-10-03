@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
+  Accessibility,
   BarChart3,
   Check,
   ChevronLeft,
@@ -13,6 +14,7 @@ import {
   Plus,
   RotateCcw,
   Settings2,
+  Sunrise,
   Trash2,
   X,
 } from "lucide-react";
@@ -62,6 +64,8 @@ interface WorkoutDay {
   completed: boolean;
   date: string;
   kettlebellCompleted: boolean;
+  kneeCompleted?: boolean;
+  morningCompleted?: boolean;
 }
 
 interface CardioEntry {
@@ -596,9 +600,7 @@ function WorkoutCalendar({
   const [year, monthNumber] = month.split("-").map(Number);
   const first = new Date(year, monthNumber - 1, 1);
   const total = new Date(year, monthNumber, 0).getDate();
-  const completed = new Set(
-    days.filter((day) => day.completed).map((day) => day.date),
-  );
+  const daysByDate = new Map(days.map((day) => [day.date, day]));
   const cells = Array.from({ length: first.getDay() + total }, (_, index) =>
     index < first.getDay() ? 0 : index - first.getDay() + 1,
   );
@@ -640,7 +642,16 @@ function WorkoutCalendar({
           {cells.map((day, index) => {
             if (!day) return <span key={`blank-${index}`} />;
             const date = `${month}-${String(day).padStart(2, "0")}`;
-            const done = completed.has(date);
+            const workoutDay = daysByDate.get(date);
+            const completedTypes = workoutDay
+              ? [
+                  workoutDay.morningCompleted ? "Morning Stretch" : "",
+                  workoutDay.kettlebellCompleted ? "Kettlebell" : "",
+                  workoutDay.cardioCompleted ? "Cardio" : "",
+                  workoutDay.kneeCompleted ? "Knee" : "",
+                ].filter(Boolean)
+              : [];
+            const done = completedTypes.length > 0;
             const enabled = done || (ownView && date === today);
             return (
               <button
@@ -649,16 +660,46 @@ function WorkoutCalendar({
                 key={date}
                 onClick={() => void openDay(date, done)}
                 type="button"
-                aria-label={`${prettyDate(date)}${done ? ", completed" : date === today ? ", start workout" : ""}`}
+                aria-label={`${prettyDate(date)}${completedTypes.length ? `, completed: ${completedTypes.join(", ")}` : date === today ? ", start workout" : ""}`}
               >
                 <span>{day}</span>
-                {done ? <Check aria-hidden="true" /> : null}
+                {enabled ? (
+                  <CompletionMark
+                    day={
+                      workoutDay || {
+                        cardioCompleted: false,
+                        completed: false,
+                        date,
+                        kettlebellCompleted: false,
+                      }
+                    }
+                  />
+                ) : null}
               </button>
             );
           })}
         </div>
       )}
     </section>
+  );
+}
+
+function CompletionMark({ day }: { day: WorkoutDay }) {
+  return (
+    <span className={styles.completionMark} aria-hidden="true">
+      <span
+        className={`${styles.completionSegment} ${styles.morningSegment}${day.morningCompleted ? ` ${styles.segmentCompleted}` : ""}`}
+      />
+      <span
+        className={`${styles.completionSegment} ${styles.kettlebellSegment}${day.kettlebellCompleted ? ` ${styles.segmentCompleted}` : ""}`}
+      />
+      <span
+        className={`${styles.completionSegment} ${styles.cardioSegment}${day.cardioCompleted ? ` ${styles.segmentCompleted}` : ""}`}
+      />
+      <span
+        className={`${styles.completionSegment} ${styles.kneeSegment}${day.kneeCompleted ? ` ${styles.segmentCompleted}` : ""}`}
+      />
+    </span>
   );
 }
 
@@ -677,7 +718,16 @@ function WorkoutTypeChooser({
 }) {
   return (
     <section className={styles.typeChooser} aria-label="Choose workout type">
+      <button className={styles.morningType} disabled type="button">
+        <Sunrise aria-hidden="true" />
+        <span>
+          <strong>Morning Stretch</strong>
+          <small>Routine setup coming next</small>
+        </span>
+        <ChevronRight aria-hidden="true" />
+      </button>
       <button
+        className={styles.kettlebellType}
         disabled={!canStart && !kettlebellCompleted}
         onClick={openKettlebell}
         type="button"
@@ -696,6 +746,7 @@ function WorkoutTypeChooser({
         {kettlebellCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
       </button>
       <button
+        className={styles.cardioType}
         disabled={!canStart && !cardioCompleted}
         onClick={openCardio}
         type="button"
@@ -712,6 +763,14 @@ function WorkoutTypeChooser({
           </small>
         </span>
         {cardioCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
+      </button>
+      <button className={styles.kneeType} disabled type="button">
+        <Accessibility aria-hidden="true" />
+        <span>
+          <strong>Knee</strong>
+          <small>Routine setup coming next</small>
+        </span>
+        <ChevronRight aria-hidden="true" />
       </button>
     </section>
   );

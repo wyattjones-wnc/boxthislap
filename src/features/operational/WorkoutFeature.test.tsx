@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
@@ -58,6 +59,58 @@ afterEach(() => {
 });
 
 describe("Daily Workouts", () => {
+  it("uses the four-part completion marker and matching chooser order", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "completion-marker-test", isAdmin: false }),
+    );
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({
+            days: [
+              {
+                cardioCompleted: true,
+                completed: true,
+                date: today,
+                kettlebellCompleted: false,
+              },
+            ],
+          });
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    const day = await screen.findByRole("button", {
+      name: /completed: Cardio/,
+    });
+    const marker = day.querySelector('[aria-hidden="true"]');
+    expect(marker?.children).toHaveLength(4);
+    expect(
+      marker?.querySelectorAll('[class*="segmentCompleted"]'),
+    ).toHaveLength(1);
+
+    fireEvent.click(day);
+    const chooser = screen.getByRole("region", {
+      name: "Choose workout type",
+    });
+    expect(
+      within(chooser)
+        .getAllByRole("button")
+        .map((button) => button.querySelector("strong")?.textContent),
+    ).toEqual(["Morning Stretch", "Kettlebell", "Cardio", "Knee"]);
+  });
+
   it("lets an administrator add an exercise from the calendar page", async () => {
     localStorage.setItem(
       "boxThisLapManagerSession",

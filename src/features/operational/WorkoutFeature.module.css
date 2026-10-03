@@ -105,7 +105,7 @@
 }
 .day {
   align-items: center;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 5;
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;

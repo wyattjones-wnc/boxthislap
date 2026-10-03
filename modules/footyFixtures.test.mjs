@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   compareFootyFixturesAscending,
+  doesFootyFixtureMatchKitFilter,
   getDefaultFootyTeams,
   getFootyCalendarWeek,
   getFootyFilterTeams,
@@ -57,6 +58,30 @@ test("recognizes friendly overrides, provider IDs, and known names", () => {
   assert.equal(isFootyFriendlyFixture({ leagueId: "4569" }), true);
   assert.equal(isFootyFriendlyFixture({ league: "Trofeo Joan Gamper" }), true);
   assert.equal(isFootyFriendlyFixture({ league: "Premier League" }), false);
+});
+
+test("excludes friendlies from past matches without a set kit", () => {
+  assert.equal(
+    doesFootyFixtureMatchKitFilter(
+      { league: "Premier League", matchNote: {} },
+      "not-set",
+    ),
+    true,
+  );
+  assert.equal(
+    doesFootyFixtureMatchKitFilter(
+      { league: "Club Friendly", matchNote: {} },
+      "not-set",
+    ),
+    false,
+  );
+  assert.equal(
+    doesFootyFixtureMatchKitFilter(
+      { isFriendly: true, matchNote: { kit: "home" } },
+      "home",
+    ),
+    true,
+  );
 });
 
 test("deduplicates team filter names and resolves default-priority teams", () => {

@@ -11,6 +11,7 @@ import {
 import {
   compareFootyFixturesAscending,
   compareFootyFixturesDescending,
+  doesFootyFixtureMatchKitFilter,
   getFootyFilterTeams,
   getFootyFixtureComparableTime,
   getFootyFixtureDateKey,
@@ -28,7 +29,7 @@ import {
   normalizeFootyClubName,
   normalizeFootyDateRange,
   normalizeFootyPriority,
-} from "./modules/footyFixtures.js?v=202609120300";
+} from "./modules/footyFixtures.js?v=202610020001";
 import {
   WORKFLOW_LOOKAHEAD_DAYS,
   THEME_STORAGE_KEY,
@@ -1773,11 +1774,8 @@ function renderFootyTeamPastSchedule(team, fixtures = []) {
     if (footyTeamPastFilters.competition && getFootyTeamFixtureCompetition(fixture) !== footyTeamPastFilters.competition) {
       return false;
     }
-    if (footyTeamPastFilters.kit) {
-      const fixtureKit = String(fixture.matchNote?.kit || "");
-      if (footyTeamPastFilters.kit === "not-set" ? fixtureKit : fixtureKit !== footyTeamPastFilters.kit) {
-        return false;
-      }
+    if (!doesFootyFixtureMatchKitFilter(fixture, footyTeamPastFilters.kit)) {
+      return false;
     }
     if (footyTeamPastFilters.result && getFootyFixtureResultClass(fixture) !== `footy-fixture-card--${footyTeamPastFilters.result}`) {
       return false;

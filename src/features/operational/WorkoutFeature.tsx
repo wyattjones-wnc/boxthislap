@@ -685,20 +685,22 @@ function WorkoutCalendar({
 }
 
 function CompletionMark({ day }: { day: WorkoutDay }) {
+  const segments = [
+    [styles.morningSegment, Boolean(day.morningCompleted)],
+    [styles.kettlebellSegment, day.kettlebellCompleted],
+    [styles.cardioSegment, day.cardioCompleted],
+    [styles.kneeSegment, Boolean(day.kneeCompleted)],
+  ] as const;
   return (
     <span className={styles.completionMark} aria-hidden="true">
-      <span
-        className={`${styles.completionSegment} ${styles.morningSegment}${day.morningCompleted ? ` ${styles.segmentCompleted}` : ""}`}
-      />
-      <span
-        className={`${styles.completionSegment} ${styles.kettlebellSegment}${day.kettlebellCompleted ? ` ${styles.segmentCompleted}` : ""}`}
-      />
-      <span
-        className={`${styles.completionSegment} ${styles.cardioSegment}${day.cardioCompleted ? ` ${styles.segmentCompleted}` : ""}`}
-      />
-      <span
-        className={`${styles.completionSegment} ${styles.kneeSegment}${day.kneeCompleted ? ` ${styles.segmentCompleted}` : ""}`}
-      />
+      {segments.map(([segmentClass, completed]) => (
+        <span
+          className={`${styles.completionSegment} ${segmentClass}${completed ? ` ${styles.segmentCompleted}` : ""}`}
+          key={segmentClass}
+        >
+          {completed ? <Check strokeWidth={3} /> : null}
+        </span>
+      ))}
     </span>
   );
 }

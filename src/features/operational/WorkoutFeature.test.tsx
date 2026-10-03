@@ -99,6 +99,7 @@ describe("Daily Workouts", () => {
     expect(
       marker?.querySelectorAll('[class*="segmentCompleted"]'),
     ).toHaveLength(1);
+    expect(marker?.querySelectorAll("svg")).toHaveLength(1);
 
     fireEvent.click(day);
     const chooser = screen.getByRole("region", {

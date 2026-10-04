@@ -90,7 +90,40 @@ test("Barcelona scanner paginates until a short page", async () => {
   assert.equal(scan.complete, true);
 });
 
-test("extracts the inherited gallery preload from configurable Barcelona pages", () => {
+test("excludes synthetic Barcelona customization products without shortening pagination", async () => {
+  const calls = [];
+  const pages = [
+    [
+      { id: 1, product_type: "Ficticious" },
+      { id: 2, tags: "KIT_AWAY, PRODUCTO_FICTICIO" },
+      { id: 3, tags: ["PRODUCTO_FICTICIO"] },
+    ],
+    [
+      {
+        id: 4,
+        handle: "jersey",
+        title: "Away Jersey",
+        tags: ["PRODUCTO_NO_FICTICIO"],
+        image: { src: "https://cdn.example/jersey.jpg" },
+      },
+    ],
+  ];
+  const scan = await scanBarcelona({
+    limit: 3,
+    fetchImpl: async (url) => {
+      calls.push(url);
+      return { ok: true, json: async () => ({ products: pages.shift() }) };
+    },
+  });
+  assert.deepEqual(
+    scan.products.map((product) => product.id),
+    ["barcelona:4"],
+  );
+  assert.equal(scan.pageCount, 2);
+  assert.equal(calls.length, 2);
+});
+
+test("extracts a Barcelona product gallery preload", () => {
   assert.equal(
     barcelonaPageImage(`<link rel="icon" href="/favicon.png">
       <link href='//store.fcbarcelona.com/cdn/shop/files/jersey.png?v=1&amp;width=450'

@@ -44,8 +44,21 @@ export async function scanBarcelona({
       throw new Error(
         `Barcelona catalog returned an invalid product response on page ${page}.`,
       );
-    for (const product of value.products)
+    for (const product of value.products) {
+      const tags = Array.isArray(product.tags)
+        ? product.tags
+        : String(product.tags || "").split(",");
+      if (
+        String(product.product_type || "")
+          .trim()
+          .toLowerCase() === "ficticious" ||
+        tags.some(
+          (tag) => String(tag).trim().toUpperCase() === "PRODUCTO_FICTICIO",
+        )
+      )
+        continue;
       products.push(normalizeBarcelonaProduct(product, baseUrl));
+    }
     if (value.products.length < limit) break;
   }
   if (page > 50)

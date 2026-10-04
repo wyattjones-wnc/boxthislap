@@ -215,6 +215,42 @@ async function deleteRoutine(env, ownerType, ownerId) {
     .run();
 }
 
+export function morningSnapshotMatchesRoutine(snapshot, routine) {
+  if (snapshot.length !== routine.length) return false;
+  return snapshot.every((row, index) => {
+    const step = routine[index];
+    return (
+      Number(row.position) === step.position &&
+      String(row.step_id) === step.id &&
+      String(row.name) === step.name &&
+      String(row.step_type) === step.type &&
+      (row.duration_seconds == null ? null : Number(row.duration_seconds)) ===
+        step.durationSeconds &&
+      (row.target_count == null ? null : Number(row.target_count)) ===
+        step.targetCount &&
+      (row.completion_mode || null) === step.completionMode
+    );
+  });
+}
+
+function insertMorningSteps(env, managerId, date, steps) {
+  return steps.map((step) =>
+    env.DB.prepare(
+      "INSERT INTO manager_morning_steps (manager_id, workout_date, position, step_id, name, step_type, duration_seconds, target_count, completion_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    ).bind(
+      managerId,
+      date,
+      step.position,
+      step.id,
+      step.name,
+      step.type,
+      step.durationSeconds,
+      step.targetCount,
+      step.completionMode,
+    ),
+  );
+}
+
 async function startMorningWorkout(env, managerId, date, timeZone) {
   const zone = String(timeZone || "").trim();
   if (dateInTimeZone(zone) !== date)
@@ -223,7 +259,7 @@ async function startMorningWorkout(env, managerId, date, timeZone) {
       "Only today's Morning Stretch routine can be started.",
     );
   const existing = await env.DB.prepare(
-    "SELECT manager_id FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
+    "SELECT current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
   )
     .bind(managerId, date)
     .first();
@@ -235,22 +271,38 @@ async function startMorningWorkout(env, managerId, date, timeZone) {
       env.DB.prepare(
         "INSERT INTO manager_morning_workouts (manager_id, workout_date, time_zone) VALUES (?, ?, ?)",
       ).bind(managerId, date, zone),
-      ...routine.steps.map((step) =>
-        env.DB.prepare(
-          "INSERT INTO manager_morning_steps (manager_id, workout_date, position, step_id, name, step_type, duration_seconds, target_count, completion_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        ).bind(
-          managerId,
-          date,
-          step.position,
-          step.id,
-          step.name,
-          step.type,
-          step.durationSeconds,
-          step.targetCount,
-          step.completionMode,
-        ),
-      ),
+      ...insertMorningSteps(env, managerId, date, routine.steps),
     ]);
+  } else if (
+    !existing.completed_at &&
+    !existing.step_started_at &&
+    Number(existing.current_position) === 1
+  ) {
+    const snapshot = await env.DB.prepare(
+      "SELECT position, step_id, name, step_type, duration_seconds, target_count, completion_mode, completed_count, completed_at FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ? ORDER BY position",
+    )
+      .bind(managerId, date)
+      .all();
+    const rows = snapshot.results || [];
+    const hasProgress = rows.some(
+      (row) => row.completed_at || Number(row.completed_count || 0) > 0,
+    );
+    if (!hasProgress) {
+      const routine = (await readEffectiveRoutine(env, managerId)).routine;
+      if (!routine.steps.length)
+        throw httpError(409, "Morning Stretch has not been configured yet.");
+      if (!morningSnapshotMatchesRoutine(rows, routine.steps)) {
+        await env.DB.batch([
+          env.DB.prepare(
+            "DELETE FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ?",
+          ).bind(managerId, date),
+          env.DB.prepare(
+            "UPDATE manager_morning_workouts SET time_zone = ?, current_position = 1, step_started_at = NULL, completed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
+          ).bind(zone, managerId, date),
+          ...insertMorningSteps(env, managerId, date, routine.steps),
+        ]);
+      }
+    }
   }
   return readMorningWorkout(env, managerId, date);
 }

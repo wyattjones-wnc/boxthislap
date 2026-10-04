@@ -8,6 +8,7 @@ import {
   workoutElapsed,
 } from "../src/workouts.js";
 import {
+  morningSnapshotMatchesRoutine,
   normalizeMorningRoutine,
   readEffectiveRoutine,
 } from "../src/morning.js";
@@ -144,6 +145,45 @@ test("morning routines reject unsafe bounds and duplicate step IDs", () => {
         ],
       }),
     /unique/,
+  );
+});
+
+test("morning workout snapshots detect changes to the saved routine", () => {
+  const routine = normalizeMorningRoutine({
+    steps: [
+      { durationSeconds: 30, id: "one", name: "First", type: "timer" },
+      {
+        completionMode: "toggle",
+        id: "two",
+        name: "Second",
+        targetCount: 10,
+        type: "count",
+      },
+    ],
+  });
+  const snapshot = routine.map((step) => ({
+    completion_mode: step.completionMode,
+    duration_seconds: step.durationSeconds,
+    name: step.name,
+    position: step.position,
+    step_id: step.id,
+    step_type: step.type,
+    target_count: step.targetCount,
+  }));
+
+  assert.equal(morningSnapshotMatchesRoutine(snapshot, routine), true);
+  assert.equal(
+    morningSnapshotMatchesRoutine(snapshot.slice(0, 1), routine),
+    false,
+  );
+  assert.equal(
+    morningSnapshotMatchesRoutine(
+      snapshot.map((step, index) =>
+        index === 1 ? { ...step, target_count: 12 } : step,
+      ),
+      routine,
+    ),
+    false,
   );
 });
 

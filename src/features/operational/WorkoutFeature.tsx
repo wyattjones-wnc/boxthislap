@@ -373,6 +373,28 @@ export function WorkoutFeature() {
   const openMorning = async () => {
     if (!selectedDate) return;
     const completed = Boolean(selectedDay?.morningCompleted);
+    if (!completed) {
+      setBusy(true);
+      setError("");
+      try {
+        const effective = await api<{
+          routine: { steps: MorningRoutineStep[] };
+        }>("/api/me/morning-routine");
+        if (!effective.routine.steps.length) {
+          setRoutineEditor("mine");
+          return;
+        }
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "The Morning Stretch routine could not load.",
+        );
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
     const path = completed
       ? ownView
         ? `/api/me/workouts/${selectedDate}/morning`

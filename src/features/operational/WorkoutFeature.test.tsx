@@ -178,6 +178,30 @@ describe("Daily Workouts", () => {
         const url = String(input);
         if (url.includes("/api/me/workouts?month="))
           return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine"))
+          return response({
+            hasOverride: false,
+            routine: {
+              steps: [
+                {
+                  durationSeconds: 1,
+                  id: "timer-1",
+                  name: "Hamstring stretch",
+                  position: 1,
+                  type: "timer",
+                },
+                {
+                  completionMode: "toggle",
+                  id: "count-1",
+                  name: "Lunges",
+                  position: 2,
+                  targetCount: 10,
+                  type: "count",
+                },
+              ],
+            },
+            source: "default",
+          });
         if (url.endsWith(`/api/me/workouts/${today}/morning/start`))
           return response({ morning });
         if (url.endsWith(`/api/me/workouts/${today}/morning/action`)) {
@@ -247,6 +271,45 @@ describe("Daily Workouts", () => {
     ).toContain("00:01");
     fireEvent.click(screen.getByRole("button", { name: "Complete" }));
     expect(await screen.findByText("Morning Stretch complete")).not.toBeNull();
+  });
+
+  it("opens routine setup when Morning Stretch has not been configured", async () => {
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine"))
+          return response({
+            hasOverride: false,
+            routine: { steps: [] },
+            source: "default",
+          });
+        throw new Error(`Unexpected request: ${url}`);
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /start workout/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
+
+    expect(await screen.findByText("My Morning Stretch")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Add timer" })).not.toBeNull();
+    expect(
+      fetchMock.mock.calls.some(([input]) =>
+        String(input).endsWith(`/api/me/workouts/${today}/morning/start`),
+      ),
+    ).toBe(false);
   });
 
   it("uses the four-part completion marker and matching chooser order", async () => {

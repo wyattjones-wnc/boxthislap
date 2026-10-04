@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 describe("Daily Workouts", () => {
-  it("creates a manager override from the admin Morning Stretch routine", async () => {
+  it("creates a manager override from a blank routine builder", async () => {
     localStorage.setItem(
       "boxThisLapManagerSession",
       JSON.stringify({ managerId: "morning-editor-test", isAdmin: false }),
@@ -115,13 +115,15 @@ describe("Daily Workouts", () => {
         name: "Customize my Morning Stretch routine",
       }),
     );
-    expect(await screen.findByText(/using Wyatt’s routine/i)).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Add count" }));
+    expect(
+      await screen.findByText(/workouts use Wyatt’s routine/i),
+    ).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Counted movement/ }));
     const names = screen.getAllByLabelText("Name");
-    fireEvent.change(names[1], { target: { value: "Lunges" } });
+    fireEvent.change(names[0], { target: { value: "Lunges" } });
     fireEvent.click(screen.getByRole("button", { name: "Save routine" }));
-    await waitFor(() => expect(savedSteps).toHaveLength(2));
-    expect(savedSteps[1]).toMatchObject({
+    await waitFor(() => expect(savedSteps).toHaveLength(1));
+    expect(savedSteps[0]).toMatchObject({
       completionMode: "toggle",
       name: "Lunges",
       targetCount: 10,

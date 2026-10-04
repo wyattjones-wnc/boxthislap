@@ -1637,7 +1637,11 @@ function MorningRoutineEditor({ close }: { close: () => void }) {
         if (!active) return;
         setHasOverride(value.hasOverride);
         setIsDefaultManager(value.isDefaultManager);
-        setSteps(value.routine.steps);
+        setSteps(
+          value.isDefaultManager || value.hasOverride
+            ? value.routine.steps
+            : [],
+        );
       })
       .catch((cause) => {
         if (active)
@@ -1767,9 +1771,7 @@ function MorningRoutineEditor({ close }: { close: () => void }) {
               ? "This is your routine. Other managers use it unless they create their own."
               : hasOverride
                 ? "You are using your own routine."
-                : steps.length
-                  ? "You are using Wyatt’s routine. Saving creates your own version."
-                  : "Wyatt has not configured a routine yet. Saving creates your own."}
+                : "Your workouts use Wyatt’s routine. Build a routine here only if you want to replace it with your own."}
           </p>
           {error ? (
             <p className={styles.error} role="alert">

@@ -76,6 +76,7 @@ describe("Daily Workouts", () => {
         if (url.endsWith("/api/me/morning-routine") && !init?.method)
           return response({
             hasOverride: false,
+            isDefaultManager: false,
             routine: {
               steps: [
                 {
@@ -114,9 +115,7 @@ describe("Daily Workouts", () => {
         name: "Customize my Morning Stretch routine",
       }),
     );
-    expect(
-      await screen.findByText(/using the admin routine/i),
-    ).not.toBeNull();
+    expect(await screen.findByText(/using Wyatt’s routine/i)).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add count" }));
     const names = screen.getAllByLabelText("Name");
     fireEvent.change(names[1], { target: { value: "Lunges" } });
@@ -128,6 +127,66 @@ describe("Daily Workouts", () => {
       targetCount: 10,
       type: "count",
     });
+  });
+
+  it("restores Wyatt's routine by deleting a manager override", async () => {
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    let restored = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine") && !init?.method)
+          return response({
+            hasOverride: true,
+            isDefaultManager: false,
+            routine: {
+              steps: [
+                {
+                  completionMode: null,
+                  durationSeconds: 45,
+                  id: "own-1",
+                  name: "My stretch",
+                  position: 1,
+                  targetCount: null,
+                  type: "timer",
+                },
+              ],
+            },
+            source: "manager",
+          });
+        if (
+          url.endsWith("/api/me/morning-routine") &&
+          init?.method === "DELETE"
+        ) {
+          restored = true;
+          return response({});
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Customize my Morning Stretch routine",
+      }),
+    );
+    expect(
+      await screen.findByText("You are using your own routine."),
+    ).not.toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Restore default routine" }),
+    );
+    await waitFor(() => expect(restored).toBe(true));
   });
 
   it("advances a Morning Stretch timer into the next count step", async () => {
@@ -181,6 +240,7 @@ describe("Daily Workouts", () => {
         if (url.endsWith("/api/me/morning-routine"))
           return response({
             hasOverride: false,
+            isDefaultManager: false,
             routine: {
               steps: [
                 {
@@ -283,6 +343,7 @@ describe("Daily Workouts", () => {
       if (url.endsWith("/api/me/morning-routine"))
         return response({
           hasOverride: false,
+          isDefaultManager: false,
           routine: { steps: [] },
           source: "default",
         });
@@ -301,7 +362,7 @@ describe("Daily Workouts", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
 
-    expect(await screen.findByText("My Morning Stretch")).not.toBeNull();
+    expect(await screen.findByText("Morning Stretch Routine")).not.toBeNull();
     expect(
       await screen.findByRole("button", { name: /Timed stretch/ }),
     ).not.toBeNull();

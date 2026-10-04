@@ -1,4 +1,3 @@
-const DEFAULT_OWNER_ID = "default";
 const MAX_ROUTINE_STEPS = 30;
 
 export async function handleMorningRequest({
@@ -12,29 +11,19 @@ export async function handleMorningRequest({
   if (url.pathname === "/api/me/morning-routine") {
     const manager = await requireManager(request, env);
     if (request.method === "GET") return readEffectiveRoutine(env, manager.sub);
-    if (request.method === "PUT")
-      return saveRoutine(env, "manager", manager.sub, await readBody(request));
+    if (request.method === "PUT") {
+      await saveRoutine(env, "manager", manager.sub, await readBody(request));
+      return readEffectiveRoutine(env, manager.sub);
+    }
     if (request.method === "DELETE") {
+      if (isDefaultManager(env, manager.sub))
+        throw httpError(
+          400,
+          "The default manager cannot restore another routine.",
+        );
       await deleteRoutine(env, "manager", manager.sub);
       return readEffectiveRoutine(env, manager.sub);
     }
-  }
-
-  if (url.pathname === "/api/admin/morning-routine/default") {
-    await authorizeAdmin();
-    if (request.method === "GET")
-      return {
-        hasOverride: false,
-        routine: await readRoutine(env, "default", DEFAULT_OWNER_ID),
-        source: "default",
-      };
-    if (request.method === "PUT")
-      return saveRoutine(
-        env,
-        "default",
-        DEFAULT_OWNER_ID,
-        await readBody(request),
-      );
   }
 
   const ownMatch = url.pathname.match(
@@ -147,16 +136,26 @@ export function normalizeMorningRoutine(value) {
   return steps;
 }
 
-async function readEffectiveRoutine(env, managerId) {
+export async function readEffectiveRoutine(env, managerId) {
   const own = await readRoutine(env, "manager", managerId);
-  const hasOverride = own.steps.length > 0;
+  const defaultManager = isDefaultManager(env, managerId);
+  const hasOwnRoutine = own.steps.length > 0;
   return {
-    hasOverride,
-    routine: hasOverride
+    hasOverride: !defaultManager && hasOwnRoutine,
+    isDefaultManager: defaultManager,
+    routine: hasOwnRoutine
       ? own
-      : await readRoutine(env, "default", DEFAULT_OWNER_ID),
-    source: hasOverride ? "manager" : "default",
+      : await readRoutine(env, "manager", defaultManagerId(env)),
+    source: hasOwnRoutine ? "manager" : "default-manager",
   };
+}
+
+function defaultManagerId(env) {
+  return String(env.DEFAULT_MORNING_MANAGER_ID || "6");
+}
+
+function isDefaultManager(env, managerId) {
+  return String(managerId) === defaultManagerId(env);
 }
 
 async function readRoutine(env, ownerType, ownerId) {

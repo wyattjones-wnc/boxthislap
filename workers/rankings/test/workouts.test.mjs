@@ -7,7 +7,67 @@ import {
   parseWorkoutDate,
   workoutElapsed,
 } from "../src/workouts.js";
-import { normalizeMorningRoutine } from "../src/morning.js";
+import {
+  normalizeMorningRoutine,
+  readEffectiveRoutine,
+} from "../src/morning.js";
+
+test("managers inherit Wyatt's routine until they save their own", async () => {
+  const rows = new Map([
+    [
+      "manager:6",
+      [
+        {
+          step_id: "wyatt",
+          position: 1,
+          name: "Wyatt step",
+          step_type: "timer",
+          duration_seconds: 30,
+        },
+      ],
+    ],
+    ["manager:8", []],
+    [
+      "manager:9",
+      [
+        {
+          step_id: "own",
+          position: 1,
+          name: "Own step",
+          step_type: "count",
+          target_count: 10,
+          completion_mode: "toggle",
+        },
+      ],
+    ],
+  ]);
+  const env = {
+    DEFAULT_MORNING_MANAGER_ID: "6",
+    DB: {
+      prepare: () => ({
+        bind: (ownerType, ownerId) => ({
+          all: async () => ({
+            results: rows.get(`${ownerType}:${ownerId}`) || [],
+          }),
+        }),
+      }),
+    },
+  };
+
+  const inherited = await readEffectiveRoutine(env, "8");
+  assert.equal(inherited.hasOverride, false);
+  assert.equal(inherited.isDefaultManager, false);
+  assert.equal(inherited.routine.steps[0].name, "Wyatt step");
+
+  const own = await readEffectiveRoutine(env, "9");
+  assert.equal(own.hasOverride, true);
+  assert.equal(own.routine.steps[0].name, "Own step");
+
+  const wyatt = await readEffectiveRoutine(env, "6");
+  assert.equal(wyatt.hasOverride, false);
+  assert.equal(wyatt.isDefaultManager, true);
+  assert.equal(wyatt.routine.steps[0].name, "Wyatt step");
+});
 
 test("morning routines normalize ordered timer, toggle, and tally steps", () => {
   assert.deepEqual(

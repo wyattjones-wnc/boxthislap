@@ -179,9 +179,7 @@ export function WorkoutFeature() {
   >(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
-  const [routineEditor, setRoutineEditor] = useState<"default" | "mine" | null>(
-    null,
-  );
+  const [routineEditor, setRoutineEditor] = useState<"mine" | null>(null);
 
   useEffect(() => setSelectedManager(ownManagerId), [ownManagerId]);
 
@@ -516,14 +514,6 @@ export function WorkoutFeature() {
               label="Customize my Morning Stretch routine"
               onClick={() => setRoutineEditor("mine")}
             />
-            {isAdmin ? (
-              <IconButton
-                className="icon-action-button"
-                icon={<Settings2 />}
-                label="Configure the default Morning Stretch routine"
-                onClick={() => setRoutineEditor("default")}
-              />
-            ) : null}
             <IconButton
               className="icon-action-button"
               icon={<BarChart3 />}
@@ -696,10 +686,7 @@ export function WorkoutFeature() {
         />
       ) : null}
       {routineEditor ? (
-        <MorningRoutineEditor
-          close={() => setRoutineEditor(null)}
-          mode={routineEditor}
-        />
+        <MorningRoutineEditor close={() => setRoutineEditor(null)} />
       ) : null}
     </div>
   );
@@ -1630,32 +1617,26 @@ function ManageExercises({
   );
 }
 
-function MorningRoutineEditor({
-  close,
-  mode,
-}: {
-  close: () => void;
-  mode: "default" | "mine";
-}) {
+function MorningRoutineEditor({ close }: { close: () => void }) {
   const [steps, setSteps] = useState<MorningRoutineStep[]>([]);
   const [hasOverride, setHasOverride] = useState(false);
+  const [isDefaultManager, setIsDefaultManager] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const path =
-    mode === "default"
-      ? "/api/admin/morning-routine/default"
-      : "/api/me/morning-routine";
+  const path = "/api/me/morning-routine";
 
   useEffect(() => {
     let active = true;
     void api<{
       hasOverride: boolean;
+      isDefaultManager: boolean;
       routine: { steps: MorningRoutineStep[] };
     }>(path)
       .then((value) => {
         if (!active) return;
         setHasOverride(value.hasOverride);
+        setIsDefaultManager(value.isDefaultManager);
         setSteps(value.routine.steps);
       })
       .catch((cause) => {
@@ -1748,21 +1729,17 @@ function MorningRoutineEditor({
   return (
     <Modal
       close={close}
-      description={
-        mode === "default"
-          ? "Set the starting routine available to every manager."
-          : "Arrange timers and counted movements in the order you want to complete them."
-      }
+      description="Arrange timers and counted movements in the order you want to complete them."
       footer={
         <div className={styles.routineSaveActions}>
-          {mode === "mine" && hasOverride ? (
+          {hasOverride ? (
             <button
               className="action-button secondary-action"
               disabled={saving}
               onClick={() => void useDefault()}
               type="button"
             >
-              Use default routine
+              Restore default routine
             </button>
           ) : null}
           <button
@@ -1775,9 +1752,7 @@ function MorningRoutineEditor({
           </button>
         </div>
       }
-      title={
-        mode === "default" ? "Default Morning Stretch" : "My Morning Stretch"
-      }
+      title="Morning Stretch Routine"
     >
       {loading ? (
         <p className="table-message">Loading routine…</p>
@@ -1787,15 +1762,15 @@ function MorningRoutineEditor({
           id="morning-routine-editor"
           onSubmit={save}
         >
-          {mode === "mine" ? (
-            <p className={styles.routineSource}>
-              {hasOverride
+          <p className={styles.routineSource}>
+            {isDefaultManager
+              ? "This is your routine. Other managers use it unless they create their own."
+              : hasOverride
                 ? "You are using your own routine."
                 : steps.length
-                  ? "You are using the admin routine. Saving creates your own routine."
-                  : "No admin routine is configured. Saving creates your own routine."}
-            </p>
-          ) : null}
+                  ? "You are using Wyatt’s routine. Saving creates your own version."
+                  : "Wyatt has not configured a routine yet. Saving creates your own."}
+          </p>
           {error ? (
             <p className={styles.error} role="alert">
               {error}

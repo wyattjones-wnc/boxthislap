@@ -12777,9 +12777,11 @@ async function runFormulaOneAdminAction(action) {
   const fetched = action === "fetch" ? Number(result.fetchedCount || 0) : 0;
   const unavailable = action === "fetch" ? (result.sessions || []).filter((session) => session.status === "unavailable") : [];
   const unavailableMessage = unavailable.length ? ` ${unavailable.map((session) => formatFormulaOneSessionName(session.sessionType)).join(", ")} ${unavailable.length === 1 ? "is" : "are"} not available from the provider yet.` : "";
+  const providerErrors = action === "fetch" ? (result.sessions || []).filter((session) => session.status === "error") : [];
+  const providerErrorMessage = providerErrors.map((session) => ` ${formatFormulaOneSessionName(session.sessionType)} could not be fetched: ${session.error || "Provider request failed. Try again."}`).join("");
   const safetyCarMessage = action === "fetch" && result.safetyCar ? ` Safety Car: ${result.safetyCar.value} (${result.safetyCar.detail}).` : "";
   const safetyCarError = action === "fetch" && result.safetyCarError ? ` Safety Car could not be determined automatically: ${result.safetyCarError}` : "";
-  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${safetyCarError}${unavailableMessage}` });
+  renderFormulaOneAdminWeekly({ message: action === "export" ? `${formulaOneAdminSelectedYear} ${formulaOneAdminMode === "weekly" ? "Weekly" : "Main"} datasets exported to Google Sheets.` : `${fetched} ${fetched === 1 ? "session is" : "sessions are"} ready for review.${safetyCarMessage}${safetyCarError}${unavailableMessage}${providerErrorMessage}` });
 }
 
 async function submitFormulaOneAdminForm(form, kind) {

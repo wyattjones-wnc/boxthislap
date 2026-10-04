@@ -1791,7 +1791,9 @@ function MorningRoutineEditor({
             <p className={styles.routineSource}>
               {hasOverride
                 ? "You are using your own routine."
-                : "You are using the default routine. Saving creates your own copy."}
+                : steps.length
+                  ? "You are using the admin routine. Saving creates your own routine."
+                  : "No admin routine is configured. Saving creates your own routine."}
             </p>
           ) : null}
           {error ? (

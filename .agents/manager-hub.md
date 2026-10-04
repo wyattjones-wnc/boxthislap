@@ -15,7 +15,7 @@
 - Admin-only controls and routes must remain hidden and rejected server-side for non-admin managers.
 - Signed-out, login-only, and admin-only route protection must survive React migrations.
 - Manager Hub aggregates existing subsystem state; it must not become a second source of truth.
-- Daily Workouts uses the shared `ContainedDialog` component for React dialogs. Morning Stretch managers inherit the admin default routine until they explicitly save a manager override; starting a day snapshots the effective routine so later edits only affect future days.
+- Daily Workouts uses the shared `ContainedDialog` component for React dialogs. Morning Stretch managers inherit the admin-authored routine until they explicitly save a manager override; do not invent or seed routine content. Starting a day snapshots the effective routine so later edits only affect future days.
 
 ## Detailed Reference
 

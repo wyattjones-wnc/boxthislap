@@ -32,3 +32,7 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 - New React dialogs must use `src/components/ContainedDialog/ContainedDialog.tsx`, or the established `modules/dialogs/FormDialog` wrapper for compatibility modules. Do not add one-off overlays or independent dialog styling.
 - Keep dialog structure and scrolling inside the shared component so page scroll remains locked and touch or wheel gestures cannot escape to the underlying page or trigger pull-to-refresh.
 - Put long content in the dialog's contained scrolling body and persistent form actions in its footer.
+
+## Product Defaults
+
+- Do not invent or seed user-facing content when a feature describes an admin-configured default. An admin-configured default may begin empty; managers inherit it only after the admin supplies it.

@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 describe("Daily Workouts", () => {
-  it("creates a manager override from the default Morning Stretch routine", async () => {
+  it("creates a manager override from the admin Morning Stretch routine", async () => {
     localStorage.setItem(
       "boxThisLapManagerSession",
       JSON.stringify({ managerId: "morning-editor-test", isAdmin: false }),
@@ -115,7 +115,7 @@ describe("Daily Workouts", () => {
       }),
     );
     expect(
-      await screen.findByText(/using the default routine/i),
+      await screen.findByText(/using the admin routine/i),
     ).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add count" }));
     const names = screen.getAllByLabelText("Name");

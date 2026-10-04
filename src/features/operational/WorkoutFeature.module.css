@@ -338,6 +338,172 @@
 .cardioEntries small {
   color: var(--text-muted);
 }
+.morningWorkout {
+  display: grid;
+  gap: 0.75rem;
+}
+.morningComplete {
+  align-items: center;
+  background: color-mix(in srgb, #f3a6bd 16%, var(--surface-panel));
+  border: 1px solid color-mix(in srgb, #f3a6bd 55%, var(--border-subtle));
+  border-radius: var(--radius-panel);
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+}
+.morningComplete > svg {
+  color: #f3a6bd;
+  height: 2rem;
+  width: 2rem;
+}
+.morningComplete > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.morningComplete span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.morningSteps,
+.routineStepEditor {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.morningSteps > li {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+.morningStepHeading {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+.morningStepHeading > span {
+  align-items: center;
+  background: var(--surface-raised);
+  border-radius: 50%;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: 0 0 1.65rem;
+  height: 1.65rem;
+  justify-content: center;
+  width: 1.65rem;
+}
+.morningStepHeading > svg {
+  color: #f3a6bd;
+  height: 1rem;
+  margin-left: auto;
+  width: 1rem;
+}
+.morningStepDone,
+.morningStepUpcoming {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0.35rem 0.65rem;
+}
+.morningStepDone {
+  background: color-mix(in srgb, #f3a6bd 8%, var(--surface-panel)) !important;
+}
+.morningStepDone small,
+.morningStepUpcoming small {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.morningStepUpcoming {
+  opacity: 0.62;
+}
+.morningStepActive {
+  border-color: #f3a6bd !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f3a6bd 18%, transparent);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+.morningStepActive .morningStepHeading strong {
+  font-size: 1.2rem;
+}
+.morningStepControl {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+.morningTimer,
+.morningTally {
+  font-size: clamp(2rem, 10vw, 3.5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.routineEditor {
+  display: grid;
+  gap: 1rem;
+}
+.routineSource {
+  color: var(--text-muted);
+  margin: 0;
+}
+.routineStepEditor > li {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+.routineStepEditor header,
+.routineStepEditor header > div,
+.routineAddActions,
+.routineSaveActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.routineStepEditor header {
+  justify-content: space-between;
+}
+.routineStepEditor header button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.25rem;
+}
+.routineStepEditor header button:hover,
+.routineStepEditor header button:focus-visible {
+  color: var(--text-primary);
+}
+.routineStepEditor label {
+  display: grid;
+  gap: 0.25rem;
+}
+.routineStepEditor label > span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.routineStepEditor input,
+.routineStepEditor select {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  min-height: 44px;
+  padding: 0.55rem 0.7rem;
+}
+.routineSaveActions {
+  justify-content: flex-end;
+}
 .workout {
   display: grid;
   gap: 0.6rem;

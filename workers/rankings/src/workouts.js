@@ -1,3 +1,5 @@
+import { handleMorningRequest } from "./morning.js";
+
 const DAILY_EXERCISE_COUNT = 6;
 
 export async function handleWorkoutRequest({
@@ -28,6 +30,16 @@ export async function handleWorkoutRequest({
       throw httpError(403, "Administrator access is required.");
     return payload;
   };
+
+  const morningResult = await handleMorningRequest({
+    authorizeAdmin,
+    env,
+    readBody,
+    request,
+    requireManager,
+    url,
+  });
+  if (morningResult) return morningResult;
 
   if (
     url.pathname === "/api/workouts/exercises" &&
@@ -555,18 +567,26 @@ async function readWorkoutMonth(env, managerId, value) {
   const rows = await env.DB.prepare(
     `SELECT workout_date,
       MAX(kettlebell_completed) AS kettlebell_completed,
-      MAX(cardio_completed) AS cardio_completed
+      MAX(cardio_completed) AS cardio_completed,
+      MAX(morning_completed) AS morning_completed
     FROM (
-      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed
+      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed
       FROM manager_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
       UNION ALL
-      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed
+      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed, 0 AS morning_completed
       FROM manager_cardio_workouts
+      WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
+      UNION ALL
+      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, completed_at IS NOT NULL AS morning_completed
+      FROM manager_morning_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
     ) GROUP BY workout_date ORDER BY workout_date`,
   )
     .bind(
+      managerId,
+      `${month}-01`,
+      `${month}-01`,
       managerId,
       `${month}-01`,
       `${month}-01`,
@@ -578,9 +598,14 @@ async function readWorkoutMonth(env, managerId, value) {
   return {
     days: (rows.results || []).map((row) => ({
       cardioCompleted: Boolean(row.cardio_completed),
-      completed: Boolean(row.kettlebell_completed || row.cardio_completed),
+      completed: Boolean(
+        row.kettlebell_completed ||
+        row.cardio_completed ||
+        row.morning_completed,
+      ),
       date: String(row.workout_date),
       kettlebellCompleted: Boolean(row.kettlebell_completed),
+      morningCompleted: Boolean(row.morning_completed),
     })),
     month,
   };

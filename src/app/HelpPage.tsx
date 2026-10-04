@@ -272,10 +272,22 @@ const topics: GuideTopic[] = [
             it.
           </>,
           <>
-            Open a workout or cardio type, enter the requested sets,
-            repetitions, time, or distance, and save.
+            Choose Morning Stretch, Kettlebell, Cardio, or Knee. The colored
+            calendar marker shows which parts you completed that day.
           </>,
         ],
+      },
+      {
+        title: "Configure Morning Stretch",
+        body: (
+          <>
+            Morning Stretch follows an ordered list of timers and counted
+            exercises. Timers advance automatically when they end. Counted
+            exercises can use one completion toggle or tally every repetition.
+            Use the sunrise control above the calendar to customize your
+            routine; administrators can also maintain the default routine.
+          </>
+        ),
       },
       {
         title: "View statistics",

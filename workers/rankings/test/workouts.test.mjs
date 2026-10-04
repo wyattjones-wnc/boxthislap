@@ -7,6 +7,85 @@ import {
   parseWorkoutDate,
   workoutElapsed,
 } from "../src/workouts.js";
+import { normalizeMorningRoutine } from "../src/morning.js";
+
+test("morning routines normalize ordered timer, toggle, and tally steps", () => {
+  assert.deepEqual(
+    normalizeMorningRoutine({
+      steps: [
+        {
+          durationSeconds: 45,
+          id: "timer-1",
+          name: " Hamstring stretch ",
+          type: "timer",
+        },
+        {
+          completionMode: "toggle",
+          id: "count-1",
+          name: "Lunges",
+          targetCount: 10,
+          type: "count",
+        },
+        {
+          completionMode: "tally",
+          id: "count-2",
+          name: "Calf raises",
+          targetCount: 12,
+          type: "count",
+        },
+      ],
+    }),
+    [
+      {
+        completionMode: null,
+        durationSeconds: 45,
+        id: "timer-1",
+        name: "Hamstring stretch",
+        position: 1,
+        targetCount: null,
+        type: "timer",
+      },
+      {
+        completionMode: "toggle",
+        durationSeconds: null,
+        id: "count-1",
+        name: "Lunges",
+        position: 2,
+        targetCount: 10,
+        type: "count",
+      },
+      {
+        completionMode: "tally",
+        durationSeconds: null,
+        id: "count-2",
+        name: "Calf raises",
+        position: 3,
+        targetCount: 12,
+        type: "count",
+      },
+    ],
+  );
+});
+
+test("morning routines reject unsafe bounds and duplicate step IDs", () => {
+  assert.throws(
+    () =>
+      normalizeMorningRoutine({
+        steps: [{ durationSeconds: 4, name: "Too short", type: "timer" }],
+      }),
+    /between 5 and 3600/,
+  );
+  assert.throws(
+    () =>
+      normalizeMorningRoutine({
+        steps: [
+          { durationSeconds: 30, id: "same", name: "One", type: "timer" },
+          { durationSeconds: 30, id: "same", name: "Two", type: "timer" },
+        ],
+      }),
+    /unique/,
+  );
+});
 
 test("cardio entries accept walks and runs with bounded mileage", () => {
   assert.deepEqual(normalizeCardioEntry({ miles: 1.2345, type: "WALK" }), {

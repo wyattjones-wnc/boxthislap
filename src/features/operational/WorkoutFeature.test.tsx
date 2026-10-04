@@ -59,6 +59,196 @@ afterEach(() => {
 });
 
 describe("Daily Workouts", () => {
+  it("creates a manager override from the default Morning Stretch routine", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "morning-editor-test", isAdmin: false }),
+    );
+    let savedSteps: Array<Record<string, unknown>> = [];
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine") && !init?.method)
+          return response({
+            hasOverride: false,
+            routine: {
+              steps: [
+                {
+                  completionMode: null,
+                  durationSeconds: 30,
+                  id: "default-1",
+                  name: "Wake up stretch",
+                  position: 1,
+                  targetCount: null,
+                  type: "timer",
+                },
+              ],
+            },
+            source: "default",
+          });
+        if (url.endsWith("/api/me/morning-routine") && init?.method === "PUT") {
+          savedSteps = (
+            JSON.parse(String(init.body || "{}")) as {
+              steps: Array<Record<string, unknown>>;
+            }
+          ).steps;
+          return response({});
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Customize my Morning Stretch routine",
+      }),
+    );
+    expect(
+      await screen.findByText(/using the default routine/i),
+    ).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Add count" }));
+    const names = screen.getAllByLabelText("Name");
+    fireEvent.change(names[1], { target: { value: "Lunges" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save routine" }));
+    await waitFor(() => expect(savedSteps).toHaveLength(2));
+    expect(savedSteps[1]).toMatchObject({
+      completionMode: "toggle",
+      name: "Lunges",
+      targetCount: 10,
+      type: "count",
+    });
+  });
+
+  it("advances a Morning Stretch timer into the next count step", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "morning-runner-test", isAdmin: false }),
+    );
+    const timerStep = {
+      active: true,
+      completedAt: null as string | null,
+      completedCount: 0,
+      completionMode: null,
+      durationSeconds: 1,
+      id: "timer-1",
+      name: "Hamstring stretch",
+      position: 1,
+      remainingSeconds: 1,
+      running: false,
+      targetCount: null,
+      type: "timer" as const,
+    };
+    const countStep = {
+      active: false,
+      completedAt: null as string | null,
+      completedCount: 0,
+      completionMode: "toggle" as const,
+      durationSeconds: null,
+      id: "count-1",
+      name: "Lunges",
+      position: 2,
+      remainingSeconds: null,
+      running: false,
+      targetCount: 10,
+      type: "count" as const,
+    };
+    let morning = {
+      completedAt: null as string | null,
+      currentPosition: 1,
+      date: today,
+      started: true,
+      steps: [timerStep, countStep],
+    };
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith(`/api/me/workouts/${today}/morning/start`))
+          return response({ morning });
+        if (url.endsWith(`/api/me/workouts/${today}/morning/action`)) {
+          const body = JSON.parse(String(init?.body || "{}")) as {
+            action: string;
+          };
+          if (body.action === "timer-start") {
+            morning = {
+              ...morning,
+              steps: [{ ...timerStep, running: true }, countStep],
+            };
+          } else if (body.action === "timer-finish") {
+            morning = {
+              ...morning,
+              currentPosition: 2,
+              steps: [
+                {
+                  ...timerStep,
+                  active: false,
+                  completedAt: "2026-10-04T12:00:00Z",
+                  completedCount: 1,
+                  remainingSeconds: 1,
+                },
+                { ...countStep, active: true },
+              ],
+            };
+          } else if (body.action === "complete-step") {
+            morning = {
+              ...morning,
+              completedAt: "2026-10-04T12:01:00Z",
+              currentPosition: 3,
+              steps: morning.steps.map((step) => ({
+                ...step,
+                active: false,
+                completedAt: step.completedAt || "2026-10-04T12:01:00Z",
+                completedCount:
+                  step.type === "count" ? Number(step.targetCount) : 1,
+              })),
+            };
+          }
+          return response({ morning });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /start workout/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Start timer" }));
+    expect(
+      await screen.findByRole(
+        "button",
+        { name: "Complete" },
+        { timeout: 2500 },
+      ),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("Hamstring stretch").closest("li")?.textContent,
+    ).toContain("00:01");
+    fireEvent.click(screen.getByRole("button", { name: "Complete" }));
+    expect(await screen.findByText("Morning Stretch complete")).not.toBeNull();
+  });
+
   it("uses the four-part completion marker and matching chooser order", async () => {
     localStorage.setItem(
       "boxThisLapManagerSession",

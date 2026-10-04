@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
+  Accessibility,
   BarChart3,
   Check,
   ChevronLeft,
@@ -13,11 +13,12 @@ import {
   Plus,
   RotateCcw,
   Settings2,
+  Sunrise,
   Trash2,
-  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "../../app/providers";
+import { ContainedDialog } from "../../components/ContainedDialog/ContainedDialog";
 import { IconButton } from "../../components/IconButton/IconButton";
 import styles from "./WorkoutFeature.module.css";
 
@@ -62,6 +63,8 @@ interface WorkoutDay {
   completed: boolean;
   date: string;
   kettlebellCompleted: boolean;
+  kneeCompleted?: boolean;
+  morningCompleted?: boolean;
 }
 
 interface CardioEntry {
@@ -76,6 +79,32 @@ interface CardioWorkout {
   entries: CardioEntry[];
   started: boolean;
   totalMiles: number;
+}
+
+interface MorningRoutineStep {
+  completionMode: "tally" | "toggle" | null;
+  durationSeconds: number | null;
+  id: string;
+  name: string;
+  position: number;
+  targetCount: number | null;
+  type: "count" | "timer";
+}
+
+interface MorningWorkoutStep extends MorningRoutineStep {
+  active: boolean;
+  completedAt: string | null;
+  completedCount: number;
+  remainingSeconds: number | null;
+  running: boolean;
+}
+
+interface MorningWorkout {
+  completedAt: string | null;
+  currentPosition: number;
+  date: string;
+  started: boolean;
+  steps: MorningWorkoutStep[];
 }
 
 interface HistoryRow {
@@ -140,6 +169,7 @@ export function WorkoutFeature() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [cardio, setCardio] = useState<CardioWorkout | null>(null);
+  const [morning, setMorning] = useState<MorningWorkout | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [statsOpen, setStatsOpen] = useState(false);
@@ -149,6 +179,7 @@ export function WorkoutFeature() {
   >(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
+  const [routineEditor, setRoutineEditor] = useState<"mine" | null>(null);
 
   useEffect(() => setSelectedManager(ownManagerId), [ownManagerId]);
 
@@ -235,6 +266,7 @@ export function WorkoutFeature() {
     setSelectedDate(date);
     setWorkout(null);
     setCardio(null);
+    setMorning(null);
   };
 
   const selectedDay = calendar.data?.days.find(
@@ -307,6 +339,81 @@ export function WorkoutFeature() {
     if (saved) void queryClient.invalidateQueries({ queryKey: ["workouts"] });
   };
 
+  const changeMorning = async (
+    path: string,
+    body?: unknown,
+    method = "POST",
+  ) => {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<{ morning: MorningWorkout }>(path, {
+        body: body === undefined ? undefined : JSON.stringify(body),
+        method,
+      });
+      setMorning(result.morning);
+      if (result.morning.completedAt)
+        void queryClient.invalidateQueries({ queryKey: ["workouts"] });
+      return result.morning;
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Morning Stretch could not be saved.",
+      );
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openMorning = async () => {
+    if (!selectedDate) return;
+    const completed = Boolean(selectedDay?.morningCompleted);
+    if (!completed) {
+      setBusy(true);
+      setError("");
+      try {
+        const effective = await api<{
+          routine: { steps: MorningRoutineStep[] };
+        }>("/api/me/morning-routine");
+        if (!effective.routine.steps.length) {
+          setRoutineEditor("mine");
+          return;
+        }
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "The Morning Stretch routine could not load.",
+        );
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
+    const path = completed
+      ? ownView
+        ? `/api/me/workouts/${selectedDate}/morning`
+        : `/api/admin/managers/${encodeURIComponent(selectedManager)}/workouts/${selectedDate}/morning`
+      : `/api/me/workouts/${selectedDate}/morning/start`;
+    await changeMorning(
+      path,
+      completed
+        ? undefined
+        : { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      completed ? "GET" : "POST",
+    );
+  };
+
+  const morningAction = (action: string, stepId?: string) =>
+    morning
+      ? changeMorning(`/api/me/workouts/${morning.date}/morning/action`, {
+          action,
+          stepId,
+        })
+      : null;
+
   const action = (body: unknown) =>
     workout ? mutate(`/api/me/workouts/${workout.date}/action`, body) : null;
 
@@ -334,7 +441,7 @@ export function WorkoutFeature() {
       <header
         className={`${styles.pageHeader}${!selectedDate ? ` ${styles.calendarPageHeader}` : ""}`}
       >
-        {workout || cardio ? (
+        {workout || cardio || morning ? (
           <a
             className="back-link"
             href="#workouts"
@@ -342,6 +449,7 @@ export function WorkoutFeature() {
               event.preventDefault();
               setWorkout(null);
               setCardio(null);
+              setMorning(null);
             }}
           >
             Workout Types
@@ -388,6 +496,7 @@ export function WorkoutFeature() {
                   setSelectedDate(null);
                   setWorkout(null);
                   setCardio(null);
+                  setMorning(null);
                 }}
               >
                 {(managers.data?.managers || []).map((manager) => (
@@ -399,6 +508,12 @@ export function WorkoutFeature() {
             </label>
           ) : null}
           <div className={styles.pageActionButtons}>
+            <IconButton
+              className="icon-action-button"
+              icon={<Sunrise />}
+              label="Customize my Morning Stretch routine"
+              onClick={() => setRoutineEditor("mine")}
+            />
             <IconButton
               className="icon-action-button"
               icon={<BarChart3 />}
@@ -458,6 +573,14 @@ export function WorkoutFeature() {
         <CardioWorkoutView
           cardio={cardio}
           busy={busy}
+          canEdit={ownView}
+          edit={(entryId, entry) =>
+            changeCardio(
+              `/api/me/workouts/${cardio.date}/cardio/entries/${encodeURIComponent(entryId)}`,
+              entry,
+              "PATCH",
+            )
+          }
           add={(entry) =>
             changeCardio(
               `/api/me/workouts/${cardio.date}/cardio/entries`,
@@ -473,13 +596,22 @@ export function WorkoutFeature() {
             )
           }
         />
+      ) : morning ? (
+        <MorningWorkoutView
+          action={morningAction}
+          busy={busy}
+          editRoutine={() => setRoutineEditor("mine")}
+          morning={morning}
+        />
       ) : selectedDate ? (
         <WorkoutTypeChooser
           cardioCompleted={Boolean(selectedDay?.cardioCompleted)}
           canStart={ownView && selectedDate === today}
           kettlebellCompleted={Boolean(selectedDay?.kettlebellCompleted)}
+          morningCompleted={Boolean(selectedDay?.morningCompleted)}
           openCardio={() => void openCardio()}
           openKettlebell={() => void openKettlebell()}
+          openMorning={() => void openMorning()}
         />
       ) : (
         <>
@@ -553,6 +685,9 @@ export function WorkoutFeature() {
           }}
         />
       ) : null}
+      {routineEditor ? (
+        <MorningRoutineEditor close={() => setRoutineEditor(null)} />
+      ) : null}
     </div>
   );
 }
@@ -588,9 +723,7 @@ function WorkoutCalendar({
   const [year, monthNumber] = month.split("-").map(Number);
   const first = new Date(year, monthNumber - 1, 1);
   const total = new Date(year, monthNumber, 0).getDate();
-  const completed = new Set(
-    days.filter((day) => day.completed).map((day) => day.date),
-  );
+  const daysByDate = new Map(days.map((day) => [day.date, day]));
   const cells = Array.from({ length: first.getDay() + total }, (_, index) =>
     index < first.getDay() ? 0 : index - first.getDay() + 1,
   );
@@ -632,7 +765,16 @@ function WorkoutCalendar({
           {cells.map((day, index) => {
             if (!day) return <span key={`blank-${index}`} />;
             const date = `${month}-${String(day).padStart(2, "0")}`;
-            const done = completed.has(date);
+            const workoutDay = daysByDate.get(date);
+            const completedTypes = workoutDay
+              ? [
+                  workoutDay.morningCompleted ? "Morning Stretch" : "",
+                  workoutDay.kettlebellCompleted ? "Kettlebell" : "",
+                  workoutDay.cardioCompleted ? "Cardio" : "",
+                  workoutDay.kneeCompleted ? "Knee" : "",
+                ].filter(Boolean)
+              : [];
+            const done = completedTypes.length > 0;
             const enabled = done || (ownView && date === today);
             return (
               <button
@@ -641,10 +783,21 @@ function WorkoutCalendar({
                 key={date}
                 onClick={() => void openDay(date, done)}
                 type="button"
-                aria-label={`${prettyDate(date)}${done ? ", completed" : date === today ? ", start workout" : ""}`}
+                aria-label={`${prettyDate(date)}${completedTypes.length ? `, completed: ${completedTypes.join(", ")}` : date === today ? ", start workout" : ""}`}
               >
                 <span>{day}</span>
-                {done ? <Check aria-hidden="true" /> : null}
+                {enabled ? (
+                  <CompletionMark
+                    day={
+                      workoutDay || {
+                        cardioCompleted: false,
+                        completed: false,
+                        date,
+                        kettlebellCompleted: false,
+                      }
+                    }
+                  />
+                ) : null}
               </button>
             );
           })}
@@ -654,22 +807,67 @@ function WorkoutCalendar({
   );
 }
 
+function CompletionMark({ day }: { day: WorkoutDay }) {
+  const segments = [
+    [styles.morningSegment, Boolean(day.morningCompleted)],
+    [styles.kettlebellSegment, day.kettlebellCompleted],
+    [styles.cardioSegment, day.cardioCompleted],
+    [styles.kneeSegment, Boolean(day.kneeCompleted)],
+  ] as const;
+  return (
+    <span className={styles.completionMark} aria-hidden="true">
+      {segments.map(([segmentClass, completed]) => (
+        <span
+          className={`${styles.completionSegment} ${segmentClass}${completed ? ` ${styles.segmentCompleted}` : ""}`}
+          key={segmentClass}
+        >
+          {completed ? <Check strokeWidth={3} /> : null}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function WorkoutTypeChooser({
   cardioCompleted,
   canStart,
   kettlebellCompleted,
+  morningCompleted,
   openCardio,
   openKettlebell,
+  openMorning,
 }: {
   cardioCompleted: boolean;
   canStart: boolean;
   kettlebellCompleted: boolean;
+  morningCompleted: boolean;
   openCardio: () => void;
   openKettlebell: () => void;
+  openMorning: () => void;
 }) {
   return (
     <section className={styles.typeChooser} aria-label="Choose workout type">
       <button
+        className={styles.morningType}
+        disabled={!canStart && !morningCompleted}
+        onClick={openMorning}
+        type="button"
+      >
+        <Sunrise aria-hidden="true" />
+        <span>
+          <strong>Morning Stretch</strong>
+          <small>
+            {morningCompleted
+              ? "Completed — view routine"
+              : canStart
+                ? "Follow your progressive routine"
+                : "Not completed"}
+          </small>
+        </span>
+        {morningCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
+      </button>
+      <button
+        className={styles.kettlebellType}
         disabled={!canStart && !kettlebellCompleted}
         onClick={openKettlebell}
         type="button"
@@ -688,6 +886,7 @@ function WorkoutTypeChooser({
         {kettlebellCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
       </button>
       <button
+        className={styles.cardioType}
         disabled={!canStart && !cardioCompleted}
         onClick={openCardio}
         type="button"
@@ -705,6 +904,14 @@ function WorkoutTypeChooser({
         </span>
         {cardioCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
       </button>
+      <button className={styles.kneeType} disabled type="button">
+        <Accessibility aria-hidden="true" />
+        <span>
+          <strong>Knee</strong>
+          <small>Routine setup coming next</small>
+        </span>
+        <ChevronRight aria-hidden="true" />
+      </button>
     </section>
   );
 }
@@ -713,7 +920,9 @@ function CardioWorkoutView({
   add,
   busy,
   cardio,
+  canEdit,
   complete,
+  edit,
   remove,
 }: {
   add: (entry: {
@@ -722,16 +931,28 @@ function CardioWorkoutView({
   }) => Promise<CardioWorkout | null>;
   busy: boolean;
   cardio: CardioWorkout;
+  canEdit: boolean;
   complete: () => void;
+  edit: (
+    entryId: string,
+    entry: { miles: number; type: "run" | "walk" },
+  ) => Promise<CardioWorkout | null>;
   remove: (entryId: string) => Promise<CardioWorkout | null>;
 }) {
   const [type, setType] = useState<"run" | "walk">("walk");
   const [miles, setMiles] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const completed = Boolean(cardio.completedAt);
+  const cancelEdit = () => {
+    setEditingId(null);
+    setMiles("");
+    setType("walk");
+  };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const saved = await add({ miles: Number(miles), type });
-    if (saved) setMiles("");
+    const entry = { miles: Number(miles), type };
+    const saved = editingId ? await edit(editingId, entry) : await add(entry);
+    if (saved) cancelEdit();
   };
   return (
     <section className={styles.cardioWorkout}>
@@ -740,11 +961,12 @@ function CardioWorkoutView({
         <strong>{formatMiles(cardio.totalMiles)}</strong>
         <small>miles</small>
       </div>
-      {!completed ? (
+      {canEdit && (!completed || editingId) ? (
         <form className={styles.cardioEntryForm} onSubmit={submit}>
           <label>
             <span>Type</span>
             <select
+              disabled={busy}
               value={type}
               onChange={(event) =>
                 setType(event.target.value as "run" | "walk")
@@ -758,6 +980,7 @@ function CardioWorkoutView({
             <span>Miles</span>
             <input
               required
+              disabled={busy}
               inputMode="decimal"
               min="0.001"
               max="1000"
@@ -768,8 +991,24 @@ function CardioWorkoutView({
             />
           </label>
           <button className="action-button" disabled={busy} type="submit">
-            <Plus aria-hidden="true" /> Add
+            {editingId ? (
+              "Save changes"
+            ) : (
+              <>
+                <Plus aria-hidden="true" /> Add
+              </>
+            )}
           </button>
+          {editingId ? (
+            <button
+              className="action-button"
+              disabled={busy}
+              type="button"
+              onClick={cancelEdit}
+            >
+              Cancel
+            </button>
+          ) : null}
         </form>
       ) : null}
       <div className={styles.cardioEntries}>
@@ -780,16 +1019,35 @@ function CardioWorkoutView({
                 <strong>{entry.type === "walk" ? "Walk" : "Run"}</strong>
                 <small>{formatMiles(entry.miles)} mi</small>
               </span>
-              {!completed ? (
-                <IconButton
-                  disabled={busy}
-                  icon={<Trash2 />}
-                  label={`Remove ${entry.type} of ${formatMiles(entry.miles)} miles`}
-                  onClick={() => void remove(entry.id)}
-                />
-              ) : (
-                <Check aria-hidden="true" />
-              )}
+              <div className={styles.cardioEntryActions}>
+                {canEdit ? (
+                  <IconButton
+                    disabled={busy}
+                    icon={<Pencil />}
+                    label={`Edit ${entry.type} of ${formatMiles(entry.miles)} miles`}
+                    onClick={() => {
+                      setEditingId(entry.id);
+                      setType(entry.type);
+                      setMiles(String(entry.miles));
+                    }}
+                  />
+                ) : null}
+                {canEdit && !completed ? (
+                  <IconButton
+                    disabled={busy}
+                    icon={<Trash2 />}
+                    label={`Remove ${entry.type} of ${formatMiles(entry.miles)} miles`}
+                    onClick={async () => {
+                      const saved = await remove(entry.id);
+                      if (saved && editingId === entry.id) cancelEdit();
+                    }}
+                  />
+                ) : (
+                  <span className={styles.cardioEntryStatus}>
+                    <Check aria-hidden="true" />
+                  </span>
+                )}
+              </div>
             </div>
           ))
         ) : (
@@ -799,13 +1057,149 @@ function CardioWorkoutView({
       {!completed ? (
         <button
           className={`action-button ${styles.complete}`}
-          disabled={busy || cardio.entries.length === 0}
+          disabled={busy || editingId !== null || cardio.entries.length === 0}
           onClick={complete}
           type="button"
         >
           Complete Cardio
         </button>
       ) : null}
+    </section>
+  );
+}
+
+function MorningWorkoutView({
+  action,
+  busy,
+  editRoutine,
+  morning,
+}: {
+  action: (
+    action: string,
+    stepId?: string,
+  ) => Promise<MorningWorkout | null> | null;
+  busy: boolean;
+  editRoutine: () => void;
+  morning: MorningWorkout;
+}) {
+  const current = morning.steps.find((step) => step.active);
+  const [remaining, setRemaining] = useState(current?.remainingSeconds || 0);
+
+  useEffect(() => {
+    setRemaining(current?.remainingSeconds || 0);
+  }, [current?.id, current?.remainingSeconds]);
+
+  useEffect(() => {
+    if (!current?.running) return;
+    const deadline = Date.now() + (current.remainingSeconds || 0) * 1000;
+    const timer = window.setInterval(() => {
+      setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [current?.id, current?.running, current?.remainingSeconds]);
+
+  useEffect(() => {
+    if (current?.running && remaining === 0 && !busy)
+      void action("timer-finish", current.id);
+  }, [action, busy, current?.id, current?.running, remaining]);
+
+  return (
+    <section className={styles.morningWorkout}>
+      <div className={styles.morningRoutineActions}>
+        <button className="action-button" onClick={editRoutine} type="button">
+          <Pencil aria-hidden="true" /> Edit routine
+        </button>
+        <small>Changes apply the next time you start Morning Stretch.</small>
+      </div>
+      {morning.completedAt ? (
+        <div className={styles.morningComplete}>
+          <Sunrise aria-hidden="true" />
+          <div>
+            <strong>Morning Stretch complete</strong>
+            <span>{morning.steps.length} steps finished</span>
+          </div>
+        </div>
+      ) : null}
+      <ol className={styles.morningSteps}>
+        {morning.steps.map((step) => {
+          const completed = Boolean(step.completedAt);
+          return (
+            <li
+              className={
+                completed
+                  ? styles.morningStepDone
+                  : step.active
+                    ? styles.morningStepActive
+                    : styles.morningStepUpcoming
+              }
+              key={step.id}
+            >
+              <div className={styles.morningStepHeading}>
+                <span>{step.position}</span>
+                <strong>{step.name}</strong>
+                {completed ? <Check aria-label="Completed" /> : null}
+              </div>
+              {completed ? (
+                <small>
+                  {step.type === "timer"
+                    ? formatTime(step.durationSeconds || 0)
+                    : `${step.targetCount} repetitions`}
+                </small>
+              ) : step.active ? (
+                <div className={styles.morningStepControl}>
+                  {step.type === "timer" ? (
+                    <>
+                      <strong className={styles.morningTimer}>
+                        {formatTime(remaining)}
+                      </strong>
+                      <button
+                        className="action-button"
+                        disabled={busy || step.running}
+                        onClick={() => void action("timer-start", step.id)}
+                        type="button"
+                      >
+                        {step.running ? "Running" : "Start timer"}
+                      </button>
+                    </>
+                  ) : step.completionMode === "tally" ? (
+                    <>
+                      <strong className={styles.morningTally}>
+                        {step.completedCount} / {step.targetCount}
+                      </strong>
+                      <button
+                        className="action-button"
+                        disabled={busy}
+                        onClick={() => void action("increment", step.id)}
+                        type="button"
+                      >
+                        <Plus aria-hidden="true" /> Add one
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span>{step.targetCount} repetitions</span>
+                      <button
+                        className="action-button"
+                        disabled={busy}
+                        onClick={() => void action("complete-step", step.id)}
+                        type="button"
+                      >
+                        <Check aria-hidden="true" /> Complete
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <small>
+                  {step.type === "timer"
+                    ? formatTime(step.durationSeconds || 0)
+                    : `${step.targetCount} repetitions`}
+                </small>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
@@ -1138,27 +1532,25 @@ function weeklyRows(rows: HistoryRow[]) {
 function Modal({
   children,
   close,
+  description,
+  footer,
   title,
 }: {
   children: React.ReactNode;
   close: () => void;
+  description?: React.ReactNode;
+  footer?: React.ReactNode;
   title: string;
 }) {
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && close()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className={styles.modalBackdrop} />
-        <Dialog.Content className={styles.modal}>
-          <header>
-            <Dialog.Title>{title}</Dialog.Title>
-            <Dialog.Close asChild>
-              <IconButton icon={<X />} label={`Close ${title}`} />
-            </Dialog.Close>
-          </header>
-          {children}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <ContainedDialog
+      close={close}
+      description={description}
+      footer={footer}
+      title={title}
+    >
+      {children}
+    </ContainedDialog>
   );
 }
 
@@ -1220,6 +1612,328 @@ function ManageExercises({
             </button>
           ))}
         </div>
+      )}
+    </Modal>
+  );
+}
+
+function MorningRoutineEditor({ close }: { close: () => void }) {
+  const [steps, setSteps] = useState<MorningRoutineStep[]>([]);
+  const [hasOverride, setHasOverride] = useState(false);
+  const [isDefaultManager, setIsDefaultManager] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const path = "/api/me/morning-routine";
+
+  useEffect(() => {
+    let active = true;
+    void api<{
+      hasOverride: boolean;
+      isDefaultManager: boolean;
+      routine: { steps: MorningRoutineStep[] };
+    }>(path)
+      .then((value) => {
+        if (!active) return;
+        setHasOverride(value.hasOverride);
+        setIsDefaultManager(value.isDefaultManager);
+        setSteps(
+          value.isDefaultManager || value.hasOverride
+            ? value.routine.steps
+            : [],
+        );
+      })
+      .catch((cause) => {
+        if (active)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "The routine could not load.",
+          );
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [path]);
+
+  const updateStep = (index: number, values: Partial<MorningRoutineStep>) =>
+    setSteps((current) =>
+      current.map((step, stepIndex) =>
+        stepIndex === index ? { ...step, ...values } : step,
+      ),
+    );
+  const addStep = (type: "count" | "timer") =>
+    setSteps((current) => [
+      ...current,
+      {
+        completionMode: type === "count" ? "toggle" : null,
+        durationSeconds: type === "timer" ? 30 : null,
+        id: crypto.randomUUID(),
+        name: "",
+        position: current.length + 1,
+        targetCount: type === "count" ? 10 : null,
+        type,
+      },
+    ]);
+  const moveStep = (index: number, delta: number) =>
+    setSteps((current) => {
+      const destination = index + delta;
+      if (destination < 0 || destination >= current.length) return current;
+      const next = [...current];
+      [next[index], next[destination]] = [next[destination], next[index]];
+      return next.map((step, stepIndex) => ({
+        ...step,
+        position: stepIndex + 1,
+      }));
+    });
+  const removeStep = (index: number) =>
+    setSteps((current) =>
+      current
+        .filter((_, stepIndex) => stepIndex !== index)
+        .map((step, stepIndex) => ({ ...step, position: stepIndex + 1 })),
+    );
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await api(path, {
+        body: JSON.stringify({ steps }),
+        method: "PUT",
+      });
+      close();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The routine could not be saved.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  const useDefault = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await api(path, { method: "DELETE" });
+      close();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The default routine could not be restored.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      close={close}
+      description="Arrange timers and counted movements in the order you want to complete them."
+      footer={
+        <div className={styles.routineSaveActions}>
+          {hasOverride ? (
+            <button
+              className="action-button secondary-action"
+              disabled={saving}
+              onClick={() => void useDefault()}
+              type="button"
+            >
+              Restore default routine
+            </button>
+          ) : null}
+          <button
+            className="action-button"
+            disabled={saving || steps.length === 0}
+            form="morning-routine-editor"
+            type="submit"
+          >
+            {saving ? "Saving…" : "Save routine"}
+          </button>
+        </div>
+      }
+      title="Morning Stretch Routine"
+    >
+      {loading ? (
+        <p className="table-message">Loading routine…</p>
+      ) : (
+        <form
+          className={styles.routineEditor}
+          id="morning-routine-editor"
+          onSubmit={save}
+        >
+          <p className={styles.routineSource}>
+            {isDefaultManager
+              ? "This is your routine. Other managers use it unless they create their own."
+              : hasOverride
+                ? "You are using your own routine."
+                : "Your workouts use Wyatt’s routine. Build a routine here only if you want to replace it with your own."}
+          </p>
+          {error ? (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          ) : null}
+          {!steps.length ? (
+            <section className={styles.routineOnboarding}>
+              <span className={styles.routineOnboardingIcon}>
+                <Sunrise aria-hidden="true" />
+              </span>
+              <div>
+                <h3>Build your morning routine</h3>
+                <p>
+                  Begin with a timed stretch or a movement you count. You can
+                  add more steps and reorder them at any time.
+                </p>
+              </div>
+              <div className={styles.routineOnboardingActions}>
+                <button onClick={() => addStep("timer")} type="button">
+                  <span>Timed stretch</span>
+                  <small>Runs a countdown, then advances automatically</small>
+                </button>
+                <button onClick={() => addStep("count")} type="button">
+                  <span>Counted movement</span>
+                  <small>Complete once or tally every repetition</small>
+                </button>
+              </div>
+            </section>
+          ) : null}
+          <ol className={styles.routineStepEditor}>
+            {steps.map((step, index) => (
+              <li key={step.id}>
+                <header>
+                  <strong>Step {index + 1}</strong>
+                  <div>
+                    <button
+                      disabled={index === 0 || saving}
+                      onClick={() => moveStep(index, -1)}
+                      type="button"
+                    >
+                      Move up
+                    </button>
+                    <button
+                      disabled={index === steps.length - 1 || saving}
+                      onClick={() => moveStep(index, 1)}
+                      type="button"
+                    >
+                      Move down
+                    </button>
+                    <button
+                      disabled={saving}
+                      onClick={() => removeStep(index)}
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </header>
+                <label>
+                  <span>Name</span>
+                  <input
+                    maxLength={100}
+                    required
+                    value={step.name}
+                    onChange={(event) =>
+                      updateStep(index, { name: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Type</span>
+                  <select
+                    value={step.type}
+                    onChange={(event) => {
+                      const type = event.target.value as "count" | "timer";
+                      updateStep(index, {
+                        completionMode: type === "count" ? "toggle" : null,
+                        durationSeconds: type === "timer" ? 30 : null,
+                        targetCount: type === "count" ? 10 : null,
+                        type,
+                      });
+                    }}
+                  >
+                    <option value="timer">Timer</option>
+                    <option value="count">Count</option>
+                  </select>
+                </label>
+                {step.type === "timer" ? (
+                  <label>
+                    <span>Seconds</span>
+                    <input
+                      max={3600}
+                      min={5}
+                      required
+                      type="number"
+                      value={step.durationSeconds || ""}
+                      onChange={(event) =>
+                        updateStep(index, {
+                          durationSeconds: Number(event.target.value),
+                        })
+                      }
+                    />
+                  </label>
+                ) : (
+                  <>
+                    <label>
+                      <span>Repetitions</span>
+                      <input
+                        max={1000}
+                        min={1}
+                        required
+                        type="number"
+                        value={step.targetCount || ""}
+                        onChange={(event) =>
+                          updateStep(index, {
+                            targetCount: Number(event.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>Completion</span>
+                      <select
+                        value={step.completionMode || "toggle"}
+                        onChange={(event) =>
+                          updateStep(index, {
+                            completionMode: event.target.value as
+                              "tally" | "toggle",
+                          })
+                        }
+                      >
+                        <option value="toggle">One completion toggle</option>
+                        <option value="tally">Tally each repetition</option>
+                      </select>
+                    </label>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+          {steps.length ? (
+            <div className={styles.routineAddActions}>
+              <button
+                className="action-button"
+                disabled={saving || steps.length >= 30}
+                onClick={() => addStep("timer")}
+                type="button"
+              >
+                <Plus aria-hidden="true" /> Add timer
+              </button>
+              <button
+                className="action-button"
+                disabled={saving || steps.length >= 30}
+                onClick={() => addStep("count")}
+                type="button"
+              >
+                <Plus aria-hidden="true" /> Add count
+              </button>
+            </div>
+          ) : null}
+        </form>
       )}
     </Modal>
   );

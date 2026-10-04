@@ -7,6 +7,185 @@ import {
   parseWorkoutDate,
   workoutElapsed,
 } from "../src/workouts.js";
+import {
+  morningSnapshotMatchesRoutine,
+  normalizeMorningRoutine,
+  readEffectiveRoutine,
+} from "../src/morning.js";
+
+test("managers inherit Wyatt's routine until they save their own", async () => {
+  const rows = new Map([
+    [
+      "manager:6",
+      [
+        {
+          step_id: "wyatt",
+          position: 1,
+          name: "Wyatt step",
+          step_type: "timer",
+          duration_seconds: 30,
+        },
+      ],
+    ],
+    ["manager:8", []],
+    [
+      "manager:9",
+      [
+        {
+          step_id: "own",
+          position: 1,
+          name: "Own step",
+          step_type: "count",
+          target_count: 10,
+          completion_mode: "toggle",
+        },
+      ],
+    ],
+  ]);
+  const env = {
+    DEFAULT_MORNING_MANAGER_ID: "6",
+    DB: {
+      prepare: () => ({
+        bind: (ownerType, ownerId) => ({
+          all: async () => ({
+            results: rows.get(`${ownerType}:${ownerId}`) || [],
+          }),
+        }),
+      }),
+    },
+  };
+
+  const inherited = await readEffectiveRoutine(env, "8");
+  assert.equal(inherited.hasOverride, false);
+  assert.equal(inherited.isDefaultManager, false);
+  assert.equal(inherited.routine.steps[0].name, "Wyatt step");
+
+  const own = await readEffectiveRoutine(env, "9");
+  assert.equal(own.hasOverride, true);
+  assert.equal(own.routine.steps[0].name, "Own step");
+
+  const wyatt = await readEffectiveRoutine(env, "6");
+  assert.equal(wyatt.hasOverride, false);
+  assert.equal(wyatt.isDefaultManager, true);
+  assert.equal(wyatt.routine.steps[0].name, "Wyatt step");
+});
+
+test("morning routines normalize ordered timer, toggle, and tally steps", () => {
+  assert.deepEqual(
+    normalizeMorningRoutine({
+      steps: [
+        {
+          durationSeconds: 45,
+          id: "timer-1",
+          name: " Hamstring stretch ",
+          type: "timer",
+        },
+        {
+          completionMode: "toggle",
+          id: "count-1",
+          name: "Lunges",
+          targetCount: 10,
+          type: "count",
+        },
+        {
+          completionMode: "tally",
+          id: "count-2",
+          name: "Calf raises",
+          targetCount: 12,
+          type: "count",
+        },
+      ],
+    }),
+    [
+      {
+        completionMode: null,
+        durationSeconds: 45,
+        id: "timer-1",
+        name: "Hamstring stretch",
+        position: 1,
+        targetCount: null,
+        type: "timer",
+      },
+      {
+        completionMode: "toggle",
+        durationSeconds: null,
+        id: "count-1",
+        name: "Lunges",
+        position: 2,
+        targetCount: 10,
+        type: "count",
+      },
+      {
+        completionMode: "tally",
+        durationSeconds: null,
+        id: "count-2",
+        name: "Calf raises",
+        position: 3,
+        targetCount: 12,
+        type: "count",
+      },
+    ],
+  );
+});
+
+test("morning routines reject unsafe bounds and duplicate step IDs", () => {
+  assert.throws(
+    () =>
+      normalizeMorningRoutine({
+        steps: [{ durationSeconds: 4, name: "Too short", type: "timer" }],
+      }),
+    /between 5 and 3600/,
+  );
+  assert.throws(
+    () =>
+      normalizeMorningRoutine({
+        steps: [
+          { durationSeconds: 30, id: "same", name: "One", type: "timer" },
+          { durationSeconds: 30, id: "same", name: "Two", type: "timer" },
+        ],
+      }),
+    /unique/,
+  );
+});
+
+test("morning workout snapshots detect changes to the saved routine", () => {
+  const routine = normalizeMorningRoutine({
+    steps: [
+      { durationSeconds: 30, id: "one", name: "First", type: "timer" },
+      {
+        completionMode: "toggle",
+        id: "two",
+        name: "Second",
+        targetCount: 10,
+        type: "count",
+      },
+    ],
+  });
+  const snapshot = routine.map((step) => ({
+    completion_mode: step.completionMode,
+    duration_seconds: step.durationSeconds,
+    name: step.name,
+    position: step.position,
+    step_id: step.id,
+    step_type: step.type,
+    target_count: step.targetCount,
+  }));
+
+  assert.equal(morningSnapshotMatchesRoutine(snapshot, routine), true);
+  assert.equal(
+    morningSnapshotMatchesRoutine(snapshot.slice(0, 1), routine),
+    false,
+  );
+  assert.equal(
+    morningSnapshotMatchesRoutine(
+      snapshot.map((step, index) =>
+        index === 1 ? { ...step, target_count: 12 } : step,
+      ),
+      routine,
+    ),
+    false,
+  );
+});
 
 test("cardio entries accept walks and runs with bounded mileage", () => {
   assert.deepEqual(normalizeCardioEntry({ miles: 1.2345, type: "WALK" }), {
@@ -117,5 +296,69 @@ test("running workout elapsed time excludes pauses and clamps at duration", () =
       now,
     ),
     1200,
+  );
+});
+
+for (const completedAt of [null, "2026-09-25T12:00:00Z"]) {
+  test(`cardio edits update own entry and totals (${completedAt ? "completed" : "active"})`, async () => {
+    let entry = { entry_id: "entry-1", activity_type: "walk", miles: 1 };
+    const date = "2026-09-25";
+    const env = {
+      DB: {
+        prepare: (sql) => ({
+          bind: (...values) => ({
+            first: async () => ({ completed_at: completedAt }),
+            all: async () => ({ results: [entry] }),
+            run: async () => {
+              assert.match(sql, /UPDATE manager_cardio_entries/);
+              assert.deepEqual(values, ["run", 2.5, "entry-1", "8", date]);
+              assert.match(
+                sql,
+                /WHERE entry_id = \? AND manager_id = \? AND workout_date = \?/,
+              );
+              entry = { ...entry, activity_type: values[0], miles: values[1] };
+              return { meta: { changes: 1 } };
+            },
+          }),
+        }),
+      },
+    };
+    const url = new URL(
+      `https://example.com/api/me/workouts/${date}/cardio/entries/entry-1`,
+    );
+    const result = await handleWorkoutRequest({
+      env,
+      readBody: async () => ({ type: "run", miles: 2.5 }),
+      request: new Request(url, { method: "PATCH" }),
+      requireManager: async () => ({ sub: "8" }),
+      url,
+    });
+    assert.deepEqual(result.cardio.entries, [
+      { id: "entry-1", type: "run", miles: 2.5 },
+    ]);
+    assert.equal(result.cardio.totalMiles, 2.5);
+    assert.equal(result.cardio.completedAt, completedAt);
+  });
+}
+
+test("cardio edits reject missing or other managers' entries", async () => {
+  const url = new URL(
+    "https://example.com/api/me/workouts/2026-09-25/cardio/entries/missing",
+  );
+  await assert.rejects(
+    handleWorkoutRequest({
+      env: {
+        DB: {
+          prepare: () => ({
+            bind: () => ({ run: async () => ({ meta: { changes: 0 } }) }),
+          }),
+        },
+      },
+      readBody: async () => ({ type: "walk", miles: 1 }),
+      request: new Request(url, { method: "PATCH" }),
+      requireManager: async () => ({ sub: "8" }),
+      url,
+    }),
+    /Cardio entry was not found/,
   );
 });

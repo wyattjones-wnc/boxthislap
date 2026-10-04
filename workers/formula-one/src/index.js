@@ -863,12 +863,47 @@ async function fetchSession(
         ? "sprint"
         : "results";
   const sourceUrl = `${baseUrl}/${year}/${round}/${endpoint}.json`;
-  const response = await fetch(sourceUrl, {
-    headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" },
-  });
+  let response;
+  let payload;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      response = await fetch(sourceUrl, {
+        headers: { "User-Agent": "BoxThisLap/1.0 (formula-one-admin-import)" },
+      });
+      if (response.status !== 429 && response.status < 500) break;
+    } catch {
+      response = null;
+    }
+    if (attempt < 2) {
+      const retryAfter = Number(response?.headers.get("Retry-After"));
+      const delay = Math.min(
+        5000,
+        Math.max(
+          1000 * (attempt + 1),
+          Number.isFinite(retryAfter) ? retryAfter * 1000 : 0,
+        ),
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  if (!response)
+    throw httpError(
+      502,
+      "The Formula 1 provider could not be reached. Try fetching again.",
+    );
   if (!response.ok)
-    throw httpError(502, `The Formula 1 provider returned ${response.status}.`);
-  const payload = await response.json();
+    throw httpError(
+      502,
+      `The Formula 1 provider returned HTTP ${response.status}. Try fetching again.`,
+    );
+  try {
+    payload = await response.json();
+  } catch {
+    throw httpError(
+      502,
+      "The Formula 1 provider returned an invalid response. Try fetching again.",
+    );
+  }
   const race = payload?.MRData?.RaceTable?.Races?.[0];
   if (!race)
     throw httpError(
@@ -962,7 +997,7 @@ async function fetchSession(
   };
 }
 
-async function fetchRound(env, year, round, actorManagerId) {
+export async function fetchRound(env, year, round, actorManagerId) {
   const roundRow = await env.DB.prepare(
     "SELECT name, has_sprint FROM f1_rounds WHERE year = ? AND round = ?",
   )
@@ -1011,7 +1046,7 @@ async function fetchRound(env, year, round, actorManagerId) {
       if (![404, 502].includes(Number(error?.status))) throw error;
       sessions.push({
         sessionType,
-        status: "unavailable",
+        status: Number(error.status) === 404 ? "unavailable" : "error",
         error: error.message,
       });
     }

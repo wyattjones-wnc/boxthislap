@@ -105,7 +105,7 @@
 }
 .day {
   align-items: center;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 5;
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;
@@ -113,8 +113,10 @@
   display: flex;
   flex-direction: column;
   font-weight: 750;
+  gap: clamp(0.2rem, 8%, 0.6rem);
   justify-content: center;
   min-height: 44px;
+  padding: clamp(0.2rem, 4%, 0.55rem);
 }
 .day:disabled {
   background: transparent;
@@ -129,16 +131,51 @@
   border-color: var(--accent);
   outline: 2px solid var(--focus-ring);
 }
-.day svg {
-  height: 1rem;
-  width: 1rem;
+.completionMark {
+  aspect-ratio: 1;
+  display: grid;
+  flex: 0 1 auto;
+  gap: clamp(2px, 8%, 5px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(68%, 4.75rem);
+}
+.completionSegment {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--text-muted) 60%, transparent);
+  border-radius: clamp(3px, 22%, 0.6rem);
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+.morningSegment {
+  --completion-color: #f3a6bd;
+}
+.kettlebellSegment {
+  --completion-color: #ef6464;
+}
+.cardioSegment {
+  --completion-color: #4dc981;
+}
+.kneeSegment {
+  --completion-color: #63a9f4;
+}
+.segmentCompleted {
+  background: var(--completion-color);
+  border-color: var(--completion-color);
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--completion-color) 22%, transparent);
+}
+.segmentCompleted svg {
+  color: #fff;
+  height: 68%;
+  width: 68%;
 }
 .today {
   border-color: var(--accent);
 }
 .done {
-  background: var(--accent-surface);
-  color: var(--accent-strong);
+  background: var(--surface-raised);
 }
 .typeChooser {
   display: grid;
@@ -146,42 +183,67 @@
   grid-template-columns: repeat(2, 1fr);
 }
 .typeChooser > button {
+  --component-color: var(--accent-strong);
   align-items: center;
   background: var(--surface-panel);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid
+    color-mix(in srgb, var(--component-color) 38%, var(--border-subtle));
   border-radius: var(--radius-panel);
   color: var(--text-primary);
   cursor: pointer;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  grid-template-columns: auto 1fr auto;
-  min-height: 96px;
+  justify-content: center;
+  min-height: 148px;
+  min-width: 0;
   padding: 1rem;
-  text-align: left;
+  position: relative;
+  text-align: center;
 }
 .typeChooser > button:hover,
 .typeChooser > button:focus-visible {
-  border-color: var(--accent);
-  outline: 2px solid var(--focus-ring);
+  border-color: var(--component-color);
+  outline: 2px solid color-mix(in srgb, var(--component-color) 45%, transparent);
 }
 .typeChooser > button:disabled {
   cursor: default;
   opacity: 0.5;
 }
 .typeChooser > button > svg:first-child {
-  color: var(--accent-strong);
+  color: var(--component-color);
   height: 2rem;
   width: 2rem;
+}
+.typeChooser > button > svg:last-child {
+  height: 1rem;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  width: 1rem;
 }
 .typeChooser > button span {
   display: grid;
   gap: 0.2rem;
+  justify-items: center;
 }
 .typeChooser > button strong {
   font-size: 1.1rem;
 }
 .typeChooser > button small {
   color: var(--text-muted);
+}
+.morningType {
+  --component-color: #f3a6bd;
+}
+.kettlebellType {
+  --component-color: #ef6464;
+}
+.cardioType {
+  --component-color: #4dc981;
+}
+.kneeType {
+  --component-color: #63a9f4;
 }
 .cardioWorkout {
   display: grid;
@@ -251,7 +313,22 @@
   display: flex;
   justify-content: space-between;
   min-height: 50px;
-  padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.75rem;
+}
+.cardioEntryActions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.cardioEntryStatus {
+  align-items: center;
+  display: inline-flex;
+  height: var(--control-touch);
+  justify-content: center;
+  width: var(--control-touch);
 }
 .cardioEntries > div > span {
   align-items: baseline;
@@ -260,6 +337,239 @@
 }
 .cardioEntries small {
   color: var(--text-muted);
+}
+.morningWorkout {
+  display: grid;
+  gap: 0.75rem;
+}
+.morningRoutineActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.8rem;
+  justify-content: space-between;
+}
+.morningRoutineActions small {
+  color: var(--text-muted);
+}
+.morningComplete {
+  align-items: center;
+  background: color-mix(in srgb, #f3a6bd 16%, var(--surface-panel));
+  border: 1px solid color-mix(in srgb, #f3a6bd 55%, var(--border-subtle));
+  border-radius: var(--radius-panel);
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+}
+.morningComplete > svg {
+  color: #f3a6bd;
+  height: 2rem;
+  width: 2rem;
+}
+.morningComplete > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.morningComplete span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.morningSteps,
+.routineStepEditor {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.morningSteps > li {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+.morningStepHeading {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+.morningStepHeading > span {
+  align-items: center;
+  background: var(--surface-raised);
+  border-radius: 50%;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: 0 0 1.65rem;
+  height: 1.65rem;
+  justify-content: center;
+  width: 1.65rem;
+}
+.morningStepHeading > svg {
+  color: #f3a6bd;
+  height: 1rem;
+  margin-left: auto;
+  width: 1rem;
+}
+.morningStepDone,
+.morningStepUpcoming {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0.35rem 0.65rem;
+}
+.morningStepDone {
+  background: color-mix(in srgb, #f3a6bd 8%, var(--surface-panel)) !important;
+}
+.morningStepDone small,
+.morningStepUpcoming small {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.morningStepUpcoming {
+  opacity: 0.62;
+}
+.morningStepActive {
+  border-color: #f3a6bd !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f3a6bd 18%, transparent);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+.morningStepActive .morningStepHeading strong {
+  font-size: 1.2rem;
+}
+.morningStepControl {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+.morningTimer,
+.morningTally {
+  font-size: clamp(2rem, 10vw, 3.5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.routineEditor {
+  display: grid;
+  gap: 1rem;
+}
+.routineSource {
+  color: var(--text-muted);
+  margin: 0;
+}
+.routineOnboarding {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  padding: 1.25rem 0.25rem;
+  text-align: center;
+}
+.routineOnboarding h3,
+.routineOnboarding p {
+  margin: 0;
+}
+.routineOnboarding p {
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+.routineOnboardingIcon {
+  align-items: center;
+  background: color-mix(in srgb, #f3a6bd 18%, var(--surface-raised));
+  border-radius: 50%;
+  color: #f3a6bd;
+  display: inline-flex;
+  height: 4rem;
+  justify-content: center;
+  width: 4rem;
+}
+.routineOnboardingIcon svg {
+  height: 2rem;
+  width: 2rem;
+}
+.routineOnboardingActions {
+  display: grid;
+  gap: 0.65rem;
+  width: 100%;
+}
+.routineOnboardingActions button {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  gap: 0.2rem;
+  min-height: 64px;
+  padding: 0.75rem;
+  text-align: left;
+}
+.routineOnboardingActions button:hover,
+.routineOnboardingActions button:focus-visible {
+  border-color: #f3a6bd;
+}
+.routineOnboardingActions span {
+  font-weight: 800;
+}
+.routineOnboardingActions small {
+  color: var(--text-muted);
+}
+.routineStepEditor > li {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+.routineStepEditor header,
+.routineStepEditor header > div,
+.routineAddActions,
+.routineSaveActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.routineStepEditor header {
+  justify-content: space-between;
+}
+.routineStepEditor header button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.25rem;
+}
+.routineStepEditor header button:hover,
+.routineStepEditor header button:focus-visible {
+  color: var(--text-primary);
+}
+.routineStepEditor label {
+  display: grid;
+  gap: 0.25rem;
+}
+.routineStepEditor label > span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.routineStepEditor input,
+.routineStepEditor select {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  min-height: 44px;
+  padding: 0.55rem 0.7rem;
+}
+.routineSaveActions {
+  justify-content: flex-end;
 }
 .workout {
   display: grid;
@@ -521,40 +831,6 @@
   margin-top: 0.3rem;
   writing-mode: vertical-rl;
 }
-.modalBackdrop {
-  align-items: center;
-  background: rgb(0 0 0 / 65%);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 1rem;
-  position: fixed;
-  z-index: 1000;
-}
-.modal {
-  background: var(--surface-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-panel);
-  max-height: min(85vh, 720px);
-  max-width: 560px;
-  overflow: auto;
-  padding: 1rem;
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1001;
-  width: 100%;
-}
-.modal > header {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-.modal h2 {
-  margin: 0;
-}
 .helpList,
 .manageList {
   display: grid;
@@ -631,10 +907,19 @@
     gap: 0.2rem;
   }
   .typeChooser {
-    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .typeChooser > button {
-    min-height: 82px;
+    gap: 0.55rem;
+    min-height: 132px;
+    padding: 0.75rem 0.5rem;
+  }
+  .typeChooser > button strong {
+    font-size: 0.95rem;
+  }
+  .typeChooser > button small {
+    font-size: 0.72rem;
   }
   .day {
     border-radius: 0.5rem;

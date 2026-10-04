@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
@@ -58,6 +59,375 @@ afterEach(() => {
 });
 
 describe("Daily Workouts", () => {
+  it("creates a manager override from a blank routine builder", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "morning-editor-test", isAdmin: false }),
+    );
+    let savedSteps: Array<Record<string, unknown>> = [];
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine") && !init?.method)
+          return response({
+            hasOverride: false,
+            isDefaultManager: false,
+            routine: {
+              steps: [
+                {
+                  completionMode: null,
+                  durationSeconds: 30,
+                  id: "default-1",
+                  name: "Wake up stretch",
+                  position: 1,
+                  targetCount: null,
+                  type: "timer",
+                },
+              ],
+            },
+            source: "default",
+          });
+        if (url.endsWith("/api/me/morning-routine") && init?.method === "PUT") {
+          savedSteps = (
+            JSON.parse(String(init.body || "{}")) as {
+              steps: Array<Record<string, unknown>>;
+            }
+          ).steps;
+          return response({});
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Customize my Morning Stretch routine",
+      }),
+    );
+    expect(
+      await screen.findByText(/workouts use Wyatt’s routine/i),
+    ).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Counted movement/ }));
+    const names = screen.getAllByLabelText("Name");
+    fireEvent.change(names[0], { target: { value: "Lunges" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save routine" }));
+    await waitFor(() => expect(savedSteps).toHaveLength(1));
+    expect(savedSteps[0]).toMatchObject({
+      completionMode: "toggle",
+      name: "Lunges",
+      targetCount: 10,
+      type: "count",
+    });
+  });
+
+  it("restores Wyatt's routine by deleting a manager override", async () => {
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    let restored = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine") && !init?.method)
+          return response({
+            hasOverride: true,
+            isDefaultManager: false,
+            routine: {
+              steps: [
+                {
+                  completionMode: null,
+                  durationSeconds: 45,
+                  id: "own-1",
+                  name: "My stretch",
+                  position: 1,
+                  targetCount: null,
+                  type: "timer",
+                },
+              ],
+            },
+            source: "manager",
+          });
+        if (
+          url.endsWith("/api/me/morning-routine") &&
+          init?.method === "DELETE"
+        ) {
+          restored = true;
+          return response({});
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Customize my Morning Stretch routine",
+      }),
+    );
+    expect(
+      await screen.findByText("You are using your own routine."),
+    ).not.toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Restore default routine" }),
+    );
+    await waitFor(() => expect(restored).toBe(true));
+  });
+
+  it("advances a Morning Stretch timer into the next count step", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "morning-runner-test", isAdmin: false }),
+    );
+    const timerStep = {
+      active: true,
+      completedAt: null as string | null,
+      completedCount: 0,
+      completionMode: null,
+      durationSeconds: 1,
+      id: "timer-1",
+      name: "Hamstring stretch",
+      position: 1,
+      remainingSeconds: 1,
+      running: false,
+      targetCount: null,
+      type: "timer" as const,
+    };
+    const countStep = {
+      active: false,
+      completedAt: null as string | null,
+      completedCount: 0,
+      completionMode: "toggle" as const,
+      durationSeconds: null,
+      id: "count-1",
+      name: "Lunges",
+      position: 2,
+      remainingSeconds: null,
+      running: false,
+      targetCount: 10,
+      type: "count" as const,
+    };
+    let morning = {
+      completedAt: null as string | null,
+      currentPosition: 1,
+      date: today,
+      started: true,
+      steps: [timerStep, countStep],
+    };
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/morning-routine"))
+          return response({
+            hasOverride: false,
+            isDefaultManager: false,
+            routine: {
+              steps: [
+                {
+                  durationSeconds: 1,
+                  id: "timer-1",
+                  name: "Hamstring stretch",
+                  position: 1,
+                  type: "timer",
+                },
+                {
+                  completionMode: "toggle",
+                  id: "count-1",
+                  name: "Lunges",
+                  position: 2,
+                  targetCount: 10,
+                  type: "count",
+                },
+              ],
+            },
+            source: "default",
+          });
+        if (url.endsWith(`/api/me/workouts/${today}/morning/start`))
+          return response({ morning });
+        if (url.endsWith(`/api/me/workouts/${today}/morning/action`)) {
+          const body = JSON.parse(String(init?.body || "{}")) as {
+            action: string;
+          };
+          if (body.action === "timer-start") {
+            morning = {
+              ...morning,
+              steps: [{ ...timerStep, running: true }, countStep],
+            };
+          } else if (body.action === "timer-finish") {
+            morning = {
+              ...morning,
+              currentPosition: 2,
+              steps: [
+                {
+                  ...timerStep,
+                  active: false,
+                  completedAt: "2026-10-04T12:00:00Z",
+                  completedCount: 1,
+                  remainingSeconds: 1,
+                },
+                { ...countStep, active: true },
+              ],
+            };
+          } else if (body.action === "complete-step") {
+            morning = {
+              ...morning,
+              completedAt: "2026-10-04T12:01:00Z",
+              currentPosition: 3,
+              steps: morning.steps.map((step) => ({
+                ...step,
+                active: false,
+                completedAt: step.completedAt || "2026-10-04T12:01:00Z",
+                completedCount:
+                  step.type === "count" ? Number(step.targetCount) : 1,
+              })),
+            };
+          }
+          return response({ morning });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /start workout/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Start timer" }));
+    expect(
+      await screen.findByRole(
+        "button",
+        { name: "Complete" },
+        { timeout: 2500 },
+      ),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("Hamstring stretch").closest("li")?.textContent,
+    ).toContain("00:01");
+    fireEvent.click(screen.getByRole("button", { name: "Complete" }));
+    expect(await screen.findByText("Morning Stretch complete")).not.toBeNull();
+  });
+
+  it("opens routine setup when Morning Stretch has not been configured", async () => {
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/me/workouts?month="))
+        return response({ days: [] });
+      if (url.endsWith("/api/me/morning-routine"))
+        return response({
+          hasOverride: false,
+          isDefaultManager: false,
+          routine: { steps: [] },
+          source: "default",
+        });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /start workout/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
+
+    expect(await screen.findByText("Morning Stretch Routine")).not.toBeNull();
+    expect(
+      await screen.findByRole("button", { name: /Timed stretch/ }),
+    ).not.toBeNull();
+    expect(
+      fetchMock.mock.calls.some(([input]) =>
+        String(input).endsWith(`/api/me/workouts/${today}/morning/start`),
+      ),
+    ).toBe(false);
+  });
+
+  it("uses the four-part completion marker and matching chooser order", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "completion-marker-test", isAdmin: false }),
+    );
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({
+            days: [
+              {
+                cardioCompleted: true,
+                completed: true,
+                date: today,
+                kettlebellCompleted: false,
+              },
+            ],
+          });
+        throw new Error(`Unexpected request: ${url}`);
+      }) as unknown as typeof fetch,
+    );
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    const day = await screen.findByRole("button", {
+      name: /completed: Cardio/,
+    });
+    const marker = day.querySelector('[aria-hidden="true"]');
+    expect(marker?.children).toHaveLength(4);
+    expect(
+      marker?.querySelectorAll('[class*="segmentCompleted"]'),
+    ).toHaveLength(1);
+    expect(marker?.querySelectorAll("svg")).toHaveLength(1);
+
+    fireEvent.click(day);
+    const chooser = screen.getByRole("region", {
+      name: "Choose workout type",
+    });
+    expect(
+      within(chooser)
+        .getAllByRole("button")
+        .map((button) => button.querySelector("strong")?.textContent),
+    ).toEqual(["Morning Stretch", "Kettlebell", "Cardio", "Knee"]);
+  });
+
   it("lets an administrator add an exercise from the calendar page", async () => {
     localStorage.setItem(
       "boxThisLapManagerSession",
@@ -239,6 +609,23 @@ describe("Daily Workouts", () => {
           };
           return response({ cardio });
         }
+        if (
+          url.endsWith(`/api/me/workouts/${today}/cardio/entries/entry-1`) &&
+          init?.method === "PATCH"
+        ) {
+          const entry = JSON.parse(String(init.body));
+          cardio = {
+            ...cardio,
+            entries: cardio.entries.map((value) =>
+              value.id === "entry-1" ? { ...value, ...entry } : value,
+            ),
+          };
+          cardio.totalMiles = cardio.entries.reduce(
+            (total, value) => total + value.miles,
+            0,
+          );
+          return response({ cardio });
+        }
         if (url.endsWith(`/api/me/workouts/${today}/cardio/complete`)) {
           cardio = { ...cardio, completedAt: "2026-09-28T12:00:00Z" };
           return response({ cardio });
@@ -277,8 +664,46 @@ describe("Daily Workouts", () => {
       screen.getByText("Total mileage").parentElement?.textContent,
     ).toContain("3.75");
 
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit walk of 1.25 miles" }),
+    );
+    expect((screen.getByLabelText("Miles") as HTMLInputElement).value).toBe(
+      "1.25",
+    );
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("1.25 mi")).not.toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit walk of 1.25 miles" }),
+    );
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("Type"), {
+      target: { value: "run" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("2 mi");
+    expect(
+      screen.getByText("Total mileage").parentElement?.textContent,
+    ).toContain("4.5");
+
     fireEvent.click(screen.getByRole("button", { name: "Complete Cardio" }));
     expect(await screen.findByText("Cardio complete")).not.toBeNull();
+    expect(screen.queryByLabelText("Miles")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit run of 2 miles" }),
+    );
+    fireEvent.change(screen.getByLabelText("Miles"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("3 mi");
+    expect(
+      screen.getByText("Cardio complete").parentElement?.textContent,
+    ).toContain("5.5");
     expect(screen.queryByLabelText("Miles")).toBeNull();
   });
 });

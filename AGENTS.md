@@ -4,8 +4,8 @@
 
 - Work from the repository root with remote `https://github.com/wyattjones-wnc/boxthislap.git`; use `dev` unless the user requests another branch. Keep commands and documentation repository-relative so the workflow works in local and cloud checkouts.
 - Preserve unrelated work. Never reset, discard, stash, overwrite, commit, or push it, and never push `main` without explicit authorization.
-- Requests to implement, change, add, fix, update, or remove project files authorize focused edits and validation only. Do not commit, push, merge, create a pull request, deploy, or otherwise publish changes unless the user explicitly authorizes that action.
-- Honor explicit requests for local-only work, no push, or another branch. When a push is explicitly authorized, first run `node scripts/bump-version.mjs`, fetch and integrate current `origin/dev`, and confirm the outgoing diff contains only this task.
+- Requests to implement, change, add, fix, update, or remove project files authorize focused edits, validation, and delivery to `dev` for review. Complete each task by committing its changes and pushing them to `origin/dev`, unless the user explicitly requests local-only work, no push, or another branch. Do not merge into or push `main`, create a pull request, or deploy unless explicitly authorized.
+- Before delivering to `dev`, run `node scripts/bump-version.mjs`, fetch and integrate current `origin/dev`, and confirm the outgoing diff contains only this task. Preserve unrelated work and report the pushed commit and validation results.
 
 ## Startup and Context
 
@@ -17,7 +17,7 @@
 
 Cloud tasks may use a synthetic local branch such as `work` and may not expose a normal `origin` remote. Do not treat that alone as a configuration failure if the task was started from the `boxthislap` environment on `dev`.
 
-Do not push, merge, create a PR, or otherwise publish changes unless explicitly authorized.
+Completed tasks must reach `origin/dev` for review, including from a synthetic cloud branch. Honor explicit local-only, no-push, or alternate-branch instructions. Do not merge into or push `main`, create a PR, or deploy unless explicitly authorized.
 
 ## Validation and Reporting
 
@@ -26,3 +26,13 @@ Do not push, merge, create a PR, or otherwise publish changes unless explicitly 
 - Workflow-only tasks must not change application behavior. Report remaining Worker deployment, D1 migration, Apps Script publication, secrets, or manual configuration separately.
 - Keep completion reports concise. Include manual verification only for meaningful behavior not reliably covered by automated checks.
 - Keep one task focused on one initiative. For a materially different initiative after completion, recommend a fresh task in the saved `boxthislap` project to avoid carrying old history.
+
+## Dialog Standard
+
+- New React dialogs must use `src/components/ContainedDialog/ContainedDialog.tsx`, or the established `modules/dialogs/FormDialog` wrapper for compatibility modules. Do not add one-off overlays or independent dialog styling.
+- Keep dialog structure and scrolling inside the shared component so page scroll remains locked and touch or wheel gestures cannot escape to the underlying page or trigger pull-to-refresh.
+- Put long content in the dialog's contained scrolling body and persistent form actions in its footer.
+
+## Product Defaults
+
+- Do not invent or seed user-facing content when a feature describes an admin-configured default. An admin-configured default may begin empty; managers inherit it only after the admin supplies it.

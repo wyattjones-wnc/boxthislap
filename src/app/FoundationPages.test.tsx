@@ -34,6 +34,20 @@ describe("help experience", () => {
         .getByRole("link", { name: "Open Manager Hub" })
         .getAttribute("href"),
     ).toBe("#manager-hub");
+    expect(
+      document.documentElement.classList.contains("has-contained-dialog"),
+    ).toBe(true);
+    const dialog = screen.getByRole("dialog", { name: "Manager Hub" });
+    const boundaryScroll = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY: -1,
+    });
+    expect(dialog.dispatchEvent(boundaryScroll)).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Close Manager Hub" }));
+    expect(
+      document.documentElement.classList.contains("has-contained-dialog"),
+    ).toBe(false);
   });
 
   it("documents all three Home Screen widgets", () => {

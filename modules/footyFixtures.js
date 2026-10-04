@@ -23,6 +23,17 @@ export function isFootyFriendlyFixture(fixture = {}) {
   );
 }
 
+export function doesFootyFixtureMatchKitFilter(fixture = {}, kitFilter = "") {
+  if (!kitFilter) return true;
+
+  const fixtureKit = String(fixture.matchNote?.kit || "");
+  if (kitFilter === "not-set") {
+    return !fixtureKit && !isFootyFriendlyFixture(fixture);
+  }
+
+  return fixtureKit === kitFilter;
+}
+
 export function normalizeFootyDateRange(rawStart, rawEnd) {
   const startValue = String(rawStart || "").trim();
   const endValue = String(rawEnd || "").trim();
@@ -160,7 +171,9 @@ export function isFootyFixtureStarted(fixture, now = Date.now()) {
 
 export function isFootyFixturePostponed(fixture = {}) {
   return ["postponed", "suspended"].includes(
-    String(fixture.status || "").trim().toLowerCase(),
+    String(fixture.status || "")
+      .trim()
+      .toLowerCase(),
   );
 }
 

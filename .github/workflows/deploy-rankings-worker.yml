@@ -2,6 +2,12 @@ name: Deploy Rankings Worker
 
 on:
   workflow_dispatch:
+    inputs:
+      apply_migrations:
+        description: Apply pending D1 migrations before deploying
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -24,6 +30,7 @@ jobs:
       - run: npm ci
 
       - name: Apply Rankings migrations
+        if: ${{ inputs.apply_migrations }}
         run: npx wrangler d1 migrations apply rankings --remote --config workers/rankings/wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

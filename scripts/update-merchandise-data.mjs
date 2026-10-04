@@ -65,7 +65,9 @@ export async function runMerchandiseUpdate({
         baseline = !previous;
         priorCount = Number(previous?.item_count || 0);
       }
-      if (priorCount >= 20 && scan.products.length < priorCount * 0.5) {
+      const observedCount =
+        scan.products.length + (scan.excludedProductCount || 0);
+      if (priorCount >= 20 && observedCount < priorCount * 0.5) {
         const message = `Suspect catalog collapse: ${scan.products.length} items after ${priorCount}.`;
         if (d1)
           await recordScan(d1, {

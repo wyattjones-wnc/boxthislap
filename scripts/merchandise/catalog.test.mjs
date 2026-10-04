@@ -121,6 +121,7 @@ test("excludes synthetic Barcelona customization products without shortening pag
   );
   assert.equal(scan.pageCount, 2);
   assert.equal(calls.length, 2);
+  assert.equal(scan.excludedProductCount, 3);
 });
 
 test("extracts a Barcelona product gallery preload", () => {

@@ -35,6 +35,7 @@ export async function scanBarcelona({
   limit = 250,
 } = {}) {
   const products = [];
+  let excludedProductCount = 0;
   let page = 1;
   for (; page <= 50; page += 1) {
     const url = `${baseUrl}/collections/all/products.json?limit=${limit}&page=${page}`;
@@ -55,8 +56,10 @@ export async function scanBarcelona({
         tags.some(
           (tag) => String(tag).trim().toUpperCase() === "PRODUCTO_FICTICIO",
         )
-      )
+      ) {
+        excludedProductCount += 1;
         continue;
+      }
       products.push(normalizeBarcelonaProduct(product, baseUrl));
     }
     if (value.products.length < limit) break;
@@ -76,7 +79,12 @@ export async function scanBarcelona({
       }),
     );
   }
-  return validateScan({ source: "barcelona", pageCount: page, products });
+  return validateScan({
+    source: "barcelona",
+    pageCount: page,
+    products,
+    excludedProductCount,
+  });
 }
 
 export function barcelonaPageImage(html) {

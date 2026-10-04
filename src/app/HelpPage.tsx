@@ -1,4 +1,3 @@
-import * as Dialog from "@radix-ui/react-dialog";
 import {
   BookOpen,
   CalendarDays,
@@ -11,10 +10,10 @@ import {
   Settings,
   Smartphone,
   Trophy,
-  X,
   type LucideIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { ContainedDialog } from "../components/ContainedDialog/ContainedDialog";
 import styles from "./Shell.module.css";
 
 interface GuideSection {
@@ -480,58 +479,53 @@ export default function HelpPage() {
 
 function TopicDialog({ topic }: { topic: GuideTopic }) {
   const Icon = topic.icon;
+  const [open, setOpen] = useState(false);
   return (
-    <Dialog.Root>
-      <Dialog.Trigger asChild>
-        <button className={styles.helpFeatureCard} type="button">
-          <span className={styles.helpFeatureIcon} aria-hidden="true">
-            <Icon />
-          </span>
-          <span className={styles.helpFeatureCopy}>
-            <strong>{topic.title}</strong>
-            <span>{topic.description}</span>
-          </span>
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className={styles.guideDialogOverlay} />
-        <Dialog.Content className={styles.guideDialogContent}>
-          <header className={styles.guideDialogHeader}>
-            <div>
-              <Dialog.Title>{topic.title}</Dialog.Title>
-              <Dialog.Description>{topic.description}</Dialog.Description>
-            </div>
-            <Dialog.Close
-              className={styles.guideDialogClose}
-              aria-label={`Close ${topic.title}`}
+    <>
+      <button
+        className={styles.helpFeatureCard}
+        onClick={() => setOpen(true)}
+        type="button"
+      >
+        <span className={styles.helpFeatureIcon} aria-hidden="true">
+          <Icon />
+        </span>
+        <span className={styles.helpFeatureCopy}>
+          <strong>{topic.title}</strong>
+          <span>{topic.description}</span>
+        </span>
+      </button>
+      {open ? (
+        <ContainedDialog
+          bodyClassName={styles.guideDialogBody}
+          close={() => setOpen(false)}
+          description={topic.description}
+          title={topic.title}
+        >
+          {topic.sections.map((section) => (
+            <section className={styles.guideSection} key={section.title}>
+              <h3>{section.title}</h3>
+              {section.steps ? (
+                <ol className={styles.guideSteps}>
+                  {section.steps.map((step, index) => (
+                    <li key={index}>{step}</li>
+                  ))}
+                </ol>
+              ) : null}
+              {section.body ? <p>{section.body}</p> : null}
+            </section>
+          ))}
+          {topic.destination ? (
+            <a
+              className="action-button"
+              href={topic.destination.href}
+              onClick={() => setOpen(false)}
             >
-              <X aria-hidden="true" />
-            </Dialog.Close>
-          </header>
-          <div className={styles.guideDialogBody}>
-            {topic.sections.map((section) => (
-              <section className={styles.guideSection} key={section.title}>
-                <h3>{section.title}</h3>
-                {section.steps ? (
-                  <ol className={styles.guideSteps}>
-                    {section.steps.map((step, index) => (
-                      <li key={index}>{step}</li>
-                    ))}
-                  </ol>
-                ) : null}
-                {section.body ? <p>{section.body}</p> : null}
-              </section>
-            ))}
-            {topic.destination ? (
-              <Dialog.Close asChild>
-                <a className="action-button" href={topic.destination.href}>
-                  {topic.destination.label}
-                </a>
-              </Dialog.Close>
-            ) : null}
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              {topic.destination.label}
+            </a>
+          ) : null}
+        </ContainedDialog>
+      ) : null}
+    </>
   );
 }

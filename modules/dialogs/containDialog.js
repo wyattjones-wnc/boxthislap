@@ -83,7 +83,10 @@ export function openContainedDialog({
     dialog.removeEventListener("touchstart", rememberTouch);
     dialog.removeEventListener("touchmove", containTouch);
     dialog.removeEventListener("wheel", containWheel);
-    if (dialog.open) dialog.close();
+    if (dialog.open) {
+      if (typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+    }
     activeDialogs.delete(dialog);
     unlockPage();
   }

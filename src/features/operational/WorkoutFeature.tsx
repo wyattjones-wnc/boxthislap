@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
 import {
   Accessibility,
   BarChart3,
@@ -16,10 +15,10 @@ import {
   Settings2,
   Sunrise,
   Trash2,
-  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "../../app/providers";
+import { ContainedDialog } from "../../components/ContainedDialog/ContainedDialog";
 import { IconButton } from "../../components/IconButton/IconButton";
 import styles from "./WorkoutFeature.module.css";
 
@@ -611,6 +610,7 @@ export function WorkoutFeature() {
         <MorningWorkoutView
           action={morningAction}
           busy={busy}
+          editRoutine={() => setRoutineEditor("mine")}
           morning={morning}
         />
       ) : selectedDate ? (
@@ -1084,6 +1084,7 @@ function CardioWorkoutView({
 function MorningWorkoutView({
   action,
   busy,
+  editRoutine,
   morning,
 }: {
   action: (
@@ -1091,6 +1092,7 @@ function MorningWorkoutView({
     stepId?: string,
   ) => Promise<MorningWorkout | null> | null;
   busy: boolean;
+  editRoutine: () => void;
   morning: MorningWorkout;
 }) {
   const current = morning.steps.find((step) => step.active);
@@ -1116,6 +1118,12 @@ function MorningWorkoutView({
 
   return (
     <section className={styles.morningWorkout}>
+      <div className={styles.morningRoutineActions}>
+        <button className="action-button" onClick={editRoutine} type="button">
+          <Pencil aria-hidden="true" /> Edit routine
+        </button>
+        <small>Changes apply the next time you start Morning Stretch.</small>
+      </div>
       {morning.completedAt ? (
         <div className={styles.morningComplete}>
           <Sunrise aria-hidden="true" />
@@ -1537,27 +1545,25 @@ function weeklyRows(rows: HistoryRow[]) {
 function Modal({
   children,
   close,
+  description,
+  footer,
   title,
 }: {
   children: React.ReactNode;
   close: () => void;
+  description?: React.ReactNode;
+  footer?: React.ReactNode;
   title: string;
 }) {
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && close()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className={styles.modalBackdrop} />
-        <Dialog.Content className={styles.modal}>
-          <header>
-            <Dialog.Title>{title}</Dialog.Title>
-            <Dialog.Close asChild>
-              <IconButton icon={<X />} label={`Close ${title}`} />
-            </Dialog.Close>
-          </header>
-          {children}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <ContainedDialog
+      close={close}
+      description={description}
+      footer={footer}
+      title={title}
+    >
+      {children}
+    </ContainedDialog>
   );
 }
 
@@ -1742,6 +1748,33 @@ function MorningRoutineEditor({
   return (
     <Modal
       close={close}
+      description={
+        mode === "default"
+          ? "Set the starting routine available to every manager."
+          : "Arrange timers and counted movements in the order you want to complete them."
+      }
+      footer={
+        <div className={styles.routineSaveActions}>
+          {mode === "mine" && hasOverride ? (
+            <button
+              className="action-button secondary-action"
+              disabled={saving}
+              onClick={() => void useDefault()}
+              type="button"
+            >
+              Use default routine
+            </button>
+          ) : null}
+          <button
+            className="action-button"
+            disabled={saving || steps.length === 0}
+            form="morning-routine-editor"
+            type="submit"
+          >
+            {saving ? "Saving…" : "Save routine"}
+          </button>
+        </div>
+      }
       title={
         mode === "default" ? "Default Morning Stretch" : "My Morning Stretch"
       }
@@ -1749,7 +1782,11 @@ function MorningRoutineEditor({
       {loading ? (
         <p className="table-message">Loading routine…</p>
       ) : (
-        <form className={styles.routineEditor} onSubmit={save}>
+        <form
+          className={styles.routineEditor}
+          id="morning-routine-editor"
+          onSubmit={save}
+        >
           {mode === "mine" ? (
             <p className={styles.routineSource}>
               {hasOverride
@@ -1761,6 +1798,30 @@ function MorningRoutineEditor({
             <p className={styles.error} role="alert">
               {error}
             </p>
+          ) : null}
+          {!steps.length ? (
+            <section className={styles.routineOnboarding}>
+              <span className={styles.routineOnboardingIcon}>
+                <Sunrise aria-hidden="true" />
+              </span>
+              <div>
+                <h3>Build your morning routine</h3>
+                <p>
+                  Begin with a timed stretch or a movement you count. You can
+                  add more steps and reorder them at any time.
+                </p>
+              </div>
+              <div className={styles.routineOnboardingActions}>
+                <button onClick={() => addStep("timer")} type="button">
+                  <span>Timed stretch</span>
+                  <small>Runs a countdown, then advances automatically</small>
+                </button>
+                <button onClick={() => addStep("count")} type="button">
+                  <span>Counted movement</span>
+                  <small>Complete once or tally every repetition</small>
+                </button>
+              </div>
+            </section>
           ) : null}
           <ol className={styles.routineStepEditor}>
             {steps.map((step, index) => (
@@ -1873,43 +1934,26 @@ function MorningRoutineEditor({
               </li>
             ))}
           </ol>
-          <div className={styles.routineAddActions}>
-            <button
-              className="action-button"
-              disabled={saving || steps.length >= 30}
-              onClick={() => addStep("timer")}
-              type="button"
-            >
-              <Plus aria-hidden="true" /> Add timer
-            </button>
-            <button
-              className="action-button"
-              disabled={saving || steps.length >= 30}
-              onClick={() => addStep("count")}
-              type="button"
-            >
-              <Plus aria-hidden="true" /> Add count
-            </button>
-          </div>
-          <div className={styles.routineSaveActions}>
-            {mode === "mine" && hasOverride ? (
+          {steps.length ? (
+            <div className={styles.routineAddActions}>
               <button
                 className="action-button"
-                disabled={saving}
-                onClick={() => void useDefault()}
+                disabled={saving || steps.length >= 30}
+                onClick={() => addStep("timer")}
                 type="button"
               >
-                Use default routine
+                <Plus aria-hidden="true" /> Add timer
               </button>
-            ) : null}
-            <button
-              className="action-button"
-              disabled={saving || steps.length === 0}
-              type="submit"
-            >
-              Save routine
-            </button>
-          </div>
+              <button
+                className="action-button"
+                disabled={saving || steps.length >= 30}
+                onClick={() => addStep("count")}
+                type="button"
+              >
+                <Plus aria-hidden="true" /> Add count
+              </button>
+            </div>
+          ) : null}
         </form>
       )}
     </Modal>

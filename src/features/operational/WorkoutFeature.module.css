@@ -342,6 +342,16 @@
   display: grid;
   gap: 0.75rem;
 }
+.morningRoutineActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.8rem;
+  justify-content: space-between;
+}
+.morningRoutineActions small {
+  color: var(--text-muted);
+}
 .morningComplete {
   align-items: center;
   background: color-mix(in srgb, #f3a6bd 16%, var(--surface-panel));
@@ -448,6 +458,63 @@
 .routineSource {
   color: var(--text-muted);
   margin: 0;
+}
+.routineOnboarding {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  padding: 1.25rem 0.25rem;
+  text-align: center;
+}
+.routineOnboarding h3,
+.routineOnboarding p {
+  margin: 0;
+}
+.routineOnboarding p {
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+.routineOnboardingIcon {
+  align-items: center;
+  background: color-mix(in srgb, #f3a6bd 18%, var(--surface-raised));
+  border-radius: 50%;
+  color: #f3a6bd;
+  display: inline-flex;
+  height: 4rem;
+  justify-content: center;
+  width: 4rem;
+}
+.routineOnboardingIcon svg {
+  height: 2rem;
+  width: 2rem;
+}
+.routineOnboardingActions {
+  display: grid;
+  gap: 0.65rem;
+  width: 100%;
+}
+.routineOnboardingActions button {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  gap: 0.2rem;
+  min-height: 64px;
+  padding: 0.75rem;
+  text-align: left;
+}
+.routineOnboardingActions button:hover,
+.routineOnboardingActions button:focus-visible {
+  border-color: #f3a6bd;
+}
+.routineOnboardingActions span {
+  font-weight: 800;
+}
+.routineOnboardingActions small {
+  color: var(--text-muted);
 }
 .routineStepEditor > li {
   background: var(--surface-raised);
@@ -763,40 +830,6 @@
   font-size: 0.6rem;
   margin-top: 0.3rem;
   writing-mode: vertical-rl;
-}
-.modalBackdrop {
-  align-items: center;
-  background: rgb(0 0 0 / 65%);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 1rem;
-  position: fixed;
-  z-index: 1000;
-}
-.modal {
-  background: var(--surface-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow-panel);
-  max-height: min(85vh, 720px);
-  max-width: 560px;
-  overflow: auto;
-  padding: 1rem;
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1001;
-  width: 100%;
-}
-.modal > header {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-.modal h2 {
-  margin: 0;
 }
 .helpList,
 .manageList {

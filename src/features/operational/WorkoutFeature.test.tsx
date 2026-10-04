@@ -276,20 +276,18 @@ describe("Daily Workouts", () => {
   it("opens routine setup when Morning Stretch has not been configured", async () => {
     const response = (value: Record<string, unknown>) =>
       Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
-    const fetchMock = vi.fn(
-      async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("/api/me/workouts?month="))
-          return response({ days: [] });
-        if (url.endsWith("/api/me/morning-routine"))
-          return response({
-            hasOverride: false,
-            routine: { steps: [] },
-            source: "default",
-          });
-        throw new Error(`Unexpected request: ${url}`);
-      },
-    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/me/workouts?month="))
+        return response({ days: [] });
+      if (url.endsWith("/api/me/morning-routine"))
+        return response({
+          hasOverride: false,
+          routine: { steps: [] },
+          source: "default",
+        });
+      throw new Error(`Unexpected request: ${url}`);
+    });
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
     render(
@@ -304,7 +302,9 @@ describe("Daily Workouts", () => {
     fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
 
     expect(await screen.findByText("My Morning Stretch")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Add timer" })).not.toBeNull();
+    expect(
+      await screen.findByRole("button", { name: /Timed stretch/ }),
+    ).not.toBeNull();
     expect(
       fetchMock.mock.calls.some(([input]) =>
         String(input).endsWith(`/api/me/workouts/${today}/morning/start`),

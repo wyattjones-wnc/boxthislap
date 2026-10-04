@@ -5477,17 +5477,6 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   margin: 0;
 }
 
-.react-form-dialog-heading {
-  display: grid;
-  gap: 4px;
-}
-
-.react-form-dialog-heading p {
-  color: var(--muted);
-  font-size: 0.88rem;
-  margin: 0;
-}
-
 .react-form-dialog-scroll {
   min-height: 0;
   overflow-y: auto;

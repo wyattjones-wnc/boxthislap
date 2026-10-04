@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { openContainedDialog } from "../../../modules/dialogs/containDialog.js";
+import styles from "./ContainedDialog.module.css";
 
 export function ContainedDialog({
   bodyClassName = "",
@@ -35,7 +36,7 @@ export function ContainedDialog({
   return (
     <dialog
       aria-label={title}
-      className="react-form-dialog"
+      className={styles.dialog}
       onCancel={(event) => {
         event.preventDefault();
         close();
@@ -45,15 +46,15 @@ export function ContainedDialog({
       }}
       ref={dialogRef}
     >
-      <section className="react-form-dialog-panel">
+      <section className={styles.panel}>
         <header>
-          <div className="react-form-dialog-heading">
+          <div className={styles.heading}>
             <h2>{title}</h2>
             {description ? <p>{description}</p> : null}
           </div>
           <button
             aria-label={`Close ${title}`}
-            className="icon-action-button dialog-close"
+            className={`icon-action-button dialog-close ${styles.close}`}
             onClick={close}
             ref={closeRef}
             title={`Close ${title}`}
@@ -63,7 +64,7 @@ export function ContainedDialog({
           </button>
         </header>
         <div
-          className={`react-form-dialog-scroll ${bodyClassName}`.trim()}
+          className={`${styles.scroll} ${bodyClassName}`.trim()}
           ref={scrollRef}
         >
           {children}

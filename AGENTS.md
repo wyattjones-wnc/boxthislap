@@ -26,3 +26,9 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 - Workflow-only tasks must not change application behavior. Report remaining Worker deployment, D1 migration, Apps Script publication, secrets, or manual configuration separately.
 - Keep completion reports concise. Include manual verification only for meaningful behavior not reliably covered by automated checks.
 - Keep one task focused on one initiative. For a materially different initiative after completion, recommend a fresh task in the saved `boxthislap` project to avoid carrying old history.
+
+## Dialog Standard
+
+- New React dialogs must use `src/components/ContainedDialog/ContainedDialog.tsx`, or the established `modules/dialogs/FormDialog` wrapper for compatibility modules. Do not add one-off overlays or independent dialog styling.
+- Keep dialog structure and scrolling inside the shared component so page scroll remains locked and touch or wheel gestures cannot escape to the underlying page or trigger pull-to-refresh.
+- Put long content in the dialog's contained scrolling body and persistent form actions in its footer.

@@ -50,7 +50,40 @@ export async function scanBarcelona({
   }
   if (page > 50)
     throw new Error("Barcelona catalog exceeded the 50-page safety limit.");
+  const missingImages = products.filter((product) => !product.imageUrl);
+  for (let index = 0; index < missingImages.length; index += 5) {
+    await Promise.all(
+      missingImages.slice(index, index + 5).map(async (product) => {
+        try {
+          const response = await fetchPage(fetchImpl, product.canonicalUrl);
+          product.imageUrl = barcelonaPageImage(await response.text());
+        } catch {
+          // Optional image enrichment must not invalidate a complete catalog scan.
+        }
+      }),
+    );
+  }
   return validateScan({ source: "barcelona", pageCount: page, products });
+}
+
+export function barcelonaPageImage(html) {
+  // Configurable jerseys can inherit their gallery without exposing catalog images.
+  for (const tag of String(html).match(/<link\b[^>]*>/gi) || []) {
+    const attributes = Object.fromEntries(
+      [...tag.matchAll(/([\w-]+)\s*=\s*(["'])(.*?)\2/gs)].map(
+        ([, name, , value]) => [name.toLowerCase(), decodeHtml(value)],
+      ),
+    );
+    if (
+      attributes.rel?.toLowerCase() === "preload" &&
+      attributes.as?.toLowerCase() === "image" &&
+      attributes.href
+    ) {
+      const url = cleanImage(attributes.href);
+      if (url?.startsWith("https://")) return url;
+    }
+  }
+  return null;
 }
 
 export function normalizeBarcelonaProduct(

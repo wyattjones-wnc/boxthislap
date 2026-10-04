@@ -15,7 +15,7 @@
 
 ### Codex Cloud
 
-Cloud tasks may use a synthetic local branch such as `work` and may not expose a normal `origin` remote. Do not treat that alone as a configuration failure if the task was started from the `boxthislap` environment on `dev`.
+Apply project changes to local `dev` and run validation there unless the user requests another branch. If a cloud task starts on a synthetic branch such as `work`, fetch `origin/dev` when available and switch to local `dev` before editing. Preserve task changes when switching; use a managed worktree if unrelated work prevents a safe switch. If `origin/dev` cannot be accessed, report that limitation instead of treating validation on a synthetic branch as validation on `dev`.
 
 Completed tasks must reach `origin/dev` for review, including from a synthetic cloud branch. Honor explicit local-only, no-push, or alternate-branch instructions. Do not merge into or push `main`, create a PR, or deploy unless explicitly authorized.
 

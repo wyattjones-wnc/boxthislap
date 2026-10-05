@@ -2,20 +2,21 @@
 
 ## Repository and Delivery
 
-- Work from the repository root with remote `https://github.com/wyattjones-wnc/boxthislap.git`; use `dev` unless the user requests another branch. Keep commands and documentation repository-relative so the workflow works in local and cloud checkouts.
+- Work from the repository root with remote `https://github.com/wyattjones-wnc/boxthislap.git`; always base task work on current `origin/dev`, apply changes on local `dev`, and validate there. An explicitly requested task branch or managed worktree must also start from current `origin/dev`. Keep commands and documentation repository-relative so the workflow works in local and cloud checkouts.
+- Change `main` only through an explicitly authorized promotion from `dev` to `main`. Do not implement fixes directly on `main` or use `main` as the starting point for task work. A direct change to `main` is permitted only when the user explicitly authorizes that particular exception; general permission to publish or promote does not authorize it.
 - Preserve unrelated work. Never reset, discard, stash, overwrite, commit, or push it, and never push `main` without explicit authorization.
 - Requests to implement, change, add, fix, update, or remove project files authorize focused edits, validation, and delivery to `dev` for review. Complete each task by committing its changes and pushing them to `origin/dev`, unless the user explicitly requests local-only work, no push, or another branch. Do not merge into or push `main`, create a pull request, or deploy unless explicitly authorized.
 - Before delivering to `dev`, run `node scripts/bump-version.mjs`, fetch and integrate current `origin/dev`, and confirm the outgoing diff contains only this task. Preserve unrelated work and report the pushed commit and validation results.
 
 ## Startup and Context
 
-- At task start, check the repository, branch, status, and divergence from `origin/dev`. Use the permanent checkout when safe. If another task owns local changes or Git state, use a managed worktree from current `origin/dev`; otherwise stop rather than disturbing it.
+- At task start, check the repository, branch, status, and divergence from `origin/dev`. Fetch and integrate current `origin/dev` before editing. If the checkout is on `main` or a synthetic branch, switch safely to local `dev` first. Use the permanent checkout when safe. If another task owns local changes or Git state, use a managed worktree from current `origin/dev`; otherwise stop rather than disturbing it.
 - Use [.agents/overview.md](.agents/overview.md) only when routing is unclear, then read only directly relevant topic files. For obvious small changes, go straight to targeted `rg` searches and bounded source reads.
 - Treat source and linked detailed docs as authoritative. Do not preload all topics or whole copies of large files such as `script.js` and `styles.css` without a task-specific reason.
 
 ### Codex Cloud
 
-Apply project changes to local `dev` and run validation there unless the user requests another branch. If a cloud task starts on a synthetic branch such as `work`, fetch `origin/dev` when available and switch to local `dev` before editing. Preserve task changes when switching; use a managed worktree if unrelated work prevents a safe switch. If `origin/dev` cannot be accessed, report that limitation instead of treating validation on a synthetic branch as validation on `dev`.
+Apply project changes to local `dev` and run validation there. Explicitly requested task branches must be based on current `origin/dev`; direct work on `main` requires the particular exception described above. If a cloud task starts on a synthetic branch such as `work`, fetch `origin/dev` when available and switch to local `dev` before editing. Preserve task changes when switching; use a managed worktree if unrelated work prevents a safe switch. If `origin/dev` cannot be accessed, report that limitation instead of treating validation on a synthetic branch as validation on `dev`.
 
 Completed tasks must reach `origin/dev` for review, including from a synthetic cloud branch. Honor explicit local-only, no-push, or alternate-branch instructions. Do not merge into or push `main`, create a PR, or deploy unless explicitly authorized.
 

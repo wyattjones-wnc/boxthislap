@@ -141,6 +141,13 @@ function localDate(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+export function exerciseDate(date = new Date()) {
+  const exerciseDay = new Date(date);
+  if (exerciseDay.getHours() < 3)
+    exerciseDay.setDate(exerciseDay.getDate() - 1);
+  return localDate(exerciseDay);
+}
+
 function formatTime(seconds: number) {
   const safe = Math.max(0, Math.floor(seconds));
   return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
@@ -164,7 +171,8 @@ export function WorkoutFeature() {
   const isAdmin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
   const ownManagerId = String(session?.managerId || "");
   const today = localDate();
-  const [month, setMonth] = useState(today.slice(0, 7));
+  const activeDate = exerciseDate();
+  const [month, setMonth] = useState(activeDate.slice(0, 7));
   const [selectedManager, setSelectedManager] = useState(ownManagerId);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [workout, setWorkout] = useState<Workout | null>(null);
@@ -262,7 +270,7 @@ export function WorkoutFeature() {
   };
 
   const openDay = (date: string, completed: boolean) => {
-    if (!completed && (date !== today || !ownView)) return;
+    if (!completed && (date !== activeDate || !ownView)) return;
     setSelectedDate(date);
     setWorkout(null);
     setCardio(null);
@@ -481,7 +489,8 @@ export function WorkoutFeature() {
       </header>
       {!selectedDate ? (
         <p className={styles.pageIntro}>
-          Choose today or revisit a completed workout.
+          Choose the current exercise day or revisit a completed workout. Each
+          day stays open until 3:00 a.m.
         </p>
       ) : null}
       {!selectedDate ? (
@@ -606,7 +615,7 @@ export function WorkoutFeature() {
       ) : selectedDate ? (
         <WorkoutTypeChooser
           cardioCompleted={Boolean(selectedDay?.cardioCompleted)}
-          canStart={ownView && selectedDate === today}
+          canStart={ownView && selectedDate === activeDate}
           kettlebellCompleted={Boolean(selectedDay?.kettlebellCompleted)}
           morningCompleted={Boolean(selectedDay?.morningCompleted)}
           openCardio={() => void openCardio()}
@@ -640,6 +649,7 @@ export function WorkoutFeature() {
               loading={calendar.isLoading}
               month={month}
               ownView={ownView}
+              activeDate={activeDate}
               setMonth={setMonth}
               today={today}
               openDay={openDay}
@@ -704,6 +714,7 @@ function RetryMessage({ error, retry }: { error: Error; retry: () => void }) {
 }
 
 function WorkoutCalendar({
+  activeDate,
   days,
   loading,
   month,
@@ -712,6 +723,7 @@ function WorkoutCalendar({
   setMonth,
   today,
 }: {
+  activeDate: string;
   days: WorkoutDay[];
   loading: boolean;
   month: string;
@@ -775,7 +787,7 @@ function WorkoutCalendar({
                 ].filter(Boolean)
               : [];
             const done = completedTypes.length > 0;
-            const enabled = done || (ownView && date === today);
+            const enabled = done || (ownView && date === activeDate);
             return (
               <button
                 className={`${styles.day}${date === today ? ` ${styles.today}` : ""}${done ? ` ${styles.done}` : ""}`}
@@ -783,7 +795,7 @@ function WorkoutCalendar({
                 key={date}
                 onClick={() => void openDay(date, done)}
                 type="button"
-                aria-label={`${prettyDate(date)}${completedTypes.length ? `, completed: ${completedTypes.join(", ")}` : date === today ? ", start workout" : ""}`}
+                aria-label={`${prettyDate(date)}${completedTypes.length ? `, completed: ${completedTypes.join(", ")}` : date === activeDate ? ", start workout" : ""}`}
               >
                 <span>{day}</span>
                 {enabled ? (

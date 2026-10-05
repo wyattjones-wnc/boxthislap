@@ -10,7 +10,14 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
-import { WorkoutFeature } from "./WorkoutFeature";
+import { exerciseDate, WorkoutFeature } from "./WorkoutFeature";
+
+describe("exerciseDate", () => {
+  it("keeps the previous day open until 3 a.m.", () => {
+    expect(exerciseDate(new Date(2026, 9, 5, 2, 59))).toBe("2026-10-04");
+    expect(exerciseDate(new Date(2026, 9, 5, 3, 0))).toBe("2026-10-05");
+  });
+});
 
 const today = (() => {
   const now = new Date();

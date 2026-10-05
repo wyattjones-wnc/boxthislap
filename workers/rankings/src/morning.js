@@ -1,3 +1,5 @@
+import { workoutDateInTimeZone } from "./workout-date.js";
+
 const MAX_ROUTINE_STEPS = 30;
 
 export async function handleMorningRequest({
@@ -253,10 +255,10 @@ function insertMorningSteps(env, managerId, date, steps) {
 
 async function startMorningWorkout(env, managerId, date, timeZone) {
   const zone = String(timeZone || "").trim();
-  if (dateInTimeZone(zone) !== date)
+  if (workoutDateInTimeZone(zone) !== date)
     throw httpError(
       400,
-      "Only today's Morning Stretch routine can be started.",
+      "That Morning Stretch exercise day is no longer available.",
     );
   const existing = await env.DB.prepare(
     "SELECT current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
@@ -369,13 +371,15 @@ async function readMorningWorkout(env, managerId, date) {
 
 async function updateMorningWorkout(env, managerId, date, body) {
   const workout = await env.DB.prepare(
-    "SELECT current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
+    "SELECT time_zone, current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
   )
     .bind(managerId, date)
     .first();
   if (!workout) throw httpError(404, "Morning Stretch routine was not found.");
   if (workout.completed_at)
     throw httpError(409, "Morning Stretch is already complete.");
+  if (workoutDateInTimeZone(String(workout.time_zone || "")) !== date)
+    throw httpError(409, "That exercise day closed at 3:00 a.m.");
   const position = Number(workout.current_position);
   const step = await env.DB.prepare(
     "SELECT step_id, step_type, duration_seconds, target_count, completion_mode, completed_count FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ? AND position = ?",
@@ -496,21 +500,6 @@ function parseWorkoutDate(value) {
   )
     throw httpError(400, "Workout date is invalid.");
   return date;
-}
-
-function dateInTimeZone(timeZone) {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      day: "2-digit",
-      month: "2-digit",
-      timeZone,
-      year: "numeric",
-    }).formatToParts(new Date());
-    const get = (type) => parts.find((part) => part.type === type)?.value || "";
-    return `${get("year")}-${get("month")}-${get("day")}`;
-  } catch {
-    throw httpError(400, "Device timezone is invalid.");
-  }
 }
 
 function parseId(value, label) {

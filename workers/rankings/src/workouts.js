@@ -1,4 +1,5 @@
 import { handleMorningRequest } from "./morning.js";
+import { workoutDateInTimeZone } from "./workout-date.js";
 
 const DAILY_EXERCISE_COUNT = 6;
 
@@ -341,21 +342,6 @@ function parseWorkoutMonth(value) {
   return month;
 }
 
-function dateInTimeZone(timeZone) {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      day: "2-digit",
-      month: "2-digit",
-      timeZone,
-      year: "numeric",
-    }).formatToParts(new Date());
-    const get = (type) => parts.find((part) => part.type === type)?.value || "";
-    return `${get("year")}-${get("month")}-${get("day")}`;
-  } catch {
-    throw httpError(400, "Device timezone is invalid.");
-  }
-}
-
 async function ensureWorkoutAssignment(env, date) {
   const existing = await env.DB.prepare(
     "SELECT COUNT(*) AS count FROM workout_day_exercises WHERE workout_date = ?",
@@ -391,8 +377,8 @@ async function ensureWorkoutAssignment(env, date) {
 
 async function startWorkout(env, managerId, date, timeZone) {
   const zone = String(timeZone || "").trim();
-  if (dateInTimeZone(zone) !== date)
-    throw httpError(400, "Only today's workout can be started.");
+  if (workoutDateInTimeZone(zone) !== date)
+    throw httpError(400, "That exercise day is no longer available.");
   const exercises = await ensureWorkoutAssignment(env, date);
   await env.DB.batch([
     env.DB.prepare(
@@ -465,6 +451,7 @@ async function updateWorkout(env, managerId, date, body) {
   if (!row) throw httpError(404, "Workout was not found.");
   if (row.completed_at)
     throw httpError(409, "Completed workouts are read-only.");
+  requireOpenWorkoutDate(date, row.time_zone);
   const action = String(body?.action || "");
   const elapsed = workoutElapsed(row);
   if (action === "timer-start") {
@@ -550,6 +537,7 @@ async function completeWorkout(env, managerId, date) {
     .first();
   if (!row) throw httpError(404, "Workout was not found.");
   if (row.completed_at) throw httpError(409, "Workout is already complete.");
+  requireOpenWorkoutDate(date, row.time_zone);
   const elapsed = workoutElapsed(row);
   await env.DB.batch([
     env.DB.prepare(
@@ -613,8 +601,8 @@ async function readWorkoutMonth(env, managerId, value) {
 
 async function startCardioWorkout(env, managerId, date, timeZone) {
   const zone = String(timeZone || "").trim();
-  if (dateInTimeZone(zone) !== date)
-    throw httpError(400, "Only today's cardio workout can be started.");
+  if (workoutDateInTimeZone(zone) !== date)
+    throw httpError(400, "That exercise day is no longer available.");
   await env.DB.prepare(
     "INSERT OR IGNORE INTO manager_cardio_workouts (manager_id, workout_date, time_zone) VALUES (?, ?, ?)",
   )
@@ -706,13 +694,19 @@ async function completeCardioWorkout(env, managerId, date) {
 
 async function requireEditableCardioWorkout(env, managerId, date) {
   const row = await env.DB.prepare(
-    "SELECT completed_at FROM manager_cardio_workouts WHERE manager_id = ? AND workout_date = ?",
+    "SELECT time_zone, completed_at FROM manager_cardio_workouts WHERE manager_id = ? AND workout_date = ?",
   )
     .bind(managerId, date)
     .first();
   if (!row) throw httpError(404, "Cardio workout was not found.");
   if (row.completed_at)
     throw httpError(409, "Completed cardio workouts are read-only.");
+  requireOpenWorkoutDate(date, row.time_zone);
+}
+
+function requireOpenWorkoutDate(date, timeZone) {
+  if (workoutDateInTimeZone(String(timeZone || "")) !== date)
+    throw httpError(409, "That exercise day closed at 3:00 a.m.");
 }
 
 export function normalizeCardioEntry(value) {

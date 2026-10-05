@@ -37,6 +37,7 @@ const candidate = {
 };
 
 beforeEach(() => {
+  HTMLElement.prototype.scrollIntoView = vi.fn();
   window.boxThisLapGetManagerAccessToken = async () => "token";
 });
 
@@ -92,7 +93,7 @@ describe("MatchImagesFeature", () => {
           json: async () => ({
             ok: true,
             images: [candidate],
-            pagination: { page: 1, total: 1, hasMore: false },
+            pagination: { page: 1, total: 1, hasMore: true },
             facets: [],
           }),
         } as Response;
@@ -103,11 +104,27 @@ describe("MatchImagesFeature", () => {
     expect(
       await screen.findByRole("heading", { name: "Photos from the win" }),
     ).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByText("Page 2");
+    const readsBeforeFilter = requests.filter((request) =>
+      request.url.includes("/api/match-media?"),
+    ).length;
     await user.selectOptions(screen.getByLabelText("Team"), "2");
+    await screen.findByText("Page 1");
+    expect(
+      requests.filter((request) => request.url.includes("/api/match-media?"))
+        .length,
+    ).toBe(readsBeforeFilter + 1);
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByText("Page 2");
+    const readsBeforeSeen = requests.filter((request) =>
+      request.url.includes("/api/match-media?"),
+    ).length;
     const first = await screen.findByRole("button", {
       name: "Seen through here",
     });
     await user.click(first);
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
     await user.click(
       screen.getByRole("button", { name: "Confirm through here" }),
     );
@@ -124,6 +141,25 @@ describe("MatchImagesFeature", () => {
       sort: "newest",
     });
     expect(await screen.findByText("3 images marked seen.")).not.toBeNull();
+    await waitFor(() =>
+      expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+        block: "start",
+        behavior: "instant",
+      }),
+    );
+    await screen.findByText("Page 1");
+    expect(
+      requests.filter((request) => request.url.includes("/api/match-media?"))
+        .length,
+    ).toBe(readsBeforeSeen + 1);
+    expect(
+      requests.filter((request) =>
+        request.url.endsWith("/api/match-media/health"),
+      ),
+    ).toHaveLength(1);
+    expect(
+      requests.filter((request) => request.url.includes("/seen-through")),
+    ).toHaveLength(1);
     await user.click(
       screen.getByRole("button", { name: /Scan for new images/ }),
     );

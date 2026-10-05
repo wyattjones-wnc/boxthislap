@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, HardDriveDownload, Images, Play, X } from "lucide-react";
 import { FOOTY_MATCH_NOTES_ENDPOINT } from "../../../modules/siteConfig";
 import styles from "./MatchImagesFeature.module.css";
@@ -140,6 +140,7 @@ function isReviewableFixture(fixture: Fixture, now = Date.now()) {
 }
 
 export default function MatchImagesFeature() {
+  const pageRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>("unseen");
   const [teamId, setTeamId] = useState("");
   const [source, setSource] = useState("");
@@ -156,42 +157,59 @@ export default function MatchImagesFeature() {
   const [confirmingId, setConfirmingId] = useState("");
   const [selected, setSelected] = useState<ImageCandidate | null>(null);
 
-  const load = useCallback(async () => {
-    const query = new URLSearchParams({ page: String(page), view });
-    if (teamId) query.set("teamId", teamId);
-    if (source) query.set("source", source);
-    if (category) query.set("category", category);
-    if (matchId) query.set("matchId", matchId);
-    setBusy(true);
-    setError("");
-    try {
-      const [feedValue, healthValue] = await Promise.all([
-        api<{ ok: true } & Feed>(`/api/match-media?${query}`),
-        api<{ ok: true; latestScan: Scan | null; sources: SourceHealth[] }>(
-          "/api/match-media/health",
-        ),
-      ]);
-      setFeed(feedValue);
-      setScan(healthValue.latestScan);
-      setSources(healthValue.sources);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Match images could not be loaded.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }, [category, matchId, page, source, teamId, view]);
+  const load = useCallback(
+    async (requestedPage = page) => {
+      const query = new URLSearchParams({ page: String(requestedPage), view });
+      if (teamId) query.set("teamId", teamId);
+      if (source) query.set("source", source);
+      if (category) query.set("category", category);
+      if (matchId) query.set("matchId", matchId);
+      setBusy(true);
+      setError("");
+      try {
+        const feedValue = await api<{ ok: true } & Feed>(
+          `/api/match-media?${query}`,
+        );
+        setFeed(feedValue);
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Match images could not be loaded.",
+        );
+      } finally {
+        setBusy(false);
+      }
+    },
+    [category, matchId, page, source, teamId, view],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
+  const loadHealth = useCallback(async () => {
+    try {
+      const value = await api<{
+        ok: true;
+        latestScan: Scan | null;
+        sources: SourceHealth[];
+      }>("/api/match-media/health");
+      setScan(value.latestScan);
+      setSources(value.sources);
+      return value.latestScan;
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Scan health could not be loaded.",
+      );
+      return undefined;
+    }
+  }, []);
+
   useEffect(() => {
-    setPage(1);
-    setConfirmingId("");
-  }, [category, matchId, source, teamId, view]);
+    void loadHealth();
+  }, [loadHealth]);
   useEffect(() => {
     void fetch("data/footy-schedule.json", { cache: "no-store" })
       .then((response) => response.json())
@@ -219,9 +237,24 @@ export default function MatchImagesFeature() {
   }, []);
   useEffect(() => {
     if (!scan || !["queued", "running"].includes(scan.status)) return;
-    const timer = window.setInterval(() => void load(), 5000);
+    let checking = false;
+    const timer = window.setInterval(async () => {
+      if (checking) return;
+      checking = true;
+      try {
+        const latest = await loadHealth();
+        if (
+          latest !== undefined &&
+          (!latest || !["queued", "running"].includes(latest.status))
+        ) {
+          await load();
+        }
+      } finally {
+        checking = false;
+      }
+    }, 15_000);
     return () => window.clearInterval(timer);
-  }, [load, scan]);
+  }, [load, loadHealth, scan]);
 
   const grouped = useMemo(() => {
     const values = new Map<string, ImageCandidate[]>();
@@ -322,8 +355,9 @@ export default function MatchImagesFeature() {
         `${value.seen} ${value.seen === 1 ? "image" : "images"} marked seen.`,
       );
       setConfirmingId("");
-      setPage(1);
-      await load();
+      if (page === 1) await load(1);
+      else setPage(1);
+      pageRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -383,7 +417,7 @@ export default function MatchImagesFeature() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
       <header className={styles.heading}>
         <div>
           <a
@@ -442,7 +476,11 @@ export default function MatchImagesFeature() {
           <span>View</span>
           <select
             value={view}
-            onChange={(event) => setView(event.target.value as View)}
+            onChange={(event) => {
+              setView(event.target.value as View);
+              setPage(1);
+              setConfirmingId("");
+            }}
           >
             <option value="unseen">Unseen</option>
             <option value="saved">Soft Saved</option>
@@ -456,7 +494,11 @@ export default function MatchImagesFeature() {
           <span>Team</span>
           <select
             value={teamId}
-            onChange={(event) => setTeamId(event.target.value)}
+            onChange={(event) => {
+              setTeamId(event.target.value);
+              setPage(1);
+              setConfirmingId("");
+            }}
           >
             <option value="">All teams</option>
             <option value="1">Arsenal</option>
@@ -467,7 +509,11 @@ export default function MatchImagesFeature() {
           <span>Source</span>
           <select
             value={source}
-            onChange={(event) => setSource(event.target.value)}
+            onChange={(event) => {
+              setSource(event.target.value);
+              setPage(1);
+              setConfirmingId("");
+            }}
           >
             <option value="">All sources</option>
             <option value="arsenal">Arsenal</option>
@@ -479,7 +525,11 @@ export default function MatchImagesFeature() {
           <span>Category</span>
           <select
             value={category}
-            onChange={(event) => setCategory(event.target.value)}
+            onChange={(event) => {
+              setCategory(event.target.value);
+              setPage(1);
+              setConfirmingId("");
+            }}
           >
             <option value="">All categories</option>
             <option value="match">Match</option>
@@ -493,7 +543,11 @@ export default function MatchImagesFeature() {
           <span>Match</span>
           <select
             value={matchId}
-            onChange={(event) => setMatchId(event.target.value)}
+            onChange={(event) => {
+              setMatchId(event.target.value);
+              setPage(1);
+              setConfirmingId("");
+            }}
           >
             <option value="">All matches</option>
             {feed?.facets

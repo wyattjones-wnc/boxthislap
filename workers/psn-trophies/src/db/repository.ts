@@ -51,22 +51,6 @@ export async function saveGame(
   `).bind(game.id).all<Record<string, unknown>>();
   const existingById = new Map((existingTrophies.results || []).map((row) => [Number(row.trophy_id), row]));
   const existingGroupsById = new Map((existingGroups.results || []).map((row) => [String(row.group_id), row]));
-  const ordinalById = new Map<number, { earnedNumber: number | null; platinumNumber: number | null }>();
-  const newlyEarned = trophies
-    .filter((trophy) => trophy.earned && !Number(existingById.get(trophy.trophyId)?.earned_number))
-    .sort((first, second) => String(first.earnedAt || "").localeCompare(String(second.earnedAt || "")) || first.trophyId - second.trophyId);
-  const newPlatinums = newlyEarned.filter((trophy) => trophy.type === "platinum").length;
-  const [earnedMaximum, platinumMaximum] = await Promise.all([
-    reserveOrdinalRange(env, "earned_number", newlyEarned.length),
-    reserveOrdinalRange(env, "platinum_number", newPlatinums),
-  ]);
-  let nextEarnedNumber = earnedMaximum - newlyEarned.length;
-  let nextPlatinumNumber = platinumMaximum - newPlatinums;
-  for (const trophy of newlyEarned) {
-    nextEarnedNumber += 1;
-    const platinumNumber = trophy.type === "platinum" ? ++nextPlatinumNumber : null;
-    ordinalById.set(trophy.trophyId, { earnedNumber: nextEarnedNumber, platinumNumber });
-  }
   if (!existing || !sameGame(existing, game)) await env.DB.prepare(`
     INSERT INTO games (
       id, np_communication_id, title_name, platforms, icon_url, progress,
@@ -109,7 +93,8 @@ export async function saveGame(
   ).run();
 
   const changedGroups = groups.filter((group) => !sameGroup(existingGroupsById.get(group.groupId), group));
-  const changedTrophies = trophies.filter((trophy) => !sameTrophy(existingById.get(trophy.trophyId), trophy));
+  const changedTrophies = trophies.filter((trophy) => !sameTrophy(existingById.get(trophy.trophyId), trophy))
+    .sort((first, second) => String(first.earnedAt || "").localeCompare(String(second.earnedAt || "")) || first.trophyId - second.trophyId);
 
   const statements: D1PreparedStatement[] = [
     ...changedGroups.map((group) => env.DB.prepare(`
@@ -143,8 +128,8 @@ export async function saveGame(
       trophy.gameId, trophy.trophyId, trophy.groupId, trophy.name, trophy.description, trophy.type,
       trophy.iconUrl, Number(trophy.earned), trophy.earnedAt, trophy.rarityClass, trophy.earnedRate,
       trophy.progress, syncedAt, syncedAt,
-      ordinalById.get(trophy.trophyId)?.earnedNumber || existingById.get(trophy.trophyId)?.earned_number || null,
-      ordinalById.get(trophy.trophyId)?.platinumNumber || existingById.get(trophy.trophyId)?.platinum_number || null,
+      existingById.get(trophy.trophyId)?.earned_number || null,
+      existingById.get(trophy.trophyId)?.platinum_number || null,
     )),
   ];
 
@@ -217,19 +202,6 @@ function sameNumber(first: unknown, second: unknown): boolean {
 function sameNullableNumber(first: unknown, second: unknown): boolean {
   if ((first === null || first === undefined) && (second === null || second === undefined)) return true;
   return Number(first) === Number(second);
-}
-
-async function reserveOrdinalRange(env: PsnEnvironment, key: string, count: number): Promise<number> {
-  if (!count) {
-    const current = await env.DB.prepare("SELECT value FROM sync_state WHERE key = ?").bind(key).first<{ value?: unknown }>();
-    return Number(current?.value || 0);
-  }
-  const row = await env.DB.prepare(`
-    INSERT INTO sync_state (key, value, updated_at) VALUES (?, ?, ?)
-    ON CONFLICT(key) DO UPDATE SET value = CAST(sync_state.value AS INTEGER) + CAST(excluded.value AS INTEGER), updated_at = excluded.updated_at
-    RETURNING value
-  `).bind(key, String(count), new Date().toISOString()).first<{ value?: unknown }>();
-  return Number(row?.value || count);
 }
 
 export async function getSyncCursor(env: PsnEnvironment): Promise<number> {

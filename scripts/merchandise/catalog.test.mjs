@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   arsenalListingImage,
+  barcelonaPageImage,
   normalizeArsenalProduct,
   normalizeBarcelonaProduct,
   normalizeCategory,
@@ -87,6 +88,95 @@ test("Barcelona scanner paginates until a short page", async () => {
   assert.equal(scan.products.length, 1);
   assert.equal(scan.pageCount, 2);
   assert.equal(scan.complete, true);
+});
+
+test("excludes synthetic Barcelona customization products without shortening pagination", async () => {
+  const calls = [];
+  const pages = [
+    [
+      { id: 1, product_type: "Ficticious" },
+      { id: 2, tags: "KIT_AWAY, PRODUCTO_FICTICIO" },
+      { id: 3, tags: ["PRODUCTO_FICTICIO"] },
+    ],
+    [
+      {
+        id: 4,
+        handle: "jersey",
+        title: "Away Jersey",
+        tags: ["PRODUCTO_NO_FICTICIO"],
+        image: { src: "https://cdn.example/jersey.jpg" },
+      },
+    ],
+  ];
+  const scan = await scanBarcelona({
+    limit: 3,
+    fetchImpl: async (url) => {
+      calls.push(url);
+      return { ok: true, json: async () => ({ products: pages.shift() }) };
+    },
+  });
+  assert.deepEqual(
+    scan.products.map((product) => product.id),
+    ["barcelona:4"],
+  );
+  assert.equal(scan.pageCount, 2);
+  assert.equal(calls.length, 2);
+  assert.equal(scan.excludedProductCount, 3);
+});
+
+test("extracts a Barcelona product gallery preload", () => {
+  assert.equal(
+    barcelonaPageImage(`<link rel="icon" href="/favicon.png">
+      <link href='//store.fcbarcelona.com/cdn/shop/files/jersey.png?v=1&amp;width=450'
+        fetchpriority="high" as="image" rel="preload">`),
+    "https://store.fcbarcelona.com/cdn/shop/files/jersey.png?v=1&width=450",
+  );
+  assert.equal(
+    barcelonaPageImage('<link rel="preload" as="style" href="/base.css">'),
+    null,
+  );
+});
+
+test("Barcelona scanner enriches only missing images and tolerates page failures", async () => {
+  const calls = [];
+  const scan = await scanBarcelona({
+    fetchImpl: async (url) => {
+      calls.push(url);
+      if (url.includes("products.json")) {
+        return {
+          ok: true,
+          json: async () => ({
+            products: [
+              { id: 1, handle: "custom", title: "Custom Jersey", images: [] },
+              {
+                id: 2,
+                handle: "plain",
+                title: "Plain Jersey",
+                image: { src: "https://cdn.example/plain.jpg" },
+              },
+              {
+                id: 3,
+                handle: "unavailable",
+                title: "Other Jersey",
+                images: [],
+              },
+            ],
+          }),
+        };
+      }
+      if (url.endsWith("/unavailable")) return { ok: false, status: 503 };
+      return {
+        ok: true,
+        text: async () =>
+          '<link rel="preload" as="image" href="//cdn.example/custom.jpg">',
+      };
+    },
+  });
+  assert.equal(scan.products[0].imageUrl, "https://cdn.example/custom.jpg");
+  assert.equal(scan.products[1].imageUrl, "https://cdn.example/plain.jpg");
+  assert.equal(scan.products[2].imageUrl, null);
+  assert.equal(scan.complete, true);
+  assert.equal(calls.length, 3);
 });
 
 test("normalizes Arsenal JSON-LD using the product code", () => {

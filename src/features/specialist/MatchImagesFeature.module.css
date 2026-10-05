@@ -93,9 +93,10 @@
   gap: 0.35rem;
 }
 .grid {
+  align-items: start;
   display: grid;
   gap: 0.8rem;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
 }
 .card {
   background: var(--panel);
@@ -109,17 +110,20 @@
   border: 0;
   border-radius: 0;
   display: block;
-  height: 240px;
   padding: 0;
   width: 100%;
 }
 .preview img,
 .preview iframe {
   border: 0;
-  height: 100%;
+  display: block;
+  height: auto;
   object-fit: contain;
   pointer-events: none;
   width: 100%;
+}
+.preview iframe {
+  aspect-ratio: 3 / 2;
 }
 .meta {
   display: grid;
@@ -215,8 +219,5 @@
   }
   .review {
     grid-template-columns: 1fr;
-  }
-  .preview {
-    height: 210px;
   }
 }

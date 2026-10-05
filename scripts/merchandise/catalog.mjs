@@ -35,6 +35,7 @@ export async function scanBarcelona({
   limit = 250,
 } = {}) {
   const products = [];
+  let excludedProductCount = 0;
   let page = 1;
   for (; page <= 50; page += 1) {
     const url = `${baseUrl}/collections/all/products.json?limit=${limit}&page=${page}`;
@@ -44,13 +45,66 @@ export async function scanBarcelona({
       throw new Error(
         `Barcelona catalog returned an invalid product response on page ${page}.`,
       );
-    for (const product of value.products)
+    for (const product of value.products) {
+      const tags = Array.isArray(product.tags)
+        ? product.tags
+        : String(product.tags || "").split(",");
+      if (
+        String(product.product_type || "")
+          .trim()
+          .toLowerCase() === "ficticious" ||
+        tags.some(
+          (tag) => String(tag).trim().toUpperCase() === "PRODUCTO_FICTICIO",
+        )
+      ) {
+        excludedProductCount += 1;
+        continue;
+      }
       products.push(normalizeBarcelonaProduct(product, baseUrl));
+    }
     if (value.products.length < limit) break;
   }
   if (page > 50)
     throw new Error("Barcelona catalog exceeded the 50-page safety limit.");
-  return validateScan({ source: "barcelona", pageCount: page, products });
+  const missingImages = products.filter((product) => !product.imageUrl);
+  for (let index = 0; index < missingImages.length; index += 5) {
+    await Promise.all(
+      missingImages.slice(index, index + 5).map(async (product) => {
+        try {
+          const response = await fetchPage(fetchImpl, product.canonicalUrl);
+          product.imageUrl = barcelonaPageImage(await response.text());
+        } catch {
+          // Optional image enrichment must not invalidate a complete catalog scan.
+        }
+      }),
+    );
+  }
+  return validateScan({
+    source: "barcelona",
+    pageCount: page,
+    products,
+    excludedProductCount,
+  });
+}
+
+export function barcelonaPageImage(html) {
+  // Configurable jerseys can inherit their gallery without exposing catalog images.
+  for (const tag of String(html).match(/<link\b[^>]*>/gi) || []) {
+    const attributes = Object.fromEntries(
+      [...tag.matchAll(/([\w-]+)\s*=\s*(["'])(.*?)\2/gs)].map(
+        ([, name, , value]) => [name.toLowerCase(), decodeHtml(value)],
+      ),
+    );
+    if (
+      attributes.rel?.toLowerCase() === "preload" &&
+      attributes.as?.toLowerCase() === "image" &&
+      attributes.href
+    ) {
+      const url = cleanImage(attributes.href);
+      if (url?.startsWith("https://")) return url;
+    }
+  }
+  return null;
 }
 
 export function normalizeBarcelonaProduct(

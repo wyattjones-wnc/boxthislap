@@ -1,4 +1,5 @@
 import { handleMorningRequest } from "./morning.js";
+import { workoutDateInTimeZone } from "./workout-date.js";
 
 const DAILY_EXERCISE_COUNT = 6;
 
@@ -341,21 +342,6 @@ function parseWorkoutMonth(value) {
   return month;
 }
 
-function dateInTimeZone(timeZone) {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      day: "2-digit",
-      month: "2-digit",
-      timeZone,
-      year: "numeric",
-    }).formatToParts(new Date());
-    const get = (type) => parts.find((part) => part.type === type)?.value || "";
-    return `${get("year")}-${get("month")}-${get("day")}`;
-  } catch {
-    throw httpError(400, "Device timezone is invalid.");
-  }
-}
-
 async function ensureWorkoutAssignment(env, date) {
   const existing = await env.DB.prepare(
     "SELECT COUNT(*) AS count FROM workout_day_exercises WHERE workout_date = ?",
@@ -391,8 +377,8 @@ async function ensureWorkoutAssignment(env, date) {
 
 async function startWorkout(env, managerId, date, timeZone) {
   const zone = String(timeZone || "").trim();
-  if (dateInTimeZone(zone) !== date)
-    throw httpError(400, "Only today's workout can be started.");
+  if (workoutDateInTimeZone(zone) !== date)
+    throw httpError(400, "That exercise day is no longer available.");
   const exercises = await ensureWorkoutAssignment(env, date);
   await env.DB.batch([
     env.DB.prepare(
@@ -465,6 +451,7 @@ async function updateWorkout(env, managerId, date, body) {
   if (!row) throw httpError(404, "Workout was not found.");
   if (row.completed_at)
     throw httpError(409, "Completed workouts are read-only.");
+  requireOpenWorkoutDate(date, row.time_zone);
   const action = String(body?.action || "");
   const elapsed = workoutElapsed(row);
   if (action === "timer-start") {
@@ -550,6 +537,7 @@ async function completeWorkout(env, managerId, date) {
     .first();
   if (!row) throw httpError(404, "Workout was not found.");
   if (row.completed_at) throw httpError(409, "Workout is already complete.");
+  requireOpenWorkoutDate(date, row.time_zone);
   const elapsed = workoutElapsed(row);
   await env.DB.batch([
     env.DB.prepare(
@@ -568,22 +556,30 @@ async function readWorkoutMonth(env, managerId, value) {
     `SELECT workout_date,
       MAX(kettlebell_completed) AS kettlebell_completed,
       MAX(cardio_completed) AS cardio_completed,
-      MAX(morning_completed) AS morning_completed
+      MAX(morning_completed) AS morning_completed,
+      MAX(knee_completed) AS knee_completed
     FROM (
-      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed
+      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed, 0 AS knee_completed
       FROM manager_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
       UNION ALL
-      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed, 0 AS morning_completed
+      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed, 0 AS morning_completed, 0 AS knee_completed
       FROM manager_cardio_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
       UNION ALL
-      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, completed_at IS NOT NULL AS morning_completed
+      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, completed_at IS NOT NULL AS morning_completed, 0 AS knee_completed
       FROM manager_morning_workouts
+      WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
+      UNION ALL
+      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed, completed_at IS NOT NULL AS knee_completed
+      FROM manager_knee_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
     ) GROUP BY workout_date ORDER BY workout_date`,
   )
     .bind(
+      managerId,
+      `${month}-01`,
+      `${month}-01`,
       managerId,
       `${month}-01`,
       `${month}-01`,
@@ -601,10 +597,12 @@ async function readWorkoutMonth(env, managerId, value) {
       completed: Boolean(
         row.kettlebell_completed ||
         row.cardio_completed ||
-        row.morning_completed,
+        row.morning_completed ||
+        row.knee_completed,
       ),
       date: String(row.workout_date),
       kettlebellCompleted: Boolean(row.kettlebell_completed),
+      kneeCompleted: Boolean(row.knee_completed),
       morningCompleted: Boolean(row.morning_completed),
     })),
     month,
@@ -613,8 +611,8 @@ async function readWorkoutMonth(env, managerId, value) {
 
 async function startCardioWorkout(env, managerId, date, timeZone) {
   const zone = String(timeZone || "").trim();
-  if (dateInTimeZone(zone) !== date)
-    throw httpError(400, "Only today's cardio workout can be started.");
+  if (workoutDateInTimeZone(zone) !== date)
+    throw httpError(400, "That exercise day is no longer available.");
   await env.DB.prepare(
     "INSERT OR IGNORE INTO manager_cardio_workouts (manager_id, workout_date, time_zone) VALUES (?, ?, ?)",
   )
@@ -706,13 +704,19 @@ async function completeCardioWorkout(env, managerId, date) {
 
 async function requireEditableCardioWorkout(env, managerId, date) {
   const row = await env.DB.prepare(
-    "SELECT completed_at FROM manager_cardio_workouts WHERE manager_id = ? AND workout_date = ?",
+    "SELECT time_zone, completed_at FROM manager_cardio_workouts WHERE manager_id = ? AND workout_date = ?",
   )
     .bind(managerId, date)
     .first();
   if (!row) throw httpError(404, "Cardio workout was not found.");
   if (row.completed_at)
     throw httpError(409, "Completed cardio workouts are read-only.");
+  requireOpenWorkoutDate(date, row.time_zone);
+}
+
+function requireOpenWorkoutDate(date, timeZone) {
+  if (workoutDateInTimeZone(String(timeZone || "")) !== date)
+    throw httpError(409, "That exercise day closed at 3:00 a.m.");
 }
 
 export function normalizeCardioEntry(value) {

@@ -12,6 +12,18 @@ import {
   normalizeMorningRoutine,
   readEffectiveRoutine,
 } from "../src/morning.js";
+import { workoutDateInTimeZone } from "../src/workout-date.js";
+
+test("the exercise day changes at 3 a.m. in the manager's timezone", () => {
+  assert.equal(
+    workoutDateInTimeZone("America/New_York", new Date("2026-10-05T06:59:00Z")),
+    "2026-10-04",
+  );
+  assert.equal(
+    workoutDateInTimeZone("America/New_York", new Date("2026-10-05T07:00:00Z")),
+    "2026-10-05",
+  );
+});
 
 test("managers inherit Wyatt's routine until they save their own", async () => {
   const rows = new Map([
@@ -68,6 +80,34 @@ test("managers inherit Wyatt's routine until they save their own", async () => {
   assert.equal(wyatt.hasOverride, false);
   assert.equal(wyatt.isDefaultManager, true);
   assert.equal(wyatt.routine.steps[0].name, "Wyatt step");
+});
+
+test("Knee reads from its own routine storage", async () => {
+  const statements = [];
+  const url = new URL("https://example.com/api/me/knee-routine");
+  const result = await handleWorkoutRequest({
+    env: {
+      DEFAULT_MORNING_MANAGER_ID: "6",
+      DB: {
+        prepare: (sql) => {
+          statements.push(sql);
+          return {
+            bind: () => ({ all: async () => ({ results: [] }) }),
+          };
+        },
+      },
+    },
+    readBody: async () => ({}),
+    readManagerCatalog: async () => [],
+    request: new Request(url),
+    requireManager: async () => ({ sub: "8" }),
+    url,
+  });
+
+  assert.deepEqual(result.routine.steps, []);
+  assert.equal(result.source, "default-manager");
+  assert.ok(statements.every((sql) => sql.includes("knee_routine_steps")));
+  assert.ok(statements.every((sql) => !sql.includes("morning_routine_steps")));
 });
 
 test("morning routines normalize ordered timer, toggle, and tally steps", () => {
@@ -204,6 +244,7 @@ test("cardio entries accept walks and runs with bounded mileage", () => {
 
 test("completing a workout does not require a JSON request body", async () => {
   let readBodyCalled = false;
+  const date = workoutDateInTimeZone("America/New_York");
   const workoutRow = {
     completed_at: null,
     elapsed_seconds: 300,
@@ -237,11 +278,11 @@ test("completing a workout does not require a JSON request body", async () => {
     },
     readManagerCatalog: async () => [],
     request: new Request(
-      "https://example.com/api/me/workouts/2026-09-25/complete",
+      `https://example.com/api/me/workouts/${date}/complete`,
       { method: "POST" },
     ),
     requireManager: async () => ({ sub: "8" }),
-    url: new URL("https://example.com/api/me/workouts/2026-09-25/complete"),
+    url: new URL(`https://example.com/api/me/workouts/${date}/complete`),
   });
 
   assert.equal(readBodyCalled, false);

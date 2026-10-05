@@ -272,16 +272,16 @@ export function parseArsenalGalleryResponse(payload, gallery) {
     .map((item, ordinal) => {
       const renditions = Array.isArray(item?.list) ? item.list : [];
       const preferred = [
+        "original",
         "xxl_landscape",
         "xl_landscape",
         "large_landscape",
-        "original",
       ];
       const rendition = preferred
         .map((type) => renditions.find((candidate) => candidate?.type === type))
         .find(Boolean);
       const sourceImageUrl = absoluteUrl(
-        rendition?.url || item?.url || item?.originalUrl,
+        item?.originalUrl || rendition?.url || item?.url,
         gallery.sourceUrl,
       );
       if (!plausibleImageUrl(sourceImageUrl, "arsenal")) return null;

@@ -99,6 +99,39 @@ test("Arsenal extraction uses only the exact structured gallery images", () => {
   assert.equal(images[1].ordinal, 1);
 });
 
+test("Arsenal preserves original portrait images ahead of landscape crops", () => {
+  const original =
+    "https://assets.arsenal.com/prod/images/original/portrait.jpg";
+  const landscape =
+    "https://assets.arsenal.com/prod/images/xxl_landscape/portrait.jpg";
+  const gallery = {
+    sourceUrl: "https://www.arsenal.com/news/training-gallery",
+  };
+  const extract = (image) =>
+    parseArsenalGalleryResponse(
+      {
+        data: { singleGallery: { images: [image] } },
+      },
+      gallery,
+    )[0];
+  const cropped = {
+    url: landscape,
+    list: [{ type: "xxl_landscape", url: landscape }],
+  };
+  assert.equal(
+    extract({ ...cropped, originalUrl: original }).sourceImageUrl,
+    original,
+  );
+  const fromRenditions = extract({
+    ...cropped,
+    list: [...cropped.list, { type: "original", url: original }],
+  });
+  assert.equal(fromRenditions.sourceImageUrl, original);
+  assert.equal(fromRenditions.sourceImageKey, extract(cropped).sourceImageKey);
+  assert.equal(fromRenditions.id, extract(cropped).id);
+  assert.equal(extract(cropped).sourceImageUrl, landscape);
+});
+
 test("fixture matching applies the documented confidence threshold", () => {
   const result = matchGalleryToFixture(
     {

@@ -1,5 +1,21 @@
 # Deployment and Cloudflare Credentials
 
+## Free Usage Budget and Approval
+
+The user's permanent goal is to remain **well under Cloudflare's free usage limits**, not merely avoid an invoice. Preserve substantial headroom for ordinary traffic and other Workers/databases in the same account. This applies to one-time maintenance and ongoing behavior.
+
+Before a potentially heavy action, prepare a concrete usage review:
+
+1. Identify the target account/resources and every pending migration or automatic workflow that will run. Use local SQL analysis, fixtures, and existing observations first; avoid expensive remote scans just to estimate another scan.
+2. Estimate one-time and recurring usage: D1 rows read and written (including index maintenance), storage, Worker requests and CPU, KV operations, scheduled frequency, retries, and validation queries where relevant. Compare with current account usage and current applicable free quotas. Do not invent quota figures or treat missing usage data as zero.
+3. Explain the expected impact, available headroom, uncertainty, and cheaper options such as narrower updates, indexed reads, fewer checks, or postponement. Splitting work into batches does not by itself reduce total usage.
+4. Discuss the plan with the user and obtain explicit agreement before the first potentially heavy command, workflow dispatch, or push that automatically starts it. Record the approved scope and estimate in the task/PR description or maintenance notes. Broad authorization to deploy is not approval for substantial usage.
+5. After execution, report available usage observations and any material difference from the estimate. Do not repeat a costly operation without reviewing its additional impact.
+
+Full-table renumbering, broad backfills, index creation/rebuilds, full-library syncs, increased polling, and repeated remote verification are examples requiring review. Small scoped operations may proceed within normal task authorization when their impact is known to be low. When cost or headroom cannot be bounded confidently, pause the potentially heavy action and discuss the uncertainty first. Do not upgrade to paid usage or rely on paid overages without explicit approval.
+
+The PSN numbering repair (`0012_atomic_trophy_numbers.sql`) is a concrete example: it rewrites trophy ordinals and creates indexes across existing data. Future comparable work must receive this review before execution, even when described as a bug fix.
+
 ## Credential Model
 
 `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are encrypted GitHub Actions repository secrets. Their values must never be committed, printed, copied into documentation, or placed in a checked-in `.env` file.
@@ -10,7 +26,7 @@ Do not ask the user to expose the token to a Cloud chat when an existing workflo
 
 ## Canonical Workflow
 
-Deployment requires explicit user approval. After the relevant commit is on `dev`:
+Deployment requires explicit user approval and the usage review above for potentially heavy operations. Check path-triggered workflows before pushing so approval precedes automatic execution. After the relevant commit is on `dev`:
 
 1. Select the matching workflow in `.github/workflows`.
 2. Dispatch it against `dev` with `gh workflow run`.

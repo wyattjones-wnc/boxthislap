@@ -28,6 +28,13 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 - Keep completion reports concise. Include manual verification only for meaningful behavior not reliably covered by automated checks.
 - Keep one task focused on one initiative. For a materially different initiative after completion, recommend a fresh task in the saved `boxthislap` project to avoid carrying old history.
 
+## Cloudflare Free Usage Budget
+
+- The standing goal is to stay **well below Cloudflare free usage limits**, with substantial headroom for normal use across the entire account. Apply this to design, queries, indexing, migrations, synchronization, scheduled jobs, verification, and deployments.
+- Before any operation that could consume substantial usage, estimate its impact against current usage and the applicable free quotas, explain the estimate, uncertainty, and lower-usage alternatives, and obtain explicit user agreement **before execution**. General permission to fix, push, migrate, or deploy does not approve unusually heavy usage.
+- Broad D1 scans or rewrites, index creation or rebuilds, full-library backfills, repeated remote checks, and higher-frequency jobs require a usage review. Include rows read/written, index maintenance, storage, Worker requests/CPU, KV operations, and recurring costs where relevant. If impact is unknown, pause the potentially heavy action instead of assuming it is cheap.
+- Check automatic workflow triggers before pushing: a push that runs a heavy migration or deployment is execution, not a harmless preparation step. Prepare and test locally first. Follow [.agents/deployment.md](.agents/deployment.md) for the usage review and approval record.
+
 ## Cloudflare Deployments
 
 - Cloudflare credentials are intentionally stored as encrypted GitHub Actions repository secrets, not in this repository and not necessarily in a Codex Cloud environment. An empty Codex secret list does not prevent workflow-based deployment.

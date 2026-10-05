@@ -20,13 +20,14 @@ Deployment requires explicit user approval. After the relevant commit is on `dev
 
 Available Worker workflows:
 
-| Worker                         | Workflow                         | Trigger command                                                                                                   |
-| ------------------------------ | -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Rankings                       | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=true`                                   |
-| Rankings, no pending migration | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=false`                                  |
-| Merchandise                    | `deploy-merchandise-worker.yml`  | `gh workflow run deploy-merchandise-worker.yml --ref dev`                                                         |
-| Collectibles                   | `deploy-collectibles-worker.yml` | `gh workflow run deploy-collectibles-worker.yml --ref dev`                                                        |
-| PSN trophies                   | `deploy-psn-worker.yml`          | Automatically runs for matching `dev` changes; manual fallback: `gh workflow run deploy-psn-worker.yml --ref dev` |
+| Worker                         | Workflow                         | Trigger command                                                                                                          |
+| ------------------------------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Rankings                       | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=true`                                          |
+| Rankings, no pending migration | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=false`                                         |
+| Merchandise                    | `deploy-merchandise-worker.yml`  | `gh workflow run deploy-merchandise-worker.yml --ref dev`                                                                |
+| Collectibles                   | `deploy-collectibles-worker.yml` | `gh workflow run deploy-collectibles-worker.yml --ref dev`                                                               |
+| Footy Push                     | `deploy-footy-push-worker.yml`   | Automatically runs for matching `dev` changes; manual fallback: `gh workflow run deploy-footy-push-worker.yml --ref dev` |
+| PSN trophies                   | `deploy-psn-worker.yml`          | Automatically runs for matching `dev` changes; manual fallback: `gh workflow run deploy-psn-worker.yml --ref dev`        |
 
 Useful verification commands:
 
@@ -38,6 +39,12 @@ gh run view RUN_ID --log
 ```
 
 For a Worker without a deployment workflow, prefer adding a narrowly scoped workflow that references `${{ secrets.CLOUDFLARE_API_TOKEN }}` and `${{ secrets.CLOUDFLARE_ACCOUNT_ID }}` over distributing those credentials to individual Cloud environments. Follow the established workflows for Node setup, Wrangler configuration, concurrency, tests, and migrations.
+
+## GitHub Authentication Failures
+
+If `gh auth status` reports an invalid `GH_TOKEN`, the problem is the Cloud environment's GitHub connection, not the Cloudflare repository secrets. Do not put a GitHub token in the repository, copy one from another chat, or substitute the Cloudflare token.
+
+For a path-triggered workflow, successfully pushing the change to `dev` is sufficient; GitHub starts the deployment without a separate `gh workflow run` command. If a manual dispatch is still required, repair or reconnect GitHub access in that Cloud environment, start a chat with the corrected configuration, or dispatch the workflow from the GitHub Actions interface. Report the authentication limitation rather than attempting to bypass it.
 
 ## Recommended Improvements
 

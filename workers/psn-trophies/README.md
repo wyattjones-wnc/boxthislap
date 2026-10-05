@@ -102,3 +102,9 @@ GET http://localhost:8787/api/psn/status
 Supported trophy filters are `earned=true|false`, `group=<id>`, `sort=date|id|rarity`, and `order=asc|desc`.
 
 The hourly Cron Trigger also advances a persisted title cursor, refreshing the complete current library in roughly one week before starting again. Failed title requests produce a partial sync record while successful titles remain available; authentication or title-list failures are recorded as failed runs.
+
+## Atomic trophy numbering repair
+
+Migration `0012_atomic_trophy_numbers.sql` rebuilds earned and platinum numbers in earned-date order and resets the cached totals. Favorites and featured selections remain attached to trophy IDs. It also installs database triggers that allocate numbers within the trophy write transaction, so failed writes and overlapping sync retries cannot advance counters without saving trophies. The Worker no longer reserves ranges before writing.
+
+Apply the D1 migration before deploying the updated Worker. Both are required; deploying this Worker without the migration leaves new trophies unnumbered. Subsequent new trophies append to the persisted sequence, as before.

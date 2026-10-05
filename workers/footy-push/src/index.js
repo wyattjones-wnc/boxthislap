@@ -190,12 +190,16 @@ async function sendDueFootyAlerts(env) {
   ]);
 
   const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
+  if (subscriptions.length === 0) {
+    return { ok: true, dueAlerts: 0, fixtureCount: 0, nextAlertWindows: [] };
+  }
   const schedules = await loadFootySchedulesByChannel(env, subscriptions);
   const dueAlertsByChannel = {
     main: getDueFootyAlerts(schedules.main, env),
     dev: getDueFootyAlerts(schedules.dev, env),
   };
-  const formulaOneAlerts = await getDueFormulaOneAlertsFromEnvironment(env);
+  const needsFormulaOne = subscriptions.some((subscription) => getSubscriptionTopics(subscription.record)["formula-one"]);
+  const formulaOneAlerts = needsFormulaOne ? await getDueFormulaOneAlertsFromEnvironment(env) : [];
   const dueAlertCount = dueAlertsByChannel.main.length + dueAlertsByChannel.dev.length + formulaOneAlerts.length;
 
   if (dueAlertCount === 0) {

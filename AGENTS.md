@@ -28,6 +28,12 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 - Keep completion reports concise. Include manual verification only for meaningful behavior not reliably covered by automated checks.
 - Keep one task focused on one initiative. For a materially different initiative after completion, recommend a fresh task in the saved `boxthislap` project to avoid carrying old history.
 
+## Cloudflare Deployments
+
+- Cloudflare credentials are intentionally stored as encrypted GitHub Actions repository secrets, not in this repository and not necessarily in a Codex Cloud environment. An empty Codex secret list does not prevent workflow-based deployment.
+- When a matching `.github/workflows/deploy-*-worker.yml` workflow exists, use it as the canonical deployment path after explicit user approval. Do not require, reveal, copy, or write `CLOUDFLARE_API_TOKEN` into a file or local environment.
+- Read [.agents/deployment.md](.agents/deployment.md) before deploying a Worker. It identifies the available workflows, migration inputs, verification commands, and the fallback for Workers that do not yet have a deployment workflow.
+
 ## Dialog Standard
 
 - New React dialogs must use `src/components/ContainedDialog/ContainedDialog.tsx`, or the established `modules/dialogs/FormDialog` wrapper for compatibility modules. Do not add one-off overlays or independent dialog styling.

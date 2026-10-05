@@ -82,6 +82,34 @@ test("managers inherit Wyatt's routine until they save their own", async () => {
   assert.equal(wyatt.routine.steps[0].name, "Wyatt step");
 });
 
+test("Knee reads from its own routine storage", async () => {
+  const statements = [];
+  const url = new URL("https://example.com/api/me/knee-routine");
+  const result = await handleWorkoutRequest({
+    env: {
+      DEFAULT_MORNING_MANAGER_ID: "6",
+      DB: {
+        prepare: (sql) => {
+          statements.push(sql);
+          return {
+            bind: () => ({ all: async () => ({ results: [] }) }),
+          };
+        },
+      },
+    },
+    readBody: async () => ({}),
+    readManagerCatalog: async () => [],
+    request: new Request(url),
+    requireManager: async () => ({ sub: "8" }),
+    url,
+  });
+
+  assert.deepEqual(result.routine.steps, []);
+  assert.equal(result.source, "default-manager");
+  assert.ok(statements.every((sql) => sql.includes("knee_routine_steps")));
+  assert.ok(statements.every((sql) => !sql.includes("morning_routine_steps")));
+});
+
 test("morning routines normalize ordered timer, toggle, and tally steps", () => {
   assert.deepEqual(
     normalizeMorningRoutine({

@@ -119,9 +119,10 @@ describe("Daily Workouts", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Customize my Morning Stretch routine",
+        name: "Edit routines",
       }),
     );
+    fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
     expect(
       await screen.findByText(/workouts use Wyatt’s routine/i),
     ).not.toBeNull();
@@ -136,6 +137,44 @@ describe("Daily Workouts", () => {
       targetCount: 10,
       type: "count",
     });
+  });
+
+  it("opens Knee through the consolidated routine editor", async () => {
+    const response = (value: Record<string, unknown>) =>
+      Promise.resolve({ ok: true, json: async () => ({ ok: true, ...value }) });
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/me/workouts?month="))
+          return response({ days: [] });
+        if (url.endsWith("/api/me/knee-routine") && !init?.method)
+          return response({
+            hasOverride: false,
+            isDefaultManager: false,
+            routine: { steps: [] },
+            source: "default-manager",
+          });
+        throw new Error(`Unexpected request: ${url}`);
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    render(
+      <AppProviders>
+        <WorkoutFeature />
+      </AppProviders>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit routines" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Knee/ }));
+    expect(await screen.findByText("Knee Routine")).not.toBeNull();
+    expect(
+      fetchMock.mock.calls.some(([input]) =>
+        String(input).endsWith("/api/me/knee-routine"),
+      ),
+    ).toBe(true);
   });
 
   it("restores Wyatt's routine by deleting a manager override", async () => {
@@ -186,9 +225,10 @@ describe("Daily Workouts", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Customize my Morning Stretch routine",
+        name: "Edit routines",
       }),
     );
+    fireEvent.click(screen.getByRole("button", { name: /Morning Stretch/ }));
     expect(
       await screen.findByText("You are using your own routine."),
     ).not.toBeNull();
@@ -431,7 +471,8 @@ describe("Daily Workouts", () => {
     expect(
       within(chooser)
         .getAllByRole("button")
-        .map((button) => button.querySelector("strong")?.textContent),
+        .map((button) => button.querySelector("strong")?.textContent)
+        .filter(Boolean),
     ).toEqual(["Morning Stretch", "Kettlebell", "Cardio", "Knee"]);
   });
 

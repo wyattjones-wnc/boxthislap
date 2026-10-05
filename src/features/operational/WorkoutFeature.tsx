@@ -178,6 +178,7 @@ export function WorkoutFeature() {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [cardio, setCardio] = useState<CardioWorkout | null>(null);
   const [morning, setMorning] = useState<MorningWorkout | null>(null);
+  const [knee, setKnee] = useState<MorningWorkout | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [statsOpen, setStatsOpen] = useState(false);
@@ -187,7 +188,9 @@ export function WorkoutFeature() {
   >(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
-  const [routineEditor, setRoutineEditor] = useState<"mine" | null>(null);
+  const [routineEditor, setRoutineEditor] = useState<
+    "choose" | "knee" | "morning" | null
+  >(null);
 
   useEffect(() => setSelectedManager(ownManagerId), [ownManagerId]);
 
@@ -275,6 +278,7 @@ export function WorkoutFeature() {
     setWorkout(null);
     setCardio(null);
     setMorning(null);
+    setKnee(null);
   };
 
   const selectedDay = calendar.data?.days.find(
@@ -386,7 +390,7 @@ export function WorkoutFeature() {
           routine: { steps: MorningRoutineStep[] };
         }>("/api/me/morning-routine");
         if (!effective.routine.steps.length) {
-          setRoutineEditor("mine");
+          setRoutineEditor("morning");
           return;
         }
       } catch (cause) {
@@ -417,6 +421,77 @@ export function WorkoutFeature() {
   const morningAction = (action: string, stepId?: string) =>
     morning
       ? changeMorning(`/api/me/workouts/${morning.date}/morning/action`, {
+          action,
+          stepId,
+        })
+      : null;
+
+  const changeKnee = async (path: string, body?: unknown, method = "POST") => {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<{ knee: MorningWorkout }>(path, {
+        body: body === undefined ? undefined : JSON.stringify(body),
+        method,
+      });
+      setKnee(result.knee);
+      if (result.knee.completedAt)
+        void queryClient.invalidateQueries({ queryKey: ["workouts"] });
+      return result.knee;
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "The Knee routine could not be saved.",
+      );
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openKnee = async () => {
+    if (!selectedDate) return;
+    const completed = Boolean(selectedDay?.kneeCompleted);
+    if (!completed) {
+      setBusy(true);
+      setError("");
+      try {
+        const effective = await api<{
+          routine: { steps: MorningRoutineStep[] };
+        }>("/api/me/knee-routine");
+        if (!effective.routine.steps.length) {
+          setRoutineEditor("knee");
+          return;
+        }
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "The Knee routine could not load.",
+        );
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
+    const path = completed
+      ? ownView
+        ? `/api/me/workouts/${selectedDate}/knee`
+        : `/api/admin/managers/${encodeURIComponent(selectedManager)}/workouts/${selectedDate}/knee`
+      : `/api/me/workouts/${selectedDate}/knee/start`;
+    await changeKnee(
+      path,
+      completed
+        ? undefined
+        : { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      completed ? "GET" : "POST",
+    );
+  };
+
+  const kneeAction = (action: string, stepId?: string) =>
+    knee
+      ? changeKnee(`/api/me/workouts/${knee.date}/knee/action`, {
           action,
           stepId,
         })
@@ -519,9 +594,9 @@ export function WorkoutFeature() {
           <div className={styles.pageActionButtons}>
             <IconButton
               className="icon-action-button"
-              icon={<Sunrise />}
-              label="Customize my Morning Stretch routine"
-              onClick={() => setRoutineEditor("mine")}
+              icon={<Pencil />}
+              label="Edit routines"
+              onClick={() => setRoutineEditor("choose")}
             />
             <IconButton
               className="icon-action-button"
@@ -609,17 +684,29 @@ export function WorkoutFeature() {
         <MorningWorkoutView
           action={morningAction}
           busy={busy}
-          editRoutine={() => setRoutineEditor("mine")}
+          editRoutine={() => setRoutineEditor("choose")}
+          kind="morning"
           morning={morning}
+        />
+      ) : knee ? (
+        <MorningWorkoutView
+          action={kneeAction}
+          busy={busy}
+          editRoutine={() => setRoutineEditor("choose")}
+          kind="knee"
+          morning={knee}
         />
       ) : selectedDate ? (
         <WorkoutTypeChooser
           cardioCompleted={Boolean(selectedDay?.cardioCompleted)}
           canStart={ownView && selectedDate === activeDate}
           kettlebellCompleted={Boolean(selectedDay?.kettlebellCompleted)}
+          kneeCompleted={Boolean(selectedDay?.kneeCompleted)}
           morningCompleted={Boolean(selectedDay?.morningCompleted)}
+          editRoutines={() => setRoutineEditor("choose")}
           openCardio={() => void openCardio()}
           openKettlebell={() => void openKettlebell()}
+          openKnee={() => void openKnee()}
           openMorning={() => void openMorning()}
         />
       ) : (
@@ -696,7 +783,17 @@ export function WorkoutFeature() {
         />
       ) : null}
       {routineEditor ? (
-        <MorningRoutineEditor close={() => setRoutineEditor(null)} />
+        routineEditor === "choose" ? (
+          <RoutineCategoryEditor
+            choose={setRoutineEditor}
+            close={() => setRoutineEditor(null)}
+          />
+        ) : (
+          <MorningRoutineEditor
+            category={routineEditor}
+            close={() => setRoutineEditor(null)}
+          />
+        )
       ) : null}
     </div>
   );
@@ -843,22 +940,33 @@ function CompletionMark({ day }: { day: WorkoutDay }) {
 function WorkoutTypeChooser({
   cardioCompleted,
   canStart,
+  editRoutines,
   kettlebellCompleted,
+  kneeCompleted,
   morningCompleted,
   openCardio,
   openKettlebell,
+  openKnee,
   openMorning,
 }: {
   cardioCompleted: boolean;
   canStart: boolean;
+  editRoutines: () => void;
   kettlebellCompleted: boolean;
+  kneeCompleted: boolean;
   morningCompleted: boolean;
   openCardio: () => void;
   openKettlebell: () => void;
+  openKnee: () => void;
   openMorning: () => void;
 }) {
   return (
     <section className={styles.typeChooser} aria-label="Choose workout type">
+      <div className={styles.routineEditAction}>
+        <button className="action-button" onClick={editRoutines} type="button">
+          <Pencil aria-hidden="true" /> Edit routines
+        </button>
+      </div>
       <button
         className={styles.morningType}
         disabled={!canStart && !morningCompleted}
@@ -916,13 +1024,24 @@ function WorkoutTypeChooser({
         </span>
         {cardioCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
       </button>
-      <button className={styles.kneeType} disabled type="button">
+      <button
+        className={styles.kneeType}
+        disabled={!canStart && !kneeCompleted}
+        onClick={openKnee}
+        type="button"
+      >
         <Accessibility aria-hidden="true" />
         <span>
           <strong>Knee</strong>
-          <small>Routine setup coming next</small>
+          <small>
+            {kneeCompleted
+              ? "Completed — view routine"
+              : canStart
+                ? "Follow your progressive routine"
+                : "Not completed"}
+          </small>
         </span>
-        <ChevronRight aria-hidden="true" />
+        {kneeCompleted ? <Check aria-hidden="true" /> : <ChevronRight />}
       </button>
     </section>
   );
@@ -1084,6 +1203,7 @@ function MorningWorkoutView({
   action,
   busy,
   editRoutine,
+  kind,
   morning,
 }: {
   action: (
@@ -1092,8 +1212,10 @@ function MorningWorkoutView({
   ) => Promise<MorningWorkout | null> | null;
   busy: boolean;
   editRoutine: () => void;
+  kind: "knee" | "morning";
   morning: MorningWorkout;
 }) {
+  const label = kind === "knee" ? "Knee" : "Morning Stretch";
   const current = morning.steps.find((step) => step.active);
   const [remaining, setRemaining] = useState(current?.remainingSeconds || 0);
 
@@ -1116,18 +1238,24 @@ function MorningWorkoutView({
   }, [action, busy, current?.id, current?.running, remaining]);
 
   return (
-    <section className={styles.morningWorkout}>
+    <section
+      className={`${styles.morningWorkout}${kind === "knee" ? ` ${styles.kneeWorkout}` : ""}`}
+    >
       <div className={styles.morningRoutineActions}>
         <button className="action-button" onClick={editRoutine} type="button">
           <Pencil aria-hidden="true" /> Edit routine
         </button>
-        <small>Changes apply the next time you start Morning Stretch.</small>
+        <small>Changes apply the next time you start {label}.</small>
       </div>
       {morning.completedAt ? (
         <div className={styles.morningComplete}>
-          <Sunrise aria-hidden="true" />
+          {kind === "knee" ? (
+            <Accessibility aria-hidden="true" />
+          ) : (
+            <Sunrise aria-hidden="true" />
+          )}
           <div>
-            <strong>Morning Stretch complete</strong>
+            <strong>{label} complete</strong>
             <span>{morning.steps.length} steps finished</span>
           </div>
         </div>
@@ -1629,14 +1757,58 @@ function ManageExercises({
   );
 }
 
-function MorningRoutineEditor({ close }: { close: () => void }) {
+function RoutineCategoryEditor({
+  choose,
+  close,
+}: {
+  choose: (category: "knee" | "morning") => void;
+  close: () => void;
+}) {
+  return (
+    <Modal
+      close={close}
+      description="Choose which progressive routine you want to change. Morning Stretch and Knee are configured separately."
+      title="Edit routines"
+    >
+      <div className={styles.routineCategoryList}>
+        <button onClick={() => choose("morning")} type="button">
+          <Sunrise aria-hidden="true" />
+          <span>
+            <strong>Morning Stretch</strong>
+            <small>Edit morning timers and movements</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </button>
+        <button onClick={() => choose("knee")} type="button">
+          <Accessibility aria-hidden="true" />
+          <span>
+            <strong>Knee</strong>
+            <small>Edit knee timers and movements</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function MorningRoutineEditor({
+  category,
+  close,
+}: {
+  category: "knee" | "morning";
+  close: () => void;
+}) {
   const [steps, setSteps] = useState<MorningRoutineStep[]>([]);
   const [hasOverride, setHasOverride] = useState(false);
   const [isDefaultManager, setIsDefaultManager] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const path = "/api/me/morning-routine";
+  const isKnee = category === "knee";
+  const label = isKnee ? "Knee" : "Morning Stretch";
+  const path = `/api/me/${category}-routine`;
+  const formId = `${category}-routine-editor`;
 
   useEffect(() => {
     let active = true;
@@ -1761,23 +1933,19 @@ function MorningRoutineEditor({ close }: { close: () => void }) {
           <button
             className="action-button"
             disabled={saving || steps.length === 0}
-            form="morning-routine-editor"
+            form={formId}
             type="submit"
           >
             {saving ? "Saving…" : "Save routine"}
           </button>
         </div>
       }
-      title="Morning Stretch Routine"
+      title={`${label} Routine`}
     >
       {loading ? (
         <p className="table-message">Loading routine…</p>
       ) : (
-        <form
-          className={styles.routineEditor}
-          id="morning-routine-editor"
-          onSubmit={save}
-        >
+        <form className={styles.routineEditor} id={formId} onSubmit={save}>
           <p className={styles.routineSource}>
             {isDefaultManager
               ? "This is your routine. Other managers use it unless they create their own."
@@ -1793,10 +1961,14 @@ function MorningRoutineEditor({ close }: { close: () => void }) {
           {!steps.length ? (
             <section className={styles.routineOnboarding}>
               <span className={styles.routineOnboardingIcon}>
-                <Sunrise aria-hidden="true" />
+                {isKnee ? (
+                  <Accessibility aria-hidden="true" />
+                ) : (
+                  <Sunrise aria-hidden="true" />
+                )}
               </span>
               <div>
-                <h3>Build your morning routine</h3>
+                <h3>Build your {isKnee ? "knee" : "morning"} routine</h3>
                 <p>
                   Begin with a timed stretch or a movement you count. You can
                   add more steps and reorder them at any time.

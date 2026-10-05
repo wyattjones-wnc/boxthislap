@@ -556,22 +556,30 @@ async function readWorkoutMonth(env, managerId, value) {
     `SELECT workout_date,
       MAX(kettlebell_completed) AS kettlebell_completed,
       MAX(cardio_completed) AS cardio_completed,
-      MAX(morning_completed) AS morning_completed
+      MAX(morning_completed) AS morning_completed,
+      MAX(knee_completed) AS knee_completed
     FROM (
-      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed
+      SELECT workout_date, completed_at IS NOT NULL AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed, 0 AS knee_completed
       FROM manager_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
       UNION ALL
-      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed, 0 AS morning_completed
+      SELECT workout_date, 0 AS kettlebell_completed, completed_at IS NOT NULL AS cardio_completed, 0 AS morning_completed, 0 AS knee_completed
       FROM manager_cardio_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
       UNION ALL
-      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, completed_at IS NOT NULL AS morning_completed
+      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, completed_at IS NOT NULL AS morning_completed, 0 AS knee_completed
       FROM manager_morning_workouts
+      WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
+      UNION ALL
+      SELECT workout_date, 0 AS kettlebell_completed, 0 AS cardio_completed, 0 AS morning_completed, completed_at IS NOT NULL AS knee_completed
+      FROM manager_knee_workouts
       WHERE manager_id = ? AND workout_date >= ? AND workout_date < date(?, '+1 month')
     ) GROUP BY workout_date ORDER BY workout_date`,
   )
     .bind(
+      managerId,
+      `${month}-01`,
+      `${month}-01`,
       managerId,
       `${month}-01`,
       `${month}-01`,
@@ -589,10 +597,12 @@ async function readWorkoutMonth(env, managerId, value) {
       completed: Boolean(
         row.kettlebell_completed ||
         row.cardio_completed ||
-        row.morning_completed,
+        row.morning_completed ||
+        row.knee_completed,
       ),
       date: String(row.workout_date),
       kettlebellCompleted: Boolean(row.kettlebell_completed),
+      kneeCompleted: Boolean(row.knee_completed),
       morningCompleted: Boolean(row.morning_completed),
     })),
     month,

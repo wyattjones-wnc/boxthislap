@@ -1,6 +1,23 @@
 import { workoutDateInTimeZone } from "./workout-date.js";
 
 const MAX_ROUTINE_STEPS = 30;
+const ROUTINE_CONFIGS = [
+  {
+    key: "morning",
+    label: "Morning Stretch",
+    routineTable: "morning_routine_steps",
+    stepsTable: "manager_morning_steps",
+    workoutsTable: "manager_morning_workouts",
+  },
+  {
+    key: "knee",
+    label: "Knee",
+    routineTable: "knee_routine_steps",
+    stepsTable: "manager_knee_steps",
+    workoutsTable: "manager_knee_workouts",
+  },
+];
+const MORNING_CONFIG = ROUTINE_CONFIGS[0];
 
 export async function handleMorningRequest({
   authorizeAdmin,
@@ -10,12 +27,43 @@ export async function handleMorningRequest({
   requireManager,
   url,
 }) {
-  if (url.pathname === "/api/me/morning-routine") {
+  for (const config of ROUTINE_CONFIGS) {
+    const result = await handleRoutineRequest({
+      authorizeAdmin,
+      config,
+      env,
+      readBody,
+      request,
+      requireManager,
+      url,
+    });
+    if (result) return result;
+  }
+  return null;
+}
+
+async function handleRoutineRequest({
+  authorizeAdmin,
+  config,
+  env,
+  readBody,
+  request,
+  requireManager,
+  url,
+}) {
+  if (url.pathname === `/api/me/${config.key}-routine`) {
     const manager = await requireManager(request, env);
-    if (request.method === "GET") return readEffectiveRoutine(env, manager.sub);
+    if (request.method === "GET")
+      return readEffectiveRoutine(env, manager.sub, config);
     if (request.method === "PUT") {
-      await saveRoutine(env, "manager", manager.sub, await readBody(request));
-      return readEffectiveRoutine(env, manager.sub);
+      await saveRoutine(
+        env,
+        "manager",
+        manager.sub,
+        await readBody(request),
+        config,
+      );
+      return readEffectiveRoutine(env, manager.sub, config);
     }
     if (request.method === "DELETE") {
       if (isDefaultManager(env, manager.sub))
@@ -23,50 +71,59 @@ export async function handleMorningRequest({
           400,
           "The default manager cannot restore another routine.",
         );
-      await deleteRoutine(env, "manager", manager.sub);
-      return readEffectiveRoutine(env, manager.sub);
+      await deleteRoutine(env, "manager", manager.sub, config);
+      return readEffectiveRoutine(env, manager.sub, config);
     }
   }
 
   const ownMatch = url.pathname.match(
-    /^\/api\/me\/workouts\/(\d{4}-\d{2}-\d{2})\/morning(?:\/(start|action))?$/,
+    new RegExp(
+      `^/api/me/workouts/(\\d{4}-\\d{2}-\\d{2})/${config.key}(?:/(start|action))?$`,
+    ),
   );
   if (ownMatch) {
     const manager = await requireManager(request, env);
     const date = parseWorkoutDate(ownMatch[1]);
     const operation = ownMatch[2] || "read";
     if (request.method === "GET" && operation === "read")
-      return { morning: await readMorningWorkout(env, manager.sub, date) };
+      return {
+        [config.key]: await readMorningWorkout(env, manager.sub, date, config),
+      };
     if (request.method === "POST" && operation === "start")
       return {
-        morning: await startMorningWorkout(
+        [config.key]: await startMorningWorkout(
           env,
           manager.sub,
           date,
           (await readBody(request)).timeZone,
+          config,
         ),
       };
     if (request.method === "POST" && operation === "action")
       return {
-        morning: await updateMorningWorkout(
+        [config.key]: await updateMorningWorkout(
           env,
           manager.sub,
           date,
           await readBody(request),
+          config,
         ),
       };
   }
 
   const adminMatch = url.pathname.match(
-    /^\/api\/admin\/managers\/([^/]+)\/workouts\/(\d{4}-\d{2}-\d{2})\/morning$/,
+    new RegExp(
+      `^/api/admin/managers/([^/]+)/workouts/(\\d{4}-\\d{2}-\\d{2})/${config.key}$`,
+    ),
   );
   if (adminMatch && request.method === "GET") {
     await authorizeAdmin();
     return {
-      morning: await readMorningWorkout(
+      [config.key]: await readMorningWorkout(
         env,
         parseId(adminMatch[1], "manager ID"),
         parseWorkoutDate(adminMatch[2]),
+        config,
       ),
     };
   }
@@ -74,12 +131,12 @@ export async function handleMorningRequest({
   return null;
 }
 
-export function normalizeMorningRoutine(value) {
+export function normalizeMorningRoutine(value, label = "Morning Stretch") {
   const values = Array.isArray(value?.steps) ? value.steps : [];
   if (!values.length || values.length > MAX_ROUTINE_STEPS)
     throw httpError(
       400,
-      `A Morning Stretch routine must contain 1 to ${MAX_ROUTINE_STEPS} steps.`,
+      `A ${label} routine must contain 1 to ${MAX_ROUTINE_STEPS} steps.`,
     );
   const steps = values.map((value, index) => {
     const name = String(value?.name || "").trim();
@@ -138,8 +195,12 @@ export function normalizeMorningRoutine(value) {
   return steps;
 }
 
-export async function readEffectiveRoutine(env, managerId) {
-  const own = await readRoutine(env, "manager", managerId);
+export async function readEffectiveRoutine(
+  env,
+  managerId,
+  config = MORNING_CONFIG,
+) {
+  const own = await readRoutine(env, "manager", managerId, config);
   const defaultManager = isDefaultManager(env, managerId);
   const hasOwnRoutine = own.steps.length > 0;
   return {
@@ -147,7 +208,7 @@ export async function readEffectiveRoutine(env, managerId) {
     isDefaultManager: defaultManager,
     routine: hasOwnRoutine
       ? own
-      : await readRoutine(env, "manager", defaultManagerId(env)),
+      : await readRoutine(env, "manager", defaultManagerId(env), config),
     source: hasOwnRoutine ? "manager" : "default-manager",
   };
 }
@@ -160,9 +221,9 @@ function isDefaultManager(env, managerId) {
   return String(managerId) === defaultManagerId(env);
 }
 
-async function readRoutine(env, ownerType, ownerId) {
+async function readRoutine(env, ownerType, ownerId, config) {
   const rows = await env.DB.prepare(
-    "SELECT step_id, position, name, step_type, duration_seconds, target_count, completion_mode FROM morning_routine_steps WHERE owner_type = ? AND owner_id = ? ORDER BY position",
+    `SELECT step_id, position, name, step_type, duration_seconds, target_count, completion_mode FROM ${config.routineTable} WHERE owner_type = ? AND owner_id = ? ORDER BY position`,
   )
     .bind(ownerType, ownerId)
     .all();
@@ -180,15 +241,15 @@ async function readRoutine(env, ownerType, ownerId) {
   };
 }
 
-async function saveRoutine(env, ownerType, ownerId, body) {
-  const steps = normalizeMorningRoutine(body);
+async function saveRoutine(env, ownerType, ownerId, body, config) {
+  const steps = normalizeMorningRoutine(body, config.label);
   await env.DB.batch([
     env.DB.prepare(
-      "DELETE FROM morning_routine_steps WHERE owner_type = ? AND owner_id = ?",
+      `DELETE FROM ${config.routineTable} WHERE owner_type = ? AND owner_id = ?`,
     ).bind(ownerType, ownerId),
     ...steps.map((step) =>
       env.DB.prepare(
-        "INSERT INTO morning_routine_steps (owner_type, owner_id, position, step_id, name, step_type, duration_seconds, target_count, completion_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO ${config.routineTable} (owner_type, owner_id, position, step_id, name, step_type, duration_seconds, target_count, completion_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(
         ownerType,
         ownerId,
@@ -204,14 +265,14 @@ async function saveRoutine(env, ownerType, ownerId, body) {
   ]);
   return {
     hasOverride: ownerType === "manager",
-    routine: await readRoutine(env, ownerType, ownerId),
+    routine: await readRoutine(env, ownerType, ownerId, config),
     source: ownerType,
   };
 }
 
-async function deleteRoutine(env, ownerType, ownerId) {
+async function deleteRoutine(env, ownerType, ownerId, config) {
   await env.DB.prepare(
-    "DELETE FROM morning_routine_steps WHERE owner_type = ? AND owner_id = ?",
+    `DELETE FROM ${config.routineTable} WHERE owner_type = ? AND owner_id = ?`,
   )
     .bind(ownerType, ownerId)
     .run();
@@ -235,10 +296,10 @@ export function morningSnapshotMatchesRoutine(snapshot, routine) {
   });
 }
 
-function insertMorningSteps(env, managerId, date, steps) {
+function insertMorningSteps(env, managerId, date, steps, config) {
   return steps.map((step) =>
     env.DB.prepare(
-      "INSERT INTO manager_morning_steps (manager_id, workout_date, position, step_id, name, step_type, duration_seconds, target_count, completion_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      `INSERT INTO ${config.stepsTable} (manager_id, workout_date, position, step_id, name, step_type, duration_seconds, target_count, completion_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       managerId,
       date,
@@ -253,27 +314,28 @@ function insertMorningSteps(env, managerId, date, steps) {
   );
 }
 
-async function startMorningWorkout(env, managerId, date, timeZone) {
+async function startMorningWorkout(env, managerId, date, timeZone, config) {
   const zone = String(timeZone || "").trim();
   if (workoutDateInTimeZone(zone) !== date)
     throw httpError(
       400,
-      "That Morning Stretch exercise day is no longer available.",
+      `That ${config.label} exercise day is no longer available.`,
     );
   const existing = await env.DB.prepare(
-    "SELECT current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
+    `SELECT current_position, step_started_at, completed_at FROM ${config.workoutsTable} WHERE manager_id = ? AND workout_date = ?`,
   )
     .bind(managerId, date)
     .first();
   if (!existing) {
-    const routine = (await readEffectiveRoutine(env, managerId)).routine;
+    const routine = (await readEffectiveRoutine(env, managerId, config))
+      .routine;
     if (!routine.steps.length)
-      throw httpError(409, "Morning Stretch has not been configured yet.");
+      throw httpError(409, `${config.label} has not been configured yet.`);
     await env.DB.batch([
       env.DB.prepare(
-        "INSERT INTO manager_morning_workouts (manager_id, workout_date, time_zone) VALUES (?, ?, ?)",
+        `INSERT INTO ${config.workoutsTable} (manager_id, workout_date, time_zone) VALUES (?, ?, ?)`,
       ).bind(managerId, date, zone),
-      ...insertMorningSteps(env, managerId, date, routine.steps),
+      ...insertMorningSteps(env, managerId, date, routine.steps, config),
     ]);
   } else if (
     !existing.completed_at &&
@@ -281,7 +343,7 @@ async function startMorningWorkout(env, managerId, date, timeZone) {
     Number(existing.current_position) === 1
   ) {
     const snapshot = await env.DB.prepare(
-      "SELECT position, step_id, name, step_type, duration_seconds, target_count, completion_mode, completed_count, completed_at FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ? ORDER BY position",
+      `SELECT position, step_id, name, step_type, duration_seconds, target_count, completion_mode, completed_count, completed_at FROM ${config.stepsTable} WHERE manager_id = ? AND workout_date = ? ORDER BY position`,
     )
       .bind(managerId, date)
       .all();
@@ -290,29 +352,30 @@ async function startMorningWorkout(env, managerId, date, timeZone) {
       (row) => row.completed_at || Number(row.completed_count || 0) > 0,
     );
     if (!hasProgress) {
-      const routine = (await readEffectiveRoutine(env, managerId)).routine;
+      const routine = (await readEffectiveRoutine(env, managerId, config))
+        .routine;
       if (!routine.steps.length)
-        throw httpError(409, "Morning Stretch has not been configured yet.");
+        throw httpError(409, `${config.label} has not been configured yet.`);
       if (!morningSnapshotMatchesRoutine(rows, routine.steps)) {
         await env.DB.batch([
           env.DB.prepare(
-            "DELETE FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ?",
+            `DELETE FROM ${config.stepsTable} WHERE manager_id = ? AND workout_date = ?`,
           ).bind(managerId, date),
           env.DB.prepare(
-            "UPDATE manager_morning_workouts SET time_zone = ?, current_position = 1, step_started_at = NULL, completed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
+            `UPDATE ${config.workoutsTable} SET time_zone = ?, current_position = 1, step_started_at = NULL, completed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?`,
           ).bind(zone, managerId, date),
-          ...insertMorningSteps(env, managerId, date, routine.steps),
+          ...insertMorningSteps(env, managerId, date, routine.steps, config),
         ]);
       }
     }
   }
-  return readMorningWorkout(env, managerId, date);
+  return readMorningWorkout(env, managerId, date, config);
 }
 
-async function readMorningWorkout(env, managerId, date) {
-  await settleExpiredTimer(env, managerId, date);
+async function readMorningWorkout(env, managerId, date, config) {
+  await settleExpiredTimer(env, managerId, date, config);
   const workout = await env.DB.prepare(
-    "SELECT current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
+    `SELECT current_position, step_started_at, completed_at FROM ${config.workoutsTable} WHERE manager_id = ? AND workout_date = ?`,
   )
     .bind(managerId, date)
     .first();
@@ -325,7 +388,7 @@ async function readMorningWorkout(env, managerId, date) {
       steps: [],
     };
   const rows = await env.DB.prepare(
-    "SELECT position, step_id, name, step_type, duration_seconds, target_count, completion_mode, completed_count, completed_at FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ? ORDER BY position",
+    `SELECT position, step_id, name, step_type, duration_seconds, target_count, completion_mode, completed_count, completed_at FROM ${config.stepsTable} WHERE manager_id = ? AND workout_date = ? ORDER BY position`,
   )
     .bind(managerId, date)
     .all();
@@ -369,36 +432,36 @@ async function readMorningWorkout(env, managerId, date) {
   };
 }
 
-async function updateMorningWorkout(env, managerId, date, body) {
+async function updateMorningWorkout(env, managerId, date, body, config) {
   const workout = await env.DB.prepare(
-    "SELECT time_zone, current_position, step_started_at, completed_at FROM manager_morning_workouts WHERE manager_id = ? AND workout_date = ?",
+    `SELECT time_zone, current_position, step_started_at, completed_at FROM ${config.workoutsTable} WHERE manager_id = ? AND workout_date = ?`,
   )
     .bind(managerId, date)
     .first();
-  if (!workout) throw httpError(404, "Morning Stretch routine was not found.");
+  if (!workout) throw httpError(404, `${config.label} routine was not found.`);
   if (workout.completed_at)
-    throw httpError(409, "Morning Stretch is already complete.");
+    throw httpError(409, `${config.label} is already complete.`);
   if (workoutDateInTimeZone(String(workout.time_zone || "")) !== date)
     throw httpError(409, "That exercise day closed at 3:00 a.m.");
   const position = Number(workout.current_position);
   const step = await env.DB.prepare(
-    "SELECT step_id, step_type, duration_seconds, target_count, completion_mode, completed_count FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ? AND position = ?",
+    `SELECT step_id, step_type, duration_seconds, target_count, completion_mode, completed_count FROM ${config.stepsTable} WHERE manager_id = ? AND workout_date = ? AND position = ?`,
   )
     .bind(managerId, date, position)
     .first();
-  if (!step) throw httpError(409, "Morning Stretch has no current step.");
+  if (!step) throw httpError(409, `${config.label} has no current step.`);
   const action = String(body?.action || "");
   if (
     action === "timer-finish" &&
     body?.stepId &&
     String(body.stepId) !== String(step.step_id)
   )
-    return readMorningWorkout(env, managerId, date);
+    return readMorningWorkout(env, managerId, date, config);
   if (action === "timer-start") {
     if (step.step_type !== "timer")
       throw httpError(409, "The current step is not a timer.");
     await env.DB.prepare(
-      "UPDATE manager_morning_workouts SET step_started_at = COALESCE(step_started_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
+      `UPDATE ${config.workoutsTable} SET step_started_at = COALESCE(step_started_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?`,
     )
       .bind(managerId, date)
       .run();
@@ -410,7 +473,7 @@ async function updateMorningWorkout(env, managerId, date, body) {
     );
     if (elapsed + 1 < Number(step.duration_seconds))
       throw httpError(409, "The current timer is still running.");
-    await completeStep(env, managerId, date, position, 1);
+    await completeStep(env, managerId, date, position, 1, config);
   } else if (action === "complete-step") {
     if (step.step_type !== "count" || step.completion_mode !== "toggle")
       throw httpError(409, "The current step does not use toggle completion.");
@@ -420,6 +483,7 @@ async function updateMorningWorkout(env, managerId, date, body) {
       date,
       position,
       Number(step.target_count),
+      config,
     );
   } else if (action === "increment") {
     if (step.step_type !== "count" || step.completion_mode !== "tally")
@@ -429,22 +493,22 @@ async function updateMorningWorkout(env, managerId, date, body) {
       Number(step.completed_count || 0) + 1,
     );
     if (next >= Number(step.target_count))
-      await completeStep(env, managerId, date, position, next);
+      await completeStep(env, managerId, date, position, next, config);
     else
       await env.DB.prepare(
-        "UPDATE manager_morning_steps SET completed_count = ? WHERE manager_id = ? AND workout_date = ? AND position = ?",
+        `UPDATE ${config.stepsTable} SET completed_count = ? WHERE manager_id = ? AND workout_date = ? AND position = ?`,
       )
         .bind(next, managerId, date, position)
         .run();
-  } else throw httpError(400, "Morning Stretch action is invalid.");
-  return readMorningWorkout(env, managerId, date);
+  } else throw httpError(400, `${config.label} action is invalid.`);
+  return readMorningWorkout(env, managerId, date, config);
 }
 
-async function settleExpiredTimer(env, managerId, date) {
+async function settleExpiredTimer(env, managerId, date, config) {
   const row = await env.DB.prepare(
     `SELECT w.current_position, w.step_started_at, s.duration_seconds
-     FROM manager_morning_workouts w
-     JOIN manager_morning_steps s ON s.manager_id = w.manager_id AND s.workout_date = w.workout_date AND s.position = w.current_position
+     FROM ${config.workoutsTable} w
+     JOIN ${config.stepsTable} s ON s.manager_id = w.manager_id AND s.workout_date = w.workout_date AND s.position = w.current_position
      WHERE w.manager_id = ? AND w.workout_date = ? AND w.completed_at IS NULL AND w.step_started_at IS NOT NULL AND s.step_type = 'timer'`,
   )
     .bind(managerId, date)
@@ -454,25 +518,39 @@ async function settleExpiredTimer(env, managerId, date) {
     Date.now() - parseSqliteTimestamp(row.step_started_at) >=
       Number(row.duration_seconds) * 1000
   )
-    await completeStep(env, managerId, date, Number(row.current_position), 1);
+    await completeStep(
+      env,
+      managerId,
+      date,
+      Number(row.current_position),
+      1,
+      config,
+    );
 }
 
-async function completeStep(env, managerId, date, position, completedCount) {
+async function completeStep(
+  env,
+  managerId,
+  date,
+  position,
+  completedCount,
+  config,
+) {
   const next = await env.DB.prepare(
-    "SELECT position FROM manager_morning_steps WHERE manager_id = ? AND workout_date = ? AND position > ? ORDER BY position LIMIT 1",
+    `SELECT position FROM ${config.stepsTable} WHERE manager_id = ? AND workout_date = ? AND position > ? ORDER BY position LIMIT 1`,
   )
     .bind(managerId, date, position)
     .first();
   await env.DB.batch([
     env.DB.prepare(
-      "UPDATE manager_morning_steps SET completed_count = ?, completed_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ? AND position = ? AND completed_at IS NULL",
+      `UPDATE ${config.stepsTable} SET completed_count = ?, completed_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ? AND position = ? AND completed_at IS NULL`,
     ).bind(completedCount, managerId, date, position),
     next
       ? env.DB.prepare(
-          "UPDATE manager_morning_workouts SET current_position = ?, step_started_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
+          `UPDATE ${config.workoutsTable} SET current_position = ?, step_started_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?`,
         ).bind(Number(next.position), managerId, date)
       : env.DB.prepare(
-          "UPDATE manager_morning_workouts SET current_position = ?, step_started_at = NULL, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?",
+          `UPDATE ${config.workoutsTable} SET current_position = ?, step_started_at = NULL, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE manager_id = ? AND workout_date = ?`,
         ).bind(position + 1, managerId, date),
   ]);
 }

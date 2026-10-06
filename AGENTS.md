@@ -10,13 +10,15 @@
 
 ## Startup and Context
 
+- The standing user requirement is delivery to `dev`, not local-only edits; it was explicitly reaffirmed on 2026-10-06. Do not request permission again for this delivery unless the user changes the scope.
 - At task start, check the repository, branch, status, and divergence from `origin/dev`. Fetch and integrate current `origin/dev` before editing. If the checkout is on `main` or a synthetic branch, switch safely to local `dev` first. Use the permanent checkout when safe. If another task owns local changes or Git state, use a managed worktree from current `origin/dev`; otherwise stop rather than disturbing it.
+- Before trusting local delivery instructions, verify the checkout against current remote `dev`. If shell Git cannot fetch, use the authorized GitHub connector to read current `dev` and its `AGENTS.md`; a stale checkout may contain superseded no-push rules. Preserve the current remote instructions when editing this file.
 - Use [.agents/overview.md](.agents/overview.md) only when routing is unclear, then read only directly relevant topic files. For obvious small changes, go straight to targeted `rg` searches and bounded source reads.
 - Treat source and linked detailed docs as authoritative. Do not preload all topics or whole copies of large files such as `script.js` and `styles.css` without a task-specific reason.
 
 ### Codex Cloud
 
-Apply project changes to local `dev` and run validation there. Explicitly requested task branches must be based on current `origin/dev`; direct work on `main` requires the particular exception described above. If a cloud task starts on a synthetic branch such as `work`, fetch `origin/dev` when available and switch to local `dev` before editing. Preserve task changes when switching; use a managed worktree if unrelated work prevents a safe switch. If `origin/dev` cannot be accessed, report that limitation instead of treating validation on a synthetic branch as validation on `dev`.
+Apply project changes to local `dev` and run validation there. Explicitly requested task branches must be based on current `origin/dev`; direct work on `main` requires the particular exception described above. If a cloud task starts on a synthetic branch such as `work`, fetch `origin/dev` when available and switch to local `dev` before editing. Preserve task changes when switching; use a managed worktree if unrelated work prevents a safe switch. If shell Git cannot access `origin/dev`, use an available authorized GitHub connector to inspect current `dev`, reconcile the task files, and create a commit based on its current head with an expected-head check. Do not replace unrelated remote changes. If neither path is available, report the concrete delivery blocker instead of treating local edits as completed work.
 
 Completed tasks must reach `origin/dev` for review, including from a synthetic cloud branch. Honor explicit local-only, no-push, or alternate-branch instructions. Do not merge into or push `main`, create a PR, or deploy unless explicitly authorized.
 
@@ -25,6 +27,7 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 - Run the smallest reliable checks for the changed surface. Use a production build only for cross-cutting work, shared infrastructure, build configuration, or when focused checks reveal broader risk.
 - Do not poll GitHub Actions unless requested, deployment status is part of the task, or its result is required for correctness.
 - Workflow-only tasks must not change application behavior. Report remaining Worker deployment, D1 migration, Apps Script publication, secrets, or manual configuration separately.
+- Confirm the task commit is present on remote `dev` before reporting delivery, and include its commit link. When Pages publication is needed for the user to see the change, verify the corresponding deployment; a local commit or an unverified push is not completion.
 - Keep completion reports concise. Include manual verification only for meaningful behavior not reliably covered by automated checks.
 - Keep one task focused on one initiative. For a materially different initiative after completion, recommend a fresh task in the saved `boxthislap` project to avoid carrying old history.
 

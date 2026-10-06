@@ -49,6 +49,7 @@ const COLORS = {
   nearMatchMuted: new Color("#574d68"),
 };
 let loadedManagers = null;
+let refreshFailed = false;
 
 if (!WIDGET_OPTIONS.managerValue) {
   if (config.runsInWidget) {
@@ -70,42 +71,58 @@ if (config.runsInWidget) {
 Script.complete();
 
 async function loadFixtures() {
-  let schedule;
-
-  try {
-    const request = new Request(`${SCHEDULE_URL}?nonce=${Date.now()}`);
-    request.timeoutInterval = 20;
-    schedule = await request.loadJSON();
-
-    if (!isValidSchedule(schedule)) {
-      throw new Error("The Footy schedule did not return valid data.");
+  const displayCacheFile = `box-this-lap-footy-display-${SITE_CHANNEL}-${encodeURIComponent(normalizeManagerName(WIDGET_OPTIONS.managerValue) || "default")}.json`;
+  const cachedDisplay = readJsonCache(displayCacheFile);
+  const lastLoaded = () => {
+    if (!Array.isArray(cachedDisplay && cachedDisplay.fixtures)) {
+      return null;
     }
 
-    writeJsonCache(SCHEDULE_CACHE_FILE, schedule);
-  } catch (error) {
-    schedule = readJsonCache(SCHEDULE_CACHE_FILE);
-
-    if (isValidSchedule(schedule)) {
-      console.warn(`Unable to refresh Footy data; using the saved cache: ${error}`);
-    } else {
-      return {
-        ok: false,
-        fixtures: [],
-        error: String(error && error.message ? error.message : error),
-      };
-    }
-  }
+    WIDGET_OPTIONS.managerName = cachedDisplay.managerName || "";
+    return { ok: true, fixtures: cachedDisplay.fixtures.slice(0, MATCH_LIMIT), cached: true };
+  };
 
   try {
+    let schedule;
+    try {
+      const request = new Request(`${SCHEDULE_URL}?nonce=${Date.now()}`);
+      request.timeoutInterval = 20;
+      schedule = await request.loadJSON();
+
+      if (!isValidSchedule(schedule)) {
+        throw new Error("The Footy schedule did not return valid data.");
+      }
+
+      writeJsonCache(SCHEDULE_CACHE_FILE, schedule);
+    } catch (error) {
+      refreshFailed = true;
+      const savedDisplay = lastLoaded();
+      if (savedDisplay) {
+        return savedDisplay;
+      }
+      schedule = readJsonCache(SCHEDULE_CACHE_FILE);
+      if (!isValidSchedule(schedule)) {
+        throw error;
+      }
+    }
+
     await resolveWidgetManager();
     const followedTeamIds = await loadFollowedTeamIds();
-    return { ok: true, fixtures: getUpcomingFixtures(schedule, followedTeamIds) };
+    if (refreshFailed) {
+      const savedDisplay = lastLoaded();
+      if (savedDisplay) {
+        return savedDisplay;
+      }
+    }
+
+    // Save enough matches for either widget size, preserving the last display
+    // even when those matches have passed during an extended outage.
+    const fixtures = getUpcomingFixtures(schedule, followedTeamIds, 8);
+    writeJsonCache(displayCacheFile, { fixtures, managerName: WIDGET_OPTIONS.managerName });
+    return { ok: true, fixtures: fixtures.slice(0, MATCH_LIMIT), cached: refreshFailed };
   } catch (error) {
-    return {
-      ok: false,
-      fixtures: [],
-      error: String(error && error.message ? error.message : error),
-    };
+    console.warn(`Unable to refresh Footy: ${error}`);
+    return lastLoaded() || { ok: true, fixtures: [], pending: true };
   }
 }
 
@@ -113,11 +130,11 @@ function isValidSchedule(schedule) {
   return Array.isArray(schedule && schedule.teamSchedules);
 }
 
-function getUpcomingFixtures(schedule, followedTeamIds = null) {
+function getUpcomingFixtures(schedule, followedTeamIds = null, limit = MATCH_LIMIT) {
   return getUniqueFixtures(getScheduleFixtures(schedule, followedTeamIds))
     .filter((fixture) => !isFixturePast(fixture))
     .sort((first, second) => getFixtureTime(first) - getFixtureTime(second))
-    .slice(0, MATCH_LIMIT);
+    .slice(0, limit);
 }
 
 async function loadFollowedTeamIds() {
@@ -148,6 +165,7 @@ async function loadManagerPreferences(managerId) {
     });
     return preferences;
   } catch (error) {
+    refreshFailed = true;
     const cached = readJsonCache(cacheFile);
 
     if (Array.isArray(cached && cached.teams) || Array.isArray(cached && cached.teamIds)) {
@@ -199,6 +217,7 @@ async function loadManagers() {
     }
     writeJsonCache(MANAGERS_CACHE_FILE, { managers });
   } catch (error) {
+    refreshFailed = true;
     managers = readJsonCache(MANAGERS_CACHE_FILE)?.managers;
 
     if (!Array.isArray(managers)) {
@@ -407,8 +426,8 @@ async function createWidget(result) {
   widget.setPadding(2, 14, 6, 14);
   addHeader(widget);
 
-  if (!result.ok) {
-    addErrorState(widget, result.error);
+  if (result.pending) {
+    addPendingState(widget);
     widget.refreshAfterDate = getRefreshDate(null);
     return widget;
   }
@@ -561,14 +580,14 @@ function normalizeTeamName(value) {
     .trim();
 }
 
-function addErrorState(widget, message) {
+function addPendingState(widget) {
   widget.addSpacer(8);
-  const title = widget.addText("Footy unavailable");
+  const title = widget.addText("Waiting for schedule");
   title.font = Font.boldSystemFont(18);
   title.textColor = COLORS.text;
-  const detail = widget.addText(message || "Unable to load the Footy schedule.");
+  const detail = widget.addText("Matches will appear after the first successful refresh.");
   detail.font = Font.mediumSystemFont(12);
-  detail.textColor = COLORS.accent;
+  detail.textColor = COLORS.muted;
   detail.lineLimit = 3;
 }
 

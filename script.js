@@ -18418,6 +18418,7 @@ function loadPageData(scope) {
   const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|calculator|results|manage|review)$/);
   if (formulaOneMatch) {
     const [, year, view] = formulaOneMatch;
+    if (year === "2026" && view === "questions") return Promise.resolve();
     if (year === "2026" && ["manage", "review"].includes(view)) {
       return ensureFormulaOneAdminData();
     }
@@ -19050,26 +19051,6 @@ function ensureFormulaOneData(year, view = "questions") {
     },
     (error) => renderFormulaOneError(yearKey, error)
   )];
-
-  if (view === "questions" && yearKey === "2026") {
-    sourceTasks.push(ensureFormulaOneSource(
-      "formulaOne2026QuestionProgress",
-      async () => {
-        if (!FORMULA_ONE_ENDPOINT) throw new Error("The Formula 1 service is not configured.");
-        const response = await fetch(`${FORMULA_ONE_ENDPOINT.replace(/\/$/, "")}/api/seasons/2026/questions/progress`);
-        if (!response.ok) throw new Error(`Formula 1 question progress returned ${response.status}.`);
-        return response.json();
-      },
-      (data) => {
-        siteData.formulaOne2026QuestionProgress = data;
-        renderFormulaOneQuestions(yearKey);
-      },
-      () => {
-        siteData.formulaOne2026QuestionProgress = { error: true };
-        renderFormulaOneQuestions(yearKey);
-      }
-    ));
-  }
 
   if ((view === "weekly" || view === "weekly-results") && ["2025", "2026"].includes(yearKey)) {
     sourceTasks.push(ensureFormulaOneSource(

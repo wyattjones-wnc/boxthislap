@@ -2044,3 +2044,105 @@ async function prepareAuthenticatedSecondaryRoutes(page) {
     },
   );
 }
+
+test("Formula 1 Questions owns In Progress filtering and individual selections in React", async ({
+  page,
+}) => {
+  const rows = [
+    ["", "", "Jonathan", ""],
+    ["Question", "Answer", "Bet", "Points"],
+    ["Who will be World Drivers Champion?", "", "Lando Norris", "0"],
+    [
+      "Which drivers will finish on the podium this season?",
+      "",
+      "Lando Norris",
+      "0",
+    ],
+    ...Array.from({ length: 7 }, (_, index) => [
+      `Question ${index + 3}`,
+      "",
+      "",
+      "0",
+    ]),
+    ["What will the final championship order be?", "", "", "0"],
+  ];
+  const csv = rows
+    .map((row) =>
+      row.map((value) => `"${value.replaceAll('"', '""')}"`).join(","),
+    )
+    .join("\n");
+  await page.route(
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSB*/pub*",
+    (route) => route.fulfill({ contentType: "text/csv", body: csv }),
+  );
+  await page.route("**/api/seasons/2026/questions/progress", (route) =>
+    route.fulfill({
+      json: {
+        ok: true,
+        completedRounds: 1,
+        counts: { podiums: { "Lando Norris": 1 } },
+        drivers: [
+          {
+            id: "norris",
+            name: "Lando Norris",
+            rank: 1,
+            points: 25,
+            starting: true,
+            laps: 50,
+          },
+        ],
+        constructors: [],
+        rounds: [],
+        teammatePairs: [],
+      },
+    }),
+  );
+  await page.goto("/#formula-1-2026-questions", {
+    waitUntil: "domcontentloaded",
+  });
+  const questions = page.locator('[data-page="formula-1-2026-questions"]');
+  const select = questions.getByRole("combobox", { name: "Question" });
+  await expect(select).toHaveValue("in-progress");
+  await expect(
+    questions.getByRole("heading", {
+      name: "Who will be World Drivers Champion?",
+    }),
+  ).toBeVisible();
+  await expect(
+    questions.getByRole("heading", {
+      name: "What will the final championship order be?",
+    }),
+  ).toHaveCount(0);
+  await expect(
+    questions.getByText(
+      "Season to date · approved session results and recorded awards.",
+    ),
+  ).toHaveCount(0);
+  await questions.getByRole("searchbox", { name: "Filter" }).fill("podium");
+  await expect(
+    questions.getByRole("heading", {
+      name: "Which drivers will finish on the podium this season?",
+    }),
+  ).toBeVisible();
+  await expect(
+    questions.getByRole("heading", {
+      name: "Who will be World Drivers Champion?",
+    }),
+  ).toHaveCount(0);
+  await select.selectOption("question-10");
+  await expect(questions.getByRole("searchbox")).toHaveValue("");
+  await expect(
+    questions.getByRole("heading", {
+      name: "What will the final championship order be?",
+    }),
+  ).toBeVisible();
+  await select.selectOption("");
+  await expect(
+    questions.locator("#formula-one-2026-question-list article"),
+  ).toHaveCount(10);
+  const viewport = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+});

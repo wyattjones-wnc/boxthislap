@@ -1,5 +1,3 @@
-import { getFormulaOneQuestionProgress } from "./formulaOneProgress.js";
-
 let dependencies = {};
 const formulaOneResultsMode = { 2025: "yearly", 2026: "yearly" };
 const formulaOneWeeklyResultsGroup = { 2025: "all", 2026: "all" };
@@ -383,7 +381,6 @@ function renderFormulaOneQuestionOptions(year, questions) {
 
   const selected = view.questionSelect.value;
   view.questionSelect.innerHTML = `
-    ${String(year) === "2026" ? '<option value="in-progress">In Progress</option>' : ""}
     <option value="">All questions</option>
     ${questions
       .map((question) => {
@@ -395,12 +392,10 @@ function renderFormulaOneQuestionOptions(year, questions) {
     (option) => option.value === selected,
   )
     ? selected
-    : String(year) === "2026"
-      ? "in-progress"
-      : "";
+    : "";
 }
 
-function formatFormulaOneQuestionOption(question) {
+export function formatFormulaOneQuestionOption(question) {
   return `${question.number}. ${getFormulaOneQuestionSummary(question.question)}`;
 }
 
@@ -510,17 +505,9 @@ function renderFormulaOneQuestions(year) {
   }
 
   const selectedQuestion = view.questionSelect?.value ?? "";
-  const progress =
-    String(year) === "2026" ? siteData.formulaOne2026QuestionProgress : null;
   const filterText = (view.questionFilter?.value ?? "").trim().toLowerCase();
   const questions = data.questions.filter((question) => {
-    if (selectedQuestion === "in-progress") {
-      if (
-        question.answer ||
-        !getFormulaOneQuestionProgress(question.question, progress)
-      )
-        return false;
-    } else if (selectedQuestion && question.id !== selectedQuestion) {
+    if (selectedQuestion && question.id !== selectedQuestion) {
       return false;
     }
 
@@ -532,34 +519,22 @@ function renderFormulaOneQuestions(year) {
   });
 
   if (questions.length === 0) {
-    const message =
-      selectedQuestion === "in-progress" && !filterText
-        ? progress?.error
-          ? "Provisional Formula 1 data is unavailable. Select All questions to view season bets."
-          : !progress
-            ? "Loading provisional Formula 1 data..."
-            : "No questions have provisional data yet. Select All questions to view season bets."
-        : "No Formula 1 questions match that filter.";
-    view.questionList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">${message}</p></article>`;
+    view.questionList.innerHTML = `<article class="formula-one-question-card"><p class="table-message">No Formula 1 questions match that filter.</p></article>`;
     return;
   }
 
   view.questionList.innerHTML = questions
-    .map((question) => renderFormulaOneQuestion(question, progress))
+    .map(renderFormulaOneQuestion)
     .join("");
 }
 
-function renderFormulaOneQuestion(question, progress) {
-  const provisional =
-    !question.answer &&
-    getFormulaOneQuestionProgress(question.question, progress);
+function renderFormulaOneQuestion(question) {
   return `
     <article class="formula-one-question-card">
       <header>
         <span>Question ${escapeHtml(question.number)}</span>
         <h3>${escapeHtml(question.question)}</h3>
         ${renderFormulaOneAnswer(question)}
-        ${provisional ? `<div class="formula-one-question-progress"><p><strong>In Progress</strong> · ${escapeHtml(provisional.label)}</p><ul>${provisional.entries.map(([name, value]) => `<li>${escapeHtml(name)}: <strong>${escapeHtml(value)} ${escapeHtml(provisional.unit)}</strong></li>`).join("")}</ul><p>Season to date · approved session results and recorded awards.</p></div>` : ""}
       </header>
       <div class="formula-one-bet-list">
         ${question.bets.map(renderFormulaOneBet).join("")}

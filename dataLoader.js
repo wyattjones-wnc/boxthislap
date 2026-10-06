@@ -314,7 +314,7 @@ function hasValues(row) {
   return row.some((value) => value.trim() !== "");
 }
 
-function parseCsvRows(text) {
+export function parseCsvRows(text) {
   const rows = [];
   let row = [];
   let field = "";

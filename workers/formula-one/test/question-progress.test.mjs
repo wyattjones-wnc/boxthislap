@@ -51,7 +51,7 @@ test("season progress includes sprint points, race podiums and recorded awards f
       "Who will be World Drivers Champion?",
       progress,
     ).entries,
-    [["Driver B", 26]],
+    [["Driver B", "P1 · 26 points"]],
   );
   assert.deepEqual(
     getFormulaOneQuestionProgress(
@@ -88,6 +88,7 @@ test("season progress includes sprint points, race podiums and recorded awards f
 test("leaders include ties and invalid or sprint positions do not count as podiums", () => {
   const progress = buildFormulaOneProgress({
     drivers,
+    rounds,
     results: [
       ...results,
       {
@@ -104,10 +105,7 @@ test("leaders include ties and invalid or sprint positions do not count as podiu
       "Who will be World Drivers Champion?",
       progress,
     ).entries,
-    [
-      ["Driver A", 26],
-      ["Driver B", 26],
-    ],
+    [["Driver A", "P1 · 26 points"]],
   );
   assert.deepEqual(progress.counts.podiums, { "Driver A": 1, "Driver B": 1 });
 });
@@ -149,8 +147,12 @@ test("public endpoint reads only approved facts and exposes no manager entries",
   assert.ok(sqlQueries.every((sql) => !sql.includes("weekly_entries")));
   assert.deepEqual(Object.keys(data).sort(), [
     "completedRounds",
+    "constructors",
     "counts",
+    "drivers",
     "ok",
+    "rounds",
+    "teammatePairs",
     "year",
   ]);
 });
@@ -180,4 +182,106 @@ test("award name variants aggregate under the roster name without altering round
   });
   assert.deepEqual(progress.counts.driverOfTheDay, { "Kimi Antonelli": 2 });
   assert.equal(awardRounds[1].driver_of_the_day, "Andrea Kimi Antonelli");
+});
+
+test("public standings requests stop at the approved race and use provider ranks for ties", async (t) => {
+  const requests = [];
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    requests.push({ url, options });
+    const kind = url.includes("driverStandings")
+      ? "DriverStandings"
+      : "ConstructorStandings";
+    return new Response(
+      JSON.stringify({
+        MRData: {
+          StandingsTable: {
+            StandingsLists: [
+              {
+                season: "2026",
+                round: "1",
+                [kind]:
+                  kind === "DriverStandings"
+                    ? [
+                        {
+                          position: "1",
+                          points: "0",
+                          Driver: { driverId: "b" },
+                        },
+                        {
+                          position: "2",
+                          points: "0",
+                          Driver: { driverId: "a" },
+                        },
+                      ]
+                    : [
+                        {
+                          position: "1",
+                          points: "0",
+                          Constructor: { name: "Cadillac F1 Team" },
+                        },
+                      ],
+              },
+            ],
+          },
+        },
+      }),
+    );
+  });
+  const tiedDrivers = [
+    { driver_id: "a", display_name: "A", constructor_name: "Cadillac" },
+    { driver_id: "b", display_name: "B", constructor_name: "Cadillac" },
+  ];
+  const tiedResults = tiedDrivers.map((driver) => ({
+    round: 1,
+    session_type: "race",
+    driver_id: driver.driver_id,
+    position: null,
+    points: 0,
+  }));
+  const env = {
+    JOLPICA_BASE_URL: "https://provider.example/f1",
+    DB: {
+      prepare(sql) {
+        return {
+          bind() {
+            return {
+              async all() {
+                return {
+                  results: sql.includes("FROM f1_drivers")
+                    ? tiedDrivers
+                    : sql.includes("FROM f1_rounds")
+                      ? [
+                          { round: 1, name: "Australia" },
+                          { round: 2, name: "China" },
+                        ]
+                      : tiedResults,
+                };
+              },
+            };
+          },
+        };
+      },
+    },
+  };
+  const response = await worker.fetch(
+    new Request("https://example.com/api/seasons/2026/questions/progress"),
+    env,
+  );
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.deepEqual(
+    data.drivers.map((driver) => [driver.id, driver.rank]),
+    [
+      ["b", 1],
+      ["a", 2],
+    ],
+  );
+  assert.equal(requests.length, 2);
+  assert.ok(
+    requests.every(
+      ({ url, options }) =>
+        url.includes("/2026/1/") && options.cf.cacheTtl === 300,
+    ),
+  );
+  assert.equal(data.rounds[1].complete, false);
 });

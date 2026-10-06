@@ -538,43 +538,15 @@ export function FantasyCriticPage({ year }: { year: 2025 | 2026 }) {
   return <div id={`fantasy-critic-${year}-content`} />;
 }
 
-export function FormulaOneQuestionsPage({
-  year,
-}: {
-  year: 2024 | 2025 | 2026;
-}) {
+export function FormulaOneQuestionsPage({ year }: { year: 2024 | 2025 }) {
   const prefix = year === 2024 ? "formula-one" : `formula-one-${year}`;
   return (
     <>
-      <div
-        className={`league-detail-heading${year === 2026 ? " formula-one-question-heading" : ""}`}
-      >
-        <div>
-          <h2>Formula 1</h2>
-          <p>{year} Questions</p>
-        </div>
-        {year === 2026 ? (
-          <a
-            className="action-button formula-one-question-manage-link"
-            href="#formula-1-2026-manage"
-            data-page-link="formula-1-2026-manage"
-            data-admin-only
-            hidden
-          >
-            Manage
-          </a>
-        ) : null}
-      </div>
+      <LeagueHeading title="Formula 1" subtitle={`${year} Questions`} />
       <div className="formula-one-controls">
         <label className="select-control">
           <span>Question</span>
-          <select
-            id={`${prefix}-question-select`}
-            defaultValue={year === 2026 ? "in-progress" : ""}
-          >
-            {year === 2026 ? (
-              <option value="in-progress">In Progress</option>
-            ) : null}
+          <select id={`${prefix}-question-select`} defaultValue="">
             <option value="">All questions</option>
           </select>
         </label>

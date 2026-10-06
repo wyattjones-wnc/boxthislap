@@ -36,13 +36,13 @@ Deployment requires explicit user approval and the usage review above for potent
 
 Available Worker workflows:
 
-| Worker                         | Workflow                         | Trigger command                                                                                                          |
-| ------------------------------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Rankings                       | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=true`                                          |
-| Rankings, no pending migration | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=false`                                         |
-| Merchandise                    | `deploy-merchandise-worker.yml`  | `gh workflow run deploy-merchandise-worker.yml --ref dev`                                                                |
-| Collectibles                   | `deploy-collectibles-worker.yml` | `gh workflow run deploy-collectibles-worker.yml --ref dev`                                                               |
-| Footy Push                     | `deploy-footy-push-worker.yml`   | Automatically runs for matching `dev` changes; manual fallback: `gh workflow run deploy-footy-push-worker.yml --ref dev` |
+| Worker                         | Workflow                         | Trigger command                                                                                                                                                        |
+| ------------------------------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rankings                       | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=true`                                                                                        |
+| Rankings, no pending migration | `deploy-rankings-worker.yml`     | `gh workflow run deploy-rankings-worker.yml --ref dev -f apply_migrations=false`                                                                                       |
+| Merchandise                    | `deploy-merchandise-worker.yml`  | `gh workflow run deploy-merchandise-worker.yml --ref dev`                                                                                                              |
+| Collectibles                   | `deploy-collectibles-worker.yml` | `gh workflow run deploy-collectibles-worker.yml --ref dev`                                                                                                             |
+| Footy Push                     | `deploy-footy-push-worker.yml`   | Automatically runs for matching `dev` changes; manual fallback: `gh workflow run deploy-footy-push-worker.yml --ref dev`                                               |
 | PSN trophies                   | `deploy-psn-worker.yml`          | Matching `dev` changes deploy without migrations. After usage review and explicit approval: `gh workflow run deploy-psn-worker.yml --ref dev -f apply_migrations=true` |
 
 Useful verification commands:

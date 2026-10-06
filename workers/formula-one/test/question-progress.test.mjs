@@ -154,3 +154,30 @@ test("public endpoint reads only approved facts and exposes no manager entries",
     "year",
   ]);
 });
+
+test("award name variants aggregate under the roster name without altering round facts", () => {
+  const awardRounds = [
+    { round: 1, driver_of_the_day: "Kimi Antonelli" },
+    { round: 2, driver_of_the_day: "Andrea Kimi Antonelli" },
+  ];
+  const progress = buildFormulaOneProgress({
+    drivers: [
+      {
+        driver_id: "antonelli",
+        display_name: "Kimi Antonelli",
+        given_name: "Andrea Kimi",
+        family_name: "Antonelli",
+      },
+    ],
+    rounds: awardRounds,
+    results: [1, 2].map((round) => ({
+      round,
+      session_type: "race",
+      driver_id: "antonelli",
+      position: 1,
+      points: 25,
+    })),
+  });
+  assert.deepEqual(progress.counts.driverOfTheDay, { "Kimi Antonelli": 2 });
+  assert.equal(awardRounds[1].driver_of_the_day, "Andrea Kimi Antonelli");
+});

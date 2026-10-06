@@ -745,7 +745,7 @@ async function readPublicWeekly(env, year) {
 async function readPublicQuestionProgress(env, year) {
   const queries = await Promise.all([
     env.DB.prepare(
-      "SELECT driver_id, display_name, constructor_name FROM f1_drivers WHERE year = ?",
+      "SELECT driver_id, display_name, given_name, family_name, constructor_name FROM f1_drivers WHERE year = ?",
     )
       .bind(year)
       .all(),

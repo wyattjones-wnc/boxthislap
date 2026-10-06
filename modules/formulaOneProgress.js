@@ -10,6 +10,30 @@ export function buildFormulaOneProgress({
   const teams = new Map(
     drivers.map((driver) => [driver.driver_id, driver.constructor_name]),
   );
+  const normalizeName = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  const awardName = (value) => {
+    if (names.has(value)) return names.get(value);
+    const normalized = normalizeName(value);
+    if (!normalized) return "";
+    const matches = drivers.filter((driver) => {
+      const aliases = [
+        driver.display_name,
+        `${driver.given_name || ""} ${driver.family_name || ""}`,
+      ].map(normalizeName);
+      return aliases.some(
+        (alias) =>
+          alias === normalized ||
+          (normalized.includes(" ") && alias.endsWith(` ${normalized}`)),
+      );
+    });
+    return matches.length === 1
+      ? matches[0].display_name
+      : String(value).trim();
+  };
   const counts = {};
   const add = (metric, name, value) => {
     if (!name) return;
@@ -45,11 +69,7 @@ export function buildFormulaOneProgress({
   }
   for (const round of rounds) {
     if (!raceRounds.has(Number(round.round))) continue;
-    add(
-      "driverOfTheDay",
-      names.get(round.driver_of_the_day) || round.driver_of_the_day,
-      1,
-    );
+    add("driverOfTheDay", awardName(round.driver_of_the_day), 1);
   }
   return { counts, completedRounds: raceRounds.size };
 }

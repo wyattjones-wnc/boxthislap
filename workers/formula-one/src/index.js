@@ -5,6 +5,7 @@ import {
   WILDCARD_POINTS,
 } from "./scoring.js";
 import { buildFormulaOneMainDatasets } from "../../../modules/formulaOneQualifying.js";
+import { buildFormulaOneProgress } from "../../../modules/formulaOneProgress.js";
 
 const SESSION_TYPES = new Set(["qualifying", "sprint", "race"]);
 
@@ -48,6 +49,23 @@ export default {
           {
             ok: true,
             ...(await readPublicWeekly(env, parseYear(publicWeeklyMatch[1]))),
+          },
+          200,
+          cors,
+        );
+      }
+
+      const publicProgressMatch = url.pathname.match(
+        /^\/api\/seasons\/(\d{4})\/questions\/progress$/,
+      );
+      if (publicProgressMatch && request.method === "GET") {
+        return json(
+          {
+            ok: true,
+            ...(await readPublicQuestionProgress(
+              env,
+              parseYear(publicProgressMatch[1]),
+            )),
           },
           200,
           cors,
@@ -722,6 +740,37 @@ async function readPublicWeekly(env, year) {
     };
   }
   return { year, races, standings: buildWeeklyStandings(scores) };
+}
+
+async function readPublicQuestionProgress(env, year) {
+  const queries = await Promise.all([
+    env.DB.prepare(
+      "SELECT driver_id, display_name, constructor_name FROM f1_drivers WHERE year = ?",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      "SELECT round, driver_of_the_day FROM f1_rounds WHERE year = ? ORDER BY round",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      `SELECT results.round, results.session_type, results.driver_id, results.constructor_name, results.position, results.points, results.laps
+      FROM f1_session_results results
+      INNER JOIN f1_sessions sessions ON sessions.year = results.year AND sessions.round = results.round AND sessions.session_type = results.session_type
+      WHERE results.year = ? AND sessions.status = 'approved'`,
+    )
+      .bind(year)
+      .all(),
+  ]);
+  return {
+    year,
+    ...buildFormulaOneProgress({
+      drivers: queries[0].results || [],
+      rounds: queries[1].results || [],
+      results: queries[2].results || [],
+    }),
+  };
 }
 
 async function readPublicCalculator(env, year) {

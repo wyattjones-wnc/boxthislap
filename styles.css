@@ -9138,6 +9138,17 @@ button.formula-one-admin-status:focus-visible {
   padding: 16px;
 }
 
+.formula-one-question-progress {
+  background: var(--soft);
+  border-left: 3px solid var(--time-strong);
+  padding: 12px;
+}
+
+.formula-one-question-progress ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
 .formula-one-bet-list {
   display: grid;
 }

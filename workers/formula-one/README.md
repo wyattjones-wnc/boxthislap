@@ -23,6 +23,8 @@ The public `GET /api/seasons/:year/weekly` endpoint exposes scored, completed we
 
 The public `GET /api/seasons/:year/calculator` endpoint builds the points-calculator season state directly from approved D1 sessions. It exposes active drivers, completed points, remaining race and sprint rounds, and the standard scoring options without reading the exported Google workbook.
 
+The public `GET /api/seasons/:year/questions/progress` endpoint aggregates approved session facts for the 2026 Questions page's default In Progress view. It includes race and sprint championship points, race podium counts, recorded Driver of the Day awards, poles, sprint points, and racing laps. Driver of the Day awards count only once the round has approved race results. Provisional displays do not score manager bets or replace final workbook answers; questions without supported, available facts remain accessible through All questions and individual selections. Deploy the Worker with the frontend to make this endpoint available; no D1 migration is required.
+
 `Fetch round` treats approved sheet/manual sessions as reconciliation candidates: provider rows are merged into the imported session, non-participant classifications are retained, and the session returns to review. Sessions already sourced from Jolpica remain unchanged until explicitly reopened.
 
 No cron trigger is configured. Admins explicitly fetch a session and explicitly approve it.

@@ -568,7 +568,13 @@ export function FormulaOneQuestionsPage({
       <div className="formula-one-controls">
         <label className="select-control">
           <span>Question</span>
-          <select id={`${prefix}-question-select`} defaultValue="">
+          <select
+            id={`${prefix}-question-select`}
+            defaultValue={year === 2026 ? "in-progress" : ""}
+          >
+            {year === 2026 ? (
+              <option value="in-progress">In Progress</option>
+            ) : null}
             <option value="">All questions</option>
           </select>
         </label>

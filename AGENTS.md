@@ -16,11 +16,17 @@
 - Use [.agents/overview.md](.agents/overview.md) only when routing is unclear, then read only directly relevant topic files. For obvious small changes, go straight to targeted `rg` searches and bounded source reads.
 - Treat source and linked detailed docs as authoritative. Do not preload all topics or whole copies of large files such as `script.js` and `styles.css` without a task-specific reason.
 
-### Codex Cloud
+### Cloud Branch and Delivery
 
-Apply project changes to local `dev` and run validation there. Explicitly requested task branches must be based on current `origin/dev`; direct work on `main` requires the particular exception described above. If a cloud task starts on a synthetic branch such as `work`, fetch `origin/dev` when available and switch to local `dev` before editing. Preserve task changes when switching; use a managed worktree if unrelated work prevents a safe switch. If shell Git cannot access `origin/dev`, use an available authorized GitHub connector to inspect current `dev`, reconcile the task files, and create a commit based on its current head with an expected-head check. Do not replace unrelated remote changes. If neither path is available, report the concrete delivery blocker instead of treating local edits as completed work.
+When a Codex Cloud task starts without an explicit branch selection, treat `dev` as the intended base branch for this repository.
 
-Completed tasks must reach `origin/dev` for review, including from a synthetic cloud branch. Honor explicit local-only, no-push, or alternate-branch instructions. Do not merge into or push `main`, create a PR, or deploy unless explicitly authorized.
+Before making changes, fetch `origin/dev` and verify the current HEAD against it. If the workspace is already based on the same commit, do not switch or rewrite Git state unnecessarily. If the task starts from `main`, another branch, or a synthetic branch such as `work`, move the task safely onto current `dev` while preserving unrelated work. Use a managed worktree when the current checkout cannot be changed safely.
+
+A completed change must be validated, committed, and pushed to `origin/dev` unless the user explicitly requests local-only work or another branch. Do not report completion until the task commit is confirmed on remote `dev`, and include its commit link in the completion report.
+
+Never push or merge into `main` without explicit authorization. Do not create a pull request or deploy separately unless explicitly authorized.
+
+If shell Git cannot access `origin/dev`, use an available authorized GitHub connector to inspect current `dev`, reconcile the task files, and create a commit based on its current head with an expected-head check. Do not replace unrelated remote changes. If neither path is available, report the concrete delivery blocker instead of treating local edits as completed work.
 
 ## Validation and Reporting
 

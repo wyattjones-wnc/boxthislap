@@ -2,7 +2,8 @@
   background: transparent;
   border: 0;
   color: var(--ink);
-  height: min(680px, calc(100dvh - 24px));
+  height: fit-content;
+  max-height: calc(100dvh - 24px);
   max-width: 680px;
   overflow: hidden;
   padding: 0;
@@ -21,7 +22,9 @@
   display: grid;
   gap: 14px;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  height: 100%;
+  height: auto;
+  max-height: calc(100dvh - 24px);
+  box-sizing: border-box;
   padding: 18px;
 }
 

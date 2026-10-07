@@ -658,6 +658,70 @@ test("Next item form loads as a contained React dialog and saves", async ({
   ).toBeGreaterThanOrEqual(48);
   await expect(page.locator("body")).toHaveCSS("position", "fixed");
 
+  const compactHeight = await dialog.evaluate(
+    (element) => element.getBoundingClientRect().height,
+  );
+  const date = await dialog.getByLabel("Date", { exact: true }).boundingBox();
+  const endDate = await dialog.getByLabel("End Date").boundingBox();
+  if (!date || !endDate) throw new Error("Date fields must be visible");
+  expect(endDate.x - (date.x + date.width)).toBeGreaterThanOrEqual(15);
+  const switches = dialog.getByRole("switch");
+  expect(
+    await switches.evaluateAll((elements) =>
+      elements.map((element) => {
+        const { width, height } = element.getBoundingClientRect();
+        return { width, height };
+      }),
+    ),
+  ).toEqual([
+    { width: 40, height: 24 },
+    { width: 40, height: 24 },
+  ]);
+  const completed = dialog.getByRole("switch", { name: "Completed" });
+  const state = completed.locator("~ .toggle-label .toggle-state");
+  expect(
+    await state.evaluate(
+      (element) => getComputedStyle(element, "::after").content,
+    ),
+  ).toBe('"Off"');
+  await completed.check();
+  expect(
+    await state.evaluate(
+      (element) => getComputedStyle(element, "::after").content,
+    ),
+  ).toBe('"On"');
+  await completed.uncheck();
+
+  // Future fields must grow the dialog only up to the viewport, then scroll
+  // inside its body while keeping the footer visible.
+  const scrollArea = dialog.locator(".react-form-dialog-scroll");
+  await scrollArea.evaluate((element) => {
+    const extra = document.createElement("div");
+    extra.dataset.testDialogContent = "";
+    extra.style.height = "1000px";
+    element.append(extra);
+  });
+  expect(
+    await scrollArea.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+  expect(
+    await dialog.evaluate((element) => element.getBoundingClientRect().height),
+  ).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight - 23));
+  await expect(dialog.getByRole("button", { name: "Save" })).toBeInViewport();
+  await dialog
+    .locator("[data-test-dialog-content]")
+    .evaluate((element) => element.remove());
+  expect(
+    await dialog.evaluate((element) => element.getBoundingClientRect().height),
+  ).toBe(compactHeight);
+  expect(
+    await scrollArea.evaluate(
+      (element) => element.scrollHeight <= element.clientHeight + 1,
+    ),
+  ).toBe(true);
+
   await thing.fill("React migration check");
   await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
   await dialog.getByLabel("Priority", { exact: true }).fill("8");

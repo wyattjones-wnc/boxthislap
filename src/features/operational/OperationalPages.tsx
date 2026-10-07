@@ -2498,7 +2498,10 @@ function Check({
       hidden={adminOnly}
     >
       <input id={id} type="checkbox" role={toggle ? "switch" : undefined} />
-      <span>{label}</span>
+      <span className={toggle ? "toggle-label" : undefined}>
+        <span>{label}</span>
+        {toggle ? <span className="toggle-state" aria-hidden="true" /> : null}
+      </span>
     </label>
   );
 }

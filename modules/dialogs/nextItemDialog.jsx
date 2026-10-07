@@ -142,7 +142,10 @@ function NextItemDialog({
               role="switch"
               type="checkbox"
             />
-            <span>Completed</span>
+            <span className="toggle-label">
+              <span>Completed</span>
+              <span className="toggle-state" aria-hidden="true" />
+            </span>
           </label>
           <label className="next-checkbox-control next-dialog-checkbox toggle-control">
             <input
@@ -151,7 +154,10 @@ function NextItemDialog({
               role="switch"
               type="checkbox"
             />
-            <span>Show to non-admin</span>
+            <span className="toggle-label">
+              <span>Show to non-admin</span>
+              <span className="toggle-state" aria-hidden="true" />
+            </span>
           </label>
         </div>
       </div>

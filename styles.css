@@ -5348,7 +5348,7 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
 
 .next-item-fields {
   display: grid;
-  gap: 12px;
+  gap: 12px 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -5434,7 +5434,8 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   background: transparent;
   border: 0;
   color: var(--ink);
-  height: min(680px, calc(100dvh - 24px));
+  height: fit-content;
+  max-height: calc(100dvh - 24px);
   max-width: 680px;
   overflow: hidden;
   padding: 0;
@@ -5453,7 +5454,8 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   display: grid;
   gap: 14px;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  height: 100%;
+  height: auto;
+  max-height: calc(100dvh - 24px);
   padding: 18px;
 }
 
@@ -12389,35 +12391,43 @@ html.has-contained-dialog body {
 
 .toggle-control input[type="checkbox"] {
   appearance: none;
-  background: var(--muted);
-  border: 2px solid transparent;
+  box-sizing: border-box;
+  background: var(--soft);
+  border: 2px solid var(--muted);
   border-radius: 999px;
   cursor: pointer;
   flex: 0 0 auto;
-  height: 22px;
-  width: 38px;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding: 0;
   margin: 0;
   position: relative;
   transition: background 150ms ease;
 }
 
 .toggle-control input[type="checkbox"]::before {
-  background: var(--panel);
+  background: var(--muted);
   border-radius: 50%;
   content: "";
   height: 16px;
-  left: 1px;
+  left: 2px;
   position: absolute;
-  top: 1px;
+  top: 2px;
   width: 16px;
   transition: transform 150ms ease;
 }
 
 .toggle-control input[type="checkbox"]:checked {
   background: var(--track);
+  border-color: var(--track);
 }
 
 .toggle-control input[type="checkbox"]:checked::before {
+  background: var(--panel);
   transform: translateX(16px);
 }
 
@@ -12473,4 +12483,46 @@ html.has-contained-dialog body {
   background: transparent;
   border: 0;
   padding: 0;
+}
+
+/* Safari date controls must fit their grid track rather than their native
+   intrinsic width. Keep the space between the two date fields visible. */
+.next-item-fields input[type="date"] {
+  appearance: none;
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+}
+
+.next-item-fields input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+.toggle-control .toggle-label {
+  display: grid;
+  gap: 2px;
+}
+
+.toggle-state {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.toggle-state::after {
+  content: "Off";
+}
+
+.toggle-control input:checked ~ .toggle-label .toggle-state {
+  color: var(--ink);
+}
+
+.toggle-control input:checked ~ .toggle-label .toggle-state::after {
+  content: "On";
+}
+
+.react-form-dialog-panel > footer .footy-note-status:empty {
+  display: none;
 }

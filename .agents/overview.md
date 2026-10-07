@@ -9,6 +9,7 @@ Box This Lap is a mobile-first React/Vite dashboard hosted on GitHub Pages. Reac
 - Compatibility modules and endpoint configuration: [modules](../modules) and [modules/siteConfig.js](../modules/siteConfig.js).
 - Persistent APIs and migrations: [workers](../workers).
 - Data publishing, migration, and maintenance: [scripts](../scripts) and [.github/workflows](../.github/workflows).
+- Cloudflare Worker deployment and credential location: [deployment.md](deployment.md).
 - Tests: colocated React tests, module `*.test.mjs` files, Worker `test` directories, and [tests/e2e](../tests/e2e).
 - Canonical frontend ownership rules: [docs/frontend-architecture.md](../docs/frontend-architecture.md).
 
@@ -19,6 +20,7 @@ Box This Lap is a mobile-first React/Vite dashboard hosted on GitHub Pages. Reac
 - Rankings, Elo, comparisons, and draft lists: [rankings.md](rankings.md)
 - Login, sessions, administration, and Manager Hub: [manager-hub.md](manager-hub.md)
 - Google Sheets, Apps Script, and published snapshots: [google-sheets.md](google-sheets.md)
+- Worker deployment, migrations, and Cloudflare credentials: [deployment.md](deployment.md)
 - Fantasy Critic, Fantasy Office, leagues, and awards: [fantasy-leagues.md](fantasy-leagues.md)
 - Formula 1 questions, scoring, weekly entries, and data service: [formula-1.md](formula-1.md)
 - Scriptable loaders and iPhone widgets: [scriptable.md](scriptable.md)

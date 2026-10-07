@@ -5,6 +5,7 @@ import {
   WILDCARD_POINTS,
 } from "./scoring.js";
 import { buildFormulaOneMainDatasets } from "../../../modules/formulaOneQualifying.js";
+import { buildFormulaOneProgress } from "../../../modules/formulaOneProgress.js";
 
 const SESSION_TYPES = new Set(["qualifying", "sprint", "race"]);
 
@@ -48,6 +49,23 @@ export default {
           {
             ok: true,
             ...(await readPublicWeekly(env, parseYear(publicWeeklyMatch[1]))),
+          },
+          200,
+          cors,
+        );
+      }
+
+      const publicProgressMatch = url.pathname.match(
+        /^\/api\/seasons\/(\d{4})\/questions\/progress$/,
+      );
+      if (publicProgressMatch && request.method === "GET") {
+        return json(
+          {
+            ok: true,
+            ...(await readPublicQuestionProgress(
+              env,
+              parseYear(publicProgressMatch[1]),
+            )),
           },
           200,
           cors,
@@ -722,6 +740,85 @@ async function readPublicWeekly(env, year) {
     };
   }
   return { year, races, standings: buildWeeklyStandings(scores) };
+}
+
+async function readPublicQuestionProgress(env, year) {
+  const queries = await Promise.all([
+    env.DB.prepare(
+      "SELECT driver_id, display_name, given_name, family_name, constructor_id, constructor_name FROM f1_drivers WHERE year = ?",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      "SELECT round, name, has_sprint, driver_of_the_day, fastest_pit_time, fastest_pit_team, dnf_count, safety_car FROM f1_rounds WHERE year = ? ORDER BY round",
+    )
+      .bind(year)
+      .all(),
+    env.DB.prepare(
+      `SELECT results.round, results.session_type, results.driver_id, results.constructor_id, results.constructor_name, results.position, results.classified_position, results.points, results.laps, results.status, results.q1, results.q2, results.q3, results.qualifying_unadjusted_seconds, results.qualifying_adjusted_seconds, results.qualifying_adjusted_session
+      FROM f1_session_results results
+      INNER JOIN f1_sessions sessions ON sessions.year = results.year AND sessions.round = results.round AND sessions.session_type = results.session_type
+      WHERE results.year = ? AND sessions.status = 'approved'`,
+    )
+      .bind(year)
+      .all(),
+  ]);
+  const latestRace = Math.max(
+    0,
+    ...(queries[2].results || [])
+      .filter((result) => result.session_type === "race")
+      .map((result) => Number(result.round)),
+  );
+  const standings =
+    latestRace && env.JOLPICA_BASE_URL
+      ? await Promise.all([
+          readPublicProviderStandings(env, year, latestRace, "driver"),
+          readPublicProviderStandings(env, year, latestRace, "constructor"),
+        ])
+      : [[], []];
+  return {
+    year,
+    ...buildFormulaOneProgress({
+      drivers: queries[0].results || [],
+      rounds: queries[1].results || [],
+      results: queries[2].results || [],
+      driverStandings: standings[0],
+      constructorStandings: standings[1],
+    }),
+  };
+}
+
+async function readPublicProviderStandings(env, year, round, kind) {
+  try {
+    const response = await fetch(
+      `${String(env.JOLPICA_BASE_URL).replace(/\/$/, "")}/${year}/${round}/${kind}Standings.json?limit=100`,
+      {
+        signal: AbortSignal.timeout(8000),
+        cf: { cacheTtl: 300, cacheEverything: true },
+      },
+    );
+    if (!response.ok) return [];
+    const data = await response.json();
+    const list = data.MRData?.StandingsTable?.StandingsLists?.find(
+      (entry) => Number(entry.round) === round && Number(entry.season) === year,
+    );
+    return (
+      list?.[kind === "driver" ? "DriverStandings" : "ConstructorStandings"] ||
+      []
+    ).map((entry) => ({
+      position: Number(entry.position),
+      points: Number(entry.points),
+      ...(kind === "driver"
+        ? { driverId: entry.Driver?.driverId }
+        : {
+            name: entry.Constructor?.name,
+            constructorId: entry.Constructor?.constructorId,
+          }),
+    }));
+  } catch {
+    // Approved results still support countback when the provider is unavailable.
+    return [];
+  }
 }
 
 async function readPublicCalculator(env, year) {

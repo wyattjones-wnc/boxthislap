@@ -1,0 +1,36 @@
+name: Deploy Footy Push Worker
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - workers/footy-push/**
+      - .github/workflows/deploy-footy-push-worker.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-footy-push-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Test Footy Push worker
+        run: node --test workers/footy-push/test/*.test.mjs
+      - name: Validate Footy Push worker
+        run: npx wrangler deploy --dry-run --config workers/footy-push/wrangler.toml --outdir .tmp/footy-push-dry-run
+      - name: Deploy Footy Push worker
+        run: npx wrangler deploy --config workers/footy-push/wrangler.toml

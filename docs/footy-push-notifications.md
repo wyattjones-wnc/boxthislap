@@ -38,16 +38,16 @@ This setup uses a Cloudflare Worker with KV and the shared Rankings D1 database 
 
 7. Apply `workers/rankings/migrations/0005_manager_followed_teams.sql` to the shared `rankings` D1 database.
 8. Apply `workers/rankings/migrations/0007_manager_match_notifications.sql` to the same database.
-9. Deploy from `workers/footy-push`:
+9. Push the reviewed Footy Push changes to `dev`. The path-triggered GitHub Actions workflow tests, validates, and deploys the Worker using encrypted repository secrets. A manual deployment can also be requested from GitHub Actions or with an authenticated GitHub CLI:
 
    ```bash
-   wrangler deploy
+   gh workflow run deploy-footy-push-worker.yml --ref dev
    ```
 
 10. Copy the deployed Worker URL into both:
 
-   - `modules/siteConfig.js` as `FOOTY_PUSH_ENDPOINT`
-   - `service-worker.js` as `FOOTY_PUSH_ENDPOINT`
+- `modules/siteConfig.js` as `FOOTY_PUSH_ENDPOINT`
+- `service-worker.js` as `FOOTY_PUSH_ENDPOINT`
 
 Main and dev use the same Worker and VAPID keys. Each service-worker scope creates its own browser subscription; the Worker stores the subscribing page URL and sends that subscription alerts from the matching schedule with a matching notification link.
 

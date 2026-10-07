@@ -23,6 +23,10 @@ The public `GET /api/seasons/:year/weekly` endpoint exposes scored, completed we
 
 The public `GET /api/seasons/:year/calculator` endpoint builds the points-calculator season state directly from approved D1 sessions. It exposes active drivers, completed points, remaining race and sprint rounds, and the standard scoring options without reading the exported Google workbook.
 
+The public `GET /api/seasons/:year/questions/progress` endpoint supplies the React-owned 2026 Questions page. Its season facts include championship totals, the opening-round driver roster, reweighted sprint points, qualifying averages and adjusted/unadjusted teammate gaps, finishing positions, race/sprint winners, podiums, poles, laps, and recorded round facts. Provider standings are requested at the last approved race, cached for five minutes, and used for definitive positions only when their points agree with the approved dataset; result countback provides a fallback. No unapproved session results or manager entries are exposed.
+
+The Questions page uses explicit workbook question mappings, preserves final answers and bet scoring, and excludes questions with no actual bets from In Progress. Driver and constructor aliases are normalized, as are race picks (including Catalunya/Barcelona, Austin/United States, and the rescheduled Bahrain round). Question 16 displays Isack Hadjar in place of the workbook typo without writing back to the sheet. Questions 35/36 appear only for true cases where both drivers finished for the constructors named in the question. Subjective questions and questions requiring a future outcome remain available through All questions and individual selections. Deploy the Worker with the frontend; no D1 migration is required.
+
 `Fetch round` treats approved sheet/manual sessions as reconciliation candidates: provider rows are merged into the imported session, non-participant classifications are retained, and the session returns to review. Sessions already sourced from Jolpica remain unchanged until explicitly reopened.
 
 No cron trigger is configured. Admins explicitly fetch a session and explicitly approve it.

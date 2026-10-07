@@ -70,6 +70,8 @@ Add `dev` before or after the manager to read the development schedule and prefe
 dev Wyatt
 ```
 
+Footy saves the last loaded matches separately for each channel and manager choice. If the schedule or manager service is unavailable, it keeps showing that saved display and retries on the next refresh. Before the first successful load, it shows “Waiting for schedule” without an error.
+
 ## Formula 1
 
 Formula 1 reads the current season schedule directly from Jolpica and displays times in the iPhone's local time zone. The bet deadline is the scheduled qualifying start.

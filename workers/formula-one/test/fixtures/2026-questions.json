@@ -1,0 +1,800 @@
+[
+  {
+    "number": 1,
+    "question": "Who will be World Drivers Champion?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Max Verstappen",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 2,
+    "question": "Which drivers will finish on the podium this season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Lando, Oscar, George, Max, Carlos, Nico",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 3,
+    "question": "Who will get the most Driver of the Day awards?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Max Verstappen",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 4,
+    "question": "Which driver will come in last in the Drivers Championship, of the drivers starting the season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Valtteri Bottas",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 5,
+    "question": "Which will be the closest teammate pair in qualifying?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Lando Norris and Oscar Piastri",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 6,
+    "question": "Which will be the closest teammate pair in the Grand Prix?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Valtteri Bottas and Sergio Perez",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 7,
+    "question": "Who would be the Sprint Race Champion if we gave race points to the Sprint Races?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Max Verstappen",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 8,
+    "question": "Who will win the F1 Overtake Award at the end of the season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Max Verstappen",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 9,
+    "question": "Which driver will complete the fewest racing laps in 2026, of those starting the season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Liam Lawson",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 10,
+    "question": "What will the final championship order be?",
+    "answer": "",
+    "bets": []
+  },
+  {
+    "number": 11,
+    "question": "Pick 4 races. Get Valtteri Bottas’ points at those Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Australia, Bahrain, Catalunya, Italy",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 12,
+    "question": "Pick 4 races. Get Isack Hadjar's points at those Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Japan, Netherlands, Brazil, Las Vegas",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 13,
+    "question": "Which three Grand Prix will have the most classified DNFs?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Australia, Saudi Arabia, Miami",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 14,
+    "question": "What will the points difference between Charles Leclerc and Lewis Hamilton be?  60 points for exact, -1 for every point off.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "8",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 15,
+    "question": "Difference between average qualifying positions of Alonso and Stroll.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "4",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 16,
+    "question": "Difference between average qualifying positions of Max Verstappen and Liam Lawson.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "8",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 17,
+    "question": "George Russell will outscore Oscar Piastri over the course of the season.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 18,
+    "question": "Who finishes in the points more, Isack Hadjar or Liam Lawson?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Isack Hadjar",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 19,
+    "question": "Who will get into Q3 more, Nico Hulkenberg or Gabriel Bortoleto?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Nico Hulkenberg",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 20,
+    "question": "Difference in final championship positions of Nico Hulkenberg and Gabriel Bortoleto?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "3",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 21,
+    "question": "Which third of the season will be the strongest for Isack Hadjar?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Middle Third (Rounds 9 - 16)",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 22,
+    "question": "Which team will win the World Constructors Championship?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "McLaren",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 23,
+    "question": "Which team will come in last in the World Constructors Championship?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Cadillac",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 24,
+    "question": "Which constructor will be considered to have had the biggest scandal?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Cadillac",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 25,
+    "question": "How many constructors will score fewer than 20 points by the end of the season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "1",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 26,
+    "question": "Which team will go through the most total power unit components?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Cadillac",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 27,
+    "question": "Which team will have the fastest pit stop at any of the races for the 2026 season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "McLaren",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 28,
+    "question": "On a race weekend, how many of the Sprint Races will have the same winner as the Grand Prix?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "1",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 29,
+    "question": "There are 24 races scheduled in 2026.  How many will have a safety car?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "10",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 30,
+    "question": "All constructors will score points by the end of the season.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 31,
+    "question": "The winning constructor takes 10 or fewer wins over the season.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 32,
+    "question": "The constructor standing order after Round 12 (Belgian Grand Prix) will be the same as the final order at the end of the season.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 33,
+    "question": "The 2026 Formula 2 Drivers' Champion gets a seat on the Formula 1 grid in 2027.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 34,
+    "question": "Lando Norris will finish in the top 3 in the Drivers Championship.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 35,
+    "question": "Not considering DNFs for either driver - will Carlos Sainz in a Williams finish a Grand Prix ahead of Lewis Hamilton in a Ferrari at any point in the season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 36,
+    "question": "Not considering DNFs for either driver - will Liam Lawson in an RB finish a Grand Prix ahead of Isack Hadjar in a Red Bull at any point in the season?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 37,
+    "question": "Lewis Hamilton will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 38,
+    "question": "Charles Leclerc will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 39,
+    "question": "Aston Martin will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 40,
+    "question": "Lando Norris will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 41,
+    "question": "Oscar Piastri will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 42,
+    "question": "George Russell will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 43,
+    "question": "Andrea Kimi Antonelli will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 44,
+    "question": "Max Verstappen will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 45,
+    "question": "Isack Hadjar will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 46,
+    "question": "A driver for a constructor outside the top 4 (McLaren, Ferrari, Red Bull, Mercedes) will win a Grand Prix.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 47,
+    "question": "A driver on the grid at the beginning of the season will not compete in the last race.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "TRUE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 48,
+    "question": "Williams will score a podium.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "FALSE",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 49,
+    "question": "There were only 4 unique race winners in 2025.  Will there be more in 2026?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 50,
+    "question": "Max Verstappen is currently joint 2nd for the record of most consecutive wins at the same Grand Prix with his 4 wins at the Japanese Grand Prix.  To join Lewis Hamiton and Ayrton Senna in first with 5, Max needs to win the 2026 Japanese Grand Prix.  Will Max win in Suzuka this year?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Yes",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 51,
+    "question": "The last engine regulation change of this scale was for the 2014 season.  In that season, a Mercedes was on pole for 18 of 19 rounds.  In 2026's 24 round season, will a constructor claim at least 22 pole positions.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 52,
+    "question": "The last engine regulation change of this scale was for the 2014 season.  In that season, a Mercedes won the race in 16 of 19 rounds.  In 2026's 24 race season, will the winning constructor win 20 or more races.",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 53,
+    "question": "Kimi Raikkonen holds the record for the most 3rd place finishes at 45.  Lewis Hamilton is currently at 40.  Will Lewis hold the record by the end of 2026?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 54,
+    "question": "The constructor Toyota currently holds the 2nd place record for the constructor with the most podiums without a win at 13.  Aston Martin currently has 9.  Will Aston Martin match or surpass Toyota on this list in 2026?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "No",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 55,
+    "question": "In 2014, there was a 67 point gap between P1 and P2 in the Drivers' Championship.  Will there be a smaller gap in 2026?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Yes",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 56,
+    "question": "In 2014, there was a 296 point gap between P1 and P2 in the Constructors' Championship.  Will there be a smaller gap in 2026?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Yes",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 57,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Lando Norris and Oscar Piastri?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Lando Norris",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 58,
+    "question": "Who will have more points at the end of the season between the teammate pairing of George Russell and Kimi Antonelli?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "George Russell",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 59,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Max Verstappen and Isack Hadjar?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Max Verstappen",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 60,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Charles Leclerc and Lewis Hamilton?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Charles Leclerc",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 61,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Alex Albon and Carlos Sainz?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Alex Albon",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 62,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Liam Lawson and Arvid Lindblad?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Arvid Lindblad",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 63,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Fernando Alonso and Lance Stroll?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Fernando Alonso",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 64,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Esteban Ocon and Oliver Bearman?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Esteban Ocon",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 65,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Nico Hulkenberg and Gabriel Bortoleto?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Nico Hulkenberg",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 66,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Pierre Gasly and Franco Colapinto?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Pierre Gasly",
+        "points": 0
+      }
+    ]
+  },
+  {
+    "number": 67,
+    "question": "Who will have more points at the end of the season between the teammate pairing of Valtteri Bottas and Sergio Perez?",
+    "answer": "",
+    "bets": [
+      {
+        "manager": "Test Manager",
+        "bet": "Sergio Perez",
+        "points": 0
+      }
+    ]
+  }
+]

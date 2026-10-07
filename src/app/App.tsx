@@ -81,6 +81,24 @@ const FantasyOffice2026Page = lazy(() =>
   })),
 );
 
+const FormulaOne2026QuestionsPage = lazy(() =>
+  import("../features/competition/FormulaOne2026QuestionsFeature").then(
+    (module) => ({ default: module.FormulaOne2026QuestionsPage }),
+  ),
+);
+
+function DeferredFormulaOne2026QuestionsPage() {
+  const { route } = useAppState();
+  if (route !== "formula-1-2026-questions") return null;
+  return (
+    <Suspense
+      fallback={<p className="table-message">Loading Formula 1 questions...</p>}
+    >
+      <FormulaOne2026QuestionsPage />
+    </Suspense>
+  );
+}
+
 const HelpPage = lazy(() => import("./HelpPage"));
 
 function DeferredFantasyOffice2026Page({
@@ -359,7 +377,7 @@ export function App({
           competitionRoots.formulaOne2025Weekly,
         )}
         {createPortal(
-          <FormulaOneQuestionsPage year={2026} />,
+          <DeferredFormulaOne2026QuestionsPage />,
           competitionRoots.formulaOne2026Questions,
         )}
         {createPortal(

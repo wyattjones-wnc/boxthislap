@@ -2,7 +2,9 @@
 
 ## Entry Points
 
-- React questions, results, weekly, manage, and calculator surfaces: [src/features/competition/CompetitionPages.tsx](../src/features/competition/CompetitionPages.tsx).
+- React-owned 2026 Questions, queries, filters, and provisional displays: [src/features/competition/FormulaOne2026QuestionsFeature.tsx](../src/features/competition/FormulaOne2026QuestionsFeature.tsx). Its compatibility IDs must not be mutated by the legacy controller.
+- Approved season facts, normalization, and explicit 2026 question mappings: [modules/formulaOneProgress.js](../modules/formulaOneProgress.js).
+- Archived questions, results, weekly, manage, and calculator surfaces: [src/features/competition/CompetitionPages.tsx](../src/features/competition/CompetitionPages.tsx).
 - Public formatting/calculation helpers: [modules/formulaOnePublic.js](../modules/formulaOnePublic.js), [modules/formulaOneCalculator.js](../modules/formulaOneCalculator.js), and [modules/formulaOneQualifying.js](../modules/formulaOneQualifying.js).
 - D1 service, provider imports, approvals, manager entries, scoring, and exports: [workers/formula-one/src/index.js](../workers/formula-one/src/index.js) and [workers/formula-one/src/scoring.js](../workers/formula-one/src/scoring.js).
 - Migration and seed tools: [scripts/migrate-formula-one-2026.mjs](../scripts/migrate-formula-one-2026.mjs) and [scripts/build-formula-one-seed-sql.mjs](../scripts/build-formula-one-seed-sql.mjs).
@@ -30,4 +32,5 @@
 ## Focused Validation
 
 - `npm run test:formula-one`
-- `npx vitest run src/features/competition/CompetitionPages.test.tsx src/features/competition/formulaOnePublic.test.ts`
+- `npx vitest run src/features/competition/CompetitionPages.test.tsx src/features/competition/formulaOnePublic.test.ts src/features/competition/FormulaOne2026QuestionsFeature.test.tsx`
+- `npx playwright test --project mobile-chrome --grep "Formula 1 Questions owns"` (against the preview server)

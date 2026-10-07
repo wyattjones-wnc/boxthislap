@@ -22,13 +22,13 @@ describe("competition React pages", () => {
   it("renders Formula 1 public controls and weekly sections", () => {
     const { container } = render(
       <>
-        <FormulaOneQuestionsPage year={2026} />
+        <FormulaOneQuestionsPage year={2025} />
         <FormulaOne2026WeeklyPage />
       </>,
     );
 
     expect(
-      container.querySelector("#formula-one-2026-question-select"),
+      container.querySelector("#formula-one-2025-question-select"),
     ).not.toBeNull();
     expect(
       container.querySelector("#formula-one-2026-weekly-form"),

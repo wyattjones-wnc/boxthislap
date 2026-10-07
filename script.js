@@ -18418,6 +18418,7 @@ function loadPageData(scope) {
   const formulaOneMatch = scope.match(/^formula-one-(2024|2025|2026)-(questions|weekly|calculator|results|manage|review)$/);
   if (formulaOneMatch) {
     const [, year, view] = formulaOneMatch;
+    if (year === "2026" && view === "questions") return Promise.resolve();
     if (year === "2026" && ["manage", "review"].includes(view)) {
       return ensureFormulaOneAdminData();
     }

@@ -379,6 +379,7 @@ function renderFormulaOneQuestionOptions(year, questions) {
     return;
   }
 
+  const selected = view.questionSelect.value;
   view.questionSelect.innerHTML = `
     <option value="">All questions</option>
     ${questions
@@ -387,9 +388,14 @@ function renderFormulaOneQuestionOptions(year, questions) {
       })
       .join("")}
   `;
+  view.questionSelect.value = [...view.questionSelect.options].some(
+    (option) => option.value === selected,
+  )
+    ? selected
+    : "";
 }
 
-function formatFormulaOneQuestionOption(question) {
+export function formatFormulaOneQuestionOption(question) {
   return `${question.number}. ${getFormulaOneQuestionSummary(question.question)}`;
 }
 

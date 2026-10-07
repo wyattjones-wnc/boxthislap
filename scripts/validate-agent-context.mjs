@@ -14,6 +14,7 @@ const requiredTopics = [
   "fantasy-leagues.md",
   "formula-1.md",
   "scriptable.md",
+  "deployment.md",
 ];
 const errors = [];
 const warnings = [];

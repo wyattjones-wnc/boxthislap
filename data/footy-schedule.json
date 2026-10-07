@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-10-06T16:50:32.594Z",
+  "generatedAt": "2026-10-07T17:27:11.962Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-10-06T16:50:32.594Z",
-    "attemptedAt": "2026-10-06T16:50:32.594Z",
-    "updatedAt": "2026-10-06T16:50:32.594Z",
-    "oldestTeamUpdatedAt": "2026-10-06T16:50:32.594Z",
+    "generatedAt": "2026-10-07T17:27:11.962Z",
+    "attemptedAt": "2026-10-07T17:27:11.962Z",
+    "updatedAt": "2026-10-07T17:27:11.962Z",
+    "oldestTeamUpdatedAt": "2026-10-07T17:27:11.962Z",
     "competitionCount": 11,
     "competitionFixtureCount": 2275,
     "teamCount": 7,
-    "fixtureCount": 217,
+    "fixtureCount": 216,
     "statuses": {
       "updated": 7
     }
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 257,
-      "syncedAt": "2026-10-06T16:50:32.594Z",
-      "appended": 1,
-      "updated": 256
+      "syncedAt": "2026-10-07T17:27:11.962Z",
+      "appended": 0,
+      "updated": 257
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-10-06T16:55:25.932Z",
+      "attemptedAt": "2026-10-07T17:32:05.560Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -13898,15 +13898,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:52.495Z",
+      "attemptedAt": "2026-10-07T17:32:31.500Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -14125,15 +14125,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:38.726Z",
+      "attemptedAt": "2026-10-07T17:32:18.053Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19392,15 +19392,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:45.647Z",
+      "attemptedAt": "2026-10-07T17:32:24.928Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -33283,15 +33283,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:52.492Z",
+      "attemptedAt": "2026-10-07T17:32:31.498Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -53317,15 +53317,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:52.496Z",
+      "attemptedAt": "2026-10-07T17:32:31.501Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53428,15 +53428,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:52.497Z",
+      "attemptedAt": "2026-10-07T17:32:31.502Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -53620,7 +53620,7 @@
           "timestamp": "2026-10-07T00:00:00.000Z",
           "venue": "Allianz Field",
           "isFriendly": true,
-          "matchId": "footy_fc1b01ee7f10",
+          "matchId": "footy_comp_thesportsdb_2578517",
           "homeTeamId": "4",
           "awayTeamId": "team:canada",
           "lastSeen": "",
@@ -53718,16 +53718,16 @@
       "notes": [
         "Preserved 6 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:55:52.497Z",
+      "attemptedAt": "2026-10-07T17:32:31.502Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -56950,7 +56950,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "2-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047949"
@@ -56958,9 +56958,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "16:00:00",
-          "timestamp": "2026-10-06T14:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047949",
           "followedTeamNames": [],
@@ -56984,7 +56984,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047946"
@@ -56992,7 +56992,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57018,7 +57018,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047947"
@@ -57026,7 +57026,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57052,7 +57052,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047948"
@@ -57060,7 +57060,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57086,7 +57086,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047940"
@@ -57094,7 +57094,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57120,7 +57120,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047941"
@@ -57128,7 +57128,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57154,7 +57154,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047942"
@@ -57162,7 +57162,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57188,7 +57188,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "0-4",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047944"
@@ -57196,7 +57196,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57222,7 +57222,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047945"
@@ -57230,7 +57230,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57256,7 +57256,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "0-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047943"
@@ -57264,7 +57264,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -59051,15 +59051,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:56:04.626Z",
+      "attemptedAt": "2026-10-07T17:32:43.931Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -77065,15 +77065,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:56:04.633Z",
+      "attemptedAt": "2026-10-07T17:32:43.937Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -79832,15 +79832,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-10-06T16:56:04.637Z",
+      "attemptedAt": "2026-10-07T17:32:43.940Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82044,12 +82044,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-06T16:50:32.594Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     }
   ],
   "teamCatalog": [
@@ -82813,10 +82813,6 @@
         {
           "id": "international friendlies",
           "name": "International Friendlies"
-        },
-        {
-          "id": "cesdwwnxbc5fmajgroc0hqzy2",
-          "name": "International Friendly"
         }
       ],
       "name": "Canada",
@@ -87127,9 +87123,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -89334,19 +89330,19 @@
         }
       ],
       "notes": [
-        "Loaded 40 SCHEDULED matches from 2026-10-06 through 2027-10-06.",
+        "Loaded 40 SCHEDULED matches from 2026-10-07 through 2027-10-07.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 41 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-10-06.",
+        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-10-07.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -91464,18 +91460,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-10-06 through 2027-10-06.",
+        "Loaded 38 SCHEDULED matches from 2026-10-07 through 2027-10-07.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-06.",
+        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-07.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -93455,18 +93451,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-10-06 through 2027-10-06.",
+        "Loaded 38 SCHEDULED matches from 2026-10-07 through 2027-10-07.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-06.",
+        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-07.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -93480,7 +93476,7 @@
         "TheSportsDB",
         "U.S. Soccer"
       ],
-      "fixtureCount": 2,
+      "fixtureCount": 1,
       "fixtures": [
         {
           "away": "Peru",
@@ -93521,61 +93517,20 @@
           "isFriendly": true,
           "homeTeamId": "4",
           "awayTeamId": "team:peru"
-        },
-        {
-          "away": "Canada",
-          "awayBadge": "",
-          "awayProviderTeamId": "eg7vduna0h3vis1wd47s41za7",
-          "awaySportDbTeamId": "140073",
-          "date": "2026-10-07",
-          "home": "USMNT",
-          "homeBadge": "",
-          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
-          "homeSportDbTeamId": "134514",
-          "id": "",
-          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
-          "isHome": true,
-          "league": "International Friendly",
-          "opponent": "Canada",
-          "priority": "4",
-          "round": "0",
-          "season": "2026",
-          "source": "U.S. Soccer + TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2578517"
-          },
-          "sources": [
-            "U.S. Soccer",
-            "TheSportsDB"
-          ],
-          "sourceDetail": "official-schedule",
-          "status": "SCHEDULED",
-          "teamBadge": "assets/teams/usmnt.svg",
-          "teamId": "4",
-          "teamName": "USMNT",
-          "time": "00:00:00",
-          "timestamp": "2026-10-07T00:00:00.000Z",
-          "venue": "Allianz Field",
-          "lastSeen": "",
-          "matchId": "footy_fc1b01ee7f10",
-          "isFriendly": true,
-          "homeTeamId": "4",
-          "awayTeamId": "team:canada"
         }
       ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "No TheSportsDB League IDs configured; team-upcoming matches still checked.",
-        "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 1 U.S. Soccer fixtures.",
-        "Preserved 1 registered fixtures that were not returned by providers this run."
+        "Loaded 0 TheSportsDB team-upcoming matches and 0 league-season matches.",
+        "Loaded 0 U.S. Soccer fixtures."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -93709,9 +93664,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -94746,15 +94701,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-10-06.",
+        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-10-07.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-06T16:50:32.594Z",
-      "updatedAt": "2026-10-06T16:50:32.594Z",
-      "previousUpdatedAt": "2026-10-04T15:24:32.534Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -95683,7 +95638,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-10-06.",
+        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-10-07.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

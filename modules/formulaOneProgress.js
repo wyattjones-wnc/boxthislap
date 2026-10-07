@@ -518,7 +518,7 @@ export function getFormulaOneQuestionProgress(question, progress) {
         .filter((pair) => pair[metric]?.length)
         .map((pair) => [
           pair.names.join(" / "),
-          `${decimal(pair[metric].reduce((total, gap) => total + gap, 0) / pair[metric].length)} ${metric === "racePositions" ? "places" : "seconds"} · ${pair[metric].length} rounds`,
+          `${decimal(pair[metric].reduce((total, gap) => total + gap, 0) / pair[metric].length)} ${metric === "racePositions" ? "places" : "seconds"}`,
         ])
         .sort((a, b) => parseFloat(a[1]) - parseFloat(b[1]));
     if (number === 6)
@@ -554,9 +554,7 @@ export function getFormulaOneQuestionProgress(question, progress) {
       number === 11 ? "Valtteri Bottas" : "Isack Hadjar",
     );
     if (!selectedDriver) return null;
-    const available = completed.filter((round) =>
-      round.race.some((row) => row.driverId === selectedDriver.id),
-    );
+    const available = completed;
     const betProgress = {};
     for (const bet of question.bets || []) {
       const picks = bet.bet
@@ -586,7 +584,8 @@ export function getFormulaOneQuestionProgress(question, progress) {
       `${selectedDriver.name}: Grand Prix points`,
       available.map((round) => [
         round.name,
-        round.race.find((row) => row.driverId === selectedDriver.id).points,
+        round.race.find((row) => row.driverId === selectedDriver.id)?.points ||
+          0,
       ]),
       "points",
       { betProgress },
@@ -594,23 +593,39 @@ export function getFormulaOneQuestionProgress(question, progress) {
   }
   if (number === 13) {
     const available = completed
-      .filter((round) => round.dnfCount !== "" && round.dnfCount !== null)
+      .filter(
+        (round) =>
+          round.dnfCount !== "" &&
+          round.dnfCount != null &&
+          Number.isFinite(Number(round.dnfCount)),
+      )
       .sort((a, b) => Number(b.dnfCount) - Number(a.dnfCount));
+    const cutoff = Number(
+      available[Math.min(2, available.length - 1)]?.dnfCount,
+    );
+    const qualifying = available.filter(
+      (round) => Number(round.dnfCount) >= cutoff,
+    );
     const betProgress = {};
     for (const bet of question.bets || []) {
-      const matches = bet.bet
+      const picks = bet.bet
         .split(",")
+        .map((pick) => pick.trim())
+        .filter(Boolean);
+      const matches = picks
         .map((pick) =>
-          available.find(
+          qualifying.find(
             (round) =>
               normalizeFormulaOneRoundName(round.name) ===
               normalizeFormulaOneRoundName(pick),
           ),
         )
         .filter(Boolean);
-      betProgress[bet.bet] = matches
-        .map((round) => `${round.name}: ${round.dnfCount} DNFs`)
-        .join(" · ");
+      const names = matches.map(
+        (round) => `${round.name}: ${round.dnfCount} DNFs`,
+      );
+      betProgress[bet.bet] =
+        `${matches.length}/${picks.length} picks currently in the top 3${names.length ? ` · ${names.join(" · ")}` : ""}`;
     }
     return display(
       "Classified DNFs by Grand Prix",

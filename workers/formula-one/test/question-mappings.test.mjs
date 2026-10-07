@@ -123,7 +123,10 @@ test("race aliases preserve the distinction between Barcelona and Madrid and mat
     data.betProgress[picks.bets[0].bet],
     `Selected race points: ${expected} · ${completedPicks.length}/4 completed`,
   );
-  assert.match(answer(13).betProgress[question(13).bets[0].bet], /DNFs/);
+  assert.match(
+    answer(13).betProgress[question(13).bets[0].bet],
+    /\d+\/3 picks currently in the top 3/,
+  );
 });
 
 test("starting roster alone is considered for fewest laps and standings last place", () => {
@@ -441,4 +444,76 @@ test("a retired driver with no race points does not count as a finish in the poi
     ["Liam Lawson", 1],
     ["Isack Hadjar", 0],
   ]);
+});
+
+test("teammate gaps omit round counts for qualifying and race comparisons", () => {
+  for (const number of [5, 6]) {
+    const data = answer(number);
+    const entries = [
+      ...data.entries,
+      ...(data.sections || []).flatMap((section) => section.entries),
+    ];
+    assert.ok(entries.length);
+    for (const [, value] of entries) assert.doesNotMatch(value, /rounds/);
+  }
+});
+
+test("completed picks count even when the selected driver has no result row", () => {
+  for (const number of [11, 12]) {
+    const picks = {
+      number,
+      bets: [{ bet: "Japan, Monaco, Netherlands, Las Vegas" }],
+    };
+    const source = {
+      ...progress,
+      rounds: [
+        { name: "Japanese Grand Prix", complete: true, race: [] },
+        { name: "Monaco Grand Prix", complete: true, race: [] },
+        { name: "Dutch Grand Prix", complete: true, race: [] },
+        { name: "Las Vegas Grand Prix", complete: false, race: [] },
+      ],
+    };
+    const data = getFormulaOneQuestionProgress(picks, source);
+    assert.equal(
+      data.betProgress[picks.bets[0].bet],
+      "Selected race points: 0 · 3/4 completed",
+    );
+    assert.equal(data.entries.length, 3);
+    assert.ok(data.entries.every(([, points]) => points === 0));
+  }
+});
+
+test("DNF picks qualify at the third-place cutoff, including ties", () => {
+  const picks = {
+    number: 13,
+    bets: [
+      { bet: "Barcelona, Monaco, Netherlands" },
+      { bet: "Australia, Austria, Spain" },
+    ],
+  };
+  const source = {
+    ...progress,
+    rounds: [
+      { name: "Barcelona Grand Prix", dnfCount: 8 },
+      { name: "Azerbaijan Grand Prix", dnfCount: 7 },
+      { name: "Monaco Grand Prix", dnfCount: 6 },
+      { name: "Dutch Grand Prix", dnfCount: 6 },
+      { name: "Australian Grand Prix", dnfCount: 4 },
+    ].map((round) => ({ ...round, complete: true, race: [] })),
+  };
+  const data = getFormulaOneQuestionProgress(picks, source);
+  assert.equal(
+    data.betProgress[picks.bets[0].bet],
+    "3/3 picks currently in the top 3 · Barcelona Grand Prix: 8 DNFs · Monaco Grand Prix: 6 DNFs · Dutch Grand Prix: 6 DNFs",
+  );
+  assert.equal(
+    data.betProgress[picks.bets[1].bet],
+    "0/3 picks currently in the top 3",
+  );
+  source.rounds[1].dnfCount = 8;
+  source.rounds[2].dnfCount = 7;
+  assert.doesNotMatch(
+    getFormulaOneQuestionProgress(picks, source).betProgress[picks.bets[0].bet],
+    /Dutch/,
+  );
 });

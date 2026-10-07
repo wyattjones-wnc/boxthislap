@@ -40,6 +40,25 @@ describe("shared floating fields", () => {
     expect(input.checkValidity()).toBe(true);
   });
 
+  it("suppresses placeholders that repeat the floating label", () => {
+    render(
+      <FloatingField>
+        <span>Search</span>
+        <input type="search" placeholder="Search" />
+      </FloatingField>,
+    );
+    expect(
+      screen
+        .getByRole("searchbox", { name: "Search" })
+        .getAttribute("placeholder"),
+    ).toBe(" ");
+    const root = document.createElement("div");
+    root.innerHTML =
+      '<label><span>Search</span><input type="search" placeholder="Search"></label>';
+    enhanceLegacyFloatingFields(root);
+    expect(root.querySelector("input")?.getAttribute("placeholder")).toBe(" ");
+  });
+
   it("preserves hints and accessible names for unlabeled and date controls", () => {
     render(
       <>

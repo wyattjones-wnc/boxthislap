@@ -58,3 +58,4 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 
 - Use `src/components/FloatingField/FloatingField.tsx` for boxed inputs, selects, and textareas across React pages and dialogs. Preserve native control props, refs, validation, and accessible names. Text labels float on focus or a value; date/time and select labels remain lifted to keep native content readable.
 - Legacy HTML forms receive the same field markup and styles through `src/components/FloatingField/legacyFloatingFields.ts`. Do not reparent React-owned controls from legacy code. Checkboxes, switches, radio buttons, sliders, and file/color pickers keep their native interaction patterns.
+- Use `src/components/TimePicker/TimePicker.tsx` for optional quarter-hour clock times. It accepts a controlled `HH:mm` value (or an empty string for no time) and provides independent hour, minute, and AM/PM scroll wheels with keyboard selection.

@@ -41,6 +41,11 @@ export function FloatingField({
         control?.props.placeholder ||
         control?.props.name);
 
+  const placeholder = control?.props.placeholder;
+  const repeatsLabel =
+    typeof caption === "string" &&
+    placeholder?.trim().toLowerCase() === caption.trim().toLowerCase();
+
   return (
     <label
       {...props}
@@ -67,7 +72,11 @@ export function FloatingField({
           return cloneElement(control, {
             "data-floating-control": "",
             ...(control.type !== "select"
-              ? { placeholder: control.props.placeholder || " " }
+              ? {
+                  placeholder: repeatsLabel
+                    ? " "
+                    : control.props.placeholder || " ",
+                }
               : {}),
           });
         })}

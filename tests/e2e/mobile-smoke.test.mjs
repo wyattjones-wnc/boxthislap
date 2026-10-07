@@ -583,6 +583,7 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
 
 test("Next item form loads as a contained React dialog and saves", async ({
   page,
+  browserName,
 }) => {
   /** @type {string[]} */
   const dialogBundleRequests = [];
@@ -632,6 +633,7 @@ test("Next item form loads as a contained React dialog and saves", async ({
   const search = page.getByRole("searchbox", { name: "Search", exact: true });
   const searchLabel = search.locator("..").locator(".floating-label");
   await expect(searchLabel).toHaveCSS("top", "17px");
+  await expect(search).toHaveAttribute("placeholder", " ");
   await search.focus();
   await expect(searchLabel).toHaveCSS("top", "5px");
   await search.fill("Floating label check");
@@ -735,6 +737,100 @@ test("Next item form loads as a contained React dialog and saves", async ({
     ),
   ).toBe(true);
 
+  await dialog.getByRole("button", { name: "Time: No time" }).click();
+  expect(
+    await dialog.evaluate((element) => element.getBoundingClientRect().height),
+  ).toBe(compactHeight);
+  const popup = dialog.getByRole("group", { name: "Choose time" });
+  const popupSize = await popup.boundingBox();
+  if (!popupSize) throw new Error("Time popup must be visible");
+  expect(popupSize.width).toBeLessThanOrEqual(220);
+  expect(popupSize.height).toBeLessThanOrEqual(200);
+  await dialog.getByLabel("Priority", { exact: true }).click();
+  await expect(popup).toBeHidden();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Time: No time" }).click();
+  await page.keyboard.press("Escape");
+  await expect(popup).toBeHidden();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Time: No time" }).click();
+  const hourWheel = dialog.getByRole("listbox", { name: "Hour", exact: true });
+  const minuteWheel = dialog.getByRole("listbox", {
+    name: "Minute",
+    exact: true,
+  });
+  const periodWheel = dialog.getByRole("listbox", {
+    name: "AM/PM",
+    exact: true,
+  });
+  await expect(minuteWheel.getByRole("option")).toHaveText([
+    "00",
+    "15",
+    "30",
+    "45",
+  ]);
+  const hourPosition = await hourWheel.evaluate((element) => element.scrollTop);
+  const periodPosition = await periodWheel.evaluate(
+    (element) => element.scrollTop,
+  );
+  const bodyPosition = await scrollArea.evaluate(
+    (element) => element.scrollTop,
+  );
+  expect(
+    await minuteWheel.evaluate((element) =>
+      element.dispatchEvent(
+        new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          deltaY: 44,
+        }),
+      ),
+    ),
+  ).toBe(true);
+  expect(
+    await minuteWheel.evaluate((element) => {
+      /** @param {string} type @param {number} clientY */
+      const dispatchTouch = (type, clientY) => {
+        const event = new Event(type, { bubbles: true, cancelable: true });
+        Object.defineProperty(event, "touches", { value: [{ clientY }] });
+        return element.dispatchEvent(event);
+      };
+      dispatchTouch("touchstart", 100);
+      return dispatchTouch("touchmove", 40);
+    }),
+  ).toBe(true);
+  if (browserName === "webkit") {
+    // Mobile WebKit has no mouse-wheel API; drive its real scroll position
+    // after verifying above that the dialog allows the touch gesture.
+    await minuteWheel.evaluate((element) => {
+      element.scrollTop = 44;
+    });
+  } else {
+    await minuteWheel.hover();
+    await page.mouse.wheel(0, 44);
+  }
+  await expect(
+    minuteWheel.getByRole("option", { name: "15", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  expect(await hourWheel.evaluate((element) => element.scrollTop)).toBe(
+    hourPosition,
+  );
+  expect(await periodWheel.evaluate((element) => element.scrollTop)).toBe(
+    periodPosition,
+  );
+  expect(await scrollArea.evaluate((element) => element.scrollTop)).toBe(
+    bodyPosition,
+  );
+  await hourWheel.focus();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("ArrowDown");
+  await periodWheel.focus();
+  await page.keyboard.press("End");
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(
+    dialog.getByRole("button", { name: "Time: 2:15 PM" }),
+  ).toBeVisible();
+
   await thing.fill("React migration check");
   await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
   await dialog.getByLabel("Priority", { exact: true }).fill("8");
@@ -746,6 +842,7 @@ test("Next item form loads as a contained React dialog and saves", async ({
     date: "2099-01-02",
     priority: 8,
     thing: "React migration check",
+    time: "2:15 PM",
   });
   await expect(
     page.getByText("React migration check", { exact: true }),

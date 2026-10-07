@@ -33,7 +33,12 @@ export function enhanceLegacyFloatingFields(root: ParentNode) {
     label.classList.add("floating-field");
     label.setAttribute("data-floating-field", "");
     control.setAttribute("data-floating-control", "");
-    if (control.tagName !== "SELECT" && !control.getAttribute("placeholder"))
+    const placeholder = control.getAttribute("placeholder");
+    if (
+      control.tagName !== "SELECT" &&
+      (!placeholder ||
+        placeholder.trim().toLowerCase() === captionText.toLowerCase())
+    )
       control.setAttribute("placeholder", " ");
     const floatingLabel = caption || document.createElement("span");
     floatingLabel.classList.remove("sr-only");

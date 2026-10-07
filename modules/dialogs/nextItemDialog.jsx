@@ -1,3 +1,4 @@
+import { TimePicker } from "../../src/components/TimePicker/TimePicker.tsx";
 import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -110,20 +111,10 @@ function NextItemDialog({
             value={values.endDate}
           />
         </FloatingField>
-        <FloatingField>
-          <span>Time</span>
-          <select
-            onChange={(event) => update("time", event.target.value)}
-            value={values.time}
-          >
-            <option value="">No time</option>
-            {timeOptions().map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </FloatingField>
+        <TimePicker
+          value={values.time}
+          onChange={(time) => update("time", time)}
+        />
         <FloatingField>
           <span>Priority</span>
           <input
@@ -176,18 +167,4 @@ function normalizeValues(values) {
     thing: String(values.thing || ""),
     time: String(values.time || ""),
   };
-}
-
-function timeOptions() {
-  return Array.from({ length: 96 }, (_, index) => {
-    const totalMinutes = index * 15;
-    const hour = Math.floor(totalMinutes / 60);
-    const minute = totalMinutes % 60;
-    const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-    const period = hour >= 12 ? "PM" : "AM";
-    return {
-      label: `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${period}`,
-      value,
-    };
-  });
 }

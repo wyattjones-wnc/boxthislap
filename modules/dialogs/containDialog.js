@@ -38,6 +38,28 @@ export function openContainedDialog({
   const rememberTouch = (event) => {
     lastTouchY = event.touches[0]?.clientY ?? 0;
   };
+  // Independently scrolling controls (for example time wheels) consume their
+  // own gestures before the dialog body's boundary guard runs.
+  const nestedScrollCanConsume = (target, direction) => {
+    let element = target instanceof Element ? target : target?.parentElement;
+    while (element && element !== scrollArea && scrollArea.contains(element)) {
+      const overflow = getComputedStyle(element).overflowY;
+      if (
+        (overflow === "auto" || overflow === "scroll") &&
+        element.scrollHeight > element.clientHeight
+      ) {
+        if (direction < 0 && element.scrollTop > 0) return true;
+        if (
+          direction > 0 &&
+          Math.ceil(element.scrollTop + element.clientHeight) <
+            element.scrollHeight
+        )
+          return true;
+      }
+      element = element.parentElement;
+    }
+    return false;
+  };
   const containTouch = (event) => {
     if (!scrollArea.contains(event.target)) {
       event.preventDefault();
@@ -45,6 +67,10 @@ export function openContainedDialog({
     }
     const touchY = event.touches[0]?.clientY ?? lastTouchY;
     const movingDown = touchY > lastTouchY;
+    if (nestedScrollCanConsume(event.target, movingDown ? -1 : 1)) {
+      lastTouchY = touchY;
+      return;
+    }
     const atTop = scrollArea.scrollTop <= 0;
     const atBottom =
       Math.ceil(scrollArea.scrollTop + scrollArea.clientHeight) >=
@@ -63,6 +89,7 @@ export function openContainedDialog({
       event.preventDefault();
       return;
     }
+    if (nestedScrollCanConsume(event.target, event.deltaY)) return;
     const atTop = scrollArea.scrollTop <= 0;
     const atBottom =
       Math.ceil(scrollArea.scrollTop + scrollArea.clientHeight) >=

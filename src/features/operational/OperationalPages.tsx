@@ -55,8 +55,8 @@ export function NextPage() {
       </PageHeading>
       <div className="next-controls">
         <label>
-          <span>Search</span>
           <input
+            aria-label="Search"
             id="next-search"
             type="search"
             placeholder="Search"
@@ -65,10 +65,12 @@ export function NextPage() {
         </label>
       </div>
       <div className="next-filters" id="next-filters" hidden>
-        <Check id="next-completed-filter" label="Completed" adminOnly />
-        <Check id="next-previous-filter" label="Previous" />
-        <Check id="next-non-admin-filter" label="Non-Admin Only" adminOnly />
-        <Check id="next-edit-mode-filter" label="Edit" adminOnly />
+        <div className="next-filter-checks">
+          <Check id="next-completed-filter" label="Completed" adminOnly />
+          <Check id="next-previous-filter" label="Previous" />
+          <Check id="next-non-admin-filter" label="Non-Admin Only" adminOnly />
+        </div>
+        <Check id="next-edit-mode-filter" label="Edit" adminOnly toggle />
         <label className="next-date-filter">
           <span>Date</span>
           <div className="footy-date-range">
@@ -2482,18 +2484,20 @@ function Check({
   id,
   label,
   adminOnly = false,
+  toggle = false,
 }: {
   id: string;
   label: string;
   adminOnly?: boolean;
+  toggle?: boolean;
 }) {
   return (
     <label
-      className="next-checkbox-control"
+      className={`next-checkbox-control${toggle ? " toggle-control" : ""}`}
       data-admin-only={adminOnly ? "" : undefined}
       hidden={adminOnly}
     >
-      <input id={id} type="checkbox" />
+      <input id={id} type="checkbox" role={toggle ? "switch" : undefined} />
       <span>{label}</span>
     </label>
   );

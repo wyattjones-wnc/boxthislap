@@ -2814,7 +2814,7 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   box-shadow: 0 10px 26px var(--shadow);
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, max-content) minmax(210px, 1fr) minmax(220px, 1fr);
+  grid-template-columns: max-content max-content minmax(210px, 1fr) minmax(220px, 1fr);
   margin: -4px 0 18px;
   padding: 14px;
 }
@@ -11033,9 +11033,7 @@ html.has-contained-dialog body {
     flex-direction: row;
   }
 
-  .footy-note-grid,
-  .next-item-fields,
-  .next-dialog-checks {
+  .footy-note-grid {
     grid-template-columns: 1fr;
   }
 
@@ -12361,4 +12359,118 @@ html.has-contained-dialog body {
   textarea {
     font-size: 16px !important;
   }
+}
+
+/* Compact Next controls retain native input events for the page controller. */
+.next-filter-checks {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.next-filters .next-checkbox-control {
+  width: max-content;
+  min-height: 36px;
+  padding: 6px;
+  gap: 5px;
+  font-size: 0.78rem;
+}
+
+.next-item-fields > label {
+  min-width: 0;
+}
+
+.next-item-fields .next-dialog-checkbox {
+  white-space: normal;
+  font-size: 0.8rem;
+  gap: 6px;
+}
+
+.toggle-control input[type="checkbox"] {
+  appearance: none;
+  background: var(--muted);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 22px;
+  width: 38px;
+  margin: 0;
+  position: relative;
+  transition: background 150ms ease;
+}
+
+.toggle-control input[type="checkbox"]::before {
+  background: var(--panel);
+  border-radius: 50%;
+  content: "";
+  height: 16px;
+  left: 1px;
+  position: absolute;
+  top: 1px;
+  width: 16px;
+  transition: transform 150ms ease;
+}
+
+.toggle-control input[type="checkbox"]:checked {
+  background: var(--track);
+}
+
+.toggle-control input[type="checkbox"]:checked::before {
+  transform: translateX(16px);
+}
+
+.toggle-control input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.next-item-fields .floating-field {
+  position: relative;
+  display: block;
+}
+
+.react-form-dialog-panel .next-item-fields .floating-field input {
+  width: 100%;
+  padding: 20px 12px 6px;
+  min-height: 50px;
+}
+
+.floating-field > span {
+  position: absolute;
+  left: 12px;
+  top: 16px;
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform 150ms ease, top 150ms ease;
+}
+
+.floating-field input:focus + span,
+.floating-field input:not(:placeholder-shown) + span {
+  top: 5px;
+  transform: scale(0.78);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-field > span,
+  .toggle-control input[type="checkbox"],
+  .toggle-control input[type="checkbox"]::before {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .toggle-control input[type="checkbox"] {
+    appearance: auto;
+  }
+  .toggle-control input[type="checkbox"]::before {
+    display: none;
+  }
+}
+
+.next-filter-checks .next-checkbox-control {
+  background: transparent;
+  border: 0;
+  padding: 0;
 }

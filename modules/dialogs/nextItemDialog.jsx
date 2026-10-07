@@ -69,27 +69,28 @@ function NextItemDialog({
       titleId="next-react-dialog-title"
     >
       <div className="next-item-fields">
-        <label className="next-item-wide">
-          <span>Thing</span>
+        <label className="next-item-wide floating-field">
           <input
             autoComplete="off"
             onChange={(event) => update("thing", event.target.value)}
             ref={thingRef}
+            placeholder=" "
             required
             type="text"
             value={values.thing}
           />
+          <span>Thing</span>
         </label>
-        <label className="next-item-wide">
-          <span>Image URL</span>
+        <label className="next-item-wide floating-field">
           <input
             autoComplete="url"
             inputMode="url"
             onChange={(event) => update("imageUrl", event.target.value)}
-            placeholder="https://example.com/image.jpg"
+            placeholder=" "
             type="url"
             value={values.imageUrl}
           />
+          <span>Image URL</span>
         </label>
         <label>
           <span>Date</span>
@@ -134,18 +135,20 @@ function NextItemDialog({
           />
         </label>
         <div className="next-dialog-checks">
-          <label className="next-checkbox-control next-dialog-checkbox">
+          <label className="next-checkbox-control next-dialog-checkbox toggle-control">
             <input
               checked={values.completed}
               onChange={(event) => update("completed", event.target.checked)}
+              role="switch"
               type="checkbox"
             />
             <span>Completed</span>
           </label>
-          <label className="next-checkbox-control next-dialog-checkbox">
+          <label className="next-checkbox-control next-dialog-checkbox toggle-control">
             <input
               checked={values.nonAdmin}
               onChange={(event) => update("nonAdmin", event.target.checked)}
+              role="switch"
               type="checkbox"
             />
             <span>Show to non-admin</span>

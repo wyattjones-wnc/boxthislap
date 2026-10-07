@@ -238,7 +238,6 @@ function GuideIndex({
     <>
       <div className="section-heading page-heading-with-action footy-heading">
         <div>
-          <p className="guides-eyebrow">Walkthroughs</p>
           <h1>Guides</h1>
           <p className="guides-intro">Pick a guide. We’ll save your place.</p>
         </div>
@@ -786,7 +785,6 @@ function GuidesLoading({
     <>
       <div className="section-heading page-heading-with-action footy-heading">
         <div>
-          <p className="guides-eyebrow">Walkthroughs</p>
           <h1>Guides</h1>
         </div>
       </div>

@@ -937,7 +937,7 @@ function renderLeagueList(year) {
     const canOpen = isWorldCup || isFantasyCritic || isFormulaOne || isFantasyOffice;
 
     return `
-      <article class="league-card${isWorldCup ? " is-current" : ""}">
+      <article class="league-card">
         <div>
           <h2>${escapeHtml(league)}</h2>
         </div>

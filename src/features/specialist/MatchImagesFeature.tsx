@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, HardDriveDownload, Images, Play, X } from "lucide-react";
 import { FOOTY_MATCH_NOTES_ENDPOINT } from "../../../modules/siteConfig";
@@ -472,7 +473,7 @@ export default function MatchImagesFeature() {
       </details>
 
       <div className={styles.filters}>
-        <label>
+        <FloatingField>
           <span>View</span>
           <select
             value={view}
@@ -489,8 +490,8 @@ export default function MatchImagesFeature() {
             <option value="needs-match">Needs Match</option>
             <option value="all">All</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Team</span>
           <select
             value={teamId}
@@ -504,8 +505,8 @@ export default function MatchImagesFeature() {
             <option value="1">Arsenal</option>
             <option value="2">Barcelona</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Source</span>
           <select
             value={source}
@@ -520,8 +521,8 @@ export default function MatchImagesFeature() {
             <option value="barcelona">Barcelona</option>
             <option value="getty">Getty</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Category</span>
           <select
             value={category}
@@ -538,8 +539,8 @@ export default function MatchImagesFeature() {
             <option value="behind_scenes">Behind the scenes</option>
             <option value="other">Other</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Match</span>
           <select
             value={matchId}
@@ -561,7 +562,7 @@ export default function MatchImagesFeature() {
                 </option>
               ))}
           </select>
-        </label>
+        </FloatingField>
       </div>
 
       <p className={styles.status} role="status">
@@ -792,7 +793,7 @@ function GalleryReview({
   );
   return (
     <div className={styles.review}>
-      <label>
+      <FloatingField>
         <span>Category</span>
         <select
           value={category}
@@ -804,8 +805,8 @@ function GalleryReview({
           <option value="behind_scenes">Behind the scenes</option>
           <option value="other">Other</option>
         </select>
-      </label>
-      <label>
+      </FloatingField>
+      <FloatingField>
         <span>Attach to match</span>
         <select
           value={value}
@@ -819,7 +820,7 @@ function GalleryReview({
             </option>
           ))}
         </select>
-      </label>
+      </FloatingField>
       <button
         type="button"
         disabled={busy || !value}

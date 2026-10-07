@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DATABASE_ADMIN_ENDPOINT } from "../../../modules/siteConfig";
 
@@ -252,7 +253,7 @@ export function DatabaseAdminPage() {
         </p>
       </div>
       <div className="database-admin-controls">
-        <label>
+        <FloatingField>
           <span>Database</span>
           <select
             value={databaseId}
@@ -265,8 +266,8 @@ export function DatabaseAdminPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Table</span>
           <select
             value={tableName}
@@ -286,7 +287,7 @@ export function DatabaseAdminPage() {
               </option>
             ))}
           </select>
-        </label>
+        </FloatingField>
       </div>
       {selectedTable && (
         <details className="database-schema">
@@ -350,7 +351,7 @@ export function DatabaseAdminPage() {
             );
             return (
               <div className="database-admin-filter-row" key={index}>
-                <label>
+                <FloatingField>
                   <span>Column</span>
                   <select
                     value={filter.column}
@@ -374,8 +375,8 @@ export function DatabaseAdminPage() {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label>
+                </FloatingField>
+                <FloatingField>
                   <span>Condition</span>
                   <select
                     value={filter.operator}
@@ -403,9 +404,9 @@ export function DatabaseAdminPage() {
                       </>
                     )}
                   </select>
-                </label>
+                </FloatingField>
                 {!noValue && (
-                  <label>
+                  <FloatingField>
                     <span>
                       {filter.operator === "date_between" ? "From" : "Value"}
                     </span>
@@ -416,10 +417,10 @@ export function DatabaseAdminPage() {
                         changeFilter(index, { value: event.target.value })
                       }
                     />
-                  </label>
+                  </FloatingField>
                 )}
                 {filter.operator === "date_between" && (
-                  <label>
+                  <FloatingField>
                     <span>Through</span>
                     <input
                       type="date"
@@ -428,7 +429,7 @@ export function DatabaseAdminPage() {
                         changeFilter(index, { value2: event.target.value })
                       }
                     />
-                  </label>
+                  </FloatingField>
                 )}
                 <button
                   type="button"
@@ -524,21 +525,25 @@ export function DatabaseAdminPage() {
                       return (
                         <td key={column.name}>
                           {active ? (
-                            <textarea
-                              aria-label={`${column.name}, row ${rowIndex + 1} editor`}
-                              value={value}
-                              rows={Math.min(
-                                4,
-                                Math.max(1, value.split("\n").length),
-                              )}
-                              onChange={(event) =>
-                                changeCell(
-                                  rowIndex,
-                                  column.name,
-                                  event.target.value,
-                                )
-                              }
-                            />
+                            <FloatingField
+                              label={`${column.name}, row ${rowIndex + 1} editor`}
+                            >
+                              <textarea
+                                aria-label={`${column.name}, row ${rowIndex + 1} editor`}
+                                value={value}
+                                rows={Math.min(
+                                  4,
+                                  Math.max(1, value.split("\n").length),
+                                )}
+                                onChange={(event) =>
+                                  changeCell(
+                                    rowIndex,
+                                    column.name,
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </FloatingField>
                           ) : locked ? (
                             <span className="database-admin-cell-value is-locked">
                               {value}

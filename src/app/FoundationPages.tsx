@@ -1,3 +1,4 @@
+import { FloatingField } from "../components/FloatingField/FloatingField";
 import {
   Bell,
   BookOpen,
@@ -25,13 +26,13 @@ export const LoginPage = memo(function LoginPage() {
           This passphrase is only a lightweight site check. Do not reuse an
           important password.
         </p>
-        <label className="select-control">
+        <FloatingField className="select-control">
           <span>Manager</span>
           <select id="login-manager-select" defaultValue="">
             <option value="">Loading managers...</option>
           </select>
-        </label>
-        <label className="filter-control" id="login-passphrase-group">
+        </FloatingField>
+        <FloatingField className="filter-control" id="login-passphrase-group">
           <span>Passphrase</span>
           <input
             id="login-passphrase"
@@ -39,10 +40,10 @@ export const LoginPage = memo(function LoginPage() {
             autoComplete="off"
             placeholder="Passphrase"
           />
-        </label>
+        </FloatingField>
         <div className="login-setup-panel" id="login-recovery-panel" hidden>
           <p className="login-recovery-question" id="login-recovery-question" />
-          <label className="filter-control">
+          <FloatingField className="filter-control">
             <span>Recovery Answer</span>
             <input
               id="login-recovery-answer"
@@ -50,14 +51,14 @@ export const LoginPage = memo(function LoginPage() {
               autoComplete="off"
               placeholder="Answer"
             />
-          </label>
+          </FloatingField>
         </div>
         <div
           className="login-setup-panel"
           id="login-new-passphrase-panel"
           hidden
         >
-          <label className="filter-control">
+          <FloatingField className="filter-control">
             <span>New Passphrase</span>
             <input
               id="login-new-passphrase"
@@ -65,8 +66,8 @@ export const LoginPage = memo(function LoginPage() {
               autoComplete="off"
               placeholder="New passphrase"
             />
-          </label>
-          <label className="filter-control">
+          </FloatingField>
+          <FloatingField className="filter-control">
             <span>Confirm Passphrase</span>
             <input
               id="login-confirm-passphrase"
@@ -74,7 +75,7 @@ export const LoginPage = memo(function LoginPage() {
               autoComplete="off"
               placeholder="Confirm passphrase"
             />
-          </label>
+          </FloatingField>
         </div>
         <button
           className="action-button"

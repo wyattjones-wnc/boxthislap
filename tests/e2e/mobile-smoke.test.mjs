@@ -629,6 +629,27 @@ test("Next item form loads as a contained React dialog and saves", async ({
   });
   await page.goto("/#next", { waitUntil: "networkidle" });
 
+  const search = page.getByRole("searchbox", { name: "Search", exact: true });
+  const searchLabel = search.locator("..").locator(".floating-label");
+  await expect(searchLabel).toHaveCSS("top", "17px");
+  await search.focus();
+  await expect(searchLabel).toHaveCSS("top", "5px");
+  await search.fill("Floating label check");
+  await search.blur();
+  await expect(searchLabel).toHaveCSS("top", "5px");
+  await search.clear();
+  await search.blur();
+  await expect(searchLabel).toHaveCSS("top", "17px");
+  await page.getByRole("button", { name: "Show filters", exact: true }).click();
+  const filterBounds = await page.locator("#next-filters").boundingBox();
+  const searchBounds = await search.boundingBox();
+  if (!filterBounds || !searchBounds)
+    throw new Error("Next controls must be visible");
+  expect(filterBounds.y + filterBounds.height).toBeLessThanOrEqual(
+    searchBounds.y,
+  );
+  await page.locator("#next-filter-toggle").click();
+
   expect(dialogBundleRequests).toEqual([]);
   await page.getByRole("button", { name: "Add Next item" }).click();
   const dialog = page.getByRole("dialog", { name: "Add Next Item" });
@@ -678,18 +699,10 @@ test("Next item form loads as a contained React dialog and saves", async ({
     { width: 40, height: 24 },
   ]);
   const completed = dialog.getByRole("switch", { name: "Completed" });
-  const state = completed.locator("~ .toggle-label .toggle-state");
-  expect(
-    await state.evaluate(
-      (element) => getComputedStyle(element, "::after").content,
-    ),
-  ).toBe('"Off"');
+  await expect(dialog.locator(".toggle-state")).toHaveCount(0);
+  await expect(completed).not.toBeChecked();
   await completed.check();
-  expect(
-    await state.evaluate(
-      (element) => getComputedStyle(element, "::after").content,
-    ),
-  ).toBe('"On"');
+  await expect(completed).toBeChecked();
   await completed.uncheck();
 
   // Future fields must grow the dialog only up to the viewport, then scroll
@@ -815,7 +828,7 @@ test("To Do form uses the shared contained React dialog", async ({ page }) => {
       });
     },
   );
-  await page.goto("/#todo", { waitUntil: "networkidle" });
+  await page.goto("/#todo", { waitUntil: "domcontentloaded" });
 
   expect(dialogBundleRequests).toEqual([]);
   await page.getByRole("button", { name: "Add To Do item" }).click();
@@ -1502,6 +1515,13 @@ test("authenticated YouTube route loads its deferred controller", async ({
   await expect(
     page.getByRole("heading", { name: "All caught up" }),
   ).toBeVisible();
+  await expect(page.locator("[data-youtube-priority]")).toHaveAttribute(
+    "data-floating-control",
+    "",
+  );
+  await expect(
+    page.locator(".youtube-priority-filter > .floating-label"),
+  ).toHaveText("Priority");
   expect(controllerRequests).toHaveLength(1);
   expect(pageErrors).toEqual([]);
 });

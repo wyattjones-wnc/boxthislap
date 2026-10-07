@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import {
   BarChart3,
   Boxes,
@@ -224,7 +225,7 @@ export function CollectiblesPage() {
           <p className="eyebrow">Monster Trucks</p>
           <h1>Collectibles</h1>
         </div>
-        <label className="collectibles-view-control">
+        <FloatingField className="collectibles-view-control">
           <span>View</span>
           <select
             id="collectibles-view-select"
@@ -237,7 +238,7 @@ export function CollectiblesPage() {
             <option value="wishlist">Wishlist</option>
             <option value="catalog">Full Catalog</option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div
         className="collectibles-stats"
@@ -295,15 +296,15 @@ export function CollectiblesPage() {
 function CollectiblesFilters() {
   return (
     <form className="collectibles-filters" id="collectibles-filters" hidden>
-      <label className="collectibles-search">
+      <FloatingField className="collectibles-search">
         <span>Search</span>
         <input
           type="search"
           name="search"
           placeholder="Name, item number, or variant"
         />
-      </label>
-      <label>
+      </FloatingField>
+      <FloatingField>
         <span>Ownership</span>
         <select name="status" defaultValue="">
           <option value="">All</option>
@@ -312,21 +313,21 @@ function CollectiblesFilters() {
           <option value="not_owned">Don&apos;t Have</option>
           <option value="wanted">Want</option>
         </select>
-      </label>
+      </FloatingField>
       {[
         ["manufacturer", "Manufacturer", "All manufacturers"],
         ["year", "Year", "All years"],
         ["scale", "Scale", "All scales"],
         ["category", "Catalog category", "All catalog categories"],
       ].map(([name, label, option]) => (
-        <label key={name}>
+        <FloatingField key={name}>
           <span>{label}</span>
           <select name={name} defaultValue="">
             <option value="">{option}</option>
           </select>
-        </label>
+        </FloatingField>
       ))}
-      <label>
+      <FloatingField>
         <span>Sort</span>
         <select name="sort" defaultValue="source">
           <option value="source">Catalog order</option>
@@ -341,21 +342,21 @@ function CollectiblesFilters() {
           <option value="owned_first">Owned first</option>
           <option value="missing_first">Missing first</option>
         </select>
-      </label>
-      <label>
+      </FloatingField>
+      <FloatingField>
         <span>Checklist visibility</span>
         <select name="scope" defaultValue="active">
           <option value="active">Checklist items</option>
           <option value="excluded">Excluded only</option>
           <option value="all">Include excluded</option>
         </select>
-      </label>
-      <label>
+      </FloatingField>
+      <FloatingField>
         <span>Page</span>
         <select name="page" disabled defaultValue="1">
           <option value="1">Page 1</option>
         </select>
-      </label>
+      </FloatingField>
       <div className="collectibles-filter-actions">
         <button className="action-button" type="submit">
           Apply
@@ -423,7 +424,7 @@ export function TrophyLogPage() {
             </button>
           ))}
         </div>
-        <label className="trophy-log-sort">
+        <FloatingField className="trophy-log-sort">
           <span>Sort</span>
           <select id="trophy-log-sort" defaultValue="">
             <option value="" disabled>
@@ -440,7 +441,7 @@ export function TrophyLogPage() {
               Platinum: shortest to earn
             </option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div className="trophy-log-results-heading">
         <h2>Trophies</h2>
@@ -540,7 +541,7 @@ function PsnAuthentication() {
           </li>
         </ol>
         <form className="psn-auth-form" id="psn-auth-form">
-          <label>
+          <FloatingField>
             <span>NPSSO token</span>
             <input
               type="password"
@@ -551,7 +552,7 @@ function PsnAuthentication() {
               spellCheck="false"
               required
             />
-          </label>
+          </FloatingField>
           <button className="action-button" type="submit">
             Validate &amp; Save
           </button>

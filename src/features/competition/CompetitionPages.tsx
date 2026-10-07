@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import type { ReactNode } from "react";
 import { Bell, CalendarDays } from "lucide-react";
 
@@ -103,7 +104,7 @@ export function WorldCupResultsPage() {
 
 function PositionSelect({ id }: { id: string }) {
   return (
-    <select id={id} defaultValue="all">
+    <select id={id} defaultValue="all" data-floating-control>
       {positions.map(([value, label]) => (
         <option value={value} key={value}>
           {label}
@@ -146,10 +147,10 @@ export function WorldCupDraftPage() {
       </div>
       <div className="draft-panel" data-draft-panel="players">
         <div className="standings-controls">
-          <label className="select-control compact-select-control">
+          <FloatingField className="select-control compact-select-control">
             <span>Position</span>
             <PositionSelect id="draft-player-position-filter" />
-          </label>
+          </FloatingField>
         </div>
         <div className="draft-list" id="draft-players-list">
           <article className="draft-card">
@@ -208,12 +209,12 @@ export function WorldCupStandingsPage() {
               defaultChecked
             />
           </label>
-          <label className="select-control standings-round-control">
+          <FloatingField className="select-control standings-round-control">
             <span>Round</span>
             <select id="standings-round-select" defaultValue="">
               <option value="">All</option>
             </select>
-          </label>
+          </FloatingField>
         </div>
       </div>
       <section className="standings-awards" id="standings-awards" hidden>
@@ -257,10 +258,10 @@ export function WorldCupStandingsPage() {
         role="tabpanel"
       >
         <div className="standings-controls">
-          <label className="select-control compact-select-control">
+          <FloatingField className="select-control compact-select-control">
             <span>Position</span>
             <PositionSelect id="player-position-filter" />
-          </label>
+          </FloatingField>
         </div>
         <StandingsTable
           columns={["Rank", "Player", "Team / Manager", "Matches", "Points"]}
@@ -287,14 +288,14 @@ export function WorldCupStandingsPage() {
         role="tabpanel"
       >
         <div className="standings-controls">
-          <label className="select-control compact-select-control">
+          <FloatingField className="select-control compact-select-control">
             <span>Show</span>
             <select id="manager-results-filter" defaultValue="all">
               <option value="all">All</option>
               <option value="players">Players</option>
               <option value="nations">Nations</option>
             </select>
-          </label>
+          </FloatingField>
         </div>
         <StandingsTable
           columns={["Rank", "Manager", "Points"]}
@@ -334,7 +335,7 @@ export function WorldCupRulesPage() {
               is calculated.
             </p>
           </div>
-          <label
+          <FloatingField
             className="select-control compact-select-control"
             htmlFor="rules-nation-select"
           >
@@ -342,7 +343,7 @@ export function WorldCupRulesPage() {
             <select id="rules-nation-select" defaultValue="">
               <option value="">Loading nations...</option>
             </select>
-          </label>
+          </FloatingField>
         </div>
         <div className="rules-breakdown" id="rules-nation-breakdown">
           <p className="table-message">
@@ -421,12 +422,12 @@ export function WorldCupMatchesPage() {
     <>
       <div className="section-heading page-heading-with-action">
         <h1>Matches</h1>
-        <label className="select-control">
+        <FloatingField className="select-control">
           <span>Matchday</span>
           <select id="matchday-select" defaultValue="loading">
             <option value="loading">Loading matchdays...</option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div className="match-list" id="matchday-match-list">
         <article className="match-card">
@@ -446,12 +447,12 @@ export function WorldCupBracketPage() {
       <div className="section-heading page-heading-with-action">
         <h1>Bracket</h1>
         <div className="bracket-actions">
-          <label className="bracket-submitter bracket-submission-viewer">
+          <FloatingField className="bracket-submitter bracket-submission-viewer">
             <span>Submitted</span>
             <select id="bracket-submission-select" defaultValue="">
               <option value="">Official</option>
             </select>
-          </label>
+          </FloatingField>
           <button
             className="action-button secondary-action"
             id="bracket-clear-picks"
@@ -520,14 +521,14 @@ export function LeaguesPage() {
     <>
       <div className="section-heading page-heading-with-action">
         <h1>Leagues</h1>
-        <label className="select-control">
+        <FloatingField className="select-control">
           <span>Year</span>
           <select id="league-year-select" defaultValue="2026">
             <option value="2026">2026</option>
             <option value="2025">2025</option>
             <option value="2024">2024</option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div className="league-list" id="league-list" />
     </>
@@ -544,20 +545,20 @@ export function FormulaOneQuestionsPage({ year }: { year: 2024 | 2025 }) {
     <>
       <LeagueHeading title="Formula 1" subtitle={`${year} Questions`} />
       <div className="formula-one-controls">
-        <label className="select-control">
+        <FloatingField className="select-control">
           <span>Question</span>
           <select id={`${prefix}-question-select`} defaultValue="">
             <option value="">All questions</option>
           </select>
-        </label>
-        <label className="filter-control">
+        </FloatingField>
+        <FloatingField className="filter-control">
           <span>Filter</span>
           <input
             id={`${prefix}-question-filter`}
             type="search"
             placeholder="Search"
           />
-        </label>
+        </FloatingField>
       </div>
       <div className="formula-one-question-list" id={`${prefix}-question-list`}>
         <LoadingCard text="Loading Formula 1 questions..." />
@@ -617,7 +618,7 @@ export function FormulaOneResultsPage({ year }: { year: 2024 | 2025 | 2026 }) {
           id={`${resultsPrefix}-results-weekly-controls`}
           hidden
         >
-          <label className="select-control">
+          <FloatingField className="select-control">
             <span>Rounds</span>
             <select
               id={`${resultsPrefix}-results-weekly-group`}
@@ -625,7 +626,7 @@ export function FormulaOneResultsPage({ year }: { year: 2024 | 2025 | 2026 }) {
             >
               <option value="all">All</option>
             </select>
-          </label>
+          </FloatingField>
         </div>
       ) : null}
       <StandingsTable
@@ -643,12 +644,12 @@ export function FormulaOne2025WeeklyPage() {
     <>
       <LeagueHeading title="Formula 1" subtitle="2025 Weekly" />
       <div className="formula-one-controls">
-        <label className="select-control">
+        <FloatingField className="select-control">
           <span>Round</span>
           <select id="formula-one-2025-weekly-round-select" defaultValue="">
             <option value="">All rounds</option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div
         className="formula-one-weekly-list"
@@ -739,12 +740,12 @@ export function FormulaOne2026WeeklyPage() {
         role="tabpanel"
       >
         <div className="formula-one-controls">
-          <label className="select-control">
+          <FloatingField className="select-control">
             <span>Round</span>
             <select id="formula-one-2026-weekly-round-select" defaultValue="">
               <option value="">All rounds</option>
             </select>
-          </label>
+          </FloatingField>
         </div>
         <div
           className="formula-one-weekly-list"

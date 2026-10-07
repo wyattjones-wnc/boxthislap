@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { ChevronLeft, Filter, Plus, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
@@ -67,7 +68,7 @@ export function FootyMissingNotesPage() {
         id="footy-missing-notes-filters"
         hidden
       >
-        <label>
+        <FloatingField>
           <span>Search</span>
           <input
             id="footy-missing-notes-search"
@@ -75,40 +76,44 @@ export function FootyMissingNotesPage() {
             placeholder="Search"
             autoComplete="off"
           />
-        </label>
+        </FloatingField>
         <label>
           <span>Date</span>
           <span className="footy-date-range">
-            <input
-              id="footy-missing-notes-date-from"
-              type="date"
-              aria-label="Date from"
-            />
-            <input
-              id="footy-missing-notes-date-to"
-              type="date"
-              aria-label="Date to"
-            />
+            <FloatingField label="Date from">
+              <input
+                id="footy-missing-notes-date-from"
+                type="date"
+                aria-label="Date from"
+              />
+            </FloatingField>
+            <FloatingField label="Date to">
+              <input
+                id="footy-missing-notes-date-to"
+                type="date"
+                aria-label="Date to"
+              />
+            </FloatingField>
           </span>
         </label>
-        <label>
+        <FloatingField>
           <span>Competition</span>
           <select id="footy-missing-notes-competition">
             <option value="">All competitions</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Match Week / Day</span>
           <select id="footy-missing-notes-match-period">
             <option value="">All match weeks / days</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Team</span>
           <select id="footy-missing-notes-team">
             <option value="">All teams</option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <p
         className="footy-missing-notes-summary"
@@ -162,7 +167,7 @@ export function FootyCustomSchedulePage() {
         id="footy-custom-filters"
         hidden
       >
-        <label>
+        <FloatingField>
           <span>Search matches</span>
           <input
             id="footy-custom-match-search"
@@ -170,39 +175,43 @@ export function FootyCustomSchedulePage() {
             placeholder="Team, competition, venue"
             autoComplete="off"
           />
-        </label>
+        </FloatingField>
         <label>
           <span>Date</span>
           <span className="footy-date-range">
-            <input
-              id="footy-custom-date-from"
-              type="date"
-              aria-label="Custom schedule date from"
-            />
-            <input
-              id="footy-custom-date-to"
-              type="date"
-              aria-label="Custom schedule date to"
-            />
+            <FloatingField label="Custom schedule date from">
+              <input
+                id="footy-custom-date-from"
+                type="date"
+                aria-label="Custom schedule date from"
+              />
+            </FloatingField>
+            <FloatingField label="Custom schedule date to">
+              <input
+                id="footy-custom-date-to"
+                type="date"
+                aria-label="Custom schedule date to"
+              />
+            </FloatingField>
           </span>
         </label>
-        <label>
+        <FloatingField>
           <span>Competition</span>
           <select id="footy-custom-match-competition">
             <option value="">All competitions</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Time</span>
           <select id="footy-custom-time-filter">
             <option value="upcoming">Upcoming matches</option>
             <option value="past">Past matches</option>
             <option value="all">All matches</option>
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div className="footy-custom-team-tools" id="footy-custom-team-tools">
-        <label>
+        <FloatingField>
           <span>Find teams</span>
           <input
             id="footy-custom-team-search"
@@ -210,13 +219,13 @@ export function FootyCustomSchedulePage() {
             placeholder="Search team names"
             autoComplete="off"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Competition</span>
           <select id="footy-custom-team-competition">
             <option value="">All competitions</option>
           </select>
-        </label>
+        </FloatingField>
         <label className="footy-checkbox-control">
           <input id="footy-custom-selected-only" type="checkbox" />
           <span>Selected only</span>
@@ -347,42 +356,42 @@ function RosterEditorDialog() {
         </div>
         <input id="footy-roster-editor-id" type="hidden" />
         <div className="footy-roster-editor-fields">
-          <label>
+          <FloatingField>
             <span>Player</span>
             <input id="footy-roster-editor-name" required maxLength={300} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Position</span>
             <input id="footy-roster-editor-position" maxLength={100} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Number</span>
             <input id="footy-roster-editor-number" maxLength={20} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Appearances</span>
             <input id="footy-roster-editor-appearances" maxLength={40} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Birthday</span>
             <input id="footy-roster-editor-birthday" type="date" />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Home country</span>
             <input id="footy-roster-editor-country" maxLength={100} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Year joined</span>
             <input id="footy-roster-editor-joined" maxLength={20} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Club joined from</span>
             <input id="footy-roster-editor-from" maxLength={200} />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Transfer-out date</span>
             <input id="footy-roster-editor-transfer" type="date" />
-          </label>
+          </FloatingField>
           <label>
             <span>Profile image</span>
             <input
@@ -558,7 +567,7 @@ export function FootyPerfectPage() {
         id="footy-perfect-filters"
         hidden
       >
-        <label>
+        <FloatingField>
           <span>Search</span>
           <input
             id="footy-perfect-search"
@@ -566,23 +575,27 @@ export function FootyPerfectPage() {
             placeholder="Player, team, competition"
             autoComplete="off"
           />
-        </label>
+        </FloatingField>
         <label>
           <span>Date</span>
           <span className="footy-date-range">
-            <input
-              id="footy-perfect-date-from"
-              type="date"
-              aria-label="10 out of 10 date from"
-            />
-            <input
-              id="footy-perfect-date-to"
-              type="date"
-              aria-label="10 out of 10 date to"
-            />
+            <FloatingField label="10 out of 10 date from">
+              <input
+                id="footy-perfect-date-from"
+                type="date"
+                aria-label="10 out of 10 date from"
+              />
+            </FloatingField>
+            <FloatingField label="10 out of 10 date to">
+              <input
+                id="footy-perfect-date-to"
+                type="date"
+                aria-label="10 out of 10 date to"
+              />
+            </FloatingField>
           </span>
         </label>
-        <label>
+        <FloatingField>
           <span>Player Team</span>
           <select
             id="footy-perfect-team-filter"
@@ -590,8 +603,8 @@ export function FootyPerfectPage() {
           >
             <option value="">All teams</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Competition</span>
           <select
             id="footy-perfect-competition-filter"
@@ -599,7 +612,7 @@ export function FootyPerfectPage() {
           >
             <option value="">All competitions</option>
           </select>
-        </label>
+        </FloatingField>
         <div className="footy-filter-toggles footy-perfect-filter-toggles">
           <label className="footy-checkbox-control">
             <input id="footy-perfect-edit-toggle" type="checkbox" />
@@ -643,7 +656,7 @@ export function FootySeenPage() {
         id="footy-seen-filters"
         hidden
       >
-        <label>
+        <FloatingField>
           <span>Search</span>
           <input
             id="footy-seen-search"
@@ -651,23 +664,27 @@ export function FootySeenPage() {
             placeholder="Team, competition, venue"
             autoComplete="off"
           />
-        </label>
+        </FloatingField>
         <label>
           <span>Date</span>
           <span className="footy-date-range">
-            <input
-              id="footy-seen-date-from"
-              type="date"
-              aria-label="Seen match date from"
-            />
-            <input
-              id="footy-seen-date-to"
-              type="date"
-              aria-label="Seen match date to"
-            />
+            <FloatingField label="Seen match date from">
+              <input
+                id="footy-seen-date-from"
+                type="date"
+                aria-label="Seen match date from"
+              />
+            </FloatingField>
+            <FloatingField label="Seen match date to">
+              <input
+                id="footy-seen-date-to"
+                type="date"
+                aria-label="Seen match date to"
+              />
+            </FloatingField>
           </span>
         </label>
-        <label>
+        <FloatingField>
           <span>Competition</span>
           <select
             id="footy-seen-competition-filter"
@@ -675,8 +692,8 @@ export function FootySeenPage() {
           >
             <option value="">All competitions</option>
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Sports Bar</span>
           <select
             id="footy-seen-sports-bar-filter"
@@ -686,7 +703,7 @@ export function FootySeenPage() {
             <option value="yes">Sports Bar</option>
             <option value="no">Not Sports Bar</option>
           </select>
-        </label>
+        </FloatingField>
         <div className="footy-filter-toggles footy-seen-filter-toggles">
           <label className="footy-checkbox-control">
             <input id="footy-seen-edit-toggle" type="checkbox" />
@@ -735,7 +752,7 @@ export function FootyGoalAssistsPage() {
       </div>
       <div className="content-shell footy-goal-assists-shell">
         <form className="footy-goal-assists-form" id="footy-goal-assists-form">
-          <label>
+          <FloatingField>
             <span>Scorer Name</span>
             <input
               id="footy-scorer-name"
@@ -743,8 +760,8 @@ export function FootyGoalAssistsPage() {
               autoComplete="off"
               placeholder="Scorer Name"
             />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Assister Name</span>
             <input
               id="footy-assister-name"
@@ -752,7 +769,7 @@ export function FootyGoalAssistsPage() {
               autoComplete="off"
               placeholder="Assister Name"
             />
-          </label>
+          </FloatingField>
           <label className="footy-penalty-toggle">
             <input id="footy-penalty" type="checkbox" />
             <span>Penalty</span>
@@ -828,7 +845,7 @@ function PerfectDialog() {
         <input id="footy-perfect-match-id" type="hidden" />
         <div className="legacy-dialog-scroll">
           <div className="footy-note-grid">
-            <label className="footy-note-wide">
+            <FloatingField className="footy-note-wide">
               <span>Player</span>
               <input
                 id="footy-perfect-player"
@@ -836,8 +853,8 @@ function PerfectDialog() {
                 autoComplete="off"
                 required
               />
-            </label>
-            <label>
+            </FloatingField>
+            <FloatingField>
               <span>Home</span>
               <input
                 id="footy-perfect-home"
@@ -845,8 +862,8 @@ function PerfectDialog() {
                 autoComplete="off"
                 required
               />
-            </label>
-            <label>
+            </FloatingField>
+            <FloatingField>
               <span>Away</span>
               <input
                 id="footy-perfect-away"
@@ -854,39 +871,39 @@ function PerfectDialog() {
                 autoComplete="off"
                 required
               />
-            </label>
-            <label className="footy-note-wide">
+            </FloatingField>
+            <FloatingField className="footy-note-wide">
               <span>Player Team</span>
               <select id="footy-perfect-player-team-side" required>
                 <option value="">Select home or away</option>
                 <option value="home">Home</option>
                 <option value="away">Away</option>
               </select>
-            </label>
-            <label>
+            </FloatingField>
+            <FloatingField>
               <span>Date</span>
               <input id="footy-perfect-date" type="date" required />
-            </label>
-            <label>
+            </FloatingField>
+            <FloatingField>
               <span>Time</span>
               <input id="footy-perfect-time" type="time" />
-            </label>
-            <label className="footy-note-wide">
+            </FloatingField>
+            <FloatingField className="footy-note-wide">
               <span>Competition</span>
               <input
                 id="footy-perfect-competition"
                 type="text"
                 autoComplete="off"
               />
-            </label>
-            <label className="footy-note-wide">
+            </FloatingField>
+            <FloatingField className="footy-note-wide">
               <span>Game Info</span>
               <textarea
                 id="footy-perfect-note"
                 rows={3}
                 placeholder="Optional context about the performance"
               />
-            </label>
+            </FloatingField>
           </div>
         </div>
         <p
@@ -943,7 +960,7 @@ function SeenDialog() {
             id="footy-seen-manual-fields"
           >
             <div className="footy-note-grid">
-              <label>
+              <FloatingField>
                 <span>Home</span>
                 <input
                   id="footy-seen-home"
@@ -951,8 +968,8 @@ function SeenDialog() {
                   autoComplete="off"
                   required
                 />
-              </label>
-              <label>
+              </FloatingField>
+              <FloatingField>
                 <span>Away</span>
                 <input
                   id="footy-seen-away"
@@ -960,27 +977,27 @@ function SeenDialog() {
                   autoComplete="off"
                   required
                 />
-              </label>
-              <label>
+              </FloatingField>
+              <FloatingField>
                 <span>Date</span>
                 <input id="footy-seen-date" type="date" required />
-              </label>
-              <label>
+              </FloatingField>
+              <FloatingField>
                 <span>Time</span>
                 <input id="footy-seen-time" type="time" />
-              </label>
-              <label className="footy-note-wide">
+              </FloatingField>
+              <FloatingField className="footy-note-wide">
                 <span>Competition</span>
                 <input
                   id="footy-seen-competition"
                   type="text"
                   autoComplete="off"
                 />
-              </label>
-              <label className="footy-note-wide">
+              </FloatingField>
+              <FloatingField className="footy-note-wide">
                 <span>Venue</span>
                 <input id="footy-seen-venue" type="text" autoComplete="off" />
-              </label>
+              </FloatingField>
             </div>
           </div>
           <label className="footy-checkbox-control footy-seen-sports-bar-control">

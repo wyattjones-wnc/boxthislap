@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MERCHANDISE_ENDPOINT } from "../../../modules/siteConfig";
 import { useAppState } from "../../app/providers";
@@ -258,7 +259,7 @@ export function MerchandiseFeature() {
       ) : null}
       <div className={styles.toolbar}>
         <div className={styles.filters}>
-          <label>
+          <FloatingField>
             Team
             <select
               aria-label="Team"
@@ -269,8 +270,8 @@ export function MerchandiseFeature() {
               <option value="arsenal">Arsenal</option>
               <option value="barcelona">FC Barcelona</option>
             </select>
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             Category
             <select
               aria-label="Category"
@@ -284,9 +285,9 @@ export function MerchandiseFeature() {
                 </option>
               ))}
             </select>
-          </label>
+          </FloatingField>
           {view === "seen" ? (
-            <label>
+            <FloatingField>
               Sort
               <select
                 aria-label="Sort seen products"
@@ -298,7 +299,7 @@ export function MerchandiseFeature() {
                 <option value="seen-newest">Most recently seen</option>
                 <option value="seen-oldest">Earliest seen</option>
               </select>
-            </label>
+            </FloatingField>
           ) : null}
         </div>
         <span className={styles.resultCount}>

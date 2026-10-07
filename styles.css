@@ -12436,34 +12436,8 @@ html.has-contained-dialog body {
   outline-offset: 3px;
 }
 
-.next-item-fields .floating-field {
-  position: relative;
-  display: block;
-}
-
-.react-form-dialog-panel .next-item-fields .floating-field input {
-  width: 100%;
-  padding: 20px 12px 6px;
-  min-height: 50px;
-}
-
-.floating-field > span {
-  position: absolute;
-  left: 12px;
-  top: 16px;
-  pointer-events: none;
-  transform-origin: left top;
-  transition: transform 150ms ease, top 150ms ease;
-}
-
-.floating-field input:focus + span,
-.floating-field input:not(:placeholder-shown) + span {
-  top: 5px;
-  transform: scale(0.78);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .floating-field > span,
+  .floating-label,
   .toggle-control input[type="checkbox"],
   .toggle-control input[type="checkbox"]::before {
     transition: none;
@@ -12505,24 +12479,116 @@ html.has-contained-dialog body {
   gap: 2px;
 }
 
-.toggle-state {
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.2;
-}
-
-.toggle-state::after {
-  content: "Off";
-}
-
-.toggle-control input:checked ~ .toggle-label .toggle-state {
-  color: var(--ink);
-}
-
-.toggle-control input:checked ~ .toggle-label .toggle-state::after {
-  content: "On";
-}
-
 .react-form-dialog-panel > footer .footy-note-status:empty {
   display: none;
+}
+
+/* One field presentation for React and legacy HTML forms. */
+.floating-field[data-floating-field] {
+  display: block;
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.floating-field[data-floating-field] > :is(input, select, textarea)[data-floating-control] {
+  box-sizing: border-box;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  display: block;
+  font: inherit;
+  font-size: 16px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 52px;
+  padding: 22px 12px 6px;
+}
+
+.floating-field[data-floating-field] > textarea[data-floating-control] {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.floating-field[data-floating-field] > select[data-floating-control] {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) right 16px center / 6px 6px no-repeat,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) right 10px center / 6px 6px no-repeat,
+    var(--soft);
+  padding-right: 32px;
+}
+
+.floating-field[data-floating-field] > input[type="date"][data-floating-control],
+.floating-field[data-floating-field] > input[type="time"][data-floating-control],
+.floating-field[data-floating-field] > input[type="datetime-local"][data-floating-control] {
+  appearance: none;
+  min-inline-size: 0;
+  overflow: hidden;
+}
+
+.floating-field[data-floating-field] > .floating-label {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: none;
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 17px;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  height: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform 150ms ease, top 150ms ease;
+}
+
+.floating-field[data-floating-field]:focus-within > .floating-label,
+.floating-field[data-floating-field]:has(> :is(input, textarea):not(:placeholder-shown)) > .floating-label,
+.floating-field[data-floating-field]:has(> :is(select, input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"], input[type="week"])) > .floating-label {
+  top: 5px;
+  transform: scale(0.75);
+}
+
+.floating-field[data-floating-field] > :is(input, textarea)::placeholder {
+  opacity: 0;
+}
+
+.floating-field[data-floating-field]:focus-within > :is(input, textarea)::placeholder {
+  opacity: 1;
+}
+
+.floating-field[data-floating-field] > :is(input, select, textarea):focus-visible {
+  border-color: var(--track);
+  outline: 2px solid var(--track);
+  outline-offset: 2px;
+}
+
+.next-date-filter,
+.footy-date-filter {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.next-filters + .next-controls {
+  margin-top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-field[data-floating-field] > .floating-label {
+    transition: none;
+  }
 }

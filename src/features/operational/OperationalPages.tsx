@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import {
   Archive,
   ArchiveRestore,
@@ -53,17 +54,6 @@ export function NextPage() {
           label="Add Next item"
         />
       </PageHeading>
-      <div className="next-controls">
-        <label>
-          <input
-            aria-label="Search"
-            id="next-search"
-            type="search"
-            placeholder="Search"
-            autoComplete="off"
-          />
-        </label>
-      </div>
       <div className="next-filters" id="next-filters" hidden>
         <div className="next-filter-checks">
           <Check id="next-completed-filter" label="Completed" adminOnly />
@@ -71,17 +61,25 @@ export function NextPage() {
           <Check id="next-non-admin-filter" label="Non-Admin Only" adminOnly />
         </div>
         <Check id="next-edit-mode-filter" label="Edit" adminOnly toggle />
-        <label className="next-date-filter">
+        <div className="next-date-filter" role="group" aria-label="Date range">
           <span>Date</span>
           <div className="footy-date-range">
-            <input
-              id="next-date-from-filter"
-              type="date"
-              aria-label="Date from"
-            />
-            <input id="next-date-to-filter" type="date" aria-label="Date to" />
+            <FloatingField label="Date from">
+              <input
+                id="next-date-from-filter"
+                type="date"
+                aria-label="Date from"
+              />
+            </FloatingField>
+            <FloatingField label="Date to">
+              <input
+                id="next-date-to-filter"
+                type="date"
+                aria-label="Date to"
+              />
+            </FloatingField>
           </div>
-        </label>
+        </div>
         <div
           className="next-priority-filter"
           role="group"
@@ -120,6 +118,17 @@ export function NextPage() {
             />
           </div>
         </div>
+      </div>
+      <div className="next-controls">
+        <FloatingField>
+          <input
+            aria-label="Search"
+            id="next-search"
+            type="search"
+            placeholder="Search"
+            autoComplete="off"
+          />
+        </FloatingField>
       </div>
       <div className="content-shell" id="next-list" data-react-list="next">
         <NextItems />
@@ -350,16 +359,16 @@ export function FootyPage() {
         id="footy-competition-controls"
         hidden
       >
-        <label>
+        <FloatingField>
           <span>Competition</span>
           <select
             id="footy-competition-select"
             aria-label="Competition schedule"
           />
-        </label>
+        </FloatingField>
       </div>
       <div className="footy-filters" id="footy-filters" hidden>
-        <label>
+        <FloatingField>
           <span>Search</span>
           <input
             id="footy-search"
@@ -367,19 +376,27 @@ export function FootyPage() {
             placeholder="Search"
             autoComplete="off"
           />
-        </label>
+        </FloatingField>
         <label>
           <span>Date</span>
           <div className="footy-date-range">
-            <input
-              id="footy-date-from-filter"
-              type="date"
-              aria-label="Date from"
-            />
-            <input id="footy-date-to-filter" type="date" aria-label="Date to" />
+            <FloatingField label="Date from">
+              <input
+                id="footy-date-from-filter"
+                type="date"
+                aria-label="Date from"
+              />
+            </FloatingField>
+            <FloatingField label="Date to">
+              <input
+                id="footy-date-to-filter"
+                type="date"
+                aria-label="Date to"
+              />
+            </FloatingField>
           </div>
         </label>
-        <label>
+        <FloatingField>
           <span>Match Week / Day</span>
           <select
             id="footy-match-period-filter"
@@ -388,7 +405,7 @@ export function FootyPage() {
           >
             <option value="">All match weeks / days</option>
           </select>
-        </label>
+        </FloatingField>
         <label>
           <span>Teams</span>
           <div className="multi-filter" id="footy-team-filter">
@@ -470,7 +487,7 @@ function FootyNoteDialog() {
           />
         </header>
         <div className="footy-note-grid">
-          <label>
+          <FloatingField>
             <span>Home Score</span>
             <input
               id="footy-note-home-score"
@@ -478,8 +495,8 @@ function FootyNoteDialog() {
               inputMode="numeric"
               autoComplete="off"
             />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Away Score</span>
             <input
               id="footy-note-away-score"
@@ -487,8 +504,11 @@ function FootyNoteDialog() {
               inputMode="numeric"
               autoComplete="off"
             />
-          </label>
-          <label className="footy-note-kit-field" id="footy-note-kit-field">
+          </FloatingField>
+          <FloatingField
+            className="footy-note-kit-field"
+            id="footy-note-kit-field"
+          >
             <span>Followed Team Kit</span>
             <select id="footy-note-kit">
               <option value="">Not set</option>
@@ -496,7 +516,7 @@ function FootyNoteDialog() {
               <option value="away">Away</option>
               <option value="third">Third</option>
             </select>
-          </label>
+          </FloatingField>
           <GoalAssistBuilder
             side="follow"
             title="Follow G/A"
@@ -507,18 +527,18 @@ function FootyNoteDialog() {
             title="Opp G/A"
             empty="No saved opponent entries."
           />
-          <label className="footy-note-wide">
+          <FloatingField className="footy-note-wide">
             <span>Note</span>
             <textarea id="footy-note-text" rows={3} />
-          </label>
-          <label className="footy-note-wide">
+          </FloatingField>
+          <FloatingField className="footy-note-wide">
             <span>Highlight Link</span>
             <input
               id="footy-note-highlight-link"
               type="url"
               autoComplete="off"
             />
-          </label>
+          </FloatingField>
         </div>
         <p
           className="footy-note-status"
@@ -555,7 +575,7 @@ function GoalAssistBuilder({
     <details className="footy-note-ga-builder" data-footy-note-ga-side={side}>
       <summary>{title}</summary>
       <div className="footy-note-ga-fields">
-        <label>
+        <FloatingField>
           <span>Scorer Name</span>
           <input
             type="text"
@@ -566,8 +586,8 @@ function GoalAssistBuilder({
             spellCheck="false"
             placeholder="Scorer Name"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Assister Name</span>
           <input
             type="text"
@@ -578,8 +598,8 @@ function GoalAssistBuilder({
             spellCheck="false"
             placeholder="Assister Name"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Minute</span>
           <input
             type="text"
@@ -588,7 +608,7 @@ function GoalAssistBuilder({
             autoComplete="off"
             placeholder="45 +5"
           />
-        </label>
+        </FloatingField>
         <label className="footy-penalty-toggle">
           <input type="checkbox" data-footy-note-ga-field="penalty" />
           <span>Penalty</span>
@@ -1356,10 +1376,10 @@ export function RankingsPage() {
         />
       </PageHeading>
       <div className="ranking-filters" id="ranking-filters" hidden>
-        <label className="ranking-select-control">
+        <FloatingField className="ranking-select-control">
           <span>Manager</span>
           <select id="ranking-manager-select" />
-        </label>
+        </FloatingField>
         <span className="ranking-read-only" id="ranking-read-only" hidden>
           Read only
         </span>
@@ -1393,7 +1413,7 @@ export function RankingsPage() {
             Calculated
           </button>
         </div>
-        <label
+        <FloatingField
           className="ranking-select-control"
           data-ranking-owner-only
           hidden
@@ -1402,8 +1422,8 @@ export function RankingsPage() {
           <select id="ranking-snapshot-select">
             <option value="current">Current</option>
           </select>
-        </label>
-        <label
+        </FloatingField>
+        <FloatingField
           className="ranking-select-control"
           data-ranking-owner-only
           hidden
@@ -1412,7 +1432,7 @@ export function RankingsPage() {
           <select id="ranking-compare-select">
             <option value="">None</option>
           </select>
-        </label>
+        </FloatingField>
         <button
           className="action-button ranking-normalize-button"
           id="ranking-normalize-button"
@@ -1681,7 +1701,7 @@ function RankingItemDialog() {
         <input id="ranking-item-kind" type="hidden" />
         <input id="ranking-item-id" type="hidden" />
         <div className="next-item-fields">
-          <label className="next-item-wide">
+          <FloatingField className="next-item-wide">
             <span>Name</span>
             <input
               id="ranking-item-name"
@@ -1689,8 +1709,8 @@ function RankingItemDialog() {
               autoComplete="off"
               required
             />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Rank</span>
             <input
               id="ranking-item-rank"
@@ -1699,7 +1719,7 @@ function RankingItemDialog() {
               step="1"
               required
             />
-          </label>
+          </FloatingField>
         </div>
         <p
           className="footy-note-status"
@@ -1796,7 +1816,7 @@ function RankingNormalizeDialog() {
           ratings into closer gaps, and clears old choices for this ranking
           list.
         </p>
-        <label className="next-item-wide">
+        <FloatingField className="next-item-wide">
           <span>Reason</span>
           <input
             id="ranking-normalize-reason"
@@ -1804,7 +1824,7 @@ function RankingNormalizeDialog() {
             defaultValue="Normalized calculated rankings"
             autoComplete="off"
           />
-        </label>
+        </FloatingField>
         <footer>
           <button
             className="action-button"
@@ -1895,7 +1915,7 @@ export function ManagerHubPage() {
         >
           <div className="manager-hub-card-heading">
             <h2 id="manager-summary-heading">Results</h2>
-            <label className="manager-summary-year-control">
+            <FloatingField className="manager-summary-year-control">
               <span>Year</span>
               <select id="manager-summary-year-select" defaultValue="2026">
                 <option value="2026">2026</option>
@@ -1903,7 +1923,7 @@ export function ManagerHubPage() {
                 <option value="2025">2025</option>
                 <option value="2024">2024</option>
               </select>
-            </label>
+            </FloatingField>
           </div>
           <div className="manager-summary-list" id="manager-summary-list">
             <Message text="Log in to load manager results." />
@@ -2225,10 +2245,10 @@ export function DraftListPage() {
         </div>
       </div>
       <div className="draft-list-filters" id="draft-list-filters" hidden>
-        <label className="ranking-select-control">
+        <FloatingField className="ranking-select-control">
           <span>Entered after</span>
           <input id="draft-list-entry-after" type="date" />
-        </label>
+        </FloatingField>
         <div
           className="draft-list-filter-toggles"
           role="group"
@@ -2313,7 +2333,7 @@ function DraftListItemDialog() {
         </header>
         <input id="draft-list-item-id" type="hidden" />
         <div className="next-item-fields">
-          <label className="next-item-wide">
+          <FloatingField className="next-item-wide">
             <span>Name</span>
             <input
               id="draft-list-item-name"
@@ -2322,12 +2342,12 @@ function DraftListItemDialog() {
               autoComplete="off"
               required
             />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Release Date</span>
             <input id="draft-list-item-release-date" type="date" />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Rank</span>
             <input
               id="draft-list-item-rank"
@@ -2336,8 +2356,8 @@ function DraftListItemDialog() {
               step="1"
               required
             />
-          </label>
-          <label className="next-item-wide">
+          </FloatingField>
+          <FloatingField className="next-item-wide">
             <span>Data URL</span>
             <input
               id="draft-list-item-data-url"
@@ -2346,8 +2366,8 @@ function DraftListItemDialog() {
               autoComplete="url"
               placeholder="https://example.com/details"
             />
-          </label>
-          <label className="next-item-wide">
+          </FloatingField>
+          <FloatingField className="next-item-wide">
             <span>Image URL</span>
             <input
               id="draft-list-item-image-url"
@@ -2356,10 +2376,10 @@ function DraftListItemDialog() {
               autoComplete="url"
               placeholder="https://example.com/image.jpg"
             />
-          </label>
+          </FloatingField>
           <details className="draft-list-notes-field">
             <summary>Notes</summary>
-            <label>
+            <FloatingField>
               <span className="sr-only">Notes</span>
               <textarea
                 id="draft-list-item-notes"
@@ -2367,7 +2387,7 @@ function DraftListItemDialog() {
                 maxLength={4000}
                 placeholder="Add notes about this item"
               />
-            </label>
+            </FloatingField>
           </details>
           <div className="next-dialog-checks draft-list-dialog-checks">
             <Check id="draft-list-item-archived" label="Archived" />
@@ -2429,7 +2449,7 @@ function DraftListSheetDialog() {
           />
         </header>
         <div className="next-item-fields">
-          <label className="next-item-wide">
+          <FloatingField className="next-item-wide">
             <span>Sheet Name</span>
             <input
               id="draft-list-sheet-name"
@@ -2439,7 +2459,7 @@ function DraftListSheetDialog() {
               placeholder="Grocery List"
               required
             />
-          </label>
+          </FloatingField>
         </div>
         <p
           className="footy-note-status"
@@ -2500,7 +2520,6 @@ function Check({
       <input id={id} type="checkbox" role={toggle ? "switch" : undefined} />
       <span className={toggle ? "toggle-label" : undefined}>
         <span>{label}</span>
-        {toggle ? <span className="toggle-state" aria-hidden="true" /> : null}
       </span>
     </label>
   );
@@ -2569,18 +2588,18 @@ function RankingFilters({
           <input id="todo-more-data-toggle" type="checkbox" />
         </label>
       ) : null}
-      <label className="ranking-select-control">
+      <FloatingField className="ranking-select-control">
         <span>Snapshot</span>
         <select id={`${kind}-snapshot-select`} defaultValue="current">
           <option value="current">Current</option>
         </select>
-      </label>
-      <label className="ranking-select-control">
+      </FloatingField>
+      <FloatingField className="ranking-select-control">
         <span>Compare</span>
         <select id={`${kind}-snapshot-compare-select`} defaultValue="">
           <option value="">None</option>
         </select>
-      </label>
+      </FloatingField>
       <button
         className="action-button ranking-normalize-button"
         id={`${kind}-normalize-button`}

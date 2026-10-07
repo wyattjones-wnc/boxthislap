@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
@@ -687,7 +688,7 @@ function GuideFilter({
 }) {
   if (!values.length) return null;
   return (
-    <label className="ranking-select-control">
+    <FloatingField className="ranking-select-control">
       <span>{label}</span>
       <select value={value} onChange={(event) => setValue(event.target.value)}>
         <option value="">All</option>
@@ -697,7 +698,7 @@ function GuideFilter({
           </option>
         ))}
       </select>
-    </label>
+    </FloatingField>
   );
 }
 

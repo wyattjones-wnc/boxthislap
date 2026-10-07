@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type CSSProperties } from "react";
 import { useAppState } from "../../app/providers";
@@ -234,7 +235,7 @@ export function FormulaOne2026QuestionsPage() {
         ) : null}
       </div>
       <div className="formula-one-controls">
-        <label className="select-control">
+        <FloatingField className="select-control">
           <span>Question</span>
           <select
             id="formula-one-2026-question-select"
@@ -256,8 +257,8 @@ export function FormulaOne2026QuestionsPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="filter-control">
+        </FloatingField>
+        <FloatingField className="filter-control">
           <span>Filter</span>
           <input
             id="formula-one-2026-question-filter"
@@ -266,7 +267,7 @@ export function FormulaOne2026QuestionsPage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-        </label>
+        </FloatingField>
       </div>
       <div className={styles.list} id="formula-one-2026-question-list">
         {!filtered.length ? (

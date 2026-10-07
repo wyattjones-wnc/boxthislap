@@ -1,3 +1,4 @@
+import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 // JSX references are not visible to the lightweight tooling lint rule.
@@ -98,7 +99,7 @@ function TodoItemDialog({
       titleId="todo-react-dialog-title"
     >
       <div className="next-item-fields">
-        <label className="next-item-wide">
+        <FloatingField className="next-item-wide">
           <span>Name</span>
           <input
             autoComplete="off"
@@ -108,8 +109,8 @@ function TodoItemDialog({
             type="text"
             value={values.name}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Order</span>
           <input
             max={values.maxOrder}
@@ -119,8 +120,8 @@ function TodoItemDialog({
             type="number"
             value={values.order}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Low Hour</span>
           <input
             min="0"
@@ -129,8 +130,8 @@ function TodoItemDialog({
             type="number"
             value={values.lowHour}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>High Hour</span>
           <input
             min="0"
@@ -139,8 +140,8 @@ function TodoItemDialog({
             type="number"
             value={values.highHour}
           />
-        </label>
-        <label className="next-item-wide autocomplete-field">
+        </FloatingField>
+        <FloatingField className="next-item-wide autocomplete-field">
           <span>Parent</span>
           <input
             aria-autocomplete="list"
@@ -182,8 +183,8 @@ function TodoItemDialog({
               )}
             </div>
           ) : null}
-        </label>
-        <label className="next-item-wide">
+        </FloatingField>
+        <FloatingField className="next-item-wide">
           <span>Image URL</span>
           <input
             autoComplete="url"
@@ -192,7 +193,7 @@ function TodoItemDialog({
             type="url"
             value={values.imageUrl}
           />
-        </label>
+        </FloatingField>
         <div className="next-dialog-checks">
           {[
             ["started", "Started"],

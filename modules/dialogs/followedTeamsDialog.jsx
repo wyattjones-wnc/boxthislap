@@ -1,3 +1,4 @@
+import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useContainedDialog } from "./useContainedDialog.js";
@@ -133,7 +134,7 @@ function FollowedTeamsDialog({
         </button>
       </div>
       <div className="followed-teams-picker-filters">
-        <label>
+        <FloatingField>
           <span>Search teams</span>
           <input
             autoComplete="off"
@@ -143,8 +144,8 @@ function FollowedTeamsDialog({
             type="search"
             value={query}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Competition</span>
           <select
             onChange={(event) => setLeagueId(event.target.value)}
@@ -157,7 +158,7 @@ function FollowedTeamsDialog({
               </option>
             ))}
           </select>
-        </label>
+        </FloatingField>
       </div>
       <div
         aria-label="Teams"

@@ -1,3 +1,4 @@
+import { observeLegacyFloatingFields } from "./components/FloatingField/legacyFloatingFields";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import {
@@ -184,5 +185,7 @@ if (
 ) {
   window.requestAnimationFrame(() => window.scrollTo({ left: 0, top: 0 }));
 }
+
+observeLegacyFloatingFields(document.body);
 
 void import("../script.js");

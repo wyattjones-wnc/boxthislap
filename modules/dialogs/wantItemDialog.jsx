@@ -1,3 +1,4 @@
+import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 // JSX references are not visible to the lightweight tooling lint rule.
@@ -67,7 +68,7 @@ function WantItemDialog({
       titleId="want-react-dialog-title"
     >
       <div className="next-item-fields">
-        <label className="next-item-wide">
+        <FloatingField className="next-item-wide">
           <span>Name</span>
           <input
             autoComplete="off"
@@ -77,8 +78,8 @@ function WantItemDialog({
             type="text"
             value={values.name}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Order</span>
           <input
             max={values.maxOrder}
@@ -88,8 +89,8 @@ function WantItemDialog({
             type="number"
             value={values.order}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Price</span>
           <input
             inputMode="decimal"
@@ -99,8 +100,8 @@ function WantItemDialog({
             type="number"
             value={values.price}
           />
-        </label>
-        <label className="next-item-wide">
+        </FloatingField>
+        <FloatingField className="next-item-wide">
           <span>Image URL</span>
           <input
             autoComplete="url"
@@ -109,7 +110,7 @@ function WantItemDialog({
             type="url"
             value={values.imageUrl}
           />
-        </label>
+        </FloatingField>
         <div className="next-dialog-checks">
           {[
             ["archived", "Archived"],

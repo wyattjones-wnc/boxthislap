@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { useAppState } from "../../app/providers";
@@ -442,7 +443,7 @@ function ManageView({ data }: { data: SeasonData }) {
               unavailable means the source page exists but has no value yet.
             </p>
           </div>
-          <label>
+          <FloatingField>
             Show
             <select
               value={issueFilter}
@@ -464,7 +465,7 @@ function ManageView({ data }: { data: SeasonData }) {
               <option value="healthy">Healthy ({counts.healthy || 0})</option>
               <option value="all">All movies ({data.movies.length})</option>
             </select>
-          </label>
+          </FloatingField>
         </header>
         <div className={styles.diagnosticCounts}>
           {(
@@ -647,11 +648,11 @@ function MovieAdminForm({
         </ul>
       </div>
       <div className={styles.sourceGrid}>
-        <label>
+        <FloatingField>
           Movie title
           <input defaultValue={movie.movie} name="title" required />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           Letterboxd URL
           <input
             defaultValue={movie.letterboxdUrl}
@@ -663,8 +664,8 @@ function MovieAdminForm({
             defaultChecked={movie.letterboxdVerified}
             name="letterboxdVerified"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           Rotten Tomatoes URL
           <input
             defaultValue={movie.rottenTomatoesUrl}
@@ -676,8 +677,8 @@ function MovieAdminForm({
             defaultChecked={movie.rottenTomatoesVerified}
             name="rottenTomatoesVerified"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           Box Office Mojo URL
           <input
             defaultValue={movie.boxOfficeMojoUrl}
@@ -689,15 +690,15 @@ function MovieAdminForm({
             defaultChecked={movie.boxOfficeMojoVerified}
             name="boxOfficeMojoVerified"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           Box Office Mojo release ID
           <input
             defaultValue={movie.boxOfficeMojoReleaseId}
             name="boxOfficeMojoReleaseId"
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           Award points
           <input
             defaultValue={movie.awardPoints}
@@ -706,7 +707,7 @@ function MovieAdminForm({
             step="1"
             type="number"
           />
-        </label>
+        </FloatingField>
       </div>
       <details>
         <summary>Health, emergency corrections, and freezes</summary>
@@ -728,7 +729,7 @@ function MovieAdminForm({
                 {health.lastErrorMessage ? (
                   <p className={styles.error}>{health.lastErrorMessage}</p>
                 ) : null}
-                <label>
+                <FloatingField>
                   Override
                   <input
                     defaultValue={health.manualOverride ?? ""}
@@ -736,8 +737,8 @@ function MovieAdminForm({
                     step="any"
                     type="number"
                   />
-                </label>
-                <label>
+                </FloatingField>
+                <FloatingField>
                   Frozen value
                   <input
                     defaultValue={health.frozenValue ?? ""}
@@ -745,7 +746,7 @@ function MovieAdminForm({
                     step="any"
                     type="number"
                   />
-                </label>
+                </FloatingField>
               </fieldset>
             );
           })}

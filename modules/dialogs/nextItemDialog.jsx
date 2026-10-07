@@ -1,3 +1,4 @@
+import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 // JSX references are not visible to the lightweight tooling lint rule.
@@ -69,7 +70,7 @@ function NextItemDialog({
       titleId="next-react-dialog-title"
     >
       <div className="next-item-fields">
-        <label className="next-item-wide floating-field">
+        <FloatingField className="next-item-wide">
           <input
             autoComplete="off"
             onChange={(event) => update("thing", event.target.value)}
@@ -80,8 +81,8 @@ function NextItemDialog({
             value={values.thing}
           />
           <span>Thing</span>
-        </label>
-        <label className="next-item-wide floating-field">
+        </FloatingField>
+        <FloatingField className="next-item-wide">
           <input
             autoComplete="url"
             inputMode="url"
@@ -91,8 +92,8 @@ function NextItemDialog({
             value={values.imageUrl}
           />
           <span>Image URL</span>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Date</span>
           <input
             onChange={(event) => update("date", event.target.value)}
@@ -100,16 +101,16 @@ function NextItemDialog({
             type="date"
             value={values.date}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>End Date</span>
           <input
             onChange={(event) => update("endDate", event.target.value)}
             type="date"
             value={values.endDate}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Time</span>
           <select
             onChange={(event) => update("time", event.target.value)}
@@ -122,8 +123,8 @@ function NextItemDialog({
               </option>
             ))}
           </select>
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>Priority</span>
           <input
             max="10"
@@ -133,7 +134,7 @@ function NextItemDialog({
             type="number"
             value={values.priority}
           />
-        </label>
+        </FloatingField>
         <div className="next-dialog-checks">
           <label className="next-checkbox-control next-dialog-checkbox toggle-control">
             <input
@@ -144,7 +145,6 @@ function NextItemDialog({
             />
             <span className="toggle-label">
               <span>Completed</span>
-              <span className="toggle-state" aria-hidden="true" />
             </span>
           </label>
           <label className="next-checkbox-control next-dialog-checkbox toggle-control">
@@ -156,7 +156,6 @@ function NextItemDialog({
             />
             <span className="toggle-label">
               <span>Show to non-admin</span>
-              <span className="toggle-state" aria-hidden="true" />
             </span>
           </label>
         </div>

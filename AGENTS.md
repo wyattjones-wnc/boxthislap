@@ -53,3 +53,8 @@ Completed tasks must reach `origin/dev` for review, including from a synthetic c
 ## Product Defaults
 
 - Do not invent or seed user-facing content when a feature describes an admin-configured default. An admin-configured default may begin empty; managers inherit it only after the admin supplies it.
+
+## Form Field Standard
+
+- Use `src/components/FloatingField/FloatingField.tsx` for boxed inputs, selects, and textareas across React pages and dialogs. Preserve native control props, refs, validation, and accessible names. Text labels float on focus or a value; date/time and select labels remain lifted to keep native content readable.
+- Legacy HTML forms receive the same field markup and styles through `src/components/FloatingField/legacyFloatingFields.ts`. Do not reparent React-owned controls from legacy code. Checkboxes, switches, radio buttons, sliders, and file/color pickers keep their native interaction patterns.

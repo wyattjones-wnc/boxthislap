@@ -1,3 +1,4 @@
+import { FloatingField } from "../../components/FloatingField/FloatingField";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Accessibility,
@@ -571,7 +572,7 @@ export function WorkoutFeature() {
       {!selectedDate ? (
         <div className={styles.pageActions}>
           {isAdmin ? (
-            <label className={styles.managerSelect}>
+            <FloatingField className={styles.managerSelect}>
               <span>Manager</span>
               <select
                 value={selectedManager}
@@ -589,7 +590,7 @@ export function WorkoutFeature() {
                   </option>
                 ))}
               </select>
-            </label>
+            </FloatingField>
           ) : null}
           <div className={styles.pageActionButtons}>
             <IconButton
@@ -1094,7 +1095,7 @@ function CardioWorkoutView({
       </div>
       {canEdit && (!completed || editingId) ? (
         <form className={styles.cardioEntryForm} onSubmit={submit}>
-          <label>
+          <FloatingField>
             <span>Type</span>
             <select
               disabled={busy}
@@ -1106,8 +1107,8 @@ function CardioWorkoutView({
               <option value="walk">Walk</option>
               <option value="run">Run</option>
             </select>
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Miles</span>
             <input
               required
@@ -1120,7 +1121,7 @@ function CardioWorkoutView({
               value={miles}
               onChange={(event) => setMiles(event.target.value)}
             />
-          </label>
+          </FloatingField>
           <button className="action-button" disabled={busy} type="submit">
             {editingId ? (
               "Save changes"
@@ -1409,7 +1410,7 @@ function ActiveWorkout({
       </section>
       {more ? (
         <section className={styles.moreControls}>
-          <label>
+          <FloatingField>
             <span>Minutes</span>
             <input
               type="number"
@@ -1419,7 +1420,7 @@ function ActiveWorkout({
               value={minutes}
               onChange={(event) => setMinutes(event.target.value)}
             />
-          </label>
+          </FloatingField>
           {!durationLocked ? (
             <button
               className="action-button"
@@ -2015,7 +2016,7 @@ function MorningRoutineEditor({
                     </button>
                   </div>
                 </header>
-                <label>
+                <FloatingField>
                   <span>Name</span>
                   <input
                     maxLength={100}
@@ -2025,8 +2026,8 @@ function MorningRoutineEditor({
                       updateStep(index, { name: event.target.value })
                     }
                   />
-                </label>
-                <label>
+                </FloatingField>
+                <FloatingField>
                   <span>Type</span>
                   <select
                     value={step.type}
@@ -2043,9 +2044,9 @@ function MorningRoutineEditor({
                     <option value="timer">Timer</option>
                     <option value="count">Count</option>
                   </select>
-                </label>
+                </FloatingField>
                 {step.type === "timer" ? (
-                  <label>
+                  <FloatingField>
                     <span>Seconds</span>
                     <input
                       max={3600}
@@ -2059,10 +2060,10 @@ function MorningRoutineEditor({
                         })
                       }
                     />
-                  </label>
+                  </FloatingField>
                 ) : (
                   <>
-                    <label>
+                    <FloatingField>
                       <span>Repetitions</span>
                       <input
                         max={1000}
@@ -2076,8 +2077,8 @@ function MorningRoutineEditor({
                           })
                         }
                       />
-                    </label>
-                    <label>
+                    </FloatingField>
+                    <FloatingField>
                       <span>Completion</span>
                       <select
                         value={step.completionMode || "toggle"}
@@ -2091,7 +2092,7 @@ function MorningRoutineEditor({
                         <option value="toggle">One completion toggle</option>
                         <option value="tally">Tally each repetition</option>
                       </select>
-                    </label>
+                    </FloatingField>
                   </>
                 )}
               </li>
@@ -2159,7 +2160,7 @@ function ExerciseEditor({
   return (
     <Modal close={close} title={existing ? "Edit Exercise" : "Add Exercise"}>
       <form className={styles.form} onSubmit={(event) => void submit(event)}>
-        <label>
+        <FloatingField>
           <span>Name</span>
           <input
             required
@@ -2167,8 +2168,8 @@ function ExerciseEditor({
             value={name}
             onChange={(event) => setName(event.target.value)}
           />
-        </label>
-        <label>
+        </FloatingField>
+        <FloatingField>
           <span>
             Video URL <small>optional</small>
           </span>
@@ -2178,7 +2179,7 @@ function ExerciseEditor({
             value={videoUrl}
             onChange={(event) => setVideoUrl(event.target.value)}
           />
-        </label>
+        </FloatingField>
         <label className={styles.checkbox}>
           <input
             type="checkbox"
@@ -2248,7 +2249,7 @@ function CorrectionDialog({
     <Modal close={close} title="Correct Result">
       <form className={styles.form} onSubmit={(event) => void submit(event)}>
         <div className={styles.timeInputs}>
-          <label>
+          <FloatingField>
             <span>Minutes</span>
             <input
               type="number"
@@ -2257,8 +2258,8 @@ function CorrectionDialog({
               value={minutes}
               onChange={(event) => setMinutes(event.target.value)}
             />
-          </label>
-          <label>
+          </FloatingField>
+          <FloatingField>
             <span>Seconds</span>
             <input
               type="number"
@@ -2267,9 +2268,9 @@ function CorrectionDialog({
               value={seconds}
               onChange={(event) => setSeconds(event.target.value)}
             />
-          </label>
+          </FloatingField>
         </div>
-        <label>
+        <FloatingField>
           <span>Full sets</span>
           <input
             type="number"
@@ -2277,9 +2278,9 @@ function CorrectionDialog({
             value={sets}
             onChange={(event) => setSets(event.target.value)}
           />
-        </label>
+        </FloatingField>
         {workout.exercises.map((exercise, index) => (
-          <label key={exercise.id}>
+          <FloatingField key={exercise.id}>
             <span>{exercise.name}</span>
             <input
               type="number"
@@ -2294,7 +2295,7 @@ function CorrectionDialog({
                 )
               }
             />
-          </label>
+          </FloatingField>
         ))}
         {error ? (
           <p className={styles.error} role="alert">

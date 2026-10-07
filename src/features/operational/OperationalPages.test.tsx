@@ -28,6 +28,17 @@ function renderWithTooltips(component: React.ReactNode) {
 }
 
 describe("operational React pages", () => {
+  it("places Next filters before the floating Search field", () => {
+    renderWithTooltips(<NextPage />);
+    const filters = document.querySelector("#next-filters");
+    const search = screen.getByRole("searchbox", { name: "Search" });
+    expect(filters?.compareDocumentPosition(search)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(search.closest("[data-floating-field]")).not.toBeNull();
+    expect(document.querySelector(".toggle-state")).toBeNull();
+  });
+
   it("places Daily Workouts first in the Manager Hub actions", () => {
     renderWithTooltips(<ManagerHubPage />);
     const actions = document.querySelector(".manager-hub-actions");

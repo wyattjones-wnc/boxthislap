@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-09-28T18:11:16.098Z",
+  "generatedAt": "2026-10-07T17:27:11.962Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-09-28T18:11:16.098Z",
-    "attemptedAt": "2026-09-28T18:11:16.098Z",
-    "updatedAt": "2026-09-28T18:11:16.098Z",
-    "oldestTeamUpdatedAt": "2026-09-28T18:11:16.098Z",
+    "generatedAt": "2026-10-07T17:27:11.962Z",
+    "attemptedAt": "2026-10-07T17:27:11.962Z",
+    "updatedAt": "2026-10-07T17:27:11.962Z",
+    "oldestTeamUpdatedAt": "2026-10-07T17:27:11.962Z",
     "competitionCount": 11,
     "competitionFixtureCount": 2275,
     "teamCount": 7,
-    "fixtureCount": 219,
+    "fixtureCount": 216,
     "statuses": {
       "updated": 7
     }
@@ -40,18 +40,18 @@
     }
   ],
   "footyMatchRegistry": {
-    "matchCount": 256,
+    "matchCount": 257,
     "sync": {
       "status": "synced",
-      "rows": 256,
-      "syncedAt": "2026-09-28T18:11:16.098Z",
+      "rows": 257,
+      "syncedAt": "2026-10-07T17:27:11.962Z",
       "appended": 0,
-      "updated": 256
+      "updated": 257
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-09-28T18:16:09.821Z",
+      "attemptedAt": "2026-10-07T17:32:05.560Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -1386,10 +1386,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560577",
-            "iCalendar": "6a3507b354aa884dbe01a44c",
-            "Arsenal.com": "49bge6tbymd5aaw88zl3trgno",
-            "TheSportsDB": "2494038"
+            "football-data.org": "560577"
           },
           "sources": [
             "football-data.org"
@@ -1398,7 +1395,7 @@
           "time": "19:00:00",
           "timestamp": "2026-09-12T19:00:00Z",
           "venue": "",
-          "matchId": "footy_e5434cfc0251",
+          "matchId": "footy_comp_football_data_org_560577",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -13901,15 +13898,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:35.692Z",
+      "attemptedAt": "2026-10-07T17:32:31.500Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -14128,15 +14125,15 @@
       "notes": [
         "Loaded all 5 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:22.443Z",
+      "attemptedAt": "2026-10-07T17:32:18.053Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19395,15 +19392,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:29.104Z",
+      "attemptedAt": "2026-10-07T17:32:24.928Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -23069,46 +23066,10 @@
           "awayTeamId": "team:ca-osasuna"
         },
         {
-          "away": "Málaga CF",
-          "awayBadge": "https://crests.football-data.org/84.png",
-          "awayProviderTeamId": "84",
-          "date": "2026-11-01",
-          "home": "Real Betis Balompié",
-          "homeBadge": "https://crests.football-data.org/90.png",
-          "homeProviderTeamId": "90",
-          "id": "564736",
-          "isCompetitionFixture": true,
-          "leagueId": "2014",
-          "league": "Primera Division",
-          "round": "11",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "564736"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_564736",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:real-betis-balompie",
-          "awayTeamId": "team:malaga-cf"
-        },
-        {
           "away": "RCD Espanyol de Barcelona",
           "awayBadge": "https://crests.football-data.org/80.png",
           "awayProviderTeamId": "80",
-          "date": "2026-11-01",
+          "date": "2026-10-30",
           "home": "Villarreal CF",
           "homeBadge": "https://crests.football-data.org/94.png",
           "homeProviderTeamId": "94",
@@ -23125,9 +23086,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-10-30T20:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564737",
           "followedTeamNames": [
@@ -23143,82 +23104,10 @@
           "awayTeamId": "team:rcd-espanyol-de-barcelona"
         },
         {
-          "away": "Valencia CF",
-          "awayBadge": "https://crests.football-data.org/95.png",
-          "awayProviderTeamId": "95",
-          "date": "2026-11-01",
-          "home": "Elche CF",
-          "homeBadge": "https://crests.football-data.org/285.png",
-          "homeProviderTeamId": "285",
-          "id": "564728",
-          "isCompetitionFixture": true,
-          "leagueId": "2014",
-          "league": "Primera Division",
-          "round": "11",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "564728"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_564728",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:elche-cf",
-          "awayTeamId": "team:valencia-cf"
-        },
-        {
-          "away": "Real Sociedad de Fútbol",
-          "awayBadge": "https://crests.football-data.org/92.png",
-          "awayProviderTeamId": "92",
-          "date": "2026-11-01",
-          "home": "Athletic Club",
-          "homeBadge": "https://crests.football-data.org/77.png",
-          "homeProviderTeamId": "77",
-          "id": "564729",
-          "isCompetitionFixture": true,
-          "leagueId": "2014",
-          "league": "Primera Division",
-          "round": "11",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "564729"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_564729",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:athletic-club",
-          "awayTeamId": "team:real-sociedad-de-futbol"
-        },
-        {
           "away": "Club Atlético de Madrid",
           "awayBadge": "https://crests.football-data.org/78.png",
           "awayProviderTeamId": "78",
-          "date": "2026-11-01",
+          "date": "2026-10-31",
           "home": "Levante UD",
           "homeBadge": "https://crests.football-data.org/88.png",
           "homeProviderTeamId": "88",
@@ -23235,9 +23124,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "13:00:00",
+          "timestamp": "2026-10-31T13:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564730",
           "followedTeamNames": [],
@@ -23251,14 +23140,14 @@
           "awayTeamId": "team:club-atletico-de-madrid"
         },
         {
-          "away": "CA Osasuna",
-          "awayBadge": "https://crests.football-data.org/79.png",
-          "awayProviderTeamId": "79",
-          "date": "2026-11-01",
-          "home": "RC Deportivo La Coruña",
-          "homeBadge": "https://crests.football-data.org/560.png",
-          "homeProviderTeamId": "560",
-          "id": "564731",
+          "away": "RC Celta de Vigo",
+          "awayBadge": "https://crests.football-data.org/558.png",
+          "awayProviderTeamId": "558",
+          "date": "2026-10-31",
+          "home": "Rayo Vallecano de Madrid",
+          "homeBadge": "https://crests.football-data.org/87.png",
+          "homeProviderTeamId": "87",
+          "id": "564735",
           "isCompetitionFixture": true,
           "leagueId": "2014",
           "league": "Primera Division",
@@ -23266,16 +23155,16 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "564731"
+            "football-data.org": "564735"
           },
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:15:00",
+          "timestamp": "2026-10-31T15:15:00Z",
           "venue": "",
-          "matchId": "footy_comp_football_data_org_564731",
+          "matchId": "footy_comp_football_data_org_564735",
           "followedTeamNames": [],
           "isHome": null,
           "opponent": "",
@@ -23283,14 +23172,50 @@
           "teamBadge": "",
           "teamId": "",
           "teamName": "",
-          "homeTeamId": "team:rc-deportivo-la-coruna",
-          "awayTeamId": "team:ca-osasuna"
+          "homeTeamId": "team:rayo-vallecano-de-madrid",
+          "awayTeamId": "team:rc-celta-de-vigo"
+        },
+        {
+          "away": "Málaga CF",
+          "awayBadge": "https://crests.football-data.org/84.png",
+          "awayProviderTeamId": "84",
+          "date": "2026-10-31",
+          "home": "Real Betis Balompié",
+          "homeBadge": "https://crests.football-data.org/90.png",
+          "homeProviderTeamId": "90",
+          "id": "564736",
+          "isCompetitionFixture": true,
+          "leagueId": "2014",
+          "league": "Primera Division",
+          "round": "11",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "564736"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:30:00",
+          "timestamp": "2026-10-31T17:30:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_564736",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:real-betis-balompie",
+          "awayTeamId": "team:malaga-cf"
         },
         {
           "away": "Deportivo Alavés",
           "awayBadge": "https://crests.football-data.org/263.png",
           "awayProviderTeamId": "263",
-          "date": "2026-11-01",
+          "date": "2026-10-31",
           "home": "FC Barcelona",
           "homeBadge": "https://crests.football-data.org/81.png",
           "homeProviderTeamId": "81",
@@ -23308,9 +23233,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-10-31T20:00:00Z",
           "venue": "",
           "matchId": "footy_c1e303ae400b",
           "followedTeamNames": [
@@ -23346,9 +23271,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "13:00:00",
+          "timestamp": "2026-11-01T13:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564733",
           "followedTeamNames": [],
@@ -23382,9 +23307,9 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "15:15:00",
+          "timestamp": "2026-11-01T15:15:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_564734",
           "followedTeamNames": [],
@@ -23398,14 +23323,14 @@
           "awayTeamId": "team:real-madrid-cf"
         },
         {
-          "away": "RC Celta de Vigo",
-          "awayBadge": "https://crests.football-data.org/558.png",
-          "awayProviderTeamId": "558",
+          "away": "Valencia CF",
+          "awayBadge": "https://crests.football-data.org/95.png",
+          "awayProviderTeamId": "95",
           "date": "2026-11-01",
-          "home": "Rayo Vallecano de Madrid",
-          "homeBadge": "https://crests.football-data.org/87.png",
-          "homeProviderTeamId": "87",
-          "id": "564735",
+          "home": "Elche CF",
+          "homeBadge": "https://crests.football-data.org/285.png",
+          "homeProviderTeamId": "285",
+          "id": "564728",
           "isCompetitionFixture": true,
           "leagueId": "2014",
           "league": "Primera Division",
@@ -23413,16 +23338,16 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "564735"
+            "football-data.org": "564728"
           },
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "status": "TIMED",
+          "time": "17:30:00",
+          "timestamp": "2026-11-01T17:30:00Z",
           "venue": "",
-          "matchId": "footy_comp_football_data_org_564735",
+          "matchId": "footy_comp_football_data_org_564728",
           "followedTeamNames": [],
           "isHome": null,
           "opponent": "",
@@ -23430,8 +23355,80 @@
           "teamBadge": "",
           "teamId": "",
           "teamName": "",
-          "homeTeamId": "team:rayo-vallecano-de-madrid",
-          "awayTeamId": "team:rc-celta-de-vigo"
+          "homeTeamId": "team:elche-cf",
+          "awayTeamId": "team:valencia-cf"
+        },
+        {
+          "away": "Real Sociedad de Fútbol",
+          "awayBadge": "https://crests.football-data.org/92.png",
+          "awayProviderTeamId": "92",
+          "date": "2026-11-01",
+          "home": "Athletic Club",
+          "homeBadge": "https://crests.football-data.org/77.png",
+          "homeProviderTeamId": "77",
+          "id": "564729",
+          "isCompetitionFixture": true,
+          "leagueId": "2014",
+          "league": "Primera Division",
+          "round": "11",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "564729"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-01T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_564729",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:athletic-club",
+          "awayTeamId": "team:real-sociedad-de-futbol"
+        },
+        {
+          "away": "CA Osasuna",
+          "awayBadge": "https://crests.football-data.org/79.png",
+          "awayProviderTeamId": "79",
+          "date": "2026-11-02",
+          "home": "RC Deportivo La Coruña",
+          "homeBadge": "https://crests.football-data.org/560.png",
+          "homeProviderTeamId": "560",
+          "id": "564731",
+          "isCompetitionFixture": true,
+          "leagueId": "2014",
+          "league": "Primera Division",
+          "round": "11",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "564731"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-02T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_564731",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:rc-deportivo-la-coruna",
+          "awayTeamId": "team:ca-osasuna"
         },
         {
           "away": "Real Betis Balompié",
@@ -33286,15 +33283,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:35.689Z",
+      "attemptedAt": "2026-10-07T17:32:31.498Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -35823,9 +35820,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "561842",
-            "iCalendar": "6a3d100c54aa884dc434f52a",
-            "TheSportsDB": "2501323"
+            "football-data.org": "561842"
           },
           "sources": [
             "football-data.org"
@@ -35834,7 +35829,7 @@
           "time": "19:00:00",
           "timestamp": "2026-09-11T19:00:00Z",
           "venue": "",
-          "matchId": "footy_38976f33b59c",
+          "matchId": "footy_comp_football_data_org_561842",
           "followedTeamNames": [
             "Wrexham"
           ],
@@ -39144,42 +39139,6 @@
           "awayTeamId": "team:bolton-wanderers-fc"
         },
         {
-          "away": "Millwall FC",
-          "awayBadge": "https://crests.football-data.org/384.png",
-          "awayProviderTeamId": "384",
-          "date": "2026-11-03",
-          "home": "Birmingham City FC",
-          "homeBadge": "https://crests.football-data.org/332.png",
-          "homeProviderTeamId": "332",
-          "id": "561917",
-          "isCompetitionFixture": true,
-          "leagueId": "2016",
-          "league": "Championship",
-          "round": "14",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "561917"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "19:45:00",
-          "timestamp": "2026-11-03T19:45:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_561917",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:birmingham-city-fc",
-          "awayTeamId": "team:millwall-fc"
-        },
-        {
           "away": "Swansea City AFC",
           "awayBadge": "https://crests.football-data.org/72.png",
           "awayProviderTeamId": "72",
@@ -39286,6 +39245,42 @@
           "teamName": "",
           "homeTeamId": "team:west-bromwich-albion-fc",
           "awayTeamId": "team:southampton-fc"
+        },
+        {
+          "away": "Millwall FC",
+          "awayBadge": "https://crests.football-data.org/384.png",
+          "awayProviderTeamId": "384",
+          "date": "2026-11-03",
+          "home": "Birmingham City FC",
+          "homeBadge": "https://crests.football-data.org/332.png",
+          "homeProviderTeamId": "332",
+          "id": "561917",
+          "isCompetitionFixture": true,
+          "leagueId": "2016",
+          "league": "Championship",
+          "round": "14",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "561917"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-11-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_561917",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:birmingham-city-fc",
+          "awayTeamId": "team:millwall-fc"
         },
         {
           "away": "West Ham United FC",
@@ -53322,15 +53317,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:35.692Z",
+      "attemptedAt": "2026-10-07T17:32:31.501Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53433,15 +53428,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:35.693Z",
+      "attemptedAt": "2026-10-07T17:32:31.502Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -53539,7 +53534,7 @@
           "timestamp": "2026-09-30T00:00:00.000Z",
           "venue": "Energizer Park",
           "lastSeen": "",
-          "matchId": "footy_a73f0d623665",
+          "matchId": "footy_comp_thesportsdb_2578512",
           "isFriendly": true,
           "homeTeamId": "4",
           "awayTeamId": "team:chile",
@@ -53562,12 +53557,15 @@
           "league": "International Friendly",
           "opponent": "Mexico",
           "priority": "4",
-          "round": "",
+          "round": "0",
           "season": "2026",
-          "source": "U.S. Soccer",
-          "sourceIds": {},
+          "source": "U.S. Soccer + TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2578514"
+          },
           "sources": [
-            "U.S. Soccer"
+            "U.S. Soccer",
+            "TheSportsDB"
           ],
           "sourceDetail": "official-schedule",
           "status": "SCHEDULED",
@@ -53578,14 +53576,16 @@
           "timestamp": "2026-10-04T02:00:00.000Z",
           "venue": "State Farm Stadium",
           "isFriendly": true,
-          "matchId": "footy_76fb8c43567a",
+          "matchId": "footy_comp_thesportsdb_2578514",
           "homeTeamId": "4",
           "awayTeamId": "team:mexico",
           "lastSeen": "",
           "followedTeamNames": [
             "USMNT"
           ],
-          "isCompetitionFixture": true
+          "isCompetitionFixture": true,
+          "awaySportDbTeamId": "134497",
+          "homeSportDbTeamId": "134514"
         },
         {
           "away": "Canada",
@@ -53601,12 +53601,15 @@
           "league": "International Friendly",
           "opponent": "Canada",
           "priority": "4",
-          "round": "",
+          "round": "0",
           "season": "2026",
-          "source": "U.S. Soccer",
-          "sourceIds": {},
+          "source": "U.S. Soccer + TheSportsDB",
+          "sourceIds": {
+            "TheSportsDB": "2578517"
+          },
           "sources": [
-            "U.S. Soccer"
+            "U.S. Soccer",
+            "TheSportsDB"
           ],
           "sourceDetail": "official-schedule",
           "status": "SCHEDULED",
@@ -53617,14 +53620,16 @@
           "timestamp": "2026-10-07T00:00:00.000Z",
           "venue": "Allianz Field",
           "isFriendly": true,
-          "matchId": "footy_fc1b01ee7f10",
+          "matchId": "footy_comp_thesportsdb_2578517",
           "homeTeamId": "4",
           "awayTeamId": "team:canada",
           "lastSeen": "",
           "followedTeamNames": [
             "USMNT"
           ],
-          "isCompetitionFixture": true
+          "isCompetitionFixture": true,
+          "awaySportDbTeamId": "140073",
+          "homeSportDbTeamId": "134514"
         },
         {
           "away": "Spain Women",
@@ -53713,16 +53718,16 @@
       "notes": [
         "Preserved 6 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:35.693Z",
+      "attemptedAt": "2026-10-07T17:32:31.502Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -54905,7 +54910,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047991"
@@ -54913,9 +54918,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-09-28T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047991",
           "followedTeamNames": [],
@@ -54939,7 +54944,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "2-3",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047987"
@@ -54947,9 +54952,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-09-28T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047987",
           "followedTeamNames": [],
@@ -54973,7 +54978,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047988"
@@ -54981,9 +54986,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-09-28T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047988",
           "followedTeamNames": [],
@@ -55007,7 +55012,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "0-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047989"
@@ -55015,7 +55020,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
@@ -55041,7 +55046,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "1-4",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047990"
@@ -55049,7 +55054,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
@@ -55075,7 +55080,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047986"
@@ -55083,7 +55088,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
@@ -55109,7 +55114,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "2-4",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047984"
@@ -55117,7 +55122,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
@@ -55143,7 +55148,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "3-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047985"
@@ -55151,7 +55156,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-28T18:45:00.000Z",
           "venue": "",
@@ -55177,7 +55182,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047993"
@@ -55185,9 +55190,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-09-29T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047993",
           "followedTeamNames": [],
@@ -55211,7 +55216,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047994"
@@ -55219,9 +55224,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-09-29T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047994",
           "followedTeamNames": [],
@@ -55245,7 +55250,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "0-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2048000"
@@ -55253,7 +55258,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55279,7 +55284,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "4-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047999"
@@ -55287,7 +55292,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55313,7 +55318,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "0-3",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2048001"
@@ -55321,7 +55326,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55347,7 +55352,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "2-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047992"
@@ -55355,7 +55360,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55381,7 +55386,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "0-3",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047995"
@@ -55389,7 +55394,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55415,7 +55420,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047996"
@@ -55423,7 +55428,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55449,7 +55454,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047997"
@@ -55457,7 +55462,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55483,7 +55488,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "0-3",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047998"
@@ -55491,7 +55496,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-09-29T18:45:00.000Z",
           "venue": "",
@@ -55517,7 +55522,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "D2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047955"
@@ -55525,9 +55530,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-01T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047955",
           "followedTeamNames": [],
@@ -55551,7 +55556,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A2",
-          "score": "",
+          "score": "2-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047954"
@@ -55559,7 +55564,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55585,7 +55590,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A2",
-          "score": "",
+          "score": "2-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047951"
@@ -55593,7 +55598,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55619,7 +55624,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A4",
-          "score": "",
+          "score": "2-4",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047957"
@@ -55627,7 +55632,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55653,7 +55658,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A4",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047950"
@@ -55661,7 +55666,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55687,7 +55692,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B3",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047952"
@@ -55695,7 +55700,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55721,7 +55726,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B3",
-          "score": "",
+          "score": "2-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047953"
@@ -55729,7 +55734,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55755,7 +55760,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "D1",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047956"
@@ -55763,7 +55768,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-01T18:45:00.000Z",
           "venue": "",
@@ -55789,7 +55794,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047967"
@@ -55797,9 +55802,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "16:00:00",
-          "timestamp": "2026-10-02T14:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047967",
           "followedTeamNames": [],
@@ -55823,7 +55828,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "2-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047966"
@@ -55831,9 +55836,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-02T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047966",
           "followedTeamNames": [],
@@ -55857,7 +55862,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047958"
@@ -55865,9 +55870,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-02T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047958",
           "followedTeamNames": [],
@@ -55891,7 +55896,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047961"
@@ -55899,7 +55904,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -55925,7 +55930,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047960"
@@ -55933,7 +55938,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -55959,7 +55964,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047962"
@@ -55967,7 +55972,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -55993,7 +55998,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "0-3",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047959"
@@ -56001,7 +56006,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56027,7 +56032,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047964"
@@ -56035,7 +56040,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56061,7 +56066,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "6-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047963"
@@ -56069,7 +56074,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56095,7 +56100,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047965"
@@ -56103,7 +56108,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-02T18:45:00.000Z",
           "venue": "",
@@ -56129,7 +56134,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047970"
@@ -56137,9 +56142,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "15:00:00",
-          "timestamp": "2026-10-03T13:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047970",
           "followedTeamNames": [],
@@ -56163,7 +56168,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "0-7",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047968"
@@ -56171,9 +56176,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-03T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047968",
           "followedTeamNames": [],
@@ -56197,7 +56202,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "4-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047973"
@@ -56205,9 +56210,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-03T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047973",
           "followedTeamNames": [],
@@ -56231,7 +56236,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047974"
@@ -56239,9 +56244,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-03T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047974",
           "followedTeamNames": [],
@@ -56265,7 +56270,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047969"
@@ -56273,9 +56278,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-03T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047969",
           "followedTeamNames": [],
@@ -56299,7 +56304,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "3-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047971"
@@ -56307,7 +56312,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
@@ -56333,7 +56338,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "0-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047975"
@@ -56341,7 +56346,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
@@ -56367,7 +56372,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047972"
@@ -56375,7 +56380,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-03T18:45:00.000Z",
           "venue": "",
@@ -56401,7 +56406,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "D2",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047931"
@@ -56409,9 +56414,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "15:00:00",
-          "timestamp": "2026-10-04T13:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047931",
           "followedTeamNames": [],
@@ -56435,7 +56440,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B3",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047927"
@@ -56443,9 +56448,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-04T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047927",
           "followedTeamNames": [],
@@ -56469,7 +56474,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "D1",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047928"
@@ -56477,9 +56482,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-04T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047928",
           "followedTeamNames": [],
@@ -56503,7 +56508,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047926"
@@ -56511,7 +56516,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
@@ -56537,7 +56542,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A2",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047925"
@@ -56545,7 +56550,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
@@ -56571,7 +56576,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A4",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047924"
@@ -56579,7 +56584,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
@@ -56605,7 +56610,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A4",
-          "score": "",
+          "score": "0-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047930"
@@ -56613,7 +56618,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
@@ -56639,7 +56644,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B3",
-          "score": "",
+          "score": "1-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047929"
@@ -56647,7 +56652,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-04T18:45:00.000Z",
           "venue": "",
@@ -56673,7 +56678,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047936"
@@ -56681,9 +56686,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "18:00:00",
-          "timestamp": "2026-10-05T16:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047936",
           "followedTeamNames": [],
@@ -56707,7 +56712,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "4-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047937"
@@ -56715,7 +56720,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56741,7 +56746,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A1",
-          "score": "",
+          "score": "3-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047938"
@@ -56749,7 +56754,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56775,7 +56780,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047934"
@@ -56783,7 +56788,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56809,7 +56814,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B2",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047932"
@@ -56817,7 +56822,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56843,7 +56848,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047939"
@@ -56851,7 +56856,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56877,7 +56882,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B4",
-          "score": "",
+          "score": "0-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047933"
@@ -56885,7 +56890,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56911,7 +56916,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C2",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047935"
@@ -56919,7 +56924,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-05T18:45:00.000Z",
           "venue": "",
@@ -56945,7 +56950,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "2-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047949"
@@ -56953,9 +56958,9 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
-          "time": "16:00:00",
-          "timestamp": "2026-10-06T14:00:00.000Z",
+          "status": "FINISHED",
+          "time": "20:45:00",
+          "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
           "matchId": "footy_comp_uefa_com_2047949",
           "followedTeamNames": [],
@@ -56979,7 +56984,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047946"
@@ -56987,7 +56992,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57013,7 +57018,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "A3",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047947"
@@ -57021,7 +57026,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57047,7 +57052,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "1-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047948"
@@ -57055,7 +57060,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57081,7 +57086,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "B1",
-          "score": "",
+          "score": "3-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047940"
@@ -57089,7 +57094,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57115,7 +57120,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "2-1",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047941"
@@ -57123,7 +57128,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57149,7 +57154,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C1",
-          "score": "",
+          "score": "1-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047942"
@@ -57157,7 +57162,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57183,7 +57188,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C3",
-          "score": "",
+          "score": "0-4",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047944"
@@ -57191,7 +57196,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57217,7 +57222,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "0-0",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047945"
@@ -57225,7 +57230,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -57251,7 +57256,7 @@
           "league": "UEFA Nations League",
           "leagueId": "4490",
           "round": "C4",
-          "score": "",
+          "score": "0-2",
           "source": "UEFA.com",
           "sourceIds": {
             "UEFA.com": "2047943"
@@ -57259,7 +57264,7 @@
           "sources": [
             "UEFA.com"
           ],
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "time": "20:45:00",
           "timestamp": "2026-10-06T18:45:00.000Z",
           "venue": "",
@@ -59046,15 +59051,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:48.106Z",
+      "attemptedAt": "2026-10-07T17:32:43.931Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -74927,8 +74932,8 @@
           ],
           "sourceDetail": "league-calendar-feed",
           "status": "Scheduled",
-          "time": "23:00:00",
-          "timestamp": "2026-10-18T23:00:00Z",
+          "time": "21:00:00",
+          "timestamp": "2026-10-18T21:00:00Z",
           "venue": "TQL Stadium, Cincinnati, OH",
           "matchId": "footy_comp_icalendar_mls_mat_0009nl",
           "followedTeamNames": [],
@@ -77060,15 +77065,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:48.111Z",
+      "attemptedAt": "2026-10-07T17:32:43.937Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -79827,15 +79832,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     },
     {
-      "attemptedAt": "2026-09-28T18:16:48.115Z",
+      "attemptedAt": "2026-10-07T17:32:43.940Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82039,12 +82044,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-09-28T18:11:16.098Z"
+      "updatedAt": "2026-10-07T17:27:11.962Z"
     }
   ],
   "teamCatalog": [
@@ -82808,15 +82813,13 @@
         {
           "id": "international friendlies",
           "name": "International Friendlies"
-        },
-        {
-          "id": "cesdwwnxbc5fmajgroc0hqzy2",
-          "name": "International Friendly"
         }
       ],
       "name": "Canada",
       "prettyName": "Canada",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "140073"
+      }
     },
     {
       "active": true,
@@ -83066,10 +83069,6 @@
         {
           "id": "international friendlies",
           "name": "International Friendlies"
-        },
-        {
-          "id": "cesdwwnxbc5fmajgroc0hqzy2",
-          "name": "International Friendly"
         }
       ],
       "name": "Chile",
@@ -84922,15 +84921,13 @@
         {
           "id": "international friendlies",
           "name": "International Friendlies"
-        },
-        {
-          "id": "cesdwwnxbc5fmajgroc0hqzy2",
-          "name": "International Friendly"
         }
       ],
       "name": "Mexico",
       "prettyName": "Mexico",
-      "providerTeamIds": {}
+      "providerTeamIds": {
+        "TheSportsDB": "134497"
+      }
     },
     {
       "active": true,
@@ -87126,9 +87123,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -89333,19 +89330,19 @@
         }
       ],
       "notes": [
-        "Loaded 40 SCHEDULED matches from 2026-09-28 through 2027-09-28.",
+        "Loaded 40 SCHEDULED matches from 2026-10-07 through 2027-10-07.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 41 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 44 iCalendar fixtures from 2026-07-01 through 2027-09-28.",
-        "Preserved 9 registered fixtures that were not returned by providers this run."
+        "Loaded 42 iCalendar fixtures from 2026-07-01 through 2027-10-07.",
+        "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -90076,7 +90073,7 @@
         {
           "away": "Deportivo Alavés",
           "awayBadge": "",
-          "date": "2026-11-01",
+          "date": "2026-10-31",
           "home": "FC Barcelona",
           "homeBadge": "",
           "id": "564732",
@@ -90097,12 +90094,12 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "SCHEDULED",
+          "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
-          "time": "00:00:00",
-          "timestamp": "2026-11-01T00:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2026-10-31T20:00:00Z",
           "venue": "Barcelona, Barcelona",
           "awayProviderTeamId": "263",
           "homeProviderTeamId": "81",
@@ -91463,25 +91460,25 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-09-28 through 2027-09-28.",
+        "Loaded 38 SCHEDULED matches from 2026-10-07 through 2027-10-07.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-09-28.",
+        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-07.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
         "id": "3",
         "league": "Championship",
         "leagueGames": 46,
-        "projectedPoints": 135,
+        "projectedPoints": 138,
         "name": "Wrexham",
         "prettyName": "Wrexham Association Football Club",
         "priority": "3"
@@ -93454,18 +93451,18 @@
         }
       ],
       "notes": [
-        "Loaded 38 SCHEDULED matches from 2026-09-28 through 2027-09-28.",
+        "Loaded 38 SCHEDULED matches from 2026-10-07 through 2027-10-07.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 40 iCalendar fixtures from 2026-07-01 through 2027-09-28.",
-        "Preserved 10 registered fixtures that were not returned by providers this run."
+        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-07.",
+        "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -93479,7 +93476,7 @@
         "TheSportsDB",
         "U.S. Soccer"
       ],
-      "fixtureCount": 4,
+      "fixtureCount": 1,
       "fixtures": [
         {
           "away": "Peru",
@@ -93520,129 +93517,20 @@
           "isFriendly": true,
           "homeTeamId": "4",
           "awayTeamId": "team:peru"
-        },
-        {
-          "away": "Chile",
-          "awayBadge": "",
-          "awayProviderTeamId": "4etj58jfe5zmfspk9pl7jfzr3",
-          "awaySportDbTeamId": "134499",
-          "date": "2026-09-30",
-          "home": "USMNT",
-          "homeBadge": "",
-          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
-          "homeSportDbTeamId": "134514",
-          "id": "",
-          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
-          "isHome": true,
-          "league": "International Friendly",
-          "opponent": "Chile",
-          "priority": "4",
-          "round": "0",
-          "season": "2026",
-          "source": "U.S. Soccer + TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2578512"
-          },
-          "sources": [
-            "U.S. Soccer",
-            "TheSportsDB"
-          ],
-          "sourceDetail": "official-schedule",
-          "status": "SCHEDULED",
-          "teamBadge": "assets/teams/usmnt.svg",
-          "teamId": "4",
-          "teamName": "USMNT",
-          "time": "00:00:00",
-          "timestamp": "2026-09-30T00:00:00.000Z",
-          "venue": "Energizer Park",
-          "lastSeen": "",
-          "matchId": "footy_a73f0d623665",
-          "isFriendly": true,
-          "homeTeamId": "4",
-          "awayTeamId": "team:chile"
-        },
-        {
-          "away": "Mexico",
-          "awayBadge": "",
-          "awayProviderTeamId": "4vofb84dzb5fyc81n2ssws6ah",
-          "date": "2026-10-04",
-          "home": "USMNT",
-          "homeBadge": "",
-          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
-          "id": "",
-          "isHome": true,
-          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
-          "league": "International Friendly",
-          "opponent": "Mexico",
-          "priority": "4",
-          "round": "",
-          "season": "2026",
-          "source": "U.S. Soccer",
-          "sourceIds": {},
-          "sources": [
-            "U.S. Soccer"
-          ],
-          "sourceDetail": "official-schedule",
-          "status": "SCHEDULED",
-          "teamBadge": "assets/teams/usmnt.svg",
-          "teamId": "4",
-          "teamName": "USMNT",
-          "time": "02:00:00",
-          "timestamp": "2026-10-04T02:00:00.000Z",
-          "venue": "State Farm Stadium",
-          "isFriendly": true,
-          "matchId": "footy_76fb8c43567a",
-          "homeTeamId": "4",
-          "awayTeamId": "team:mexico"
-        },
-        {
-          "away": "Canada",
-          "awayBadge": "",
-          "awayProviderTeamId": "eg7vduna0h3vis1wd47s41za7",
-          "date": "2026-10-07",
-          "home": "USMNT",
-          "homeBadge": "",
-          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
-          "id": "",
-          "isHome": true,
-          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
-          "league": "International Friendly",
-          "opponent": "Canada",
-          "priority": "4",
-          "round": "",
-          "season": "2026",
-          "source": "U.S. Soccer",
-          "sourceIds": {},
-          "sources": [
-            "U.S. Soccer"
-          ],
-          "sourceDetail": "official-schedule",
-          "status": "SCHEDULED",
-          "teamBadge": "assets/teams/usmnt.svg",
-          "teamId": "4",
-          "teamName": "USMNT",
-          "time": "00:00:00",
-          "timestamp": "2026-10-07T00:00:00.000Z",
-          "venue": "Allianz Field",
-          "isFriendly": true,
-          "matchId": "footy_fc1b01ee7f10",
-          "homeTeamId": "4",
-          "awayTeamId": "team:canada"
         }
       ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "No TheSportsDB League IDs configured; team-upcoming matches still checked.",
-        "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 3 U.S. Soccer fixtures.",
-        "Preserved 1 registered fixtures that were not returned by providers this run."
+        "Loaded 0 TheSportsDB team-upcoming matches and 0 league-season matches.",
+        "Loaded 0 U.S. Soccer fixtures."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -93736,7 +93624,7 @@
           "away": "El Salvador Women",
           "awayBadge": "",
           "awayProviderTeamId": "5ri638ndnnz9ju4lbeg33uvsc",
-          "date": "2026-11-27",
+          "date": "2026-11-28",
           "home": "USWNT",
           "homeBadge": "",
           "homeProviderTeamId": "e70zl10x0ayu7y10ry0wi465a",
@@ -93758,11 +93646,11 @@
           "teamBadge": "assets/teams/uswnt.svg",
           "teamId": "5",
           "teamName": "USWNT",
-          "time": "19:30:00",
-          "timestamp": "2026-11-27T19:30:00.000Z",
+          "time": "01:30:00",
+          "timestamp": "2026-11-28T01:30:00.000Z",
           "venue": "Texas Health Mansfield Stadium",
           "isFriendly": false,
-          "matchId": "footy_2aeb5e8d8c53",
+          "matchId": "footy_75aaca58c4d1",
           "homeTeamId": "5",
           "awayTeamId": "team:el-salvador-women"
         }
@@ -93776,9 +93664,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -94813,15 +94701,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-09-28.",
+        "Loaded 18 iCalendar fixtures from 2026-01-01 through 2027-10-07.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-09-28T18:11:16.098Z",
-      "updatedAt": "2026-09-28T18:11:16.098Z",
-      "previousUpdatedAt": "2026-09-27T17:30:02.255Z",
+      "attemptedAt": "2026-10-07T17:27:11.962Z",
+      "updatedAt": "2026-10-07T17:27:11.962Z",
+      "previousUpdatedAt": "2026-10-06T16:50:32.594Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -95476,13 +95364,13 @@
           "away": "Inter Miami CF",
           "awayBadge": "",
           "date": "2026-09-27",
-          "home": "Columbus Crew",
+          "home": "Columbus Crew*",
           "homeBadge": "",
           "id": "iCalendar:MLS-MAT-0009M1",
           "leagueId": "",
           "isHome": false,
           "league": "MLS - Regular Season",
-          "opponent": "Columbus Crew",
+          "opponent": "Columbus Crew*",
           "priority": "7",
           "round": "",
           "season": "",
@@ -95750,7 +95638,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-09-28.",
+        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-10-07.",
         "Preserved 11 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

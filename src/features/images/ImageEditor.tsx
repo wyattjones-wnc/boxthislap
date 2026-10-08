@@ -623,7 +623,8 @@ export function ImageEditor({
           l.id === g.layer!.id ? g.layer! : l,
         ),
       };
-      remember(JSON.stringify(before));
+      if (JSON.stringify(before) !== JSON.stringify(projectRef.current))
+        remember(JSON.stringify(before));
       setHistoryVersion((v) => v + 1);
     }
   }
@@ -758,24 +759,6 @@ export function ImageEditor({
             </button>
           </>
         )}
-        <button
-          title="Undo"
-          type="button"
-          disabled={!history.current.undo.length || busy}
-          onClick={() => undo()}
-        >
-          <Undo2 size={18} aria-hidden="true" />
-          <span className={styles.srOnly}>Undo</span>
-        </button>
-        <button
-          title="Redo"
-          type="button"
-          disabled={!history.current.redo.length || busy}
-          onClick={() => undo(true)}
-        >
-          <Redo2 size={18} aria-hidden="true" />
-          <span className={styles.srOnly}>Redo</span>
-        </button>
         <button
           title="Save project"
           type="button"
@@ -1080,6 +1063,30 @@ export function ImageEditor({
           )}
         </aside>
         <div className={styles.viewport} ref={viewport}>
+          <div
+            className={styles.canvasHistory}
+            role="toolbar"
+            aria-label="Canvas history"
+          >
+            <button
+              title="Undo"
+              type="button"
+              disabled={!history.current.undo.length || busy}
+              onClick={() => undo()}
+            >
+              <Undo2 size={18} aria-hidden="true" />
+              <span>Undo</span>
+            </button>
+            <button
+              title="Redo"
+              type="button"
+              disabled={!history.current.redo.length || busy}
+              onClick={() => undo(true)}
+            >
+              <Redo2 size={18} aria-hidden="true" />
+              <span>Redo</span>
+            </button>
+          </div>
           <div
             className={styles.canvasWrap}
             style={{

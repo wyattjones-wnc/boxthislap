@@ -51,3 +51,13 @@ Actual account headroom, existing object counts, and previously pending migratio
 - `npx vitest run src/features/images`: project validation, selections, fill connectivity, and coordinate transforms.
 - `npx playwright test tests/e2e/image-editor.test.mjs`: exact crop pixels, local project reopening, export, pixel tools/selection/history, and embedded local fallback in Chrome/WebKit.
 - `npm run check` and the existing mobile smoke suite cover shared routing, dialog containment, source compatibility, and the production mobile bundle budget.
+
+## Metadata-first rollout review (2026-10-08)
+
+Read-only checks confirmed that the image-library Worker and bucket are absent. Only `0012_image_library.sql` is pending; the existing Footy database is about 2.08 MB with 16 tables. The account subscription response lists R2 Paid; it does not establish remaining free-operation allowances or all account usage. No rollout has been executed.
+
+A limited first stage can make presets, shared title metadata, and the safety settings readable while leaving R2 operations disabled. Proposed scope: create one empty Standard bucket; apply the single reviewed migration (six empty tables, seven explicit indexes, two triggers; zero existing application rows rewritten); deploy only the image-library Worker/private gate. Do not deploy Footy, initialize a storage baseline, enable the gate, migrate images, scan buckets, or upload objects. Initial verification is bounded to one health request and the three settings/library reads.
+
+Estimated impact: zero R2 object bytes, zero R2 Get/Put/List/Delete operations, one empty migration-history record plus SQLite schema metadata, conservatively under 256 KiB additional D1 schema storage, and a few deployment/management requests. The gate status read initializes a small SQLite DO state record. There are no new scheduled jobs. Normal metadata use subsequently consumes Workers/D1/DO requests; it is not an account-wide spending cap. Verify Workers Free eligibility before deploying the SQLite DO and review current account allowances before any later R2 enablement. Remaining account headroom has not been measured and must not be treated as zero usage.
+
+The manual deployment workflow exists only on `dev` and is not discoverable through the GitHub workflow API on the default branch. Do not promote to `main` to work around that. Once this bounded scope is explicitly approved, direct deployment with the ready environment credentials is an available fallback; never print or copy their values.

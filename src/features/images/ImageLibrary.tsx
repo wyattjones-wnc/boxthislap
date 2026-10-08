@@ -29,6 +29,7 @@ export function ImageLibrary({
   const [editing, setEditing] = useState(false),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [remove, setRemove] = useState<{
     file: ImageFile;
     contentId: string;
@@ -40,10 +41,12 @@ export function ImageLibrary({
         content: SharedContent[];
         files: ImageFile[];
       }>(`/api/images/catalog?q=${encodeURIComponent(query)}`);
+      setConnected(true);
       setContent(value.content);
       setFiles(value.files);
       setMessage("");
     } catch (e) {
+      setConnected(false);
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
@@ -107,7 +110,7 @@ export function ImageLibrary({
           <input value={query} onChange={(e) => setQuery(e.target.value)} />
         </FloatingField>
         <button type="submit" disabled={busy}>
-          Search
+          {connected ? "Search" : "Retry connection"}
         </button>
       </form>
       <div className={styles.grid}>
@@ -217,7 +220,7 @@ export function ImageLibrary({
               onChange={(e) => setAliases(e.target.value)}
             />
           </FloatingField>
-          <button type="submit" disabled={busy}>
+          <button type="submit" disabled={busy || !connected}>
             {editing ? "Save content details" : "Create shared content"}
           </button>
           {editing && (
@@ -301,14 +304,18 @@ export function CropSettings({
     [isDefault, setDefault] = useState(false),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
+  const [connected, setConnected] = useState(false);
   async function load() {
     try {
       const value = await imageApi<{ presets: CropPreset[] }>(
         "/api/images/presets",
       );
+      setConnected(true);
+      setMessage("");
       setPresets(value.presets);
       onChange(value.presets);
     } catch (e) {
+      setConnected(false);
       setMessage((e as Error).message);
     }
   }
@@ -322,6 +329,11 @@ export function CropSettings({
         Preset changes apply to future exports. Existing images keep their saved
         dimensions.
       </p>
+      {!connected && message && (
+        <button type="button" onClick={() => void load()}>
+          Retry connection
+        </button>
+      )}
       <div className={styles.grid}>
         {presets.map((p) => (
           <div key={p.id}>
@@ -445,7 +457,7 @@ export function CropSettings({
           />{" "}
           Default for this context
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !connected}>
           {editing ? "Update preset" : "Add preset"}
         </button>
       </form>
@@ -476,13 +488,18 @@ export function UsageSettings() {
     [baseline, setBaseline] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
+  async function load() {
+    try {
+      const v = await imageApi<Budget>("/api/images/budget");
+      setBudget(v);
+      setConfig(v.config);
+      setMessage("");
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  }
   useEffect(() => {
-    void imageApi<Budget>("/api/images/budget")
-      .then((v) => {
-        setBudget(v);
-        setConfig(v.config);
-      })
-      .catch((e) => setMessage(e.message));
+    void load();
   }, []);
   return (
     <section className={styles.section}>
@@ -493,6 +510,11 @@ export function UsageSettings() {
         Unrelated Cloudflare services and direct bucket access are outside this
         gate.
       </p>
+      {!budget && message && (
+        <button type="button" onClick={() => void load()}>
+          Retry connection
+        </button>
+      )}
       {budget && (
         <p>
           {Math.ceil(budget.storage / 1e6)} MB reserved storage · {budget.reads}{" "}

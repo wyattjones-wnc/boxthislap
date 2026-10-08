@@ -354,3 +354,69 @@ test("resize mode scales the selected image with handles and exact dimensions", 
     editor.getByLabel("Image width (px)", { exact: true }),
   ).toBeVisible();
 });
+
+test("cloud cards explain disconnection and presets recover after reconnecting", async ({
+  page,
+}) => {
+  await page.route("**/api/images/**", (route) => route.abort("failed"));
+  await page.goto("/#image-editor");
+  await expect(page.locator("[data-image-editor]")).toBeVisible();
+  for (const name of [
+    "Crop presets",
+    "Cloud usage and hard stops",
+    "Shared image library",
+  ]) {
+    await page
+      .locator("summary")
+      .filter({ hasText: new RegExp(`^${name}$`) })
+      .click();
+  }
+  const presets = page
+    .getByRole("heading", { name: "Crop presets", exact: true })
+    .locator("..");
+  await expect(presets.getByRole("status")).toContainText(
+    "Cloud image features are not connected",
+  );
+  await expect(
+    presets.getByRole("button", { name: "Add preset", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Retry connection", exact: true }),
+  ).toHaveCount(3);
+  let saved = false;
+  await page.route("**/api/images/presets", async (route) => {
+    if (route.request().method() === "PUT") saved = true;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        presets: saved
+          ? [
+              {
+                id: "preset-one",
+                version: 1,
+                name: "Landscape",
+                context: "movies",
+                width: 32,
+                height: 24,
+                is_default: 0,
+              },
+            ]
+          : [],
+      }),
+    });
+  });
+  await presets
+    .getByRole("button", { name: "Retry connection", exact: true })
+    .click();
+  await expect(
+    presets.getByRole("button", { name: "Add preset", exact: true }),
+  ).toBeEnabled();
+  await presets.getByLabel("Preset name", { exact: true }).fill("Landscape");
+  await presets.getByLabel("Width (pixels)", { exact: true }).fill("32");
+  await presets.getByLabel("Height (pixels)", { exact: true }).fill("24");
+  await presets
+    .getByRole("button", { name: "Add preset", exact: true })
+    .click();
+  await expect(presets.getByRole("status")).toHaveText("Preset saved.");
+  await expect(presets.getByText("Landscape", { exact: true })).toBeVisible();
+});

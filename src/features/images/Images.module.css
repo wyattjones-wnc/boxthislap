@@ -332,3 +332,26 @@
 .editor {
   scroll-margin-top: 190px;
 }
+
+.canvasHistory {
+  position: sticky;
+  top: -24px;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.35rem;
+  width: max-content;
+  margin: -16px 0 12px -16px;
+  padding: 0.35rem;
+  border: 1px solid var(--border-color, #465365);
+  border-radius: 0.5rem;
+  background: var(--bg-secondary, #151b25);
+}
+.canvasHistory button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+}

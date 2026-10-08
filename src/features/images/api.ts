@@ -48,19 +48,48 @@ export async function imageApi<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = await window.boxThisLapGetManagerAccessToken?.();
+  if (!window.boxThisLapGetManagerAccessToken) {
+    await new Promise<void>((resolve) => {
+      const ready = () => {
+        clearTimeout(timer);
+        window.removeEventListener("boxthislap:manager-auth-ready", ready);
+        resolve();
+      };
+      const timer = window.setTimeout(ready, 10000);
+      window.addEventListener("boxthislap:manager-auth-ready", ready, {
+        once: true,
+      });
+      if (window.boxThisLapGetManagerAccessToken) ready();
+    });
+    if (!window.boxThisLapGetManagerAccessToken)
+      throw new Error(
+        "Sign-in controls are still loading. Retry the connection shortly.",
+      );
+  }
+  const token = await window.boxThisLapGetManagerAccessToken();
   if (!token) throw new Error("Sign in again to access the image library.");
-  const response = await fetch(`${IMAGE_LIBRARY_ENDPOINT}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      ...(options.body && !(options.body instanceof FormData)
-        ? { "Content-Type": "application/json" }
-        : {}),
-    },
-    signal: AbortSignal.timeout(30000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${IMAGE_LIBRARY_ENDPOINT}${path}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        ...(options.body && !(options.body instanceof FormData)
+          ? { "Content-Type": "application/json" }
+          : {}),
+      },
+      signal: AbortSignal.timeout(30000),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError")
+      throw new Error(
+        "The cloud image service timed out. Try reconnecting. Local editing remains available.",
+      );
+    throw new Error(
+      "Cloud image features are not connected. Check cloud setup or your connection, then retry. Local editing remains available.",
+    );
+  }
   const value = await response.json().catch(() => ({}));
   if (!response.ok)
     throw new Error(

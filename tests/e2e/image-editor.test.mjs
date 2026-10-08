@@ -61,6 +61,7 @@ test("layered editor exports exact cropped pixels and reopens local project tran
     page.getByRole("heading", { name: "Image Studio", exact: true }),
   ).toBeVisible();
   const editor = page.locator("[data-image-editor]");
+  await editor.getByText("Canvas size & background", { exact: true }).click();
   await editor.getByLabel("Canvas width", { exact: true }).fill("80");
   await editor.getByLabel("Canvas height", { exact: true }).fill("60");
   await editor
@@ -87,6 +88,7 @@ test("layered editor exports exact cropped pixels and reopens local project tran
   await expect(editor.getByLabel("Layer name", { exact: true })).toHaveValue(
     "red.png",
   );
+  await editor.getByText("Scale percentages", { exact: true }).click();
   await editor.getByLabel("Scale (%)", { exact: true }).fill("100");
   await editor.getByLabel("X", { exact: true }).fill("-10");
   await editor.getByLabel("Y", { exact: true }).fill("0");
@@ -142,6 +144,7 @@ test("paint tools, selections, text, and history work on a real canvas", async (
   await page.goto("/#image-editor");
   const editor = page.locator("[data-image-editor]");
   await expect(editor).toBeVisible();
+  await editor.getByText("Canvas size & background", { exact: true }).click();
   await editor.getByLabel("Canvas width", { exact: true }).fill("80");
   await editor.getByLabel("Canvas height", { exact: true }).fill("60");
   await editor
@@ -150,27 +153,22 @@ test("paint tools, selections, text, and history work on a real canvas", async (
   await editor
     .getByRole("button", { name: "Paint layer", exact: true })
     .click();
-  await editor
-    .getByRole("combobox", { name: "Tool", exact: true })
-    .selectOption("fill");
+  await editor.getByRole("button", { name: "Fill", exact: true }).click();
   await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
   await expect.poll(() => pixel(page)).toEqual([255, 255, 255, 255]);
   await editor.getByRole("button", { name: "Undo", exact: true }).click();
   await expect.poll(async () => (await pixel(page))[3]).toBe(0);
   await editor.getByRole("button", { name: "Redo", exact: true }).click();
-  await editor
-    .getByRole("combobox", { name: "Tool", exact: true })
-    .selectOption("eraser");
+  await editor.getByRole("button", { name: "Eraser", exact: true }).click();
   await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
   await expect.poll(async () => (await pixel(page))[3]).toBe(0);
-  await editor
-    .getByRole("combobox", { name: "Tool", exact: true })
-    .selectOption("brush");
+  await editor.getByRole("button", { name: "Brush", exact: true }).click();
   await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
   await expect.poll(() => pixel(page)).toEqual([255, 255, 255, 255]);
   await editor
-    .getByRole("combobox", { name: "Tool", exact: true })
-    .selectOption("rectangle");
+    .getByRole("button", { name: "Rectangle selection", exact: true })
+    .click();
+  await editor.locator("canvas").scrollIntoViewIfNeeded();
   const box = await editor.locator("canvas").boundingBox();
   if (!box) throw new Error("Canvas unavailable");
   await page.mouse.move(box.x + 2, box.y + 2);
@@ -193,6 +191,7 @@ test("paint tools, selections, text, and history work on a real canvas", async (
   await editor
     .getByRole("textbox", { name: "Text", exact: true })
     .fill("Hello");
+  await editor.getByText("Adjustments & raster tools", { exact: true }).click();
   await editor
     .getByRole("button", { name: "Rasterize layer", exact: true })
     .click();
@@ -271,6 +270,38 @@ test("brush and eraser hardness produces feathered edges", async ({ page }) => {
   await page.goto("/#image-editor");
   const editor = page.locator("[data-image-editor]");
   await expect(editor).toBeVisible();
+  await editor.getByText("Canvas size & background", { exact: true }).click();
+  await editor.getByLabel("Canvas width", { exact: true }).fill("80");
+  await editor.getByLabel("Canvas height", { exact: true }).fill("60");
+  await editor
+    .getByRole("button", { name: "Resize canvas", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Paint layer", exact: true })
+    .click();
+  await editor.getByRole("button", { name: "Brush", exact: true }).click();
+  await editor.getByLabel("Tool hardness", { exact: true }).fill("0");
+  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await expect.poll(async () => (await pixel(page))[3]).toBeGreaterThan(0);
+  expect((await pixel(page))[3]).toBeLessThan(255);
+  await editor.getByRole("button", { name: "Undo", exact: true }).click();
+  await editor.getByLabel("Tool hardness", { exact: true }).fill("100");
+  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await expect.poll(async () => (await pixel(page))[3]).toBe(255);
+  await editor.getByRole("button", { name: "Eraser", exact: true }).click();
+  await editor.getByLabel("Tool hardness", { exact: true }).fill("0");
+  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await expect.poll(async () => (await pixel(page))[3]).toBeLessThan(255);
+  expect((await pixel(page))[3]).toBeGreaterThan(0);
+});
+
+test("resize mode scales the selected image with handles and exact dimensions", async ({
+  page,
+}) => {
+  await page.goto("/#image-editor");
+  const editor = page.locator("[data-image-editor]");
+  await expect(editor).toBeVisible();
+  await editor.getByText("Canvas size & background", { exact: true }).click();
   await editor.getByLabel("Canvas width", { exact: true }).fill("80");
   await editor.getByLabel("Canvas height", { exact: true }).fill("60");
   await editor
@@ -280,21 +311,46 @@ test("brush and eraser hardness produces feathered edges", async ({ page }) => {
     .getByRole("button", { name: "Paint layer", exact: true })
     .click();
   await editor
-    .getByRole("combobox", { name: "Tool", exact: true })
-    .selectOption("brush");
-  await editor.getByLabel("Tool hardness", { exact: true }).fill("0");
-  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
-  await expect.poll(async () => (await pixel(page))[3]).toBeGreaterThan(0);
-  expect((await pixel(page))[3]).toBeLessThan(255);
+    .getByRole("button", { name: "Resize layer", exact: true })
+    .click();
+  const handle = editor.locator('[aria-label="Resize layer corner 3"]');
+  await handle.scrollIntoViewIfNeeded();
+  const box = await handle.boundingBox();
+  if (!box) throw new Error("Resize handle unavailable");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    box.x + box.width / 2 + 10,
+    box.y + box.height / 2 + 10,
+    { steps: 5 },
+  );
+  await page.mouse.up();
+  await expect
+    .poll(async () =>
+      Number(
+        await editor
+          .getByLabel("Image width (px)", { exact: true })
+          .inputValue(),
+      ),
+    )
+    .toBeGreaterThan(80);
   await editor.getByRole("button", { name: "Undo", exact: true }).click();
-  await editor.getByLabel("Tool hardness", { exact: true }).fill("100");
-  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
-  await expect.poll(async () => (await pixel(page))[3]).toBe(255);
-  await editor
-    .getByRole("combobox", { name: "Tool", exact: true })
-    .selectOption("eraser");
-  await editor.getByLabel("Tool hardness", { exact: true }).fill("0");
-  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
-  await expect.poll(async () => (await pixel(page))[3]).toBeLessThan(255);
-  expect((await pixel(page))[3]).toBeGreaterThan(0);
+  await expect(
+    editor.getByLabel("Image width (px)", { exact: true }),
+  ).toHaveValue("80");
+  await editor.getByLabel("Image width (px)", { exact: true }).fill("40");
+  await expect(
+    editor.getByLabel("Image height (px)", { exact: true }),
+  ).toHaveValue("30");
+  await expect(editor.getByLabel("Canvas width", { exact: true })).toHaveValue(
+    "80",
+  );
+  await editor.getByText("Layer properties", { exact: true }).click();
+  await editor.getByRole("button", { name: "Move layer", exact: true }).click();
+  await editor.locator("canvas").scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -150));
+  await editor.locator("canvas").dblclick({ position: { x: 15, y: 10 } });
+  await expect(
+    editor.getByLabel("Image width (px)", { exact: true }),
+  ).toBeVisible();
 });

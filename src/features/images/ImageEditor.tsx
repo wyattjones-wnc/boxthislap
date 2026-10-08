@@ -1,3 +1,28 @@
+import {
+  Move,
+  Scaling,
+  Hand,
+  Brush,
+  Eraser,
+  PaintBucket,
+  RectangleHorizontal,
+  Circle,
+  Lasso,
+  WandSparkles,
+  Undo2,
+  Redo2,
+  Layers,
+  Type,
+  Download,
+  Save,
+  Copy,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Scan,
+  ImagePlus,
+  FolderOpen,
+} from "lucide-react";
 import { processPixels } from "./pixelTools";
 import { useEffect, useRef, useState } from "react";
 import { FloatingField } from "../../components/FloatingField/FloatingField";
@@ -36,6 +61,7 @@ type Gesture = {
 };
 type Tool =
   | "move"
+  | "resize"
   | "pan"
   | "brush"
   | "eraser"
@@ -68,6 +94,31 @@ export type EditorOptions = {
   onDirty?: (dirty: boolean) => void;
 };
 
+const toolIcons = {
+  move: Move,
+  resize: Scaling,
+  pan: Hand,
+  brush: Brush,
+  eraser: Eraser,
+  fill: PaintBucket,
+  rectangle: RectangleHorizontal,
+  ellipse: Circle,
+  lasso: Lasso,
+  wand: WandSparkles,
+};
+const toolNames = {
+  move: "Move layer",
+  resize: "Resize layer",
+  pan: "Pan canvas",
+  brush: "Brush",
+  eraser: "Eraser",
+  fill: "Fill",
+  rectangle: "Rectangle selection",
+  ellipse: "Ellipse selection",
+  lasso: "Freehand selection",
+  wand: "Connected color selection",
+};
+
 export function ImageEditor({
   width = 1200,
   height = 800,
@@ -80,6 +131,7 @@ export function ImageEditor({
 }: EditorOptions) {
   const [project, setProject] = useState(() => newProject(width, height));
   const [active, setActive] = useState("");
+  const [inspectorOpen, setInspectorOpen] = useState(true);
   const [tool, setTool] = useState<Tool>("move");
   const [color, setColor] = useState("#ffffff");
   const [brushSize, setBrushSize] = useState(24);
@@ -360,14 +412,30 @@ export function ImageEditor({
   async function pointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     if (busy || gesture.current) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    const p = point(event),
-      token = ++gestureToken.current;
+    const p = point(event);
+    const selectedLayer =
+      tool === "move" || tool === "resize"
+        ? [...project.layers].reverse().find((l) => {
+            const local = toLayerPoint(l, p);
+            return (
+              l.visible &&
+              local.x >= 0 &&
+              local.y >= 0 &&
+              local.x <= l.width &&
+              local.y <= l.height
+            );
+          }) || current
+        : current;
+    if (selectedLayer && (tool === "move" || tool === "resize"))
+      setActive(selectedLayer.id);
+    const token = ++gestureToken.current;
     const g = {
       point: p,
       points: [p],
-      layer: current ? { ...current } : undefined,
+      layer: selectedLayer ? { ...selectedLayer } : undefined,
       token,
     } as Gesture;
+    if (tool === "resize") g.handle = "resize";
     gesture.current = g;
     if (tool === "pan") {
       g.scroll = { x: event.clientX, y: event.clientY };
@@ -377,24 +445,24 @@ export function ImageEditor({
       setSelection({ kind: tool as Selection["kind"], points: [p, p] });
       return;
     }
-    if (!current) {
+    if (!selectedLayer) {
       gesture.current = null;
       setMessage("Add or select a layer first.");
       return;
     }
-    if (tool === "move") return;
-    if (current.kind !== "raster") {
+    if (tool === "move" || tool === "resize") return;
+    if (selectedLayer.kind !== "raster") {
       gesture.current = null;
       setMessage("Rasterize the text layer before painting.");
       return;
     }
     try {
-      const c = canvas(current.width, current.height),
+      const c = canvas(selectedLayer.width, selectedLayer.height),
         ctx = c.getContext("2d")!;
-      if (current.source)
+      if (selectedLayer.source)
         ctx.drawImage(
-          images.current.get(current.source) ||
-            (await loadImage(current.source)),
+          images.current.get(selectedLayer.source) ||
+            (await loadImage(selectedLayer.source)),
           0,
           0,
         );
@@ -402,7 +470,7 @@ export function ImageEditor({
       g.working = c;
       if (tool === "brush" || tool === "eraser") paint(g, p);
       else {
-        const lp = toLayerPoint(current, p),
+        const lp = toLayerPoint(selectedLayer, p),
           data = ctx.getImageData(0, 0, c.width, c.height);
         const rgba = [
           parseInt(color.slice(1, 3), 16),
@@ -418,7 +486,7 @@ export function ImageEditor({
           const m = canvas(c.width, c.height),
             maskContext = m.getContext("2d")!;
           maskContext.save();
-          clip(maskContext, current);
+          clip(maskContext, selectedLayer);
           maskContext.fillStyle = "#fff";
           maskContext.fillRect(0, 0, m.width, m.height);
           maskContext.restore();
@@ -438,9 +506,9 @@ export function ImageEditor({
           const cut = canvas(c.width, c.height);
           cut.getContext("2d")!.putImageData(result.cut, 0, 0);
           const l = {
-            ...current,
+            ...selectedLayer,
             id: crypto.randomUUID(),
-            name: `${current.name} selection`.slice(0, 200),
+            name: `${selectedLayer.name} selection`.slice(0, 200),
             source: cut.toDataURL(),
           };
           commit({
@@ -469,7 +537,7 @@ export function ImageEditor({
     }
   }
   function startHandle(
-    event: React.PointerEvent<SVGCircleElement>,
+    event: React.PointerEvent<SVGElement>,
     handle: "resize" | "rotate",
   ) {
     if (!current || busy || gesture.current) return;
@@ -630,9 +698,11 @@ export function ImageEditor({
       aria-busy={busy}
     >
       <div className={styles.toolbar}>
-        <label className="action-button">
-          Add image
+        <label className="action-button" title="Add image">
+          <ImagePlus size={18} aria-hidden="true" />
+          <span className={styles.srOnly}>Add image</span>
           <input
+            className={styles.srOnly}
             type="file"
             accept="image/png,image/jpeg,image/webp"
             disabled={busy}
@@ -646,6 +716,7 @@ export function ImageEditor({
         {!limited && (
           <>
             <button
+              title="Paint layer"
               type="button"
               disabled={busy}
               onClick={() => {
@@ -659,9 +730,11 @@ export function ImageEditor({
                 setActive(l.id);
               }}
             >
-              Paint layer
+              <Layers size={18} aria-hidden="true" />
+              <span className={styles.srOnly}>Paint layer</span>
             </button>
             <button
+              title="Text layer"
               type="button"
               disabled={busy}
               onClick={() => {
@@ -680,25 +753,31 @@ export function ImageEditor({
                 setActive(l.id);
               }}
             >
-              Text layer
+              <Type size={18} aria-hidden="true" />
+              <span className={styles.srOnly}>Text layer</span>
             </button>
           </>
         )}
         <button
+          title="Undo"
           type="button"
           disabled={!history.current.undo.length || busy}
           onClick={() => undo()}
         >
-          Undo
+          <Undo2 size={18} aria-hidden="true" />
+          <span className={styles.srOnly}>Undo</span>
         </button>
         <button
+          title="Redo"
           type="button"
           disabled={!history.current.redo.length || busy}
           onClick={() => undo(true)}
         >
-          Redo
+          <Redo2 size={18} aria-hidden="true" />
+          <span className={styles.srOnly}>Redo</span>
         </button>
         <button
+          title="Save project"
           type="button"
           disabled={busy}
           onClick={() => {
@@ -711,11 +790,14 @@ export function ImageEditor({
             setMessage("Layered project saved locally.");
           }}
         >
-          Save project
+          <Save size={18} aria-hidden="true" />
+          <span className={styles.srOnly}>Save project</span>
         </button>
-        <label className="action-button">
-          Open project
+        <label className="action-button" title="Open project">
+          <FolderOpen size={18} aria-hidden="true" />
+          <span className={styles.srOnly}>Open project</span>
           <input
+            className={styles.srOnly}
             type="file"
             accept=".json"
             disabled={busy}
@@ -743,38 +825,39 @@ export function ImageEditor({
           />
         </label>
       </div>
+      <div className={styles.toolStrip} role="toolbar" aria-label="Image tools">
+        {(Object.keys(toolIcons) as Tool[])
+          .filter((t) => !limited || ["move", "resize", "pan"].includes(t))
+          .map((t) => {
+            const Icon = toolIcons[t];
+            return (
+              <button
+                key={t}
+                type="button"
+                title={toolNames[t]}
+                aria-label={toolNames[t]}
+                aria-pressed={tool === t}
+                disabled={busy}
+                onClick={() => setTool(t)}
+              >
+                <Icon size={20} />
+              </button>
+            );
+          })}
+        <span className={styles.toolHint}>
+          {tool === "resize"
+            ? "Drag a corner to resize · proportions stay locked"
+            : tool === "move"
+              ? "Click a layer to select · drag to move · double-click for properties"
+              : toolNames[tool]}
+        </span>
+      </div>
       <fieldset
         className={styles.workspace}
         disabled={busy}
         aria-label="Image editing controls"
       >
         <aside className={styles.controls}>
-          <FloatingField label="Tool">
-            <select
-              value={tool}
-              disabled={busy}
-              onChange={(e) => setTool(e.target.value as Tool)}
-            >
-              {(limited
-                ? ["move", "pan"]
-                : [
-                    "move",
-                    "pan",
-                    "brush",
-                    "eraser",
-                    "fill",
-                    "rectangle",
-                    "ellipse",
-                    "lasso",
-                    "wand",
-                  ]
-              ).map((t) => (
-                <option key={t} value={t}>
-                  {t === "wand" ? "Connected color selection" : t}
-                </option>
-              ))}
-            </select>
-          </FloatingField>
           <label>
             Zoom{" "}
             <input
@@ -787,6 +870,7 @@ export function ImageEditor({
             />
           </label>
           <button
+            title="Fit canvas"
             type="button"
             onClick={() =>
               setZoom(
@@ -801,9 +885,10 @@ export function ImageEditor({
               )
             }
           >
-            Fit canvas
+            <Scan size={18} aria-hidden="true" />
+            <span className={styles.srOnly}>Fit canvas</span>
           </button>
-          {!limited && (
+          {!limited && ["brush", "eraser", "fill", "wand"].includes(tool) && (
             <>
               <label>
                 Color{" "}
@@ -814,19 +899,21 @@ export function ImageEditor({
                   onChange={(e) => setColor(e.target.value)}
                 />
               </label>
-              <FloatingField label="Brush size">
-                <input
-                  type="number"
-                  min="1"
-                  max="500"
-                  value={brushSize}
-                  onChange={(e) =>
-                    setBrushSize(
-                      Math.max(1, Math.min(500, Number(e.target.value))),
-                    )
-                  }
-                />
-              </FloatingField>
+              {(tool === "brush" || tool === "eraser") && (
+                <FloatingField label="Brush size">
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={brushSize}
+                    onChange={(e) =>
+                      setBrushSize(
+                        Math.max(1, Math.min(500, Number(e.target.value))),
+                      )
+                    }
+                  />
+                </FloatingField>
+              )}
               {(tool === "brush" || tool === "eraser") && (
                 <label>
                   Hardness {hardness}%
@@ -841,19 +928,21 @@ export function ImageEditor({
                   <small>0% soft · 100% sharp</small>
                 </label>
               )}
-              <FloatingField label="Color tolerance">
-                <input
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={tolerance}
-                  onChange={(e) =>
-                    setTolerance(
-                      Math.max(0, Math.min(255, Number(e.target.value))),
-                    )
-                  }
-                />
-              </FloatingField>
+              {(tool === "fill" || tool === "wand") && (
+                <FloatingField label="Color tolerance">
+                  <input
+                    type="number"
+                    min="0"
+                    max="255"
+                    value={tolerance}
+                    onChange={(e) =>
+                      setTolerance(
+                        Math.max(0, Math.min(255, Number(e.target.value))),
+                      )
+                    }
+                  />
+                </FloatingField>
+              )}
             </>
           )}
           {presets.length > 0 && (
@@ -879,43 +968,49 @@ export function ImageEditor({
             </FloatingField>
           )}
           {!limited && (
-            <>
-              <FloatingField label="Canvas width">
-                <input
-                  type="number"
-                  value={size.width}
-                  min="1"
-                  max="8192"
-                  onChange={(e) =>
-                    setSize({ ...size, width: Number(e.target.value) })
+            <details className={styles.settings}>
+              <summary>Canvas size & background</summary>
+              <div className={styles.propertyGrid}>
+                <FloatingField label="Canvas width">
+                  <input
+                    type="number"
+                    value={size.width}
+                    min="1"
+                    max="8192"
+                    onChange={(e) =>
+                      setSize({ ...size, width: Number(e.target.value) })
+                    }
+                  />
+                </FloatingField>
+                <FloatingField label="Canvas height">
+                  <input
+                    type="number"
+                    value={size.height}
+                    min="1"
+                    max="8192"
+                    onChange={(e) =>
+                      setSize({ ...size, height: Number(e.target.value) })
+                    }
+                  />
+                </FloatingField>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void run(() => {
+                      dimensions(size.width, size.height);
+                      commit({ ...project, ...size });
+                      setSelection(null);
+                    })
                   }
-                />
-              </FloatingField>
-              <FloatingField label="Canvas height">
-                <input
-                  type="number"
-                  value={size.height}
-                  min="1"
-                  max="8192"
-                  onChange={(e) =>
-                    setSize({ ...size, height: Number(e.target.value) })
-                  }
-                />
-              </FloatingField>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void run(() => {
-                    dimensions(size.width, size.height);
-                    commit({ ...project, ...size });
-                    setSelection(null);
-                  })
-                }
-              >
-                Resize canvas
-              </button>
-            </>
+                >
+                  Resize canvas
+                </button>
+                <small>
+                  Changes output bounds; use Resize layer to scale an image.
+                </small>
+              </div>
+            </details>
           )}
           <label>
             <input
@@ -999,18 +1094,26 @@ export function ImageEditor({
               onPointerMove={pointerMove}
               onPointerUp={pointerUp}
               onPointerCancel={pointerUp}
+              onDoubleClick={() => {
+                if (tool === "move" || tool === "resize") {
+                  setTool("move");
+                  setInspectorOpen(true);
+                }
+              }}
               style={{
                 width: "100%",
                 height: "100%",
                 cursor:
                   tool === "pan"
                     ? "grab"
-                    : tool === "move"
-                      ? "move"
-                      : "crosshair",
+                    : tool === "resize"
+                      ? "nwse-resize"
+                      : tool === "move"
+                        ? "move"
+                        : "crosshair",
               }}
             />
-            {current && tool === "move" && (
+            {current && (tool === "move" || tool === "resize") && (
               <svg
                 className={styles.transform}
                 viewBox={`0 0 ${project.width} ${project.height}`}
@@ -1029,29 +1132,51 @@ export function ImageEditor({
                     })
                     .join(" ")}
                 />
-                {(["resize", "rotate"] as const).map((handle) => {
-                  const p = toDocumentPoint(
-                    current,
-                    handle === "resize"
-                      ? { x: current.width, y: current.height }
-                      : { x: current.width / 2, y: -30 / zoom },
-                  );
-                  return (
-                    <circle
-                      key={handle}
-                      aria-label={
-                        handle === "resize" ? "Resize layer" : "Rotate layer"
-                      }
-                      cx={p.x}
-                      cy={p.y}
-                      r={7 / zoom}
-                      onPointerDown={(e) => startHandle(e, handle)}
-                      onPointerMove={pointerMove}
-                      onPointerUp={pointerUp}
-                      onPointerCancel={pointerUp}
-                    />
-                  );
-                })}
+                {tool === "resize" && (
+                  <>
+                    {[
+                      { x: 0, y: 0 },
+                      { x: current.width, y: 0 },
+                      { x: current.width, y: current.height },
+                      { x: 0, y: current.height },
+                    ].map((corner, index) => {
+                      const p = toDocumentPoint(current, corner);
+                      return (
+                        <circle
+                          key={index}
+                          aria-label={`Resize layer corner ${index + 1}`}
+                          data-transform-handle="resize"
+                          cx={p.x}
+                          cy={p.y}
+                          r={12 / zoom}
+                          onPointerDown={(e) => startHandle(e, "resize")}
+                          onPointerMove={pointerMove}
+                          onPointerUp={pointerUp}
+                          onPointerCancel={pointerUp}
+                        />
+                      );
+                    })}
+                    {(() => {
+                      const p = toDocumentPoint(current, {
+                        x: current.width / 2,
+                        y: -30 / zoom,
+                      });
+                      return (
+                        <circle
+                          aria-label="Rotate layer"
+                          data-transform-handle="rotate"
+                          cx={p.x}
+                          cy={p.y}
+                          r={12 / zoom}
+                          onPointerDown={(e) => startHandle(e, "rotate")}
+                          onPointerMove={pointerMove}
+                          onPointerUp={pointerUp}
+                          onPointerCancel={pointerUp}
+                        />
+                      );
+                    })()}
+                  </>
+                )}
               </svg>
             )}
             {selectionBox && (
@@ -1097,7 +1222,11 @@ export function ImageEditor({
                 <button
                   type="button"
                   aria-pressed={l.id === active}
-                  onClick={() => setActive(l.id)}
+                  onClick={() => {
+                    setActive(l.id);
+                    setTool("move");
+                    setInspectorOpen(true);
+                  }}
                 >
                   {l.name}
                 </button>
@@ -1105,226 +1234,312 @@ export function ImageEditor({
             ))}
           </div>
           {current && (
-            <>
-              <FloatingField label="Layer name">
-                <input
-                  value={current.name}
-                  maxLength={200}
-                  onChange={(e) => updateLayer({ name: e.target.value })}
-                />
-              </FloatingField>
-              <div className={styles.toolbar}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const index = project.layers.findIndex(
-                      (l) => l.id === active,
-                    );
-                    if (index < project.layers.length - 1) {
-                      const layers = [...project.layers];
-                      [layers[index], layers[index + 1]] = [
-                        layers[index + 1],
-                        layers[index],
-                      ];
-                      commit({ ...project, layers });
-                    }
-                  }}
-                >
-                  Up
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const index = project.layers.findIndex(
-                      (l) => l.id === active,
-                    );
-                    if (index > 0) {
-                      const layers = [...project.layers];
-                      [layers[index], layers[index - 1]] = [
-                        layers[index - 1],
-                        layers[index],
-                      ];
-                      commit({ ...project, layers });
-                    }
-                  }}
-                >
-                  Down
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const l = {
-                      ...current,
-                      id: crypto.randomUUID(),
-                      name: `${current.name} copy`.slice(0, 200),
-                    };
-                    commit({ ...project, layers: [...project.layers, l] });
-                    setActive(l.id);
-                  }}
-                >
-                  Duplicate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    commit({
-                      ...project,
-                      layers: project.layers.filter((l) => l.id !== active),
-                    });
-                    setActive("");
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-              {(["x", "y", "rotation"] as const).map((key) => (
-                <FloatingField
-                  key={key}
-                  label={
-                    key === "rotation"
-                      ? "Rotation (degrees)"
-                      : key.toUpperCase()
-                  }
-                >
+            <details
+              className={styles.settings}
+              open={inspectorOpen}
+              onToggle={(e) => setInspectorOpen(e.currentTarget.open)}
+            >
+              <summary>Layer properties</summary>
+              <div className={styles.propertyGrid}>
+                <FloatingField label="Layer name">
                   <input
-                    type="number"
-                    value={current[key]}
-                    onChange={(e) =>
-                      updateLayer({ [key]: Number(e.target.value) })
-                    }
+                    value={current.name}
+                    maxLength={200}
+                    onChange={(e) => updateLayer({ name: e.target.value })}
                   />
                 </FloatingField>
-              ))}
-              <FloatingField label="Scale (%)">
-                <input
-                  type="number"
-                  min="1"
-                  max="10000"
-                  value={Math.round(current.scaleX * 10000) / 100}
-                  onChange={(e) =>
-                    updateLayer({
-                      scaleX: Number(e.target.value) / 100,
-                      scaleY: Number(e.target.value) / 100,
-                    })
-                  }
-                />
-              </FloatingField>
-              {!limited && (
-                <FloatingField label="Vertical scale (%)">
-                  <input
-                    type="number"
-                    min="1"
-                    max="10000"
-                    value={Math.round(current.scaleY * 10000) / 100}
-                    onChange={(e) =>
-                      updateLayer({ scaleY: Number(e.target.value) / 100 })
-                    }
-                  />
-                </FloatingField>
-              )}
-              <label>
-                Opacity
-                <input
-                  aria-label="Layer opacity"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={current.opacity}
-                  onChange={(e) =>
-                    updateLayer({ opacity: Number(e.target.value) })
-                  }
-                />
-              </label>
-              {current.kind === "text" && (
-                <>
-                  <FloatingField label="Text">
-                    <textarea
-                      value={current.text}
-                      maxLength={10000}
-                      onChange={(e) => updateLayer({ text: e.target.value })}
-                    />
-                  </FloatingField>
-                  <FloatingField label="Font size">
+                <div className={styles.toolbar}>
+                  <button
+                    title="Up"
+                    type="button"
+                    onClick={() => {
+                      const index = project.layers.findIndex(
+                        (l) => l.id === active,
+                      );
+                      if (index < project.layers.length - 1) {
+                        const layers = [...project.layers];
+                        [layers[index], layers[index + 1]] = [
+                          layers[index + 1],
+                          layers[index],
+                        ];
+                        commit({ ...project, layers });
+                      }
+                    }}
+                  >
+                    <ArrowUp size={18} aria-hidden="true" />
+                    <span className={styles.srOnly}>Up</span>
+                  </button>
+                  <button
+                    title="Down"
+                    type="button"
+                    onClick={() => {
+                      const index = project.layers.findIndex(
+                        (l) => l.id === active,
+                      );
+                      if (index > 0) {
+                        const layers = [...project.layers];
+                        [layers[index], layers[index - 1]] = [
+                          layers[index - 1],
+                          layers[index],
+                        ];
+                        commit({ ...project, layers });
+                      }
+                    }}
+                  >
+                    <ArrowDown size={18} aria-hidden="true" />
+                    <span className={styles.srOnly}>Down</span>
+                  </button>
+                  <button
+                    title="Duplicate"
+                    type="button"
+                    onClick={() => {
+                      const l = {
+                        ...current,
+                        id: crypto.randomUUID(),
+                        name: `${current.name} copy`.slice(0, 200),
+                      };
+                      commit({ ...project, layers: [...project.layers, l] });
+                      setActive(l.id);
+                    }}
+                  >
+                    <Copy size={18} aria-hidden="true" />
+                    <span className={styles.srOnly}>Duplicate</span>
+                  </button>
+                  <button
+                    title="Delete"
+                    type="button"
+                    onClick={() => {
+                      commit({
+                        ...project,
+                        layers: project.layers.filter((l) => l.id !== active),
+                      });
+                      setActive("");
+                    }}
+                  >
+                    <Trash2 size={18} aria-hidden="true" />
+                    <span className={styles.srOnly}>Delete</span>
+                  </button>
+                </div>
+                {(["width", "height"] as const).map((dimension) => (
+                  <FloatingField
+                    key={dimension}
+                    label={`${dimension === "width" ? "Width" : "Height"} (px)`}
+                  >
                     <input
                       type="number"
                       min="1"
-                      max="2000"
-                      value={current.fontSize}
+                      max="819200"
+                      aria-label={`Image ${dimension} (px)`}
+                      value={Math.round(
+                        current[dimension] *
+                          (dimension === "width"
+                            ? current.scaleX
+                            : current.scaleY),
+                      )}
+                      onChange={(e) => {
+                        const factor =
+                          Math.max(1, Number(e.target.value)) /
+                          (current[dimension] *
+                            (dimension === "width"
+                              ? current.scaleX
+                              : current.scaleY));
+                        updateLayer({
+                          scaleX: Math.min(
+                            100,
+                            Math.max(0.01, current.scaleX * factor),
+                          ),
+                          scaleY: Math.min(
+                            100,
+                            Math.max(0.01, current.scaleY * factor),
+                          ),
+                        });
+                      }}
+                    />
+                  </FloatingField>
+                ))}
+                <button
+                  className={styles.wide}
+                  type="button"
+                  onClick={() => {
+                    const scale = Math.min(
+                      project.width / current.width,
+                      project.height / current.height,
+                    );
+                    updateLayer({
+                      scaleX: scale,
+                      scaleY: scale,
+                      x: (project.width - current.width * scale) / 2,
+                      y: (project.height - current.height * scale) / 2,
+                    });
+                    setTool("resize");
+                  }}
+                >
+                  Fit image to canvas
+                </button>
+                {(["x", "y", "rotation"] as const).map((key) => (
+                  <FloatingField
+                    key={key}
+                    label={
+                      key === "rotation"
+                        ? "Rotation (degrees)"
+                        : key.toUpperCase()
+                    }
+                  >
+                    <input
+                      type="number"
+                      value={current[key]}
                       onChange={(e) =>
-                        updateLayer({ fontSize: Number(e.target.value) })
+                        updateLayer({ [key]: Number(e.target.value) })
                       }
                     />
                   </FloatingField>
-                  <input
-                    aria-label="Text color"
-                    type="color"
-                    value={current.color}
-                    onChange={(e) => updateLayer({ color: e.target.value })}
-                  />
-                </>
-              )}
-              {!limited && (
-                <>
-                  {(
-                    ["brightness", "contrast", "saturation", "blur"] as const
-                  ).map((key) => (
-                    <label key={key}>
-                      {key}
+                ))}
+                <details className={styles.settings}>
+                  <summary>Scale percentages</summary>
+                  <div className={styles.propertyGrid}>
+                    <FloatingField label="Scale (%)">
                       <input
-                        aria-label={key}
-                        type="range"
-                        min="0"
-                        max={key === "blur" ? 100 : 300}
-                        value={current[key]}
+                        type="number"
+                        min="1"
+                        max="10000"
+                        value={Math.round(current.scaleX * 10000) / 100}
                         onChange={(e) =>
-                          updateLayer({ [key]: Number(e.target.value) })
+                          updateLayer({
+                            scaleX: Number(e.target.value) / 100,
+                            scaleY: Number(e.target.value) / 100,
+                          })
                         }
                       />
-                    </label>
-                  ))}
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={current.invert}
-                      onChange={(e) =>
-                        updateLayer({ invert: e.target.checked })
-                      }
-                    />{" "}
-                    Invert colors
-                  </label>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void run(rasterize)}
-                  >
-                    Rasterize layer
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(async () => {
-                        const c = await renderProject({
-                          ...project,
-                          background: "",
-                        });
-                        const l = newLayer(
-                          c.width,
-                          c.height,
-                          c.toDataURL(),
-                          "Merged image",
-                        );
-                        commit({ ...project, layers: [l] });
-                        setActive(l.id);
-                      })
+                    </FloatingField>
+                    {!limited && (
+                      <FloatingField label="Vertical scale (%)">
+                        <input
+                          type="number"
+                          min="1"
+                          max="10000"
+                          value={Math.round(current.scaleY * 10000) / 100}
+                          onChange={(e) =>
+                            updateLayer({
+                              scaleY: Number(e.target.value) / 100,
+                            })
+                          }
+                        />
+                      </FloatingField>
+                    )}
+                  </div>
+                </details>
+                <label>
+                  Opacity
+                  <input
+                    aria-label="Layer opacity"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={current.opacity}
+                    onChange={(e) =>
+                      updateLayer({ opacity: Number(e.target.value) })
                     }
-                  >
-                    Merge visible layers
-                  </button>
-                </>
-              )}
-            </>
+                  />
+                </label>
+                {current.kind === "text" && (
+                  <>
+                    <FloatingField label="Text">
+                      <textarea
+                        value={current.text}
+                        maxLength={10000}
+                        onChange={(e) => updateLayer({ text: e.target.value })}
+                      />
+                    </FloatingField>
+                    <FloatingField label="Font size">
+                      <input
+                        type="number"
+                        min="1"
+                        max="2000"
+                        value={current.fontSize}
+                        onChange={(e) =>
+                          updateLayer({ fontSize: Number(e.target.value) })
+                        }
+                      />
+                    </FloatingField>
+                    <input
+                      aria-label="Text color"
+                      type="color"
+                      value={current.color}
+                      onChange={(e) => updateLayer({ color: e.target.value })}
+                    />
+                  </>
+                )}
+                {!limited && (
+                  <>
+                    <details className={styles.settings}>
+                      <summary>Adjustments & raster tools</summary>
+                      {(
+                        [
+                          "brightness",
+                          "contrast",
+                          "saturation",
+                          "blur",
+                        ] as const
+                      ).map((key) => (
+                        <label key={key}>
+                          {key}
+                          <input
+                            aria-label={key}
+                            type="range"
+                            min="0"
+                            max={key === "blur" ? 100 : 300}
+                            value={current[key]}
+                            onChange={(e) =>
+                              updateLayer({ [key]: Number(e.target.value) })
+                            }
+                          />
+                        </label>
+                      ))}
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={current.invert}
+                          onChange={(e) =>
+                            updateLayer({ invert: e.target.checked })
+                          }
+                        />{" "}
+                        Invert colors
+                      </label>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void run(rasterize)}
+                      >
+                        Rasterize layer
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          void run(async () => {
+                            const c = await renderProject({
+                              ...project,
+                              background: "",
+                            });
+                            const l = newLayer(
+                              c.width,
+                              c.height,
+                              c.toDataURL(),
+                              "Merged image",
+                            );
+                            commit({ ...project, layers: [l] });
+                            setActive(l.id);
+                          })
+                        }
+                      >
+                        Merge visible layers
+                      </button>
+                    </details>
+                  </>
+                )}
+              </div>
+            </details>
           )}
         </aside>
       </fieldset>
@@ -1337,6 +1552,7 @@ export function ImageEditor({
           </select>
         </FloatingField>
         <button
+          title="Export image"
           type="button"
           disabled={busy}
           onClick={() =>
@@ -1353,7 +1569,8 @@ export function ImageEditor({
             })
           }
         >
-          Export image
+          <Download size={18} aria-hidden="true" />
+          <span className={styles.srOnly}>Export image</span>
         </button>
         {onSave && (
           <button

@@ -3569,6 +3569,73 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   padding: 14px;
 }
 
+.ranking-page-filters {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ranking-filter-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ranking-filter-row:has(> [data-ranking-owner-only]):not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+.ranking-more-data-control {
+  margin-left: auto;
+}
+
+.ranking-page-filters .toggle-row {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ranking-page-filters input[role="switch"] {
+  appearance: none;
+  background: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 24px;
+  margin: 0;
+  position: relative;
+  width: 42px;
+}
+
+.ranking-page-filters input[role="switch"]::before {
+  background: var(--panel);
+  border-radius: 50%;
+  content: "";
+  height: 18px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  width: 18px;
+}
+
+.ranking-page-filters input[role="switch"]:checked {
+  background: var(--track);
+}
+
+.ranking-page-filters input[role="switch"]:checked::before {
+  transform: translateX(18px);
+}
+
+.ranking-page-filters input[role="switch"]:focus-visible {
+  outline: 2px solid var(--track);
+  outline-offset: 3px;
+}
+
 .ranking-row-action {
   flex: 0 0 auto;
 }

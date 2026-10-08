@@ -45,6 +45,8 @@ Available Worker workflows:
 | Footy Push                     | `deploy-footy-push-worker.yml`   | Automatically runs for matching `dev` changes; manual fallback: `gh workflow run deploy-footy-push-worker.yml --ref dev`                                               |
 | PSN trophies                   | `deploy-psn-worker.yml`          | Matching `dev` changes deploy without migrations. After usage review and explicit approval: `gh workflow run deploy-psn-worker.yml --ref dev -f apply_migrations=true` |
 
+Image Library and Footy Media: [deploy-image-library-worker.yml](../.github/workflows/deploy-image-library-worker.yml) is manual-only and requires a recorded, approved usage review. See [docs/image-studio.md](../docs/image-studio.md) for bucket provisioning, empty-schema migration, shared namespace deployment ordering, storage baseline initialization, and the first roster-ledger scan estimate. Do not enable or deploy it without that review; no cloud rollout is implied by a frontend push.
+
 Useful verification commands:
 
 ```bash

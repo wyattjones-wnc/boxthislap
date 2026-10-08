@@ -22,6 +22,10 @@ export default [
       "scripts/run-mobile-smoke.mjs",
       "scripts/verify-site-build.mjs",
       "tests/**/*.mjs",
+      "workers/image-library/**/*.js",
+      "workers/image-library/test/**/*.mjs",
+      "workers/shared/**/*.js",
+      "modules/rankingImages*.{js,mjs}",
     ],
     languageOptions: {
       ecmaVersion: "latest",

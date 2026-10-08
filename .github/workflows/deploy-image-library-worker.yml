@@ -1,0 +1,59 @@
+name: Deploy Image Library and Footy Media
+
+on:
+  workflow_dispatch:
+    inputs:
+      usage_review:
+        description: Reference to the explicitly approved usage review for this rollout
+        required: true
+        type: string
+      apply_migrations:
+        description: Apply reviewed pending Footy D1 migrations
+        required: true
+        type: boolean
+        default: false
+      deploy_footy:
+        description: Deploy Footy to enable shared accounting and file metadata
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-image-library-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Require a recorded usage review
+        run: test -n "$USAGE_REVIEW"
+        env:
+          USAGE_REVIEW: ${{ inputs.usage_review }}
+      - run: npm run test:images
+      - name: Apply reviewed Footy migrations
+        if: ${{ inputs.apply_migrations }}
+        run: npx wrangler d1 migrations apply footy-match-notes --remote --config workers/footy-notes/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy image library and private usage gate
+        run: npx wrangler deploy --config workers/image-library/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy Footy with shared image accounting
+        if: ${{ inputs.deploy_footy }}
+        run: npx wrangler deploy --config workers/footy-notes/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

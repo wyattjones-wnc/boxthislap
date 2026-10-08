@@ -1,3 +1,4 @@
+import { useAppState } from "../../app/providers";
 import { FloatingField } from "../../components/FloatingField/FloatingField";
 import {
   Archive,
@@ -18,6 +19,7 @@ import {
   Gamepad2,
   GripVertical,
   History,
+  Images,
   Link2,
   ListPlus,
   Notebook,
@@ -1612,6 +1614,7 @@ function RankingCard({
   rankLabel: string;
   startDrag: (id: string, event: React.PointerEvent<HTMLElement>) => void;
 }) {
+  const { session } = useAppState();
   return (
     <article
       className={`ranking-item${item.archived ? " is-excluded" : ""}${dragging ? " is-dragging" : ""}`}
@@ -1663,8 +1666,17 @@ function RankingCard({
       ) : (
         <span className="ranking-spacer" aria-hidden="true" />
       )}
-      {item.canEdit || item.canArchive ? (
+      {session || item.canEdit || item.canArchive ? (
         <span className="ranking-item-actions">
+          {session && (
+            <IconButton
+              className="ranking-row-action"
+              icon={<Images />}
+              label={`Images for ${item.name}`}
+              data-ranking-images={item.id}
+              data-ranking-kind={kind}
+            />
+          )}
           {item.canEdit ? (
             <IconButton
               className="ranking-row-action"

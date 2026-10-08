@@ -9,6 +9,7 @@ const requiredTopics = [
   "guides.md",
   "footy.md",
   "rankings.md",
+  "images.md",
   "manager-hub.md",
   "google-sheets.md",
   "fantasy-leagues.md",

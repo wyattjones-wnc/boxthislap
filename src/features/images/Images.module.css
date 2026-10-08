@@ -1,0 +1,175 @@
+.editor {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.toolbar input[type="file"] {
+  max-width: 180px;
+  font-size: 0.8rem;
+}
+.toolbar label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.workspace {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 170px minmax(200px, 1fr) 210px;
+  gap: 1rem;
+  align-items: start;
+}
+.controls {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  max-height: 65vh;
+  overflow: auto;
+}
+.controls input:not([type="checkbox"]):not([type="color"]),
+.controls select,
+.controls textarea {
+  width: 100%;
+}
+.controls label {
+  display: grid;
+  gap: 0.3rem;
+}
+.controls h3,
+.controls p {
+  margin: 0;
+}
+.viewport {
+  overflow: auto;
+  height: 65vh;
+  min-height: 280px;
+  background: var(--bg-secondary, #151b25);
+  border: 1px solid var(--border-color, #465365);
+  padding: 24px;
+}
+.canvasWrap {
+  position: relative;
+  flex: none;
+  background-color: #ddd;
+  background-image: conic-gradient(#bbb 25%, #ddd 0 50%, #bbb 0 75%, #ddd 0);
+  background-size: 20px 20px;
+  box-shadow: 0 2px 12px #0006;
+}
+.canvasWrap canvas {
+  display: block;
+  touch-action: none;
+}
+.selection {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: #4386f522;
+  stroke: #4386f5;
+  stroke-width: 2px;
+  stroke-dasharray: 5 4;
+}
+.layers {
+  display: grid;
+  gap: 0.3rem;
+}
+.layers > div {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.layers button {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.layers button[aria-pressed="true"] {
+  outline: 2px solid var(--accent, #70a7ff);
+}
+.status {
+  min-height: 1.5em;
+  margin: 0;
+}
+.page {
+  display: grid;
+  gap: 1rem;
+}
+.section {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #465365);
+  border-radius: 0.75rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+.gallery img {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+}
+.dialogBody {
+  width: min(1200px, 90vw);
+}
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 140px minmax(150px, 1fr);
+  }
+  .workspace > aside:last-child {
+    grid-column: 1 / -1;
+    max-height: none;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: none;
+  }
+  .viewport {
+    height: 45vh;
+  }
+  .dialogBody {
+    width: auto;
+  }
+}
+.transform {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: #4386f5;
+  stroke-width: 1;
+}
+.transform polygon {
+  vector-effect: non-scaling-stroke;
+}
+.transform circle {
+  pointer-events: all;
+  fill: white;
+  stroke: #4386f5;
+  cursor: grab;
+  touch-action: none;
+}

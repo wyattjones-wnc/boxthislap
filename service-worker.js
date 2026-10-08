@@ -1,5 +1,17 @@
 const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
-const IMAGE_CACHE_NAME = "box-this-lap-images-v1";
+const IMAGE_CACHE_NAME = "box-this-lap-images-v2";
+const IMAGE_CACHE_META = new URL("__image_cache_metadata", self.location.origin).href;
+const IMAGE_CACHE_LIMIT = 100 * 1024 * 1024;
+const CLOUD_IMAGE_ORIGINS = new Set([
+  "https://box-this-lap-footy-notes.boxthislap.workers.dev",
+  "https://box-this-lap-image-library.boxthislap.workers.dev",
+]);
+let cacheMutation = Promise.resolve();
+function mutateCache(work) {
+  const next = cacheMutation.then(work, work);
+  cacheMutation = next.catch(() => undefined);
+  return next;
+}
 const IMAGE_MANIFEST_URL = "assets/image-cache-manifest.json";
 const IMAGE_EXTENSIONS = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 
@@ -8,7 +20,7 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(Promise.all([clients.claim(), caches.delete("box-this-lap-images-v1")]));
 });
 
 self.addEventListener("fetch", (event) => {
@@ -22,6 +34,16 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data?.type === "CACHE_ALL_IMAGES") {
     event.waitUntil(cacheAllImages(event.source));
+  } else if (event.data?.type === "INVALIDATE_IMAGE") {
+    event.waitUntil((async () => {
+      try {
+        const request = new Request(event.data.url);
+        if (!isCacheableImageRequest(request)) throw new Error("Unapproved image route.");
+        const cache = await caches.open(IMAGE_CACHE_NAME);
+        await cache.delete(imageCacheKey(request));
+        event.ports[0]?.postMessage({ ok: true });
+      } catch { event.ports[0]?.postMessage({ ok: false }); }
+    })());
   } else if (event.data?.type === "CLEAR_IMAGE_CACHE") {
     event.waitUntil(clearImageCache(event.source));
   }
@@ -98,28 +120,83 @@ async function showPendingFootyNotifications() {
 
 function isCacheableImageRequest(request) {
   const url = new URL(request.url);
-  return url.origin === self.location.origin &&
-    (request.destination === "image" || IMAGE_EXTENSIONS.test(url.pathname));
+  return (url.origin === self.location.origin &&
+    (request.destination === "image" || IMAGE_EXTENSIONS.test(url.pathname))) ||
+    (CLOUD_IMAGE_ORIGINS.has(url.origin) && /^\/media\/(rosters|match-images|library)\//.test(url.pathname));
 }
-
-async function serveCachedImage(request, event) {
-  const cache = await caches.open(IMAGE_CACHE_NAME);
-  const cachedResponse = await cache.match(request, { ignoreSearch: true });
-  const refreshPromise = fetch(request).then(async (response) => {
-    if (response.ok) {
-      await cache.put(request, response.clone());
-    } else if (response.status === 404 || response.status === 410) {
-      await cache.delete(request, { ignoreSearch: true });
+function imageCacheKey(request) {
+  const url = new URL(request.url);
+  url.searchParams.delete("__image_retry");
+  return new Request(url.href, { mode: "cors", credentials: "omit" });
+}
+async function readMetadata(cache) {
+  const response = await cache.match(IMAGE_CACHE_META);
+  const value = response ? await response.json().catch(() => null) : null;
+  const metadata = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const requests = await cache.keys(), present = new Set();
+  for (const request of requests) {
+    if (request.url === IMAGE_CACHE_META) continue;
+    present.add(request.url);
+    const entry = metadata[request.url];
+    if (!entry || !Number.isFinite(entry.bytes) || entry.bytes < 0 || !Number.isFinite(entry.used)) {
+      const image = await cache.match(request);
+      if (image) metadata[request.url] = { bytes: (await image.blob()).size, used: 0 };
     }
-    return response;
-  });
-
-  if (cachedResponse) {
-    event.waitUntil(refreshPromise.catch(() => undefined));
-    return cachedResponse;
   }
-
-  return refreshPromise;
+  for (const url of Object.keys(metadata)) if (!present.has(url)) delete metadata[url];
+  return metadata;
+}
+async function storeImage(cache, request, response) {
+  if (!response.ok || response.type === "opaque") return;
+  const bytes = (await response.clone().blob()).size;
+  if (bytes > IMAGE_CACHE_LIMIT) return;
+  const key = imageCacheKey(typeof request === "string" ? new Request(new URL(request, self.registration.scope).href) : request);
+  await mutateCache(async () => {
+    const metadata = await readMetadata(cache);
+    const stored = new Response(response.clone().body, response);
+    stored.headers.set("X-BTL-Cached-At", String(Date.now()));
+    await cache.put(key, stored);
+    metadata[key.url] = { bytes, used: Date.now() };
+    let total = Object.values(metadata).reduce((sum, value) => sum + value.bytes, 0);
+    const entries = Object.entries(metadata).sort((a, b) => a[1].used - b[1].used);
+    while (total > IMAGE_CACHE_LIMIT || entries.length > 2000) {
+      const [url, value] = entries.shift(); total -= value.bytes; delete metadata[url]; await cache.delete(url);
+    }
+    await cache.put(IMAGE_CACHE_META, Response.json(metadata));
+  });
+}
+async function serveCachedImage(request, event) {
+  let cache, cached;
+  const key = imageCacheKey(request);
+  try {
+    cache = await caches.open(IMAGE_CACHE_NAME);
+    cached = await cache.match(key);
+    if (cached && new URL(request.url).origin === self.location.origin && Date.now() - Number(cached.headers.get('X-BTL-Cached-At') || 0) > 7 * 86400000) {
+      await cache.delete(key); cached = null;
+    }
+    if (cached) {
+      // Decode stored raster bytes before returning them, so corrupt copies fall back to the origin.
+      const mime = cached.headers.get("Content-Type") || "";
+      if (typeof createImageBitmap === "function" && /image\/(png|jpeg|webp|avif|gif)/.test(mime)) {
+        const bitmap = await createImageBitmap(await cached.clone().blob()); bitmap.close();
+      }
+      event.waitUntil(mutateCache(async () => {
+        const metadata = await readMetadata(cache);
+        if (metadata[key.url]) { metadata[key.url].used = Date.now(); await cache.put(IMAGE_CACHE_META, Response.json(metadata)); }
+      }).catch(() => undefined));
+      return cached;
+    }
+  } catch {
+    if (cache) await cache.delete(key).catch(() => undefined);
+  }
+  // Cache storage and decode failures do not prevent fetching or displaying the image.
+  const url = new URL(request.url);
+  const response = await fetch(new Request(request, {
+    ...(url.origin !== self.location.origin ? { mode: "cors", credentials: "omit" } : {}),
+    cache: cached ? "reload" : "default",
+  }));
+  if (cache && response.ok) event.waitUntil(storeImage(cache, key, response).catch(() => undefined));
+  return response;
 }
 
 async function cacheAllImages(client) {
@@ -136,7 +213,8 @@ async function cacheAllImages(client) {
     const manifestPaths = new Set(images.map((image) => new URL(image.path, self.registration.scope).pathname));
     const existingRequests = await cache.keys();
     await Promise.all(existingRequests.map((request) => {
-      return manifestPaths.has(new URL(request.url).pathname) ? undefined : cache.delete(request);
+      const url = new URL(request.url);
+      return url.origin !== self.location.origin || request.url === IMAGE_CACHE_META || manifestPaths.has(url.pathname) ? undefined : cache.delete(request);
     }));
     let completed = 0;
     let bytes = 0;
@@ -145,8 +223,12 @@ async function cacheAllImages(client) {
     for (const batch of chunk(images, 3)) {
       await Promise.all(batch.map(async (image) => {
         try {
-          const response = await fetchImageWithRetry(image.path);
-          await cache.put(image.path, response);
+          const key = new Request(new URL(image.path, self.registration.scope).href);
+          const existing = await cache.match(key);
+          if (!existing) {
+            const response = await fetchImageWithRetry(image.path);
+            await storeImage(cache, key, response);
+          }
           bytes += Number(image.bytes || 0);
         } catch (error) {
           failed.push({ message: error.message || "Unknown error.", path: image.path });

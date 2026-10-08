@@ -1,3 +1,4 @@
+import { clearSharedRankingImages, loadSharedRankingImages, sharedRankingImages } from './modules/rankingImages.js';
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
@@ -657,6 +658,7 @@ let activeAutocompleteInput = null;
 let footyRosterLoadPromise = null;
 let footyRosterEditMode = false;
 let pendingFootyRosterCardFile = null;
+let pendingFootyRosterCardPreset = null;
 let tradingCardImageEditorState = null;
 const footyRosterDiscoveryStates = new Map();
 const activeFootyRosterSeasons = new Map();
@@ -713,7 +715,7 @@ const router = createRouter({
     (["rankings", "draft-list", "account-settings", "workouts"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "image-editor", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -6051,6 +6053,7 @@ function openFootyRosterEditor(team, player) {
   const season = roster?.season || getDefaultFootyRosterSeason(team);
   footyRosterEditorForm?.reset();
   pendingFootyRosterCardFile = null;
+  pendingFootyRosterCardPreset = null;
   footyRosterEditorId.value = player?.id || "";
   footyRosterEditorTitle.textContent = player ? `Edit ${player.name}` : "Add player";
   footyRosterEditorSeason.textContent = `${team.prettyName || team.name} • ${season}`;
@@ -6095,6 +6098,17 @@ async function showFootyRosterMediaUsage() {
 }
 
 async function openTradingCardImageEditor(file) {
+  if (window.boxThisLapOpenImageEditor && file) {
+    try {
+      const result = await window.boxThisLapOpenImageEditor({ file, limited: true, width: 2500, height: 3520, context: 'footy-card' });
+      if (!result) { pendingFootyRosterCardFile = null; footyRosterEditorCard.value = ''; return; }
+      pendingFootyRosterCardPreset = result.preset || null;
+      pendingFootyRosterCardFile = new File([result.blob], 'trading-card-positioned.webp', { type: result.blob.type });
+      footyRosterEditorDefaultCard.checked = false;
+      footyRosterEditorStatus.textContent = 'Trading-card image is positioned and ready to upload when you save the player.';
+    } catch (error) { footyRosterEditorStatus.textContent = error.message; }
+    return;
+  }
   if (!file || !tradingCardImageEditorDialog || !tradingCardImageEditorCanvas) return;
   if (!/^image\/(?:png|jpeg|webp)$/.test(file.type)) {
     footyRosterEditorStatus.textContent = "Choose a PNG, JPEG, or WebP image.";
@@ -6195,6 +6209,7 @@ function resetTradingCardImageEditor() {
 function closeTradingCardImageEditor({ discard = true } = {}) {
   if (discard) {
     pendingFootyRosterCardFile = null;
+  pendingFootyRosterCardPreset = null;
     if (footyRosterEditorCard) footyRosterEditorCard.value = "";
   }
   if (tradingCardImageEditorState?.imageUrl) URL.revokeObjectURL(tradingCardImageEditorState.imageUrl);
@@ -6291,7 +6306,7 @@ async function saveFootyRosterEditor() {
       if (!file) continue;
       if (file.size > 5 * 1024 * 1024) throw new Error(`${kind === "profile" ? "Profile" : "Trading-card"} image must be 5 MB or smaller.`);
       footyRosterEditorStatus.textContent = `Uploading ${kind} image...`;
-      const mediaResult = await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media`, { method: "POST", body: { kind, dataUrl: await readFileAsDataUrl(file) } });
+      const mediaResult = await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media`, { method: "POST", body: { kind, dataUrl: await readFileAsDataUrl(file), presetId: kind === "card" ? pendingFootyRosterCardPreset?.id : undefined, presetVersion: kind === "card" ? pendingFootyRosterCardPreset?.version : undefined } });
       saved = mediaResult.player;
     }
     footyRosterEditorDialog.close();
@@ -10592,6 +10607,7 @@ async function openRankingBattleDialog(kind = activeRankingKind) {
   }
   if (!["todo", "want"].includes(kind)) {
     await ensureRankingAssetManifest();
+    await loadSharedRankingImages(getCurrentManagerId(), kind, getRankingRows(kind));
   }
   renderNextRankingBattle(kind);
 
@@ -10653,6 +10669,7 @@ function renderRankingBattleArchiveAction(kind, item) {
 
   return `
     <span class="ranking-battle-actions">
+      <button class="ranking-inline-action" type="button" data-ranking-images="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Images</button>
       <button class="ranking-inline-action" type="button" data-ranking-battle-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
         Archive
       </button>
@@ -10664,7 +10681,10 @@ function renderRankingBattleArchiveAction(kind, item) {
 }
 
 function renderRankingBattleImage(kind, item) {
-  const imagePath = kind === "todo" ? getTodoImageUrl(item) : kind === "want" ? String(item?.imageUrl || "").trim() : getRandomRankingAssetPath(kind, item?.id);
+  const imagePath = kind === "todo" ? getTodoImageUrl(item) : kind === "want" ? String(item?.imageUrl || "").trim() : (() => {
+    const paths = sharedRankingImages(getCurrentManagerId(), kind, item, siteData.rankingAssets, getRankingRows('mcu'));
+    return paths.length ? paths[Math.floor(Math.random() * paths.length)] : '';
+  })();
   const imageMarkup = imagePath
     ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
     : "";
@@ -13855,6 +13875,7 @@ footyRosterEditorForm?.addEventListener("submit", (event) => {
 footyRosterEditorCard?.addEventListener("change", () => {
   const file = footyRosterEditorCard.files?.[0];
   pendingFootyRosterCardFile = null;
+  pendingFootyRosterCardPreset = null;
   if (file) void openTradingCardImageEditor(file);
 });
 [tradingCardImageEditorClose, tradingCardImageEditorCancel].forEach((button) => button?.addEventListener("click", () => closeTradingCardImageEditor()));
@@ -14672,6 +14693,25 @@ rankingBattleOptions?.addEventListener("click", (event) => {
   }
 
   chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-pick") || "");
+});
+
+window.addEventListener('boxthislap:images-changed', async () => {
+  clearSharedRankingImages();
+  if (activeRankingBattle) {
+    const kind = activeRankingBattle.kind;
+    await loadSharedRankingImages(getCurrentManagerId(), kind, getRankingRows(kind));
+    if (activeRankingBattle?.kind === kind) rankingBattleOptions.innerHTML = [activeRankingBattle.itemA, activeRankingBattle.itemB].map(item => `<article class="ranking-battle-option">${renderRankingBattleImage(kind,item)}<strong>${escapeHtml(item.name)}</strong>${renderRankingBattleArchiveAction(kind,item)}</article>`).join('');
+  }
+});
+window.addEventListener('boxthislap:session-changed', clearSharedRankingImages);
+document.addEventListener('click', async event => {
+  const action = event.target.closest('[data-ranking-images]');
+  if (!action) return;
+  event.preventDefault(); event.stopPropagation();
+  const kind = action.getAttribute('data-ranking-kind') || activeRankingKind;
+  const itemId = action.getAttribute('data-ranking-images');
+  const item = getRankingRows(kind).find(row => String(row.id) === String(itemId));
+  if (item) { await ensureRankingAssetManifest(); window.dispatchEvent(new CustomEvent('boxthislap:ranking-images',{ detail:{ kind,itemId:String(itemId),title:item.name,bundledPaths:siteData.rankingAssets?.[kind]?.[String(itemId)] || [] } })); }
 });
 
 document.addEventListener("click", (event) => {
@@ -15661,7 +15701,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "workouts") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "image-editor", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }

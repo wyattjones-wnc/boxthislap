@@ -470,3 +470,5 @@ export const FANTASY_CRITIC_PUBLISHER_MANAGERS = {
   "pepper publishing": "Jordan",
   "totalsoftware de venezuela": "Michael",
 };
+
+export const IMAGE_LIBRARY_ENDPOINT = "https://box-this-lap-image-library.boxthislap.workers.dev";

@@ -27,6 +27,13 @@ test("match media import is idempotent and preserves save state through Seen thr
   context.after(() => worker.dispose());
   const DB = await worker.getD1Database("DB");
   await executeSql(DB, await readFile(schemaPath, "utf8"));
+  await executeSql(
+    DB,
+    await readFile(
+      new URL("../migrations/0012_image_library.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   const env = { DB };
   const scanId = "scan-1";
   await syncMatchMediaScan(env, scanId, "start", {});
@@ -94,6 +101,13 @@ test("Getty embeds cannot be hard saved", async (context) => {
   context.after(() => worker.dispose());
   const DB = await worker.getD1Database("DB");
   await executeSql(DB, await readFile(schemaPath, "utf8"));
+  await executeSql(
+    DB,
+    await readFile(
+      new URL("../migrations/0012_image_library.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   await DB.prepare(
     `INSERT INTO footy_media_images (id, source, source_image_key, original_page_url, render_mode, embed_url, first_observed_at, last_observed_at)
     VALUES ('getty-1', 'getty', '1', 'https://gettyimages.com/1', 'getty_embed', 'https://embed.gettyimages.com/embed/1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
@@ -109,6 +123,13 @@ test("review can keep a training gallery without a match", async (context) => {
   context.after(() => worker.dispose());
   const DB = await worker.getD1Database("DB");
   await executeSql(DB, await readFile(schemaPath, "utf8"));
+  await executeSql(
+    DB,
+    await readFile(
+      new URL("../migrations/0012_image_library.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   await executeSql(DB, await readFile(trainingMigrationPath, "utf8"));
   await DB.prepare(
     `INSERT INTO footy_media_galleries
@@ -141,6 +162,13 @@ test("Hard Save copies an imported club image and applies Soft Save", async (con
   context.after(() => worker.dispose());
   const DB = await worker.getD1Database("DB");
   await executeSql(DB, await readFile(schemaPath, "utf8"));
+  await executeSql(
+    DB,
+    await readFile(
+      new URL("../migrations/0012_image_library.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   await DB.prepare(
     `INSERT INTO footy_media_images (id, source, source_image_key, source_image_url, normalized_url, original_page_url, render_mode, first_observed_at, last_observed_at)
      VALUES ('club-1', 'arsenal', '1', 'https://media.arsenal.com/1.jpg?width\\u003d1200,', 'https://media.arsenal.com/1.jpg', 'https://arsenal.com/gallery/1', 'image', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
@@ -154,8 +182,14 @@ test("Hard Save copies an imported club image and applies Soft Save", async (con
       ok: true,
       status: 200,
       url: "https://media.arsenal.com/1.jpg",
-      headers: new Headers({ "Content-Type": "image/jpeg" }),
-      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+      headers: new Headers({ "Content-Type": "image/png" }),
+      arrayBuffer: async () =>
+        Uint8Array.from(
+          Buffer.from(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==",
+            "base64",
+          ),
+        ).buffer,
     };
   };
   context.after(() => {
@@ -164,6 +198,10 @@ test("Hard Save copies an imported club image and applies Soft Save", async (con
   const saved = await hardSaveMatchMedia(
     {
       DB,
+      MEDIA_BUDGET: {
+        idFromName: (name) => name,
+        get: () => ({ fetch: async () => Response.json({ ok: true }) }),
+      },
       MATCH_MEDIA: {
         put: async (key, bytes) => {
           stored = { key, size: bytes.byteLength };
@@ -176,7 +214,7 @@ test("Hard Save copies an imported club image and applies Soft Save", async (con
   assert.equal(saved.hardSaved, true);
   assert.equal(saved.softSaved, true);
   assert.equal(requestedUrl, "https://media.arsenal.com/1.jpg");
-  assert.deepEqual(stored, { key: "match-images/club-1.jpg", size: 3 });
+  assert.deepEqual(stored, { key: "match-images/club-1.png", size: 70 });
   const state = await DB.prepare(
     "SELECT soft_saved_at FROM footy_media_manager_state WHERE manager_id = '6' AND image_id = 'club-1'",
   ).first();
@@ -198,7 +236,7 @@ function image(id, key, firstObservedAt) {
 async function executeSql(db, sql) {
   const statements = String(sql)
     .replaceAll("\r", "")
-    .split(/;\s*(?:\n|$)/)
+    .split(/;\s*(?:\n|$)(?!\s*END\b)/)
     .map((value) => value.trim())
     .filter(Boolean);
   for (const statement of statements) await db.prepare(statement).run();
@@ -214,9 +252,33 @@ async function createWorker() {
             DB: { name: `footy-media-${crypto.randomUUID()}`, type: "d1" },
           },
           manifest: {
-            mainModule: "index.js",
+            mainModule: "workers/footy-notes/src/index.js",
             modules: {
-              "index.js": {
+              "workers/shared/file-metadata.js": {
+                contents: await readFile(
+                  new URL("../../shared/file-metadata.js", import.meta.url),
+                  "utf8",
+                ),
+                type: "esm",
+              },
+              "workers/image-library/src/image-info.js": {
+                contents: await readFile(
+                  new URL(
+                    "../../image-library/src/image-info.js",
+                    import.meta.url,
+                  ),
+                  "utf8",
+                ),
+                type: "esm",
+              },
+              "workers/shared/media-budget.js": {
+                contents: await readFile(
+                  new URL("../../shared/media-budget.js", import.meta.url),
+                  "utf8",
+                ),
+                type: "esm",
+              },
+              "workers/footy-notes/src/index.js": {
                 contents: await readFile(workerPath, "utf8"),
                 type: "esm",
               },

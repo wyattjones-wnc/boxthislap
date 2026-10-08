@@ -57,9 +57,33 @@ test("roster sync merges provider data, preserves overrides, and flags departure
             ROSTER_SYNC_TOKEN: { type: "text", value: "test-token" },
           },
           manifest: {
-            mainModule: "index.js",
+            mainModule: "workers/footy-notes/src/index.js",
             modules: {
-              "index.js": {
+              "workers/shared/file-metadata.js": {
+                contents: await readFile(
+                  new URL("../../shared/file-metadata.js", import.meta.url),
+                  "utf8",
+                ),
+                type: "esm",
+              },
+              "workers/image-library/src/image-info.js": {
+                contents: await readFile(
+                  new URL(
+                    "../../image-library/src/image-info.js",
+                    import.meta.url,
+                  ),
+                  "utf8",
+                ),
+                type: "esm",
+              },
+              "workers/shared/media-budget.js": {
+                contents: await readFile(
+                  new URL("../../shared/media-budget.js", import.meta.url),
+                  "utf8",
+                ),
+                type: "esm",
+              },
+              "workers/footy-notes/src/index.js": {
                 contents: await readFile(workerPath, "utf8"),
                 type: "esm",
               },
@@ -337,7 +361,7 @@ async function getJson(worker, route) {
 async function executeSql(db, sql) {
   const statements = String(sql)
     .replaceAll("\r", "")
-    .split(/;\s*(?:\n|$)/)
+    .split(/;\s*(?:\n|$)(?!\s*END\b)/)
     .map((value) => value.trim())
     .filter(Boolean);
   for (const statement of statements) await db.prepare(statement).run();

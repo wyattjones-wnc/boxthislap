@@ -25,3 +25,9 @@ bucket_name = "box-this-lap-footy-roster-media"
 [[r2_buckets]]
 binding = "MATCH_MEDIA"
 bucket_name = "box-this-lap-footy-match-media"
+
+# Private shared namespace; deploying requires image-library to exist first.
+[[durable_objects.bindings]]
+name = "MEDIA_BUDGET"
+class_name = "MediaBudget"
+script_name = "box-this-lap-image-library"

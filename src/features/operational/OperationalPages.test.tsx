@@ -252,10 +252,8 @@ describe("operational React pages", () => {
             {
               archived: false,
               canEdit: true,
-              canExclude: true,
+              canArchive: true,
               draggable: true,
-              excluded: false,
-              exclusionLabel: "Exclude",
               guideLinks: [],
               id: "game-1",
               meta: ["2026"],
@@ -287,10 +285,8 @@ describe("operational React pages", () => {
     const row = {
       archived: false,
       canEdit: false,
-      canExclude: true,
+      canArchive: true,
       draggable: false,
-      excluded: false,
-      exclusionLabel: "Archive",
       guideLinks: [],
       id: "mcu-1",
       meta: [],
@@ -298,7 +294,7 @@ describe("operational React pages", () => {
       name: "Shared MCU movie",
       rankLabel: "1",
     };
-    const update = (excluded: boolean) =>
+    const update = (archived: boolean) =>
       window.dispatchEvent(
         new CustomEvent("boxthislap:ranking-list:mcu", {
           detail: {
@@ -307,7 +303,7 @@ describe("operational React pages", () => {
             itemLabel: "MCU",
             loading: false,
             messages: [],
-            rows: [{ ...row, excluded }],
+            rows: [{ ...row, archived }],
           },
         }),
       );
@@ -325,7 +321,9 @@ describe("operational React pages", () => {
       name: "Restore Shared MCU movie",
     });
     expect(restore.getAttribute("data-ranking-archive")).toBe("mcu-1");
-    expect(restore.getAttribute("data-ranking-kind")).toBe("mcu");
+    expect(
+      restore.closest("[data-ranking-kind]")?.getAttribute("data-ranking-kind"),
+    ).toBe("mcu");
     expect(screen.getByText("Archived", { selector: "small" })).not.toBeNull();
     expect(document.querySelector("#ranking-show-excluded-toggle")).toBeNull();
     expect(

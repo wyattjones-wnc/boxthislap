@@ -1320,10 +1320,8 @@ type RankingKind = "games" | "mcu" | "movies" | "tv";
 interface RankingItemView {
   archived: boolean;
   canEdit: boolean;
-  canExclude: boolean;
+  canArchive: boolean;
   draggable: boolean;
-  excluded: boolean;
-  exclusionLabel: string;
   guideLinks: OperationalGuideLink[];
   id: string;
   meta: string[];
@@ -1375,11 +1373,7 @@ export function RankingsPage() {
           hidden
         />
       </PageHeading>
-      <div
-        className="ranking-filters ranking-page-filters"
-        id="ranking-filters"
-        hidden
-      >
+      <div className="ranking-filters" id="ranking-filters" hidden>
         <div className="ranking-filter-row">
           <FloatingField className="ranking-select-control">
             <span>Manager</span>
@@ -1457,7 +1451,7 @@ export function RankingsPage() {
             </select>
           </FloatingField>
         </div>
-        <div className="ranking-filter-row ranking-filter-bottom-row">
+        <div className="ranking-filter-row">
           <label className="toggle-row" id="ranking-show-archived-control">
             <span>Show Archived</span>
             <input
@@ -1466,7 +1460,7 @@ export function RankingsPage() {
               role="switch"
             />
           </label>
-          <label className="toggle-row ranking-more-data-control">
+          <label className="toggle-row">
             <span>More Data</span>
             <input
               id="ranking-more-data-toggle"
@@ -1620,7 +1614,7 @@ function RankingCard({
 }) {
   return (
     <article
-      className={`ranking-item${item.archived || item.excluded ? " is-excluded" : ""}${dragging ? " is-dragging" : ""}`}
+      className={`ranking-item${item.archived ? " is-excluded" : ""}${dragging ? " is-dragging" : ""}`}
       data-ranking-kind={kind}
       data-ranking-id={item.id}
       data-sortable-id={item.id}
@@ -1646,7 +1640,7 @@ function RankingCard({
             </span>
           ) : null}
         </span>
-        {item.archived || item.excluded ? (
+        {item.archived ? (
           <small className="ranking-excluded-label">Archived</small>
         ) : null}
         {item.movement ? <small>{item.movement}</small> : null}
@@ -1669,7 +1663,7 @@ function RankingCard({
       ) : (
         <span className="ranking-spacer" aria-hidden="true" />
       )}
-      {item.canEdit || item.canExclude ? (
+      {item.canEdit || item.canArchive ? (
         <span className="ranking-item-actions">
           {item.canEdit ? (
             <IconButton
@@ -1677,22 +1671,14 @@ function RankingCard({
               icon={<Pencil />}
               label={`Edit ${item.name}`}
               data-ranking-edit={item.id}
-              data-ranking-kind={kind}
             />
           ) : null}
-          {item.canExclude ? (
+          {item.canArchive ? (
             <IconButton
               className="ranking-row-action"
-              icon={
-                item.archived || item.excluded ? (
-                  <ArchiveRestore />
-                ) : (
-                  <Archive />
-                )
-              }
-              label={`${item.archived || item.excluded ? "Restore" : "Archive"} ${item.name}`}
+              icon={item.archived ? <ArchiveRestore /> : <Archive />}
+              label={`${item.archived ? "Restore" : "Archive"} ${item.name}`}
               data-ranking-archive={item.id}
-              data-ranking-kind={kind}
             />
           ) : null}
         </span>

@@ -3569,7 +3569,7 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   padding: 14px;
 }
 
-.ranking-page-filters {
+#ranking-filters {
   flex-direction: column;
   align-items: stretch;
 }
@@ -3586,11 +3586,11 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   display: none;
 }
 
-.ranking-more-data-control {
+#ranking-filters .toggle-row:last-child {
   margin-left: auto;
 }
 
-.ranking-page-filters .toggle-row {
+#ranking-filters .toggle-row {
   align-items: center;
   display: inline-flex;
   gap: 8px;
@@ -3599,7 +3599,7 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   cursor: pointer;
 }
 
-.ranking-page-filters input[role="switch"] {
+#ranking-filters input[role="switch"] {
   appearance: none;
   background: var(--muted);
   border: 1px solid var(--line);
@@ -3612,7 +3612,7 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   width: 42px;
 }
 
-.ranking-page-filters input[role="switch"]::before {
+#ranking-filters input[role="switch"]::before {
   background: var(--panel);
   border-radius: 50%;
   content: "";
@@ -3623,15 +3623,15 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   width: 18px;
 }
 
-.ranking-page-filters input[role="switch"]:checked {
+#ranking-filters input[role="switch"]:checked {
   background: var(--track);
 }
 
-.ranking-page-filters input[role="switch"]:checked::before {
+#ranking-filters input[role="switch"]:checked::before {
   transform: translateX(18px);
 }
 
-.ranking-page-filters input[role="switch"]:focus-visible {
+#ranking-filters input[role="switch"]:focus-visible {
   outline: 2px solid var(--track);
   outline-offset: 3px;
 }

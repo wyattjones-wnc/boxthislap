@@ -9680,10 +9680,8 @@ function renderRankingList(kind) {
         return {
           archived: Boolean(item.archived) || excluded,
           canEdit: isOwner && kind !== "mcu" && !isSnapshotView,
-          canExclude: isOwner && activeRankingSnapshotId === "current",
+          canArchive: isOwner && activeRankingSnapshotId === "current",
           draggable: isManualView,
-          excluded,
-          exclusionLabel: excluded ? "Restore" : "Archive",
           guideLinks: kind === "games" ? getGuideEntryLinkViews("ranking", item.id) : [],
           id: item.id,
           meta: shouldShowRankingMoreData ? getRankingItemMetaParts(item) : [],
@@ -14687,14 +14685,14 @@ document.addEventListener("click", (event) => {
   if (editAction) {
     event.preventDefault();
     event.stopPropagation();
-    openRankingItemDialog(editAction.getAttribute("data-ranking-kind") || activeRankingKind, editAction.getAttribute("data-ranking-edit") || "");
+    openRankingItemDialog(editAction.closest("[data-ranking-kind]")?.getAttribute("data-ranking-kind") || activeRankingKind, editAction.getAttribute("data-ranking-edit") || "");
     return;
   }
   const archiveAction = event.target.closest("[data-ranking-archive]");
   if (archiveAction) {
     event.preventDefault();
     event.stopPropagation();
-    const kind = archiveAction.getAttribute("data-ranking-kind") || activeRankingKind;
+    const kind = archiveAction.closest("[data-ranking-kind]")?.getAttribute("data-ranking-kind") || activeRankingKind;
     const itemId = archiveAction.getAttribute("data-ranking-archive") || "";
     const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
     setRankingItemArchived(kind, itemId, !(item?.archived || isRankingItemExcluded(kind, itemId)));

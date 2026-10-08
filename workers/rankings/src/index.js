@@ -787,11 +787,19 @@ function camelItem(row) {
   };
 }
 
-async function addItem(env, managerId, type, body) {
+export async function addItem(env, managerId, type, body) {
   const name = cleanName(body.name);
   await assertRevision(env, managerId, type, body.revision);
-  const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM ranking_items WHERE manager_id = ? AND ranking_type = ? AND archived = 0").bind(managerId, type).first();
-  const nextCount = Number(count?.count || 0) + 1;
+  const existing = await env.DB.prepare("SELECT i.item_id, i.name, i.manual_rank, e.rating, e.wins, e.losses FROM ranking_items i LEFT JOIN ranking_elo e ON e.manager_id = i.manager_id AND e.ranking_type = i.ranking_type AND e.item_id = i.item_id WHERE i.manager_id = ? AND i.ranking_type = ? AND i.archived = 0").bind(managerId, type).all();
+  const rows = (existing.results || []).map((row) => ({
+    ...row,
+    rating: Number(row.rating ?? BASE_RATING),
+    wins: Number(row.wins || 0),
+    losses: Number(row.losses || 0),
+  })).sort((a, b) => b.rating - a.rating || b.wins - a.wins || a.losses - b.losses ||
+    a.manual_rank - b.manual_rank || a.name.localeCompare(b.name, undefined, { numeric: true }) ||
+    a.item_id.localeCompare(b.item_id, undefined, { numeric: true }));
+  const nextCount = rows.length + 1;
   const rank = clampRank(body.manualRank, nextCount);
   const seedRating = Math.round(BASE_RATING + (((nextCount + 1) / 2) - rank) * 8);
   const itemId = crypto.randomUUID();
@@ -801,8 +809,21 @@ async function addItem(env, managerId, type, body) {
     env.DB.prepare("INSERT INTO ranking_elo (manager_id, ranking_type, item_id, rating) VALUES (?, ?, ?, ?)").bind(managerId, type, itemId, seedRating),
     env.DB.prepare("INSERT INTO ranking_seeds (manager_id, ranking_type, item_id, seed_rank, seed_rating, reason) VALUES (?, ?, ?, ?, ?, 'Initial rating from manual placement')").bind(managerId, type, itemId, rank, seedRating),
   ];
+  const snapshotId = rows.length ? crypto.randomUUID() : null;
+  if (snapshotId) {
+    statements.push(env.DB.prepare("INSERT INTO ranking_snapshots (snapshot_id, manager_id, ranking_type, label, reason, source) VALUES (?, ?, ?, ?, ?, 'calculated')")
+      .bind(snapshotId, managerId, type, new Date().toISOString(), `Normalized before adding ${name}`));
+    rows.forEach((row, index) => statements.push(env.DB.prepare("INSERT INTO ranking_snapshot_items (snapshot_id, item_id, item_name, rank, rating, wins, losses, games) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(snapshotId, row.item_id, row.name, index + 1, row.rating, row.wins, row.losses, row.wins + row.losses)));
+  }
+  const normalizedIds = rows.map((row) => row.item_id);
+  normalizedIds.splice(rank - 1, 0, itemId);
+  normalizedIds.forEach((id, index) => statements.push(eloStatement(env, managerId, type, id, {
+    rating: Math.round(BASE_RATING + (((nextCount + 1) / 2) - (index + 1)) * 8), wins: 0, losses: 0,
+  }, "")));
+  statements.push(env.DB.prepare("DELETE FROM ranking_choices WHERE manager_id = ? AND ranking_type = ?").bind(managerId, type));
   await runMutationBatch(env, managerId, type, body.revision, statements);
-  return { item: { id: itemId, name, manualRank: rank, archived: false }, revision: Number(body.revision) + 1 };
+  return { item: { id: itemId, name, manualRank: rank, archived: false }, snapshotId, revision: Number(body.revision) + 1 };
 }
 
 async function updateItem(env, managerId, type, itemId, body) {

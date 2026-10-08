@@ -266,3 +266,35 @@ test("embedded crop remains available when cloud settings fail", async ({
     ),
   ).toEqual({ width: 80, height: 60 });
 });
+
+test("brush and eraser hardness produces feathered edges", async ({ page }) => {
+  await page.goto("/#image-editor");
+  const editor = page.locator("[data-image-editor]");
+  await expect(editor).toBeVisible();
+  await editor.getByLabel("Canvas width", { exact: true }).fill("80");
+  await editor.getByLabel("Canvas height", { exact: true }).fill("60");
+  await editor
+    .getByRole("button", { name: "Resize canvas", exact: true })
+    .click();
+  await editor
+    .getByRole("button", { name: "Paint layer", exact: true })
+    .click();
+  await editor
+    .getByRole("combobox", { name: "Tool", exact: true })
+    .selectOption("brush");
+  await editor.getByLabel("Tool hardness", { exact: true }).fill("0");
+  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await expect.poll(async () => (await pixel(page))[3]).toBeGreaterThan(0);
+  expect((await pixel(page))[3]).toBeLessThan(255);
+  await editor.getByRole("button", { name: "Undo", exact: true }).click();
+  await editor.getByLabel("Tool hardness", { exact: true }).fill("100");
+  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await expect.poll(async () => (await pixel(page))[3]).toBe(255);
+  await editor
+    .getByRole("combobox", { name: "Tool", exact: true })
+    .selectOption("eraser");
+  await editor.getByLabel("Tool hardness", { exact: true }).fill("0");
+  await editor.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await expect.poll(async () => (await pixel(page))[3]).toBeLessThan(255);
+  expect((await pixel(page))[3]).toBeGreaterThan(0);
+});

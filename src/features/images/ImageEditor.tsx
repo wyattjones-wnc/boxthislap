@@ -83,6 +83,7 @@ export function ImageEditor({
   const [tool, setTool] = useState<Tool>("move");
   const [color, setColor] = useState("#ffffff");
   const [brushSize, setBrushSize] = useState(24);
+  const [hardness, setHardness] = useState(100);
   const [tolerance, setTolerance] = useState(24);
   const [zoom, setZoom] = useState(0.5);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -316,15 +317,42 @@ export function ImageEditor({
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = brushSize / Math.sqrt(g.layer.scaleX * g.layer.scaleY);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(end.x, end.y, ctx.lineWidth / 2, 0, Math.PI * 2);
-    ctx.fill();
+    if (hardness < 100) {
+      const radius = ctx.lineWidth / 2;
+      const distance = Math.hypot(end.x - start.x, end.y - start.y);
+      const steps = Math.max(
+        1,
+        Math.ceil(distance / Math.max(0.5, radius / 4)),
+      );
+      for (let i = distance === 0 ? steps : 0; i <= steps; i++) {
+        const x = start.x + ((end.x - start.x) * i) / steps;
+        const y = start.y + ((end.y - start.y) * i) / steps;
+        const gradient = ctx.createRadialGradient(
+          x,
+          y,
+          (radius * hardness) / 100,
+          x,
+          y,
+          radius,
+        );
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, `${color}00`);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(end.x, end.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
     g.point = p;
     preview(g.working, g.layer);
@@ -799,6 +827,20 @@ export function ImageEditor({
                   }
                 />
               </FloatingField>
+              {(tool === "brush" || tool === "eraser") && (
+                <label>
+                  Hardness {hardness}%
+                  <input
+                    aria-label="Tool hardness"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={hardness}
+                    onChange={(e) => setHardness(Number(e.target.value))}
+                  />
+                  <small>0% soft · 100% sharp</small>
+                </label>
+              )}
               <FloatingField label="Color tolerance">
                 <input
                   type="number"

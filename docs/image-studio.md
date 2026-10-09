@@ -30,9 +30,9 @@ Defaults are **disabled/uninitialized**, 512 MB reserved storage, 100,000 reads 
 
 The gate limits R2 activity; requests reaching Workers/authentication and the gate itself still use Workers/DO resources, including rejected requests. Metadata queries consume D1. Direct bucket access, other Workers, external S3 clients, and unrelated Cloudflare services bypass this accounting. Keep these resources on Workers Free if the requirement is no automatic compute overages; its SQLite DO operations fail at free limits rather than charging. Do not upgrade plans or enable public bucket domains as part of this rollout. Verify the actual account configuration. [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/) and [R2 pricing](https://developers.cloudflare.com/r2/pricing/) explain the independent allowances.
 
-## Rollout: prepared, not executed
+## Rollout procedure
 
-Deployment and migration require explicit approval and the account usage review in `.agents/deployment.md`. Code delivery to `dev` does not provision cloud resources. The deployment workflow is manual-only; a normal push builds Pages and runs local quality checks.
+The image-library schema, bucket, private gate, and both Workers were deployed on 2026-10-09; see the deployment record below. The R2 gate remains uninitialized and disabled. Further deployment and migration require explicit approval and the account usage review in `.agents/deployment.md`. Code delivery to `dev` does not provision cloud resources. The deployment workflow is manual-only; a normal push builds Pages and runs local quality checks.
 
 1. Verify the Workers plan, current billing period, account R2 storage/operations, D1 usage, and any other R2 access paths. Confirm public bucket access is disabled. Record current storage across roster, match, and library buckets, plus conservative headroom for other account usage. Do not substitute zero for unknown usage.
 2. Inspect pending Footy migrations. Review each pending migration, including older ones, before applying them. This task's new schema has zero existing rows to rewrite; it creates empty tables/indexes/triggers. No image objects are copied by the migration.
@@ -61,3 +61,18 @@ A limited first stage can make presets, shared title metadata, and the safety se
 Estimated impact: zero R2 object bytes, zero R2 Get/Put/List/Delete operations, one empty migration-history record plus SQLite schema metadata, conservatively under 256 KiB additional D1 schema storage, and a few deployment/management requests. The gate status read initializes a small SQLite DO state record. There are no new scheduled jobs. Normal metadata use subsequently consumes Workers/D1/DO requests; it is not an account-wide spending cap. Verify Workers Free eligibility before deploying the SQLite DO and review current account allowances before any later R2 enablement. Remaining account headroom has not been measured and must not be treated as zero usage.
 
 The manual deployment workflow exists only on `dev` and is not discoverable through the GitHub workflow API on the default branch. Do not promote to `main` to work around that. Once this bounded scope is explicitly approved, direct deployment with the ready environment credentials is an available fallback; never print or copy their values.
+
+## Deployment record — 2026-10-09
+
+The user authorized “Complete all deploys” after reviewing the bounded rollout above. Completed from `dev` commit `61b540496b6607109d2502120eaca9d0f9bcf3af` using the ready environment credentials because the manual GitHub workflow is not available on the default branch:
+
+- Created `box-this-lap-image-library` as Standard R2 storage; confirmed its public managed domain is disabled.
+- Applied only `0012_image_library.sql`: 16 statements, 4.72 ms. The database has 22 tables and 2,166,784 bytes, up 86,016 bytes (84 KiB) from the observed baseline. No existing application rows were rewritten.
+- Deployed Image Library and its SQLite Durable Object: version `8eaaf1b5-3c5d-42dd-b6f8-a6df7634c21e`.
+- Deployed Footy Notes with the external shared-gate binding: version `50417f7b-76ac-4d8e-96e9-e305bf993228`.
+
+Both health endpoints returned 200; preset CORS preflight from the site's origin returned 204; invalid credentials returned 401. A single cold library request and cold Footy roster request each returned the expected structured 503 before R2 access. Initial urllib client requests received Cloudflare 1010; browser-compatible requests succeeded. Focused image-library, roster, and match-media tests passed locally. Deployment versions were verified through the management API.
+
+Zero R2 object bytes were uploaded and no object Get/Put/List/Delete operations were performed. No bucket scan, backfill, scheduled job, preset seed, plan upgrade, or promotion to `main` was performed. The subscription response still lists R2 Paid; no paid Workers subscription was listed. Account-wide remaining free allowances have not been measured.
+
+Presets, shared metadata, and safety settings can now connect after refresh/sign-in. The shared R2 gate starts closed: cloud image reads and uploads require an admin to supply the verified storage baseline and enable reviewed limits. Cached images remain usable. Do not enter zero for unknown existing storage or bypass the gate to restore availability.

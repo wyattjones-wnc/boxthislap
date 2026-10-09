@@ -50,6 +50,8 @@ Normal inbox operations use D1 only. YouTube is contacted during explicit refres
 
 Refresh advances past individual channel, duration, or playlist-metadata failures and returns warnings to the page instead of leaving the sync cursor permanently stalled.
 
+Refresh keeps up to five channel checks in flight, starting another as soon as a slot becomes available. Subscription metadata is written in D1 batches of up to 50 channels instead of one database round trip per channel. These optimizations preserve the seven-day upload scan and the existing YouTube request count and concurrency limit.
+
 Each completed manual sync marks any remaining `new` video older than 30 days as watched. Channel filters use stable YouTube channel IDs while displaying the current channel names.
 
 The public site's published `YouTube` sheet controls which channels are synced, which channels appear for each exact priority selection, and their title filters. Its channel table uses `ID`, `Display Name`, `YouTube Channel ID`, `Priority`, and `IsRemoved`; rows with a true `IsRemoved` value are excluded from display and manual refreshes. Its priority table uses `Priority`, `Description`, and an optional `Filter` column; comma-separated filter phrases use OR matching against video titles.

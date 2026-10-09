@@ -30,6 +30,7 @@ import { useAppState } from "./providers";
 import "./Shell.module.css";
 
 const headerArt = [
+  { name: "offline", image: "assets/final/offline-header.jpg" },
   {
     name: "default",
     image: "assets/final/default-header.jpg?v=202607210001",
@@ -114,7 +115,7 @@ const navIcons: Record<string, LucideIcon> = {
 };
 
 export function SiteShell() {
-  const { route, session } = useAppState();
+  const { route, session, isOnline } = useAppState();
   const topbarRef = useRef<HTMLElement>(null);
   const scope = getNavScope(route);
   const isAdmin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
@@ -123,7 +124,11 @@ export function SiteShell() {
   const brandImage = window.location.pathname.includes("/dev/")
     ? "assets/dev-apple-touch-icon.png"
     : "assets/box-this-lap-logo.jpg";
-  const activeArt = scope === "home" ? "default" : scope;
+  const activeArt = !isOnline
+    ? "offline"
+    : scope === "home"
+      ? "default"
+      : scope;
 
   useEffect(() => {
     if (!window.matchMedia("(max-width: 760px)").matches) return;

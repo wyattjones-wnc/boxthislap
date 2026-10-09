@@ -211,3 +211,16 @@
     justify-content: flex-start;
   }
 }
+
+.offlineCard {
+  padding: 10px 14px;
+  gap: 10px;
+}
+.offlineCard :global(.image-cache-control) {
+  flex: 0 0 auto;
+}
+@media (max-width: 760px) {
+  .offlineCard {
+    flex-wrap: wrap;
+  }
+}

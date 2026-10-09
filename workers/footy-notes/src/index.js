@@ -1,3 +1,6 @@
+import { imageInfo } from '../../image-library/src/image-info.js';
+import { recordFootyFile, forgetFootyFile } from '../../shared/file-metadata.js';
+import { reserveMedia, releaseMediaStorage, mediaBudget } from '../../shared/media-budget.js';
 export default {
   async fetch(request, env, context) {
     const origin = request.headers.get("Origin") || "";
@@ -20,12 +23,12 @@ export default {
 
       const rosterMediaRoute = url.pathname.match(/^\/media\/rosters\/(.+)$/);
       if (request.method === "GET" && rosterMediaRoute) {
-        return getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), request, context);
+        return await getRosterMedia(env, decodeURIComponent(rosterMediaRoute[1]), request, context);
       }
 
       const matchMediaAssetRoute = url.pathname.match(/^\/media\/match-images\/([^/]+)$/);
       if (request.method === "GET" && matchMediaAssetRoute) {
-        return getMatchMediaAsset(env, decodeURIComponent(matchMediaAssetRoute[1]), request, context);
+        return await getMatchMediaAsset(env, decodeURIComponent(matchMediaAssetRoute[1]), request, context);
       }
 
       if (request.method === "GET" && url.pathname === "/api/match-media") {
@@ -92,7 +95,7 @@ export default {
 
       if (request.method === "GET" && url.pathname === "/api/roster-media/usage") {
         await requireAdmin(request, env);
-        return json({ ok: true, usage: await getRosterMediaUsage(env) }, 200, cors);
+        return json({ ok: true, usage: await getRosterMediaUsage(env), sharedBudget: await mediaBudget(env, '/status') }, 200, cors);
       }
 
       if (request.method === "POST" && url.pathname === "/api/rosters/sync") {
@@ -197,7 +200,7 @@ export default {
       if (status >= 500) console.error(error);
       return json({
         ok: false,
-        error: status >= 500 ? "Footy data could not be saved." : error.message,
+        error: status >= 500 && status !== 503 ? "Footy data could not be saved." : error.message,
       }, status, cors);
     }
   },
@@ -580,9 +583,16 @@ async function saveRosterMedia(env, id, body, managerId) {
   if (!match) throw httpError(400, "Upload a PNG, JPEG, or WebP image.");
   const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
   if (bytes.byteLength > 5 * 1024 * 1024) throw httpError(413, "Roster images must be 5 MB or smaller.");
+  const info = imageInfo(bytes);
+  if (info.mime !== match[1]) throw httpError(415, 'Image bytes do not match their format.');
+  let preset = null;
+  if (body.presetId) {
+    preset = await env.DB.prepare('SELECT * FROM image_presets WHERE id=?').bind(body.presetId).first();
+    if (!preset || preset.context !== `footy-${kind === 'card' ? 'card' : 'profile'}` || preset.version !== body.presetVersion || preset.width !== info.width || preset.height !== info.height) throw httpError(409, 'Crop preset changed or does not match this image.');
+  } else if (kind === 'card' && (info.width !== 2500 || info.height !== 3520)) throw httpError(400, 'Trading-card images must be 2500 × 3520 or use an admin crop preset.');
   await ensureRosterMediaLedger(env);
   const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[match[1]];
-  const key = `${row.team_id}/${row.season}/${id}/${kind}-${Date.now()}.${extension}`;
+  const key = `${row.team_id}/${row.season}/${id}/${kind}-${crypto.randomUUID()}.${extension}`;
   const overrides = safeJson(row.overrides);
   const field = kind === "profile" ? "profileImage" : "cardImage";
   const defaultField = kind === "profile" ? "useDefaultProfileImage" : "useDefaultCardImage";
@@ -595,8 +605,10 @@ async function saveRosterMedia(env, id, body, managerId) {
   const projectedStorage = usage.storageBytes - Number(previousObject?.size_bytes || 0) + bytes.byteLength;
   if (projectedStorage > ROSTER_MEDIA_STORAGE_LIMIT) throw httpError(413, "Roster media has reached its free-tier safety limit. Delete or replace images before uploading more.");
   if (usage.monthlyUploads >= ROSTER_MEDIA_MONTHLY_UPLOAD_LIMIT) throw httpError(429, "Roster media has reached its monthly upload safety limit. Try again next month.");
-  if (previousKey && previousKey !== key) await env.ROSTER_MEDIA.delete(previousKey);
+  await reserveMedia(env, 'write', bytes.byteLength);
+  if (previousKey && previousKey !== key) await reserveMedia(env, 'delete');
   await env.ROSTER_MEDIA.put(key, bytes, { httpMetadata: { contentType: match[1], cacheControl: "public, max-age=31536000, immutable" } });
+  await recordFootyFile(env, { contentKey: `player:${id}`, title: String(overrides.name || safeJson(row.provider_data).name || id), bucket: 'roster', key, path: `https://box-this-lap-footy-notes.boxthislap.workers.dev/media/rosters/${key}`, mime: info.mime, width: info.width, height: info.height, bytes: bytes.length, preset, managerId });
   const period = new Date().toISOString().slice(0, 7);
   const statements = [
     env.DB.prepare(`INSERT INTO footy_roster_media_objects (object_key, size_bytes, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -610,6 +622,11 @@ async function saveRosterMedia(env, id, body, managerId) {
   delete overrides[defaultField];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
     .bind(JSON.stringify(overrides), managerId, id).run();
+  if (previousKey && previousKey !== key) {
+    await env.ROSTER_MEDIA.delete(previousKey);
+    await forgetFootyFile(env, 'roster', previousKey);
+    await releaseMediaStorage(env, Number(previousObject?.size_bytes || 0), `roster:${previousKey}`);
+  }
   return { player: await getRosterPlayer(env, id), usage: await getRosterMediaUsage(env, { reconciled: true }) };
 }
 
@@ -622,7 +639,12 @@ async function deleteRosterMedia(env, id, kind, managerId) {
   const field = kind === "profile" ? "profileImage" : "cardImage";
   const path = String(overrides[field] || "").split("?")[0];
   const key = path.startsWith("/media/rosters/") ? path.slice("/media/rosters/".length) : "";
-  if (key) await env.ROSTER_MEDIA.delete(key);
+  if (key) {
+    const object = await env.DB.prepare('SELECT size_bytes FROM footy_roster_media_objects WHERE object_key=?').bind(key).first();
+    await reserveMedia(env, 'delete'); await env.ROSTER_MEDIA.delete(key);
+    await forgetFootyFile(env, 'roster', key);
+    await releaseMediaStorage(env, Number(object?.size_bytes || 0), `roster:${key}`);
+  }
   if (key) await env.DB.prepare("DELETE FROM footy_roster_media_objects WHERE object_key = ?").bind(key).run();
   delete overrides[field];
   await env.DB.prepare("UPDATE footy_roster_players SET overrides = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?")
@@ -653,6 +675,7 @@ async function ensureRosterMediaLedger(env) {
   if (initialized?.state_value === "1") return;
   let cursor;
   do {
+    await reserveMedia(env, 'list');
     const page = await env.ROSTER_MEDIA.list({ cursor, limit: 1000 });
     const statements = (page.objects || []).map((object) => env.DB.prepare(`INSERT INTO footy_roster_media_objects
       (object_key, size_bytes, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -671,8 +694,9 @@ async function getRosterMedia(env, key, request, context) {
   cacheUrl.search = "";
   const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
   const cache = typeof caches === "undefined" ? null : caches.default;
-  const cached = cache ? await cache.match(cacheKey) : null;
+  const cached = cache ? await cache.match(cacheKey).catch(() => null) : null;
   if (cached) return cached;
+  await reserveMedia(env, 'read');
   const object = await env.ROSTER_MEDIA.get(key);
   if (!object) return json({ ok: false, error: "Image was not found." }, 404, headers);
   object.writeHttpMetadata(headers);
@@ -1348,11 +1372,15 @@ export async function hardSaveMatchMedia(env, managerId, imageId) {
   if (contentLength > MATCH_MEDIA_ASSET_LIMIT) throw httpError(413, "The source image is larger than 15 MB.");
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength > MATCH_MEDIA_ASSET_LIMIT) throw httpError(413, "The source image is larger than 15 MB.");
+  const info = imageInfo(bytes);
+  if (info.mime !== mime) throw httpError(415, "Image bytes do not match their declared format.");
   const hashBytes = await crypto.subtle.digest("SHA-256", bytes);
   const contentHash = [...new Uint8Array(hashBytes)].map((value) => value.toString(16).padStart(2, "0")).join("");
   const duplicate = await env.DB.prepare("SELECT id FROM footy_media_images WHERE content_hash = ? AND id <> ? LIMIT 1").bind(contentHash, imageId).first();
   const key = `match-images/${imageId}.${extensions[mime]}`;
+  await reserveMedia(env, 'write', bytes.byteLength);
   await env.MATCH_MEDIA.put(key, bytes, { httpMetadata: { contentType: mime, cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { source: image.source, sourceUrl: String(sourceUrl) } });
+  await recordFootyFile(env, { contentKey: `match:${image.match_id || image.id}`, title: image.caption || image.match_id || 'Match photograph', bucket: 'match', key, path: `https://box-this-lap-footy-notes.boxthislap.workers.dev/media/match-images/${encodeURIComponent(imageId)}`, mime: info.mime, width: info.width, height: info.height, bytes: bytes.byteLength, managerId });
   const now = new Date().toISOString();
   await env.DB.batch([
     env.DB.prepare(`UPDATE footy_media_images SET content_hash = ?, duplicate_of_image_id = ?, hard_asset_key = ?, hard_asset_mime = ?, hard_asset_size = ?, hard_saved_at = ?, hard_save_error = NULL WHERE id = ?`).bind(contentHash, duplicate?.id || null, key, mime, bytes.byteLength, now, imageId),
@@ -1372,6 +1400,11 @@ function mapHardSavedImage(row) {
 
 async function getMatchMediaAsset(env, imageId, request, context) {
   if (!env.MATCH_MEDIA) return new Response("Not found.", { status: 404 });
+  const cacheKey = new Request(new URL(request.url).origin + new URL(request.url).pathname);
+  const cache = typeof caches === 'undefined' ? null : caches.default;
+  const cached = cache ? await cache.match(cacheKey).catch(() => null) : null;
+  if (cached) return cached;
+  await reserveMedia(env, 'read');
   const row = await env.DB.prepare("SELECT hard_asset_key FROM footy_media_images WHERE id = ?").bind(imageId).first();
   if (!row?.hard_asset_key) return new Response("Not found.", { status: 404 });
   const object = await env.MATCH_MEDIA.get(row.hard_asset_key);
@@ -1381,8 +1414,10 @@ async function getMatchMediaAsset(env, imageId, request, context) {
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.set("ETag", object.httpEtag);
   if (request.headers.get("If-None-Match") === object.httpEtag) return new Response(null, { status: 304, headers });
-  context?.waitUntil?.(Promise.resolve());
-  return new Response(object.body, { headers });
+  headers.set('Access-Control-Allow-Origin', '*');
+  const response = new Response(object.body, { headers });
+  if (cache) context?.waitUntil?.(cache.put(cacheKey, response.clone()));
+  return response;
 }
 
 export async function reviewMatchMediaGallery(env, galleryId, body) {

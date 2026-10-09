@@ -21,6 +21,7 @@
 
 - Team following and rollout: [docs/manager-team-following.md](../docs/manager-team-following.md).
 - Push setup and deduplication: [docs/footy-push-notifications.md](../docs/footy-push-notifications.md).
+- Image editing, shared metadata, and R2 usage gates: [images.md](images.md).
 - Notes and roster API: [workers/footy-notes/README.md](../workers/footy-notes/README.md).
 
 ## Regression Risks

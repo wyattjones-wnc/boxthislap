@@ -9,6 +9,10 @@ import {
 } from "./app/App";
 import "./styles/tokens.css";
 
+void import("./features/images/cache").then((module) =>
+  module.installImageCacheRepair(),
+);
+
 const shellRoot = document.querySelector(".site-header");
 const loginRoot = document.querySelector('[data-page="login"]');
 const accountRoot = document.querySelector('[data-page="account-settings"]');
@@ -117,6 +121,7 @@ const specialistRoots = {
   collectibles: document.querySelector('[data-page="collectibles"]'),
   databaseAdmin: document.querySelector('[data-page="database-admin"]'),
   merchandise: document.querySelector('[data-page="merchandise"]'),
+  imageEditor: document.querySelector('[data-page="image-editor"]'),
   matchImages: document.querySelector('[data-page="match-images"]'),
   psn: document.querySelector('[data-page="psn"]'),
   trophyLog: document.querySelector('[data-page="trophy-log"]'),
@@ -160,6 +165,12 @@ Object.values(specialistRoots).forEach((root) => root?.replaceChildren());
   document.body.append(root);
 });
 
+// Compatibility controllers capture Admin Home nodes at startup. Wait for its lazy structure.
+const adminStructureReady = new Promise<void>((resolve) => {
+  window.addEventListener("boxthislap:admin-home-ready", () => resolve(), {
+    once: true,
+  });
+});
 flushSync(() => {
   createRoot(shellRoot).render(
     <App
@@ -188,4 +199,4 @@ if (
 
 observeLegacyFloatingFields(document.body);
 
-void import("../script.js");
+void adminStructureReady.then(() => import("../script.js"));

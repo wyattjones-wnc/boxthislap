@@ -1,3 +1,6 @@
+import { bundledRankingImages, clearSharedRankingImages, loadSharedRankingImages, sharedRankingImages } from './modules/rankingImages.js';
+
+import { loadOfflineSnapshot, initializeOfflineMode } from "./modules/offline.js";
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
@@ -353,7 +356,6 @@ import {
   rankingFilterToggle,
   rankingFilters,
   rankingMoreDataToggle,
-  rankingShowExcludedToggle,
   rankingManagerSelect,
   rankingReadOnly,
   rankingShowArchivedControl,
@@ -497,7 +499,6 @@ let activeRankingSnapshotId = "current";
 let activeRankingCompareSnapshotId = "";
 let shouldShowRankingFilters = false;
 let shouldShowRankingMoreData = false;
-let shouldShowRankingExcluded = false;
 let shouldShowRankingArchived = false;
 let activeRankingManagerId = "";
 let rankingCatalog = null;
@@ -659,6 +660,7 @@ let activeAutocompleteInput = null;
 let footyRosterLoadPromise = null;
 let footyRosterEditMode = false;
 let pendingFootyRosterCardFile = null;
+let pendingFootyRosterCardPreset = null;
 let tradingCardImageEditorState = null;
 const footyRosterDiscoveryStates = new Map();
 const activeFootyRosterSeasons = new Map();
@@ -715,7 +717,7 @@ const router = createRouter({
     (["rankings", "draft-list", "account-settings", "workouts"].includes(pageName) && !siteData.managerSession) ||
     (pageName === "guides" && !siteData.managerSession) ||
     (["formula-1-2026-manage", "formula-1-2026-review"].includes(pageName) && !isCurrentManagerAdmin()) ||
-    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
+    (["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "image-editor", "footy-perfect", "footy-seen", "footy-missing-notes"].includes(pageName) && !isCurrentManagerAdmin()),
   shouldBlockRulesPage: () => !shouldUseNationTestScoring(),
   tabPanels,
   tabs,
@@ -3354,7 +3356,7 @@ function syncFootyNotificationToggle() {
   const enabled = isFootyNotificationEnabled();
   const managerReady = Boolean(getCurrentManagerId());
 
-  footyNotificationToggle.hidden = !managerReady;
+  footyNotificationToggle.hidden = !navigator.onLine || !managerReady;
   footyNotificationToggle.disabled = !managerReady || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
   footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
@@ -3538,12 +3540,17 @@ function isFootyPushNotificationSupported() {
   );
 }
 
+let serviceWorkerRegistrationPromise;
 async function registerBoxThisLapServiceWorker() {
   if (!("serviceWorker" in navigator) || !window.isSecureContext) {
     return null;
   }
 
-  return navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+  serviceWorkerRegistrationPromise ||= navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`, { updateViaCache: "none" }).then((registration) => {
+    if (navigator.onLine) void registration.update().catch((error) => recordDiagnostic("offline worker update failed", error));
+    return registration;
+  });
+  return serviceWorkerRegistrationPromise;
 }
 
 async function initializeImageCache() {
@@ -5467,7 +5474,7 @@ function shouldRefreshFootyMatchNotes() {
 }
 
 function shouldWaitForFootyMatchNotes() {
-  return shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
+  return navigator.onLine && shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
 }
 
 function ensureFootyMatchNotes({ force = false } = {}) {
@@ -6053,6 +6060,7 @@ function openFootyRosterEditor(team, player) {
   const season = roster?.season || getDefaultFootyRosterSeason(team);
   footyRosterEditorForm?.reset();
   pendingFootyRosterCardFile = null;
+  pendingFootyRosterCardPreset = null;
   footyRosterEditorId.value = player?.id || "";
   footyRosterEditorTitle.textContent = player ? `Edit ${player.name}` : "Add player";
   footyRosterEditorSeason.textContent = `${team.prettyName || team.name} • ${season}`;
@@ -6097,6 +6105,17 @@ async function showFootyRosterMediaUsage() {
 }
 
 async function openTradingCardImageEditor(file) {
+  if (window.boxThisLapOpenImageEditor && file) {
+    try {
+      const result = await window.boxThisLapOpenImageEditor({ file, limited: true, width: 2500, height: 3520, context: 'footy-card' });
+      if (!result) { pendingFootyRosterCardFile = null; footyRosterEditorCard.value = ''; return; }
+      pendingFootyRosterCardPreset = result.preset || null;
+      pendingFootyRosterCardFile = new File([result.blob], 'trading-card-positioned.webp', { type: result.blob.type });
+      footyRosterEditorDefaultCard.checked = false;
+      footyRosterEditorStatus.textContent = 'Trading-card image is positioned and ready to upload when you save the player.';
+    } catch (error) { footyRosterEditorStatus.textContent = error.message; }
+    return;
+  }
   if (!file || !tradingCardImageEditorDialog || !tradingCardImageEditorCanvas) return;
   if (!/^image\/(?:png|jpeg|webp)$/.test(file.type)) {
     footyRosterEditorStatus.textContent = "Choose a PNG, JPEG, or WebP image.";
@@ -6197,6 +6216,7 @@ function resetTradingCardImageEditor() {
 function closeTradingCardImageEditor({ discard = true } = {}) {
   if (discard) {
     pendingFootyRosterCardFile = null;
+  pendingFootyRosterCardPreset = null;
     if (footyRosterEditorCard) footyRosterEditorCard.value = "";
   }
   if (tradingCardImageEditorState?.imageUrl) URL.revokeObjectURL(tradingCardImageEditorState.imageUrl);
@@ -6293,7 +6313,7 @@ async function saveFootyRosterEditor() {
       if (!file) continue;
       if (file.size > 5 * 1024 * 1024) throw new Error(`${kind === "profile" ? "Profile" : "Trading-card"} image must be 5 MB or smaller.`);
       footyRosterEditorStatus.textContent = `Uploading ${kind} image...`;
-      const mediaResult = await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media`, { method: "POST", body: { kind, dataUrl: await readFileAsDataUrl(file) } });
+      const mediaResult = await requestFootyRosterApi(`/api/roster-players/${encodeURIComponent(saved.id)}/media`, { method: "POST", body: { kind, dataUrl: await readFileAsDataUrl(file), presetId: kind === "card" ? pendingFootyRosterCardPreset?.id : undefined, presetVersion: kind === "card" ? pendingFootyRosterCardPreset?.version : undefined } });
       saved = mediaResult.player;
     }
     footyRosterEditorDialog.close();
@@ -7073,7 +7093,7 @@ function comparePreviousNextItems(first, second) {
 }
 
 function isNextEditModeEnabled() {
-  return Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
+  return navigator.onLine && Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
 }
 
 function syncNextFilters() {
@@ -9093,7 +9113,7 @@ function ensureRankingsLoaded() {
   renderRankingLists();
 
   const promise = Promise.all([
-    rankingCatalog ? Promise.resolve(rankingCatalog) : loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "force-cache" })
+    rankingCatalog ? Promise.resolve(rankingCatalog) : loadOfflineSnapshot("ranking-catalog", () => loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "no-store" }))
       .then((snapshot) => {
         if (snapshot?.schemaVersion !== 1 || !Array.isArray(snapshot.items)) throw new Error("MCU ranking catalog has an unsupported format.");
         rankingCatalog = snapshot.items;
@@ -9151,7 +9171,11 @@ function mergeMcuRankingItems(catalog, manualItems) {
   })).sort(compareRankingRows).map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
-async function loadManagerRankingSet(managerId, kind) {
+function loadManagerRankingSet(managerId, kind) {
+  return loadOfflineSnapshot(`rankings:${managerId}:${kind}`, () => fetchManagerRankingSet(managerId, kind));
+}
+
+async function fetchManagerRankingSet(managerId, kind) {
   if (!RANKINGS_ENDPOINT) throw new Error("Rankings service is not configured.");
   const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/managers/${encodeURIComponent(managerId)}/rankings/${encodeURIComponent(kind)}`, {
     cache: "no-store",
@@ -9159,7 +9183,11 @@ async function loadManagerRankingSet(managerId, kind) {
     signal: AbortSignal.timeout(12000),
   });
   const value = await response.json().catch(() => ({}));
-  if (!response.ok || !value.ok) throw new Error(value.error || `Unable to load ${kind} rankings.`);
+  if (!response.ok || !value.ok) {
+    const error = new Error(value.error || `Unable to load ${kind} rankings.`);
+    error.status = response.status;
+    throw error;
+  }
   return value;
 }
 
@@ -9179,7 +9207,7 @@ function getActiveRankingManagerId() {
 }
 
 function canEditActiveRankingManager() {
-  return Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
+  return navigator.onLine && Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
 }
 
 function resetRankingManagerData() {
@@ -9680,12 +9708,10 @@ function renderRankingList(kind) {
           }
         }
         return {
-          archived: Boolean(item.archived),
+          archived: Boolean(item.archived) || excluded,
           canEdit: isOwner && kind !== "mcu" && !isSnapshotView,
-          canExclude: isOwner && activeRankingSnapshotId === "current",
+          canArchive: isOwner && activeRankingSnapshotId === "current",
           draggable: isManualView,
-          excluded,
-          exclusionLabel: excluded ? "Include" : "Exclude",
           guideLinks: kind === "games" ? getGuideEntryLinkViews("ranking", item.id) : [],
           id: item.id,
           meta: shouldShowRankingMoreData ? getRankingItemMetaParts(item) : [],
@@ -9772,7 +9798,7 @@ function getRankingRows(kind = activeRankingKind) {
 }
 
 function getDisplayedRankingRows(kind = activeRankingKind) {
-  const filterExcludedRows = (rows) => shouldShowRankingExcluded
+  const filterExcludedRows = (rows) => shouldShowRankingArchived
     ? rows
     : rows.filter((item) => !isRankingItemExcluded(kind, item.id));
 
@@ -9784,14 +9810,14 @@ function getDisplayedRankingRows(kind = activeRankingKind) {
     const rows = getCalculatedRankingRows(kind);
     const activeRows = rows.filter((item) => !item.archived);
     const archivedRows = rows.filter((item) => item.archived);
-    return filterExcludedRows(kind !== "mcu" && shouldShowRankingArchived ? [...activeRows, ...archivedRows] : activeRows)
+    return filterExcludedRows(shouldShowRankingArchived ? [...activeRows, ...archivedRows] : activeRows)
       .map((item, index) => ({ ...item, displayRank: index + 1 }));
   }
 
   const rows = getManualRankingRowsWithElo(kind);
   const activeRows = rows.filter((item) => !item.archived);
   const archivedRows = rows.filter((item) => item.archived);
-  return filterExcludedRows(kind !== "mcu" && shouldShowRankingArchived ? [...activeRows, ...archivedRows] : activeRows)
+  return filterExcludedRows(shouldShowRankingArchived ? [...activeRows, ...archivedRows] : activeRows)
     .map((item, index) => ({ ...item, displayRank: index + 1 }));
 }
 
@@ -10099,11 +10125,8 @@ function syncRankingControls() {
     rankingMoreDataToggle.checked = shouldShowRankingMoreData;
   }
 
-  if (rankingShowExcludedToggle) {
-    rankingShowExcludedToggle.checked = shouldShowRankingExcluded;
-  }
   if (rankingShowArchivedToggle) rankingShowArchivedToggle.checked = shouldShowRankingArchived;
-  if (rankingShowArchivedControl) rankingShowArchivedControl.hidden = activeRankingKind === "mcu" || !isOwner;
+  if (rankingShowArchivedControl) rankingShowArchivedControl.hidden = !isOwner;
   if (rankingReadOnly) {
     const selected = getPortalManagerById(getActiveRankingManagerId());
     rankingReadOnly.textContent = `Viewing ${selected ? getManagerMeta(selected).displayName : "manager"} — read only`;
@@ -10442,7 +10465,11 @@ async function saveRankingItemFromForm() {
 }
 
 async function setRankingItemArchived(kind, itemId, archived) {
-  if (!canEditActiveRankingManager() || kind === "mcu") return;
+  if (!canEditActiveRankingManager()) return;
+  if (kind === "mcu") {
+    await setRankingItemExcluded(kind, itemId, archived);
+    return;
+  }
   const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
   if (!item) return;
   setRankingItemStatus(`${archived ? "Archiving" : "Restoring"} ${item.name}...`);
@@ -10452,7 +10479,12 @@ async function setRankingItemArchived(kind, itemId, archived) {
       body: JSON.stringify({ archived, revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
     });
     await reloadActiveRankings();
-    setRankingItemStatus(`${item.name} ${archived ? "archived" : "restored"}.`);
+    if (!archived && isRankingItemExcluded(kind, itemId)) {
+      await setRankingItemExcluded(kind, itemId, false);
+    } else {
+      setRankingItemStatus(`${item.name} ${archived ? "archived" : "restored"}.`);
+    }
+    if (activeRankingBattle?.kind === kind) renderNextRankingBattle(kind);
   } catch (error) {
     setRankingItemStatus(error.message, true);
     if (error.status === 409) await reloadActiveRankings();
@@ -10590,6 +10622,7 @@ async function openRankingBattleDialog(kind = activeRankingKind) {
   }
   if (!["todo", "want"].includes(kind)) {
     await ensureRankingAssetManifest();
+    await loadSharedRankingImages(getCurrentManagerId(), kind, getRankingRows(kind));
   }
   renderNextRankingBattle(kind);
 
@@ -10635,12 +10668,12 @@ function renderNextRankingBattle(kind = activeRankingKind) {
     <article class="ranking-battle-option">
       ${renderRankingBattleImage(kind, item)}
       <strong>${escapeHtml(item.name)}</strong>
-      ${renderRankingBattleExclusionAction(kind, item)}
+      ${renderRankingBattleArchiveAction(kind, item)}
     </article>
   `).join("");
 }
 
-function renderRankingBattleExclusionAction(kind, item) {
+function renderRankingBattleArchiveAction(kind, item) {
   if (!siteData.managerSession) {
     return "";
   }
@@ -10651,8 +10684,9 @@ function renderRankingBattleExclusionAction(kind, item) {
 
   return `
     <span class="ranking-battle-actions">
-      <button class="ranking-inline-action" type="button" data-ranking-battle-exclude="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
-        Exclude
+      <button class="ranking-inline-action" type="button" data-ranking-images="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">Images</button>
+      <button class="ranking-inline-action" type="button" data-ranking-battle-archive="${escapeHtml(item.id)}" data-ranking-kind="${escapeHtml(kind)}">
+        Archive
       </button>
       <button class="action-button ranking-battle-pick-button" type="button" data-ranking-battle-pick="${escapeHtml(item.id)}">
         Pick
@@ -10662,7 +10696,10 @@ function renderRankingBattleExclusionAction(kind, item) {
 }
 
 function renderRankingBattleImage(kind, item) {
-  const imagePath = kind === "todo" ? getTodoImageUrl(item) : kind === "want" ? String(item?.imageUrl || "").trim() : getRandomRankingAssetPath(kind, item?.id);
+  const imagePath = kind === "todo" ? getTodoImageUrl(item) : kind === "want" ? String(item?.imageUrl || "").trim() : (() => {
+    const paths = sharedRankingImages(getCurrentManagerId(), kind, item, siteData.rankingAssets, getRankingRows('mcu'));
+    return paths.length ? paths[Math.floor(Math.random() * paths.length)] : '';
+  })();
   const imageMarkup = imagePath
     ? `<img src="${escapeHtml(encodeURI(imagePath))}" alt="" loading="lazy" decoding="async">`
     : "";
@@ -10953,7 +10990,7 @@ async function setRankingItemExcluded(kind, itemId, excluded) {
         body: JSON.stringify({ excluded: Boolean(excluded), revision: Number(siteData.rankingRevisions?.[kind] || 0) }),
       });
       await reloadActiveRankings();
-      setRankingItemStatus(`${item.name} ${excluded ? "excluded" : "included"}.`);
+      setRankingItemStatus(`${item.name} ${excluded ? "archived" : "restored"}.`);
       if (activeRankingBattle?.kind === kind) renderNextRankingBattle(kind);
     } catch (error) {
       setRankingItemStatus(error.message, true);
@@ -13853,6 +13890,7 @@ footyRosterEditorForm?.addEventListener("submit", (event) => {
 footyRosterEditorCard?.addEventListener("change", () => {
   const file = footyRosterEditorCard.files?.[0];
   pendingFootyRosterCardFile = null;
+  pendingFootyRosterCardPreset = null;
   if (file) void openTradingCardImageEditor(file);
 });
 [tradingCardImageEditorClose, tradingCardImageEditorCancel].forEach((button) => button?.addEventListener("click", () => closeTradingCardImageEditor()));
@@ -14580,11 +14618,6 @@ rankingMoreDataToggle?.addEventListener("change", () => {
   renderRankingLists();
 });
 
-rankingShowExcludedToggle?.addEventListener("change", () => {
-  shouldShowRankingExcluded = Boolean(rankingShowExcludedToggle.checked);
-  renderRankingLists();
-});
-
 rankingShowArchivedToggle?.addEventListener("change", () => {
   shouldShowRankingArchived = Boolean(rankingShowArchivedToggle.checked);
   renderRankingLists();
@@ -14655,14 +14688,14 @@ rankingBattleSkip?.addEventListener("click", () => {
 });
 
 rankingBattleOptions?.addEventListener("click", (event) => {
-  const exclusionAction = event.target.closest("[data-ranking-battle-exclude]");
+  const exclusionAction = event.target.closest("[data-ranking-battle-archive]");
 
   if (exclusionAction) {
     event.preventDefault();
     event.stopPropagation();
-    setRankingItemExcluded(
+    setRankingItemArchived(
       exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind,
-      exclusionAction.getAttribute("data-ranking-battle-exclude") || "",
+      exclusionAction.getAttribute("data-ranking-battle-archive") || "",
       true
     );
     return;
@@ -14677,6 +14710,25 @@ rankingBattleOptions?.addEventListener("click", (event) => {
   chooseRankingBattleWinner(option.getAttribute("data-ranking-battle-pick") || "");
 });
 
+window.addEventListener('boxthislap:images-changed', async () => {
+  clearSharedRankingImages();
+  if (activeRankingBattle) {
+    const kind = activeRankingBattle.kind;
+    await loadSharedRankingImages(getCurrentManagerId(), kind, getRankingRows(kind));
+    if (activeRankingBattle?.kind === kind) rankingBattleOptions.innerHTML = [activeRankingBattle.itemA, activeRankingBattle.itemB].map(item => `<article class="ranking-battle-option">${renderRankingBattleImage(kind,item)}<strong>${escapeHtml(item.name)}</strong>${renderRankingBattleArchiveAction(kind,item)}</article>`).join('');
+  }
+});
+window.addEventListener('boxthislap:session-changed', clearSharedRankingImages);
+document.addEventListener('click', async event => {
+  const action = event.target.closest('[data-ranking-images]');
+  if (!action) return;
+  event.preventDefault(); event.stopPropagation();
+  const kind = action.getAttribute('data-ranking-kind') || activeRankingKind;
+  const itemId = action.getAttribute('data-ranking-images');
+  const item = getRankingRows(kind).find(row => String(row.id) === String(itemId));
+  if (item) { await ensureRankingAssetManifest(); window.dispatchEvent(new CustomEvent('boxthislap:ranking-images',{ detail:{ kind,itemId:String(itemId),title:item.name,bundledPaths:bundledRankingImages(getCurrentManagerId(),kind,item,siteData.rankingAssets,getRankingRows('mcu')) } })); }
+});
+
 document.addEventListener("click", (event) => {
   const emptyAddAction = event.target.closest("[data-ranking-empty-add]");
   if (emptyAddAction) {
@@ -14688,30 +14740,19 @@ document.addEventListener("click", (event) => {
   if (editAction) {
     event.preventDefault();
     event.stopPropagation();
-    openRankingItemDialog(editAction.getAttribute("data-ranking-kind") || activeRankingKind, editAction.getAttribute("data-ranking-edit") || "");
+    openRankingItemDialog(editAction.closest("[data-ranking-kind]")?.getAttribute("data-ranking-kind") || activeRankingKind, editAction.getAttribute("data-ranking-edit") || "");
     return;
   }
   const archiveAction = event.target.closest("[data-ranking-archive]");
   if (archiveAction) {
     event.preventDefault();
     event.stopPropagation();
-    const kind = archiveAction.getAttribute("data-ranking-kind") || activeRankingKind;
+    const kind = archiveAction.closest("[data-ranking-kind]")?.getAttribute("data-ranking-kind") || activeRankingKind;
     const itemId = archiveAction.getAttribute("data-ranking-archive") || "";
     const item = getRankingRows(kind).find((row) => String(row.id) === String(itemId));
-    setRankingItemArchived(kind, itemId, !item?.archived);
+    setRankingItemArchived(kind, itemId, !(item?.archived || isRankingItemExcluded(kind, itemId)));
     return;
   }
-  const exclusionAction = event.target.closest("[data-ranking-exclusion-toggle]");
-
-  if (exclusionAction) {
-    event.preventDefault();
-    event.stopPropagation();
-    const kind = exclusionAction.getAttribute("data-ranking-kind") || activeRankingKind;
-    const itemId = exclusionAction.getAttribute("data-ranking-exclusion-toggle") || "";
-    setRankingItemExcluded(kind, itemId, !isRankingItemExcluded(kind, itemId));
-    return;
-  }
-
   const rankingItem = event.target.closest(".ranking-item");
 
   if (!rankingItem) {
@@ -15675,7 +15716,7 @@ function renderLoginState() {
     (!managerMeta && activePageName === "draft-list") ||
     (!managerMeta && activePageName === "workouts") ||
     (!managerMeta && activePageName === "guides") ||
-    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
+    (!managerMeta?.isAdmin && ["todo", "want", "youtube", "the-monster-maniac", "psn", "trophy-stats", "trophy-log", "collectibles", "database-admin", "merchandise", "match-images", "image-editor", "footy-perfect", "footy-seen", "footy-missing-notes", "formula-1-2026-manage", "formula-1-2026-review"].includes(activePageName))
   ) {
     showPage("footy", { scrollToTop: true });
   }
@@ -18311,6 +18352,7 @@ function ensureSharedData(key, loader) {
 }
 
 function loadPageData(scope) {
+  if (!navigator.onLine && !["footy", "next", "rankings", "login"].includes(scope)) return Promise.resolve();
   if (scope === "account-settings") {
     return followedTeamsController.load();
   }
@@ -18545,7 +18587,7 @@ function runPortalRender(label, render) {
 
 function ensureFootyData() {
   return ensureSharedData("footy", async () => {
-    const schedule = await loadJson("data/footy-schedule.json");
+    const schedule = await loadOfflineSnapshot("footy", () => loadJson("data/footy-schedule.json"));
     clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
     footyScheduleFixtureIndex = null;
@@ -18559,7 +18601,7 @@ function ensureFootyData() {
     checkFootyMatchNotifications();
     console.info("Box This Lap footy schedule loaded", schedule);
 
-    ensureFootyMatchNotes()
+    if (navigator.onLine) ensureFootyMatchNotes()
       .then((notes) => {
         if (notes.length) {
           renderFootySchedule(siteData.footySchedule);
@@ -18583,7 +18625,7 @@ function ensureFootyData() {
 
 function ensureNextData() {
   return ensureSharedData("next", async () => {
-    const response = await nextItemsApiRequest("/api/items", { auth: false });
+    const response = await loadOfflineSnapshot("next", () => nextItemsApiRequest("/api/items", { auth: false, cache: "no-store" }));
     const items = response.items || [];
     siteData.nextItems = items;
     renderNextList(items);
@@ -19201,6 +19243,8 @@ async function ensureFootyMissingNotesData() {
   return fixtures;
 }
 
+initializeOfflineMode();
+void registerBoxThisLapServiceWorker().catch((error) => recordDiagnostic("offline support initialization failed", error));
 syncTestScoringUi();
 syncThemeToggle();
 initializeImageCache();
@@ -19210,6 +19254,11 @@ hydrateManagerAuthStatusCache();
 hydrateManagerSession();
 renderLeagueList(leagueYearSelect?.value || "2026");
 showPage(window.location.hash.replace("#", "") || "footy");
+if (navigator.onLine) {
+  void loadOfflineSnapshot("footy", () => loadJson("data/footy-schedule.json")).catch((error) => recordDiagnostic("offline Footy preparation failed", error));
+  void ensureNextData().catch((error) => recordDiagnostic("offline Next preparation failed", error));
+}
+
 
 function renderMatchdayPicker(matches) {
   if (!matchdaySelect || !matchdayMatchList) {

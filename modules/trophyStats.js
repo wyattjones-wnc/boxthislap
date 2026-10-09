@@ -1,13 +1,29 @@
 export function createTrophyStatsController({ endpoint }) {
-  const cacheKey = "boxThisLapPsnStatsSnapshotV1";
+  const cacheKey = "boxThisLapPsnStatsSnapshotV3";
   const content = document.querySelector("#trophy-stats-content");
   const updated = document.querySelector("#trophy-stats-updated");
   let stats = null;
+  let rarityRange = "0.1";
   let loadPromise = null;
 
   content?.addEventListener("click", (event) => {
     if (event.target.closest("[data-trophy-stats-retry]")) void load(true);
   });
+
+  content?.addEventListener("change", (event) => {
+    if (!event.target.matches("[data-trophy-rarity-range]")) return;
+    rarityRange = event.target.value;
+    renderRareTrophies(stats);
+  });
+
+  function renderRareTrophies(value) {
+    const list = content?.querySelector("[data-trophy-rare-list]");
+    if (!list) return;
+    const trophies = selectRareEarned(value?.rareEarned || [], rarityRange);
+    list.innerHTML = trophies.length
+      ? trophies.map((trophy) => renderHighlight(capitalize(trophy.type), trophy)).join("")
+      : `<p class="trophy-coverage-note">No earned trophies in this rarity range.</p>`;
+  }
 
   function renderPage() {
     if (!content) return;
@@ -96,23 +112,28 @@ export function createTrophyStatsController({ endpoint }) {
               <h2 id="trophy-highlights-heading">Current Import</h2>
             </div>
           </div>
-          ${renderHighlight("Rarest Earned", value?.rarestEarned)}
           ${renderHighlight("Latest Earned", value?.latestEarned)}
         </section>
         <section class="trophy-stats-card trophy-rarest-types-card" aria-labelledby="trophy-rarest-types-heading">
           <div class="trophy-stats-card-heading">
             <div>
-              <p class="eyebrow">By Type</p>
+              <p class="eyebrow">Rare Earned</p>
               <h2 id="trophy-rarest-types-heading">Rarest Earned Trophies</h2>
             </div>
+            <label class="trophy-rarity-filter">
+              <span>Rarity</span>
+              <select data-trophy-rarity-range>
+                ${["0.1", "0.5", "1"].map((range) => `<option value="${range}"${rarityRange === range ? " selected" : ""}>${range}%</option>`).join("")}
+              </select>
+            </label>
           </div>
-          <div class="trophy-rarest-type-grid">
-            ${["platinum", "gold", "silver", "bronze"].map((type) => renderHighlight(`Rarest ${capitalize(type)}`, value?.rarestByType?.[type])).join("")}
-          </div>
+          <p class="trophy-coverage-note">0.1%: exactly 0.1% · 0.5%: above 0.1% through 0.5% · 1%: above 0.5% through 1%</p>
+          <div class="trophy-rarest-type-grid" data-trophy-rare-list aria-live="polite"></div>
         </section>
       </div>
       <p class="trophy-coverage-note">Stats reflect ${formatNumber(gameCount)} synced ${gameCount === 1 ? "game" : "games"} from your PSN trophy library.</p>
     `;
+    renderRareTrophies(value);
     if (updated) updated.textContent = value?.updatedAt
       ? `Updated ${formatDate(value.updatedAt)}`
       : "Waiting for the first successful sync";
@@ -165,6 +186,7 @@ function renderHighlight(label, trophy) {
         <span>${escapeHtml(label)}</span>
         <strong>${escapeHtml(trophy.name || "Unknown trophy")}</strong>
         <p>${escapeHtml(trophy.gameName || "Unknown game")}</p>
+        ${trophy.description ? `<p class="trophy-highlight-description">${escapeHtml(trophy.description)}</p>` : ""}
         ${details ? `<small>${escapeHtml(details)}</small>` : ""}
       </div>
     </article>
@@ -196,4 +218,14 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value).replaceAll("`", "&#096;");
+}
+
+export function selectRareEarned(trophies, range) {
+  return trophies.filter((trophy) => {
+    if (trophy.earnedRate === null || trophy.earnedRate === undefined) return false;
+    const rate = Number(trophy.earnedRate);
+    if (range === "0.5") return rate > 0.1 && rate <= 0.5;
+    if (range === "1") return rate > 0.5 && rate <= 1;
+    return rate === 0.1;
+  });
 }

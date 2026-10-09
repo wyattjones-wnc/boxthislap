@@ -247,16 +247,14 @@ async function syncYouTube(request, env) {
   const discovered = [];
   const warnings = [];
 
-  for (const group of chunk(batch, 5)) {
-    const groupResults = await Promise.allSettled(group.map((channel) => syncChannel(channel, env, accessToken)));
-    groupResults.forEach((result, index) => {
-      if (result.status === "fulfilled") {
-        discovered.push(...result.value);
-      } else {
-        warnings.push(`${group[index].name}: ${result.reason?.message || "Channel refresh failed."}`);
-      }
-    });
-  }
+  const channelResults = await settleWithConcurrency(batch, 5, (channel) => syncChannel(channel, env, accessToken));
+  channelResults.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      discovered.push(...result.value);
+    } else {
+      warnings.push(`${batch[index].name}: ${result.reason?.message || "Channel refresh failed."}`);
+    }
+  });
 
   try {
     await fillVideoDurations(discovered, env, accessToken);
@@ -323,7 +321,7 @@ async function getStoredChannels(env, channelIds) {
   return channelIds.map((id) => byId.get(id)).filter(Boolean);
 }
 
-async function refreshSubscriptions(env, accessToken, configuredChannelIds = new Set(), removedChannelIds = new Set()) {
+export async function refreshSubscriptions(env, accessToken, configuredChannelIds = new Set(), removedChannelIds = new Set()) {
   const subscriptionChannelIds = [];
   let pageToken = "";
   do {
@@ -340,6 +338,7 @@ async function refreshSubscriptions(env, accessToken, configuredChannelIds = new
   for (const ids of chunk(includedChannelIds, 50)) {
     const params = new URLSearchParams({ id: ids.join(","), maxResults: "50", part: "snippet,contentDetails" });
     const data = await youtubeRequest(`/channels?${params}`, accessToken);
+    const pageChannels = [];
     for (const item of data.items || []) {
       const channel = {
         name: item.snippet?.title || "Unknown channel",
@@ -347,7 +346,10 @@ async function refreshSubscriptions(env, accessToken, configuredChannelIds = new
         youtubeChannelId: item.id,
       };
       if (!channel.uploadsPlaylistId) continue;
-      await env.DB.prepare(`
+      pageChannels.push(channel);
+    }
+    if (pageChannels.length) {
+      await env.DB.batch(pageChannels.map((channel) => env.DB.prepare(`
         INSERT INTO channels (youtube_channel_id, name, uploads_playlist_id)
         VALUES (?, ?, ?)
         ON CONFLICT(youtube_channel_id) DO UPDATE SET
@@ -356,12 +358,30 @@ async function refreshSubscriptions(env, accessToken, configuredChannelIds = new
           updated_at = CURRENT_TIMESTAMP
         WHERE channels.name IS NOT excluded.name
           OR channels.uploads_playlist_id IS NOT excluded.uploads_playlist_id
-      `).bind(channel.youtubeChannelId, channel.name, channel.uploadsPlaylistId).run();
-      channels.push(channel);
+      `).bind(channel.youtubeChannelId, channel.name, channel.uploadsPlaylistId)));
+      channels.push(...pageChannels);
     }
   }
 
   return channels.sort((a, b) => a.youtubeChannelId.localeCompare(b.youtubeChannelId));
+}
+
+// Refill each slot immediately so a slow channel cannot hold up unrelated checks.
+export async function settleWithConcurrency(items, concurrency, operation) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function work() {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      try {
+        results[index] = { status: "fulfilled", value: await operation(items[index]) };
+      } catch (reason) {
+        results[index] = { status: "rejected", reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => work()));
+  return results;
 }
 
 async function syncChannel(channel, env, accessToken) {

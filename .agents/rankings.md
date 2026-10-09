@@ -19,6 +19,7 @@
 ## Detailed Reference
 
 - Storage, authentication, and deployment: [workers/rankings/README.md](../workers/rankings/README.md).
+- Shared images, title matching, and crop tools: [images.md](images.md).
 - Shared frontend ownership: [docs/frontend-architecture.md](../docs/frontend-architecture.md).
 
 ## Regression Risks

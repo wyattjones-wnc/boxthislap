@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
@@ -106,4 +106,19 @@ if (missingLazyChunks.length) {
 
 console.info(
   `Verified mobile bundle: ${mainScriptBytes} bytes (${mainScriptGzipBytes} gzip bytes) with ${expectedLazyChunks.length} lazy chunks.`,
+);
+
+// Cache every compiled chunk so the app and its lazy imports can reopen offline.
+const offlineFiles = [
+  "index.html",
+  "data/footy-schedule.json",
+  "data/rankings.json",
+  "assets/final/offline-header.jpg",
+  ...(await readdir(buildDirectory))
+    .filter((file) => /\.(js|css)$/.test(file))
+    .map((file) => `build/${file}`),
+];
+await writeFile(
+  path.join(outputDirectory, "offline-manifest.json"),
+  JSON.stringify(offlineFiles),
 );

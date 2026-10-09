@@ -45,7 +45,6 @@ import {
   WorldCupTestingPage,
 } from "../features/competition/CompetitionPages";
 import {
-  AdminHomePage,
   CollectiblesPage,
   PsnPage,
   TrophyLogPage,
@@ -64,6 +63,13 @@ const MerchandiseFeature = lazy(() =>
     default: module.MerchandiseFeature,
   })),
 );
+
+const AdminHomePage = lazy(() =>
+  import("../features/specialist/AdminHomePage").then((module) => ({
+    default: module.AdminHomePage,
+  })),
+);
+const ImageBridge = lazy(() => import("../features/images/ImageBridge"));
 
 const MatchImagesFeature = lazy(
   () => import("../features/specialist/MatchImagesFeature"),
@@ -199,6 +205,7 @@ export interface SpecialistRoots {
   databaseAdmin: Element;
   merchandise: Element;
   matchImages: Element;
+  imageEditor?: Element;
   psn: Element;
   trophyLog: Element;
   trophyStats: Element;
@@ -281,6 +288,9 @@ export function App({
     <AppProviders>
       <AppErrorBoundary>
         <SiteShell />
+        <Suspense fallback={null}>
+          <ImageBridge root={specialistRoots.imageEditor} />
+        </Suspense>
         {createPortal(<LoginPage />, loginRoot)}
         {createPortal(<AccountSettingsPage />, accountRoot)}
         {createPortal(
@@ -320,7 +330,12 @@ export function App({
         {createPortal(<ManagerHubPage />, operationalRoots.managerHub)}
         {createPortal(<ManagerAwardsPage />, operationalRoots.managerAwards)}
         {createPortal(<DeferredWorkoutFeature />, operationalRoots.workouts)}
-        {createPortal(<AdminHomePage />, specialistRoots.adminHome)}
+        {createPortal(
+          <Suspense fallback={<p>Loading Admin Home…</p>}>
+            <AdminHomePage />
+          </Suspense>,
+          specialistRoots.adminHome,
+        )}
         {createPortal(<PsnPage />, specialistRoots.psn)}
         {createPortal(<TrophyStatsPage />, specialistRoots.trophyStats)}
         {createPortal(<CollectiblesPage />, specialistRoots.collectibles)}

@@ -17,6 +17,7 @@ Box This Lap is a mobile-first React/Vite dashboard hosted on GitHub Pages. Reac
 
 - Guides and checklist progress: [guides.md](guides.md)
 - Footy fixtures, notes, rosters, following, and notifications: [footy.md](footy.md)
+- Layered image editing, shared media, crop presets, caching, and R2 budgets: [images.md](images.md)
 - Rankings, Elo, comparisons, and draft lists: [rankings.md](rankings.md)
 - Login, sessions, administration, and Manager Hub: [manager-hub.md](manager-hub.md)
 - Google Sheets, Apps Script, and published snapshots: [google-sheets.md](google-sheets.md)

@@ -1,3 +1,4 @@
+import { useAppState } from "../../app/providers";
 import { FloatingField } from "../../components/FloatingField/FloatingField";
 import {
   Archive,
@@ -18,6 +19,7 @@ import {
   Gamepad2,
   GripVertical,
   History,
+  Images,
   Link2,
   ListPlus,
   Notebook,
@@ -291,6 +293,7 @@ function NextCard({ item, view }: { item: NextItemView; view: NextListView }) {
 }
 
 export function FootyPage() {
+  const { isOnline, session } = useAppState();
   return (
     <>
       <div className="section-heading page-heading-with-action footy-heading footy-heading--actions-only">
@@ -335,6 +338,7 @@ export function FootyPage() {
             className="icon-action-button footy-notification-toggle"
             icon={<Bell />}
             id="footy-notification-toggle"
+            hidden={!isOnline || !session?.managerId}
             label="Subscribe to match alerts"
             aria-pressed="false"
           />
@@ -1320,10 +1324,8 @@ type RankingKind = "games" | "mcu" | "movies" | "tv";
 interface RankingItemView {
   archived: boolean;
   canEdit: boolean;
-  canExclude: boolean;
+  canArchive: boolean;
   draggable: boolean;
-  excluded: boolean;
-  exclusionLabel: string;
   guideLinks: OperationalGuideLink[];
   id: string;
   meta: string[];
@@ -1376,86 +1378,101 @@ export function RankingsPage() {
         />
       </PageHeading>
       <div className="ranking-filters" id="ranking-filters" hidden>
-        <FloatingField className="ranking-select-control">
-          <span>Manager</span>
-          <select id="ranking-manager-select" />
-        </FloatingField>
-        <span className="ranking-read-only" id="ranking-read-only" hidden>
-          Read only
-        </span>
-        <Check id="ranking-more-data-toggle" label="More Data" />
-        <Check id="ranking-show-excluded-toggle" label="Show Excluded" />
-        <label
-          className="ranking-checkbox-control"
-          id="ranking-show-archived-control"
-        >
-          <input id="ranking-show-archived-toggle" type="checkbox" />
-          <span>Show Archived</span>
-        </label>
-        <div
-          className="segmented-control ranking-mode-toggle"
-          role="group"
-          aria-label="Ranking view"
-        >
+        <div className="ranking-filter-row">
+          <FloatingField className="ranking-select-control">
+            <span>Manager</span>
+            <select id="ranking-manager-select" />
+          </FloatingField>
+          <span className="ranking-read-only" id="ranking-read-only" hidden>
+            Read only
+          </span>
           <button
-            className="is-active"
+            className="action-button ranking-normalize-button"
+            id="ranking-normalize-button"
             type="button"
-            data-ranking-view-mode="manual"
-            aria-pressed="true"
+            data-ranking-owner-only
+            hidden
           >
-            Manual
-          </button>
-          <button
-            type="button"
-            data-ranking-view-mode="calculated"
-            aria-pressed="false"
-          >
-            Calculated
+            Normalize
           </button>
         </div>
-        <FloatingField
-          className="ranking-select-control"
-          data-ranking-owner-only
-          hidden
-        >
-          <span>Snapshot</span>
-          <select id="ranking-snapshot-select">
-            <option value="current">Current</option>
-          </select>
-        </FloatingField>
-        <FloatingField
-          className="ranking-select-control"
-          data-ranking-owner-only
-          hidden
-        >
-          <span>Compare</span>
-          <select id="ranking-compare-select">
-            <option value="">None</option>
-          </select>
-        </FloatingField>
-        <button
-          className="action-button ranking-normalize-button"
-          id="ranking-normalize-button"
-          type="button"
-          data-ranking-owner-only
-          hidden
-        >
-          Normalize
-        </button>
-        <button
-          className="action-button"
-          id="ranking-elo-to-manual-button"
-          type="button"
-          data-ranking-owner-only
-          hidden
-        >
-          Set Manual from Elo
-        </button>
-        <span
-          className="ranking-filter-status"
-          id="ranking-elo-to-manual-status"
-          aria-live="polite"
-        />
+        <div className="ranking-filter-row">
+          <div
+            className="segmented-control ranking-mode-toggle"
+            role="group"
+            aria-label="Ranking view"
+          >
+            <button
+              className="is-active"
+              type="button"
+              data-ranking-view-mode="manual"
+              aria-pressed="true"
+            >
+              Manual
+            </button>
+            <button
+              type="button"
+              data-ranking-view-mode="calculated"
+              aria-pressed="false"
+            >
+              Calculated
+            </button>
+          </div>
+          <button
+            className="action-button"
+            id="ranking-elo-to-manual-button"
+            type="button"
+            data-ranking-owner-only
+            hidden
+          >
+            Set Manual from Elo
+          </button>
+          <span
+            className="ranking-filter-status"
+            id="ranking-elo-to-manual-status"
+            aria-live="polite"
+          />
+        </div>
+        <div className="ranking-filter-row">
+          <FloatingField
+            className="ranking-select-control"
+            data-ranking-owner-only
+            hidden
+          >
+            <span>Snapshot</span>
+            <select id="ranking-snapshot-select">
+              <option value="current">Current</option>
+            </select>
+          </FloatingField>
+          <FloatingField
+            className="ranking-select-control"
+            data-ranking-owner-only
+            hidden
+          >
+            <span>Compare</span>
+            <select id="ranking-compare-select">
+              <option value="">None</option>
+            </select>
+          </FloatingField>
+        </div>
+        <div className="ranking-filter-row">
+          <label className="toggle-row" id="ranking-show-archived-control">
+            <span>Show Archived</span>
+            <input
+              id="ranking-show-archived-toggle"
+              type="checkbox"
+              role="switch"
+            />
+          </label>
+          <label className="toggle-row">
+            <span>More Data</span>
+            <input
+              id="ranking-more-data-toggle"
+              type="checkbox"
+              role="switch"
+            />
+          </label>
+        </div>
       </div>
       <div
         className="tabs ranking-tabs"
@@ -1599,9 +1616,10 @@ function RankingCard({
   rankLabel: string;
   startDrag: (id: string, event: React.PointerEvent<HTMLElement>) => void;
 }) {
+  const { session } = useAppState();
   return (
     <article
-      className={`ranking-item${item.excluded ? " is-excluded" : ""}${dragging ? " is-dragging" : ""}`}
+      className={`ranking-item${item.archived ? " is-excluded" : ""}${dragging ? " is-dragging" : ""}`}
       data-ranking-kind={kind}
       data-ranking-id={item.id}
       data-sortable-id={item.id}
@@ -1627,8 +1645,8 @@ function RankingCard({
             </span>
           ) : null}
         </span>
-        {item.excluded ? (
-          <small className="ranking-excluded-label">Excluded</small>
+        {item.archived ? (
+          <small className="ranking-excluded-label">Archived</small>
         ) : null}
         {item.movement ? <small>{item.movement}</small> : null}
         {item.meta.length ? (
@@ -1650,24 +1668,31 @@ function RankingCard({
       ) : (
         <span className="ranking-spacer" aria-hidden="true" />
       )}
-      {item.canEdit ? (
+      {session || item.canEdit || item.canArchive ? (
         <span className="ranking-item-actions">
+          {session && (
+            <IconButton
+              className="ranking-row-action"
+              icon={<Images />}
+              label={`Images for ${item.name}`}
+              data-ranking-images={item.id}
+              data-ranking-kind={kind}
+            />
+          )}
           {item.canEdit ? (
             <IconButton
               className="ranking-row-action"
               icon={<Pencil />}
               label={`Edit ${item.name}`}
               data-ranking-edit={item.id}
-              data-ranking-kind={kind}
             />
           ) : null}
-          {item.canEdit ? (
+          {item.canArchive ? (
             <IconButton
               className="ranking-row-action"
               icon={item.archived ? <ArchiveRestore /> : <Archive />}
               label={`${item.archived ? "Restore" : "Archive"} ${item.name}`}
               data-ranking-archive={item.id}
-              data-ranking-kind={kind}
             />
           ) : null}
         </span>

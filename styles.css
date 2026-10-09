@@ -1518,6 +1518,22 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   grid-column: 1 / -1;
 }
 
+.trophy-rarity-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trophy-rarity-filter select {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+}
+
 .trophy-rarest-type-grid {
   display: grid;
   gap: 12px;
@@ -3567,6 +3583,138 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   gap: 12px;
   margin: -4px 0 18px;
   padding: 14px;
+}
+
+#ranking-filters {
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+  box-shadow: none;
+  gap: 10px;
+  max-width: 680px;
+  padding: 12px;
+}
+
+.ranking-filter-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+#ranking-filters .ranking-select-control {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+#ranking-filters .floating-field > select[data-floating-control] {
+  min-height: 48px;
+  padding-top: 20px;
+  padding-bottom: 4px;
+  font-weight: 600;
+}
+
+#ranking-filters .action-button {
+  background: transparent;
+  border: 1px solid var(--line);
+  box-shadow: none;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 8px;
+}
+
+#ranking-filters .action-button:hover:not(:disabled) {
+  background: var(--soft);
+  border-color: var(--muted);
+}
+
+#ranking-filters .ranking-mode-toggle {
+  gap: 2px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 2px;
+}
+
+#ranking-filters .ranking-mode-toggle button {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-height: 38px;
+  padding: 6px 5px;
+}
+
+#ranking-filters .ranking-mode-toggle button.is-active {
+  box-shadow: none;
+}
+
+#ranking-filters .ranking-filter-row:last-child {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+
+#ranking-filters .ranking-filter-status:empty {
+  display: none;
+}
+
+#ranking-filters .ranking-filter-status:not(:empty) {
+  flex-basis: 100%;
+}
+
+.ranking-filter-row:has(> [data-ranking-owner-only]):not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+#ranking-filters .toggle-row:last-child {
+  margin-left: auto;
+}
+
+#ranking-filters .toggle-row {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#ranking-filters input[role="switch"] {
+  appearance: none;
+  background: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 24px;
+  margin: 0;
+  position: relative;
+  width: 42px;
+}
+
+#ranking-filters input[role="switch"]::before {
+  background: var(--panel);
+  border-radius: 50%;
+  content: "";
+  height: 18px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  width: 18px;
+}
+
+#ranking-filters input[role="switch"]:checked {
+  background: var(--track);
+}
+
+#ranking-filters input[role="switch"]:checked::before {
+  transform: translateX(18px);
+}
+
+#ranking-filters input[role="switch"]:focus-visible {
+  outline: 2px solid var(--track);
+  outline-offset: 3px;
 }
 
 .ranking-row-action {
@@ -12592,3 +12740,5 @@ html.has-contained-dialog body {
     transition: none;
   }
 }
+
+[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }

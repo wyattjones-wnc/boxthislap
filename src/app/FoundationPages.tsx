@@ -1,3 +1,7 @@
+import {
+  getOfflineSettingsText,
+  subscribeOfflineSettings,
+} from "../../modules/offlineStatus.js";
 import { FloatingField } from "../components/FloatingField/FloatingField";
 import {
   Bell,
@@ -11,8 +15,21 @@ import {
   Settings,
   Trophy,
 } from "lucide-react";
-import { memo, type ReactNode } from "react";
+import { memo, useSyncExternalStore, type ReactNode } from "react";
 import styles from "./Shell.module.css";
+import { useAppState } from "./providers";
+
+function OfflineStatusNote() {
+  const text = useSyncExternalStore(
+    subscribeOfflineSettings,
+    getOfflineSettingsText,
+  );
+  return (
+    <p id="offline-settings-status" role="status">
+      {text}
+    </p>
+  );
+}
 
 export const LoginPage = memo(function LoginPage() {
   return (
@@ -120,15 +137,12 @@ export const AccountSettingsPage = memo(function AccountSettingsPage() {
           </button>
         </section>
         <section
-          className={`account-settings-card account-settings-card--stacked ${styles.settingsCard}`}
+          className={`account-settings-card ${styles.settingsCard} ${styles.offlineCard}`}
           aria-labelledby="image-settings-heading"
         >
           <div>
-            <h2 id="image-settings-heading">Offline Images</h2>
-            <p>
-              Save site images for offline use or remove images already saved on
-              this device.
-            </p>
+            <h2 id="image-settings-heading">Offline</h2>
+            <OfflineStatusNote />
           </div>
           <div className="image-cache-control">
             <button
@@ -348,16 +362,19 @@ function HelpFeatureCard({
 }
 
 export const SiteFooter = memo(function SiteFooter() {
+  const { isOnline } = useAppState();
   return (
     <>
-      <div className="view-counter">
-        <img
-          src="https://visitor-badge.laobi.icu/badge?page_id=wyattjones-wnc.boxthislap"
-          alt="Site view count"
-          decoding="async"
-          loading="lazy"
-        />
-      </div>
+      {isOnline && (
+        <div className="view-counter">
+          <img
+            src="https://visitor-badge.laobi.icu/badge?page_id=wyattjones-wnc.boxthislap"
+            alt="Site view count"
+            decoding="async"
+            loading="lazy"
+          />
+        </div>
+      )}
       <div className={styles.footerActions}>
         <a
           className={styles.footerHelpLink}

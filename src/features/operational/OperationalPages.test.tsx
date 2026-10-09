@@ -252,10 +252,8 @@ describe("operational React pages", () => {
             {
               archived: false,
               canEdit: true,
-              canExclude: true,
+              canArchive: true,
               draggable: true,
-              excluded: false,
-              exclusionLabel: "Exclude",
               guideLinks: [],
               id: "game-1",
               meta: ["2026"],
@@ -280,6 +278,59 @@ describe("operational React pages", () => {
       screen.getByRole("button", { name: "Archive React ranking card" }),
     ).not.toBeNull();
     expect(screen.queryByText("Exclude", { selector: "button" })).toBeNull();
+  });
+
+  it("offers manager archive and restore actions for the shared MCU catalog", async () => {
+    renderWithTooltips(<RankingsPage />);
+    const row = {
+      archived: false,
+      canEdit: false,
+      canArchive: true,
+      draggable: false,
+      guideLinks: [],
+      id: "mcu-1",
+      meta: [],
+      movement: "",
+      name: "Shared MCU movie",
+      rankLabel: "1",
+    };
+    const update = (archived: boolean) =>
+      window.dispatchEvent(
+        new CustomEvent("boxthislap:ranking-list:mcu", {
+          detail: {
+            canAdd: false,
+            emptyLabel: "No MCU rankings.",
+            itemLabel: "MCU",
+            loading: false,
+            messages: [],
+            rows: [{ ...row, archived }],
+          },
+        }),
+      );
+
+    update(false);
+    expect(
+      await screen.findByRole("button", { name: "Archive Shared MCU movie" }),
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Edit Shared MCU movie" }),
+    ).toBeNull();
+
+    update(true);
+    const restore = await screen.findByRole("button", {
+      name: "Restore Shared MCU movie",
+    });
+    expect(restore.getAttribute("data-ranking-archive")).toBe("mcu-1");
+    expect(
+      restore.closest("[data-ranking-kind]")?.getAttribute("data-ranking-kind"),
+    ).toBe("mcu");
+    expect(screen.getByText("Archived", { selector: "small" })).not.toBeNull();
+    expect(document.querySelector("#ranking-show-excluded-toggle")).toBeNull();
+    expect(
+      document
+        .querySelector("#ranking-show-archived-toggle")
+        ?.getAttribute("role"),
+    ).toBe("switch");
   });
 });
 // @vitest-environment jsdom

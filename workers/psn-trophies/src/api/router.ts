@@ -5,7 +5,7 @@ const SORT_COLUMNS = {
   id: "trophy_id",
   rarity: "earned_rate",
 } as const;
-const STATS_SNAPSHOT_KEY = "public:stats:v1";
+const STATS_SNAPSHOT_KEY = "public:stats:v2";
 const STATUS_SNAPSHOT_KEY = "public:status:v1";
 
 export async function routePublicApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
@@ -30,7 +30,7 @@ async function getStats(env: PsnEnvironment): Promise<Response> {
 
 export async function buildStats(env: PsnEnvironment): Promise<Record<string, unknown>> {
   const trophyTypes = ["bronze", "silver", "gold", "platinum"];
-  const [summaryResult, rarestEarnedResult, latestEarnedResult, ...rarestTypeResults] = await Promise.all([
+  const [summaryResult, rareEarnedResult, rarestEarnedResult, latestEarnedResult, ...rarestTypeResults] = await Promise.all([
     env.DB.prepare(`
       SELECT COUNT(*) AS games, COALESCE(SUM(platinum_earned), 0) AS platinums,
         COALESCE(SUM(is_100_percent), 0) AS hundred_percent, MAX(last_synced_at) AS updated_at,
@@ -41,6 +41,14 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
         COALESCE(SUM(earned_gold), 0) AS gold,
         COALESCE(SUM(earned_platinum), 0) AS platinum
       FROM games
+    `).all<Record<string, unknown>>(),
+    env.DB.prepare(`
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+        t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
+      FROM trophies t INDEXED BY idx_trophies_log_rarity
+      JOIN games g ON g.id = t.game_id
+      WHERE t.earned = 1 AND t.earned_at IS NOT NULL AND t.earned_rate >= 0.1 AND t.earned_rate <= 1
+      ORDER BY t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
       SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
@@ -93,6 +101,7 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
       platinum: numberValue(summary?.platinum),
     },
     latestEarned: mapStatTrophy(latestEarned),
+    rareEarned: (rareEarnedResult.results || []).map(mapStatTrophy),
     rarestByType,
     rarestEarned: mapStatTrophy(rarestEarned),
     updatedAt: summary?.updated_at || null,
@@ -100,8 +109,8 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
   console.log(JSON.stringify({
     event: "psn_d1_snapshot_rebuilt",
     snapshot: "stats",
-    queries: 7,
-    rowsRead: [summaryResult, rarestEarnedResult, latestEarnedResult, ...rarestTypeResults]
+    queries: 8,
+    rowsRead: [summaryResult, rareEarnedResult, rarestEarnedResult, latestEarnedResult, ...rarestTypeResults]
       .reduce((total, result) => total + Number(result.meta?.rows_read || 0), 0),
   }));
   return value;

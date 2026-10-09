@@ -1518,6 +1518,22 @@ button.database-admin-cell-value:focus-visible { border-color: var(--line); back
   grid-column: 1 / -1;
 }
 
+.trophy-rarity-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trophy-rarity-filter select {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+}
+
 .trophy-rarest-type-grid {
   display: grid;
   gap: 12px;

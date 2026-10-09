@@ -34,4 +34,20 @@ describe("getNavScope", () => {
       )?.adminOnly,
     ).toBe(true);
   });
+  it("keeps 2027 drafts in separate scopes with protected management tabs", () => {
+    for (const league of ["fantasy-office", "world-cup"] as const) {
+      const scope = `${league}-2027` as const;
+      expect(getNavScope(`${scope}-draft?draft=example`)).toBe(scope);
+      expect(
+        navItems[scope].find((item) => item.route === `${scope}-manage`)
+          ?.adminOnly,
+      ).toBe(true);
+      expect(navItems[scope].map((item) => item.label)).toEqual([
+        "Draft",
+        "Resources",
+        "Manage",
+        "Leagues",
+      ]);
+    }
+  });
 });

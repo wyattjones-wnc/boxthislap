@@ -34,6 +34,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { GuidesFeature } from "./GuidesFeature";
+import { LeagueDraftHubEntry } from "../competition/LeagueDrafts/LeagueDraftEntry";
 
 export function NextPage() {
   return (
@@ -1911,6 +1912,7 @@ export function ManagerHubPage() {
         </div>
       </div>
       <div className="manager-hub-grid">
+        <LeagueDraftHubEntry />
         <details
           className="manager-hub-card workflow-dropdown"
           aria-labelledby="workflow-heading"

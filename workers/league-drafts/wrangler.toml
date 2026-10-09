@@ -1,0 +1,27 @@
+name = "box-this-lap-league-drafts-dev"
+main = "src/index.js"
+compatibility_date = "2026-10-09"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "formula-one"
+database_id = "b3e28ed0-a9c9-43d1-a6cb-ae22b8a181a6"
+migrations_table = "league_drafts_dev_migrations"
+
+[[services]]
+binding = "AUTH_SERVICE"
+service = "box-this-lap-rankings"
+remote = true
+
+[[services]]
+binding = "PUSH_SERVICE"
+service = "box-this-lap-footy-push"
+
+[vars]
+DRAFT_ENVIRONMENT = "dev"
+ADMIN_MANAGER_IDS = "6"
+ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
+SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/"

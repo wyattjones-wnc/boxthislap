@@ -126,7 +126,7 @@ export function SiteShell() {
     : "assets/box-this-lap-logo.jpg";
   const activeArt = !isOnline
     ? "offline"
-    : scope === "home"
+    : scope === "home" || scope.endsWith("-2027")
       ? "default"
       : scope;
 
@@ -190,6 +190,7 @@ export function SiteShell() {
                 item={item}
                 route={route}
                 session={Boolean(session)}
+                admin={isAdmin}
                 key={item.route}
               />
             ))}
@@ -275,22 +276,29 @@ function NavLink({
   item,
   route,
   session,
+  admin,
 }: {
   item: NavItem;
   route: string;
   session: boolean;
+  admin: boolean;
 }) {
   const Icon = navIcons[item.route] ?? Flag;
 
   return (
     <a
-      className={route === item.route ? "is-active" : undefined}
+      className={route.split("?")[0] === item.route ? "is-active" : undefined}
       href={`#${item.route}`}
       data-page-link={item.route}
       data-login-only={item.loginOnly ? "" : undefined}
+      data-admin-only={item.adminOnly ? "" : undefined}
       data-test-rules-link={item.testOnly ? "" : undefined}
-      hidden={Boolean(item.loginOnly && !session) || Boolean(item.testOnly)}
-      aria-current={route === item.route ? "page" : undefined}
+      hidden={
+        Boolean(item.loginOnly && !session) ||
+        Boolean(item.adminOnly && !admin) ||
+        Boolean(item.testOnly)
+      }
+      aria-current={route.split("?")[0] === item.route ? "page" : undefined}
       role="tab"
     >
       <Icon className="nav-link-icon" aria-hidden="true" />

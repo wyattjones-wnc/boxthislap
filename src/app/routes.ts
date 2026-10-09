@@ -8,7 +8,9 @@ export type NavScope =
   | "fantasy-critic-2025"
   | "fantasy-critic-2026"
   | "fantasy-office-2025"
-  | "fantasy-office-2026";
+  | "fantasy-office-2026"
+  | "fantasy-office-2027"
+  | "world-cup-2027";
 
 export interface NavItem {
   adminOnly?: boolean;
@@ -18,7 +20,19 @@ export interface NavItem {
   testOnly?: boolean;
 }
 
+function draftNavigation(league: "fantasy-office" | "world-cup"): NavItem[] {
+  const prefix = `${league}-2027`;
+  return [
+    { label: "Draft", route: `${prefix}-draft` },
+    { label: "Resources", route: `${prefix}-resources` },
+    { label: "Manage", route: `${prefix}-manage`, adminOnly: true },
+    { label: "Leagues", route: "leagues" },
+  ];
+}
+
 export const navItems: Record<NavScope, NavItem[]> = {
+  "fantasy-office-2027": draftNavigation("fantasy-office"),
+  "world-cup-2027": draftNavigation("world-cup"),
   home: [
     { label: "Footy", route: "footy" },
     { label: "Next", route: "next" },
@@ -104,6 +118,8 @@ export function readRoute(): string {
 }
 
 export function getNavScope(route: string): NavScope {
+  if (route.startsWith("fantasy-office-2027-")) return "fantasy-office-2027";
+  if (route.startsWith("world-cup-2027-")) return "world-cup-2027";
   if (personalRoutes.has(route)) return "the-monster-maniac";
   if (worldCupRoutes.has(route)) return "world-cup";
   if (route.startsWith("formula-1-2024")) return "formula-one-2024";

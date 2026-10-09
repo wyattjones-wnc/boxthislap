@@ -21,6 +21,8 @@ function mutateCache(work) {
 }
 const IMAGE_MANIFEST_URL = "assets/image-cache-manifest.json";
 const IMAGE_EXTENSIONS = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+const DRAFT_MANAGER_CACHE = 'box-this-lap-draft-manager-v1';
+const DRAFT_MANAGER_KEY = new URL('./draft-manager', self.registration.scope).href;
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -86,6 +88,17 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data?.type === "OFFLINE_STATUS") {
     event.source?.postMessage({ type: "OFFLINE_READY" });
+  } else if (event.data?.type === 'DRAFT_MANAGER') {
+    event.waitUntil((async () => {
+      const managerId = String(event.data.managerId || '');
+      const cache = await caches.open(DRAFT_MANAGER_CACHE);
+      await cache.put(DRAFT_MANAGER_KEY, new Response(managerId));
+      const notifications = await self.registration.getNotifications();
+      for (const notification of notifications) {
+        if (notification.tag.startsWith('box-this-lap-draft-') && notification.data?.managerId !== managerId) notification.close();
+      }
+    })());
+
   } else if (event.data?.type === "CACHE_ALL_IMAGES") {
     event.waitUntil(cacheAllImages(event.source));
   } else if (event.data?.type === "INVALIDATE_IMAGE") {
@@ -158,15 +171,18 @@ async function showPendingFootyNotifications() {
 
   const data = await response.json();
   const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+  const managerCache = await caches.open(DRAFT_MANAGER_CACHE);
+  const savedManager = await managerCache.match(DRAFT_MANAGER_KEY);
+  const managerId = savedManager ? await savedManager.text() : '';
 
   if (notifications.length === 0) {
     return;
   }
 
-  await Promise.all(notifications.map((notification) =>
+  await Promise.all(notifications.filter((notification) => !String(notification.tag || '').startsWith('box-this-lap-draft-') || (managerId && String(notification.managerId) === managerId)).map((notification) =>
     self.registration.showNotification(notification.title || "Match alert", {
       body: notification.body || "",
-      data: { url: notification.url || "./#footy" },
+      data: { url: notification.url || "./#footy", managerId: notification.managerId || '' },
       tag: notification.tag || `box-this-lap-footy-${Date.now()}`,
     })
   ));

@@ -7,6 +7,8 @@
 - Compatibility loaders, parsers, standings, awards, and Manager Hub summaries: [script.js](../script.js). Search for `FantasyCritic`, `FantasyOffice`, or the specific render/load symbol and read a bounded range.
 - Fantasy Critic API proxy: [scripts/fantasy-critic-proxy-webapp.gs](../scripts/fantasy-critic-proxy-webapp.gs).
 - Draft-list persistence shared with other manager lists: [workers/rankings/src/index.js](../workers/rankings/src/index.js) and [modules/draftLists.js](../modules/draftLists.js).
+- Current-year league selection and cards: [src/features/competition/LeaguesFeature.tsx](../src/features/competition/LeaguesFeature.tsx) and [src/features/competition/leagueYears.ts](../src/features/competition/leagueYears.ts).
+- 2027 asynchronous league drafts: [src/features/competition/LeagueDrafts](../src/features/competition/LeagueDrafts) and [workers/league-drafts/README.md](../workers/league-drafts/README.md). Dev state uses a separate environment namespace and migration history. Admin test picks are dev-only; these drafts do not update earlier rosters or scoring.
 
 ## Invariants
 
@@ -32,3 +34,5 @@
 - `npx vitest run src/features/competition/CompetitionPages.test.tsx`
 - `node scripts/check-apps-script.mjs scripts/fantasy-critic-proxy-webapp.gs`
 - `node --check modules/draftLists.js`
+- `npm run test:league-drafts`
+- `npx vitest run src/features/competition/LeagueDrafts src/features/competition/leagueYears.test.tsx`

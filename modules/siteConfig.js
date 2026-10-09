@@ -213,6 +213,7 @@ export const FANTASY_LEAGUES_BY_YEAR = {
   2024: ["Formula 1"],
   2025: ["Fantasy Critic", "Fantasy Office", "Formula 1"],
   2026: ["Fantasy Critic", "Fantasy Office", "Formula 1", "World Cup"],
+  2027: ["Fantasy Office", "World Cup"],
 };
 
 const FANTASY_CRITIC_2025 = {

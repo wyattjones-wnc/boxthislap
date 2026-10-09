@@ -45,6 +45,24 @@ const operationalRoots = {
   workouts: document.querySelector('[data-page="workouts"]'),
 };
 const competitionRoots = {
+  fantasyOffice2027Draft: document.querySelector(
+    '[data-page="fantasy-office-2027-draft"]',
+  ),
+  fantasyOffice2027Resources: document.querySelector(
+    '[data-page="fantasy-office-2027-resources"]',
+  ),
+  fantasyOffice2027Manage: document.querySelector(
+    '[data-page="fantasy-office-2027-manage"]',
+  ),
+  worldCup2027Draft: document.querySelector(
+    '[data-page="world-cup-2027-draft"]',
+  ),
+  worldCup2027Resources: document.querySelector(
+    '[data-page="world-cup-2027-resources"]',
+  ),
+  worldCup2027Manage: document.querySelector(
+    '[data-page="world-cup-2027-manage"]',
+  ),
   bracket: document.querySelector('[data-page="bracket"]'),
   draft: document.querySelector('[data-page="draft"]'),
   fantasyCritic2025: document.querySelector(

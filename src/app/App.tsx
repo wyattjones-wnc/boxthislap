@@ -5,6 +5,10 @@ import { AppErrorBoundary } from "./AppErrorBoundary";
 import { AppProviders, useAppState } from "./providers";
 import { SiteShell } from "./Shell";
 import {
+  LeagueDraftEntry,
+  LeaguesEntry,
+} from "../features/competition/LeagueDrafts/LeagueDraftEntry";
+import {
   DraftListPage,
   FootyPage,
   GuidesPage,
@@ -33,7 +37,6 @@ import {
   FormulaOneCalculatorPage,
   FormulaOneQuestionsPage,
   FormulaOneResultsPage,
-  LeaguesPage,
   TodayPage,
   TomorrowPage,
   WorldCupBracketPage,
@@ -213,6 +216,12 @@ export interface SpecialistRoots {
 }
 
 export interface CompetitionRoots {
+  fantasyOffice2027Draft: Element;
+  fantasyOffice2027Resources: Element;
+  fantasyOffice2027Manage: Element;
+  worldCup2027Draft: Element;
+  worldCup2027Resources: Element;
+  worldCup2027Manage: Element;
   bracket: Element;
   draft: Element;
   fantasyCritic2025: Element;
@@ -362,7 +371,35 @@ export function App({
         {createPortal(<WorldCupMatchesPage />, competitionRoots.matches)}
         {createPortal(<WorldCupBracketPage />, competitionRoots.bracket)}
         {createPortal(<WorldCupTestingPage />, competitionRoots.testing)}
-        {createPortal(<LeaguesPage />, competitionRoots.leagues)}
+        {createPortal(<LeaguesEntry />, competitionRoots.leagues)}
+        {(
+          [
+            [
+              "fantasy-office",
+              "draft",
+              competitionRoots.fantasyOffice2027Draft,
+            ],
+            [
+              "fantasy-office",
+              "resources",
+              competitionRoots.fantasyOffice2027Resources,
+            ],
+            [
+              "fantasy-office",
+              "manage",
+              competitionRoots.fantasyOffice2027Manage,
+            ],
+            ["world-cup", "draft", competitionRoots.worldCup2027Draft],
+            ["world-cup", "resources", competitionRoots.worldCup2027Resources],
+            ["world-cup", "manage", competitionRoots.worldCup2027Manage],
+          ] as const
+        ).map(([league, mode, root]) =>
+          createPortal(
+            <LeagueDraftEntry league={league} mode={mode} />,
+            root,
+            `${league}-${mode}`,
+          ),
+        )}
         {createPortal(
           <FantasyCriticPage year={2025} />,
           competitionRoots.fantasyCritic2025,

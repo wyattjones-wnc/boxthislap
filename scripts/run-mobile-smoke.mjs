@@ -36,11 +36,15 @@ let tests;
 
 try {
   await waitForPreview();
-  tests = spawn(process.execPath, [playwrightCli, "test"], {
-    cwd: projectRoot,
-    stdio: "inherit",
-    windowsHide: true,
-  });
+  tests = spawn(
+    process.execPath,
+    [playwrightCli, "test", ...process.argv.slice(2)],
+    {
+      cwd: projectRoot,
+      stdio: "inherit",
+      windowsHide: true,
+    },
+  );
 
   const testExitCode = await waitForExit(tests);
   process.exitCode = testExitCode ?? 1;

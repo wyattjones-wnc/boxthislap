@@ -59,7 +59,6 @@ import {
   BRACKET_ROUNDS,
   BRACKET_SLOT_REFERENCES,
   MANAGER_COLORS,
-  FANTASY_LEAGUES_BY_YEAR,
   FANTASY_CRITIC_LEAGUE_ID,
   FANTASY_CRITIC_PROXY_URL,
   FANTASY_CRITIC_LEAGUE_METADATA,
@@ -124,8 +123,6 @@ import {
   leagueAwardsList,
   standingsAwards,
   standingsAwardsList,
-  leagueYearSelect,
-  leagueList,
   footyPastToggle,
   footyCompetitionToggle,
   footyCompetitionControls,
@@ -917,70 +914,6 @@ async function renderCollectiblesPage() {
 
 function startLazyPageRender(label, render) {
   void render().catch((error) => recordDiagnostic(`${label} failed to render`, error));
-}
-
-function renderLeagueList(year) {
-  if (!leagueList) {
-    return;
-  }
-
-  const leagues = FANTASY_LEAGUES_BY_YEAR[year] || [];
-
-  if (leagues.length === 0) {
-    leagueList.innerHTML = `<p class="league-empty">No leagues found for ${escapeHtml(year)}.</p>`;
-    return;
-  }
-
-  leagueList.innerHTML = leagues.map((league) => {
-    const isWorldCup = year === "2026" && league === "World Cup";
-    const isFantasyCritic = (year === "2025" || year === "2026") && league === "Fantasy Critic";
-    const isFormulaOne = (year === "2024" || year === "2025" || year === "2026") && league === "Formula 1";
-    const isFantasyOffice = (year === "2025" || year === "2026") && league === "Fantasy Office";
-    const canOpen = isWorldCup || isFantasyCritic || isFormulaOne || isFantasyOffice;
-
-    return `
-      <article class="league-card">
-        <div>
-          <h2>${escapeHtml(league)}</h2>
-        </div>
-        ${renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year })}
-      </article>
-    `;
-  }).join("");
-}
-
-function renderLeagueCardAction({ isWorldCup, isFantasyCritic, isFormulaOne, isFantasyOffice, canOpen, year }) {
-  if (isWorldCup) {
-    return renderLeagueOpenAction("results", "Open World Cup");
-  }
-
-  if (isFantasyCritic) {
-    return renderLeagueOpenAction(`fantasy-critic-${year}`, `Open ${year} Fantasy Critic`);
-  }
-
-  if (isFormulaOne) {
-    return renderLeagueOpenAction(`formula-1-${year}-questions`, `Open ${year} Formula 1`);
-  }
-
-  if (isFantasyOffice) {
-    const page = year === "2026" ? "draft" : "results";
-    return renderLeagueOpenAction(`fantasy-office-${year}-${page}`, `Open ${year} Fantasy Office`);
-  }
-
-  return `<button class="league-card-link" type="button" ${canOpen ? "" : "disabled"}>Planned</button>`;
-}
-
-function renderLeagueOpenAction(route, label) {
-  const safeRoute = escapeHtml(route);
-  const safeLabel = escapeHtml(label);
-  return `
-    <a class="league-card-link league-card-open-button" href="#${safeRoute}" data-page-link="${safeRoute}" aria-label="${safeLabel}" title="${safeLabel}">
-      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path d="M5 12h14"></path>
-        <path d="m13 6 6 6-6 6"></path>
-      </svg>
-    </a>
-  `;
 }
 
 function renderFootySchedule(schedule) {
@@ -13966,10 +13899,6 @@ footyTeamContent?.addEventListener("keydown", (event) => {
   }
 });
 
-leagueYearSelect?.addEventListener("change", () => {
-  renderLeagueList(leagueYearSelect.value);
-});
-
 footyPastToggle?.addEventListener("click", () => {
   shouldShowPastFootyFixtures = !shouldShowPastFootyFixtures;
   shouldShowAllFootyFixtures = false;
@@ -15897,7 +15826,13 @@ async function handleManagerLogin() {
     setCachedManagerAuthStatus(managerId, { hasPassphrase: true, mustReset: false, recoveryQuestion: "" });
     document.activeElement?.blur?.();
     hideLoginPanel();
-    const destination = getManagerMeta(manager).isAdmin ? "the-monster-maniac" : "manager-hub";
+    let draftReturn = "";
+    try {
+      const stored = sessionStorage.getItem("boxThisLapDraftLoginReturn") || "";
+      sessionStorage.removeItem("boxThisLapDraftLoginReturn");
+      if (/^(?:fantasy-office|world-cup)-2027-(?:draft|resources)(?:\?draft=[a-zA-Z0-9-]+)?$/.test(stored)) draftReturn = stored;
+    } catch { /* Login can continue if session storage is unavailable. */ }
+    const destination = draftReturn || (getManagerMeta(manager).isAdmin ? "the-monster-maniac" : "manager-hub");
     showPage(destination, { scrollToTop: true });
     window.location.hash = destination;
   } catch (error) {
@@ -19252,7 +19187,6 @@ hydrateStoredManagerSession();
 hydrateBracketSubmitter();
 hydrateManagerAuthStatusCache();
 hydrateManagerSession();
-renderLeagueList(leagueYearSelect?.value || "2026");
 showPage(window.location.hash.replace("#", "") || "footy");
 if (navigator.onLine) {
   void loadOfflineSnapshot("footy", () => loadJson("data/footy-schedule.json")).catch((error) => recordDiagnostic("offline Footy preparation failed", error));

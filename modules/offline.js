@@ -85,7 +85,7 @@ export function loadOfflineSnapshot(key, loader) {
   return promise;
 }
 async function loadSnapshot(key, loader) {
-  let saved = await readSnapshot(key);
+  const saved = !navigator.onLine ? await readSnapshot(key) : null;
   const restore = () => {
     if (!saved)
       throw new Error(
@@ -101,16 +101,7 @@ async function loadSnapshot(key, loader) {
     return saved.data;
   };
   if (!navigator.onLine) return restore();
-  let data;
-  try {
-    data = await loader();
-  } catch (error) {
-    if (!error.status || error.status >= 500) {
-      saved ||= await readSnapshot(key);
-      if (saved) return restore();
-    }
-    throw error;
-  }
+  const data = await loader();
   const savedAt = Date.now();
   const persisted = await saveSnapshot(key, { savedAt, data });
   loaded.set(key, {
@@ -125,6 +116,13 @@ async function loadSnapshot(key, loader) {
 
 export function initializeOfflineMode() {
   const disabled = new Map();
+  let wasOffline = !navigator.onLine;
+  window.addEventListener("offline", () => {
+    wasOffline = true;
+  });
+  window.addEventListener("online", () => {
+    if (wasOffline && navigator.onLine) window.location.reload();
+  });
   const blocked = (element) => {
     if (navigator.onLine) return false;
     const href = element.getAttribute("href");

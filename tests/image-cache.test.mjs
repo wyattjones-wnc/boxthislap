@@ -30,6 +30,7 @@ async function fixture() {
     },
     Request,
     Response,
+    Headers,
     URL,
     Set,
     Map,
@@ -137,4 +138,32 @@ test("missing cache metadata is rebuilt before enforcing the size ceiling", asyn
     ?.json();
   assert.equal(metadata["https://site.test/existing.png"].bytes, 4);
   assert.equal(metadata["https://site.test/another.png"].bytes, 4);
+});
+
+test("online schedules replace installed copies and never hide server or network failures", async () => {
+  const f = await fixture();
+  const url = "https://site.test/data/footy-schedule.json";
+  f.entries.set(url, new Response("outdated schedule"));
+  assert.equal(await (await f.load(url)).text(), "good");
+  assert.equal(await f.entries.get(url)?.clone().text(), "good");
+  f.context.fetch = async () =>
+    new Response("server unavailable", { status: 503 });
+  assert.equal((await f.load(url)).status, 503);
+  f.context.fetch = async () => {
+    throw new Error("Network unavailable");
+  };
+  await assert.rejects(f.load(url), /Network unavailable/);
+});
+test("installed build files check the network first and reserve copies for outages", async () => {
+  const f = await fixture();
+  const url = "https://site.test/build/app.js";
+  f.entries.set(url, new Response("old build"));
+  assert.equal(await (await f.load(url)).text(), "good");
+  f.context.fetch = async () =>
+    new Response("server unavailable", { status: 503 });
+  assert.equal((await f.load(url)).status, 503);
+  f.context.fetch = async () => {
+    throw new Error("Network unavailable");
+  };
+  assert.equal(await (await f.load(url)).text(), "good");
 });

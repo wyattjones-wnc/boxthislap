@@ -9113,7 +9113,7 @@ function ensureRankingsLoaded() {
   renderRankingLists();
 
   const promise = Promise.all([
-    rankingCatalog ? Promise.resolve(rankingCatalog) : loadOfflineSnapshot("ranking-catalog", () => loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "force-cache" }))
+    rankingCatalog ? Promise.resolve(rankingCatalog) : loadOfflineSnapshot("ranking-catalog", () => loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "no-store" }))
       .then((snapshot) => {
         if (snapshot?.schemaVersion !== 1 || !Array.isArray(snapshot.items)) throw new Error("MCU ranking catalog has an unsupported format.");
         rankingCatalog = snapshot.items;
@@ -18625,7 +18625,7 @@ function ensureFootyData() {
 
 function ensureNextData() {
   return ensureSharedData("next", async () => {
-    const response = await loadOfflineSnapshot("next", () => nextItemsApiRequest("/api/items", { auth: false }));
+    const response = await loadOfflineSnapshot("next", () => nextItemsApiRequest("/api/items", { auth: false, cache: "no-store" }));
     const items = response.items || [];
     siteData.nextItems = items;
     renderNextList(items);

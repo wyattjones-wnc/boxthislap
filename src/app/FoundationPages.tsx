@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { memo, useSyncExternalStore, type ReactNode } from "react";
 import styles from "./Shell.module.css";
+import { useAppState } from "./providers";
 
 function OfflineStatusNote() {
   const text = useSyncExternalStore(
@@ -361,16 +362,19 @@ function HelpFeatureCard({
 }
 
 export const SiteFooter = memo(function SiteFooter() {
+  const { isOnline } = useAppState();
   return (
     <>
-      <div className="view-counter">
-        <img
-          src="https://visitor-badge.laobi.icu/badge?page_id=wyattjones-wnc.boxthislap"
-          alt="Site view count"
-          decoding="async"
-          loading="lazy"
-        />
-      </div>
+      {isOnline && (
+        <div className="view-counter">
+          <img
+            src="https://visitor-badge.laobi.icu/badge?page_id=wyattjones-wnc.boxthislap"
+            alt="Site view count"
+            decoding="async"
+            loading="lazy"
+          />
+        </div>
+      )}
       <div className={styles.footerActions}>
         <a
           className={styles.footerHelpLink}

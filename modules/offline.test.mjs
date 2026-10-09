@@ -11,7 +11,7 @@ globalThis.localStorage = {
   setItem: (key, value) => values.set(key, value),
 };
 globalThis.window = { dispatchEvent() {} };
-test("successful loads persist, offline reloads avoid network, and failures retain timestamps", async () => {
+test("successful loads persist, offline reloads avoid network, and online failures stay visible", async () => {
   const data = { items: [{ id: "1" }] };
   assert.deepEqual(await loadOfflineSnapshot("next", async () => data), data);
   const snapshot = values.get("boxthislap-offline-v1:next");
@@ -21,11 +21,11 @@ test("successful loads persist, offline reloads avoid network, and failures reta
     data,
   );
   navigator.onLine = true;
-  assert.deepEqual(
-    await loadOfflineSnapshot("next", async () => {
+  await assert.rejects(
+    loadOfflineSnapshot("next", async () => {
       throw new Error("network down");
     }),
-    data,
+    /network down/,
   );
   assert.equal(values.get("boxthislap-offline-v1:next"), snapshot);
 });
@@ -133,4 +133,26 @@ test("simultaneous page loads and background saving share one request", async ()
   ]);
   assert.deepEqual(first, second);
   assert.equal(calls, 1);
+});
+
+test("online loads replace old snapshots and server errors never restore them", async () => {
+  navigator.onLine = true;
+  await loadOfflineSnapshot("fresh-next", async () => ({ items: ["old"] }));
+  assert.deepEqual(
+    await loadOfflineSnapshot("fresh-next", async () => ({ items: ["new"] })),
+    { items: ["new"] },
+  );
+  await assert.rejects(
+    loadOfflineSnapshot("fresh-next", async () => {
+      throw Object.assign(new Error("Server unavailable"), { status: 503 });
+    }),
+    /Server unavailable/,
+  );
+  navigator.onLine = false;
+  assert.deepEqual(
+    await loadOfflineSnapshot("fresh-next", () =>
+      assert.fail("network called"),
+    ),
+    { items: ["new"] },
+  );
 });

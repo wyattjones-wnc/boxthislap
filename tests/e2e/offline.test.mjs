@@ -45,8 +45,13 @@ test("Footy reopens offline with saved data and unavailable actions disabled", a
     "true",
   );
   await expect(page.locator("#footy-filter-toggle")).toBeEnabled();
+  await expect(page.locator(".view-counter")).toHaveCount(0);
   await context.setOffline(false);
   await expect(page.locator("#footy-competition-toggle")).toBeEnabled();
+  await expect(page.locator(".view-counter")).toBeVisible();
+  await expect(page.locator('[data-header-art="offline"]')).not.toHaveClass(
+    /is-active/,
+  );
 });
 
 test("Next restores its latest load after an offline reload", async ({
@@ -369,5 +374,36 @@ test("signed-in users can open Next and Footy offline after loading only Ranking
   );
   await expect(page.locator("#offline-settings-status")).not.toContainText(
     "Editing",
+  );
+  await expect(page.locator(".view-counter")).toHaveCount(0);
+  await page.route("**/api/items", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        items: [
+          {
+            ID: "fresh-next",
+            Thing: "Fresh online item",
+            Date: "2099-01-01",
+            NonAdmin: true,
+          },
+        ],
+      }),
+    }),
+  );
+  await context.setOffline(false);
+  await expect(page.locator("#next-list")).toContainText("Fresh online item");
+  await expect(page.locator("#next-list")).not.toContainText(
+    "Background saved Next item",
+  );
+  await expect(page.locator(".view-counter")).toBeVisible();
+  await page.route("**/api/items", (route) =>
+    route.fulfill({ status: 503, body: "Service unavailable" }),
+  );
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#next-list")).toContainText("Unable to load");
+  await expect(page.locator("#next-list")).not.toContainText(
+    "Fresh online item",
   );
 });

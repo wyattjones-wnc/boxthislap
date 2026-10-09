@@ -96,8 +96,13 @@ export function createFollowedTeamsController({
     render();
     state.loadPromise = loadOfflineSnapshot(`footy-following:${loadKey}`, () =>
       Promise.all([
-        request("/api/teams?includeLeagues=true&active=true", { auth: false }),
-        managerId ? request("/api/me/followed-teams") : Promise.resolve(null),
+        request("/api/teams?includeLeagues=true&active=true", {
+          auth: false,
+          cache: "no-store",
+        }),
+        managerId
+          ? request("/api/me/followed-teams", { cache: "no-store" })
+          : Promise.resolve(null),
       ]),
     )
       .then(([catalog, preferences]) => {

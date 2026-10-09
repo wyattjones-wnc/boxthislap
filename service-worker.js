@@ -28,7 +28,7 @@ self.addEventListener("install", (event) => {
     if (!response.ok) throw new Error("Offline manifest unavailable.");
     const files = await response.json();
     const cache = await caches.open(SHELL_CACHE_NAME);
-    await cache.addAll(files);
+    await cache.addAll(files.map(path => new Request(new URL(path, self.registration.scope), { cache: "reload" })));
     for (const path of OFFLINE_DATA_PATHS) {
       const response = await cache.match(new URL(path, self.registration.scope));
       if (response) await cache.put(new URL(path, self.registration.scope), stampSavedResponse(response));
@@ -47,17 +47,11 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method === "GET" && url.origin === self.location.origin && isOfflineData) {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE_NAME);
-      try {
-        const response = await fetch(event.request);
-        if (response.ok) {
-          try { await cache.put(event.request, stampSavedResponse(response.clone())); } catch { /* Keep a successful online load usable. */ }
-        }
-        return response;
-      } catch (error) {
-        const cached = await cache.match(event.request, {ignoreSearch:true, ignoreVary:true});
-        if (cached) return cached;
-        throw error;
+      const response = await fetch(event.request, { cache: "no-store" });
+      if (response.ok) {
+        try { await cache.put(event.request, stampSavedResponse(response.clone())); } catch { /* Keep a successful online load usable. */ }
       }
+      return response;
     })());
     return;
   }
@@ -65,22 +59,20 @@ self.addEventListener("fetch", (event) => {
       (event.request.mode === "navigate" || url.pathname.includes("/build/") || url.pathname === new URL("assets/final/offline-header.jpg", self.registration.scope).pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE_NAME);
-      if (event.request.mode === "navigate") {
-        try {
-          const response = await fetch(event.request, { cache: "no-store" });
-          if (response.ok) {
-            try { await cache.put(new URL("index.html", self.registration.scope), response.clone()); } catch { /* Keep a successful navigation usable. */ }
-            return response;
-          }
-        } catch { /* Reopen the installed app when the server is unavailable. */ }
+      try {
+        const response = await fetch(event.request, { cache: "no-store" });
+        if (response.ok) {
+          const key = event.request.mode === "navigate" ? new URL("index.html", self.registration.scope) : event.request;
+          try { await cache.put(key, response.clone()); } catch { /* Keep a successful online load usable. */ }
+        }
+        return response;
+      } catch (error) {
+        // Only a network outage can reopen the installed app; HTTP errors stay visible.
+        const cached = await cache.match(event.request, { ignoreSearch: true, ignoreVary: true }) ||
+          (event.request.mode === "navigate" ? await cache.match(new URL("index.html", self.registration.scope), { ignoreVary: true }) : null);
+        if (cached) return cached;
+        throw error;
       }
-      const cached = await cache.match(event.request, { ignoreSearch: true, ignoreVary: true }) ||
-        (event.request.mode === "navigate" ? await cache.match(new URL("index.html", self.registration.scope), { ignoreVary: true }) : null);
-      // Reuse installed build files and the shell when navigation cannot reach the server.
-      if (cached) return cached;
-      const response = await fetch(event.request);
-      if (response.ok) await cache.put(event.request, response.clone());
-      return response;
     })());
     return;
   }

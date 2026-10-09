@@ -97,7 +97,7 @@ export function createRouter({
     headerArt.forEach((art) => {
       art.classList.toggle(
         "is-active",
-        art.dataset.headerArt === getHeaderArtName(activePageName),
+        art.dataset.headerArt === (navigator.onLine ? getHeaderArtName(activePageName) : "offline"),
       );
     });
 

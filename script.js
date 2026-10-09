@@ -3356,7 +3356,7 @@ function syncFootyNotificationToggle() {
   const enabled = isFootyNotificationEnabled();
   const managerReady = Boolean(getCurrentManagerId());
 
-  footyNotificationToggle.hidden = !managerReady;
+  footyNotificationToggle.hidden = !navigator.onLine || !managerReady;
   footyNotificationToggle.disabled = !managerReady || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
   footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);

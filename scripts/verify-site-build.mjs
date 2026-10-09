@@ -111,6 +111,9 @@ console.info(
 // Cache every compiled chunk so the app and its lazy imports can reopen offline.
 const offlineFiles = [
   "index.html",
+  "data/footy-schedule.json",
+  "data/rankings.json",
+  "assets/final/offline-header.jpg",
   ...(await readdir(buildDirectory))
     .filter((file) => /\.(js|css)$/.test(file))
     .map((file) => `build/${file}`),

@@ -293,6 +293,7 @@ function NextCard({ item, view }: { item: NextItemView; view: NextListView }) {
 }
 
 export function FootyPage() {
+  const { isOnline, session } = useAppState();
   return (
     <>
       <div className="section-heading page-heading-with-action footy-heading footy-heading--actions-only">
@@ -337,6 +338,7 @@ export function FootyPage() {
             className="icon-action-button footy-notification-toggle"
             icon={<Bell />}
             id="footy-notification-toggle"
+            hidden={!isOnline || !session?.managerId}
             label="Subscribe to match alerts"
             aria-pressed="false"
           />

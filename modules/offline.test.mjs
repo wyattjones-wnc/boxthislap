@@ -56,3 +56,66 @@ test("manager caches are separate and rejected access never falls back", async (
     /No saved data/,
   );
 });
+
+test("cache storage restores a load when local storage cannot save it", async () => {
+  const entries = new Map();
+  const storage = globalThis.localStorage;
+  globalThis.document = { baseURI: "https://site.test/dev/" };
+  globalThis.caches = {
+    open: async () => ({
+      match: async (key) => entries.get(String(key))?.clone(),
+      put: async (key, response) => entries.set(String(key), response.clone()),
+    }),
+    match: async (key) => entries.get(String(key))?.clone(),
+  };
+  globalThis.localStorage = {
+    getItem: () => null,
+    setItem: () => {
+      throw new Error("Storage full");
+    },
+  };
+  try {
+    navigator.onLine = true;
+    const data = { items: [{ id: "cache-only" }] };
+    await loadOfflineSnapshot("next", async () => data);
+    navigator.onLine = false;
+    assert.deepEqual(
+      await loadOfflineSnapshot("next", () => assert.fail("network called")),
+      data,
+    );
+    assert.ok(entries.has("https://site.test/dev/__offline-data__/next"));
+    globalThis.document.baseURI = "https://site.test/";
+    await assert.rejects(
+      loadOfflineSnapshot("next", () => {}),
+      /No saved data/,
+    );
+  } finally {
+    globalThis.localStorage = storage;
+    delete globalThis.document;
+    delete globalThis.caches;
+  }
+});
+
+test("Footy uses the installed schedule even without a browser snapshot", async () => {
+  const schedule = { generatedAt: "2026-10-09T00:00:00Z", teams: [] };
+  globalThis.document = { baseURI: "https://site.test/dev/" };
+  globalThis.caches = {
+    open: async () => ({ match: async () => undefined }),
+    match: async (url) => {
+      assert.equal(url, "https://site.test/dev/data/footy-schedule.json");
+      return new Response(JSON.stringify(schedule), {
+        headers: { "X-BoxThisLap-Saved-At": "1791504000000" },
+      });
+    },
+  };
+  navigator.onLine = false;
+  try {
+    assert.deepEqual(
+      await loadOfflineSnapshot("footy", () => assert.fail("network called")),
+      schedule,
+    );
+  } finally {
+    delete globalThis.document;
+    delete globalThis.caches;
+  }
+});

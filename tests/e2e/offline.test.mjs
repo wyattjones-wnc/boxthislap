@@ -19,13 +19,26 @@ test("Footy reopens offline with saved data and unavailable actions disabled", a
     localStorage.getItem("boxthislap-offline-v1:footy"),
   );
   await page.waitForFunction(() => navigator.serviceWorker.controller);
-  await expect(page.locator(".offline-status")).toContainText(
-    "Offline ready on this device.",
+  await expect(page.locator("#offline-settings-status")).toContainText(
+    "Offline access is ready on this device.",
   );
+  await page.evaluate(async () => {
+    localStorage.removeItem("boxthislap-offline-v1:footy");
+    await caches.delete("box-this-lap-offline-data-v1");
+  });
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator(".offline-status")).toContainText("Offline");
-  await expect(page.locator(".offline-status")).toContainText("Saved:");
+  await expect(page.locator("#offline-settings-status")).toContainText(
+    "You’re offline.",
+  );
+  await expect(page.locator("#offline-settings-status")).toContainText(
+    "Footy saved",
+  );
+  await expect(page.locator(".offline-status")).toHaveCount(0);
+  await expect(page.locator('[data-header-art="offline"]')).toHaveClass(
+    /is-active/,
+  );
+  await expect(page.locator("#footy-notification-toggle")).toBeHidden();
   await expect(page.locator("#footy-competition-toggle")).toBeDisabled();
   await expect(page.locator('a[href="#leagues"]').first()).toHaveAttribute(
     "aria-disabled",
@@ -45,6 +58,15 @@ test("Next restores its latest load after an offline reload", async ({
     browserName === "webkit",
     "WebKit offline emulation blocks service workers; use the stopped-server test below.",
   );
+  await context.addInitScript(() => {
+    const setItem = Storage.prototype.setItem;
+    /** @param {string} key @param {string} value */
+    Storage.prototype.setItem = function (key, value) {
+      if (key.startsWith("boxthislap-offline-v1:"))
+        throw new DOMException("Storage full", "QuotaExceededError");
+      return setItem.call(this, key, value);
+    };
+  });
   await page.route("**/api/items", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -63,19 +85,47 @@ test("Next restores its latest load after an offline reload", async ({
     }),
   );
   await page.goto("/#next");
-  await page.waitForFunction(() =>
-    localStorage.getItem("boxthislap-offline-v1:next"),
+  await page.waitForFunction(async () =>
+    Boolean(
+      await caches.match(
+        new URL("__offline-data__/next", document.baseURI).href,
+      ),
+    ),
   );
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("boxthislap-offline-v1:next"),
+    ),
+  ).toBeNull();
   await page.waitForFunction(() => navigator.serviceWorker.controller);
-  await expect(page.locator(".offline-status")).toContainText(
-    "Offline ready on this device.",
+  await expect(page.locator("#offline-settings-status")).toContainText(
+    "Offline access is ready on this device.",
   );
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator(".offline-status")).toContainText("Saved:");
+  await expect(page.locator("#offline-settings-status")).toContainText(
+    "Next saved",
+  );
   await expect(page.locator("#next-list")).toContainText("Saved offline item");
   await expect(page.locator("#next-add-button")).toBeDisabled();
   await expect(page.locator("#next-search")).toBeEnabled();
+  // Footy was never opened online; its installation copy must still be usable.
+  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#offline-settings-status")).toContainText(
+    "Footy saved",
+  );
+  await expect(page.locator("#footy-schedule-list")).not.toContainText(
+    "Unable to load footy schedule",
+  );
+  await expect(page.locator('[data-header-art="offline"] img')).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-header-art="offline"] img')
+        .evaluate((img) => /** @type {HTMLImageElement} */ (img).naturalWidth),
+    )
+    .toBeGreaterThan(0);
 });
 
 // Stop the server rather than using WebKit's offline emulation, which prevents
@@ -143,9 +193,16 @@ test("Safari restores Footy and Next when the server is unreachable", async ({
     await page.waitForFunction(() =>
       localStorage.getItem("boxthislap-offline-v1:footy"),
     );
-    await expect(page.locator(".offline-status")).toContainText(
-      "Offline ready on this device.",
+    await expect(page.locator("#offline-settings-status")).toContainText(
+      "Offline access is ready on this device.",
     );
+    await page.evaluate(async () => {
+      localStorage.removeItem("boxthislap-offline-v1:footy");
+      const cache = await caches.open("box-this-lap-offline-data-v1");
+      await cache.delete(
+        new URL("__offline-data__/footy", document.baseURI).href,
+      );
+    });
     await context.addInitScript(() =>
       Object.defineProperty(navigator, "onLine", { get: () => false }),
     );
@@ -154,10 +211,19 @@ test("Safari restores Footy and Next when the server is unreachable", async ({
       server.close((error) => (error ? reject(error) : resolve(undefined))),
     );
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.locator(".offline-status")).toContainText("Saved:");
+    await expect(page.locator("#offline-settings-status")).toContainText(
+      "Footy saved",
+    );
+    await expect(page.locator(".offline-status")).toHaveCount(0);
+    await expect(page.locator('[data-header-art="offline"]')).toHaveClass(
+      /is-active/,
+    );
+    await expect(page.locator("#footy-notification-toggle")).toBeHidden();
     await expect(page.locator("#footy-competition-toggle")).toBeDisabled();
     await page.goto(`${url}#next`, { waitUntil: "domcontentloaded" });
-    await expect(page.locator(".offline-status")).toContainText("Saved:");
+    await expect(page.locator("#offline-settings-status")).toContainText(
+      "Footy saved",
+    );
     await expect(page.locator("#next-list")).toContainText(
       "Saved offline item",
     );

@@ -1,3 +1,7 @@
+import {
+  getOfflineSettingsText,
+  subscribeOfflineSettings,
+} from "../../modules/offlineStatus.js";
 import { FloatingField } from "../components/FloatingField/FloatingField";
 import {
   Bell,
@@ -11,8 +15,20 @@ import {
   Settings,
   Trophy,
 } from "lucide-react";
-import { memo, type ReactNode } from "react";
+import { memo, useSyncExternalStore, type ReactNode } from "react";
 import styles from "./Shell.module.css";
+
+function OfflineStatusNote() {
+  const text = useSyncExternalStore(
+    subscribeOfflineSettings,
+    getOfflineSettingsText,
+  );
+  return (
+    <p id="offline-settings-status" role="status">
+      {text}
+    </p>
+  );
+}
 
 export const LoginPage = memo(function LoginPage() {
   return (
@@ -124,7 +140,8 @@ export const AccountSettingsPage = memo(function AccountSettingsPage() {
           aria-labelledby="image-settings-heading"
         >
           <div>
-            <h2 id="image-settings-heading">Offline Images</h2>
+            <h2 id="image-settings-heading">Offline Access</h2>
+            <OfflineStatusNote />
             <p>
               Save site images for offline use or remove images already saved on
               this device.

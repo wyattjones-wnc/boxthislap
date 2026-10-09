@@ -1,4 +1,10 @@
 const SHELL_CACHE_NAME = "box-this-lap-shell-v1";
+const OFFLINE_DATA_PATHS = ["data/footy-schedule.json", "data/rankings.json"];
+function stampSavedResponse(response) {
+  const headers = new Headers(response.headers);
+  headers.set("X-BoxThisLap-Saved-At", String(Date.now()));
+  return new Response(response.body, {status:response.status, statusText:response.statusText, headers});
+}
 const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
 const IMAGE_CACHE_NAME = "box-this-lap-images-v2";
 const IMAGE_CACHE_META = new URL("__image_cache_metadata", self.location.origin).href;
@@ -23,6 +29,10 @@ self.addEventListener("install", (event) => {
     const files = await response.json();
     const cache = await caches.open(SHELL_CACHE_NAME);
     await cache.addAll(files);
+    for (const path of OFFLINE_DATA_PATHS) {
+      const response = await cache.match(new URL(path, self.registration.scope));
+      if (response) await cache.put(new URL(path, self.registration.scope), stampSavedResponse(response));
+    }
     await self.skipWaiting();
   })());
 });
@@ -33,8 +43,26 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
+  const isOfflineData = OFFLINE_DATA_PATHS.some(path => url.pathname === new URL(path, self.registration.scope).pathname);
+  if (event.request.method === "GET" && url.origin === self.location.origin && isOfflineData) {
+    event.respondWith((async () => {
+      const cache = await caches.open(SHELL_CACHE_NAME);
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) {
+          try { await cache.put(event.request, stampSavedResponse(response.clone())); } catch { /* Keep a successful online load usable. */ }
+        }
+        return response;
+      } catch (error) {
+        const cached = await cache.match(event.request, {ignoreSearch:true, ignoreVary:true});
+        if (cached) return cached;
+        throw error;
+      }
+    })());
+    return;
+  }
   if (event.request.method === "GET" && url.origin === self.location.origin &&
-      (event.request.mode === "navigate" || url.pathname.includes("/build/"))) {
+      (event.request.mode === "navigate" || url.pathname.includes("/build/") || url.pathname === new URL("assets/final/offline-header.jpg", self.registration.scope).pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE_NAME);
       const cached = await cache.match(event.request, { ignoreSearch: true, ignoreVary: true }) ||

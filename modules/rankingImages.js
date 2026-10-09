@@ -11,8 +11,7 @@ export function clearSharedRankingImages() {
   resolved.clear();
   generation++;
 }
-export function sharedRankingImages(managerId, kind, item, bundled, mcuRows) {
-  const entry = resolved.get(`${managerId}:${kind}:${item.id}`);
+export function bundledRankingImages(managerId, kind, item, bundled, mcuRows) {
   let paths =
     kind === "games" && String(managerId) !== "6"
       ? []
@@ -25,6 +24,11 @@ export function sharedRankingImages(managerId, kind, item, bundled, mcuRows) {
     if (matches.length === 1)
       paths = [...paths, ...(bundled?.mcu?.[String(matches[0].id)] || [])];
   }
+  return [...new Set(paths)];
+}
+export function sharedRankingImages(managerId, kind, item, bundled, mcuRows) {
+  const entry = resolved.get(`${managerId}:${kind}:${item.id}`);
+  const paths = bundledRankingImages(managerId, kind, item, bundled, mcuRows);
   return [
     ...new Set([
       ...paths,

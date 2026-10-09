@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ContainedDialog } from "../../components/ContainedDialog/ContainedDialog";
 import { useAppState } from "../../app/providers";
 import { ImageEditor, type CropPreset } from "./ImageEditor";
@@ -19,6 +19,7 @@ import styles from "./Images.module.css";
 export default function ImageDialogs() {
   const { session } = useAppState(),
     admin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
+  const resolutionVersion = useRef(0);
   const [files, setFiles] = useState<ImageFile[]>([]);
   const [editingImage, setEditingImage] = useState<{
     image: ImageFile;
@@ -55,6 +56,7 @@ export default function ImageDialogs() {
     const images = (event: Event) => {
       if (!session) return;
       const r = (event as CustomEvent<RankingImagesRequest>).detail;
+      const version = ++resolutionVersion.current;
       setPresetsReady(false);
       setRanking(r);
       setEditingImage(null);
@@ -70,11 +72,14 @@ export default function ImageDialogs() {
         }),
       })
         .then((v) => {
+          if (version !== resolutionVersion.current) return;
           setMatches(v.matches[0]);
           if (v.matches[0]?.candidates.length === 1)
             setSelected(v.matches[0].candidates[0]);
         })
-        .catch((e) => setMessage(e.message));
+        .catch((e) => {
+          if (version === resolutionVersion.current) setMessage(e.message);
+        });
     };
     window.addEventListener("boxthislap:open-image-editor", open);
     window.addEventListener("boxthislap:ranking-images", images);
@@ -161,6 +166,7 @@ export default function ImageDialogs() {
     }
   }
   function close() {
+    resolutionVersion.current++;
     request?.resolve(null);
     setRequest(null);
     setRanking(null);
@@ -200,6 +206,10 @@ export default function ImageDialogs() {
   const allowed = presets.filter(
     (p) =>
       p.context === context || (context === "mcu" && p.context === "movies"),
+  );
+  const bundledPaths = [...new Set(ranking?.bundledPaths || [])].filter(
+    (path) =>
+      !files.some((file) => file.location === "bundled" && file.path === path),
   );
   const defaultPreset =
     (editingImage &&
@@ -241,6 +251,31 @@ export default function ImageDialogs() {
           />
         ) : (
           <>
+            {bundledPaths.length > 0 && (
+              <section
+                className={styles.section}
+                aria-label="Bundled images for this item"
+              >
+                <h2>Bundled images ({bundledPaths.length})</h2>
+                <p>
+                  Included with the site and available in Compare. No cloud
+                  upload is needed to view them.
+                </p>
+                <div className={styles.gallery}>
+                  {bundledPaths.map((path, index) => (
+                    <div key={path}>
+                      <a href={path} target="_blank" rel="noreferrer">
+                        <img
+                          src={path}
+                          alt={`${ranking?.title}, bundled image ${index + 1}`}
+                          loading="lazy"
+                        />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
             {matches && matches.candidates.length > 1 && (
               <section>
                 <p>Several shared titles match. Choose the correct one.</p>
@@ -445,9 +480,14 @@ export default function ImageDialogs() {
                 Create shared content for this item
               </button>
             )}
-            <details open={!selected}>
+            <details>
               <summary>Choose or correct shared content</summary>
+              <p>
+                This chooser lists other shared titles. Their images are shown
+                only after you link that title to this item.
+              </p>
               <ImageLibrary
+                showImages={false}
                 selected={selected}
                 onSelect={(c) => changeEditor(() => void link(c))}
                 admin={admin}

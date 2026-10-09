@@ -531,3 +531,72 @@ test("Ranking item shows saved images, reopens them, and confirms a replacement"
     dialog.getByRole("heading", { name: "Saved images (1)" }),
   ).toBeVisible();
 });
+
+test("Ranking bundled images stay visible without a shared title and unrelated library previews stay out of the item gallery", async ({
+  page,
+}) => {
+  await page.route("**/api/images/resolve", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        matches: [{ id: "other", candidates: [], files: [], linked: false }],
+      }),
+    }),
+  );
+  await page.route("**/api/images/catalog**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        content: [{ id: "keeper", kind: "games", title: "Keeper", year: "" }],
+        files: [
+          {
+            id: "saved",
+            content_id: "keeper",
+            path: "/media/library/keeper.webp",
+            location: "r2",
+            width: 400,
+            height: 268,
+            byte_size: 100,
+          },
+        ],
+      }),
+    }),
+  );
+  await page.goto("/#image-editor");
+  await expect(page.locator("[data-image-editor]")).toBeVisible();
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new CustomEvent("boxthislap:ranking-images", {
+        detail: {
+          kind: "games",
+          itemId: "other",
+          title: "Another game",
+          bundledPaths: [
+            "assets/ranking/games/other/example.webp",
+            "assets/ranking/games/other/example.webp",
+          ],
+        },
+      }),
+    ),
+  );
+  const dialog = page.getByRole("dialog").filter({
+    has: page.getByRole("heading", { name: "Images for Another game" }),
+  });
+  await expect(
+    dialog.getByRole("heading", { name: "Bundled images (1)" }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("img", {
+      name: "Another game, bundled image 1",
+      exact: true,
+    }),
+  ).toHaveAttribute("src", "assets/ranking/games/other/example.webp");
+  await expect(dialog.getByRole("img", { name: /Keeper/ })).toHaveCount(0);
+  await dialog
+    .getByText("Choose or correct shared content", { exact: true })
+    .click();
+  await expect(
+    dialog.getByRole("button", { name: "Keeper · games", exact: true }),
+  ).toBeVisible();
+  await expect(dialog.getByRole("img", { name: /Keeper/ })).toHaveCount(0);
+});

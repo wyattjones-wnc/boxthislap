@@ -1,4 +1,4 @@
-import { clearSharedRankingImages, loadSharedRankingImages, sharedRankingImages } from './modules/rankingImages.js';
+import { bundledRankingImages, clearSharedRankingImages, loadSharedRankingImages, sharedRankingImages } from './modules/rankingImages.js';
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
@@ -14711,7 +14711,7 @@ document.addEventListener('click', async event => {
   const kind = action.getAttribute('data-ranking-kind') || activeRankingKind;
   const itemId = action.getAttribute('data-ranking-images');
   const item = getRankingRows(kind).find(row => String(row.id) === String(itemId));
-  if (item) { await ensureRankingAssetManifest(); window.dispatchEvent(new CustomEvent('boxthislap:ranking-images',{ detail:{ kind,itemId:String(itemId),title:item.name,bundledPaths:siteData.rankingAssets?.[kind]?.[String(itemId)] || [] } })); }
+  if (item) { await ensureRankingAssetManifest(); window.dispatchEvent(new CustomEvent('boxthislap:ranking-images',{ detail:{ kind,itemId:String(itemId),title:item.name,bundledPaths:bundledRankingImages(getCurrentManagerId(),kind,item,siteData.rankingAssets,getRankingRows('mcu')) } })); }
 });
 
 document.addEventListener("click", (event) => {

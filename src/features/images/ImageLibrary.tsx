@@ -14,10 +14,12 @@ export function ImageLibrary({
   selected,
   onSelect,
   admin = true,
+  showImages = true,
 }: {
   selected: SharedContent | null;
   onSelect: (content: SharedContent) => void;
   admin?: boolean;
+  showImages?: boolean;
 }) {
   const [query, setQuery] = useState(""),
     [content, setContent] = useState<SharedContent[]>([]),
@@ -154,31 +156,35 @@ export function ImageLibrary({
                 Edit title / aliases
               </button>
             )}
-            <div className={styles.gallery}>
-              {files
-                .filter((f) => f.content_id === c.id)
-                .map((f) => (
-                  <div key={f.id}>
-                    <img
-                      src={imageUrl(f)}
-                      alt={`${c.title} (${f.width} × ${f.height})`}
-                      loading="lazy"
-                    />
-                    <small>
-                      {f.width} × {f.height} · {Math.ceil(f.byte_size / 1000)}{" "}
-                      KB
-                    </small>
-                    {admin && (!f.bucket || f.bucket === "library") && (
-                      <button
-                        type="button"
-                        onClick={() => setRemove({ file: f, contentId: c.id })}
-                      >
-                        Remove image
-                      </button>
-                    )}
-                  </div>
-                ))}
-            </div>
+            {showImages && (
+              <div className={styles.gallery}>
+                {files
+                  .filter((f) => f.content_id === c.id)
+                  .map((f) => (
+                    <div key={f.id}>
+                      <img
+                        src={imageUrl(f)}
+                        alt={`${c.title} (${f.width} × ${f.height})`}
+                        loading="lazy"
+                      />
+                      <small>
+                        {f.width} × {f.height} · {Math.ceil(f.byte_size / 1000)}{" "}
+                        KB
+                      </small>
+                      {admin && (!f.bucket || f.bucket === "library") && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRemove({ file: f, contentId: c.id })
+                          }
+                        >
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         ))}
       </div>

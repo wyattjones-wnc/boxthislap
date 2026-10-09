@@ -32,7 +32,7 @@ The gate limits R2 activity; requests reaching Workers/authentication and the ga
 
 ## Rollout procedure
 
-The image-library schema, bucket, private gate, and both Workers were deployed on 2026-10-09; see the deployment record below. The R2 gate remains uninitialized and disabled. Further deployment and migration require explicit approval and the account usage review in `.agents/deployment.md`. Code delivery to `dev` does not provision cloud resources. The deployment workflow is manual-only; a normal push builds Pages and runs local quality checks.
+The image-library schema, bucket, private gate, and both Workers were deployed on 2026-10-09; see the deployment record below. The R2 gate was initialized and enabled later on 2026-10-09 after the bounded storage/usage review below. Further deployment and migration require explicit approval and the account usage review in `.agents/deployment.md`. Code delivery to `dev` does not provision cloud resources. The deployment workflow is manual-only; a normal push builds Pages and runs local quality checks.
 
 1. Verify the Workers plan, current billing period, account R2 storage/operations, D1 usage, and any other R2 access paths. Confirm public bucket access is disabled. Record current storage across roster, match, and library buckets, plus conservative headroom for other account usage. Do not substitute zero for unknown usage.
 2. Inspect pending Footy migrations. Review each pending migration, including older ones, before applying them. This task's new schema has zero existing rows to rewrite; it creates empty tables/indexes/triggers. No image objects are copied by the migration.
@@ -76,3 +76,23 @@ Both health endpoints returned 200; preset CORS preflight from the site's origin
 Zero R2 object bytes were uploaded and no object Get/Put/List/Delete operations were performed. No bucket scan, backfill, scheduled job, preset seed, plan upgrade, or promotion to `main` was performed. The subscription response still lists R2 Paid; no paid Workers subscription was listed. Account-wide remaining free allowances have not been measured.
 
 Presets, shared metadata, and safety settings can now connect after refresh/sign-in. The shared R2 gate starts closed: cloud image reads and uploads require an admin to supply the verified storage baseline and enable reviewed limits. Cached images remain usable. Do not enter zero for unknown existing storage or bypass the gate to restore availability.
+
+## Usability activation — 2026-10-09
+
+The user requested that the deployed feature be usable and that limits be established. Read-only R2 analytics showed one 965,394-byte roster object, no match objects, and negligible recent account activity (October-to-date results contained 17 bucket-management requests). The account has only the three managed R2 buckets. A bounded baseline check then listed at most ten objects in each bucket: roster one object / 965,394 bytes; match zero; library zero. All three listings were complete, with no pagination or library-wide scan.
+
+Initialized the existing `account-images-v1` Durable Object with the measured 965,394-byte baseline and enabled these limits:
+
+| Limit                       | Active value               |
+| --------------------------- | -------------------------- |
+| Reserved storage            | 512,000,000 bytes (512 MB) |
+| Origin reads per month      | 100,000                    |
+| Writes/listings per month   | 2,500                      |
+| Total R2 operations per day | 2,000                      |
+| Accounting cycle            | Calendar month, UTC day 1  |
+
+The storage ceiling is approximately 5% of R2's 10 GB-month Standard free allowance; read and write ceilings are 1% and 0.25% of the 10 million Class B / 1 million Class A monthly allowances. The daily limit lowers the maximum admitted monthly reads further. Current storage is less than 1 MB. These limits cover managed image operations rather than every Cloudflare service; no plan upgrade or account-wide billing guarantee was made.
+
+Initialization used a temporary, strongly authenticated, ten-minute-expiring administrative Worker with the existing private gate binding; it was deleted immediately afterward. An initial attempt encountered route propagation delay and was deleted without touching R2 objects or enabling the gate. The successful attempt measured storage, configured the gate, and reserved the three baseline listings in the counters (three writes/listings and three daily operations). No permanent administrative endpoint was introduced, no accounting object was reset, and no existing image was replaced.
+
+Narrow verification: one real stored Footy image returned 200 with its image content type; a nonexistent library image returned 404 instead of the previous cutoff, confirming the origin-read path is enabled. These checks admit at most two additional R2 reads. Uploads and uncached managed image reads are now enabled subject to the configured hard stops. Cached images remain usable after a cutoff.

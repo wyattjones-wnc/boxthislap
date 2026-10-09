@@ -1,5 +1,5 @@
 export function createTrophyStatsController({ endpoint }) {
-  const cacheKey = "boxThisLapPsnStatsSnapshotV2";
+  const cacheKey = "boxThisLapPsnStatsSnapshotV3";
   const content = document.querySelector("#trophy-stats-content");
   const updated = document.querySelector("#trophy-stats-updated");
   let stats = null;
@@ -121,7 +121,7 @@ export function createTrophyStatsController({ endpoint }) {
               <h2 id="trophy-rarest-types-heading">Rarest Earned Trophies</h2>
             </div>
             <label class="trophy-rarity-filter">
-              Rarity
+              <span>Rarity</span>
               <select data-trophy-rarity-range>
                 ${["0.1", "0.5", "1"].map((range) => `<option value="${range}"${rarityRange === range ? " selected" : ""}>${range}%</option>`).join("")}
               </select>
@@ -186,6 +186,7 @@ function renderHighlight(label, trophy) {
         <span>${escapeHtml(label)}</span>
         <strong>${escapeHtml(trophy.name || "Unknown trophy")}</strong>
         <p>${escapeHtml(trophy.gameName || "Unknown game")}</p>
+        ${trophy.description ? `<p class="trophy-highlight-description">${escapeHtml(trophy.description)}</p>` : ""}
         ${details ? `<small>${escapeHtml(details)}</small>` : ""}
       </div>
     </article>

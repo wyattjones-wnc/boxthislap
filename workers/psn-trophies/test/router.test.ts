@@ -96,7 +96,7 @@ test("returns aggregate trophy statistics without exposing database rows", async
     { game_id: "G", title_name: "Gold Game", trophy_id: 3, trophy_name: "Gold Rarest", trophy_type: "gold", icon_url: null, earned_at: "2020-01-03T00:00:00Z", rarity_class: 0, earned_rate: 0.3 },
     { game_id: "P", title_name: "Platinum Game", trophy_id: 4, trophy_name: "Platinum Rarest", trophy_type: "platinum", icon_url: null, earned_at: "2020-01-04T00:00:00Z", rarity_class: 0, earned_rate: 0.4 },
   ];
-  const rareRows = [rows[3], { ...rows[3], trophy_id: 9, trophy_name: "Tied Bronze" }, rows[4], rows[5], rows[6]];
+  const rareRows = [rows[3], { ...rows[3], trophy_id: 9, trophy_name: "Tied Bronze", trophy_description: "Earn every trophy" }, rows[4], rows[5], rows[6]];
   const queries: string[] = [];
   let queryIndex = 0;
   const env = {
@@ -128,6 +128,9 @@ test("returns aggregate trophy statistics without exposing database rows", async
   assert.deepEqual(body.earnedByType, { bronze: 34, silver: 10, gold: 3, platinum: 1 });
   assert.equal(body.rareEarned.length, 5);
   assert.equal(body.rareEarned[1].name, "Tied Bronze");
+  assert.equal(body.rareEarned[1].description, "Earn every trophy");
+  assert.equal(body.rareEarned[0].description, null);
+  assert.match(queries[1], /t.trophy_description/);
   assert.equal(body.rareEarned[0].earnedRate, 0.1);
   assert.match(queries[1], /t.earned = 1 AND t.earned_at IS NOT NULL AND t.earned_rate >= 0.1 AND t.earned_rate <= 1/);
   assert.doesNotMatch(queries[1], /LIMIT/);

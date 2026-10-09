@@ -5,7 +5,7 @@ const SORT_COLUMNS = {
   id: "trophy_id",
   rarity: "earned_rate",
 } as const;
-const STATS_SNAPSHOT_KEY = "public:stats:v2";
+const STATS_SNAPSHOT_KEY = "public:stats:v3";
 const STATUS_SNAPSHOT_KEY = "public:status:v1";
 
 export async function routePublicApi(request: Request, env: PsnEnvironment): Promise<Response | null> {
@@ -43,7 +43,7 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
       FROM games
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
-      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
       FROM trophies t INDEXED BY idx_trophies_log_rarity
       JOIN games g ON g.id = t.game_id
@@ -51,7 +51,7 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
       ORDER BY t.earned_rate ASC, t.earned_at DESC, t.game_id ASC, t.trophy_id ASC
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
-      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
       FROM trophies t INDEXED BY idx_trophies_log_rarity
       JOIN games g ON g.id = t.game_id
@@ -60,7 +60,7 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
       LIMIT 1
     `).all<Record<string, unknown>>(),
     env.DB.prepare(`
-      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
       FROM trophies t INDEXED BY idx_trophies_log_date_desc
       JOIN games g ON g.id = t.game_id
@@ -69,7 +69,7 @@ export async function buildStats(env: PsnEnvironment): Promise<Record<string, un
       LIMIT 1
     `).all<Record<string, unknown>>(),
     ...trophyTypes.map((type) => env.DB.prepare(`
-      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_type,
+      SELECT t.game_id, g.title_name, t.trophy_id, t.trophy_name, t.trophy_description, t.trophy_type,
         t.icon_url, t.earned_at, t.rarity_class, t.earned_rate
       FROM trophies t INDEXED BY idx_trophies_log_rarity
       JOIN games g ON g.id = t.game_id
@@ -265,6 +265,7 @@ function parsePlatforms(value: unknown): string[] {
 function mapStatTrophy(row: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!row) return null;
   return {
+    description: row.trophy_description || null,
     earnedAt: row.earned_at || null,
     earnedRate: row.earned_rate === null ? null : Number(row.earned_rate),
     gameId: row.game_id,

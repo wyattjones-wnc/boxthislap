@@ -20,7 +20,7 @@ test("Footy reopens offline with saved data and unavailable actions disabled", a
   );
   await page.waitForFunction(() => navigator.serviceWorker.controller);
   await expect(page.locator("#offline-settings-status")).toContainText(
-    "Offline access is ready on this device.",
+    "Saved — Footy:",
   );
   await page.evaluate(async () => {
     localStorage.removeItem("boxthislap-offline-v1:footy");
@@ -29,17 +29,17 @@ test("Footy reopens offline with saved data and unavailable actions disabled", a
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("#offline-settings-status")).toContainText(
-    "You’re offline.",
+    "Saved —",
   );
   await expect(page.locator("#offline-settings-status")).toContainText(
-    "Footy saved",
+    "Footy:",
   );
   await expect(page.locator(".offline-status")).toHaveCount(0);
   await expect(page.locator('[data-header-art="offline"]')).toHaveClass(
     /is-active/,
   );
   await expect(page.locator("#footy-notification-toggle")).toBeHidden();
-  await expect(page.locator("#footy-competition-toggle")).toBeDisabled();
+  await expect(page.locator("#footy-competition-toggle")).toBeHidden();
   await expect(page.locator('a[href="#leagues"]').first()).toHaveAttribute(
     "aria-disabled",
     "true",
@@ -99,13 +99,11 @@ test("Next restores its latest load after an offline reload", async ({
   ).toBeNull();
   await page.waitForFunction(() => navigator.serviceWorker.controller);
   await expect(page.locator("#offline-settings-status")).toContainText(
-    "Offline access is ready on this device.",
+    "Saved — Footy:",
   );
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("#offline-settings-status")).toContainText(
-    "Next saved",
-  );
+  await expect(page.locator("#offline-settings-status")).toContainText("Next:");
   await expect(page.locator("#next-list")).toContainText("Saved offline item");
   await expect(page.locator("#next-add-button")).toBeDisabled();
   await expect(page.locator("#next-search")).toBeEnabled();
@@ -113,7 +111,7 @@ test("Next restores its latest load after an offline reload", async ({
   await page.goto("/#footy", { waitUntil: "domcontentloaded" });
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("#offline-settings-status")).toContainText(
-    "Footy saved",
+    "Footy:",
   );
   await expect(page.locator("#footy-schedule-list")).not.toContainText(
     "Unable to load footy schedule",
@@ -194,7 +192,7 @@ test("Safari restores Footy and Next when the server is unreachable", async ({
       localStorage.getItem("boxthislap-offline-v1:footy"),
     );
     await expect(page.locator("#offline-settings-status")).toContainText(
-      "Offline access is ready on this device.",
+      "Saved — Footy:",
     );
     await page.evaluate(async () => {
       localStorage.removeItem("boxthislap-offline-v1:footy");
@@ -212,17 +210,17 @@ test("Safari restores Footy and Next when the server is unreachable", async ({
     );
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator("#offline-settings-status")).toContainText(
-      "Footy saved",
+      "Footy:",
     );
     await expect(page.locator(".offline-status")).toHaveCount(0);
     await expect(page.locator('[data-header-art="offline"]')).toHaveClass(
       /is-active/,
     );
     await expect(page.locator("#footy-notification-toggle")).toBeHidden();
-    await expect(page.locator("#footy-competition-toggle")).toBeDisabled();
+    await expect(page.locator("#footy-competition-toggle")).toBeHidden();
     await page.goto(`${url}#next`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("#offline-settings-status")).toContainText(
-      "Footy saved",
+      "Footy:",
     );
     await expect(page.locator("#next-list")).toContainText(
       "Saved offline item",
@@ -232,4 +230,144 @@ test("Safari restores Footy and Next when the server is unreachable", async ({
     server.closeAllConnections();
     server.close();
   }
+});
+
+test("signed-in users can open Next and Footy offline after loading only Ranking", async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(
+    browserName === "webkit",
+    "Use the stopped-server test for WebKit.",
+  );
+  await context.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        managerId: "6",
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        rankingAuth: {
+          accessToken: "test-token",
+          accessExpiresAt: "2099-01-01T00:00:00.000Z",
+        },
+      }),
+    );
+  });
+  await page.route("**/api/items", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        items: [
+          {
+            ID: "warm-next",
+            Thing: "Background saved Next item",
+            Date: "2099-01-01",
+            NonAdmin: true,
+          },
+        ],
+      }),
+    }),
+  );
+  await page.route("**/api/managers/6/rankings/*", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        revision: 1,
+        items: [],
+        elo: [],
+        exclusions: [],
+        seeds: [],
+        snapshots: [],
+        snapshotItems: [],
+        pairCounts: [],
+      }),
+    }),
+  );
+  await page.route("**/api/match-notes", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, notes: [] }),
+    }),
+  );
+  await page.route("**/api/teams?includeLeagues=true&active=true", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        teams: [{ id: "1", name: "Arsenal", active: true }],
+        defaultTeamIds: ["1"],
+        leagues: [],
+      }),
+    }),
+  );
+  await page.route("**/api/me/followed-teams", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        revision: 1,
+        teams: [{ teamId: "1", priority: 1, notificationsEnabled: false }],
+        usingDefault: false,
+      }),
+    }),
+  );
+  await page.goto("/#rankings");
+  await page.waitForFunction(
+    () =>
+      localStorage.getItem("boxthislap-offline-v1:next") &&
+      localStorage.getItem("boxthislap-offline-v1:footy") &&
+      localStorage.getItem("boxthislap-offline-v1:rankings:6:games") &&
+      localStorage.getItem("boxthislap-offline-v1:footy-following:6") &&
+      navigator.serviceWorker.controller,
+  );
+  // A cached old entrypoint must not pin the online app to a stale build.
+  await page.evaluate(async () => {
+    const cache = await caches.open("box-this-lap-shell-v1");
+    await cache.put(
+      new URL("index.html", document.baseURI).href,
+      new Response("Obsolete application", {
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#offline-settings-status")).toContainText("Next:");
+  await expect(page.locator("body")).not.toHaveText("Obsolete application");
+  await context.setOffline(true);
+  await page.goto("/#footy", { waitUntil: "domcontentloaded" });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#footy-schedule-list")).not.toContainText(
+    "Unable to load",
+  );
+  await expect(page.locator("#footy-schedule-list")).toContainText(
+    "Arsenal FC",
+  );
+  await expect(page.locator("#footy-choose-teams")).toBeHidden();
+  await expect(page.locator("#footy-reset-teams")).toBeHidden();
+  await page.locator("#footy-past-toggle").click();
+  await expect(
+    page.locator("#footy-schedule-list .footy-past-week").first(),
+  ).toBeVisible();
+  await expect(page.locator("#footy-schedule-list")).not.toContainText(
+    "Unable to load match notes",
+  );
+  await expect(
+    page.locator('[data-page="footy"] a[href="#footy-perfect"]'),
+  ).toBeHidden();
+  await expect(
+    page.locator('[data-page="footy"] a[href="#footy-seen"]'),
+  ).toBeHidden();
+  await expect(page.locator("#footy-competition-toggle")).toBeHidden();
+  await page.goto("/#next", { waitUntil: "domcontentloaded" });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("#next-list")).toContainText(
+    "Background saved Next item",
+  );
+  await expect(page.locator("#offline-settings-status")).not.toContainText(
+    "Editing",
+  );
 });

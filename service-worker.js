@@ -65,9 +65,18 @@ self.addEventListener("fetch", (event) => {
       (event.request.mode === "navigate" || url.pathname.includes("/build/") || url.pathname === new URL("assets/final/offline-header.jpg", self.registration.scope).pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE_NAME);
+      if (event.request.mode === "navigate") {
+        try {
+          const response = await fetch(event.request, { cache: "no-store" });
+          if (response.ok) {
+            try { await cache.put(new URL("index.html", self.registration.scope), response.clone()); } catch { /* Keep a successful navigation usable. */ }
+            return response;
+          }
+        } catch { /* Reopen the installed app when the server is unavailable. */ }
+      }
       const cached = await cache.match(event.request, { ignoreSearch: true, ignoreVary: true }) ||
         (event.request.mode === "navigate" ? await cache.match(new URL("index.html", self.registration.scope), { ignoreVary: true }) : null);
-      // Serve the installed app immediately without waiting for a failed network request.
+      // Reuse installed build files and the shell when navigation cannot reach the server.
       if (cached) return cached;
       const response = await fetch(event.request);
       if (response.ok) await cache.put(event.request, response.clone());

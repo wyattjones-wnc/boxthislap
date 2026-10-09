@@ -1,5 +1,5 @@
 let settingsText =
-  "Offline access is being prepared. Footy, Next, and Ranking can use saved data. Editing, 10/10 Performances, Seen Matches, and full league schedules need a connection.";
+  "Saved — Footy: not saved · Next: not saved · Ranking: not saved";
 
 export function getOfflineSettingsText() {
   return settingsText;

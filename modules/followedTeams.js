@@ -1,3 +1,4 @@
+import { loadOfflineSnapshot } from "./offline.js";
 export function createFollowedTeamsController({
   getManagerId,
   onChanged = () => {},
@@ -17,6 +18,7 @@ export function createFollowedTeamsController({
   const dialogMount = document.querySelector("#followed-teams-dialog-root");
   const state = {
     catalog: [],
+    catalogSnapshot: null,
     defaultIds: [],
     error: "",
     leagues: [],
@@ -56,6 +58,7 @@ export function createFollowedTeamsController({
   function reset() {
     closePicker();
     state.catalog = [];
+    state.catalogSnapshot = null;
     state.defaultIds = [];
     state.error = "";
     state.leagues = [];
@@ -91,11 +94,14 @@ export function createFollowedTeamsController({
     state.loading = true;
     state.error = "";
     render();
-    state.loadPromise = Promise.all([
-      request("/api/teams?includeLeagues=true&active=true", { auth: false }),
-      managerId ? request("/api/me/followed-teams") : Promise.resolve(null),
-    ])
+    state.loadPromise = loadOfflineSnapshot(`footy-following:${loadKey}`, () =>
+      Promise.all([
+        request("/api/teams?includeLeagues=true&active=true", { auth: false }),
+        managerId ? request("/api/me/followed-teams") : Promise.resolve(null),
+      ]),
+    )
       .then(([catalog, preferences]) => {
+        state.catalogSnapshot = catalog;
         state.catalog = normalizeCatalog(catalog);
         state.leagues = normalizeLeagues(catalog, state.catalog);
         state.defaultIds = (catalog.defaultTeamIds || []).map(String);
@@ -434,6 +440,13 @@ export function createFollowedTeamsController({
   }
 
   function applyPreference(response = {}) {
+    if (state.catalogSnapshot && navigator.onLine) {
+      void loadOfflineSnapshot(
+        `footy-following:${String(getManagerId() || "anonymous")}`,
+        async () => [state.catalogSnapshot, response],
+      );
+    }
+
     state.savedIds = preferenceTeamIds(response);
     state.savedNotificationIds = notificationTeamIds(response);
     state.revision = Number(response.revision ?? state.revision + 1);

@@ -6,6 +6,7 @@ const STATIC_FALLBACKS = {
   "ranking-catalog": "data/rankings.json",
 };
 const loaded = new Map();
+const loading = new Map();
 const available = new Set(["footy", "next", "rankings", "account-settings"]);
 function validSnapshot(value) {
   return value && Number.isFinite(value.savedAt) && "data" in value;
@@ -77,8 +78,14 @@ async function saveSnapshot(key, value) {
   }
   return persisted;
 }
-export async function loadOfflineSnapshot(key, loader) {
-  const saved = await readSnapshot(key);
+export function loadOfflineSnapshot(key, loader) {
+  if (loading.has(key)) return loading.get(key);
+  const promise = loadSnapshot(key, loader).finally(() => loading.delete(key));
+  loading.set(key, promise);
+  return promise;
+}
+async function loadSnapshot(key, loader) {
+  let saved = await readSnapshot(key);
   const restore = () => {
     if (!saved)
       throw new Error(
@@ -98,7 +105,10 @@ export async function loadOfflineSnapshot(key, loader) {
   try {
     data = await loader();
   } catch (error) {
-    if (saved && (!error.status || error.status >= 500)) return restore();
+    if (!error.status || error.status >= 500) {
+      saved ||= await readSnapshot(key);
+      if (saved) return restore();
+    }
     throw error;
   }
   const savedAt = Date.now();
@@ -115,22 +125,16 @@ export async function loadOfflineSnapshot(key, loader) {
 
 export function initializeOfflineMode() {
   const disabled = new Map();
-  let offlineReady = false;
   const blocked = (element) => {
     if (navigator.onLine) return false;
     const href = element.getAttribute("href");
     if (href?.startsWith("#"))
       return !available.has(href.slice(1).split("?")[0]);
     return element.matches(
-      "#next-add-button, #next-edit-mode-filter, [data-next-edit], [data-next-complete], #ranking-manager-select, #ranking-add-button, #ranking-compare-button, #ranking-normalize-button, #ranking-elo-to-manual-button, .ranking-row-action, .ranking-drag-handle, [data-ranking-empty-add], #footy-competition-toggle, #footy-competition-select, #footy-notification-toggle, [data-footy-match-notification], [data-footy-perfect-match], [data-footy-seen-match], [data-footy-note-edit], [data-footy-next-export], #image-cache-toggle",
+      "#next-add-button, #next-edit-mode-filter, [data-next-edit], [data-next-complete], #ranking-manager-select, #ranking-add-button, #ranking-compare-button, #ranking-normalize-button, #ranking-elo-to-manual-button, .ranking-row-action, .ranking-drag-handle, [data-ranking-empty-add], #footy-choose-teams, #footy-reset-teams, #footy-competition-toggle, #footy-competition-select, #footy-notification-toggle, [data-footy-match-notification], [data-footy-perfect-match], [data-footy-seen-match], [data-footy-note-edit], [data-footy-next-export], .footy-highlight-button, #image-cache-toggle",
     );
   };
   const update = () => {
-    const state = navigator.onLine
-      ? offlineReady
-        ? "Offline access is ready on this device."
-        : "Preparing offline access…"
-      : "You’re offline.";
     const details = ["footy", "next", "rankings"]
       .map((page) => {
         const entries = [...loaded].filter(
@@ -139,28 +143,39 @@ export function initializeOfflineMode() {
         const saved = entries.filter(([, value]) => value.persisted);
         const label =
           page === "footy" ? "Footy" : page === "next" ? "Next" : "Ranking";
-        if (!saved.length)
-          return `${label}: ${entries.length ? "couldn’t save this load" : "no saved load yet"}.`;
+        if (!saved.length) return `${label}: not saved`;
         const date = new Date(
           Math.min(...saved.map(([, value]) => value.savedAt)),
-        ).toLocaleString();
-        const sourceTime = saved.find(([, value]) => value.sourceUpdatedAt)?.[1]
-          .sourceUpdatedAt;
-        return `${label} saved ${date}${sourceTime ? ` (schedule updated ${new Date(sourceTime).toLocaleString()})` : ""}.`;
+        ).toLocaleString(undefined, {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        return `${label}: ${date}`;
       })
-      .join(" ");
-    const nextText = `${state} ${details} Editing, 10/10 Performances, Seen Matches, and full league schedules need a connection.`;
-    updateOfflineSettings(nextText);
+      .join(" · ");
+    updateOfflineSettings(`Saved — ${details}`);
     document
       .querySelectorAll('a, button, input, select, [role="button"]')
       .forEach((element) => {
-        if (blocked(element)) {
+        const unusableFootyControl =
+          !navigator.onLine &&
+          element.closest('[data-page="footy"]') &&
+          element.matches("button:disabled");
+        if (blocked(element) || unusableFootyControl) {
           if (!disabled.has(element))
             disabled.set(element, {
               disabled: element.disabled,
               title: element.getAttribute("title"),
               aria: element.getAttribute("aria-disabled"),
+              hidden: element.hidden,
             });
+          if (
+            element.closest('[data-page="footy"]') &&
+            element.matches('a, button, [role="button"]')
+          )
+            element.hidden = true;
           if ("disabled" in element && !element.disabled)
             element.disabled = true;
           if (element.getAttribute("aria-disabled") !== "true")
@@ -170,6 +185,7 @@ export function initializeOfflineMode() {
         } else if (disabled.has(element)) {
           const previous = disabled.get(element);
           if ("disabled" in element) element.disabled = previous.disabled;
+          element.hidden = previous.hidden;
           for (const [name, value] of [
             ["title", previous.title],
             ["aria-disabled", previous.aria],
@@ -217,7 +233,6 @@ export function initializeOfflineMode() {
       });
     navigator.serviceWorker.addEventListener("message", (event) => {
       if (event.data?.type === "OFFLINE_READY") {
-        offlineReady = true;
         const keys = ["footy", "next"];
         try {
           const managerId = JSON.parse(

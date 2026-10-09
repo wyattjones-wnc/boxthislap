@@ -136,16 +136,12 @@ export const AccountSettingsPage = memo(function AccountSettingsPage() {
           </button>
         </section>
         <section
-          className={`account-settings-card account-settings-card--stacked ${styles.settingsCard}`}
+          className={`account-settings-card ${styles.settingsCard} ${styles.offlineCard}`}
           aria-labelledby="image-settings-heading"
         >
           <div>
-            <h2 id="image-settings-heading">Offline Access</h2>
+            <h2 id="image-settings-heading">Offline</h2>
             <OfflineStatusNote />
-            <p>
-              Save site images for offline use or remove images already saved on
-              this device.
-            </p>
           </div>
           <div className="image-cache-control">
             <button

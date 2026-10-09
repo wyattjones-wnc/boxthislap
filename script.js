@@ -3546,7 +3546,10 @@ async function registerBoxThisLapServiceWorker() {
     return null;
   }
 
-  serviceWorkerRegistrationPromise ||= navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+  serviceWorkerRegistrationPromise ||= navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`, { updateViaCache: "none" }).then((registration) => {
+    if (navigator.onLine) void registration.update().catch((error) => recordDiagnostic("offline worker update failed", error));
+    return registration;
+  });
   return serviceWorkerRegistrationPromise;
 }
 
@@ -5471,7 +5474,7 @@ function shouldRefreshFootyMatchNotes() {
 }
 
 function shouldWaitForFootyMatchNotes() {
-  return shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
+  return navigator.onLine && shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
 }
 
 function ensureFootyMatchNotes({ force = false } = {}) {
@@ -19251,6 +19254,11 @@ hydrateManagerAuthStatusCache();
 hydrateManagerSession();
 renderLeagueList(leagueYearSelect?.value || "2026");
 showPage(window.location.hash.replace("#", "") || "footy");
+if (navigator.onLine) {
+  void loadOfflineSnapshot("footy", () => loadJson("data/footy-schedule.json")).catch((error) => recordDiagnostic("offline Footy preparation failed", error));
+  void ensureNextData().catch((error) => recordDiagnostic("offline Next preparation failed", error));
+}
+
 
 function renderMatchdayPicker(matches) {
   if (!matchdaySelect || !matchdayMatchList) {

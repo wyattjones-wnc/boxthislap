@@ -119,3 +119,18 @@ test("Footy uses the installed schedule even without a browser snapshot", async 
     delete globalThis.caches;
   }
 });
+
+test("simultaneous page loads and background saving share one request", async () => {
+  navigator.onLine = true;
+  let calls = 0;
+  const loader = async () => {
+    calls++;
+    return { items: [] };
+  };
+  const [first, second] = await Promise.all([
+    loadOfflineSnapshot("deduplicated", loader),
+    loadOfflineSnapshot("deduplicated", loader),
+  ]);
+  assert.deepEqual(first, second);
+  assert.equal(calls, 1);
+});

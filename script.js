@@ -1,4 +1,6 @@
 import { bundledRankingImages, clearSharedRankingImages, loadSharedRankingImages, sharedRankingImages } from './modules/rankingImages.js';
+
+import { loadOfflineSnapshot, initializeOfflineMode } from "./modules/offline.js";
 import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js?v=202608200001";
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
@@ -3538,12 +3540,14 @@ function isFootyPushNotificationSupported() {
   );
 }
 
+let serviceWorkerRegistrationPromise;
 async function registerBoxThisLapServiceWorker() {
   if (!("serviceWorker" in navigator) || !window.isSecureContext) {
     return null;
   }
 
-  return navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+  serviceWorkerRegistrationPromise ||= navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`);
+  return serviceWorkerRegistrationPromise;
 }
 
 async function initializeImageCache() {
@@ -7086,7 +7090,7 @@ function comparePreviousNextItems(first, second) {
 }
 
 function isNextEditModeEnabled() {
-  return Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
+  return navigator.onLine && Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
 }
 
 function syncNextFilters() {
@@ -9106,7 +9110,7 @@ function ensureRankingsLoaded() {
   renderRankingLists();
 
   const promise = Promise.all([
-    rankingCatalog ? Promise.resolve(rankingCatalog) : loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "force-cache" })
+    rankingCatalog ? Promise.resolve(rankingCatalog) : loadOfflineSnapshot("ranking-catalog", () => loadJson(`data/rankings.json?v=${encodeURIComponent(SITE_VERSION)}`, { cache: "force-cache" }))
       .then((snapshot) => {
         if (snapshot?.schemaVersion !== 1 || !Array.isArray(snapshot.items)) throw new Error("MCU ranking catalog has an unsupported format.");
         rankingCatalog = snapshot.items;
@@ -9164,7 +9168,11 @@ function mergeMcuRankingItems(catalog, manualItems) {
   })).sort(compareRankingRows).map((item, index) => ({ ...item, rank: index + 1 }));
 }
 
-async function loadManagerRankingSet(managerId, kind) {
+function loadManagerRankingSet(managerId, kind) {
+  return loadOfflineSnapshot(`rankings:${managerId}:${kind}`, () => fetchManagerRankingSet(managerId, kind));
+}
+
+async function fetchManagerRankingSet(managerId, kind) {
   if (!RANKINGS_ENDPOINT) throw new Error("Rankings service is not configured.");
   const response = await fetch(`${RANKINGS_ENDPOINT.replace(/\/$/, "")}/api/managers/${encodeURIComponent(managerId)}/rankings/${encodeURIComponent(kind)}`, {
     cache: "no-store",
@@ -9172,7 +9180,11 @@ async function loadManagerRankingSet(managerId, kind) {
     signal: AbortSignal.timeout(12000),
   });
   const value = await response.json().catch(() => ({}));
-  if (!response.ok || !value.ok) throw new Error(value.error || `Unable to load ${kind} rankings.`);
+  if (!response.ok || !value.ok) {
+    const error = new Error(value.error || `Unable to load ${kind} rankings.`);
+    error.status = response.status;
+    throw error;
+  }
   return value;
 }
 
@@ -9192,7 +9204,7 @@ function getActiveRankingManagerId() {
 }
 
 function canEditActiveRankingManager() {
-  return Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
+  return navigator.onLine && Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
 }
 
 function resetRankingManagerData() {
@@ -18337,6 +18349,7 @@ function ensureSharedData(key, loader) {
 }
 
 function loadPageData(scope) {
+  if (!navigator.onLine && !["footy", "next", "rankings", "login"].includes(scope)) return Promise.resolve();
   if (scope === "account-settings") {
     return followedTeamsController.load();
   }
@@ -18571,7 +18584,7 @@ function runPortalRender(label, render) {
 
 function ensureFootyData() {
   return ensureSharedData("footy", async () => {
-    const schedule = await loadJson("data/footy-schedule.json");
+    const schedule = await loadOfflineSnapshot("footy", () => loadJson("data/footy-schedule.json"));
     clearFootyScheduleMatchNotes(schedule);
     siteData.footySchedule = schedule;
     footyScheduleFixtureIndex = null;
@@ -18585,7 +18598,7 @@ function ensureFootyData() {
     checkFootyMatchNotifications();
     console.info("Box This Lap footy schedule loaded", schedule);
 
-    ensureFootyMatchNotes()
+    if (navigator.onLine) ensureFootyMatchNotes()
       .then((notes) => {
         if (notes.length) {
           renderFootySchedule(siteData.footySchedule);
@@ -18609,7 +18622,7 @@ function ensureFootyData() {
 
 function ensureNextData() {
   return ensureSharedData("next", async () => {
-    const response = await nextItemsApiRequest("/api/items", { auth: false });
+    const response = await loadOfflineSnapshot("next", () => nextItemsApiRequest("/api/items", { auth: false }));
     const items = response.items || [];
     siteData.nextItems = items;
     renderNextList(items);
@@ -19227,6 +19240,8 @@ async function ensureFootyMissingNotesData() {
   return fixtures;
 }
 
+initializeOfflineMode();
+void registerBoxThisLapServiceWorker().catch((error) => recordDiagnostic("offline support initialization failed", error));
 syncTestScoringUi();
 syncThemeToggle();
 initializeImageCache();

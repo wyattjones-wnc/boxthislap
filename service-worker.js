@@ -1,3 +1,4 @@
+const SHELL_CACHE_NAME = "box-this-lap-shell-v1";
 const FOOTY_PUSH_ENDPOINT = "https://box-this-lap-footy-push.boxthislap.workers.dev";
 const IMAGE_CACHE_NAME = "box-this-lap-images-v2";
 const IMAGE_CACHE_META = new URL("__image_cache_metadata", self.location.origin).href;
@@ -15,8 +16,15 @@ function mutateCache(work) {
 const IMAGE_MANIFEST_URL = "assets/image-cache-manifest.json";
 const IMAGE_EXTENSIONS = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+self.addEventListener("install", (event) => {
+  event.waitUntil((async () => {
+    const response = await fetch("offline-manifest.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Offline manifest unavailable.");
+    const files = await response.json();
+    const cache = await caches.open(SHELL_CACHE_NAME);
+    await cache.addAll(files);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
@@ -24,6 +32,21 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  if (event.request.method === "GET" && url.origin === self.location.origin &&
+      (event.request.mode === "navigate" || url.pathname.includes("/build/"))) {
+    event.respondWith((async () => {
+      const cache = await caches.open(SHELL_CACHE_NAME);
+      const cached = await cache.match(event.request, { ignoreSearch: true, ignoreVary: true }) ||
+        (event.request.mode === "navigate" ? await cache.match(new URL("index.html", self.registration.scope), { ignoreVary: true }) : null);
+      // Serve the installed app immediately without waiting for a failed network request.
+      if (cached) return cached;
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(event.request, response.clone());
+      return response;
+    })());
+    return;
+  }
   if (event.request.method !== "GET" || !isCacheableImageRequest(event.request)) {
     return;
   }
@@ -32,7 +55,9 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data?.type === "CACHE_ALL_IMAGES") {
+  if (event.data?.type === "OFFLINE_STATUS") {
+    event.source?.postMessage({ type: "OFFLINE_READY" });
+  } else if (event.data?.type === "CACHE_ALL_IMAGES") {
     event.waitUntil(cacheAllImages(event.source));
   } else if (event.data?.type === "INVALIDATE_IMAGE") {
     event.waitUntil((async () => {

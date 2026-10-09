@@ -12724,3 +12724,16 @@ html.has-contained-dialog body {
     transition: none;
   }
 }
+
+.offline-status {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  background: var(--surface, #242424);
+  color: var(--text, #fff);
+  border-bottom: 2px solid #c79435;
+  font-size: 0.85rem;
+}
+[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }

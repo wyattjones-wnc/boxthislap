@@ -127,7 +127,7 @@ export function createTrophyStatsController({ endpoint }) {
               </select>
             </label>
           </div>
-          <p class="trophy-coverage-note">0.1%: exactly 0.1% · 0.5%: above 0.1% through 0.5% · 1%: 0.5% through 1%</p>
+          <p class="trophy-coverage-note">0.1%: exactly 0.1% · 0.5%: above 0.1% through 0.5% · 1%: above 0.5% through 1%</p>
           <div class="trophy-rarest-type-grid" data-trophy-rare-list aria-live="polite"></div>
         </section>
       </div>
@@ -225,7 +225,7 @@ export function selectRareEarned(trophies, range) {
     if (trophy.earnedRate === null || trophy.earnedRate === undefined) return false;
     const rate = Number(trophy.earnedRate);
     if (range === "0.5") return rate > 0.1 && rate <= 0.5;
-    if (range === "1") return rate >= 0.5 && rate <= 1;
+    if (range === "1") return rate > 0.5 && rate <= 1;
     return rate === 0.1;
   });
 }

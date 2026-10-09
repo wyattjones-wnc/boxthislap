@@ -16,6 +16,7 @@ export type ImageFile = {
   byte_size: number;
   location: string;
   bucket?: string;
+  preset_id?: string;
 };
 export type ImageMatch = {
   id: string;
@@ -107,9 +108,11 @@ export async function uploadFinished(
   contentId: string,
   blob: Blob,
   preset?: CropPreset,
+  replaceFileId?: string,
 ) {
   const form = new FormData();
   form.set("contentId", contentId);
+  if (replaceFileId) form.set("replaceFileId", replaceFileId);
   form.set("file", blob, `image.${blob.type.split("/")[1] || "webp"}`);
   if (preset) {
     form.set("presetId", preset.id);

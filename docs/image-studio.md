@@ -96,3 +96,11 @@ The storage ceiling is approximately 5% of R2's 10 GB-month Standard free allowa
 Initialization used a temporary, strongly authenticated, ten-minute-expiring administrative Worker with the existing private gate binding; it was deleted immediately afterward. An initial attempt encountered route propagation delay and was deleted without touching R2 objects or enabling the gate. The successful attempt measured storage, configured the gate, and reserved the three baseline listings in the counters (three writes/listings and three daily operations). No permanent administrative endpoint was introduced, no accounting object was reset, and no existing image was replaced.
 
 Narrow verification: one real stored Footy image returned 200 with its image content type; a nonexistent library image returned 404 instead of the previous cutoff, confirming the origin-read path is enabled. These checks admit at most two additional R2 reads. Uploads and uncached managed image reads are now enabled subject to the configured hard stops. Cached images remain usable after a cutoff.
+
+### Ranking item image review and editing
+
+Ranking item Images dialogs show their associated shared images above the crop editor, including dimensions and full-size previews. Admins can reopen an image with **Edit image**, choose a configured crop preset, and **Save image changes**. A successful save updates the shared title association and confirms availability in Compare. Uploaded images reopen as a single raster layer; local project files preserve separate layers.
+
+Replacement exports have immutable new URLs. The previous file remains associated with other titles that use it, or becomes available for manual unused-file cleanup. Saving identical bytes does not remove the association or create another R2 upload. Component-owned Footy images remain managed through Footy.
+
+This rollout changes the existing Image Library Worker without migrations, bucket scans, backfills, baseline resets, or Footy deployment. Existing account safety limits remain enforced. Each edited image uses at most one budgeted R2 write (5 MiB maximum), indexed file/content lookups, and a two-statement association transaction. A bounded verification of the first Ranking upload read four D1 rows and wrote none; it confirmed the Keeper image (400 × 268) was saved and associated.

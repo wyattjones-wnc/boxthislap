@@ -420,3 +420,114 @@ test("cloud cards explain disconnection and presets recover after reconnecting",
   await expect(presets.getByRole("status")).toHaveText("Preset saved.");
   await expect(presets.getByText("Landscape", { exact: true })).toBeVisible();
 });
+
+test("Ranking item shows saved images, reopens them, and confirms a replacement", async ({
+  page,
+}) => {
+  const content = {
+    id: "paddington",
+    kind: "movies",
+    title: "Paddington",
+    year: "2014",
+  };
+  const preset = {
+    id: "movie",
+    context: "movies",
+    label: "Square",
+    width: 80,
+    height: 80,
+    version: 1,
+    is_default: true,
+  };
+  let file = {
+    id: "original",
+    content_id: content.id,
+    path: "/media/library/test.png",
+    location: "r2",
+    bucket: "library",
+    width: 80,
+    height: 80,
+    byte_size: 100,
+    preset_id: preset.id,
+  };
+  let uploaded = false;
+  let imageBase64 = "";
+  await page.route("**/api/images/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    let value = {};
+    if (path.endsWith("/resolve"))
+      value = {
+        matches: [{ candidates: [content], files: [file], linked: true }],
+      };
+    else if (path.endsWith("/presets")) value = { presets: [preset] };
+    else if (path.endsWith("/catalog"))
+      value = { content: [content], files: [file] };
+    else if (path.includes("/content/"))
+      value = { content, aliases: [], files: [file] };
+    else if (path.endsWith("/files") && route.request().method() === "POST") {
+      expect(route.request().postDataBuffer()?.toString() || "").toContain(
+        'name="replaceFileId"',
+      );
+      expect(route.request().postDataBuffer()?.toString() || "").toContain(
+        "original",
+      );
+      file = { ...file, id: "edited" };
+      uploaded = true;
+      value = { file };
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(value),
+    });
+  });
+  await page.route("**/media/library/test.png", (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      body: Buffer.from(imageBase64, "base64"),
+    }),
+  );
+  await page.goto("/#image-editor");
+  await expect(page.locator("[data-image-editor]")).toBeVisible();
+  imageBase64 = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 80;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas unavailable");
+    context.fillStyle = "red";
+    context.fillRect(0, 0, 80, 80);
+    return canvas.toDataURL().split(",")[1];
+  });
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new CustomEvent("boxthislap:ranking-images", {
+        detail: { kind: "movies", itemId: "movie-1", title: "Paddington" },
+      }),
+    ),
+  );
+  const dialog = page.getByRole("dialog").filter({
+    has: page.getByRole("heading", { name: "Images for Paddington" }),
+  });
+  await expect(
+    dialog.getByRole("heading", { name: "Saved images (1)" }),
+  ).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Edit image 1", exact: true })
+    .click();
+  await expect(dialog.getByLabel("Layer name", { exact: true })).toHaveValue(
+    "saved-image.webp",
+  );
+  await dialog
+    .getByRole("button", { name: "Save image changes", exact: true })
+    .click();
+  await expect(
+    dialog.getByText(
+      "Image changes saved for Paddington. It is now available in Compare.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect(uploaded).toBe(true);
+  await expect(
+    dialog.getByRole("heading", { name: "Saved images (1)" }),
+  ).toBeVisible();
+});

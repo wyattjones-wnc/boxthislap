@@ -5,6 +5,8 @@ import { ImageEditor, type CropPreset } from "./ImageEditor";
 import { ImageLibrary } from "./ImageLibrary";
 import {
   imageApi,
+  imageUrl,
+  type ImageFile,
   notifyImagesChanged,
   uploadFinished,
   type ImageEditorRequest,
@@ -17,6 +19,16 @@ import styles from "./Images.module.css";
 export default function ImageDialogs() {
   const { session } = useAppState(),
     admin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
+  const [files, setFiles] = useState<ImageFile[]>([]);
+  const [editingImage, setEditingImage] = useState<{
+    image: ImageFile;
+    file: File;
+  } | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryError, setGalleryError] = useState("");
+  const [editorVersion, setEditorVersion] = useState(0);
+  const [pendingEdit, setPendingEdit] = useState<(() => void) | null>(null);
   const [presetsReady, setPresetsReady] = useState(false);
   const [request, setRequest] = useState<
     | (ImageEditorRequest & { resolve: (value: ImageExport | null) => void })
@@ -45,6 +57,9 @@ export default function ImageDialogs() {
       const r = (event as CustomEvent<RankingImagesRequest>).detail;
       setPresetsReady(false);
       setRanking(r);
+      setEditingImage(null);
+      setFiles([]);
+      setDirty(false);
       setSelected(null);
       setMatches(null);
       setMessage("");
@@ -80,12 +95,79 @@ export default function ImageDialogs() {
         setPresetsReady(true);
       });
   }, [request, ranking]);
+  useEffect(() => {
+    if (!selected || !ranking) {
+      setFiles([]);
+      return;
+    }
+    let active = true;
+    const load = () => {
+      setGalleryLoading(true);
+      void imageApi<{ files: ImageFile[] }>(
+        `/api/images/content/${selected.id}`,
+      )
+        .then((v) => {
+          if (active) {
+            setGalleryLoading(false);
+            setFiles(v.files);
+            setGalleryError("");
+          }
+        })
+        .catch((e) => {
+          if (active) {
+            setGalleryLoading(false);
+            setGalleryError(e.message);
+          }
+        });
+    };
+    setFiles([]);
+    load();
+    window.addEventListener("boxthislap:images-changed", load);
+    return () => {
+      active = false;
+      window.removeEventListener("boxthislap:images-changed", load);
+    };
+  }, [selected, ranking]);
+  function changeEditor(action: () => void) {
+    if (dirty) {
+      setPendingEdit(() => action);
+      setDiscard(true);
+    } else action();
+  }
+  async function editImage(image: ImageFile) {
+    setImageLoading(true);
+    try {
+      const response = await fetch(imageUrl(image));
+      if (!response.ok)
+        throw new Error(
+          "This image could not be loaded for editing. Try again.",
+        );
+      const blob = await response.blob();
+      if (blob.size > 5 * 1024 * 1024)
+        throw new Error("This image exceeds the editor's 5 MB limit.");
+      setEditingImage({
+        image,
+        file: new File([blob], "saved-image.webp", { type: blob.type }),
+      });
+      setEditorVersion((v) => v + 1);
+      setDirty(false);
+      setMessage(
+        "Editing the saved image. Saving updates this shared title for all linked Ranking items. Saved images reopen as a single layer; use a local project file to preserve separate layers.",
+      );
+    } catch (e) {
+      setMessage((e as Error).message);
+    } finally {
+      setImageLoading(false);
+    }
+  }
   function close() {
     request?.resolve(null);
     setRequest(null);
     setRanking(null);
     setDirty(false);
     setDiscard(false);
+    setPendingEdit(null);
+    setEditingImage(null);
     setMessage("");
   }
   function tryClose() {
@@ -104,6 +186,9 @@ export default function ImageDialogs() {
         }),
       });
       setSelected(content);
+      setEditingImage(null);
+      setEditorVersion((v) => v + 1);
+      setDirty(false);
       notifyImagesChanged();
       setMessage(`Linked to ${content.title}.`);
     } catch (e) {
@@ -116,7 +201,16 @@ export default function ImageDialogs() {
     (p) =>
       p.context === context || (context === "mcu" && p.context === "movies"),
   );
-  const defaultPreset = allowed.find((p) => p.is_default) || allowed[0];
+  const defaultPreset =
+    (editingImage &&
+      allowed.find(
+        (p) =>
+          p.id === editingImage.image.preset_id ||
+          (p.width === editingImage.image.width &&
+            p.height === editingImage.image.height),
+      )) ||
+    allowed.find((p) => p.is_default) ||
+    allowed[0];
   return (
     <>
       <ContainedDialog
@@ -209,9 +303,80 @@ export default function ImageDialogs() {
                 {selected.year ? ` (${selected.year})` : ""}
               </p>
             )}
+            {selected && (
+              <section
+                className={styles.section}
+                aria-label="Images associated with this item"
+              >
+                <h2>Saved images ({files.length})</h2>
+                <p>
+                  These images are available in Compare and shared with other
+                  items linked to {selected.title}.
+                </p>
+                {galleryError ? (
+                  <p role="alert">{galleryError}</p>
+                ) : galleryLoading && files.length === 0 ? (
+                  <p>Loading saved images…</p>
+                ) : files.length === 0 ? (
+                  <p>No saved images are associated with this title yet.</p>
+                ) : null}
+                <div className={styles.gallery}>
+                  {files.map((image, index) => (
+                    <div key={image.id}>
+                      <a
+                        href={imageUrl(image)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <img
+                          src={imageUrl(image)}
+                          alt={`${selected.title}, image ${index + 1}`}
+                          loading="lazy"
+                        />
+                      </a>
+                      <small>
+                        {image.width} × {image.height}
+                      </small>
+                      {admin &&
+                        defaultPreset &&
+                        (!image.bucket || image.bucket === "library") && (
+                          <button
+                            type="button"
+                            disabled={imageLoading}
+                            onClick={() =>
+                              changeEditor(() => void editImage(image))
+                            }
+                          >
+                            Edit image {index + 1}
+                          </button>
+                        )}
+                    </div>
+                  ))}
+                </div>
+                {admin && editingImage && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      changeEditor(() => {
+                        setEditingImage(null);
+                        setEditorVersion((v) => v + 1);
+                        setDirty(false);
+                        setMessage("");
+                      })
+                    }
+                  >
+                    Add another image
+                  </button>
+                )}
+              </section>
+            )}
             {admin && selected && defaultPreset && (
               <ImageEditor
-                key={selected.id}
+                key={`${selected.id}-${editorVersion}`}
+                file={editingImage?.file}
+                saveLabel={
+                  editingImage ? "Save image changes" : "Add image to item"
+                }
                 limited
                 width={defaultPreset.width}
                 height={defaultPreset.height}
@@ -219,7 +384,25 @@ export default function ImageDialogs() {
                 presets={allowed}
                 onDirty={setDirty}
                 onSave={async (blob, _p, preset) => {
-                  await uploadFinished(selected.id, blob, preset);
+                  const result = await uploadFinished(
+                    selected.id,
+                    blob,
+                    preset,
+                    editingImage?.image.id,
+                  );
+                  setFiles((previous) => [
+                    ...previous.filter(
+                      (f) =>
+                        f.id !== result.file.id &&
+                        f.id !== editingImage?.image.id,
+                    ),
+                    { ...result.file, content_id: selected.id },
+                  ]);
+                  if (editingImage)
+                    setEditingImage({ ...editingImage, image: result.file });
+                  setMessage(
+                    `${editingImage ? "Image changes saved" : "Image added"} for ${selected.title}. It is now available in Compare.`,
+                  );
                   notifyImagesChanged();
                 }}
               />
@@ -266,7 +449,7 @@ export default function ImageDialogs() {
               <summary>Choose or correct shared content</summary>
               <ImageLibrary
                 selected={selected}
-                onSelect={(c) => void link(c)}
+                onSelect={(c) => changeEditor(() => void link(c))}
                 admin={admin}
               />
             </details>
@@ -303,13 +486,31 @@ export default function ImageDialogs() {
       {discard && (
         <ContainedDialog
           title="Discard unsaved image changes?"
-          close={() => setDiscard(false)}
+          close={() => {
+            setDiscard(false);
+            setPendingEdit(null);
+          }}
           footer={
             <>
-              <button type="button" onClick={() => setDiscard(false)}>
+              <button
+                type="button"
+                onClick={() => {
+                  setDiscard(false);
+                  setPendingEdit(null);
+                }}
+              >
                 Keep editing
               </button>
-              <button type="button" onClick={close}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingEdit) {
+                    pendingEdit();
+                    setPendingEdit(null);
+                    setDiscard(false);
+                  } else close();
+                }}
+              >
                 Discard changes
               </button>
             </>

@@ -435,3 +435,72 @@ test("binary uploads avoid base64 expansion and retain server image validation",
   assert.equal(response.status, 201);
   assert.equal(f.counts().puts, 1);
 });
+
+test("editing replaces only the selected title association and keeps immutable originals", async (context) => {
+  const f = await fixture(context);
+  await f.budget.call("/configure", defaults, "PUT");
+  const create = async (title) =>
+    (
+      await (
+        await f.call("/api/images/content", { kind: "movies", title })
+      ).json()
+    ).content;
+  const content = await create("Paddington"),
+    other = await create("Other title");
+  const original = (
+    await (
+      await f.call("/api/images/files", {
+        contentId: content.id,
+        dataUrl: `data:image/png;base64,${png}`,
+      })
+    ).json()
+  ).file;
+  await f.call("/api/images/files", {
+    contentId: other.id,
+    dataUrl: `data:image/png;base64,${png}`,
+  });
+  const editedBytes = Buffer.concat([
+    Buffer.from(png, "base64"),
+    Buffer.from([0]),
+  ]).toString("base64");
+  const invalid = await f.call("/api/images/files", {
+    contentId: content.id,
+    replaceFileId: "missing",
+    dataUrl: `data:image/png;base64,${editedBytes}`,
+  });
+  assert.equal(invalid.status, 404);
+  assert.equal(f.counts().puts, 1);
+  const saved = await f.call("/api/images/files", {
+    contentId: content.id,
+    replaceFileId: original.id,
+    dataUrl: `data:image/png;base64,${editedBytes}`,
+  });
+  assert.equal(saved.status, 201);
+  const edited = (await saved.json()).file;
+  const list = async (id) =>
+    (await (await f.call(`/api/images/content/${id}`)).json()).files;
+  assert.deepEqual(
+    (await list(content.id)).map((v) => v.id),
+    [edited.id],
+  );
+  assert.deepEqual(
+    (await list(other.id)).map((v) => v.id),
+    [original.id],
+  );
+  assert.equal(
+    (
+      await f.env.DB.prepare("SELECT id FROM image_files WHERE id=?")
+        .bind(original.id)
+        .first()
+    ).id,
+    original.id,
+  );
+  const unchanged = await f.call("/api/images/files", {
+    contentId: content.id,
+    replaceFileId: edited.id,
+    dataUrl: `data:image/png;base64,${editedBytes}`,
+  });
+  assert.equal(unchanged.status, 201);
+  assert.equal((await list(content.id)).length, 1);
+  assert.equal(f.counts().puts, 2);
+});

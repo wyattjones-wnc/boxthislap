@@ -83,6 +83,7 @@ export type EditorOptions = {
   width?: number;
   height?: number;
   file?: File;
+  saveLabel?: string;
   limited?: boolean;
   presets?: CropPreset[];
   initialPreset?: CropPreset;
@@ -124,6 +125,7 @@ export function ImageEditor({
   height = 800,
   file,
   limited = false,
+  saveLabel,
   presets = [],
   initialPreset,
   onSave,
@@ -1598,7 +1600,8 @@ export function ImageEditor({
               })
             }
           >
-            {limited ? "Use cropped image" : "Upload finished image"}
+            {saveLabel ||
+              (limited ? "Use cropped image" : "Upload finished image")}
           </button>
         )}
       </div>

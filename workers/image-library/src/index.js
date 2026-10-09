@@ -486,6 +486,20 @@ export default {
             .first();
         if (!content)
           throw fail(404, "Choose shared content before uploading.");
+        if (input.replaceFileId) {
+          const original = await env.DB.prepare(
+            "SELECT f.bucket FROM image_associations a JOIN image_files f ON f.id=a.file_id WHERE a.content_id=? AND a.file_id=?",
+          )
+            .bind(content.id, input.replaceFileId)
+            .first();
+          if (!original)
+            throw fail(
+              404,
+              "The image is no longer associated with this title. Reload before editing.",
+            );
+          if (original.bucket !== "library")
+            throw fail(409, "Manage component-owned images through Footy.");
+        }
         let bytes, declaredMime;
         if (multipart) {
           bytes = input.bytes;
@@ -583,11 +597,17 @@ export default {
             .bind(id)
             .first();
         }
-        await env.DB.prepare(
+        const association = env.DB.prepare(
           "INSERT OR IGNORE INTO image_associations(content_id,file_id) VALUES(?,?)",
-        )
-          .bind(content.id, existing.id)
-          .run();
+        ).bind(content.id, existing.id);
+        if (input.replaceFileId && input.replaceFileId !== existing.id) {
+          await env.DB.batch([
+            association,
+            env.DB.prepare(
+              "DELETE FROM image_associations WHERE content_id=? AND file_id=?",
+            ).bind(content.id, input.replaceFileId),
+          ]);
+        } else await association.run();
         return json({ file: existing }, 201);
       }
       if (
@@ -768,6 +788,7 @@ async function uploadBody(request) {
     throw fail(413, "Upload an image up to 5 MB.");
   return {
     contentId: String(form.get("contentId") || ""),
+    replaceFileId: String(form.get("replaceFileId") || ""),
     presetId: String(form.get("presetId") || ""),
     presetVersion: Number(form.get("presetVersion")),
     bytes: new Uint8Array(await file.arrayBuffer()),

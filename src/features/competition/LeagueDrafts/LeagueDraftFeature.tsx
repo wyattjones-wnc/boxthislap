@@ -349,6 +349,7 @@ function Options({
 }) {
   const [tab, setTab] = useState("pick");
   const [search, setSearch] = useState("");
+  const [resourceSearch, setResourceSearch] = useState("");
   const [selected, setSelected] = useState<DraftOption | null>(null);
   const [retryKey, setRetryKey] = useState("");
   const mutation = useDraftAction(draft);
@@ -371,14 +372,13 @@ function Options({
     setRetryKey(crypto.randomUUID());
     setSelected(option);
   };
+  const query = tab === "resource" ? resourceSearch : search;
   const options =
-    tab === "resource"
-      ? draft.options
-      : search.trim()
-        ? draft.options.filter((option) =>
-            optionKey(option.name).includes(optionKey(search)),
-          )
-        : [];
+    tab === "resource" || query.trim()
+      ? draft.options.filter((option) =>
+          optionKey(option.name).includes(optionKey(query)),
+        )
+      : [];
   return (
     <section className={styles.panel} id="draft-options">
       {testMode && <h2>Admin test drafting</h2>}
@@ -391,7 +391,7 @@ function Options({
       <div
         role="tablist"
         aria-label="Drafting views"
-        className={styles.actions}
+        className={styles.viewTabs}
       >
         {["pick", "resource"].map((view) => (
           <button
@@ -439,62 +439,98 @@ function Options({
               if (canPick && search.trim() && !claimed(custom)) choose(custom);
             }}
           >
-            <FloatingField>
-              <span>Movie or pick name</span>
-              <input
-                type="search"
-                maxLength={200}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                aria-describedby="pick-help"
-              />
-            </FloatingField>
-            <p id="pick-help">
-              Type any name to draft it, or choose a matching resource
-              suggestion below.
+            <p id="pick-help" className={styles.pickHelp}>
+              Enter any name or choose a matching suggestion.
             </p>
-            <button
-              type="submit"
-              disabled={!canPick || !search.trim() || Boolean(claimed(custom))}
-            >
-              {claimed(custom)
-                ? "Already taken"
-                : `Draft${search.trim() ? ` ${search.trim()}` : " this name"}`}
-            </button>
+            <div className={styles.pickInput}>
+              <FloatingField>
+                <span>Movie or pick name</span>
+                <input
+                  type="search"
+                  maxLength={200}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  aria-describedby="pick-help"
+                />
+              </FloatingField>
+              <button
+                type="submit"
+                className={styles.pickSubmit}
+                disabled={
+                  !canPick || !search.trim() || Boolean(claimed(custom))
+                }
+              >
+                {claimed(custom) ? "Taken" : "Draft pick"}
+              </button>
+            </div>
             {search.trim() && !options.length && (
               <p>No resource matches. You can still draft this name.</p>
             )}
           </form>
         )}
-        {tab === "resource" && <h3>{draft.resourceLabel}</h3>}
-        <div className={styles.grid}>
-          {options.map((option) => {
-            const pick = claimed(option);
-            return (
-              <article
-                className={`${styles.panel} ${styles.option} ${pick ? styles.taken : ""}`}
-                key={option.id}
-              >
-                <h3>{option.name}</h3>
-                <p>{dateLabel(option)}</p>
-                <p>
-                  {pick
-                    ? `Taken by ${managerName(draft, pick.managerId)} · round ${pick.round}, pick #${pick.number}`
-                    : "Available"}
-                </p>
-                <button
-                  type="button"
-                  disabled={Boolean(pick) || !canPick}
-                  onClick={() => choose(option)}
-                >
-                  {pick ? "Taken" : testMode ? "Test select" : "Draft this"}
-                </button>
-              </article>
-            );
-          })}
-        </div>
-        {tab === "resource" && !draft.options.length && (
-          <p>No resource options yet. Use Pick to enter any name.</p>
+        {tab === "resource" && (
+          <FloatingField className={styles.resourceSearch}>
+            <span>Search resource</span>
+            <input
+              type="search"
+              value={resourceSearch}
+              onChange={(event) => setResourceSearch(event.target.value)}
+            />
+          </FloatingField>
+        )}
+        {options.length > 0 && (
+          <table className={styles.resourceTable}>
+            <caption>
+              {tab === "resource"
+                ? draft.resourceLabel
+                : "Matching suggestions"}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Release</th>
+                <th scope="col">Pick</th>
+              </tr>
+            </thead>
+            <tbody>
+              {options.map((option) => {
+                const pick = claimed(option);
+                return (
+                  <tr key={option.id}>
+                    <th scope="row">
+                      {option.name}
+                      {pick && (
+                        <span className={styles.resourceOwner}>
+                          Taken by {managerName(draft, pick.managerId)}
+                        </span>
+                      )}
+                    </th>
+                    <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        disabled={Boolean(pick) || !canPick}
+                        onClick={() => choose(option)}
+                      >
+                        {pick
+                          ? "Taken"
+                          : testMode
+                            ? "Test select"
+                            : "Draft this"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        {tab === "resource" && !options.length && (
+          <p>
+            {draft.options.length
+              ? "No matching titles."
+              : "No resource options yet. Use Pick to enter any name."}
+          </p>
         )}
       </div>
       {selected && (

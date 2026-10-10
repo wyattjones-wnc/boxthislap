@@ -152,8 +152,8 @@ describe("2027 league drafting", () => {
     );
     await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = (
-      await screen.findByRole("heading", { name: "Test Movie 1" })
-    ).closest("article")!;
+      await screen.findByRole("rowheader", { name: "Test Movie 1" })
+    ).closest("tr")!;
     expect(screen.getByRole("status").textContent).toContain(
       "Manager 6 is on the clock",
     );
@@ -226,9 +226,7 @@ describe("2027 league drafting", () => {
     wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
     await screen.findByRole("status");
     await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
-    const movie = screen
-      .getByRole("heading", { name: "Movie 0" })
-      .closest("article")!;
+    const movie = screen.getByText("Movie 0").closest("tr")!;
     await userEvent.click(
       within(movie).getByRole("button", { name: "Draft this" }),
     );
@@ -265,9 +263,7 @@ describe("2027 league drafting", () => {
     );
     wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
     await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
-    const movie = (
-      await screen.findByRole("heading", { name: "Movie 0" })
-    ).closest("article")!;
+    const movie = (await screen.findByText("Movie 0")).closest("tr")!;
     await userEvent.click(
       within(movie).getByRole("button", { name: "Draft this" }),
     );
@@ -409,9 +405,7 @@ describe("2027 league drafting", () => {
     expect(
       screen.getByText("No resource matches. You can still draft this name."),
     ).toBeTruthy();
-    await userEvent.click(
-      screen.getByRole("button", { name: "Draft An Unlisted Film" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Draft pick" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     await waitFor(() =>
       expect(state.picks[0].optionName).toBe("An Unlisted Film"),

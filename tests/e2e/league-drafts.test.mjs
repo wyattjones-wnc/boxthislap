@@ -140,8 +140,8 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await active
     .getByRole("searchbox", { name: "Movie or pick name" })
     .fill("Movie 0");
-  const option = active.getByRole("article").filter({
-    has: page.getByRole("heading", { name: "Test Movie 0", exact: true }),
+  const option = active.getByRole("row").filter({
+    has: page.getByText("Test Movie 0", { exact: true }),
   });
   await option.getByRole("button", { name: "Draft this", exact: true }).click();
   await page.getByRole("button", { name: "Confirm pick", exact: true }).click();
@@ -149,9 +149,20 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     "Manager 2 is picking",
   );
   await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
+  await active
+    .getByRole("searchbox", { name: "Search resource" })
+    .fill("Test Movie 0");
+  await expect(active.getByRole("row")).toHaveCount(2);
+  await expect(active.getByText("Test Movie 1", { exact: true })).toHaveCount(
+    0,
+  );
   await expect(
-    active.getByText("Taken by Manager 1 · round 1, pick #1"),
-  ).toBeVisible();
+    active.getByRole("button", { name: "Taken", exact: true }),
+  ).toBeDisabled();
+  await expect(active.getByText("Taken by Manager 1")).toBeVisible();
   await page
     .locator('[data-nav-scope="fantasy-office-2027"]')
     .getByRole("tab", { name: "Draft", exact: true })

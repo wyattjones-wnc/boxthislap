@@ -289,17 +289,17 @@ describe("2027 league drafting", () => {
       <LeagueDraftPage league="fantasy-office" mode="draft" />,
     );
     await userEvent.click(
-      await screen.findByRole("button", { name: "Subscribe to draft alerts" }),
+      await screen.findByRole("button", { name: "Subscribe to device alerts" }),
     );
     await screen.findByRole("button", {
-      name: "Unsubscribe from draft alerts",
+      name: "Unsubscribe from device alerts",
     });
-    expect(state.preferences["1"].push).toBe(false);
+    expect(state.preferences["1"].push).toBe(true);
     page.unmount();
     wrapper(<LeagueDraftHubCard />);
     expect(
       await screen.findByRole("button", {
-        name: "Unsubscribe from draft alerts",
+        name: "Unsubscribe from device alerts",
       }),
     ).toBeTruthy();
     expect(screen.getByText("Your turn · pick #1")).toBeTruthy();

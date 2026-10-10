@@ -474,6 +474,10 @@ test("failed push persists outbox for retry and dispatch suppresses an obsolete 
         "now",
       )
       .run();
+    state.events = state.events.filter((event) => event.type === "turn");
+    sqlite
+      .prepare("UPDATE league_drafts_state SET state = ?")
+      .run(JSON.stringify(state));
     let calls = 0;
     const env = {
       DB,
@@ -507,4 +511,20 @@ test("failed push persists outbox for retry and dispatch suppresses an obsolete 
   } finally {
     sqlite.close();
   }
+});
+
+test("Manager Hub turn alerts exist without a device subscription, including existing drafts", () => {
+  const state = activeDraft();
+  assert.ok(
+    visibleDraft(state, "1").notifications.some(
+      (event) => event.type === "turn",
+    ),
+  );
+  state.events = [];
+  assert.ok(
+    visibleDraft(state, "1").notifications.some(
+      (event) => event.type === "turn",
+    ),
+  );
+  assert.deepEqual(visibleDraft(state, "2").notifications, []);
 });

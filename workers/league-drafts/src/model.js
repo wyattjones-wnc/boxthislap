@@ -88,7 +88,11 @@ function audit(state, action, actor, reason = "") {
 
 function notify(state, type, managerId) {
   const preference = state.preferences[managerId];
-  if (!preference?.enabled) return;
+  if (
+    !state.participants.some((manager) => manager.id === managerId) &&
+    !preference?.enabled
+  )
+    return;
   const titles = {
     started: "Draft started",
     turn: "Your turn to draft",
@@ -113,7 +117,10 @@ function notify(state, type, managerId) {
 }
 
 function notifyAll(state, type) {
-  for (const managerId of Object.keys(state.preferences))
+  for (const managerId of new Set([
+    ...state.participants.map((manager) => manager.id),
+    ...Object.keys(state.preferences),
+  ]))
     notify(state, type, managerId);
 }
 
@@ -285,21 +292,30 @@ export function transition(
 export function visibleDraft(state, managerId, admin = false) {
   const { preferences, events, audit: history, ...draft } = state;
   delete draft.requests;
+  const currentTurn =
+    state.status === "active" &&
+    state.schedule[state.picks.length]?.managerId === managerId;
+  const notifications = events
+    .filter(
+      (event) => event.managerId === managerId && eventIsCurrent(state, event),
+    )
+    .slice(-20);
+  if (currentTurn && !notifications.some((event) => event.type === "turn"))
+    notifications.push({
+      id: `current-turn-${state.turnToken}`,
+      type: "turn",
+      title: "Your turn to draft",
+      body: `${state.name}: round ${state.schedule[state.picks.length].round}, pick #${state.picks.length + 1}.`,
+    });
   return {
     ...draft,
     preference: preferences[managerId] || { enabled: false, push: false },
-    notifications: events
-      .filter(
-        (event) =>
-          event.managerId === managerId && eventIsCurrent(state, event),
-      )
-      .slice(-20),
+    notifications,
     ...(admin ? { audit: history } : {}),
   };
 }
 
 export function eventIsCurrent(state, event) {
-  if (!state.preferences[event.managerId]?.enabled) return false;
   if (event.type === "turn")
     return (
       state.status === "active" &&

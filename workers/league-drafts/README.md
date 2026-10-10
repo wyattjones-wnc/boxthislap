@@ -70,7 +70,7 @@ Publishing requires explicit authorization under `AGENTS.md`. The dev rollout is
 4. Publish the frontend through the existing `dev` branch Pages workflow, following the repository's version bump and integration instructions. Do not publish `main`.
 5. Verify the draft Worker `/health`. It should report `environment: dev`; `pushConfigured` confirms that the sender has its service binding and secret. Complete an actual opt-in browser test to verify the recipient Worker and VAPID delivery as well.
 
-Core drafting and Manager Hub subscriptions work without the push secret. Browser delivery requires the push extension and matching secret on both Workers. Migration or Worker deployment alone does not update the website.
+Core drafting and automatic Manager Hub alerts work without the push secret. Browser delivery requires the push extension and matching secret on both Workers. Migration or Worker deployment alone does not update the website.
 
 ## Manual dev test walkthrough
 
@@ -83,14 +83,14 @@ Core drafting and Manager Hub subscriptions work without the push secret. Browse
 7. Run through the fourth and fifth picks and confirm that the last seed gets consecutive turns at the snake boundary. Run through all eight picks and confirm completion.
 8. Before completing another test draft, pause and confirm picks are blocked; undo with a reason, confirm the option becomes available and the draft stays paused, then resume explicitly.
 9. Test an ordinary participant account: only its current turn can submit. A nonparticipant can observe but cannot select. An unsubscribed participant can still draft. Manage must be hidden and rejected for non-admins.
-10. Subscribe in the banner, verify the same setting in Manager Hub, and unsubscribe there. Browser push is a separate explicit action. With the browser closed, verify a turn alert deep-links to the correct draft on dev. Turning draft alerts off must preserve Footy/Formula One subscriptions. Switch account or sign out and verify the previous manager's draft alerts are suppressed.
+10. Subscribe in the banner, verify the same device-alert setting in Manager Hub, and unsubscribe there; Hub alerts must remain visible. Browser push is a separate explicit action. With the browser closed, verify a turn alert deep-links to the correct draft on dev. Turning draft alerts off must preserve Footy/Formula One subscriptions. Switch account or sign out and verify the previous manager's draft alerts are suppressed.
 11. Repeat with three managers and confirm the seed order repeats every round. Repeat in the other 2027 league. Revisit older leagues and private Draft Lists to confirm their behavior.
 
 Use visibly named test drafts and sample options. Admin test selections are real writes within the dev draft namespace, not scoring updates. Cancellation retains picks and ownership for audit; create another draft for a clean run.
 
 ## Notification delivery
 
-Subscribed managers get draft start, current turn, pause/resume, cancellation, and completion events. Manager Hub always shows current-turn tasks even without a subscription. Account preferences are shared between the banner and Hub; browser capability is per device.
+Participants automatically get draft start, current turn, pause/resume, cancellation, and completion events in Manager Hub. Existing drafts also show a current-turn alert without needing to recreate the draft. Subscribing controls device push only. Account push preferences are shared between the banner and Hub; browser capability is per device.
 
 The retry cron runs 96 times daily and reads at most 200 indexed dev draft rows per run (19,200 rows/day at the retention limit; initially zero draft rows). It writes only when delivery state changes. The schema migration created an empty table and index without rewriting existing league data.
 

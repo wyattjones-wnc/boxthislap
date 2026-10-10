@@ -248,17 +248,19 @@ function NotificationSettings({
     <div>
       <p className={styles.muted}>
         Alerts cover draft start, your turn, pauses/resumes, and completion.
-        Your current-turn task is always visible in Manager Hub.
+        Manager Hub alerts are automatic. Subscribing controls device push only.
       </p>
       <div className={styles.actions}>
         <button
           type="button"
           disabled={mutation.isPending || pushBusy}
-          onClick={() => update(!draft.preference.enabled, false)}
+          onClick={() =>
+            update(!draft.preference.enabled, !draft.preference.enabled)
+          }
         >
           {draft.preference.enabled
-            ? "Unsubscribe from draft alerts"
-            : "Subscribe to draft alerts"}
+            ? "Unsubscribe from device alerts"
+            : "Subscribe to device alerts"}
         </button>
         {draft.preference.enabled && (
           <button
@@ -296,7 +298,7 @@ function NotificationSettings({
             ? deviceEnabled
               ? "Draft alerts are enabled; browser push is configured on this device."
               : "Draft alerts are enabled on your account. Enable browser push on this device to receive them here."
-            : "Draft alerts are enabled in Manager Hub. Browser push is off."}
+            : "Manager Hub alerts are always available. Browser push is off."}
         </p>
       )}
       {(pushError || mutation.error) && (
@@ -1122,12 +1124,11 @@ export function LeagueDraftHubCard() {
                 Open draft
               </a>
               <NotificationSettings draft={draft} managerId={query.managerId} />
-              {draft.preference.enabled &&
-                draft.notifications.map((event) => (
-                  <p key={event.id}>
-                    {event.title}: {event.body}
-                  </p>
-                ))}
+              {draft.notifications.map((event) => (
+                <p key={event.id}>
+                  {event.title}: {event.body}
+                </p>
+              ))}
             </article>
           );
         })

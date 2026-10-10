@@ -52,7 +52,7 @@ test("2027 navigation preserves the current-year default and a signed-out draft 
   const draft = page.locator('[data-page="fantasy-office-2027-draft"]');
   await expect(draft).toHaveClass(/is-active/);
   await expect(
-    draft.getByText("Log in to see your position and make your pick."),
+    draft.getByRole("link", { name: "Log in", exact: true }),
   ).toBeVisible();
   await expect(
     page
@@ -132,7 +132,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await expect(draft).toHaveClass(/is-active/);
   await expect(draft.getByRole("status")).toContainText("Your turn");
   await expect(
-    draft.getByRole("heading", { name: "League managers and draft choices" }),
+    draft.getByRole("region", { name: "Draft choices" }),
   ).toBeVisible();
   await draft.getByRole("link", { name: "Go to drafting" }).click();
   const active = page.locator('[data-page="fantasy-office-2027-active"]');
@@ -157,10 +157,12 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     .getByRole("tab", { name: "Draft", exact: true })
     .click();
   await expect(
-    draft.getByRole("heading", { name: "League managers and draft choices" }),
+    draft.getByRole("region", { name: "Draft choices" }),
   ).toBeVisible();
   await expect(
-    draft.getByText("Round 1: Test Movie 0", { exact: true }),
+    draft
+      .getByRole("region", { name: "Draft choices" })
+      .getByText("Test Movie 0", { exact: true }),
   ).toBeVisible();
   expect(state.picks).toHaveLength(1);
   state.status = "completed";

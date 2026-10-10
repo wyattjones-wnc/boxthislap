@@ -289,7 +289,7 @@ describe("2027 league drafting", () => {
       return Response.json({ drafts: [visibleDraft(state, "1")] });
     });
     const page = wrapper(
-      <LeagueDraftPage league="fantasy-office" mode="draft" />,
+      <LeagueDraftPage league="fantasy-office" mode="active" />,
     );
     await userEvent.click(
       await screen.findByRole("button", { name: "Subscribe to device alerts" }),
@@ -332,7 +332,7 @@ describe("2027 league drafting", () => {
     });
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain(
-        "Your next pick is #2",
+        "Manager 1 is picking",
       ),
     );
     expect(screen.getByRole("status").textContent).not.toContain("Your turn");
@@ -375,8 +375,13 @@ describe("2027 league drafting", () => {
     );
     active.unmount();
     wrapper(<LeagueDraftPage league="fantasy-office" mode="draft" />);
-    expect(await screen.findByText("Round 1: An Unlisted Film")).toBeTruthy();
+    expect(await screen.findByText("An Unlisted Film")).toBeTruthy();
     expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Turn order" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Selections" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Subscribe to device alerts" }),
+    ).toBeNull();
     expect(
       screen.getByRole("link", { name: "Go to drafting" }).getAttribute("href"),
     ).toContain("-active?draft=");

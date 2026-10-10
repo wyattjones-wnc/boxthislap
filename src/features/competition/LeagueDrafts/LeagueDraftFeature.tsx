@@ -133,9 +133,11 @@ function LoginLink() {
 export function DraftBanner({
   draft,
   managerId,
+  compact = false,
 }: {
   draft: Draft;
   managerId: string;
+  compact?: boolean;
 }) {
   const current = draft.schedule[draft.picks.length];
   const next = draft.schedule
@@ -169,6 +171,33 @@ export function DraftBanner({
     draft.status === "active" &&
     current?.managerId === managerId &&
     draft.schedule[draft.picks.length + 1]?.managerId === managerId;
+  if (compact)
+    return (
+      <section className={styles.thinBanner} aria-label="Draft status">
+        <p role="status">
+          {draft.status === "active"
+            ? `Draft is open · ${participant && current?.managerId === managerId ? "Your turn" : `${managerName(draft, current?.managerId || "")} is picking`}`
+            : draft.status === "paused"
+              ? "Draft paused"
+              : draft.status === "completed"
+                ? "Draft completed"
+                : draft.status === "published"
+                  ? "Draft opens soon"
+                  : draft.status === "cancelled"
+                    ? "Draft cancelled"
+                    : "Draft setup"}
+        </p>
+        {participant && ["active", "paused"].includes(draft.status) && (
+          <a href={draftLink(draft, "active")}>
+            Go to drafting <span aria-hidden="true">→</span>
+          </a>
+        )}
+        {!managerId &&
+          ["active", "published", "paused"].includes(draft.status) && (
+            <LoginLink />
+          )}
+      </section>
+    );
   return (
     <section
       className={`${styles.panel} ${styles.banner}`}
@@ -546,36 +575,44 @@ function Options({
 }
 function Rosters({ draft }: { draft: Draft }) {
   return (
-    <section>
-      <h2>League managers and draft choices</h2>
+    <section aria-label="Draft choices">
       <div className={styles.grid}>
-        {draft.participants.map((manager) => (
-          <article className={styles.panel} key={manager.id}>
-            <h3>{manager.name}</h3>
-            <p>
-              Seed #{draft.participants.indexOf(manager) + 1} · {draft.rounds}{" "}
-              picks
-            </p>
-            <ol>
-              {Array.from({ length: draft.rounds }, (_, round) => {
-                const pick = draft.picks.find(
-                  (entry) =>
-                    entry.managerId === manager.id && entry.round === round + 1,
-                );
-                return (
-                  <li key={round}>
-                    Round {round + 1}:{" "}
-                    {pick ? pick.optionName : "Awaiting pick"}
-                  </li>
-                );
-              })}
-            </ol>
-          </article>
-        ))}
+        {draft.participants.map((manager) => {
+          const picks = draft.picks.filter(
+            (pick) => pick.managerId === manager.id,
+          );
+          return (
+            <article
+              className={`${styles.panel} ${styles.roster}`}
+              key={manager.id}
+            >
+              <header>
+                <h2>{manager.name}</h2>
+                <span>
+                  {picks.length} / {draft.rounds}
+                </span>
+              </header>
+              <ol>
+                {Array.from({ length: draft.rounds }, (_, round) => {
+                  const pick = picks.find((entry) => entry.round === round + 1);
+                  return (
+                    <li key={round}>
+                      <span>Round {round + 1}</span>
+                      <strong className={pick ? "" : styles.muted}>
+                        {pick ? pick.optionName : "Awaiting pick"}
+                      </strong>
+                    </li>
+                  );
+                })}
+              </ol>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
 }
+
 function ResourceDates({ draft }: { draft: Draft }) {
   const [dates, setDates] = useState<Record<string, string>>({});
   const mutation = useDraftAction(draft);
@@ -1193,7 +1230,7 @@ export function LeagueDraftPage({
           </button>
         </section>
       )}
-      {drafts.length > 0 && (
+      {drafts.length > 1 && (
         <FloatingField>
           <span>Draft</span>
           <select
@@ -1246,7 +1283,11 @@ export function LeagueDraftPage({
       )}
       {draft && !creating && (
         <>
-          <DraftBanner draft={draft} managerId={query.managerId} />
+          <DraftBanner
+            draft={draft}
+            managerId={query.managerId}
+            compact={mode === "draft"}
+          />
           {mode === "manage" ? (
             <>
               <Manage draft={draft} league={league} onSaved={saved} />
@@ -1268,7 +1309,7 @@ export function LeagueDraftPage({
           ) : (
             <Rosters draft={draft} />
           )}
-          {mode !== "active" && (
+          {mode === "manage" && (
             <>
               <Order draft={draft} />
               <History draft={draft} />

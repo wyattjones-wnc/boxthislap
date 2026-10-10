@@ -272,7 +272,7 @@ export function transition(
     };
     if (
       body.enabled &&
-      (!previous?.enabled || (!previous.push && body.push)) &&
+      (!previous?.enabled || body.push) &&
       state.status === "active" &&
       state.schedule[state.picks.length]?.managerId === actor
     )

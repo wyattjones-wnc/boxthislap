@@ -528,3 +528,23 @@ test("Manager Hub turn alerts exist without a device subscription, including exi
   );
   assert.deepEqual(visibleDraft(state, "2").notifications, []);
 });
+
+test("enabling another device queues the current turn even when account push is already enabled", () => {
+  let state = apply(
+    activeDraft(),
+    "preferences",
+    { enabled: true, push: true },
+    "1",
+    false,
+  );
+  const before = state.events.length;
+  state = apply(
+    state,
+    "preferences",
+    { enabled: true, push: true },
+    "1",
+    false,
+  );
+  assert.equal(state.events.length, before + 1);
+  assert.equal(state.events.at(-1).type, "turn");
+});

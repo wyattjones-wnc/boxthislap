@@ -9,6 +9,25 @@ function label(value, field, maximum = 160) {
   return text;
 }
 
+export function choiceKey(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("en-US");
+}
+function releaseDate(value) {
+  if (!value) return "";
+  const date = String(value);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    !Number.isFinite(Date.parse(date)) ||
+    new Date(date).toISOString().slice(0, 10) !== date
+  )
+    fail(400, "Use a valid release date in YYYY-MM-DD format.");
+  return date;
+}
+
 export function scheduleFor(participants, rounds) {
   return Array.from({ length: rounds }, (_, round) => {
     const order =
@@ -54,13 +73,14 @@ export function configuration(body) {
     (option) => ({
       id: label(option.id, "Option ID", 100),
       name: label(option.name, "Option name", 200),
+      releaseDate: releaseDate(option.releaseDate),
     }),
   );
   if (
     options.length > 500 ||
     new Set(options.map((option) => option.id)).size !== options.length ||
-    new Set(options.map((option) => option.name.toLocaleLowerCase("en-US")))
-      .size !== options.length
+    new Set(options.map((option) => choiceKey(option.name))).size !==
+      options.length
   ) {
     fail(400, "Use at most 500 options with distinct IDs and names.");
   }
@@ -164,7 +184,12 @@ export function transition(
   const isPick = action === "pick";
   if (isPick && original.requests[body.requestId]) {
     const previous = original.requests[body.requestId];
-    if (previous.managerId !== actor || previous.optionId !== body.optionId)
+    if (
+      previous.managerId !== actor ||
+      (body.optionId
+        ? previous.optionId !== body.optionId
+        : choiceKey(previous.optionName) !== choiceKey(body.optionName))
+    )
       fail(409, "This retry key was used for another selection.");
     return original;
   }
@@ -191,8 +216,7 @@ export function transition(
       fail(409, "Only unpublished setup can be published.");
     if (action === "start" && state.status !== "published")
       fail(409, "Publish the draft before starting it.");
-    if (state.options.length < state.schedule.length)
-      fail(400, "Add at least one available option for every scheduled pick.");
+
     state.status = action === "publish" ? "published" : "active";
     if (action === "start") {
       notifyAll(state, "started");
@@ -204,9 +228,22 @@ export function transition(
     if (state.schedule[state.picks.length]?.managerId !== actor)
       fail(403, "It is not your turn.");
     const requestId = label(body.requestId, "Retry key", 100);
-    const option = state.options.find((entry) => entry.id === body.optionId);
-    if (!option) fail(400, "Choose an option from this draft resource.");
-    if (state.picks.some((pick) => pick.optionId === option.id))
+    const option = body.optionId
+      ? state.options.find((entry) => entry.id === body.optionId)
+      : state.options.find(
+          (entry) => choiceKey(entry.name) === choiceKey(body.optionName),
+        ) || {
+          id: `custom-${crypto.randomUUID()}`,
+          name: label(body.optionName, "Pick name", 200),
+        };
+    if (!option) fail(400, "That resource option does not exist.");
+    if (
+      state.picks.some(
+        (pick) =>
+          pick.optionId === option.id ||
+          choiceKey(pick.optionName) === choiceKey(option.name),
+      )
+    )
       fail(409, "That option has already been taken.");
     const pick = {
       ...state.schedule[state.picks.length],
@@ -217,8 +254,23 @@ export function transition(
       ...(performedBy !== actor ? { adminActor: performedBy } : {}),
     };
     state.picks.push(pick);
-    state.requests[requestId] = { managerId: actor, optionId: option.id };
+    state.requests[requestId] = {
+      managerId: actor,
+      optionId: option.id,
+      optionName: option.name,
+    };
     nextTurn(state);
+  } else if (action === "resource-dates") {
+    if (!Array.isArray(body.options) || body.options.length > 500)
+      fail(400, "Choose resource dates.");
+    const seen = new Set();
+    for (const update of body.options) {
+      const option = state.options.find((entry) => entry.id === update.id);
+      if (!option || seen.has(update.id))
+        fail(400, "Choose distinct existing resource entries.");
+      seen.add(update.id);
+      option.releaseDate = releaseDate(update.releaseDate);
+    }
   } else if (action === "pause") {
     if (state.status !== "active")
       fail(409, "Only an active draft can be paused.");

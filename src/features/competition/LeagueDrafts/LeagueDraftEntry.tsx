@@ -18,7 +18,7 @@ export function LeagueDraftEntry({
   mode,
 }: {
   league: League;
-  mode: "draft" | "resources" | "manage";
+  mode: "draft" | "active" | "manage";
 }) {
   const { route } = useAppState();
   if (route.split("?")[0] !== `${league}-2027-${mode}`) return null;

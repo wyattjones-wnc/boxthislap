@@ -24,7 +24,7 @@ function draftNavigation(league: "fantasy-office" | "world-cup"): NavItem[] {
   const prefix = `${league}-2027`;
   return [
     { label: "Draft", route: `${prefix}-draft` },
-    { label: "Resources", route: `${prefix}-resources` },
+    { label: "Active", route: `${prefix}-active` },
     { label: "Manage", route: `${prefix}-manage`, adminOnly: true },
     { label: "Leagues", route: "leagues" },
   ];

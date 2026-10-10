@@ -15830,7 +15830,7 @@ async function handleManagerLogin() {
     try {
       const stored = sessionStorage.getItem("boxThisLapDraftLoginReturn") || "";
       sessionStorage.removeItem("boxThisLapDraftLoginReturn");
-      if (/^(?:fantasy-office|world-cup)-2027-(?:draft|resources)(?:\?draft=[a-zA-Z0-9-]+)?$/.test(stored)) draftReturn = stored;
+      if (/^(?:fantasy-office|world-cup)-2027-(?:draft|active)(?:\?draft=[a-zA-Z0-9-]+)?$/.test(stored)) draftReturn = stored;
     } catch { /* Login can continue if session storage is unavailable. */ }
     const destination = draftReturn || (getManagerMeta(manager).isAdmin ? "the-monster-maniac" : "manager-hub");
     showPage(destination, { scrollToTop: true });

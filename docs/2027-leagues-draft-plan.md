@@ -249,3 +249,7 @@ Record provisioning, migration, Worker deployment, binding, and manual configura
 ## First implementation slice
 
 Begin with Phase 1: expose 2027 as an explicit choice while retaining the current-year default, add both Draft pages and their navigation, and render the full banner contract against fixtures. This produces a reviewable website foundation before committing to live draft data or notification infrastructure.
+
+### Updated Draft and Active flow
+
+Draft is now the league overview, with an open-draft banner, participant link to Active, and manager roster choices by round. Active replaces the top-level Resources tab and hides when no draft remains active or paused. Its Pick tab supports free-text names with filtered resource suggestions; Resource lists all titles, release dates, ownership, and Draft buttons. Admins can enter release dates during setup or maintain them on Manage. Resources are suggestions rather than an eligibility whitelist, so drafts can start with an empty resource. Existing state remains compatible.

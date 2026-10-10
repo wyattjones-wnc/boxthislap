@@ -44,7 +44,7 @@ describe("getNavScope", () => {
       ).toBe(true);
       expect(navItems[scope].map((item) => item.label)).toEqual([
         "Draft",
-        "Resources",
+        "Active",
         "Manage",
         "Leagues",
       ]);

@@ -12742,3 +12742,6 @@ html.has-contained-dialog body {
 }
 
 [aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+
+html:not([data-fantasy-office-draft-open="true"]) a[data-page-link="fantasy-office-2027-active"],
+html:not([data-world-cup-draft-open="true"]) a[data-page-link="world-cup-2027-active"] { display: none; }

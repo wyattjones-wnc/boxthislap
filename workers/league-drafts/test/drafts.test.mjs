@@ -80,9 +80,9 @@ test("setup rejects duplicate managers/options, unsupported seasons, and invalid
       () => newDraft(body, "6"),
       (error) => error.status === 400,
     );
-  assert.throws(
-    () => apply(newDraft({ ...configuration, options: [] }, "6"), "publish"),
-    /every scheduled pick/,
+  assert.equal(
+    apply(newDraft({ ...configuration, options: [] }, "6"), "publish").status,
+    "published",
   );
 });
 
@@ -547,4 +547,95 @@ test("enabling another device queues the current turn even when account push is 
   );
   assert.equal(state.events.length, before + 1);
   assert.equal(state.events.at(-1).type, "turn");
+});
+
+test("free-text picks match resources, reject duplicate names, and remain idempotent after undo", () => {
+  let state = activeDraft();
+  const body = {
+    optionName: "A Movie Outside The Resource",
+    requestId: "custom-retry",
+  };
+  const actor = state.schedule[0].managerId;
+  state = apply(state, "pick", body, actor, false);
+  assert.equal(state.picks[0].optionName, body.optionName);
+  assert.equal(state.options.length, configuration.options.length);
+  assert.equal(apply(state, "pick", body, actor, false), state);
+  assert.throws(
+    () =>
+      apply(
+        state,
+        "pick",
+        {
+          optionName: "  a movie outside   the resource  ",
+          requestId: "duplicate",
+        },
+        state.schedule[1].managerId,
+        false,
+      ),
+    /already been taken/,
+  );
+  assert.throws(
+    () =>
+      apply(
+        state,
+        "pick",
+        { ...body, optionName: "Changed Name" },
+        actor,
+        false,
+      ),
+    /retry key/,
+  );
+  state = apply(state, "undo", { reason: "Test" });
+  assert.equal(apply(state, "pick", body, actor, false), state);
+  let matched = activeDraft();
+  matched = apply(
+    matched,
+    "pick",
+    {
+      optionName: configuration.options[0].name.toUpperCase(),
+      requestId: "matched",
+    },
+    matched.schedule[0].managerId,
+    false,
+  );
+  assert.equal(matched.picks[0].optionId, configuration.options[0].id);
+});
+test("resources are optional and release dates can be maintained while drafting", () => {
+  let state = apply(
+    apply(newDraft({ ...configuration, options: [] }, "6"), "publish"),
+    "start",
+  );
+  state = apply(
+    state,
+    "pick",
+    { optionName: "Unlisted movie", requestId: "unlisted" },
+    state.schedule[0].managerId,
+    false,
+  );
+  assert.equal(state.picks.length, 1);
+  state = activeDraft();
+  const updates = {
+    options: [{ id: state.options[0].id, releaseDate: "2027-03-05" }],
+  };
+  assert.throws(
+    () =>
+      apply(
+        state,
+        "resource-dates",
+        updates,
+        state.schedule[0].managerId,
+        false,
+      ),
+    /Administrator/,
+  );
+  const updated = apply(state, "resource-dates", updates);
+  assert.equal(updated.options[0].releaseDate, "2027-03-05");
+  assert.deepEqual(updated.schedule, state.schedule);
+  assert.throws(
+    () =>
+      apply(updated, "resource-dates", {
+        options: [{ id: state.options[0].id, releaseDate: "2027-02-30" }],
+      }),
+    /valid release date/,
+  );
 });

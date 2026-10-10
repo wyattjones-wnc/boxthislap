@@ -131,27 +131,46 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   const draft = page.locator('[data-page="fantasy-office-2027-draft"]');
   await expect(draft).toHaveClass(/is-active/);
   await expect(draft.getByRole("status")).toContainText("Your turn");
-  const option = draft.getByRole("article").filter({
+  await expect(
+    draft.getByRole("heading", { name: "League managers and draft choices" }),
+  ).toBeVisible();
+  await draft.getByRole("link", { name: "Go to drafting" }).click();
+  const active = page.locator('[data-page="fantasy-office-2027-active"]');
+  await expect(active).toHaveClass(/is-active/);
+  await active
+    .getByRole("searchbox", { name: "Movie or pick name" })
+    .fill("Movie 0");
+  const option = active.getByRole("article").filter({
     has: page.getByRole("heading", { name: "Test Movie 0", exact: true }),
   });
-  await option.getByRole("button", { name: "Select", exact: true }).click();
+  await option.getByRole("button", { name: "Draft this", exact: true }).click();
   await page.getByRole("button", { name: "Confirm pick", exact: true }).click();
-  await expect(
-    option.getByRole("button", { name: "Taken", exact: true }),
-  ).toBeDisabled();
-  await expect(draft.getByRole("status")).toContainText(
+  await expect(active.getByRole("status")).toContainText(
     "Manager 2 is on the clock",
   );
+  await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  await expect(
+    active.getByText("Taken by Manager 1 · round 1, pick #1"),
+  ).toBeVisible();
   await page
     .locator('[data-nav-scope="fantasy-office-2027"]')
-    .getByRole("tab", { name: "Resources" })
+    .getByRole("tab", { name: "Draft", exact: true })
     .click();
-  const resources = page.locator('[data-page="fantasy-office-2027-resources"]');
-  await expect(resources).toHaveClass(/is-active/);
   await expect(
-    resources.getByText("Taken by Manager 1 · round 1, pick #1"),
+    draft.getByRole("heading", { name: "League managers and draft choices" }),
+  ).toBeVisible();
+  await expect(
+    draft.getByText("Round 1: Test Movie 0", { exact: true }),
   ).toBeVisible();
   expect(state.picks).toHaveLength(1);
+  state.status = "completed";
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(draft.getByRole("status")).toContainText("Draft completed");
+  await expect(
+    page
+      .locator('[data-nav-scope="fantasy-office-2027"]')
+      .getByRole("tab", { name: "Active", exact: true, includeHidden: true }),
+  ).toBeHidden();
 });
 
 test("World Cup has an independent 2027 Draft page", async ({ page }) => {

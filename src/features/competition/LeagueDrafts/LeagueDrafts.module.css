@@ -8,6 +8,7 @@
   border-radius: var(--radius-panel);
   background: var(--surface-panel);
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .banner {
   border-left: 4px solid var(--accent-strong);
@@ -40,6 +41,8 @@
 .stack button,
 .panel button {
   cursor: pointer;
+  max-width: 100%;
+  white-space: normal;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-control);

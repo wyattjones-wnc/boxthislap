@@ -1,6 +1,6 @@
 # 2027 league drafts on dev
 
-This service owns the 2027 Fantasy Office and World Cup asynchronous drafts. The site has Draft, Resources, and admin-only Manage pages for each league, plus a League Drafts card in Manager Hub. Earlier leagues keep their existing data and workflow.
+This service owns the 2027 Fantasy Office and World Cup asynchronous drafts. The site has Draft overview, Active drafting, and admin-only Manage pages for each league, plus a League Drafts card in Manager Hub. Earlier leagues keep their existing data and workflow.
 
 The shipped configuration names the Worker `box-this-lap-league-drafts-dev`, uses the `dev` data namespace, and links notifications to `/boxthislap/dev/`. Production frontend pages do not connect to the dev draft service. No drafts are created automatically.
 
@@ -79,7 +79,7 @@ Core drafting and automatic Manager Hub alerts work without the push secret. Bro
 3. As admin, open Manage. Create a draft with four managers, choose two rounds, adjust the seeds, and use **Fill with sample test options** or enter distinct options one per line.
 4. Save setup and inspect the schedule preview. Publish, subscribe from Draft or Manager Hub, and then start with the explicit confirmation.
 5. On Manage, use **Test select** and **Confirm test pick** to simulate the current manager. This action is server-restricted to dev administrators and is labelled in selections and audit history. It does not change your logged-in identity.
-6. Keep Resources open in another browser or tab. Picks must acquire a Taken by label, and selecting them again must be disabled. The submitting view updates immediately; other views refresh within about ten seconds or on focus. Same-browser invalidation accelerates updates across tabs.
+6. Open Active → Resource in another browser or tab. Picks must acquire a Taken by label, and selecting them again must be disabled. The submitting view updates immediately; other views refresh within about ten seconds or on focus. Same-browser invalidation accelerates updates across tabs.
 7. Run through the fourth and fifth picks and confirm that the last seed gets consecutive turns at the snake boundary. Run through all eight picks and confirm completion.
 8. Before completing another test draft, pause and confirm picks are blocked; undo with a reason, confirm the option becomes available and the draft stays paused, then resume explicitly.
 9. Test an ordinary participant account: only its current turn can submit. A nonparticipant can observe but cannot select. An unsubscribed participant can still draft. Manage must be hidden and rejected for non-admins.
@@ -101,10 +101,18 @@ The service worker retains the currently signed-in manager ID in its own scope a
 ## Current limits and follow-up work
 
 - The two league names and year are supported; real eligible resources, scoring rules, and roster categories are not inferred.
-- Multiple independent drafts per league are supported. Option availability is scoped to each draft; shared pools across drafts are a later extension.
+- Multiple independent drafts per league are supported. Custom names and resource matches share normalized duplicate checks. Resource entries may include release dates (unknown dates remain TBA), editable on Manage without changing turn order. Option availability is scoped to each draft; shared pools across drafts are a later extension.
 - Resources are managed lists on the website. Import/export and live writeback to external spreadsheets are not included.
 - No deadlines, automatic skipping, preference queues, trades, or email delivery.
 - Draft configuration is editable before initiation and locked afterward. Available recovery actions are pause, resume, latest-pick undo, and cancellation; there is no destructive reset/delete.
 - The aggregate design is intended for small leagues, not hundreds of concurrent participants. Split normalized history/outbox tables if volume requires it.
 - Listing and notification retries inspect the most recent 200 drafts in the environment. Review retention/archival before exceeding that operational limit.
 - Production drafting must be configured separately. Do not rename the dev service or point production at its namespace as a shortcut.
+
+## Draft overview and Active drafting
+
+Draft is the first league tab: it shows the open-draft banner and each participating manager’s round-by-round choices. Participating managers can follow **Go to drafting** to Active. Active stays visible while any draft is active or paused, then hides after completion/cancellation. Direct links to ended drafts show a link back to the overview.
+
+Active has Pick and Resource tabs. Pick accepts any nonempty name (up to 200 characters), shows matching resource suggestions as you type, and confirms before submitting. Exact normalized resource matches claim that resource entry; unlisted names are recorded directly without being added to the resource. Names already picked cannot be selected again, including case/spacing/Unicode variants. Retry receipts cover both paths and survive undo.
+
+Resource shows all options, release dates, Taken labels, and per-entry Draft buttons. Dates display as TBA until supplied by the admin. Setup accepts `Movie name | YYYY-MM-DD` per line; Manage → Resource release dates can maintain dates after start without altering picks or schedule. Resources are optional; publish/start no longer require enough resource entries for every turn. Existing draft data needs no migration or reset.

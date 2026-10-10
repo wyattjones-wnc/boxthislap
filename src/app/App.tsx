@@ -217,10 +217,10 @@ export interface SpecialistRoots {
 
 export interface CompetitionRoots {
   fantasyOffice2027Draft: Element;
-  fantasyOffice2027Resources: Element;
+  fantasyOffice2027Active: Element;
   fantasyOffice2027Manage: Element;
   worldCup2027Draft: Element;
-  worldCup2027Resources: Element;
+  worldCup2027Active: Element;
   worldCup2027Manage: Element;
   bracket: Element;
   draft: Element;
@@ -381,8 +381,8 @@ export function App({
             ],
             [
               "fantasy-office",
-              "resources",
-              competitionRoots.fantasyOffice2027Resources,
+              "active",
+              competitionRoots.fantasyOffice2027Active,
             ],
             [
               "fantasy-office",
@@ -390,7 +390,7 @@ export function App({
               competitionRoots.fantasyOffice2027Manage,
             ],
             ["world-cup", "draft", competitionRoots.worldCup2027Draft],
-            ["world-cup", "resources", competitionRoots.worldCup2027Resources],
+            ["world-cup", "active", competitionRoots.worldCup2027Active],
             ["world-cup", "manage", competitionRoots.worldCup2027Manage],
           ] as const
         ).map(([league, mode, root]) =>

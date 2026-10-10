@@ -142,6 +142,7 @@ describe("2027 league drafting", () => {
     await userEvent.click(
       screen.getByRole("button", { name: "Confirm start" }),
     );
+    await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = (
       await screen.findByRole("heading", { name: "Test Movie 1" })
     ).closest("article")!;
@@ -214,13 +215,14 @@ describe("2027 league drafting", () => {
       }
       return Response.json({ ok: true, drafts: [visibleDraft(state, "1")] });
     });
-    wrapper(<LeagueDraftPage league="fantasy-office" mode="draft" />);
+    wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
     await screen.findByRole("heading", { name: "Test office draft" });
+    await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = screen
       .getByRole("heading", { name: "Movie 0" })
       .closest("article")!;
     await userEvent.click(
-      within(movie).getByRole("button", { name: "Select" }),
+      within(movie).getByRole("button", { name: "Draft this" }),
     );
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     await waitFor(() =>
@@ -255,12 +257,13 @@ describe("2027 league drafting", () => {
           )
         : Response.json({ drafts: [visibleDraft(state, "1")] }),
     );
-    wrapper(<LeagueDraftPage league="fantasy-office" mode="resources" />);
+    wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
+    await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = (
       await screen.findByRole("heading", { name: "Movie 0" })
     ).closest("article")!;
     await userEvent.click(
-      within(movie).getByRole("button", { name: "Select" }),
+      within(movie).getByRole("button", { name: "Draft this" }),
     );
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     expect(await screen.findByRole("alert")).toBeTruthy();
@@ -333,6 +336,50 @@ describe("2027 league drafting", () => {
       ),
     );
     expect(screen.getByRole("status").textContent).not.toContain("Your turn");
+  });
+  it("drafts an unlisted name and shows it on the manager overview", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "1" }),
+    );
+    let state = activeState();
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      if (String(input).endsWith("/picks")) {
+        state = transition(
+          state,
+          "pick",
+          JSON.parse(String(options?.body)),
+          "1",
+          false,
+        );
+        return Response.json({ draft: visibleDraft(state, "1") });
+      }
+      return Response.json({ drafts: [visibleDraft(state, "1")] });
+    });
+    const active = wrapper(
+      <LeagueDraftPage league="fantasy-office" mode="active" />,
+    );
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Movie or pick name" }),
+      "An Unlisted Film",
+    );
+    expect(
+      screen.getByText("No resource matches. You can still draft this name."),
+    ).toBeTruthy();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Draft An Unlisted Film" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
+    await waitFor(() =>
+      expect(state.picks[0].optionName).toBe("An Unlisted Film"),
+    );
+    active.unmount();
+    wrapper(<LeagueDraftPage league="fantasy-office" mode="draft" />);
+    expect(await screen.findByText("Round 1: An Unlisted Film")).toBeTruthy();
+    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Go to drafting" }).getAttribute("href"),
+    ).toContain("-active?draft=");
   });
   it("protects manage pages for non-admin managers", () => {
     localStorage.setItem(

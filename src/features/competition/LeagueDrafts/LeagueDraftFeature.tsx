@@ -155,7 +155,7 @@ export function DraftBanner({
             ? `Draft cancelled. ${draft.reason}`
             : draft.status === "paused"
               ? `Draft paused. ${draft.reason}`
-              : `Draft started. ${current ? managerName(draft, current.managerId) : ""} is on the clock.`;
+              : `Draft is open. ${current ? managerName(draft, current.managerId) : ""} is on the clock.`;
   if (draft.status === "active" && managerId) {
     message += participant
       ? next
@@ -195,17 +195,9 @@ export function DraftBanner({
           <LoginLink />
         </>
       )}
-      {draft.status === "active" && current?.managerId === managerId && (
-        <a
-          href="#draft-options"
-          onClick={(event) => {
-            event.preventDefault();
-            document
-              .getElementById("draft-options")
-              ?.scrollIntoView({ behavior: "smooth" });
-          }}
-        >
-          Make a selection
+      {participant && ["active", "paused"].includes(draft.status) && (
+        <a className="action-button" href={draftLink(draft, "active")}>
+          Go to drafting
         </a>
       )}
       {managerId && (
@@ -310,6 +302,21 @@ function NotificationSettings({
   );
 }
 
+function optionKey(name: string) {
+  return name
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("en-US");
+}
+function dateLabel(option: DraftOption) {
+  return option.releaseDate
+    ? new Date(`${option.releaseDate}T12:00:00Z`).toLocaleDateString(
+        undefined,
+        { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" },
+      )
+    : "Release date TBA";
+}
 function Options({
   draft,
   managerId,
@@ -319,6 +326,7 @@ function Options({
   managerId: string;
   testMode?: boolean;
 }) {
+  const [tab, setTab] = useState("pick");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<DraftOption | null>(null);
   const [retryKey, setRetryKey] = useState("");
@@ -326,39 +334,128 @@ function Options({
   const canPick =
     draft.status === "active" &&
     draft.schedule[draft.picks.length]?.managerId === managerId;
-  const taken = draft.picks.find((pick) => pick.optionId === selected?.id);
+  const claimed = (option: DraftOption) =>
+    draft.picks.find(
+      (pick) =>
+        pick.optionId === option.id ||
+        optionKey(pick.optionName) === optionKey(option.name),
+    );
+  const taken = selected ? claimed(selected) : undefined;
+  const exact = draft.options.find(
+    (option) => optionKey(option.name) === optionKey(search),
+  );
+  const custom = exact || { id: "", name: search.trim() };
+  const choose = (option: DraftOption) => {
+    mutation.reset();
+    setRetryKey(crypto.randomUUID());
+    setSelected(option);
+  };
+  const options =
+    tab === "resource"
+      ? draft.options
+      : search.trim()
+        ? draft.options.filter((option) =>
+            optionKey(option.name).includes(optionKey(search)),
+          )
+        : [];
   return (
     <section className={styles.panel} id="draft-options">
-      <h2>{draft.resourceLabel}</h2>
+      <h2>{testMode ? "Admin test drafting" : "Active draft"}</h2>
       {testMode && (
         <p>
           Dev testing: make a selection for {managerName(draft, managerId)}. The
           selection will be marked as an admin test pick.
         </p>
       )}
-      <FloatingField>
-        <span>Search available and taken options</span>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-      </FloatingField>
-      <div className={styles.grid}>
-        {draft.options
-          .filter((option) =>
-            option.name.toLowerCase().includes(search.toLowerCase()),
-          )
-          .map((option) => {
-            const pick = draft.picks.find(
-              (entry) => entry.optionId === option.id,
-            );
+      <div
+        role="tablist"
+        aria-label="Drafting views"
+        className={styles.actions}
+      >
+        {["pick", "resource"].map((view) => (
+          <button
+            key={view}
+            type="button"
+            role="tab"
+            id={`draft-${testMode ? "test-" : ""}${view}-tab`}
+            aria-controls={`draft-${testMode ? "test-" : ""}panel`}
+            aria-selected={tab === view}
+            onClick={() => setTab(view)}
+            tabIndex={tab === view ? 0 : -1}
+            onKeyDown={(event) => {
+              if (
+                ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              ) {
+                event.preventDefault();
+                const next =
+                  event.key === "Home"
+                    ? "pick"
+                    : event.key === "End"
+                      ? "resource"
+                      : view === "pick"
+                        ? "resource"
+                        : "pick";
+                setTab(next);
+                document
+                  .getElementById(`draft-${testMode ? "test-" : ""}${next}-tab`)
+                  ?.focus();
+              }
+            }}
+          >
+            {view === "pick" ? "Pick" : "Resource"}
+          </button>
+        ))}
+      </div>
+      <div
+        role="tabpanel"
+        id={`draft-${testMode ? "test-" : ""}panel`}
+        aria-labelledby={`draft-${testMode ? "test-" : ""}${tab}-tab`}
+      >
+        {tab === "pick" && (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (canPick && search.trim() && !claimed(custom)) choose(custom);
+            }}
+          >
+            <FloatingField>
+              <span>Movie or pick name</span>
+              <input
+                type="search"
+                maxLength={200}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                aria-describedby="pick-help"
+              />
+            </FloatingField>
+            <p id="pick-help">
+              Type any name to draft it, or choose a matching resource
+              suggestion below.
+            </p>
+            <button
+              type="submit"
+              disabled={!canPick || !search.trim() || Boolean(claimed(custom))}
+            >
+              {claimed(custom)
+                ? "Already taken"
+                : `Draft${search.trim() ? ` ${search.trim()}` : " this name"}`}
+            </button>
+            {search.trim() && !options.length && (
+              <p>No resource matches. You can still draft this name.</p>
+            )}
+          </form>
+        )}
+        {tab === "resource" && <h3>{draft.resourceLabel}</h3>}
+        <div className={styles.grid}>
+          {options.map((option) => {
+            const pick = claimed(option);
             return (
               <article
                 className={`${styles.panel} ${styles.option} ${pick ? styles.taken : ""}`}
                 key={option.id}
               >
                 <h3>{option.name}</h3>
+                <p>{dateLabel(option)}</p>
                 <p>
                   {pick
                     ? `Taken by ${managerName(draft, pick.managerId)} · round ${pick.round}, pick #${pick.number}`
@@ -367,19 +464,18 @@ function Options({
                 <button
                   type="button"
                   disabled={Boolean(pick) || !canPick}
-                  onClick={() => {
-                    mutation.reset();
-                    setRetryKey(crypto.randomUUID());
-                    setSelected(option);
-                  }}
+                  onClick={() => choose(option)}
                 >
-                  {pick ? "Taken" : testMode ? "Test select" : "Select"}
+                  {pick ? "Taken" : testMode ? "Test select" : "Draft this"}
                 </button>
               </article>
             );
           })}
+        </div>
+        {tab === "resource" && !draft.options.length && (
+          <p>No resource options yet. Use Pick to enter any name.</p>
+        )}
       </div>
-      {!draft.options.length && <p>No options have been added yet.</p>}
       {selected && (
         <ContainedDialog
           title="Confirm your selection"
@@ -387,6 +483,46 @@ function Options({
           close={() => {
             if (!mutation.isPending) setSelected(null);
           }}
+          footer={
+            <div className={styles.actions}>
+              <button
+                type="button"
+                disabled={mutation.isPending || !canPick || Boolean(taken)}
+                onClick={() =>
+                  mutation.mutate(
+                    {
+                      action: testMode ? "test-pick" : "picks",
+                      body: {
+                        ...(selected.id
+                          ? { optionId: selected.id }
+                          : { optionName: selected.name }),
+                        requestId: retryKey,
+                      },
+                    },
+                    {
+                      onSuccess: () => {
+                        setSelected(null);
+                        setSearch("");
+                      },
+                    },
+                  )
+                }
+              >
+                {mutation.isPending
+                  ? "Saving…"
+                  : testMode
+                    ? "Confirm test pick"
+                    : "Confirm pick"}
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => setSelected(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          }
         >
           {taken && (
             <p role="alert">
@@ -398,38 +534,92 @@ function Options({
               {mutation.error.message}
             </p>
           )}
-          <div className={styles.actions}>
-            <button
-              type="button"
-              disabled={mutation.isPending || !canPick || Boolean(taken)}
-              onClick={() =>
-                mutation.mutate(
-                  {
-                    action: testMode ? "test-pick" : "picks",
-                    body: { optionId: selected?.id, requestId: retryKey },
-                  },
-                  { onSuccess: () => setSelected(null) },
-                )
-              }
-            >
-              {mutation.isPending
-                ? "Saving…"
-                : testMode
-                  ? "Confirm test pick"
-                  : "Confirm pick"}
-            </button>
-
-            <button
-              type="button"
-              disabled={mutation.isPending}
-              onClick={() => setSelected(null)}
-            >
-              Cancel
-            </button>
-          </div>
+          <p>
+            {selected.id
+              ? dateLabel(selected)
+              : "This name is outside the resource."}
+          </p>
         </ContainedDialog>
       )}
     </section>
+  );
+}
+function Rosters({ draft }: { draft: Draft }) {
+  return (
+    <section>
+      <h2>League managers and draft choices</h2>
+      <div className={styles.grid}>
+        {draft.participants.map((manager) => (
+          <article className={styles.panel} key={manager.id}>
+            <h3>{manager.name}</h3>
+            <p>
+              Seed #{draft.participants.indexOf(manager) + 1} · {draft.rounds}{" "}
+              picks
+            </p>
+            <ol>
+              {Array.from({ length: draft.rounds }, (_, round) => {
+                const pick = draft.picks.find(
+                  (entry) =>
+                    entry.managerId === manager.id && entry.round === round + 1,
+                );
+                return (
+                  <li key={round}>
+                    Round {round + 1}:{" "}
+                    {pick ? pick.optionName : "Awaiting pick"}
+                  </li>
+                );
+              })}
+            </ol>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+function ResourceDates({ draft }: { draft: Draft }) {
+  const [dates, setDates] = useState<Record<string, string>>({});
+  const mutation = useDraftAction(draft);
+  return (
+    <details className={styles.panel}>
+      <summary>Resource release dates</summary>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          mutation.mutate(
+            {
+              action: "resource-dates",
+              body: {
+                options: draft.options.map((option) => ({
+                  id: option.id,
+                  releaseDate: dates[option.id] ?? option.releaseDate ?? "",
+                })),
+              },
+            },
+            { onSuccess: () => setDates({}) },
+          );
+        }}
+      >
+        {draft.options.map((option) => (
+          <FloatingField key={option.id}>
+            <span>{option.name}</span>
+            <input
+              type="date"
+              value={dates[option.id] ?? option.releaseDate ?? ""}
+              onChange={(event) =>
+                setDates({ ...dates, [option.id]: event.target.value })
+              }
+            />
+          </FloatingField>
+        ))}
+        <button
+          type="submit"
+          disabled={mutation.isPending || !draft.options.length}
+        >
+          Save release dates
+        </button>
+        {mutation.error && <p role="alert">{mutation.error.message}</p>}
+      </form>
+    </details>
   );
 }
 
@@ -513,7 +703,12 @@ function Setup({
   );
   const [rounds, setRounds] = useState(draft?.rounds || 2);
   const [options, setOptions] = useState(
-    draft?.options.map((option) => option.name).join("\n") || "",
+    draft?.options
+      .map(
+        (option) =>
+          `${option.name}${option.releaseDate ? ` | ${option.releaseDate}` : ""}`,
+      )
+      .join("\n") || "",
   );
   const client = useQueryClient();
   const mutation = useMutation({
@@ -556,12 +751,16 @@ function Setup({
       resourceLabel,
       participants,
       rounds,
-      options: names.map((value) => ({
-        id:
-          draft?.options.find((option) => option.name === value)?.id ||
-          crypto.randomUUID(),
-        name: value,
-      })),
+      options: names.map((value) => {
+        const parts = value.split(/\s+\|\s+/);
+        const name = parts[0];
+        const existing = draft?.options.find((option) => option.name === name);
+        return {
+          id: existing?.id || crypto.randomUUID(),
+          name,
+          releaseDate: parts[1] || existing?.releaseDate || "",
+        };
+      }),
     });
   }
   const order = Array.from(
@@ -674,7 +873,7 @@ function Setup({
         />
       </FloatingField>
       <FloatingField>
-        <span>Options — one distinct name per line</span>
+        <span>Options — name | YYYY-MM-DD, one per line</span>
         <textarea
           rows={10}
           value={options}
@@ -682,8 +881,8 @@ function Setup({
         />
       </FloatingField>
       <p className={styles.muted}>
-        At least {participants.length * rounds} options are required before
-        publishing or starting.
+        Resource suggestions are optional. Managers can also draft names outside
+        the resource.
       </p>
       <button
         type="button"
@@ -884,7 +1083,7 @@ export function LeagueDraftPage({
   mode,
 }: {
   league: League;
-  mode: "draft" | "resources" | "manage";
+  mode: "draft" | "active" | "manage";
 }) {
   const { session } = useAppState();
   const query = useDrafts(league);
@@ -915,9 +1114,18 @@ export function LeagueDraftPage({
   const drafts = query.data?.drafts || [];
   const draft =
     drafts.find((entry) => entry.id === selected) ||
-    (!selected
+    (!requested
       ? drafts.find((entry) => entry.status === "active") || drafts[0]
       : undefined);
+  useEffect(() => {
+    if (!query.data) return;
+    document.documentElement.setAttribute(
+      `data-${league}-draft-open`,
+      String(
+        drafts.some((entry) => ["active", "paused"].includes(entry.status)),
+      ),
+    );
+  }, [query.data, league, drafts]);
   const client = useQueryClient();
   useEffect(() => {
     const update = () => {
@@ -963,8 +1171,8 @@ export function LeagueDraftPage({
           </h1>
           <p>
             2027 ·{" "}
-            {mode === "resources"
-              ? "Resources"
+            {mode === "active"
+              ? "Active draft"
               : mode === "manage"
                 ? "Manage drafts"
                 : "Draft"}
@@ -1040,15 +1248,27 @@ export function LeagueDraftPage({
         <>
           <DraftBanner draft={draft} managerId={query.managerId} />
           {mode === "manage" ? (
-            <Manage draft={draft} league={league} onSaved={saved} />
+            <>
+              <Manage draft={draft} league={league} onSaved={saved} />
+              <ResourceDates draft={draft} />
+            </>
+          ) : mode === "active" ? (
+            ["active", "paused"].includes(draft.status) ? (
+              <Options
+                key={`${draft.id}-${query.managerId}`}
+                draft={draft}
+                managerId={query.managerId}
+              />
+            ) : (
+              <p>
+                The draft is not open.{" "}
+                <a href={draftLink(draft)}>View league draft choices</a>
+              </p>
+            )
           ) : (
-            <Options
-              key={`${draft.id}-${query.managerId}`}
-              draft={draft}
-              managerId={query.managerId}
-            />
+            <Rosters draft={draft} />
           )}
-          {mode !== "resources" && (
+          {mode !== "active" && (
             <>
               <Order draft={draft} />
               <History draft={draft} />

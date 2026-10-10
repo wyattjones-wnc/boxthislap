@@ -48,8 +48,8 @@ const competitionRoots = {
   fantasyOffice2027Draft: document.querySelector(
     '[data-page="fantasy-office-2027-draft"]',
   ),
-  fantasyOffice2027Resources: document.querySelector(
-    '[data-page="fantasy-office-2027-resources"]',
+  fantasyOffice2027Active: document.querySelector(
+    '[data-page="fantasy-office-2027-active"]',
   ),
   fantasyOffice2027Manage: document.querySelector(
     '[data-page="fantasy-office-2027-manage"]',
@@ -57,8 +57,8 @@ const competitionRoots = {
   worldCup2027Draft: document.querySelector(
     '[data-page="world-cup-2027-draft"]',
   ),
-  worldCup2027Resources: document.querySelector(
-    '[data-page="world-cup-2027-resources"]',
+  worldCup2027Active: document.querySelector(
+    '[data-page="world-cup-2027-active"]',
   ),
   worldCup2027Manage: document.querySelector(
     '[data-page="world-cup-2027-manage"]',

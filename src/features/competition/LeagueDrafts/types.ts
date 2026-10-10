@@ -8,6 +8,7 @@ export interface Participant {
 export interface DraftOption {
   id: string;
   name: string;
+  releaseDate?: string;
 }
 export interface ScheduledPick {
   number: number;

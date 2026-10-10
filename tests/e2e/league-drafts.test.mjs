@@ -146,7 +146,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await option.getByRole("button", { name: "Draft this", exact: true }).click();
   await page.getByRole("button", { name: "Confirm pick", exact: true }).click();
   await expect(active.getByRole("status")).toContainText(
-    "Manager 2 is on the clock",
+    "Manager 2 is picking",
   );
   await active.getByRole("tab", { name: "Resource", exact: true }).click();
   await expect(

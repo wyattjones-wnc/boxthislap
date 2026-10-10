@@ -134,10 +134,12 @@ export function DraftBanner({
   draft,
   managerId,
   compact = false,
+  drafting = false,
 }: {
   draft: Draft;
   managerId: string;
   compact?: boolean;
+  drafting?: boolean;
 }) {
   const current = draft.schedule[draft.picks.length];
   const next = draft.schedule
@@ -176,7 +178,11 @@ export function DraftBanner({
       <section className={styles.thinBanner} aria-label="Draft status">
         <p role="status">
           {draft.status === "active"
-            ? `Draft is open · ${participant && current?.managerId === managerId ? "Your turn" : `${managerName(draft, current?.managerId || "")} is picking`}`
+            ? drafting
+              ? current?.managerId === managerId
+                ? `Your turn · Pick #${current.number}`
+                : `${managerName(draft, current?.managerId || "")} is picking${next ? ` · Your pick #${next.number}` : ""}`
+              : `Draft is open · ${participant && current?.managerId === managerId ? "Your turn" : `${managerName(draft, current?.managerId || "")} is picking`}`
             : draft.status === "paused"
               ? "Draft paused"
               : draft.status === "completed"
@@ -187,11 +193,13 @@ export function DraftBanner({
                     ? "Draft cancelled"
                     : "Draft setup"}
         </p>
-        {participant && ["active", "paused"].includes(draft.status) && (
-          <a href={draftLink(draft, "active")}>
-            Go to drafting <span aria-hidden="true">→</span>
-          </a>
-        )}
+        {participant &&
+          !drafting &&
+          ["active", "paused"].includes(draft.status) && (
+            <a href={draftLink(draft, "active")}>
+              Go to drafting <span aria-hidden="true">→</span>
+            </a>
+          )}
         {!managerId &&
           ["active", "published", "paused"].includes(draft.status) && (
             <LoginLink />
@@ -249,79 +257,63 @@ function NotificationSettings({
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState("");
   const [deviceEnabled, setDeviceEnabled] = useState(false);
+  const [checkingDevice, setCheckingDevice] = useState(true);
   useEffect(() => {
     let active = true;
     setDeviceEnabled(false);
+    setCheckingDevice(true);
     void draftPushDeviceEnabled()
       .then((enabled) => {
         if (active) setDeviceEnabled(enabled);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (active) setCheckingDevice(false);
+      });
     return () => {
       active = false;
     };
   }, [managerId, draft.preference.push]);
   if (!draft.participants.some((manager) => manager.id === managerId) && !admin)
     return null;
-  const update = (enabled: boolean, push: boolean) =>
-    mutation.mutate({ action: "preferences", body: { enabled, push } });
+  const on = draft.preference.enabled && draft.preference.push && deviceEnabled;
   return (
-    <div>
-      <p className={styles.muted}>
-        Alerts cover draft start, your turn, pauses/resumes, and completion.
-        Manager Hub alerts are automatic. Subscribing controls device push only.
-      </p>
-      <div className={styles.actions}>
-        <button
-          type="button"
-          disabled={mutation.isPending || pushBusy}
-          onClick={() =>
-            update(!draft.preference.enabled, !draft.preference.enabled)
+    <div className={styles.alertControl}>
+      <button
+        type="button"
+        disabled={mutation.isPending || pushBusy || checkingDevice}
+        onClick={async () => {
+          setPushError("");
+          if (on) {
+            mutation.mutate({
+              action: "preferences",
+              body: { enabled: false, push: false },
+            });
+            return;
           }
-        >
-          {draft.preference.enabled
-            ? "Unsubscribe from device alerts"
-            : "Subscribe to device alerts"}
-        </button>
-        {draft.preference.enabled && (
-          <button
-            type="button"
-            disabled={mutation.isPending || pushBusy}
-            onClick={async () => {
-              if (draft.preference.push && deviceEnabled) {
-                update(true, false);
-                return;
-              }
-              setPushBusy(true);
-              setPushError("");
-              try {
-                await enableDraftPush();
-                setDeviceEnabled(true);
-                update(true, true);
-              } catch (error) {
-                setPushError((error as Error).message);
-              } finally {
-                setPushBusy(false);
-              }
-            }}
-          >
-            {pushBusy
-              ? "Enabling browser push…"
-              : draft.preference.push && deviceEnabled
-                ? "Turn off draft browser push"
-                : "Enable browser push on this device"}
-          </button>
-        )}
-      </div>
-      {draft.preference.enabled && (
-        <p>
-          {draft.preference.push
-            ? deviceEnabled
-              ? "Draft alerts are enabled; browser push is configured on this device."
-              : "Draft alerts are enabled on your account. Enable browser push on this device to receive them here."
-            : "Manager Hub alerts are always available. Browser push is off."}
-        </p>
-      )}
+          setPushBusy(true);
+          try {
+            await enableDraftPush();
+            setDeviceEnabled(true);
+            await mutation.mutateAsync({
+              action: "preferences",
+              body: { enabled: true, push: true },
+            });
+          } catch (error) {
+            setPushError((error as Error).message);
+          } finally {
+            setPushBusy(false);
+          }
+        }}
+      >
+        {checkingDevice
+          ? "Checking alerts…"
+          : pushBusy || mutation.isPending
+            ? "Saving…"
+            : on
+              ? "Turn off device alerts"
+              : "Enable device alerts"}
+      </button>
       {(pushError || mutation.error) && (
         <p role="alert" className={styles.error}>
           {pushError || mutation.error?.message}
@@ -389,7 +381,7 @@ function Options({
         : [];
   return (
     <section className={styles.panel} id="draft-options">
-      <h2>{testMode ? "Admin test drafting" : "Active draft"}</h2>
+      {testMode && <h2>Admin test drafting</h2>}
       {testMode && (
         <p>
           Dev testing: make a selection for {managerName(draft, managerId)}. The
@@ -1286,8 +1278,12 @@ export function LeagueDraftPage({
           <DraftBanner
             draft={draft}
             managerId={query.managerId}
-            compact={mode === "draft"}
+            compact={mode !== "manage"}
+            drafting={mode === "active"}
           />
+          {mode === "active" && query.managerId && (
+            <NotificationSettings draft={draft} managerId={query.managerId} />
+          )}
           {mode === "manage" ? (
             <>
               <Manage draft={draft} league={league} onSaved={saved} />

@@ -83,14 +83,14 @@ Core drafting and automatic Manager Hub alerts work without the push secret. Bro
 7. Run through the fourth and fifth picks and confirm that the last seed gets consecutive turns at the snake boundary. Run through all eight picks and confirm completion.
 8. Before completing another test draft, pause and confirm picks are blocked; undo with a reason, confirm the option becomes available and the draft stays paused, then resume explicitly.
 9. Test an ordinary participant account: only its current turn can submit. A nonparticipant can observe but cannot select. An unsubscribed participant can still draft. Manage must be hidden and rejected for non-admins.
-10. Subscribe in the banner, verify the same device-alert setting in Manager Hub, and unsubscribe there; Hub alerts must remain visible. Browser push is a separate explicit action. With the browser closed, verify a turn alert deep-links to the correct draft on dev. Turning draft alerts off must preserve Footy/Formula One subscriptions. Switch account or sign out and verify the previous manager's draft alerts are suppressed.
+10. Subscribe in the banner, verify the same device-alert setting in Manager Hub, and unsubscribe there; Hub alerts must remain visible. The single Enable device alerts action requests browser permission, registers this device, and enables account push preferences together. With the browser closed, verify a turn alert deep-links to the correct draft on dev. Turning draft alerts off must preserve Footy/Formula One subscriptions. Switch account or sign out and verify the previous manager's draft alerts are suppressed.
 11. Repeat with three managers and confirm the seed order repeats every round. Repeat in the other 2027 league. Revisit older leagues and private Draft Lists to confirm their behavior.
 
 Use visibly named test drafts and sample options. Admin test selections are real writes within the dev draft namespace, not scoring updates. Cancellation retains picks and ownership for audit; create another draft for a clean run.
 
 ## Notification delivery
 
-Participants automatically get draft start, current turn, pause/resume, cancellation, and completion events in Manager Hub. Existing drafts also show a current-turn alert without needing to recreate the draft. Subscribing controls device push only. Account push preferences are shared between the banner and Hub; browser capability is per device.
+Participants automatically get draft start, current turn, pause/resume, cancellation, and completion events in Manager Hub. Existing drafts also show a current-turn alert without needing to recreate the draft. Subscribing controls device push only. Account push preferences are shared between Active and Hub; browser capability is per device. Active uses a compact turn banner and one device-alert control. Turn off device alerts disables draft push preferences while retaining automatic Hub alerts and unrelated Footy/Formula One subscriptions.
 
 The retry cron runs 96 times daily and reads at most 200 indexed dev draft rows per run (19,200 rows/day at the retention limit; initially zero draft rows). It writes only when delivery state changes. The schema migration created an empty table and index without rewriting existing league data.
 

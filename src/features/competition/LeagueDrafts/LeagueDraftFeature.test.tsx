@@ -23,6 +23,12 @@ import {
   LeagueDraftPage,
 } from "./LeagueDraftFeature";
 import type { Draft, Pick } from "./types";
+import { draftPushDeviceEnabled, enableDraftPush } from "./api";
+vi.mock("./api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./api")>()),
+  draftPushDeviceEnabled: vi.fn(async () => false),
+  enableDraftPush: vi.fn(async () => {}),
+}));
 
 const participants = ["1", "2", "3", "6"].map((id) => ({
   id,
@@ -58,6 +64,8 @@ function wrapper(component: ReactNode) {
   );
 }
 beforeEach(() => {
+  vi.mocked(draftPushDeviceEnabled).mockReset().mockResolvedValue(false);
+  vi.mocked(enableDraftPush).mockReset().mockResolvedValue(undefined);
   vi.stubEnv(
     "VITE_LEAGUE_DRAFTS_ENDPOINT",
     "https://box-this-lap-league-drafts-dev.example",
@@ -216,7 +224,7 @@ describe("2027 league drafting", () => {
       return Response.json({ ok: true, drafts: [visibleDraft(state, "1")] });
     });
     wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
-    await screen.findByRole("heading", { name: "Test office draft" });
+    await screen.findByRole("status");
     await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = screen
       .getByRole("heading", { name: "Movie 0" })
@@ -229,11 +237,9 @@ describe("2027 league drafting", () => {
       expect(within(movie).getByRole("button", { name: "Taken" })).toBeTruthy(),
     );
     expect(screen.getByRole("status").textContent).toContain(
-      "Manager 2 is on the clock",
+      "Manager 2 is picking",
     );
-    expect(screen.getByRole("status").textContent).toContain(
-      "Your next pick is #8 — 6 selections before you",
-    );
+    expect(screen.getByRole("status").textContent).toContain("Your pick #8");
     expect(
       (
         within(movie).getByRole("button", {
@@ -270,6 +276,7 @@ describe("2027 league drafting", () => {
     expect(state.picks.length).toBe(0);
   });
   it("uses the same subscription in Manager Hub and the banner, with no automatic push permission request", async () => {
+    vi.mocked(draftPushDeviceEnabled).mockResolvedValue(true);
     localStorage.setItem(
       "boxThisLapManagerSession",
       JSON.stringify({ managerId: "1" }),
@@ -292,20 +299,56 @@ describe("2027 league drafting", () => {
       <LeagueDraftPage league="fantasy-office" mode="active" />,
     );
     await userEvent.click(
-      await screen.findByRole("button", { name: "Subscribe to device alerts" }),
+      await screen.findByRole("button", { name: "Enable device alerts" }),
     );
     await screen.findByRole("button", {
-      name: "Unsubscribe from device alerts",
+      name: "Turn off device alerts",
     });
     expect(state.preferences["1"].push).toBe(true);
+    expect(enableDraftPush).toHaveBeenCalled();
     page.unmount();
     wrapper(<LeagueDraftHubCard />);
     expect(
       await screen.findByRole("button", {
-        name: "Unsubscribe from device alerts",
+        name: "Turn off device alerts",
       }),
     ).toBeTruthy();
     expect(screen.getByText("Your turn · pick #1")).toBeTruthy();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Turn off device alerts" }),
+    );
+    await screen.findByRole("button", { name: "Enable device alerts" });
+    expect(state.preferences["1"].push).toBe(false);
+    expect(screen.getByText("Your turn · pick #1")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /browser push/i })).toBeNull();
+  });
+  it("does not subscribe when browser permission or registration fails", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "1" }),
+    );
+    vi.mocked(enableDraftPush).mockRejectedValueOnce(
+      new Error("Notifications are blocked."),
+    );
+    const state = activeState();
+    const fetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () =>
+        Response.json({ drafts: [visibleDraft(state, "1")] }),
+      );
+    wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Enable device alerts" }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Notifications are blocked.",
+    );
+    expect(
+      fetch.mock.calls.some(([input]) =>
+        String(input).endsWith("/preferences"),
+      ),
+    ).toBe(false);
+    expect(screen.queryByRole("link", { name: "Go to drafting" })).toBeNull();
   });
   it("clears the personalized view when the account changes", async () => {
     localStorage.setItem(
@@ -380,7 +423,7 @@ describe("2027 league drafting", () => {
     expect(screen.queryByRole("heading", { name: "Turn order" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Selections" })).toBeNull();
     expect(
-      screen.queryByRole("button", { name: "Subscribe to device alerts" }),
+      screen.queryByRole("button", { name: "Enable device alerts" }),
     ).toBeNull();
     expect(
       screen.getByRole("link", { name: "Go to drafting" }).getAttribute("href"),

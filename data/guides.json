@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-12T13:27:08.587Z",
+  "generatedAt": "2026-10-12T13:49:42.071Z",
   "guides": [
     {
       "id": "1",
@@ -63003,9 +63003,9 @@
       "guideId": "9",
       "stepId": "17",
       "parentId": "5707",
-      "divider": "Extraction Plant",
+      "divider": "",
       "section": "The Highlands - Outwash",
-      "type": "Highlands Explorer",
+      "type": "",
       "step": "Extraction Plant",
       "url": ""
     },
@@ -63014,9 +63014,9 @@
       "guideId": "9",
       "stepId": "18",
       "parentId": "5707",
-      "divider": "Aggregate Acquisition",
+      "divider": "",
       "section": "The Highlands",
-      "type": "Highlands Explorer",
+      "type": "",
       "step": "Aggregate Acquisition",
       "url": ""
     },
@@ -63026,9 +63026,9 @@
       "stepId": "19",
       "parentId": "5707",
       "divider": "",
-      "section": "",
-      "type": "Highlands Explorer",
-      "step": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Blake Bridge",
       "url": ""
     },
     {
@@ -63037,9 +63037,251 @@
       "stepId": "20",
       "parentId": "5707",
       "divider": "",
-      "section": "",
+      "section": "The Highlands",
       "type": "",
-      "step": "",
+      "step": "Extraction Point",
+      "url": ""
+    },
+    {
+      "id": "5726",
+      "guideId": "9",
+      "stepId": "21",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Frothing Creek Mill",
+      "url": ""
+    },
+    {
+      "id": "5727",
+      "guideId": "9",
+      "stepId": "22",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Hyperion Bridge",
+      "url": ""
+    },
+    {
+      "id": "5728",
+      "guideId": "9",
+      "stepId": "23",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Hunter's Bane",
+      "url": ""
+    },
+    {
+      "id": "5729",
+      "guideId": "9",
+      "stepId": "24",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Isotope Reclamation Tower",
+      "url": ""
+    },
+    {
+      "id": "5730",
+      "guideId": "9",
+      "stepId": "25",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Lake Shining Horizons",
+      "url": ""
+    },
+    {
+      "id": "5731",
+      "guideId": "9",
+      "stepId": "26",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Mercury Induction Centre",
+      "url": ""
+    },
+    {
+      "id": "5732",
+      "guideId": "9",
+      "stepId": "27",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Old Cranky's Pond",
+      "url": ""
+    },
+    {
+      "id": "5733",
+      "guideId": "9",
+      "stepId": "28",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Overlook",
+      "url": ""
+    },
+    {
+      "id": "5734",
+      "guideId": "9",
+      "stepId": "29",
+      "parentId": "5707",
+      "divider": "",
+      "section": "The Highlands",
+      "type": "",
+      "step": "Whispering Riverbed",
+      "url": ""
+    },
+    {
+      "id": "5735",
+      "guideId": "9",
+      "stepId": "30",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "Bloody Knuckle Point",
+      "url": ""
+    },
+    {
+      "id": "5736",
+      "guideId": "9",
+      "stepId": "31",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "Broken Face Bridge",
+      "url": ""
+    },
+    {
+      "id": "5737",
+      "guideId": "9",
+      "stepId": "32",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "Buzzard Factory",
+      "url": ""
+    },
+    {
+      "id": "5738",
+      "guideId": "9",
+      "stepId": "33",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "Competitor's Deterrence Field",
+      "url": ""
+    },
+    {
+      "id": "5739",
+      "guideId": "9",
+      "stepId": "34",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "Control Core Loading Dock",
+      "url": ""
+    },
+    {
+      "id": "5740",
+      "guideId": "9",
+      "stepId": "35",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "No Man's Land",
+      "url": ""
+    },
+    {
+      "id": "5741",
+      "guideId": "9",
+      "stepId": "36",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Thousand Cuts",
+      "type": "",
+      "step": "Slab Town",
+      "url": ""
+    },
+    {
+      "id": "5742",
+      "guideId": "9",
+      "stepId": "37",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Wildlife Exploration Reserve",
+      "type": "",
+      "step": "Blood Wing's Enclosure",
+      "url": ""
+    },
+    {
+      "id": "5743",
+      "guideId": "9",
+      "stepId": "38",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Wildlife Exploration Reserve",
+      "type": "",
+      "step": "Casa Del Mordecai",
+      "url": ""
+    },
+    {
+      "id": "5744",
+      "guideId": "9",
+      "stepId": "39",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Wildlife Exploration Reserve",
+      "type": "",
+      "step": "Observation Wing",
+      "url": ""
+    },
+    {
+      "id": "5745",
+      "guideId": "9",
+      "stepId": "40",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Wildlife Exploration Reserve",
+      "type": "",
+      "step": "Preserve Dockyard",
+      "url": ""
+    },
+    {
+      "id": "5746",
+      "guideId": "9",
+      "stepId": "41",
+      "parentId": "5707",
+      "divider": "",
+      "section": "Wildlife Exploration Reserve",
+      "type": "",
+      "step": "Specimen Maintenance",
+      "url": ""
+    },
+    {
+      "id": "5747",
+      "guideId": "9",
+      "stepId": "42",
+      "parentId": "5708",
+      "divider": "",
+      "section": "Eridium Blight",
+      "type": "",
+      "step": "Eridium Extraction Plant",
       "url": ""
     }
   ]

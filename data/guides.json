@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-12T13:09:25.387Z",
+  "generatedAt": "2026-10-12T13:27:08.587Z",
   "guides": [
     {
       "id": "1",
@@ -62919,6 +62919,127 @@
       "section": "",
       "type": "Badass Challenge",
       "step": "Get Second Winds by killing enemies with a shock DoT (damage over time).",
+      "url": ""
+    },
+    {
+      "id": "5715",
+      "guideId": "9",
+      "stepId": "10",
+      "parentId": "5706",
+      "divider": "Chemical Sprayer",
+      "section": "",
+      "type": "Badass Challenge",
+      "step": "Kill enemies with Area-of-Effect grenades.",
+      "url": ""
+    },
+    {
+      "id": "5716",
+      "guideId": "9",
+      "stepId": "11",
+      "parentId": "5706",
+      "divider": "Woah, Black Betty",
+      "section": "",
+      "type": "Badass Challenge",
+      "step": "Kill enemies with Bouncing Betty grenades.",
+      "url": ""
+    },
+    {
+      "id": "5717",
+      "guideId": "9",
+      "stepId": "12",
+      "parentId": "5706",
+      "divider": "Roid Rage",
+      "section": "",
+      "type": "Badass Challenge",
+      "step": "Kill enemies while buffed by a Maylay shield.",
+      "url": ""
+    },
+    {
+      "id": "5718",
+      "guideId": "9",
+      "stepId": "13",
+      "parentId": "5706",
+      "divider": "Splish Splash",
+      "section": "Level 5",
+      "type": "Badass Challenge",
+      "step": "Kill enemies with rocket launcher splash damage (200).",
+      "url": ""
+    },
+    {
+      "id": "5719",
+      "guideId": "9",
+      "stepId": "14",
+      "parentId": "5706",
+      "divider": "Catch-a-Rocket",
+      "section": "",
+      "type": "Badass Challenge",
+      "step": "Kill 5 enemies with direct rocket hits (Unlocked after splish Splash level 5)",
+      "url": ""
+    },
+    {
+      "id": "5720",
+      "guideId": "9",
+      "stepId": "15",
+      "parentId": "5706",
+      "divider": "Open Wide!",
+      "section": "Level 5",
+      "type": "Badass Challenge",
+      "step": "Kill enemies from point-blank range with shotguns (750).",
+      "url": ""
+    },
+    {
+      "id": "5721",
+      "guideId": "9",
+      "stepId": "16",
+      "parentId": "5706",
+      "divider": "Shotgun Sniper",
+      "section": "",
+      "type": "Badass Challenge",
+      "step": "Kill 10 enemies from long range with shotguns (Unlocked after open Wide! level 5)",
+      "url": ""
+    },
+    {
+      "id": "5722",
+      "guideId": "9",
+      "stepId": "17",
+      "parentId": "5707",
+      "divider": "Extraction Plant",
+      "section": "The Highlands - Outwash",
+      "type": "Highlands Explorer",
+      "step": "Extraction Plant",
+      "url": ""
+    },
+    {
+      "id": "5723",
+      "guideId": "9",
+      "stepId": "18",
+      "parentId": "5707",
+      "divider": "Aggregate Acquisition",
+      "section": "The Highlands",
+      "type": "Highlands Explorer",
+      "step": "Aggregate Acquisition",
+      "url": ""
+    },
+    {
+      "id": "5724",
+      "guideId": "9",
+      "stepId": "19",
+      "parentId": "5707",
+      "divider": "",
+      "section": "",
+      "type": "Highlands Explorer",
+      "step": "",
+      "url": ""
+    },
+    {
+      "id": "5725",
+      "guideId": "9",
+      "stepId": "20",
+      "parentId": "5707",
+      "divider": "",
+      "section": "",
+      "type": "",
+      "step": "",
       "url": ""
     }
   ]

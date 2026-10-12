@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-12T03:54:29.522Z",
+  "generatedAt": "2026-10-12T13:09:25.387Z",
   "guides": [
     {
       "id": "1",
@@ -62820,6 +62820,105 @@
       "section": "Evening",
       "type": "Social Link",
       "step": "Hang out with the Monk. (Tower Rank 10)",
+      "url": ""
+    },
+    {
+      "id": "5706",
+      "guideId": "9",
+      "stepId": "1",
+      "parentId": "",
+      "divider": "Challenge Accepted",
+      "section": "Gold",
+      "type": "Trophy",
+      "step": "Completed level 1 of all non-level-specific challenges with a single character",
+      "url": ""
+    },
+    {
+      "id": "5707",
+      "guideId": "9",
+      "stepId": "2",
+      "parentId": "",
+      "divider": "Highlands Explorer",
+      "section": "Bronze",
+      "type": "Trophy",
+      "step": "Discovered all named locations in The Highlands, Thousand Cuts, and Wildlife Exploitation Preserve",
+      "url": ""
+    },
+    {
+      "id": "5708",
+      "guideId": "9",
+      "stepId": "3",
+      "parentId": "",
+      "divider": "Blight Explorer",
+      "section": "Bronze",
+      "type": "Trophy",
+      "step": "Discovered all named locations in Eridium Blight, Arid Nexus, and Sawtooth Cauldron",
+      "url": ""
+    },
+    {
+      "id": "5709",
+      "guideId": "9",
+      "stepId": "4",
+      "parentId": "",
+      "divider": "World Traveler",
+      "section": "Silver",
+      "type": "Trophy",
+      "step": "Discovered all named locations",
+      "url": ""
+    },
+    {
+      "id": "5710",
+      "guideId": "9",
+      "stepId": "5",
+      "parentId": "",
+      "divider": "Phased and Confused",
+      "section": "Bronze",
+      "type": "Trophy",
+      "step": "Phaselocked 100 enemies",
+      "url": ""
+    },
+    {
+      "id": "5711",
+      "guideId": "9",
+      "stepId": "6",
+      "parentId": "",
+      "divider": "Definitely an Italian Plumber",
+      "section": "Bronze",
+      "type": "Trophy",
+      "step": "Killed Donkey Mong",
+      "url": ""
+    },
+    {
+      "id": "5712",
+      "guideId": "9",
+      "stepId": "7",
+      "parentId": "",
+      "divider": "Unseen Predator",
+      "section": "Bronze",
+      "type": "Trophy",
+      "step": "Remained in Zero's Deception mode for ten seconds straight",
+      "url": ""
+    },
+    {
+      "id": "5713",
+      "guideId": "9",
+      "stepId": "8",
+      "parentId": "",
+      "divider": "Did It All",
+      "section": "Silver",
+      "type": "Trophy",
+      "step": "Completed all side missions",
+      "url": ""
+    },
+    {
+      "id": "5714",
+      "guideId": "9",
+      "stepId": "9",
+      "parentId": "5706",
+      "divider": "I'm Back! Shocked?",
+      "section": "",
+      "type": "Badass Challenge",
+      "step": "Get Second Winds by killing enemies with a shock DoT (damage over time).",
       "url": ""
     }
   ]

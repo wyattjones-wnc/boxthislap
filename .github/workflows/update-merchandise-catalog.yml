@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Scan stores without writing D1
+        description: Preview only (do not save products or scan dates)
         required: false
-        default: true
+        default: false
         type: boolean
       sources:
         description: Comma-separated stores to scan

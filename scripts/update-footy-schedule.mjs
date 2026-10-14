@@ -7,6 +7,7 @@ import { isSameFootballClubName, normalizeFootballClubName } from "./footy-club-
 import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
 import { parseUefaNationsLeagueFixtures } from "./uefa-nations-league-provider.mjs";
 import { loadUsSoccerSchedule } from "./ussoccer-schedule-provider.mjs";
+import { applyFootyFixtureCorrection } from "./footy-fixture-corrections.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -2121,6 +2122,7 @@ function getErrorMessageFromText(text) {
 }
 
 function mergeFixtures(fixtures) {
+  fixtures = fixtures.map(applyFootyFixtureCorrection);
   const mergedFixtures = [];
 
   for (const fixture of fixtures) {

@@ -36,3 +36,11 @@
 - `npm run test:footy-following`
 - `npm run test:footy-rosters`
 - `npx vitest run src/features/operational/OperationalPages.test.tsx`
+
+## Schedule Status Reconciliation
+
+- `scripts/footy-status-reconciliation.mjs` checks ESPN scoreboards during each schedule refresh, after primary schedules are built. It matches a unique home/away pairing on the same UTC date within the competition; it never infers postponement from a missing result or an elapsed kickoff.
+- Supported competition codes: PL, ELC, PD, BL1, SA, FL1, PPL, DED, CL, EL, MLS. Checks cover 14 days before through 7 days after the refresh, with one request per league/date and no requests for completed or live fixtures. Other competitions retain their existing provider status handling.
+- ESPN postponement and suspension reports override pending primary statuses. Abandonment maps to the existing suspended/no-kickoff behavior, with the exact ESPN status retained in `statusVerification`. Evidence includes event ID, URL, and verification time. Verified interruptions survive stale primary data and verifier failures until the kickoff changes or the primary provider reports match progress.
+- Verification failures appear in schedule errors with partial status. Missing or ambiguous event matches leave the primary status unchanged. Status lookups bypass the API disk cache; the overnight workflow also explicitly refreshes provider caches. This cannot detect an interruption absent from both providers.
+- Validate with `npm run test:footy-following` and `node scripts/test-update-footy-schedule.mjs`.

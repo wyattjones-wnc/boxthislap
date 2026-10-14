@@ -37,7 +37,7 @@ test("baseline SQL preserves unseen state and safely escapes catalog data", () =
   assert.match(sql, /content_hash/);
 });
 
-test("a blocked Arsenal scan does not prevent a healthy Barcelona scan", async () => {
+test("default scans include Arsenal and continue to Barcelona when Arsenal is blocked", async () => {
   const fetchImpl = async (url) => {
     if (String(url).includes("arsenaldirect"))
       return { ok: false, status: 403 };
@@ -60,7 +60,7 @@ test("a blocked Arsenal scan does not prevent a healthy Barcelona scan", async (
   const report = await runMerchandiseUpdate({
     dryRun: true,
     fetchImpl,
-    sources: ["arsenal", "barcelona"],
+    env: {},
   });
   assert.equal(report.healthy, false);
   assert.equal(

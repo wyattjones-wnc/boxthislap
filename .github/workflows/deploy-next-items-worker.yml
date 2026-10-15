@@ -1,6 +1,14 @@
 name: Deploy Next Items Worker
 
 on:
+  push:
+    branches:
+      - dev
+    paths:
+      - workers/next-items/src/**
+      - workers/next-items/test/**
+      - workers/next-items/wrangler.toml
+      - .github/workflows/deploy-next-items-worker.yml
   workflow_dispatch:
 
 permissions:

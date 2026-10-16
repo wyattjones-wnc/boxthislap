@@ -10384,6 +10384,7 @@ tr:last-child td {
 .account-settings-grid {
   display: grid;
   gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .account-settings-card {
@@ -10393,9 +10394,26 @@ tr:last-child td {
   border-radius: 8px;
   box-shadow: 0 12px 28px var(--shadow);
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   justify-content: space-between;
   padding: 18px;
+}
+
+.account-settings-card > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.account-settings-card .followed-teams-heading-row,
+.account-settings-card .followed-teams-actions {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.account-settings-card .followed-team-row {
+  flex-wrap: wrap;
 }
 
 .account-settings-card h2,

@@ -16,6 +16,42 @@
       }
     </script>
     <script>
+      // Restore installed-app navigation before either application router starts.
+      (() => {
+        const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+        if (!standalone) return;
+
+        const storageKey = `boxThisLapLastPage:${window.location.pathname}`;
+        try {
+          const savedHash = localStorage.getItem(storageKey);
+          if (!window.location.hash && savedHash?.startsWith("#")) {
+            window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${savedHash}`);
+          }
+        } catch {
+          // Storage may be unavailable; navigation must still work.
+        }
+
+        const rememberPage = () => {
+          try {
+            if (window.location.hash) {
+              localStorage.setItem(storageKey, window.location.hash);
+            } else {
+              localStorage.removeItem(storageKey);
+            }
+          } catch {
+            // Keep the current visit usable when storage is full or blocked.
+          }
+        };
+        window.addEventListener("hashchange", rememberPage);
+        window.addEventListener("popstate", rememberPage);
+        window.addEventListener("boxthislap:page-shown", rememberPage);
+        window.addEventListener("pagehide", rememberPage);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") rememberPage();
+        });
+      })();
+    </script>
+    <script>
       (() => {
         let isShellReady = false;
         let staleTimer = null;
@@ -23,8 +59,6 @@
         let pullDistance = 0;
         let isTrackingPull = false;
         const refreshThreshold = 72;
-        const staleResumeThreshold = 10 * 60 * 1000;
-        let hiddenAt = 0;
 
         function hardRefresh() {
           const url = new URL(window.location.href);
@@ -50,19 +84,6 @@
 
           document.body.classList.remove("is-routing");
           document.body.classList.add("has-shell-stale-warning");
-        }
-
-        function refreshIfStaleResume() {
-          if (!hiddenAt) {
-            return;
-          }
-
-          const hiddenDuration = Date.now() - hiddenAt;
-          hiddenAt = 0;
-
-          if (hiddenDuration >= staleResumeThreshold) {
-            hardRefresh();
-          }
         }
 
         function setPullDistance(value) {
@@ -109,25 +130,6 @@
             showStaleWarning();
           }
         }, true);
-
-        window.addEventListener("pagehide", () => {
-          hiddenAt = Date.now();
-        });
-
-        window.addEventListener("pageshow", (event) => {
-          if (event.persisted) {
-            refreshIfStaleResume();
-          }
-        });
-
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "hidden") {
-            hiddenAt = Date.now();
-            return;
-          }
-
-          refreshIfStaleResume();
-        });
 
         window.addEventListener("online", () => {
           if (document.body?.classList.contains("has-shell-stale-warning")) {
@@ -199,7 +201,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.10.16.05.20";
+      window.BOX_THIS_LAP_VERSION = "2026.10.16.05.24";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest vite-ignore>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -213,7 +215,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202610160520">
+    <link rel="stylesheet" href="styles.css?v=202610160524">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">

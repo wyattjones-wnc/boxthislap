@@ -1355,6 +1355,7 @@ export function LeagueDraftPage({
 
 export function LeagueDraftHubCard() {
   const query = useDrafts();
+  if (!draftEndpoint()) return null;
   const drafts = [...(query.data?.drafts || [])].sort(
     (a, b) =>
       Number(
@@ -1372,9 +1373,7 @@ export function LeagueDraftHubCard() {
       aria-label="League drafts"
     >
       <h2>League Drafts</h2>
-      {!draftEndpoint() ? (
-        <p>2027 drafting is available on dev.</p>
-      ) : !query.managerId ? (
+      {!query.managerId ? (
         <p>Log in to load league drafts.</p>
       ) : query.isLoading ? (
         <p>Loading league drafts…</p>

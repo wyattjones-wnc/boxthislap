@@ -61,6 +61,23 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const pwaCapable = "serviceWorker" in navigator;
 
   useEffect(() => {
+    if (!pwaCapable) return;
+    let cancelled = false;
+    void navigator.serviceWorker.ready
+      .then((registration) => {
+        if (!cancelled)
+          registration.active?.postMessage({
+            type: "DRAFT_MANAGER",
+            managerId: session?.managerId || "",
+          });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pwaCapable, session?.managerId]);
+
+  useEffect(() => {
     const syncRoute = () => setRoute(readRoute());
     const syncLegacyRoute = (event: Event) =>
       setRoute(

@@ -7,6 +7,7 @@ import { isSameFootballClubName, normalizeFootballClubName } from "./footy-club-
 import { buildRosterProviderIndex, getRosterProviderIds } from "./footy-roster-providers.mjs";
 import { parseUefaNationsLeagueFixtures } from "./uefa-nations-league-provider.mjs";
 import { loadUsSoccerSchedule } from "./ussoccer-schedule-provider.mjs";
+import { reconcileFootyStatuses } from "./footy-status-reconciliation.mjs";
 
 const DEFAULT_FOOTY_WORKBOOK_BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBd-UqYHhrob90IdNm8CmAmDy0gCfJ8cYTCESL01ph4D9A9kEY62Y78pWc9rjrEQq0lCS3JWc8Nar7/pub";
@@ -66,7 +67,7 @@ const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 6500;
 const EXTERNAL_REQUEST_RETRY_LIMIT = Number(process.env.FOOTY_API_RETRY_LIMIT) || 3;
 const LOOKAHEAD_DAYS = Number(process.env.FOOTY_SCHEDULE_LOOKAHEAD_DAYS) || 365;
-const MATCH_STATUS = process.env.FOOTY_SCHEDULE_MATCH_STATUS || "SCHEDULED";
+const MATCH_STATUS = process.env.FOOTY_SCHEDULE_MATCH_STATUS || "";
 const SHOULD_REFRESH_API_CACHE = isTrueValue(process.env.FOOTY_API_REFRESH);
 const SHOULD_USE_API_CACHE = !isFalseValue(process.env.FOOTY_API_CACHE || "true");
 const FOOTY_MATCH_SYNC_ENDPOINT = process.env.FOOTY_MATCH_SYNC_ENDPOINT || "";
@@ -323,6 +324,23 @@ async function main() {
     previousSchedules: previousPayload?.teamSchedules,
     teams,
   }));
+  await reconcileFootyStatuses({
+    schedules: competitionSchedules,
+    previousSchedules: previousPayload?.competitionSchedules || [],
+    generatedAt,
+    loadJson: async (url) => JSON.parse(await loadText(url, { extension: "json", fresh: true })),
+  });
+  const verifiedFixtures = new Map(competitionSchedules.flatMap((schedule) => schedule.fixtures || [])
+    .filter((fixture) => fixture.statusVerification).map((fixture) => [fixture.matchId, fixture]));
+  for (const schedule of teamSchedules) {
+    for (const fixture of schedule.fixtures || []) {
+      const verified = verifiedFixtures.get(fixture.matchId);
+      if (verified && Date.parse(verified.timestamp) === Date.parse(fixture.timestamp)) {
+        fixture.status = verified.status;
+        fixture.statusVerification = verified.statusVerification;
+      }
+    }
+  }
   const teamCatalog = attachCanonicalFootyTeams({ competitionSchedules, teamSchedules });
   const rosterProviderIndex = buildRosterProviderIndex({ competitionSchedules, teamCatalog, teamSchedules });
   for (const team of teamCatalog) team.providerTeamIds = getRosterProviderIds(rosterProviderIndex, team);
@@ -1563,10 +1581,10 @@ async function loadFootballDataJson(endpoint) {
   }));
 }
 
-async function loadText(url, { body = "", extension, headers = {}, method = "GET" }) {
+async function loadText(url, { body = "", extension, headers = {}, method = "GET", fresh = false }) {
   const cachePath = getApiCachePath(url, extension, { body, method });
 
-  if (SHOULD_USE_API_CACHE && !SHOULD_REFRESH_API_CACHE) {
+  if (SHOULD_USE_API_CACHE && !SHOULD_REFRESH_API_CACHE && !fresh) {
     const cachedText = await tryReadFile(cachePath);
 
     if (cachedText !== null) {

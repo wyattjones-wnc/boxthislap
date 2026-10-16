@@ -1,0 +1,36 @@
+name: Deploy Dev League Drafts Worker
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - workers/league-drafts/**
+      - .github/workflows/deploy-league-drafts-worker.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-league-drafts-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Test League Drafts worker
+        run: node --test workers/league-drafts/test/*.test.mjs
+      - name: Validate League Drafts worker
+        run: npx wrangler deploy --dry-run --config workers/league-drafts/wrangler.toml --outdir .tmp/league-drafts-dry-run
+      - name: Deploy League Drafts worker
+        run: npx wrangler deploy --config workers/league-drafts/wrangler.toml

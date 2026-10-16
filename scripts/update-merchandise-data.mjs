@@ -13,7 +13,7 @@ export async function runMerchandiseUpdate({
 } = {}) {
   const selectedSources =
     sources ||
-    String(env.MERCHANDISE_SOURCES || "barcelona")
+    String(env.MERCHANDISE_SOURCES || "arsenal,barcelona")
       .split(",")
       .map((source) => source.trim().toLowerCase())
       .filter(Boolean);

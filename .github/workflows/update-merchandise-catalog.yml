@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Scan stores without writing D1
+        description: Preview only (do not save products or scan dates)
         required: false
-        default: true
+        default: false
         type: boolean
       sources:
         description: Comma-separated stores to scan
@@ -41,7 +41,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           MERCHANDISE_D1_DATABASE_ID: ${{ secrets.MERCHANDISE_D1_DATABASE_ID }}
-          MERCHANDISE_SOURCES: ${{ (github.event_name == 'workflow_dispatch' && inputs.sources) || vars.MERCHANDISE_SOURCES || 'barcelona' }}
+          MERCHANDISE_SOURCES: ${{ (github.event_name == 'workflow_dispatch' && inputs.sources) || 'arsenal,barcelona' }}
         run: node scripts/update-merchandise-data.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
       - name: Retain scan report
         if: always()

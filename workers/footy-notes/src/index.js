@@ -1203,7 +1203,7 @@ export async function listMatchMedia(env, managerId, searchParams) {
   const where = [];
   const bindings = [managerId];
   if (view === "unseen") where.push("s.seen_at IS NULL", "g.match_status IN ('auto', 'manual')");
-  if (view === "saved") where.push("s.soft_saved_at IS NOT NULL");
+  if (view === "saved") where.push("s.soft_saved_at IS NOT NULL", "i.hard_saved_at IS NULL");
   if (view === "hard-saved") where.push("i.hard_saved_at IS NOT NULL");
   if (view === "seen") where.push("s.seen_at IS NOT NULL");
   if (view === "needs-match") where.push("g.match_status = 'review'");

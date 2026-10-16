@@ -94,6 +94,19 @@ test("match media import is idempotent and preserves save state through Seen thr
   assert.equal(feed.images.length, 1);
   assert.equal(feed.images[0].id, "image-1");
   assert.equal(feed.images[0].seen, true);
+
+  // Hard saves can retain a soft-save flag, but belong only in Hard Saved.
+  await saveMatchMediaState(env, "6", "image-2", { softSaved: true });
+  await DB.prepare(
+    "UPDATE footy_media_images SET hard_saved_at = CURRENT_TIMESTAMP WHERE id IN ('image-2', 'image-3')",
+  ).run();
+  const softSaved = await listMatchMedia(env, "6", new URLSearchParams("view=saved"));
+  const hardSaved = await listMatchMedia(env, "6", new URLSearchParams("view=hard-saved"));
+  assert.deepEqual(softSaved.images.map((candidate) => candidate.id), ["image-1"]);
+  assert.deepEqual(hardSaved.images.map((candidate) => candidate.id).sort(), ["image-2", "image-3"]);
+  assert.ok(softSaved.images.every((candidate) => !candidate.hardSaved));
+  assert.ok(hardSaved.images.every((candidate) => candidate.hardSaved));
+  assert.equal(hardSaved.images.find((candidate) => candidate.id === "image-3").softSaved, false);
 });
 
 test("Getty embeds cannot be hard saved", async (context) => {

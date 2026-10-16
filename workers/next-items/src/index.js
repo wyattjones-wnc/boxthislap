@@ -469,13 +469,15 @@ async function normalizeTodoOrder(env, managerId, movedId, requestedOrder) {
     );
   }
   const statements = active
-    .filter((item, index) => item.order !== index + 1)
     .map((item, index) =>
-      env.DB.prepare(
-        `UPDATE todo_items SET sort_order = ?, revision = revision + 1,
+      item.order === index + 1
+        ? null
+        : env.DB.prepare(
+            `UPDATE todo_items SET sort_order = ?, revision = revision + 1,
           updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE id = ?`,
-      ).bind(index + 1, managerId, Number(item.id)),
-    );
+          ).bind(index + 1, managerId, Number(item.id)),
+    )
+    .filter(Boolean);
   if (statements.length) await env.DB.batch(statements);
 }
 

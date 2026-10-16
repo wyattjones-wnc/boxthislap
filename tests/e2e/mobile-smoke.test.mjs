@@ -455,6 +455,25 @@ test("signed-in managers can find notification setup in unsupported browser cont
   );
 });
 
+test("Account Settings fits the viewport without horizontal scrolling", async ({
+  page,
+}) => {
+  await prepareAuthenticatedFollowedTeams(page);
+  await page.goto("/#account-settings", { waitUntil: "networkidle" });
+  await expect(page.locator("#followed-teams-add")).toBeVisible();
+
+  for (const width of [320, 390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    const dimensions = await page
+      .locator("#account-settings")
+      .evaluate((section) => ({
+        width: section.clientWidth,
+        scrollWidth: section.scrollWidth,
+      }));
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.width + 1);
+  }
+});
+
 test("followed-team picker loads on demand with a contained mobile scroll list", async ({
   page,
 }) => {

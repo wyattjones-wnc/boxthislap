@@ -516,25 +516,6 @@ export function WorldCupTestingPage() {
   );
 }
 
-export function LeaguesPage() {
-  return (
-    <>
-      <div className="section-heading page-heading-with-action">
-        <h1>Leagues</h1>
-        <FloatingField className="select-control">
-          <span>Year</span>
-          <select id="league-year-select" defaultValue="2026">
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-          </select>
-        </FloatingField>
-      </div>
-      <div className="league-list" id="league-list" />
-    </>
-  );
-}
-
 export function FantasyCriticPage({ year }: { year: 2025 | 2026 }) {
   return <div id={`fantasy-critic-${year}-content`} />;
 }

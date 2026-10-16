@@ -69,7 +69,8 @@ export function createRouter({
   tabs,
 }) {
   function showPage(pageName, options = {}) {
-    const allowedPageName = PAGE_ALIASES[pageName] || pageName;
+    const routeName = /^(?:fantasy-office|world-cup)-2027-/.test(pageName) ? pageName.split('?')[0] : pageName;
+    const allowedPageName = PAGE_ALIASES[routeName] || routeName;
     const renderedPageName = getRenderedPageName(allowedPageName);
     const testRulesBlocked =
       allowedPageName === "rules" && shouldBlockRulesPage();
@@ -218,6 +219,8 @@ function getHeaderArtName(pageName) {
 }
 
 function getNavScope(pageName) {
+  if (pageName.startsWith('fantasy-office-2027-')) return 'fantasy-office-2027';
+  if (pageName.startsWith('world-cup-2027-')) return 'world-cup-2027';
   const renderedPageName = getRenderedPageName(pageName);
 
   if (THE_MONSTER_MANIAC_PAGES.includes(renderedPageName)) {
@@ -264,6 +267,10 @@ function getNavScope(pageName) {
 }
 
 function rememberNavScope(pageName) {
+  if (/^(?:fantasy-office|world-cup)-2027-/.test(pageName)) {
+    sessionStorage.setItem('boxThisLapActiveNavScope', getNavScope(pageName));
+    return;
+  }
   if (THE_MONSTER_MANIAC_PAGES.includes(getRenderedPageName(pageName))) {
     sessionStorage.setItem("boxThisLapActiveNavScope", "the-monster-maniac");
     return;

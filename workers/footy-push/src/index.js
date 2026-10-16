@@ -22,6 +22,10 @@ export default {
     const url = new URL(request.url);
 
     try {
+      if (request.method === "POST" && url.pathname === "/internal/draft-events") {
+        if (!env.DRAFT_PUSH_SECRET || request.headers.get("Authorization") !== `Bearer ${env.DRAFT_PUSH_SECRET}`) throw httpError(401, "Draft event authorization is invalid.");
+        return json(await sendDraftEvent(await request.json(), env), env);
+      }
       if (request.method === "GET" && url.pathname === "/health") {
         return json({ ok: true, source: "box-this-lap-footy-push" }, env);
       }
@@ -33,6 +37,14 @@ export default {
 
       if (request.method === "POST" && url.pathname === "/subscribe") {
         return json(await subscribe(request, env), env);
+      }
+      if (request.method === 'POST' && url.pathname === '/subscription-status') {
+        assertEnv(env, ['FOOTY_PUSH_KV', 'AUTH_SECRET']);
+        const manager = await requireManager(request, env);
+        const body = await request.json();
+        const record = body.endpoint ? await getJson(env.FOOTY_PUSH_KV, `${SUBSCRIPTION_PREFIX}${await hashText(String(body.endpoint))}`, null) : null;
+        const registered = record?.active && String(record.managerId) === String(manager.sub);
+        return json({ ok: true, registered: Boolean(registered), topics: registered ? getSubscriptionTopics(record) : {} }, env);
       }
 
       if (request.method === "POST" && url.pathname === "/unsubscribe") {
@@ -115,13 +127,84 @@ async function updatePreference(request, env) {
 
 function normalizeTopic(value) {
   const topic = String(value || "").trim();
-  if (!new Set(["footy", "formula-one"]).has(topic)) throw httpError(400, "Unknown notification topic.");
+  if (!new Set(["footy", "formula-one", "league-drafts"]).has(topic)) throw httpError(400, "Unknown notification topic.");
   return topic;
 }
 
 function getSubscriptionTopics(record) {
   if (record?.topics && typeof record.topics === "object") return record.topics;
   return record ? { footy: true, "formula-one": false } : { footy: false, "formula-one": false };
+}
+
+export async function sendDraftEvent(event, env, send = sendEmptyWebPush) {
+  assertEnv(env, [
+    "FOOTY_PUSH_KV",
+    "VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+  ]);
+  const url = new URL(String(event.url || ""));
+  const dev = event.environment === "dev";
+  if (
+    !event.id ||
+    !event.managerId ||
+    !["dev", "production"].includes(event.environment) ||
+    url.origin !== "https://wyattjones-wnc.github.io" ||
+    url.pathname !== (dev ? "/boxthislap/dev/" : "/boxthislap/") ||
+    !/^#(?:fantasy-office|world-cup)-2027-draft\?draft=[a-zA-Z0-9-]+$/.test(
+      url.hash,
+    )
+  )
+    throw httpError(400, "Draft event is invalid.");
+  const subscriptions = await listActiveSubscriptions(env.FOOTY_PUSH_KV);
+  let sent = 0;
+  let failed = 0;
+  for (const subscription of subscriptions) {
+    if (
+      String(subscription.record.managerId) !== String(event.managerId) ||
+      !getSubscriptionTopics(subscription.record)["league-drafts"]
+    )
+      continue;
+    if ((getFootySubscriptionChannel(subscription.record) === "dev") !== dev)
+      continue;
+    // Deduplicate per device, so a manager's second device is not suppressed.
+    const sentKey = `sent:draft:${event.id}:${subscription.hash}`;
+    if (await env.FOOTY_PUSH_KV.get(sentKey)) continue;
+    const pendingKey = `${PENDING_PREFIX}${subscription.hash}`;
+    const tag = `box-this-lap-draft-${event.id}`;
+    const notification = {
+      title: String(event.title || "Draft alert").slice(0, 160),
+      body: String(event.body || "").slice(0, 500),
+      tag,
+      url: event.url,
+      managerId: String(event.managerId),
+    };
+    const existing = await getJson(env.FOOTY_PUSH_KV, pendingKey, []);
+    await env.FOOTY_PUSH_KV.put(
+      pendingKey,
+      JSON.stringify([
+        ...existing.filter((entry) => entry.tag !== tag),
+        notification,
+      ]),
+      { expirationTtl: 3600 },
+    );
+    const result = await send(subscription.record, env);
+    if (result.status === 404 || result.status === 410) {
+      await env.FOOTY_PUSH_KV.delete(
+        `${SUBSCRIPTION_PREFIX}${subscription.hash}`,
+      );
+      await env.FOOTY_PUSH_KV.delete(pendingKey);
+    } else if (!result.ok) {
+      // Preserve the pending queue for a retry, including unrelated alerts.
+      failed += 1;
+    } else {
+      await env.FOOTY_PUSH_KV.put(sentKey, new Date().toISOString(), {
+        expirationTtl: 60 * 60 * 24 * 14,
+      });
+      sent += 1;
+    }
+  }
+  return { ok: true, sent, failed };
 }
 
 async function unsubscribe(request, env) {

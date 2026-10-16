@@ -21988,7 +21988,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "CANCELLED",
+          "status": "SUSPENDED",
           "time": "12:00:00",
           "timestamp": "2026-10-10T12:00:00Z",
           "venue": "",
@@ -22001,7 +22001,14 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:rayo-vallecano-de-madrid",
-          "awayTeamId": "team:athletic-club"
+          "awayTeamId": "team:athletic-club",
+          "statusVerification": {
+            "source": "ESPN",
+            "eventId": "401882849",
+            "reportedStatus": "STATUS_ABANDONED",
+            "checkedAt": "2026-10-14T00:23:32.555Z",
+            "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20261010"
+          }
         },
         {
           "away": "Club Atlético de Madrid",

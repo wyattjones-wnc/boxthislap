@@ -6,6 +6,7 @@
 - Browser session compatibility, login flow, workflow cards, summaries, and awards: [script.js](../script.js). Locate the relevant symbol with `rg` and read only its surrounding range.
 - Access/refresh tokens, Manager Portal validation, followed teams, and manager-owned data: [workers/rankings/src/index.js](../workers/rankings/src/index.js).
 - Manager Portal Apps Script boundary: [scripts/manager-portal-webapp.gs](../scripts/manager-portal-webapp.gs).
+- The 2027 League Drafts card is a lazy React feature in [src/features/competition/LeagueDrafts/LeagueDraftFeature.tsx](../src/features/competition/LeagueDrafts/LeagueDraftFeature.tsx), loading independently from portal workflows. See [workers/league-drafts/README.md](../workers/league-drafts/README.md) for notification setup and dev testing.
 - Endpoint and manager/league metadata: [modules/siteConfig.js](../modules/siteConfig.js).
 
 ## Invariants

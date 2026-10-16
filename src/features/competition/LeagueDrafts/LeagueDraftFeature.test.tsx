@@ -23,9 +23,10 @@ import {
   LeagueDraftPage,
 } from "./LeagueDraftFeature";
 import type { Draft, Pick } from "./types";
-import { draftPushDeviceEnabled, enableDraftPush } from "./api";
+import { draftEndpoint, draftPushDeviceEnabled, enableDraftPush } from "./api";
 vi.mock("./api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./api")>()),
+  draftEndpoint: vi.fn(() => "https://box-this-lap-league-drafts-dev.example"),
   draftPushDeviceEnabled: vi.fn(async () => false),
   enableDraftPush: vi.fn(async () => {}),
 }));
@@ -64,6 +65,9 @@ function wrapper(component: ReactNode) {
   );
 }
 beforeEach(() => {
+  vi.mocked(draftEndpoint)
+    .mockReset()
+    .mockReturnValue("https://box-this-lap-league-drafts-dev.example");
   vi.mocked(draftPushDeviceEnabled).mockReset().mockResolvedValue(false);
   vi.mocked(enableDraftPush).mockReset().mockResolvedValue(undefined);
   vi.stubEnv(
@@ -85,6 +89,16 @@ afterEach(() => {
 });
 
 describe("2027 league drafting", () => {
+  it("hides the Manager Hub draft card when drafting is unavailable", () => {
+    vi.mocked(draftEndpoint).mockReturnValue("");
+    const fetchDrafts = vi.fn();
+    vi.stubGlobal("fetch", fetchDrafts);
+    const { container } = wrapper(<LeagueDraftHubCard />);
+    expect(container.innerHTML).toBe("");
+    expect(fetchDrafts).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it("lets an admin select managers, seed, publish, start, and make an attributed dev test pick", async () => {
     localStorage.setItem(
       "boxThisLapManagerSession",

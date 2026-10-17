@@ -4,7 +4,9 @@ const VALID_STATUSES = new Set(["new", "ignored", "saved", "watched"]);
 const KNOWN_PLAYLISTS = [
   { id: "PLGNVOQrF_q_U", name: "3New" },
 ];
-const INBOX_SNAPSHOT_KEY = "youtube-inbox:v1";
+const METADATA_KEY = "youtube-inbox:metadata:v1";
+const METADATA_TTL_SECONDS = 300;
+const metadataCache = new WeakMap();
 const MAX_VISIBLE_VIDEO_IDS = 1000;
 
 export default {
@@ -35,8 +37,8 @@ export default {
         return json(await getVideos(url, env), 200, cors);
       }
       if (request.method === "GET" && url.pathname === "/api/youtube/playlists") {
-        const snapshot = await getInboxSnapshot(env);
-        return json({ playlists: snapshot.playlists }, 200, cors);
+        const metadata = await getInboxMetadata(env);
+        return json({ playlists: metadata.playlists }, 200, cors);
       }
       if (request.method === "POST" && url.pathname === "/api/youtube/sync") {
         return json(await syncYouTube(request, env), 200, cors);
@@ -76,40 +78,28 @@ async function getVideos(url, env) {
     throw httpError(400, "Invalid video status.");
   }
 
-  const snapshot = await getInboxSnapshot(env);
-  const selectedChannels = new Set(channels);
-  const videos = snapshot.videos.filter((video) => {
-    if (status !== "all" && video.status !== status) return false;
-    return !selectedChannels.size || selectedChannels.has(video.channel.youtubeChannelId);
-  });
+  const metadata = await getInboxMetadata(env);
+  const channelById = new Map(metadata.channels.map((channel) => [channel.id, channel]));
+  const selectedIds = channels.length
+    ? metadata.channels.filter((channel) => channels.includes(channel.youtubeChannelId)).map((channel) => channel.id)
+    : [];
+  if (channels.length && !selectedIds.length) {
+    return { channels: publicChannels(metadata), lastSyncAt: metadata.lastSyncAt, videos: [], nextCursor: null };
+  }
+  const cursorValue = url.searchParams.get("cursor");
+  const cursor = cursorValue ? parseVideoCursor(cursorValue) : null;
+  const query = buildVideoPageQuery({ status, channelIds: selectedIds, cursor, limit: limit + 1, offset: cursor ? 0 : offset });
+  const result = await env.DB.prepare(query.sql).bind(...query.bindings).all();
+  const rows = (result.results || []).slice(0, limit);
+  const last = rows.at(-1);
   return {
-    channels: snapshot.channels,
-    lastSyncAt: snapshot.lastSyncAt,
-    videos: videos.slice(offset, offset + limit),
-  };
-}
-
-async function buildInboxSnapshot(env) {
-  const result = await env.DB.prepare(`
-    SELECT v.youtube_video_id, v.title, v.published_at, v.thumbnail_url,
-      v.duration_seconds, v.status, c.youtube_channel_id, c.name AS channel_name
-    FROM videos v
-    JOIN channels c ON c.id = v.channel_id
-    ORDER BY v.published_at DESC, v.id DESC
-  `).all();
-  const channelResult = await env.DB.prepare(`
-    SELECT youtube_channel_id, name FROM channels ORDER BY name COLLATE NOCASE
-  `).all();
-  const lastSync = await env.DB.prepare("SELECT value FROM settings WHERE key = 'last_sync_at'").first();
-  const snapshot = {
-    channels: (channelResult.results || []).map((row) => ({
-      name: row.name,
-      youtubeChannelId: row.youtube_channel_id,
-    })),
-    lastSyncAt: lastSync?.value || "",
-    playlists: await getPlaylists(env),
-    videos: (result.results || []).map((row) => ({
-      channel: { name: row.channel_name, youtubeChannelId: row.youtube_channel_id },
+    channels: publicChannels(metadata),
+    lastSyncAt: metadata.lastSyncAt,
+    nextCursor: result.results?.length > limit && last
+      ? encodeBase64Url(JSON.stringify({ publishedAt: last.published_at, id: last.id }))
+      : null,
+    videos: rows.map((row) => ({
+      channel: { name: channelById.get(row.channel_id)?.name || "Unknown channel", youtubeChannelId: channelById.get(row.channel_id)?.youtubeChannelId || "" },
       durationSeconds: row.duration_seconds,
       publishedAt: row.published_at,
       status: row.status,
@@ -118,47 +108,112 @@ async function buildInboxSnapshot(env) {
       youtubeVideoId: row.youtube_video_id,
     })),
   };
-  console.log(JSON.stringify({
-    event: "youtube_d1_snapshot_rebuilt",
-    rowsRead: Number(result.meta?.rows_read || 0) + Number(channelResult.meta?.rows_read || 0),
-    videos: snapshot.videos.length,
-  }));
-  return snapshot;
 }
 
-async function getInboxSnapshot(env) {
-  if (env.SNAPSHOTS) {
-    try {
-      const cached = await env.SNAPSHOTS.get(INBOX_SNAPSHOT_KEY, "json");
-      if (cached?.videos && cached?.playlists && cached?.channels) return cached;
-    } catch (error) {
-      console.warn(JSON.stringify({ event: "youtube_snapshot_read_failed", error: String(error) }));
-    }
+export function buildVideoPageQuery({ status, channelIds = [], cursor = null, limit = 101, offset = 0 }) {
+  if (status === "all" && channelIds.length === 1) {
+    const streams = [...VALID_STATUSES].map((streamStatus) => buildVideoPageQuery({
+      status: streamStatus, channelIds, cursor, limit: limit + offset,
+    }));
+    return {
+      sql: `SELECT * FROM (${streams.map((stream) => `SELECT * FROM (${stream.sql})`).join(" UNION ALL ")})
+        ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?`,
+      bindings: [...streams.flatMap((stream) => stream.bindings), limit, offset],
+    };
   }
-  return refreshInboxSnapshot(env);
-}
-
-async function refreshInboxSnapshot(env) {
-  const snapshot = await buildInboxSnapshot(env);
-  if (env.SNAPSHOTS) {
-    try {
-      await env.SNAPSHOTS.put(INBOX_SNAPSHOT_KEY, JSON.stringify(snapshot));
-    } catch (error) {
-      console.warn(JSON.stringify({ event: "youtube_snapshot_write_failed", error: String(error) }));
-    }
+  const conditions = [];
+  const bindings = [];
+  if (status !== "all") {
+    conditions.push("status = ?");
+    bindings.push(status);
   }
-  return snapshot;
+  if (channelIds.length === 1) {
+    conditions.push("channel_id = ?");
+    bindings.push(channelIds[0]);
+  } else if (channelIds.length) {
+    conditions.push("channel_id IN (SELECT value FROM json_each(?))");
+    bindings.push(JSON.stringify(channelIds));
+  }
+  if (cursor) {
+    conditions.push("(published_at, id) < (?, ?)");
+    bindings.push(cursor.publishedAt, cursor.id);
+  }
+  return {
+    sql: `SELECT id, youtube_video_id, channel_id, title, published_at, thumbnail_url, duration_seconds, status
+      FROM videos INDEXED BY ${channelIds.length === 1 ? "idx_videos_channel_status_published" : status === "all" ? "idx_videos_published" : "idx_videos_status_published"}
+      ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
+      ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?`,
+    bindings: [...bindings, limit, offset],
+  };
 }
 
-async function patchInboxSnapshot(env, update) {
-  if (!env.SNAPSHOTS) return;
+function parseVideoCursor(value) {
   try {
-    const snapshot = await env.SNAPSHOTS.get(INBOX_SNAPSHOT_KEY, "json");
-    if (!snapshot?.videos) return;
-    update(snapshot);
-    await env.SNAPSHOTS.put(INBOX_SNAPSHOT_KEY, JSON.stringify(snapshot));
-  } catch (error) {
-    console.warn(JSON.stringify({ event: "youtube_snapshot_patch_failed", error: String(error) }));
+    const cursor = JSON.parse(decodeBase64Url(value));
+    if (typeof cursor.publishedAt !== "string" || !cursor.publishedAt || !Number.isSafeInteger(cursor.id) || cursor.id <= 0) throw new Error("invalid");
+    return cursor;
+  } catch {
+    throw httpError(400, "Invalid video page cursor.");
+  }
+}
+
+function publicChannels(metadata) {
+  return metadata.channels.map(({ name, youtubeChannelId }) => ({ name, youtubeChannelId }));
+}
+
+async function getInboxMetadata(env) {
+  const cached = metadataCache.get(env.DB);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const entry = { expiresAt: Date.now() + METADATA_TTL_SECONDS * 1000, promise: null };
+  entry.promise = loadInboxMetadata(env).then((metadata) => {
+    entry.expiresAt = Math.min(entry.expiresAt, metadata.expiresAt);
+    return metadata;
+  }).catch((error) => {
+    if (metadataCache.get(env.DB) === entry) metadataCache.delete(env.DB);
+    throw error;
+  });
+  metadataCache.set(env.DB, entry);
+  return entry.promise;
+}
+
+async function loadInboxMetadata(env) {
+  if (env.SNAPSHOTS) {
+    try {
+      const cached = await env.SNAPSHOTS.get(METADATA_KEY, "json");
+      if (Array.isArray(cached?.channels) && Array.isArray(cached?.playlists) && Number.isFinite(cached.expiresAt) && cached.expiresAt > Date.now()) return cached;
+    } catch (error) {
+      console.warn("YouTube metadata cache read failed", String(error));
+    }
+  }
+  const [channels, lastSync, playlists] = await Promise.all([
+    env.DB.prepare("SELECT id, youtube_channel_id, name FROM channels ORDER BY name COLLATE NOCASE").all(),
+    env.DB.prepare("SELECT value FROM settings WHERE key = 'last_sync_at'").first(),
+    getPlaylists(env),
+  ]);
+  const metadata = {
+    channels: (channels.results || []).map((row) => ({ id: row.id, name: row.name, youtubeChannelId: row.youtube_channel_id })),
+    lastSyncAt: lastSync?.value || "",
+    playlists,
+    expiresAt: Date.now() + METADATA_TTL_SECONDS * 1000,
+  };
+  if (env.SNAPSHOTS) {
+    try {
+      await env.SNAPSHOTS.put(METADATA_KEY, JSON.stringify(metadata), { expirationTtl: METADATA_TTL_SECONDS });
+    } catch (error) {
+      console.warn("YouTube metadata cache write failed", String(error));
+    }
+  }
+  return metadata;
+}
+
+async function invalidateInboxMetadata(env) {
+  metadataCache.delete(env.DB);
+  if (env.SNAPSHOTS) {
+    try {
+      await env.SNAPSHOTS.delete(METADATA_KEY);
+    } catch (error) {
+      console.warn("YouTube metadata cache invalidation failed", String(error));
+    }
   }
 }
 
@@ -171,10 +226,6 @@ async function updateVideoStatus(videoId, request, env) {
     WHERE youtube_video_id = ?
   `).bind(body.status, processedAt, videoId).run();
   if (!result.meta?.changes) throw httpError(404, "Video not found.");
-  await patchInboxSnapshot(env, (snapshot) => {
-    const video = snapshot.videos.find((item) => item.youtubeVideoId === videoId);
-    if (video) video.status = body.status;
-  });
   return { ok: true, status: body.status, videoId };
 }
 
@@ -191,15 +242,15 @@ export async function markVideosSeenThrough(videoId, request, env) {
   }
 
   const processedAt = new Date().toISOString();
+  // Keep the outer update on rowid lookups. Without NOT INDEXED, SQLite can
+  // choose the status index and scan every new video before checking the IDs.
   const result = await env.DB.prepare(`
-    UPDATE videos
+    UPDATE videos NOT INDEXED
     SET status = 'watched', processed_at = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE status = 'new' AND youtube_video_id IN (SELECT value FROM json_each(?))
+    WHERE id IN (
+      SELECT id FROM videos WHERE youtube_video_id IN (SELECT value FROM json_each(?))
+    ) AND status = 'new'
   `).bind(processedAt, JSON.stringify(videoIds)).run();
-  const marked = new Set(videoIds);
-  await patchInboxSnapshot(env, (snapshot) => {
-    snapshot.videos.forEach((video) => { if (marked.has(video.youtubeVideoId) && video.status === "new") video.status = "watched"; });
-  });
   return { ok: true, updated: result.meta?.changes || 0, videoId };
 }
 
@@ -285,7 +336,7 @@ async function syncYouTube(request, env) {
     totalChannels: channels.length,
     warnings: warnings.slice(0, 10),
   };
-  if (!hasMore) await refreshInboxSnapshot(env);
+  await invalidateInboxMetadata(env);
   return syncResult;
 }
 
@@ -513,16 +564,14 @@ async function addVideoToPlaylist(playlistId, request, env) {
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
-  await env.DB.prepare(`
-    INSERT OR IGNORE INTO video_playlist_actions (video_id, playlist_id) VALUES (?, ?)
-  `).bind(video.id, playlist.id).run();
-  await env.DB.prepare(`
-    UPDATE videos SET status = 'saved', processed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).bind(new Date().toISOString(), video.id).run();
-  await patchInboxSnapshot(env, (snapshot) => {
-    const item = snapshot.videos.find((entry) => entry.youtubeVideoId === videoId);
-    if (item) item.status = "saved";
-  });
+  await env.DB.batch([
+    env.DB.prepare(`
+      INSERT OR IGNORE INTO video_playlist_actions (video_id, playlist_id) VALUES (?, ?)
+    `).bind(video.id, playlist.id),
+    env.DB.prepare(`
+      UPDATE videos SET status = 'saved', processed_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(new Date().toISOString(), video.id),
+  ]);
   return { ok: true, playlistId, videoId };
 }
 

@@ -39,14 +39,33 @@ The public site is configured for `https://box-this-lap-youtube.boxthislap.worke
 
 ## API
 
-- `GET /api/videos?status=new&channel=UC...&channel=UC...&limit=100&offset=0`
+- `GET /api/videos?status=new&channel=UC...&channel=UC...&limit=100` returns an opaque `nextCursor` (or `null` at the end); pass it as `cursor` with the same filters for the next page. Legacy `offset` remains supported.
 - `POST /api/videos/:videoId/status` with `{ "status": "ignored" }`
 - `POST /api/videos/:videoId/seen-through` with `{ "videoIds": ["..."] }` marks only the supplied visible `new` videos as watched
 - `POST /api/youtube/sync` with `{ "configuredChannelIds": ["UC..."], "removedChannelIds": ["UC..."] }`
 - `GET /api/youtube/playlists`
 - `POST /api/youtube/playlists/:playlistId/videos` with `{ "videoId": "..." }`
 
-Normal inbox operations use D1 only. YouTube is contacted during explicit refreshes and explicit playlist saves.
+Video status is read directly from D1 in pages of at most 100 videos. The page loads one matching page initially and offers **Load more** for older videos; cursor pagination avoids repeatedly reading earlier pages and remains stable when already displayed videos are marked seen or saved. A page containing only titles excluded by the priority filter is skipped until a match or the end is reached.
+
+Channel, playlist, and last-sync metadata is cached separately in memory and the existing `SNAPSHOTS` KV binding for at most five minutes. Concurrent requests share the metadata load. Each sync batch invalidates this small cache. Video status is never cached server-side, and ordinary status changes and playlist saves do not read or rewrite the legacy full-history snapshot. Cache failures fall back to D1.
+
+Seen-through updates seek only the selected video IDs through the unique video-ID index and primary keys, preserving non-new statuses. The browser divides selections larger than 1,000 into bounded requests and applies each successful batch locally. Playlist saves use indexed video/playlist lookups and one atomic D1 batch for the saved status and action record. Successful mutations invalidate browser fallback snapshots so failed reloads cannot restore an old pre-mutation list. YouTube is contacted during explicit refreshes and explicit playlist saves.
+
+### Updating an existing deployment
+
+Apply `0002_feed_indexes.sql` through D1 migrations **before** deploying this Worker, then publish the frontend. The Worker names these indexes explicitly to avoid planner choices that scan or sort unrelated history. From the repository root:
+
+The canonical deployment is `.github/workflows/deploy-youtube-inbox-worker.yml`. Pushes to `dev` validate only; manual dispatch deploys after verifying the required indexes. Its `apply_migrations` option defaults to false and requires an explicit, recorded usage review before enabling it. It uses repository secrets and records the migration estimate in the run summary. Direct CLI commands below are a fallback when the cloud environment reports its Cloudflare credentials ready.
+
+```sh
+npx wrangler d1 migrations apply youtube-inbox --remote --config workers/youtube-inbox/wrangler.toml --env=""
+npx wrangler deploy --config workers/youtube-inbox/wrangler.toml --env=""
+```
+
+The migration replaces the existing status and channel indexes and adds one index for the All feed. Index maintenance adds write overhead; no video-history cache writes or full-history rebuild queries remain. Multi-channel filters may still examine index entries for excluded channels, and title filtering may require additional pages; a 100-video response is not a promise of exactly 100 billed row reads. The old `youtube-inbox:v1` KV value is no longer used.
+
+Run `npm run test:youtube` for SQLite-backed API/query-plan tests, browser controller tests, and selection validation.
 
 Refresh advances past individual channel, duration, or playlist-metadata failures and returns warnings to the page instead of leaving the sync cursor permanently stalled.
 

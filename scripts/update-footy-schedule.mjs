@@ -61,7 +61,7 @@ const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const SHOULD_ALLOW_MISSING_FOOTBALL_DATA_API_KEY = isTrueValue(process.env.FOOTY_ALLOW_MISSING_FOOTBALL_DATA_API_KEY);
 const SHOULD_VERIFY_FOOTBALL_DATA_TEAMS = isTrueValue(process.env.FOOTY_VERIFY_FOOTBALL_DATA_TEAMS);
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
-const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/3";
+const SPORTDB_BASE_URL = process.env.SPORTDB_BASE_URL || "https://www.thesportsdb.com/api/v1/json/123";
 const ARSENAL_GRAPHQL_URL = process.env.ARSENAL_GRAPHQL_URL || "https://afc-prd.graph.arsenal.com/graphql";
 const API_CACHE_DIR = path.resolve(process.env.FOOTY_API_CACHE_DIR || path.join(".cache", "footy-schedule-api"));
 const EXTERNAL_REQUEST_INTERVAL_MS = Number(process.env.FOOTY_API_REQUEST_INTERVAL_MS) || 6500;
@@ -3502,6 +3502,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
 }
 
 export {
+  applySportDbCompetitionFallbacks,
   getCurrentTeamFixtures,
   getSportDbTimestamp,
   isActiveCalendarEvent,

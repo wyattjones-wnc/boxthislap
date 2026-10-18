@@ -286,7 +286,7 @@ async function loadFootballDataRosterPlayers(env, providerTeamId) {
 
 async function loadSportDbRosterPlayers(providerTeamId) {
   if (!providerTeamId) return [];
-  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(providerTeamId)}`);
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/123/lookup_all_players.php?id=${encodeURIComponent(providerTeamId)}`);
   if (!response.ok) return [];
   const value = await response.json().catch(() => null);
   return (Array.isArray(value?.player) ? value.player : [])
@@ -321,7 +321,7 @@ async function enrichSportDbRosterMedia(footballPlayers, teamPlayers, existingPl
 }
 
 async function searchSportDbRosterPlayer(player, providerTeamId) {
-  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(player.name)}`);
+  const response = await fetch(`https://www.thesportsdb.com/api/v1/json/123/searchplayers.php?p=${encodeURIComponent(player.name)}`);
   if (!response.ok) return {};
   const value = await response.json().catch(() => null);
   const candidates = (Array.isArray(value?.player) ? value.player : [])
@@ -387,7 +387,7 @@ async function discoverSportDbTeam(teamName, leagueNames) {
   const queries = [...new Set([teamName, stripRosterClubSuffix(teamName)].filter(Boolean))];
   const candidates = new Map();
   for (const query of queries) {
-    const response = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(query)}`);
+    const response = await fetch(`https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t=${encodeURIComponent(query)}`);
     if (!response.ok) continue;
     const value = await response.json().catch(() => null);
     for (const team of Array.isArray(value?.teams) ? value.teams : []) {

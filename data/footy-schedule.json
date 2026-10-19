@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-19T05:24:59.611Z",
+  "generatedAt": "2026-10-19T16:59:56.411Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-10-19T05:24:59.611Z",
-    "attemptedAt": "2026-10-19T05:24:59.611Z",
-    "updatedAt": "2026-10-19T05:24:59.611Z",
-    "oldestTeamUpdatedAt": "2026-10-19T05:24:59.611Z",
+    "generatedAt": "2026-10-19T16:59:56.411Z",
+    "attemptedAt": "2026-10-19T16:59:56.411Z",
+    "updatedAt": "2026-10-19T16:59:56.411Z",
+    "oldestTeamUpdatedAt": "2026-10-19T16:59:56.411Z",
     "competitionCount": 11,
     "competitionFixtureCount": 2284,
     "teamCount": 7,
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 261,
-      "syncedAt": "2026-10-19T05:24:59.611Z",
-      "appended": 1,
-      "updated": 260
+      "syncedAt": "2026-10-19T16:59:56.411Z",
+      "appended": 0,
+      "updated": 261
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-10-19T05:29:53.331Z",
+      "attemptedAt": "2026-10-19T17:04:49.885Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -13896,15 +13896,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:24.897Z",
+      "attemptedAt": "2026-10-19T17:05:21.753Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -14513,15 +14513,15 @@
       "notes": [
         "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-16T14:54:29.084Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:05.964Z",
+      "attemptedAt": "2026-10-19T17:05:02.729Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19783,15 +19783,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:12.676Z",
+      "attemptedAt": "2026-10-19T17:05:09.444Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -33671,15 +33671,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:19.226Z",
+      "attemptedAt": "2026-10-19T17:05:16.265Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -53706,15 +53706,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:31.362Z",
+      "attemptedAt": "2026-10-19T17:05:28.209Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53817,15 +53817,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:31.363Z",
+      "attemptedAt": "2026-10-19T17:05:28.210Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -54068,16 +54068,16 @@
       "notes": [
         "Preserved 5 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:31.363Z",
+      "attemptedAt": "2026-10-19T17:05:28.210Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -59401,15 +59401,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:44.611Z",
+      "attemptedAt": "2026-10-19T17:05:41.414Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -77415,15 +77415,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:44.618Z",
+      "attemptedAt": "2026-10-19T17:05:41.421Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -80182,15 +80182,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     },
     {
-      "attemptedAt": "2026-10-19T05:30:44.623Z",
+      "attemptedAt": "2026-10-19T17:05:41.425Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82394,12 +82394,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T05:24:59.611Z"
+      "updatedAt": "2026-10-19T16:59:56.411Z"
     }
   ],
   "teamCatalog": [
@@ -87879,9 +87879,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -88978,9 +88978,11 @@
         {
           "away": "Arsenal FC",
           "awayBadge": "",
+          "awayProviderTeamId": "57",
           "date": "2026-12-05",
           "home": "Tottenham Hotspur FC",
           "homeBadge": "",
+          "homeProviderTeamId": "73",
           "id": "560672",
           "leagueId": "2021",
           "isHome": false,
@@ -88989,7 +88991,7 @@
           "priority": "1",
           "round": "14",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com + iCalendar",
+          "source": "football-data.org + iCalendar + Arsenal.com",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884ccf093b09",
             "Arsenal.com": "584lckogb2y11cgn9r6svik9g",
@@ -88997,22 +88999,20 @@
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com",
-            "iCalendar"
+            "iCalendar",
+            "Arsenal.com"
           ],
-          "sourceDetail": "monthly-graphql",
+          "sourceDetail": "calendar-feed",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
           "timestamp": "2026-12-05T15:00:00Z",
-          "venue": "Tottenham Hotspur Stadium",
-          "awayProviderTeamId": "57",
-          "homeProviderTeamId": "73",
-          "lastSeen": "",
-          "matchId": "footy_12719cecbc9c",
+          "venue": "Tottenham Hotspur Stadium, London",
           "isFriendly": false,
+          "matchId": "footy_12719cecbc9c",
+          "lastSeen": "",
           "homeTeamId": "team:tottenham-hotspur-fc",
           "awayTeamId": "1"
         },
@@ -89060,9 +89060,11 @@
         {
           "away": "AFC Bournemouth",
           "awayBadge": "",
+          "awayProviderTeamId": "1044",
           "date": "2026-12-12",
           "home": "Arsenal FC",
           "homeBadge": "",
+          "homeProviderTeamId": "57",
           "id": "560688",
           "leagueId": "2021",
           "isHome": true,
@@ -89071,7 +89073,7 @@
           "priority": "1",
           "round": "15",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com + iCalendar",
+          "source": "football-data.org + iCalendar + Arsenal.com",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884cc83aa4b1",
             "Arsenal.com": "58gznr7rwmgnliua3iijo89hw",
@@ -89079,31 +89081,31 @@
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com",
-            "iCalendar"
+            "iCalendar",
+            "Arsenal.com"
           ],
-          "sourceDetail": "monthly-graphql",
+          "sourceDetail": "calendar-feed",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
           "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "Emirates Stadium",
-          "awayProviderTeamId": "1044",
-          "homeProviderTeamId": "57",
-          "lastSeen": "",
-          "matchId": "footy_e2fbc7ac730e",
+          "venue": "Emirates Stadium, London",
           "isFriendly": false,
+          "matchId": "footy_e2fbc7ac730e",
+          "lastSeen": "",
           "homeTeamId": "1",
           "awayTeamId": "team:afc-bournemouth"
         },
         {
           "away": "Manchester United FC",
           "awayBadge": "",
+          "awayProviderTeamId": "66",
           "date": "2026-12-19",
           "home": "Arsenal FC",
           "homeBadge": "",
+          "homeProviderTeamId": "57",
           "id": "560699",
           "leagueId": "2021",
           "isHome": true,
@@ -89112,7 +89114,7 @@
           "priority": "1",
           "round": "16",
           "season": "2026",
-          "source": "football-data.org + Arsenal.com + iCalendar",
+          "source": "football-data.org + iCalendar + Arsenal.com",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884dbc65d2ca",
             "Arsenal.com": "5c8vms7il1p110lfq50eqts7o",
@@ -89120,22 +89122,20 @@
           },
           "sources": [
             "football-data.org",
-            "Arsenal.com",
-            "iCalendar"
+            "iCalendar",
+            "Arsenal.com"
           ],
-          "sourceDetail": "monthly-graphql",
+          "sourceDetail": "calendar-feed",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
           "time": "15:00:00",
           "timestamp": "2026-12-19T15:00:00Z",
-          "venue": "Emirates Stadium",
-          "awayProviderTeamId": "66",
-          "homeProviderTeamId": "57",
-          "lastSeen": "",
-          "matchId": "footy_f8cd42a14544",
+          "venue": "Emirates Stadium, London",
           "isFriendly": false,
+          "matchId": "footy_f8cd42a14544",
+          "lastSeen": "",
           "homeTeamId": "1",
           "awayTeamId": "team:manchester-united-fc"
         },
@@ -90135,9 +90135,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -92276,9 +92276,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -94278,9 +94278,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -94415,9 +94415,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -94556,9 +94556,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -95602,9 +95602,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T05:24:59.611Z",
-      "updatedAt": "2026-10-19T05:24:59.611Z",
-      "previousUpdatedAt": "2026-10-18T14:02:48.417Z",
+      "attemptedAt": "2026-10-19T16:59:56.411Z",
+      "updatedAt": "2026-10-19T16:59:56.411Z",
+      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",

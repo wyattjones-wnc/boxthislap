@@ -145,13 +145,13 @@ export async function runMerchandiseUpdate({
   return report;
 }
 
-async function importScan(
+export async function importScan(
   d1,
   { baseline, contentHash, id, scan, source, startedAt },
 ) {
   const observedAt = new Date().toISOString();
   const existingRows = await d1.rows(
-    `SELECT id, title, canonical_url, image_url, category, price_minor, currency,
+    `SELECT id, title, canonical_url, image_url, category, price_minor, regular_price_minor, currency,
       availability, in_scope, source_metadata, first_published_at
      FROM merch_products WHERE source = ?`,
     [source],
@@ -169,33 +169,64 @@ async function importScan(
     .map((row) => String(row.id));
 
   await d1.batch(
-    changedProducts.map((product) => ({
-      sql: `INSERT INTO merch_products (
+    changedProducts.flatMap((product) => [
+      // Keep each reset and price update in the same D1 transaction. Only a
+      // transition onto sale needs manager-state writes.
+      ...(existing.has(product.id) &&
+      product.priceMinor != null &&
+      product.regularPriceMinor > product.priceMinor &&
+      !(
+        existing.get(product.id).price_minor != null &&
+        existing.get(product.id).regular_price_minor >
+          existing.get(product.id).price_minor
+      )
+        ? [
+            {
+              sql: `UPDATE merch_manager_state SET seen_at = NULL, updated_at = ?
+        WHERE product_id = ? AND seen_at IS NOT NULL
+          AND ? IS NOT NULL AND ? > ?
+          AND EXISTS (SELECT 1 FROM merch_products WHERE id = ?
+            AND (regular_price_minor IS NULL OR price_minor IS NULL OR regular_price_minor <= price_minor))`,
+              params: [
+                observedAt,
+                product.id,
+                product.priceMinor,
+                product.regularPriceMinor ?? null,
+                product.priceMinor,
+                product.id,
+              ],
+            },
+          ]
+        : []),
+      {
+        sql: `INSERT INTO merch_products (
       id, source, source_product_id, team, title, canonical_url, image_url, category,
-      price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, 0, ?)
+      price_minor, regular_price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, 0, ?)
     ON CONFLICT(id) DO UPDATE SET
       source_product_id = excluded.source_product_id, team = excluded.team, title = excluded.title,
       canonical_url = excluded.canonical_url, image_url = excluded.image_url, category = excluded.category,
-      price_minor = excluded.price_minor, currency = excluded.currency, availability = excluded.availability,
+      price_minor = excluded.price_minor, regular_price_minor = excluded.regular_price_minor, currency = excluded.currency, availability = excluded.availability,
       last_observed_at = excluded.last_observed_at, source_metadata = excluded.source_metadata`,
-      params: [
-        product.id,
-        product.source,
-        product.sourceProductId,
-        product.team,
-        product.title,
-        product.canonicalUrl,
-        product.imageUrl,
-        product.category,
-        product.priceMinor,
-        product.currency,
-        product.availability,
-        observedAt,
-        observedAt,
-        JSON.stringify(product.sourceMetadata || {}),
-      ],
-    })),
+        params: [
+          product.id,
+          product.source,
+          product.sourceProductId,
+          product.team,
+          product.title,
+          product.canonicalUrl,
+          product.imageUrl,
+          product.category,
+          product.priceMinor,
+          product.regularPriceMinor ?? null,
+          product.currency,
+          product.availability,
+          observedAt,
+          observedAt,
+          JSON.stringify(product.sourceMetadata || {}),
+        ],
+      },
+    ]),
     50,
   );
 
@@ -282,6 +313,10 @@ export function productChanged(row, product) {
     row.category !== product.category ||
     (row.price_minor === null ? null : Number(row.price_minor)) !==
       product.priceMinor ||
+    (row.regular_price_minor == null
+      ? null
+      : Number(row.regular_price_minor)) !==
+      (product.regularPriceMinor ?? null) ||
     (row.currency || null) !== product.currency ||
     row.availability !== product.availability ||
     String(row.source_metadata || "{}") !==
@@ -300,6 +335,7 @@ export function scanContentHash(products) {
       id: product.id,
       imageUrl: product.imageUrl,
       priceMinor: product.priceMinor,
+      regularPriceMinor: product.regularPriceMinor ?? null,
       sourceMetadata: product.sourceMetadata,
       title: product.title,
     }));
@@ -308,7 +344,7 @@ export function scanContentHash(products) {
 
 export function buildBaselineSql(scan, observedAt = new Date().toISOString()) {
   const statements = [];
-  const columns = `id, source, source_product_id, team, title, canonical_url, image_url, category, price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata`;
+  const columns = `id, source, source_product_id, team, title, canonical_url, image_url, category, price_minor, regular_price_minor, currency, availability, first_observed_at, first_published_at, last_observed_at, new_since, in_scope, source_metadata`;
   for (let offset = 0; offset < scan.products.length; offset += 40) {
     const values = scan.products
       .slice(offset, offset + 40)
@@ -323,6 +359,7 @@ export function buildBaselineSql(scan, observedAt = new Date().toISOString()) {
           product.imageUrl,
           product.category,
           product.priceMinor,
+          product.regularPriceMinor ?? null,
           product.currency,
           product.availability,
           observedAt,

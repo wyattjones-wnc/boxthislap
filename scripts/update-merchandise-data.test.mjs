@@ -121,3 +121,109 @@ test("catalog hashing ignores source order and unchanged products need no write"
     false,
   );
 });
+
+test("sale transitions reset seen for every manager once and preserve wishlists", async () => {
+  const { DatabaseSync } = await import("node:sqlite");
+  const { readFile } = await import("node:fs/promises");
+  const { importScan } = await import("./update-merchandise-data.mjs");
+  const db = new DatabaseSync(":memory:");
+  try {
+    for (const migration of [
+      "1101_merchandise_initial.sql",
+      "1102_merchandise_sale_prices.sql",
+    ])
+      db.exec(
+        await readFile(
+          new URL(
+            `../workers/merchandise/migrations/${migration}`,
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
+    const product = {
+      id: "barcelona:1",
+      source: "barcelona",
+      sourceProductId: "1",
+      team: "barcelona",
+      title: "Shirt",
+      canonicalUrl: "https://example.com/shirt",
+      imageUrl: null,
+      category: "kits",
+      priceMinor: 10000,
+      currency: "EUR",
+      availability: "in_stock",
+    };
+    const d1 = {
+      async rows(sql, params) {
+        return db.prepare(sql).all(...params);
+      },
+      async batch(statements) {
+        db.exec("BEGIN");
+        try {
+          for (const { sql, params } of statements)
+            db.prepare(sql).run(...params);
+          db.exec("COMMIT");
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      },
+    };
+    let scanNumber = 0;
+    const scan = () =>
+      importScan(d1, {
+        baseline: false,
+        contentHash: scanContentHash([product]),
+        id: String(++scanNumber),
+        scan: { products: [product], pageCount: 1 },
+        source: "barcelona",
+        startedAt: "2026-10-19",
+      });
+    await scan();
+    for (const manager of ["6", "8"])
+      db.prepare(
+        "INSERT INTO merch_manager_state VALUES (?, ?, 'seen', 'wishlist', 'before')",
+      ).run(manager, product.id);
+    const states = () =>
+      db
+        .prepare("SELECT seen_at, wishlisted_at FROM merch_manager_state")
+        .all();
+    product.title = "Updated shirt";
+    await scan();
+    assert.ok(states().every((state) => state.seen_at === "seen"));
+    product.priceMinor = 8000;
+    product.regularPriceMinor = 10000;
+    await scan();
+    assert.ok(
+      states().every(
+        (state) => state.seen_at === null && state.wishlisted_at === "wishlist",
+      ),
+    );
+    assert.equal(
+      db.prepare("SELECT regular_price_minor FROM merch_products").get()
+        .regular_price_minor,
+      10000,
+    );
+    db.exec("UPDATE merch_manager_state SET seen_at = 'seen again'");
+    await scan();
+    product.priceMinor = 7000;
+    await scan();
+    assert.ok(states().every((state) => state.seen_at === "seen again"));
+    product.regularPriceMinor = null;
+    await scan();
+    product.regularPriceMinor = 10000;
+    await scan();
+    assert.ok(states().every((state) => state.seen_at === null));
+  } finally {
+    db.close();
+  }
+});
+
+test("sale price changes affect hashing and product change detection", () => {
+  const product = { id: "barcelona:1", priceMinor: 8000 };
+  assert.notEqual(
+    scanContentHash([product]),
+    scanContentHash([{ ...product, regularPriceMinor: 10000 }]),
+  );
+});

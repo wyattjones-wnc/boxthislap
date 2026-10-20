@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-10-19T16:59:56.411Z",
+  "generatedAt": "2026-10-20T15:09:28.920Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-10-19T16:59:56.411Z",
-    "attemptedAt": "2026-10-19T16:59:56.411Z",
-    "updatedAt": "2026-10-19T16:59:56.411Z",
-    "oldestTeamUpdatedAt": "2026-10-19T16:59:56.411Z",
+    "generatedAt": "2026-10-20T15:09:28.920Z",
+    "attemptedAt": "2026-10-20T15:09:28.920Z",
+    "updatedAt": "2026-10-20T15:09:28.920Z",
+    "oldestTeamUpdatedAt": "2026-10-20T15:09:28.920Z",
     "competitionCount": 11,
-    "competitionFixtureCount": 2284,
+    "competitionFixtureCount": 2285,
     "teamCount": 7,
-    "fixtureCount": 219,
+    "fixtureCount": 220,
     "statuses": {
       "updated": 7
     }
@@ -40,18 +40,18 @@
     }
   ],
   "footyMatchRegistry": {
-    "matchCount": 261,
+    "matchCount": 262,
     "sync": {
       "status": "synced",
-      "rows": 261,
-      "syncedAt": "2026-10-19T16:59:56.411Z",
-      "appended": 0,
+      "rows": 262,
+      "syncedAt": "2026-10-20T15:09:28.920Z",
+      "appended": 1,
       "updated": 261
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-10-19T17:04:49.885Z",
+      "attemptedAt": "2026-10-20T15:14:22.457Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -2593,7 +2593,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "19:00:00",
           "timestamp": "2026-10-19T19:00:00Z",
           "venue": "",
@@ -4429,14 +4429,14 @@
           "awayTeamId": "team:manchester-city-fc"
         },
         {
-          "away": "Fulham FC",
-          "awayBadge": "https://crests.football-data.org/63.png",
-          "awayProviderTeamId": "63",
-          "date": "2026-12-02",
-          "home": "Tottenham Hotspur FC",
-          "homeBadge": "https://crests.football-data.org/73.png",
-          "homeProviderTeamId": "73",
-          "id": "560662",
+          "away": "Ipswich Town FC",
+          "awayBadge": "https://crests.football-data.org/349.png",
+          "awayProviderTeamId": "349",
+          "date": "2026-12-01",
+          "home": "Coventry City FC",
+          "homeBadge": "https://crests.football-data.org/1076.png",
+          "homeProviderTeamId": "1076",
+          "id": "560668",
           "isCompetitionFixture": true,
           "leagueId": "2021",
           "league": "Premier League",
@@ -4444,16 +4444,16 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560662"
+            "football-data.org": "560668"
           },
           "sources": [
             "football-data.org"
           ],
           "status": "TIMED",
           "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "timestamp": "2026-12-01T20:00:00Z",
           "venue": "",
-          "matchId": "footy_comp_football_data_org_560662",
+          "matchId": "footy_comp_football_data_org_560668",
           "followedTeamNames": [],
           "isHome": null,
           "opponent": "",
@@ -4461,8 +4461,8 @@
           "teamBadge": "",
           "teamId": "",
           "teamName": "",
-          "homeTeamId": "team:tottenham-hotspur-fc",
-          "awayTeamId": "team:fulham-fc"
+          "homeTeamId": "team:coventry-city-fc",
+          "awayTeamId": "team:ipswich-town-fc"
         },
         {
           "away": "Sunderland AFC",
@@ -4486,8 +4486,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "19:30:00",
+          "timestamp": "2026-12-02T19:30:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560663",
           "followedTeamNames": [],
@@ -4522,8 +4522,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "19:30:00",
+          "timestamp": "2026-12-02T19:30:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560664",
           "followedTeamNames": [],
@@ -4558,8 +4558,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "19:30:00",
+          "timestamp": "2026-12-02T19:30:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560665",
           "followedTeamNames": [],
@@ -4571,6 +4571,42 @@
           "teamName": "",
           "homeTeamId": "team:chelsea-fc",
           "awayTeamId": "team:crystal-palace-fc"
+        },
+        {
+          "away": "Leeds United FC",
+          "awayBadge": "https://crests.football-data.org/341.png",
+          "awayProviderTeamId": "341",
+          "date": "2026-12-02",
+          "home": "Manchester City FC",
+          "homeBadge": "https://crests.football-data.org/65.png",
+          "homeProviderTeamId": "65",
+          "id": "560669",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "13",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560669"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:30:00",
+          "timestamp": "2026-12-02T19:30:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560669",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:manchester-city-fc",
+          "awayTeamId": "team:leeds-united-fc"
         },
         {
           "away": "Everton FC",
@@ -4594,8 +4630,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "20:15:00",
+          "timestamp": "2026-12-02T20:15:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560666",
           "followedTeamNames": [],
@@ -4632,8 +4668,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "20:15:00",
+          "timestamp": "2026-12-02T20:15:00Z",
           "venue": "",
           "matchId": "footy_fcfe1a707a9f",
           "followedTeamNames": [
@@ -4647,78 +4683,6 @@
           "teamName": "Arsenal",
           "homeTeamId": "team:brentford-fc",
           "awayTeamId": "1"
-        },
-        {
-          "away": "Ipswich Town FC",
-          "awayBadge": "https://crests.football-data.org/349.png",
-          "awayProviderTeamId": "349",
-          "date": "2026-12-02",
-          "home": "Coventry City FC",
-          "homeBadge": "https://crests.football-data.org/1076.png",
-          "homeProviderTeamId": "1076",
-          "id": "560668",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "13",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560668"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560668",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:coventry-city-fc",
-          "awayTeamId": "team:ipswich-town-fc"
-        },
-        {
-          "away": "Leeds United FC",
-          "awayBadge": "https://crests.football-data.org/341.png",
-          "awayProviderTeamId": "341",
-          "date": "2026-12-02",
-          "home": "Manchester City FC",
-          "homeBadge": "https://crests.football-data.org/65.png",
-          "homeProviderTeamId": "65",
-          "id": "560669",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "13",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560669"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560669",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:manchester-city-fc",
-          "awayTeamId": "team:leeds-united-fc"
         },
         {
           "away": "Manchester United FC",
@@ -4742,8 +4706,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "20:15:00",
+          "timestamp": "2026-12-02T20:15:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560670",
           "followedTeamNames": [],
@@ -4778,8 +4742,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "20:15:00",
+          "timestamp": "2026-12-02T20:15:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560671",
           "followedTeamNames": [],
@@ -4793,14 +4757,50 @@
           "awayTeamId": "team:brighton-and-hove-albion-fc"
         },
         {
-          "away": "Arsenal FC",
-          "awayBadge": "https://crests.football-data.org/57.png",
-          "awayProviderTeamId": "57",
-          "date": "2026-12-05",
+          "away": "Fulham FC",
+          "awayBadge": "https://crests.football-data.org/63.png",
+          "awayProviderTeamId": "63",
+          "date": "2026-12-03",
           "home": "Tottenham Hotspur FC",
           "homeBadge": "https://crests.football-data.org/73.png",
           "homeProviderTeamId": "73",
-          "id": "560672",
+          "id": "560662",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "13",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560662"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-03T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560662",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:tottenham-hotspur-fc",
+          "awayTeamId": "team:fulham-fc"
+        },
+        {
+          "away": "Liverpool FC",
+          "awayBadge": "https://crests.football-data.org/64.png",
+          "awayProviderTeamId": "64",
+          "date": "2026-12-05",
+          "home": "Chelsea FC",
+          "homeBadge": "https://crests.football-data.org/61.png",
+          "homeProviderTeamId": "61",
+          "id": "560676",
           "isCompetitionFixture": true,
           "leagueId": "2021",
           "league": "Premier League",
@@ -4808,29 +4808,25 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560672",
-            "iCalendar": "6a3507b354aa884ccf093b09",
-            "Arsenal.com": "584lckogb2y11cgn9r6svik9g"
+            "football-data.org": "560676"
           },
           "sources": [
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
+          "time": "12:30:00",
+          "timestamp": "2026-12-05T12:30:00Z",
           "venue": "",
-          "matchId": "footy_12719cecbc9c",
-          "followedTeamNames": [
-            "Arsenal"
-          ],
-          "isHome": false,
-          "opponent": "Tottenham Hotspur FC",
-          "priority": "1",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
-          "teamId": "1",
-          "teamName": "Arsenal",
-          "homeTeamId": "team:tottenham-hotspur-fc",
-          "awayTeamId": "1"
+          "matchId": "footy_comp_football_data_org_560676",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:chelsea-fc",
+          "awayTeamId": "team:liverpool-fc"
         },
         {
           "away": "Coventry City FC",
@@ -4903,114 +4899,6 @@
           "teamName": "",
           "homeTeamId": "team:leeds-united-fc",
           "awayTeamId": "team:ipswich-town-fc"
-        },
-        {
-          "away": "Sunderland AFC",
-          "awayBadge": "https://crests.football-data.org/71.png",
-          "awayProviderTeamId": "71",
-          "date": "2026-12-05",
-          "home": "Newcastle United FC",
-          "homeBadge": "https://crests.football-data.org/67.png",
-          "homeProviderTeamId": "67",
-          "id": "560675",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "14",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560675"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560675",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:newcastle-united-fc",
-          "awayTeamId": "team:sunderland-afc"
-        },
-        {
-          "away": "Liverpool FC",
-          "awayBadge": "https://crests.football-data.org/64.png",
-          "awayProviderTeamId": "64",
-          "date": "2026-12-05",
-          "home": "Chelsea FC",
-          "homeBadge": "https://crests.football-data.org/61.png",
-          "homeProviderTeamId": "61",
-          "id": "560676",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "14",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560676"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560676",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:chelsea-fc",
-          "awayTeamId": "team:liverpool-fc"
-        },
-        {
-          "away": "Manchester City FC",
-          "awayBadge": "https://crests.football-data.org/65.png",
-          "awayProviderTeamId": "65",
-          "date": "2026-12-05",
-          "home": "Brentford FC",
-          "homeBadge": "https://crests.football-data.org/402.png",
-          "homeProviderTeamId": "402",
-          "id": "560677",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "14",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560677"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560677",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:brentford-fc",
-          "awayTeamId": "team:manchester-city-fc"
         },
         {
           "away": "Hull City AFC",
@@ -5106,8 +4994,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
+          "time": "17:30:00",
+          "timestamp": "2026-12-05T17:30:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560680",
           "followedTeamNames": [],
@@ -5121,10 +5009,82 @@
           "awayTeamId": "team:brighton-and-hove-albion-fc"
         },
         {
+          "away": "Manchester City FC",
+          "awayBadge": "https://crests.football-data.org/65.png",
+          "awayProviderTeamId": "65",
+          "date": "2026-12-05",
+          "home": "Brentford FC",
+          "homeBadge": "https://crests.football-data.org/402.png",
+          "homeProviderTeamId": "402",
+          "id": "560677",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "14",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560677"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-05T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560677",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:brentford-fc",
+          "awayTeamId": "team:manchester-city-fc"
+        },
+        {
+          "away": "Sunderland AFC",
+          "awayBadge": "https://crests.football-data.org/71.png",
+          "awayProviderTeamId": "71",
+          "date": "2026-12-06",
+          "home": "Newcastle United FC",
+          "homeBadge": "https://crests.football-data.org/67.png",
+          "homeProviderTeamId": "67",
+          "id": "560675",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "14",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560675"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2026-12-06T14:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560675",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:newcastle-united-fc",
+          "awayTeamId": "team:sunderland-afc"
+        },
+        {
           "away": "Fulham FC",
           "awayBadge": "https://crests.football-data.org/63.png",
           "awayProviderTeamId": "63",
-          "date": "2026-12-05",
+          "date": "2026-12-06",
           "home": "Everton FC",
           "homeBadge": "https://crests.football-data.org/62.png",
           "homeProviderTeamId": "62",
@@ -5142,8 +5102,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
+          "time": "14:00:00",
+          "timestamp": "2026-12-06T14:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560681",
           "followedTeamNames": [],
@@ -5157,148 +5117,44 @@
           "awayTeamId": "team:fulham-fc"
         },
         {
-          "away": "Nottingham Forest FC",
-          "awayBadge": "https://crests.football-data.org/351.png",
-          "awayProviderTeamId": "351",
-          "date": "2026-12-12",
-          "home": "Sunderland AFC",
-          "homeBadge": "https://crests.football-data.org/71.png",
-          "homeProviderTeamId": "71",
-          "id": "560682",
+          "away": "Arsenal FC",
+          "awayBadge": "https://crests.football-data.org/57.png",
+          "awayProviderTeamId": "57",
+          "date": "2026-12-06",
+          "home": "Tottenham Hotspur FC",
+          "homeBadge": "https://crests.football-data.org/73.png",
+          "homeProviderTeamId": "73",
+          "id": "560672",
           "isCompetitionFixture": true,
           "leagueId": "2021",
           "league": "Premier League",
-          "round": "15",
+          "round": "14",
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560682"
+            "football-data.org": "560672",
+            "iCalendar": "6a3507b354aa884ccf093b09",
+            "Arsenal.com": "584lckogb2y11cgn9r6svik9g"
           },
           "sources": [
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
+          "time": "16:30:00",
+          "timestamp": "2026-12-06T16:30:00Z",
           "venue": "",
-          "matchId": "footy_comp_football_data_org_560682",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:sunderland-afc",
-          "awayTeamId": "team:nottingham-forest-fc"
-        },
-        {
-          "away": "Manchester United FC",
-          "awayBadge": "https://crests.football-data.org/66.png",
-          "awayProviderTeamId": "66",
-          "date": "2026-12-12",
-          "home": "Crystal Palace FC",
-          "homeBadge": "https://crests.football-data.org/354.png",
-          "homeProviderTeamId": "354",
-          "id": "560683",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "15",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560683"
-          },
-          "sources": [
-            "football-data.org"
+          "matchId": "footy_12719cecbc9c",
+          "followedTeamNames": [
+            "Arsenal"
           ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560683",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:crystal-palace-fc",
-          "awayTeamId": "team:manchester-united-fc"
-        },
-        {
-          "away": "Tottenham Hotspur FC",
-          "awayBadge": "https://crests.football-data.org/73.png",
-          "awayProviderTeamId": "73",
-          "date": "2026-12-12",
-          "home": "Hull City AFC",
-          "homeBadge": "https://crests.football-data.org/322.png",
-          "homeProviderTeamId": "322",
-          "id": "560684",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "15",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560684"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560684",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:hull-city-afc",
-          "awayTeamId": "team:tottenham-hotspur-fc"
-        },
-        {
-          "away": "Everton FC",
-          "awayBadge": "https://crests.football-data.org/62.png",
-          "awayProviderTeamId": "62",
-          "date": "2026-12-12",
-          "home": "Brighton & Hove Albion FC",
-          "homeBadge": "https://crests.football-data.org/397.png",
-          "homeProviderTeamId": "397",
-          "id": "560685",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "15",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560685"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560685",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:brighton-and-hove-albion-fc",
-          "awayTeamId": "team:everton-fc"
+          "isHome": false,
+          "opponent": "Tottenham Hotspur FC",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal",
+          "homeTeamId": "team:tottenham-hotspur-fc",
+          "awayTeamId": "1"
         },
         {
           "away": "Newcastle United FC",
@@ -5335,118 +5191,6 @@
           "teamName": "",
           "homeTeamId": "team:ipswich-town-fc",
           "awayTeamId": "team:newcastle-united-fc"
-        },
-        {
-          "away": "Aston Villa FC",
-          "awayBadge": "https://crests.football-data.org/58.png",
-          "awayProviderTeamId": "58",
-          "date": "2026-12-12",
-          "home": "Coventry City FC",
-          "homeBadge": "https://crests.football-data.org/1076.png",
-          "homeProviderTeamId": "1076",
-          "id": "560687",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "15",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560687"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560687",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:coventry-city-fc",
-          "awayTeamId": "team:aston-villa-fc"
-        },
-        {
-          "away": "AFC Bournemouth",
-          "awayBadge": "https://crests.football-data.org/bournemouth.png",
-          "awayProviderTeamId": "1044",
-          "date": "2026-12-12",
-          "home": "Arsenal FC",
-          "homeBadge": "https://crests.football-data.org/57.png",
-          "homeProviderTeamId": "57",
-          "id": "560688",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "15",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560688",
-            "iCalendar": "6a3507b354aa884cc83aa4b1",
-            "Arsenal.com": "58gznr7rwmgnliua3iijo89hw"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_e2fbc7ac730e",
-          "followedTeamNames": [
-            "Arsenal"
-          ],
-          "isHome": true,
-          "opponent": "AFC Bournemouth",
-          "priority": "1",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
-          "teamId": "1",
-          "teamName": "Arsenal",
-          "homeTeamId": "1",
-          "awayTeamId": "team:afc-bournemouth"
-        },
-        {
-          "away": "Chelsea FC",
-          "awayBadge": "https://crests.football-data.org/61.png",
-          "awayProviderTeamId": "61",
-          "date": "2026-12-12",
-          "home": "Manchester City FC",
-          "homeBadge": "https://crests.football-data.org/65.png",
-          "homeProviderTeamId": "65",
-          "id": "560689",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "15",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560689"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560689",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:manchester-city-fc",
-          "awayTeamId": "team:chelsea-fc"
         },
         {
           "away": "Leeds United FC",
@@ -5521,6 +5265,298 @@
           "awayTeamId": "team:brentford-fc"
         },
         {
+          "away": "Chelsea FC",
+          "awayBadge": "https://crests.football-data.org/61.png",
+          "awayProviderTeamId": "61",
+          "date": "2026-12-12",
+          "home": "Manchester City FC",
+          "homeBadge": "https://crests.football-data.org/65.png",
+          "homeProviderTeamId": "65",
+          "id": "560689",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560689"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "17:30:00",
+          "timestamp": "2026-12-12T17:30:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560689",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:manchester-city-fc",
+          "awayTeamId": "team:chelsea-fc"
+        },
+        {
+          "away": "Nottingham Forest FC",
+          "awayBadge": "https://crests.football-data.org/351.png",
+          "awayProviderTeamId": "351",
+          "date": "2026-12-13",
+          "home": "Sunderland AFC",
+          "homeBadge": "https://crests.football-data.org/71.png",
+          "homeProviderTeamId": "71",
+          "id": "560682",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560682"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2026-12-13T14:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560682",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:sunderland-afc",
+          "awayTeamId": "team:nottingham-forest-fc"
+        },
+        {
+          "away": "Everton FC",
+          "awayBadge": "https://crests.football-data.org/62.png",
+          "awayProviderTeamId": "62",
+          "date": "2026-12-13",
+          "home": "Brighton & Hove Albion FC",
+          "homeBadge": "https://crests.football-data.org/397.png",
+          "homeProviderTeamId": "397",
+          "id": "560685",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560685"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2026-12-13T14:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560685",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:brighton-and-hove-albion-fc",
+          "awayTeamId": "team:everton-fc"
+        },
+        {
+          "away": "AFC Bournemouth",
+          "awayBadge": "https://crests.football-data.org/bournemouth.png",
+          "awayProviderTeamId": "1044",
+          "date": "2026-12-13",
+          "home": "Arsenal FC",
+          "homeBadge": "https://crests.football-data.org/57.png",
+          "homeProviderTeamId": "57",
+          "id": "560688",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560688",
+            "iCalendar": "6a3507b354aa884cc83aa4b1",
+            "Arsenal.com": "58gznr7rwmgnliua3iijo89hw"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2026-12-13T14:00:00Z",
+          "venue": "",
+          "matchId": "footy_e2fbc7ac730e",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": true,
+          "opponent": "AFC Bournemouth",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal",
+          "homeTeamId": "1",
+          "awayTeamId": "team:afc-bournemouth"
+        },
+        {
+          "away": "Aston Villa FC",
+          "awayBadge": "https://crests.football-data.org/58.png",
+          "awayProviderTeamId": "58",
+          "date": "2026-12-13",
+          "home": "Coventry City FC",
+          "homeBadge": "https://crests.football-data.org/1076.png",
+          "homeProviderTeamId": "1076",
+          "id": "560687",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560687"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:30:00",
+          "timestamp": "2026-12-13T16:30:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560687",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:coventry-city-fc",
+          "awayTeamId": "team:aston-villa-fc"
+        },
+        {
+          "away": "Manchester United FC",
+          "awayBadge": "https://crests.football-data.org/66.png",
+          "awayProviderTeamId": "66",
+          "date": "2026-12-13",
+          "home": "Crystal Palace FC",
+          "homeBadge": "https://crests.football-data.org/354.png",
+          "homeProviderTeamId": "354",
+          "id": "560683",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560683"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "19:00:00",
+          "timestamp": "2026-12-13T19:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560683",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:crystal-palace-fc",
+          "awayTeamId": "team:manchester-united-fc"
+        },
+        {
+          "away": "Tottenham Hotspur FC",
+          "awayBadge": "https://crests.football-data.org/73.png",
+          "awayProviderTeamId": "73",
+          "date": "2026-12-14",
+          "home": "Hull City AFC",
+          "homeBadge": "https://crests.football-data.org/322.png",
+          "homeProviderTeamId": "322",
+          "id": "560684",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "15",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560684"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "20:00:00",
+          "timestamp": "2026-12-14T20:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560684",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:hull-city-afc",
+          "awayTeamId": "team:tottenham-hotspur-fc"
+        },
+        {
+          "away": "Newcastle United FC",
+          "awayBadge": "https://crests.football-data.org/67.png",
+          "awayProviderTeamId": "67",
+          "date": "2026-12-19",
+          "home": "Brentford FC",
+          "homeBadge": "https://crests.football-data.org/402.png",
+          "homeProviderTeamId": "402",
+          "id": "560695",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "16",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560695"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "12:30:00",
+          "timestamp": "2026-12-19T12:30:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560695",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:brentford-fc",
+          "awayTeamId": "team:newcastle-united-fc"
+        },
+        {
           "away": "Fulham FC",
           "awayBadge": "https://crests.football-data.org/63.png",
           "awayProviderTeamId": "63",
@@ -5555,42 +5591,6 @@
           "teamName": "",
           "homeTeamId": "team:leeds-united-fc",
           "awayTeamId": "team:fulham-fc"
-        },
-        {
-          "away": "Ipswich Town FC",
-          "awayBadge": "https://crests.football-data.org/349.png",
-          "awayProviderTeamId": "349",
-          "date": "2026-12-19",
-          "home": "Brighton & Hove Albion FC",
-          "homeBadge": "https://crests.football-data.org/397.png",
-          "homeProviderTeamId": "397",
-          "id": "560693",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "16",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560693"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560693",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:brighton-and-hove-albion-fc",
-          "awayTeamId": "team:ipswich-town-fc"
         },
         {
           "away": "Everton FC",
@@ -5629,42 +5629,6 @@
           "awayTeamId": "team:everton-fc"
         },
         {
-          "away": "Newcastle United FC",
-          "awayBadge": "https://crests.football-data.org/67.png",
-          "awayProviderTeamId": "67",
-          "date": "2026-12-19",
-          "home": "Brentford FC",
-          "homeBadge": "https://crests.football-data.org/402.png",
-          "homeProviderTeamId": "402",
-          "id": "560695",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "16",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560695"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560695",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:brentford-fc",
-          "awayTeamId": "team:newcastle-united-fc"
-        },
-        {
           "away": "Hull City AFC",
           "awayBadge": "https://crests.football-data.org/322.png",
           "awayProviderTeamId": "322",
@@ -5699,42 +5663,6 @@
           "teamName": "",
           "homeTeamId": "team:manchester-city-fc",
           "awayTeamId": "team:hull-city-afc"
-        },
-        {
-          "away": "Crystal Palace FC",
-          "awayBadge": "https://crests.football-data.org/354.png",
-          "awayProviderTeamId": "354",
-          "date": "2026-12-19",
-          "home": "Sunderland AFC",
-          "homeBadge": "https://crests.football-data.org/71.png",
-          "homeProviderTeamId": "71",
-          "id": "560697",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "16",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560697"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_comp_football_data_org_560697",
-          "followedTeamNames": [],
-          "isHome": null,
-          "opponent": "",
-          "priority": "",
-          "teamBadge": "",
-          "teamId": "",
-          "teamName": "",
-          "homeTeamId": "team:sunderland-afc",
-          "awayTeamId": "team:crystal-palace-fc"
         },
         {
           "away": "Coventry City FC",
@@ -5773,46 +5701,6 @@
           "awayTeamId": "team:coventry-city-fc"
         },
         {
-          "away": "Manchester United FC",
-          "awayBadge": "https://crests.football-data.org/66.png",
-          "awayProviderTeamId": "66",
-          "date": "2026-12-19",
-          "home": "Arsenal FC",
-          "homeBadge": "https://crests.football-data.org/57.png",
-          "homeProviderTeamId": "57",
-          "id": "560699",
-          "isCompetitionFixture": true,
-          "leagueId": "2021",
-          "league": "Premier League",
-          "round": "16",
-          "season": "2026",
-          "source": "football-data.org",
-          "sourceIds": {
-            "football-data.org": "560699",
-            "iCalendar": "6a3507b354aa884dbc65d2ca",
-            "Arsenal.com": "5c8vms7il1p110lfq50eqts7o"
-          },
-          "sources": [
-            "football-data.org"
-          ],
-          "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
-          "venue": "",
-          "matchId": "footy_f8cd42a14544",
-          "followedTeamNames": [
-            "Arsenal"
-          ],
-          "isHome": true,
-          "opponent": "Manchester United FC",
-          "priority": "1",
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
-          "teamId": "1",
-          "teamName": "Arsenal",
-          "homeTeamId": "1",
-          "awayTeamId": "team:manchester-united-fc"
-        },
-        {
           "away": "Tottenham Hotspur FC",
           "awayBadge": "https://crests.football-data.org/73.png",
           "awayProviderTeamId": "73",
@@ -5834,8 +5722,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
+          "time": "17:30:00",
+          "timestamp": "2026-12-19T17:30:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560700",
           "followedTeamNames": [],
@@ -5849,10 +5737,122 @@
           "awayTeamId": "team:tottenham-hotspur-fc"
         },
         {
+          "away": "Ipswich Town FC",
+          "awayBadge": "https://crests.football-data.org/349.png",
+          "awayProviderTeamId": "349",
+          "date": "2026-12-20",
+          "home": "Brighton & Hove Albion FC",
+          "homeBadge": "https://crests.football-data.org/397.png",
+          "homeProviderTeamId": "397",
+          "id": "560693",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "16",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560693"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2026-12-20T14:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560693",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:brighton-and-hove-albion-fc",
+          "awayTeamId": "team:ipswich-town-fc"
+        },
+        {
+          "away": "Crystal Palace FC",
+          "awayBadge": "https://crests.football-data.org/354.png",
+          "awayProviderTeamId": "354",
+          "date": "2026-12-20",
+          "home": "Sunderland AFC",
+          "homeBadge": "https://crests.football-data.org/71.png",
+          "homeProviderTeamId": "71",
+          "id": "560697",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "16",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560697"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "14:00:00",
+          "timestamp": "2026-12-20T14:00:00Z",
+          "venue": "",
+          "matchId": "footy_comp_football_data_org_560697",
+          "followedTeamNames": [],
+          "isHome": null,
+          "opponent": "",
+          "priority": "",
+          "teamBadge": "",
+          "teamId": "",
+          "teamName": "",
+          "homeTeamId": "team:sunderland-afc",
+          "awayTeamId": "team:crystal-palace-fc"
+        },
+        {
+          "away": "Manchester United FC",
+          "awayBadge": "https://crests.football-data.org/66.png",
+          "awayProviderTeamId": "66",
+          "date": "2026-12-20",
+          "home": "Arsenal FC",
+          "homeBadge": "https://crests.football-data.org/57.png",
+          "homeProviderTeamId": "57",
+          "id": "560699",
+          "isCompetitionFixture": true,
+          "leagueId": "2021",
+          "league": "Premier League",
+          "round": "16",
+          "season": "2026",
+          "source": "football-data.org",
+          "sourceIds": {
+            "football-data.org": "560699",
+            "iCalendar": "6a3507b354aa884dbc65d2ca",
+            "Arsenal.com": "5c8vms7il1p110lfq50eqts7o"
+          },
+          "sources": [
+            "football-data.org"
+          ],
+          "status": "TIMED",
+          "time": "16:30:00",
+          "timestamp": "2026-12-20T16:30:00Z",
+          "venue": "",
+          "matchId": "footy_f8cd42a14544",
+          "followedTeamNames": [
+            "Arsenal"
+          ],
+          "isHome": true,
+          "opponent": "Manchester United FC",
+          "priority": "1",
+          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
+          "teamId": "1",
+          "teamName": "Arsenal",
+          "homeTeamId": "1",
+          "awayTeamId": "team:manchester-united-fc"
+        },
+        {
           "away": "Aston Villa FC",
           "awayBadge": "https://crests.football-data.org/58.png",
           "awayProviderTeamId": "58",
-          "date": "2026-12-19",
+          "date": "2026-12-21",
           "home": "Chelsea FC",
           "homeBadge": "https://crests.football-data.org/61.png",
           "homeProviderTeamId": "61",
@@ -5870,8 +5870,8 @@
             "football-data.org"
           ],
           "status": "TIMED",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
+          "time": "20:00:00",
+          "timestamp": "2026-12-21T20:00:00Z",
           "venue": "",
           "matchId": "footy_comp_football_data_org_560701",
           "followedTeamNames": [],
@@ -13896,15 +13896,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:21.753Z",
+      "attemptedAt": "2026-10-20T15:14:54.278Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -14513,15 +14513,15 @@
       "notes": [
         "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:02.729Z",
+      "attemptedAt": "2026-10-20T15:14:35.166Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -15212,7 +15212,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "16:45:00",
           "timestamp": "2026-10-13T16:45:00Z",
           "venue": "",
@@ -15248,7 +15248,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "16:45:00",
           "timestamp": "2026-10-13T16:45:00Z",
           "venue": "",
@@ -15284,7 +15284,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15322,7 +15322,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15360,7 +15360,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15399,7 +15399,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15437,7 +15437,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15473,7 +15473,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15509,7 +15509,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
@@ -15545,7 +15545,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "16:45:00",
           "timestamp": "2026-10-14T16:45:00Z",
           "venue": "",
@@ -15581,7 +15581,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "16:45:00",
           "timestamp": "2026-10-14T16:45:00Z",
           "venue": "",
@@ -15617,7 +15617,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -15653,7 +15653,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -15689,7 +15689,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -15725,7 +15725,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -15761,7 +15761,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -15797,7 +15797,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -15833,7 +15833,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "FINISHED",
+          "status": "TIMED",
           "time": "19:00:00",
           "timestamp": "2026-10-14T19:00:00Z",
           "venue": "",
@@ -19783,15 +19783,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:09.444Z",
+      "attemptedAt": "2026-10-20T15:14:41.887Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -23037,7 +23037,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "19:00:00",
           "timestamp": "2026-10-19T19:00:00Z",
           "venue": "",
@@ -33671,15 +33671,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:16.265Z",
+      "attemptedAt": "2026-10-20T15:14:48.544Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -53706,15 +53706,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:28.209Z",
+      "attemptedAt": "2026-10-20T15:15:00.733Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53817,15 +53817,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:28.210Z",
+      "attemptedAt": "2026-10-20T15:15:00.734Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -53842,7 +53842,7 @@
         "type": "INTERNATIONAL_FRIENDLY"
       },
       "errors": [],
-      "fixtureCount": 5,
+      "fixtureCount": 6,
       "fixtures": [
         {
           "away": "Peru",
@@ -54063,21 +54063,59 @@
             "USWNT"
           ],
           "isCompetitionFixture": true
+        },
+        {
+          "away": "Jamaica",
+          "awayBadge": "",
+          "awayProviderTeamId": "8yhjl13p7luh3v905btbvz42t",
+          "date": "2026-12-13",
+          "home": "USMNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
+          "id": "",
+          "isHome": true,
+          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
+          "league": "International Friendly",
+          "opponent": "Jamaica",
+          "priority": "4",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/usmnt.svg",
+          "teamId": "4",
+          "teamName": "USMNT",
+          "time": "20:30:00",
+          "timestamp": "2026-12-13T20:30:00.000Z",
+          "venue": "Inter Miami CF Stadium",
+          "isFriendly": true,
+          "matchId": "footy_3df00f743c35",
+          "followedTeamNames": [
+            "USMNT"
+          ],
+          "isCompetitionFixture": true,
+          "homeTeamId": "4",
+          "awayTeamId": "team:jamaica"
         }
       ],
       "notes": [
-        "Preserved 5 USMNT and USWNT international friendlies."
+        "Preserved 6 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:28.210Z",
+      "attemptedAt": "2026-10-20T15:15:00.734Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -59401,15 +59439,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:41.414Z",
+      "attemptedAt": "2026-10-20T15:15:13.892Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -77415,15 +77453,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:41.421Z",
+      "attemptedAt": "2026-10-20T15:15:13.899Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -80182,15 +80220,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     },
     {
-      "attemptedAt": "2026-10-19T17:05:41.425Z",
+      "attemptedAt": "2026-10-20T15:15:13.904Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82394,12 +82432,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-19T16:59:56.411Z"
+      "updatedAt": "2026-10-20T15:09:28.920Z"
     }
   ],
   "teamCatalog": [
@@ -84898,6 +84936,24 @@
       ],
       "name": "Italy",
       "prettyName": "Italy",
+      "providerTeamIds": {}
+    },
+    {
+      "active": true,
+      "badge": "",
+      "id": "team:jamaica",
+      "leagues": [
+        {
+          "id": "international friendlies",
+          "name": "International Friendlies"
+        },
+        {
+          "id": "cesdwwnxbc5fmajgroc0hqzy2",
+          "name": "International Friendly"
+        }
+      ],
+      "name": "Jamaica",
+      "prettyName": "Jamaica",
       "providerTeamIds": {}
     },
     {
@@ -87879,9 +87935,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -88964,8 +89020,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "20:00:00",
-          "timestamp": "2026-12-02T20:00:00Z",
+          "time": "20:15:00",
+          "timestamp": "2026-12-02T20:15:00Z",
           "venue": "Gtech Community Stadium",
           "awayProviderTeamId": "57",
           "homeProviderTeamId": "402",
@@ -88978,11 +89034,9 @@
         {
           "away": "Arsenal FC",
           "awayBadge": "",
-          "awayProviderTeamId": "57",
-          "date": "2026-12-05",
+          "date": "2026-12-06",
           "home": "Tottenham Hotspur FC",
           "homeBadge": "",
-          "homeProviderTeamId": "73",
           "id": "560672",
           "leagueId": "2021",
           "isHome": false,
@@ -88991,7 +89045,7 @@
           "priority": "1",
           "round": "14",
           "season": "2026",
-          "source": "football-data.org + iCalendar + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884ccf093b09",
             "Arsenal.com": "584lckogb2y11cgn9r6svik9g",
@@ -88999,20 +89053,22 @@
           },
           "sources": [
             "football-data.org",
-            "iCalendar",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
-          "sourceDetail": "calendar-feed",
+          "sourceDetail": "monthly-graphql",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "15:00:00",
-          "timestamp": "2026-12-05T15:00:00Z",
-          "venue": "Tottenham Hotspur Stadium, London",
-          "isFriendly": false,
-          "matchId": "footy_12719cecbc9c",
+          "time": "16:30:00",
+          "timestamp": "2026-12-06T16:30:00Z",
+          "venue": "Tottenham Hotspur Stadium",
+          "awayProviderTeamId": "57",
+          "homeProviderTeamId": "73",
           "lastSeen": "",
+          "matchId": "footy_12719cecbc9c",
+          "isFriendly": false,
           "homeTeamId": "team:tottenham-hotspur-fc",
           "awayTeamId": "1"
         },
@@ -89060,11 +89116,9 @@
         {
           "away": "AFC Bournemouth",
           "awayBadge": "",
-          "awayProviderTeamId": "1044",
-          "date": "2026-12-12",
+          "date": "2026-12-13",
           "home": "Arsenal FC",
           "homeBadge": "",
-          "homeProviderTeamId": "57",
           "id": "560688",
           "leagueId": "2021",
           "isHome": true,
@@ -89073,7 +89127,7 @@
           "priority": "1",
           "round": "15",
           "season": "2026",
-          "source": "football-data.org + iCalendar + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884cc83aa4b1",
             "Arsenal.com": "58gznr7rwmgnliua3iijo89hw",
@@ -89081,31 +89135,31 @@
           },
           "sources": [
             "football-data.org",
-            "iCalendar",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
-          "sourceDetail": "calendar-feed",
+          "sourceDetail": "monthly-graphql",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "15:00:00",
-          "timestamp": "2026-12-12T15:00:00Z",
-          "venue": "Emirates Stadium, London",
-          "isFriendly": false,
-          "matchId": "footy_e2fbc7ac730e",
+          "time": "14:00:00",
+          "timestamp": "2026-12-13T14:00:00Z",
+          "venue": "Emirates Stadium",
+          "awayProviderTeamId": "1044",
+          "homeProviderTeamId": "57",
           "lastSeen": "",
+          "matchId": "footy_e2fbc7ac730e",
+          "isFriendly": false,
           "homeTeamId": "1",
           "awayTeamId": "team:afc-bournemouth"
         },
         {
           "away": "Manchester United FC",
           "awayBadge": "",
-          "awayProviderTeamId": "66",
-          "date": "2026-12-19",
+          "date": "2026-12-20",
           "home": "Arsenal FC",
           "homeBadge": "",
-          "homeProviderTeamId": "57",
           "id": "560699",
           "leagueId": "2021",
           "isHome": true,
@@ -89114,7 +89168,7 @@
           "priority": "1",
           "round": "16",
           "season": "2026",
-          "source": "football-data.org + iCalendar + Arsenal.com",
+          "source": "football-data.org + Arsenal.com + iCalendar",
           "sourceIds": {
             "iCalendar": "6a3507b354aa884dbc65d2ca",
             "Arsenal.com": "5c8vms7il1p110lfq50eqts7o",
@@ -89122,20 +89176,22 @@
           },
           "sources": [
             "football-data.org",
-            "iCalendar",
-            "Arsenal.com"
+            "Arsenal.com",
+            "iCalendar"
           ],
-          "sourceDetail": "calendar-feed",
+          "sourceDetail": "monthly-graphql",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
-          "time": "15:00:00",
-          "timestamp": "2026-12-19T15:00:00Z",
-          "venue": "Emirates Stadium, London",
-          "isFriendly": false,
-          "matchId": "footy_f8cd42a14544",
+          "time": "16:30:00",
+          "timestamp": "2026-12-20T16:30:00Z",
+          "venue": "Emirates Stadium",
+          "awayProviderTeamId": "66",
+          "homeProviderTeamId": "57",
           "lastSeen": "",
+          "matchId": "footy_f8cd42a14544",
+          "isFriendly": false,
           "homeTeamId": "1",
           "awayTeamId": "team:manchester-united-fc"
         },
@@ -90125,19 +90181,19 @@
         }
       ],
       "notes": [
-        "Loaded 37 all-status matches from 2026-10-19 through 2027-10-19.",
+        "Loaded 37 all-status matches from 2026-10-20 through 2027-10-20.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 38 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-19.",
+        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-20.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -92267,18 +92323,18 @@
         }
       ],
       "notes": [
-        "Loaded 35 all-status matches from 2026-10-19 through 2027-10-19.",
+        "Loaded 35 all-status matches from 2026-10-20 through 2027-10-20.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-19.",
+        "Loaded 39 iCalendar fixtures from 2026-07-01 through 2027-10-20.",
         "Preserved 13 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -94269,18 +94325,18 @@
         }
       ],
       "notes": [
-        "Loaded 35 all-status matches from 2026-10-19 through 2027-10-19.",
+        "Loaded 35 all-status matches from 2026-10-20 through 2027-10-20.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-10-19.",
+        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-10-20.",
         "Preserved 12 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -94294,7 +94350,7 @@
         "TheSportsDB",
         "U.S. Soccer"
       ],
-      "fixtureCount": 3,
+      "fixtureCount": 4,
       "fixtures": [
         {
           "away": "Peru",
@@ -94403,21 +94459,55 @@
           "matchId": "footy_6844f6ec9def",
           "homeTeamId": "4",
           "awayTeamId": "team:haiti"
+        },
+        {
+          "away": "Jamaica",
+          "awayBadge": "",
+          "awayProviderTeamId": "8yhjl13p7luh3v905btbvz42t",
+          "date": "2026-12-13",
+          "home": "USMNT",
+          "homeBadge": "",
+          "homeProviderTeamId": "9vh2u1p4ppm597tjfahst2m3n",
+          "id": "",
+          "isHome": true,
+          "leagueId": "cesdwwnxbc5fmajgroc0hqzy2",
+          "league": "International Friendly",
+          "opponent": "Jamaica",
+          "priority": "4",
+          "round": "",
+          "season": "2026",
+          "source": "U.S. Soccer",
+          "sourceIds": {},
+          "sources": [
+            "U.S. Soccer"
+          ],
+          "sourceDetail": "official-schedule",
+          "status": "SCHEDULED",
+          "teamBadge": "assets/teams/usmnt.svg",
+          "teamId": "4",
+          "teamName": "USMNT",
+          "time": "20:30:00",
+          "timestamp": "2026-12-13T20:30:00.000Z",
+          "venue": "Inter Miami CF Stadium",
+          "isFriendly": true,
+          "matchId": "footy_3df00f743c35",
+          "homeTeamId": "4",
+          "awayTeamId": "team:jamaica"
         }
       ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "No TheSportsDB League IDs configured; team-upcoming matches still checked.",
         "Loaded 0 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 2 U.S. Soccer fixtures.",
+        "Loaded 3 U.S. Soccer fixtures.",
         "Preserved 1 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -94556,9 +94646,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -95596,15 +95686,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 16 iCalendar fixtures from 2026-01-01 through 2027-10-19.",
+        "Loaded 16 iCalendar fixtures from 2026-01-01 through 2027-10-20.",
         "Preserved 14 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-19T16:59:56.411Z",
-      "updatedAt": "2026-10-19T16:59:56.411Z",
-      "previousUpdatedAt": "2026-10-19T05:24:59.611Z",
+      "attemptedAt": "2026-10-20T15:09:28.920Z",
+      "updatedAt": "2026-10-20T15:09:28.920Z",
+      "previousUpdatedAt": "2026-10-19T16:59:56.411Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -96536,7 +96626,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 12 iCalendar fixtures from 2026-01-01 through 2027-10-19.",
+        "Loaded 12 iCalendar fixtures from 2026-01-01 through 2027-10-20.",
         "Preserved 14 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

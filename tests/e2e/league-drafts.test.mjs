@@ -20,7 +20,7 @@ function fixture() {
     resourceLabel: "Movies",
     movieResource: {
       source: "tmdb",
-      policy: "first-worldwide",
+      policy: "unreleased-na-2027",
       updatedAt: "2026-10-21T09:00:00.000Z",
       count: 10,
     },
@@ -29,15 +29,21 @@ function fixture() {
     reason: "",
     participants,
     rounds: 2,
-    options: Array.from({ length: 10 }, (_, index) => ({
-      id: `movie-${index}`,
-      name: `Test Movie ${index}`,
-      ...(index === 0
-        ? { releaseDate: "2027-06-01" }
-        : index === 1
-          ? { releaseDate: "2027-01-15" }
-          : {}),
-    })),
+    options: Array.from(
+      { length: 10 },
+      (_, index) =>
+        /** @type {{ id: string, name: string, releaseDate?: string, worldwideReleaseDate?: string, tmdbId?: number, previousNames?: string[] }} */ ({
+          id: `movie-${index}`,
+          name: `Test Movie ${index}`,
+          tmdbId: index + 1,
+          worldwideReleaseDate: "2027-01-01",
+          ...(index === 0
+            ? { releaseDate: "2027-06-01" }
+            : index === 1
+              ? { releaseDate: "2027-01-15" }
+              : {}),
+        }),
+    ),
     schedule: [participants, [...participants].reverse()].flatMap(
       (order, round) =>
         order.map((manager, position) => ({
@@ -46,7 +52,7 @@ function fixture() {
           round: round + 1,
         })),
     ),
-    /** @type {Array<{number: number, round: number, managerId: string, optionId: string, optionName: string, at: string, requestId: string}>} */
+    /** @type {Array<{number: number, round: number, managerId: string, optionId: string, optionName: string, at: string, requestId: string, needsReview?: boolean, reviewedAt?: string, sourceLinks?: Record<string, string>}>} */
     picks: [],
     preference: { enabled: false, push: false },
     notifications: [],
@@ -201,7 +207,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   const option = active.getByRole("row").filter({
     has: page.getByText("Test Movie 0", { exact: true }),
   });
-  await option.getByRole("button", { name: "Draft this", exact: true }).click();
+  await option.getByRole("button", { name: "Draft", exact: true }).click();
   await page.getByRole("button", { name: "Confirm pick", exact: true }).click();
   await expect(active.getByRole("status")).toContainText(
     "Manager 2 is picking",
@@ -296,4 +302,107 @@ test("World Cup has an independent 2027 Draft page", async ({ page }) => {
   await expect(
     draft.getByText("A draft has not been scheduled."),
   ).toBeVisible();
+});
+
+test("admin reviews an unlisted movie and the associated resource becomes taken", async ({
+  page,
+}) => {
+  const state = fixture();
+  state.options[0].tmdbId = 42;
+  state.picks.push({
+    number: 1,
+    round: 1,
+    managerId: "1",
+    optionId: "custom-unlisted",
+    optionName: "Unlisted movie name",
+    requestId: "original",
+    at: new Date().toISOString(),
+    needsReview: true,
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        managerId: "6",
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00Z",
+          accessToken: "admin-token",
+        },
+      }),
+    );
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        json: {
+          ok: true,
+          managers: participants.map((manager) => ({
+            ...manager,
+            active: true,
+            name: manager.id === "6" ? "Wyatt" : manager.name,
+            isAdmin: manager.id === "6",
+          })),
+          sheets: [],
+          teams: [],
+          matchIds: [],
+        },
+      }),
+  );
+  await page.route(
+    "https://box-this-lap-league-drafts-dev.boxthislap.workers.dev/**",
+    async (route) => {
+      if (route.request().url().endsWith("/api/managers"))
+        return route.fulfill({ json: { ok: true, managers: participants } });
+      if (route.request().url().endsWith("/associate-pick")) {
+        const body = route.request().postDataJSON();
+        expect(body.pickNumber).toBe(1);
+        expect(body.tmdbReference).toBe("42");
+        state.picks[0].needsReview = false;
+        state.picks[0].reviewedAt = new Date().toISOString();
+        state.picks[0].sourceLinks = {
+          ...body.links,
+          tmdb: "https://www.themoviedb.org/movie/42",
+        };
+        state.options[0].id = state.picks[0].optionId;
+        state.options[0].previousNames = [state.picks[0].optionName];
+        state.revision += 1;
+        return route.fulfill({ json: { ok: true, draft: state } });
+      }
+      return route.fulfill({ json: { ok: true, drafts: [state] } });
+    },
+  );
+  await page.goto("/#fantasy-office-2027-manage", {
+    waitUntil: "domcontentloaded",
+  });
+  const manage = page.locator('[data-page="fantasy-office-2027-manage"]');
+  await manage.getByRole("button", { name: "Review", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Associate draft pick" });
+  await dialog
+    .getByRole("textbox", { name: "TMDB movie ID or link" })
+    .fill("42");
+  await dialog
+    .getByRole("textbox", { name: "Letterboxd link" })
+    .fill("https://letterboxd.com/film/test-movie/");
+  await dialog.getByRole("button", { name: "Save association" }).click();
+  await expect(
+    manage.getByText("No unlisted picks need review."),
+  ).toBeVisible();
+  expect(state.picks[0].optionName).toBe("Unlisted movie name");
+  await page.goto("/#fantasy-office-2027-active", {
+    waitUntil: "domcontentloaded",
+  });
+  const active = page.locator('[data-page="fantasy-office-2027-active"]');
+  await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  await expect(
+    active
+      .getByRole("rowheader", { name: /Test Movie 0/ })
+      .locator("..")
+      .getByRole("button", { name: "Taken", exact: true }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 });

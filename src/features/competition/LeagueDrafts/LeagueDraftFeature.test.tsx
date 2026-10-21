@@ -241,9 +241,7 @@ describe("2027 league drafting", () => {
     await screen.findByRole("status");
     await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = screen.getByText("Movie 0").closest("tr")!;
-    await userEvent.click(
-      within(movie).getByRole("button", { name: "Draft this" }),
-    );
+    await userEvent.click(within(movie).getByRole("button", { name: "Draft" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     await waitFor(() =>
       expect(within(movie).getByRole("button", { name: "Taken" })).toBeTruthy(),
@@ -278,9 +276,7 @@ describe("2027 league drafting", () => {
     wrapper(<LeagueDraftPage league="fantasy-office" mode="active" />);
     await userEvent.click(await screen.findByRole("tab", { name: "Resource" }));
     const movie = (await screen.findByText("Movie 0")).closest("tr")!;
-    await userEvent.click(
-      within(movie).getByRole("button", { name: "Draft this" }),
-    );
+    await userEvent.click(within(movie).getByRole("button", { name: "Draft" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     expect(await screen.findByRole("alert")).toBeTruthy();
     expect(state.picks.length).toBe(0);
@@ -419,7 +415,13 @@ describe("2027 league drafting", () => {
     expect(
       screen.getByText("No resource matches. You can still draft this name."),
     ).toBeTruthy();
-    await userEvent.click(screen.getByRole("button", { name: "Draft pick" }));
+    await userEvent.click(
+      within(
+        screen
+          .getByRole("searchbox", { name: "Movie or pick name" })
+          .closest("form")!,
+      ).getByRole("button", { name: "Draft" }),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     await waitFor(() =>
       expect(state.picks[0].optionName).toBe("An Unlisted Film"),
@@ -470,7 +472,13 @@ describe("2027 league drafting", () => {
     expect(screen.getByRole("rowheader", { name: "Movie 0" })).toBeTruthy();
     expect(screen.getByText(/Movie data and credits/)).toBeTruthy();
     expect(screen.queryByRole("caption")).toBeNull();
-    await userEvent.click(screen.getByRole("button", { name: "Draft pick" }));
+    await userEvent.click(
+      within(
+        screen
+          .getByRole("searchbox", { name: "Movie or pick name" })
+          .closest("form")!,
+      ).getByRole("button", { name: "Draft" }),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
     await waitFor(() => expect(state.picks).toHaveLength(1));
     state.options[0].name = "Final movie title";
@@ -478,6 +486,76 @@ describe("2027 league drafting", () => {
     wrapper(<LeagueDraftPage league="fantasy-office" mode="draft" />);
     expect(await screen.findByText("Final movie title")).toBeTruthy();
     expect(state.picks[0].optionName).toBe("Movie 0");
+  });
+  it("flags unlisted picks in Manager Hub and lets an admin associate their movie and source links", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "6", isAdmin: true }),
+    );
+    let state = activeState();
+    state.options[0].tmdbId = 42;
+    state = transition(
+      state,
+      "pick",
+      {
+        revision: state.revision,
+        optionName: "Working movie title",
+        requestId: "unlisted",
+      },
+      "1",
+      false,
+    );
+    const submittedId = state.picks[0].optionId;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      if (String(input).endsWith("/api/managers"))
+        return Response.json({ managers: participants });
+      if (String(input).endsWith("/associate-pick")) {
+        const body = JSON.parse(String(options?.body));
+        expect(body.tmdbReference).toBe("42");
+        state = transition(
+          state,
+          "associate-pick",
+          body,
+          "6",
+          true,
+          "6",
+          state.options[0],
+        );
+        return Response.json({ draft: visibleDraft(state, "6", true) });
+      }
+      return Response.json({ drafts: [visibleDraft(state, "6", true)] });
+    });
+    const hub = wrapper(<LeagueDraftHubCard />);
+    expect(
+      await screen.findByRole("link", { name: /unlisted pick.*review/ }),
+    ).toBeTruthy();
+    hub.unmount();
+    wrapper(<LeagueDraftPage league="fantasy-office" mode="manage" />);
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Review" }),
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "TMDB movie ID or link" }),
+      "42",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Letterboxd link" }),
+      "https://letterboxd.com/film/example/",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Save association" }),
+    );
+    await waitFor(() => expect(state.picks[0].needsReview).toBe(false));
+    expect(state.picks[0].optionId).toBe(submittedId);
+    expect(state.picks[0].sourceLinks.tmdb).toBe(
+      "https://www.themoviedb.org/movie/42",
+    );
+    expect(state.picks[0].sourceLinks.letterboxd).toContain(
+      "letterboxd.com/film/example/",
+    );
+    expect(
+      await screen.findByText("No unlisted picks need review."),
+    ).toBeTruthy();
   });
   it("protects manage pages for non-admin managers", () => {
     localStorage.setItem(

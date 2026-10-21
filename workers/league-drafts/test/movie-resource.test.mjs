@@ -8,10 +8,13 @@ import {
   BATCH_SIZE,
   advanceMovieJob,
   mergeMovieCatalog,
-  movieFromDetails,
+  movieFromDetails as normalizeMovie,
   refreshMovieResource,
   tmdbRequest,
 } from "../src/movie-resource.js";
+
+const movieFromDetails = (details, year, previous) =>
+  normalizeMovie(details, year, previous, new Date("2026-10-21T09:00:00Z"));
 
 const configuration = {
   league: "fantasy-office",
@@ -29,18 +32,25 @@ const entry = (
   name = "First Film",
   date = "2027-04-05",
   previousNames = [],
-) => ({ id: `tmdb-${id}`, tmdbId: id, name, releaseDate: date, previousNames });
+) => ({
+  id: `tmdb-${id}`,
+  tmdbId: id,
+  name,
+  releaseDate: date,
+  worldwideReleaseDate: date || "2027-01-01",
+  previousNames,
+});
 const catalog = (
   movies = [entry()],
   updatedAt = "2026-10-21T09:00:00.000Z",
 ) => ({
   year: 2027,
   source: "tmdb",
-  policy: "first-worldwide",
+  policy: "unreleased-na-2027",
   movies,
   updatedAt,
 });
-const details = (id, title, date, releases = []) => ({
+const details = (id, title, date, releases = null) => ({
   id,
   title,
   release_date: date,
@@ -48,16 +58,20 @@ const details = (id, title, date, releases = []) => ({
     results: [
       {
         iso_3166_1: "US",
-        release_dates: releases.map(([type, release_date]) => ({
-          type,
-          release_date,
-        })),
+        release_dates: (releases || [[3, date]]).map(
+          ([type, release_date]) => ({
+            type,
+            release_date,
+          }),
+        ),
       },
     ],
   },
 });
 const start = () => ({
   phase: "discover",
+  policy: "unreleased-na-2027",
+  regionIndex: 0,
   page: 1,
   totalPages: null,
   ids: [],
@@ -152,6 +166,32 @@ test("first releases include streaming, physical, TV, and premieres but never a 
     release_dates: [{ type: 1, release_date: "2026-10-01" }],
   });
   assert.equal(movieFromDetails(foreignPremiere, 2027), null);
+  foreignPremiere.release_dates.results[1] = {
+    iso_3166_1: "JP",
+    release_dates: [{ type: 1, release_date: "2027-02-01" }],
+  };
+  const upcoming = movieFromDetails(foreignPremiere, 2027);
+  assert.equal(upcoming.releaseDate, "2027-05-01");
+  assert.equal(upcoming.worldwideReleaseDate, "2027-02-01");
+  assert.equal(
+    normalizeMovie(
+      foreignPremiere,
+      2027,
+      undefined,
+      new Date("2027-02-01T00:00:00Z"),
+    ),
+    null,
+  );
+  foreignPremiere.release_dates.results.push({
+    iso_3166_1: "CA",
+    release_dates: [{ type: 3, release_date: "2026-12-01" }],
+  });
+  assert.equal(movieFromDetails(foreignPremiere, 2027), null);
+  assert.equal(
+    movieFromDetails(details(1, "No regional date", "2027-03-01", []), 2027)
+      .releaseDate,
+    "",
+  );
   assert.throws(
     () =>
       movieFromDetails(
@@ -160,6 +200,14 @@ test("first releases include streaming, physical, TV, and premieres but never a 
       ),
     /history is missing/,
   );
+});
+
+test("a known North American date outside 2027 excludes a future 2027 foreign debut", () => {
+  const film = details(12, "Foreign debut", "2027-02-01", [[4, "2028-01-01"]]);
+  assert.equal(movieFromDetails(film, 2027), null);
+  film.release_dates.results[0].release_dates = [];
+  assert.equal(movieFromDetails(film, 2027).releaseDate, "");
+  assert.equal(movieFromDetails(film, 2027).worldwideReleaseDate, "2027-02-01");
 });
 
 test("a rename keeps the TMDB ID and previous names", () => {
@@ -205,17 +253,23 @@ test("discovery follows every page, includes video and all release types, and re
     { TMDB_READ_ACCESS_TOKEN: "fixture" },
     async (url) => {
       const query = new URL(url).searchParams;
-      seen.push(query.get("page"));
+      seen.push(`${query.get("region")}:${query.get("page")}`);
       assert.equal(query.get("include_video"), "true");
-      assert.equal(query.has("with_release_type"), false);
-      assert.equal(query.get("release_date.gte"), "2027-01-01");
+      assert.equal(
+        query.get(
+          query.has("region") ? "release_date.gte" : "primary_release_date.gte",
+        ),
+        "2027-01-01",
+      );
+      if (query.has("region"))
+        assert.equal(query.get("with_release_type"), "1|2|3|4|5|6");
       return Response.json({
         total_pages: 2,
         results: [{ id: Number(query.get("page")) }],
       });
     },
   );
-  assert.deepEqual(seen, ["1", "2"]);
+  assert.deepEqual(seen, ["US:1", "US:2", "CA:1", "CA:2", "null:1", "null:2"]);
   assert.deepEqual(job.ids, [1, 2, 42]);
   assert.equal(job.phase, "details");
   await assert.rejects(
@@ -452,6 +506,7 @@ test("real SQLite checkpoints publish only complete data, sync drafts, and sched
             new URL(url).pathname.endsWith("/1")
               ? details(1, "First Film", "2027-03-01", [[4, "2027-03-01"]])
               : details(2, "Old movie on video", "2026-12-01", [
+                  [3, "2026-12-01"],
                   [4, "2027-01-01"],
                 ]),
           );
@@ -504,7 +559,7 @@ test("real SQLite checkpoints publish only complete data, sync drafts, and sched
     );
     const status = await publicStatus.json();
     assert.equal(status.movies, 1);
-    assert.equal(status.policy, "first-worldwide");
+    assert.equal(status.policy, "unreleased-na-2027");
     assert.equal(JSON.stringify(status).includes("fixture-token"), false);
   } finally {
     sqlite.close();
@@ -574,9 +629,13 @@ test("concurrent refreshes are leased, provider failures retain the publication,
       0,
     );
 
-    sqlite
-      .prepare("UPDATE league_drafts_movie_resource SET job = ?")
-      .run(JSON.stringify({ phase: "drafts", after: "" }));
+    sqlite.prepare("UPDATE league_drafts_movie_resource SET job = ?").run(
+      JSON.stringify({
+        phase: "drafts",
+        policy: "unreleased-na-2027",
+        after: "",
+      }),
+    );
     let calls = 0;
     const conflict = async (_env, previous) => {
       calls++;
@@ -607,6 +666,110 @@ test("concurrent refreshes are leased, provider failures retain the publication,
     );
     assert.equal(updated.picks.length, 1);
     assert.equal(updated.options[0].tmdbId, 1);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("regional policy changes restart discovery without discarding the last publication", async () => {
+  const { sqlite, env } = await database();
+  try {
+    const old = { ...catalog(), policy: "first-worldwide" };
+    await env.DB.prepare(
+      "INSERT INTO league_drafts_movie_resource (environment, year, published, next_run) VALUES (?, ?, ?, ?)",
+    )
+      .bind("dev", 2027, JSON.stringify(old), "2099-01-01T09:00:00.000Z")
+      .run();
+    const regions = [];
+    const result = await refreshMovieResource(env, saveState, {
+      now: new Date("2026-10-21T09:00:00.000Z"),
+      fetcher: async (url) => {
+        regions.push(new URL(url).searchParams.get("region"));
+        return Response.json({ total_pages: 1, results: [{ id: 1 }] });
+      },
+    });
+    assert.equal(result.phase, "details");
+    assert.deepEqual(regions, ["US", "CA", null]);
+    assert.deepEqual(
+      JSON.parse(
+        sqlite
+          .prepare("SELECT published FROM league_drafts_movie_resource")
+          .get().published,
+      ),
+      old,
+    );
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("authenticated review associates an unlisted pick through the real SQLite service", async () => {
+  const { sqlite, env, insert } = await database();
+  try {
+    let state = mergeMovieCatalog(newDraft(configuration, "6"), catalog());
+    state = apply(apply(state, "publish"), "start");
+    state = apply(
+      state,
+      "pick",
+      { optionName: "Unlisted working name", requestId: "original" },
+      "1",
+      false,
+    );
+    const originalId = state.picks[0].optionId;
+    await insert(state);
+    const authEnv = {
+      ...env,
+      ADMIN_MANAGER_IDS: "6",
+      AUTH_SERVICE: {
+        async fetch(request) {
+          const body = await request.json();
+          return Response.json({
+            ok: true,
+            managerId: body.accessToken === "admin" ? "6" : "1",
+          });
+        },
+      },
+    };
+    const request = (token) =>
+      new Request(`https://draft.test/api/drafts/${state.id}/associate-pick`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          revision: state.revision,
+          pickNumber: 1,
+          tmdbReference: "1",
+          links: { letterboxd: "https://letterboxd.com/film/first-film/" },
+        }),
+      });
+    const ctx = { waitUntil() {} };
+    assert.equal(
+      (await worker.fetch(request("participant"), authEnv, ctx)).status,
+      403,
+    );
+    const response = await worker.fetch(request("admin"), authEnv, ctx);
+    assert.equal(response.status, 200);
+    const reviewed = (await response.json()).draft;
+    assert.equal(reviewed.picks[0].needsReview, false);
+    assert.equal(reviewed.picks[0].optionId, originalId);
+    assert.equal(
+      reviewed.picks[0].sourceLinks.tmdb,
+      "https://www.themoviedb.org/movie/1",
+    );
+    assert.equal(
+      reviewed.options.find((option) => option.tmdbId === 1).id,
+      originalId,
+    );
+    assert.equal(reviewed.picks.length, 1);
+    assert.deepEqual(reviewed.schedule, state.schedule);
+    assert.deepEqual(
+      JSON.parse(
+        sqlite.prepare("SELECT state FROM league_drafts_state").get().state,
+      ).requests,
+      state.requests,
+    );
   } finally {
     sqlite.close();
   }

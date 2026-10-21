@@ -19,6 +19,7 @@ import type {
   DraftOption,
   League,
   Participant,
+  Pick,
 } from "./types";
 import styles from "./LeagueDrafts.module.css";
 import { MANAGER_COLORS } from "../../../../modules/siteConfig.js";
@@ -367,17 +368,40 @@ function Options({
     draft.status === "active" &&
     draft.schedule[draft.picks.length]?.managerId === managerId;
   const claimed = (option: DraftOption) =>
-    draft.picks.find(
-      (pick) =>
-        pick.optionId === option.id ||
-        optionKey(pick.optionName) === optionKey(option.name),
-    );
+    draft.picks.find((pick) => {
+      const previous = draft.options.find(
+        (entry) => entry.id === pick.optionId,
+      );
+      if (pick.optionId === option.id) return true;
+      const tmdbId = pick.tmdbId || previous?.tmdbId;
+      if (tmdbId && option.tmdbId) return tmdbId === option.tmdbId;
+      return (
+        optionKey(previous?.name || pick.optionName) === optionKey(option.name)
+      );
+    });
   const taken = selected ? claimed(selected) : undefined;
+  const today = new Date().toISOString().slice(0, 10);
+  const availableOptions = draft.options.filter((option) => {
+    if (option.retired) return false;
+    if (
+      draft.league === "fantasy-office" &&
+      draft.movieResource?.policy === "unreleased-na-2027"
+    )
+      return Boolean(
+        option.tmdbId &&
+        option.worldwideReleaseDate &&
+        option.worldwideReleaseDate > today &&
+        (option.releaseDate
+          ? option.releaseDate.startsWith("2027-")
+          : option.worldwideReleaseDate.startsWith("2027-")),
+      );
+    return !option.worldwideReleaseDate || option.worldwideReleaseDate > today;
+  });
   const exact =
-    draft.options.find(
+    availableOptions.find(
       (option) => optionKey(option.name) === optionKey(search),
     ) ||
-    draft.options.find((option) =>
+    availableOptions.find((option) =>
       (option.previousNames || []).some(
         (name) => optionKey(name) === optionKey(search),
       ),
@@ -391,7 +415,7 @@ function Options({
   const query = tab === "resource" ? resourceSearch : search;
   const options =
     tab === "resource" || query.trim()
-      ? draft.options.filter((option) =>
+      ? availableOptions.filter((option) =>
           [option.name, ...(option.previousNames || [])].some((name) =>
             optionKey(name).includes(optionKey(query)),
           ),
@@ -507,7 +531,7 @@ function Options({
                   ("retired" in custom && Boolean(custom.retired))
                 }
               >
-                {claimed(custom) ? "Taken" : "Draft pick"}
+                {claimed(custom) ? "Taken" : "Draft"}
               </button>
             </div>
             {search.trim() && !options.length && (
@@ -593,7 +617,7 @@ function Options({
                               ? "Unavailable"
                               : testMode
                                 ? "Test select"
-                                : "Draft this"}
+                                : "Draft"}
                         </button>
                       </td>
                     </tr>
@@ -616,7 +640,11 @@ function Options({
                 {new Date(draft.movieResource.updatedAt).toLocaleDateString()}
               </summary>
               <p>
-                First recorded release worldwide, across all release types.
+                {draft.movieResource.policy === "unreleased-na-2027"
+                  ? "Unreleased worldwide. Dates are first US/Canada releases in 2027; unannounced North American dates show TBA."
+                  : draft.movieResource.policy === "first-north-america"
+                    ? "First US/Canada release, across all release types."
+                    : "First recorded worldwide release, across all release types."}{" "}
                 Refreshed nightly; dates can change.
               </p>
               <a
@@ -700,7 +728,7 @@ function Options({
           <p>
             {selected.id
               ? dateLabel(selected)
-              : "This name is outside the resource."}
+              : "This name is outside the resource and will be flagged for admin review."}
           </p>
         </ContainedDialog>
       )}
@@ -764,6 +792,181 @@ function Rosters({ draft }: { draft: Draft }) {
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function needsReview(pick: Pick) {
+  return (
+    !pick.reviewedAt &&
+    (typeof pick.needsReview === "boolean"
+      ? pick.needsReview
+      : pick.optionId.startsWith("custom-"))
+  );
+}
+
+function PickReview({ draft }: { draft: Draft }) {
+  const [selected, setSelected] = useState<Pick | null>(null);
+  const [reference, setReference] = useState("");
+  const [optionId, setOptionId] = useState("");
+  const [links, setLinks] = useState<Record<string, string>>({});
+  const mutation = useDraftAction(draft);
+  const pending = draft.picks.filter(needsReview);
+  const reviewed = draft.picks.filter((pick) => pick.reviewedAt);
+  const fields =
+    draft.league === "fantasy-office"
+      ? [
+          ["letterboxd", "Letterboxd link"],
+          ["rottenTomatoes", "Rotten Tomatoes link"],
+          ["boxOfficeMojo", "Box Office Mojo link"],
+        ]
+      : [["reference", "Reference link"]];
+  function open(pick: Pick) {
+    mutation.reset();
+    setSelected(pick);
+    setReference(
+      String(
+        pick.tmdbId ||
+          draft.options.find((option) => option.id === pick.optionId)?.tmdbId ||
+          "",
+      ),
+    );
+    setOptionId("");
+    setLinks(pick.sourceLinks || {});
+  }
+  return (
+    <section className={styles.panel} aria-label="Pick review">
+      <h2>Unlisted picks · {pending.length} to review</h2>
+      {!pending.length && (
+        <p className={styles.muted}>No unlisted picks need review.</p>
+      )}
+      {pending.map((pick) => (
+        <div className={styles.reviewRow} key={pick.number}>
+          <div>
+            <strong>{pick.optionName}</strong>
+            <small>
+              {managerName(draft, pick.managerId)} · pick #{pick.number}
+            </small>
+          </div>
+          <button type="button" onClick={() => open(pick)}>
+            Review
+          </button>
+        </div>
+      ))}
+      {reviewed.length > 0 && (
+        <details>
+          <summary>Reviewed picks</summary>
+          {reviewed.map((pick) => (
+            <div className={styles.reviewRow} key={pick.number}>
+              <span>{pick.optionName}</span>
+              <button type="button" onClick={() => open(pick)}>
+                Edit links
+              </button>
+            </div>
+          ))}
+        </details>
+      )}
+      {selected && (
+        <ContainedDialog
+          title="Associate draft pick"
+          description={`${selected.optionName} · pick #${selected.number}`}
+          close={() => {
+            if (!mutation.isPending) setSelected(null);
+          }}
+          footer={
+            <div className={styles.actions}>
+              <button
+                type="button"
+                disabled={
+                  mutation.isPending ||
+                  (!reference.trim() &&
+                    !optionId &&
+                    !fields.some(([key]) => links[key]?.trim()))
+                }
+                onClick={() =>
+                  mutation.mutate(
+                    {
+                      action: "associate-pick",
+                      body: {
+                        pickNumber: selected.number,
+                        tmdbReference: reference,
+                        optionId: optionId || undefined,
+                        links,
+                      },
+                    },
+                    { onSuccess: () => setSelected(null) },
+                  )
+                }
+              >
+                {mutation.isPending ? "Saving…" : "Save association"}
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => setSelected(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          }
+        >
+          <p>Link this pick without changing its manager or draft order.</p>
+          {draft.league === "fantasy-office" ? (
+            <>
+              <a
+                href={`https://www.themoviedb.org/search/movie?query=${encodeURIComponent(selected.optionName)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Find on TMDB
+              </a>
+              <FloatingField>
+                <span>TMDB movie ID or link</span>
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(event) => setReference(event.target.value)}
+                />
+              </FloatingField>
+            </>
+          ) : (
+            <FloatingField>
+              <span>Resource option</span>
+              <select
+                value={optionId}
+                onChange={(event) => setOptionId(event.target.value)}
+              >
+                <option value="">Keep entered name</option>
+                {draft.options.map((option) => (
+                  <option value={option.id} key={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </FloatingField>
+          )}
+          <p className={styles.muted}>
+            Source links are optional when a resource is associated.
+          </p>
+          {fields.map(([key, label]) => (
+            <FloatingField key={key}>
+              <span>{label}</span>
+              <input
+                type="url"
+                value={links[key] || ""}
+                onChange={(event) =>
+                  setLinks({ ...links, [key]: event.target.value })
+                }
+              />
+            </FloatingField>
+          ))}
+          {mutation.error && (
+            <p role="alert" className={styles.error}>
+              {mutation.error.message}
+            </p>
+          )}
+        </ContainedDialog>
+      )}
     </section>
   );
 }
@@ -1471,6 +1674,7 @@ export function LeagueDraftPage({
           {mode === "manage" ? (
             <>
               <Manage draft={draft} league={league} onSaved={saved} />
+              <PickReview draft={draft} />
               <ResourceDates draft={draft} />
             </>
           ) : mode === "active" ? (
@@ -1502,6 +1706,8 @@ export function LeagueDraftPage({
 }
 
 export function LeagueDraftHubCard() {
+  const { session } = useAppState();
+  const admin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
   const query = useDrafts();
   if (!draftEndpoint()) return null;
   const drafts = [...(query.data?.drafts || [])].sort(
@@ -1536,6 +1742,7 @@ export function LeagueDraftHubCard() {
         <p>No league drafts yet.</p>
       ) : (
         drafts.map((draft) => {
+          const reviewCount = draft.picks.filter(needsReview).length;
           const next = draft.schedule
             .slice(draft.picks.length)
             .find((pick) => pick.managerId === query.managerId);
@@ -1563,6 +1770,16 @@ export function LeagueDraftHubCard() {
               <a className="action-button" href={draftLink(draft)}>
                 Open draft
               </a>
+              {admin && reviewCount > 0 && (
+                <p>
+                  <a
+                    href={`#${draft.league}-${draft.year}-manage?draft=${draft.id}`}
+                  >
+                    {reviewCount} unlisted{" "}
+                    {reviewCount === 1 ? "pick needs" : "picks need"} review
+                  </a>
+                </p>
+              )}
               <NotificationSettings draft={draft} managerId={query.managerId} />
               {draft.notifications.map((event) => (
                 <p key={event.id}>

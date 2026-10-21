@@ -16,6 +16,82 @@ export function choiceKey(value) {
     .replace(/\s+/g, " ")
     .toLocaleLowerCase("en-US");
 }
+export function pickNeedsReview(pick) {
+  return (
+    !pick.reviewedAt &&
+    (typeof pick.needsReview === "boolean"
+      ? pick.needsReview
+      : String(pick.optionId).startsWith("custom-"))
+  );
+}
+
+function availableOption(state, option) {
+  if (option.retired) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  if (
+    state.league === "fantasy-office" &&
+    state.movieResource?.policy === "unreleased-na-2027"
+  ) {
+    return Boolean(
+      option.tmdbId &&
+      option.worldwideReleaseDate &&
+      option.worldwideReleaseDate > today &&
+      (option.releaseDate
+        ? option.releaseDate.startsWith("2027-")
+        : option.worldwideReleaseDate.startsWith("2027-")),
+    );
+  }
+  return !option.worldwideReleaseDate || option.worldwideReleaseDate > today;
+}
+
+function optionTaken(state, option, exceptNumber) {
+  return state.picks.some((pick) => {
+    if (pick.number === exceptNumber) return false;
+    const previous = state.options.find((entry) => entry.id === pick.optionId);
+    if (pick.optionId === option.id) return true;
+    const tmdbId = pick.tmdbId || previous?.tmdbId;
+    if (tmdbId && option.tmdbId) return tmdbId === option.tmdbId;
+    return (
+      choiceKey(previous?.name || pick.optionName) === choiceKey(option.name) ||
+      (!option.tmdbId && choiceKey(pick.optionName) === choiceKey(option.name))
+    );
+  });
+}
+
+function verifiedLinks(value = {}) {
+  const hosts = {
+    letterboxd: "letterboxd.com",
+    rottenTomatoes: "rottentomatoes.com",
+    boxOfficeMojo: "boxofficemojo.com",
+  };
+  const result = {};
+  for (const key of [
+    "letterboxd",
+    "rottenTomatoes",
+    "boxOfficeMojo",
+    "reference",
+  ]) {
+    const text = String(value?.[key] || "").trim();
+    if (!text) continue;
+    let url;
+    try {
+      url = new URL(text);
+    } catch {
+      fail(400, "Enter valid HTTPS source links.");
+    }
+    if (
+      text.length > 1000 ||
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      (hosts[key] && url.hostname.replace(/^www\./, "") !== hosts[key])
+    )
+      fail(400, "Use the matching website's HTTPS link for each source.");
+    result[key] = url.toString();
+  }
+  return result;
+}
+
 function releaseDate(value) {
   if (!value) return "";
   const date = String(value);
@@ -180,6 +256,7 @@ export function transition(
   actor,
   admin,
   performedBy = actor,
+  associatedMovie = null,
 ) {
   const isPick = action === "pick";
   if (isPick && original.requests[body.requestId]) {
@@ -254,20 +331,20 @@ export function transition(
           name: label(body.optionName, "Pick name", 200),
         };
     if (!option) fail(400, "That resource option does not exist.");
-    if (option.retired)
-      fail(409, "That movie is no longer in this release-year resource.");
-    if (
-      state.picks.some(
-        (pick) =>
-          pick.optionId === option.id ||
-          choiceKey(pick.optionName) === choiceKey(option.name),
-      )
-    )
+    if (body.optionId && !availableOption(state, option))
+      fail(
+        409,
+        "That option is no longer available. Enter its name to submit it for admin review.",
+      );
+    if (optionTaken(state, option))
       fail(409, "That option has already been taken.");
     const pick = {
       ...state.schedule[state.picks.length],
       optionId: option.id,
       optionName: option.name,
+      needsReview:
+        !state.options.some((entry) => entry.id === option.id) ||
+        !availableOption(state, option),
       at: new Date().toISOString(),
       requestId,
       ...(performedBy !== actor ? { adminActor: performedBy } : {}),
@@ -280,6 +357,75 @@ export function transition(
       ...(!body.optionId ? { requestedName: body.optionName } : {}),
     };
     nextTurn(state);
+  } else if (action === "associate-pick") {
+    const pick = state.picks.find(
+      (entry) => entry.number === Number(body.pickNumber),
+    );
+    if (!pick) fail(400, "Choose an existing pick to review.");
+    const links = verifiedLinks(body.links);
+    const listed = body.optionId
+      ? state.options.find((option) => option.id === body.optionId)
+      : null;
+    if (body.optionId && !listed)
+      fail(400, "Choose an existing resource option.");
+    const movie = associatedMovie || listed;
+    if (!movie && !Object.keys(links).length)
+      fail(400, "Associate a resource or provide a source link.");
+    if (movie) {
+      const matches = state.options.filter(
+        (option) =>
+          option.id === movie.id ||
+          (movie.tmdbId && option.tmdbId === movie.tmdbId),
+      );
+      const ids = new Set(matches.map((option) => option.id));
+      if (optionTaken(state, movie, pick.number))
+        fail(
+          409,
+          "That movie or resource is already associated with another pick.",
+        );
+      const previousOption = state.options.find(
+        (option) => option.id === pick.optionId,
+      );
+      const restored =
+        previousOption?.tmdbId &&
+        previousOption.tmdbId !== movie.tmdbId &&
+        !previousOption.retired
+          ? {
+              ...previousOption,
+              id: `resource-${crypto.randomUUID()}`,
+              previousNames: (previousOption.previousNames || []).filter(
+                (name) => choiceKey(name) !== choiceKey(pick.optionName),
+              ),
+            }
+          : null;
+      // Keep the submitted pick identity and its retry receipt. Re-key an unclaimed
+      // catalog option to that identity so it immediately becomes taken everywhere.
+      state.options = state.options.filter(
+        (option) => !ids.has(option.id) && option.id !== pick.optionId,
+      );
+      state.options.push({
+        ...movie,
+        id: pick.optionId,
+        previousNames: [
+          ...new Set(
+            [...(movie.previousNames || []), pick.optionName].filter(
+              (name) => name !== movie.name,
+            ),
+          ),
+        ],
+      });
+      if (restored) state.options.push(restored);
+      if (movie.tmdbId) {
+        pick.tmdbId = movie.tmdbId;
+        links.tmdb = `https://www.themoviedb.org/movie/${movie.tmdbId}`;
+      }
+    }
+    if (pick.tmdbId)
+      links.tmdb = `https://www.themoviedb.org/movie/${pick.tmdbId}`;
+    pick.sourceLinks = links;
+    pick.needsReview = false;
+    pick.reviewedAt = new Date().toISOString();
+    pick.reviewedBy = performedBy;
   } else if (action === "resource-dates") {
     if (!Array.isArray(body.options) || body.options.length > 500)
       fail(400, "Choose resource dates.");
@@ -357,7 +503,9 @@ export function transition(
     state,
     performedBy !== actor ? "test-pick" : action,
     performedBy,
-    state.reason,
+    action === "associate-pick"
+      ? `Pick #${body.pickNumber}: source association updated.`
+      : state.reason,
   );
   return state;
 }
@@ -382,6 +530,10 @@ export function visibleDraft(state, managerId, admin = false) {
     });
   return {
     ...draft,
+    picks: draft.picks.map((pick) => ({
+      ...pick,
+      needsReview: pickNeedsReview(pick),
+    })),
     preference: preferences[managerId] || { enabled: false, push: false },
     notifications,
     ...(admin ? { audit: history } : {}),

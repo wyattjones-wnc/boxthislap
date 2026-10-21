@@ -1,5 +1,7 @@
 import {
   MOVIE_CRON,
+  MOVIE_POLICY,
+  movieForReview,
   mergeMovieCatalog,
   readMovieCatalog,
   refreshMovieResource,
@@ -224,7 +226,7 @@ export default {
         return response(request, env, {
           ok: true,
           source: "tmdb",
-          policy: "first-worldwide",
+          policy: catalog?.policy || MOVIE_POLICY,
           updatedAt: catalog?.updatedAt || null,
           movies: catalog?.movies.length || 0,
           refreshing: Boolean(job && JSON.parse(job.job)),
@@ -332,6 +334,19 @@ export default {
         (!manager.admin || env.DRAFT_ENVIRONMENT !== "dev")
       )
         fail(403, "Test picks are available only to administrators on dev.");
+      let associatedMovie = null;
+      if (action === "associate-pick") {
+        if (!manager.admin) fail(403, "Administrator access is required.");
+        if (Number(body.revision) !== state.revision)
+          fail(409, "The draft changed. Refresh and try again.");
+        if (body.tmdbReference && state.league !== "fantasy-office")
+          fail(400, "TMDB links are for movie drafts.");
+        associatedMovie = await movieForReview(
+          env,
+          body.tmdbReference,
+          state.options,
+        );
+      }
       // Outbox delivery updates share the row without advancing revision, so merge
       // them on conflict. Gameplay revision conflicts still reject stale clients.
       for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -347,6 +362,7 @@ export default {
           actor,
           manager.admin,
           manager.id,
+          associatedMovie,
         );
         if (action === "test-pick" && next !== state) {
           next.picks.at(-1).adminActor = manager.id;

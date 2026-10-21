@@ -356,3 +356,17 @@
   display: block;
   margin-top: var(--space-3);
 }
+
+.reviewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.reviewRow small {
+  display: block;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}

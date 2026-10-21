@@ -9,6 +9,7 @@ export interface DraftOption {
   id: string;
   name: string;
   releaseDate?: string;
+  worldwideReleaseDate?: string;
   tmdbId?: number;
   previousNames?: string[];
   retired?: boolean;
@@ -24,6 +25,11 @@ export interface Pick extends ScheduledPick {
   at: string;
   requestId: string;
   adminActor?: string;
+  needsReview?: boolean;
+  tmdbId?: number;
+  sourceLinks?: Record<string, string>;
+  reviewedAt?: string;
+  reviewedBy?: string;
 }
 export interface Draft {
   id: string;
@@ -39,7 +45,7 @@ export interface Draft {
   options: DraftOption[];
   movieResource?: {
     source: "tmdb";
-    policy: "first-worldwide";
+    policy: "first-worldwide" | "first-north-america" | "unreleased-na-2027";
     updatedAt: string;
     count: number;
   };

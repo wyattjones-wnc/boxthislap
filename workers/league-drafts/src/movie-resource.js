@@ -1,6 +1,9 @@
 import { choiceKey } from "./model.js";
 
 export const MOVIE_YEAR = 2027;
+export const MOVIE_POLICY = "unreleased-na-2027";
+const DISCOVERY_SCOPES = ["US", "CA", "worldwide"];
+const REGIONS = ["US", "CA"];
 export const MOVIE_CRON = "2-57/5 * * * *";
 export const BATCH_SIZE = 32;
 const MAX_PAGES = 500;
@@ -15,7 +18,91 @@ function isoDate(value) {
     : "";
 }
 
-export function movieFromDetails(details, year, previous) {
+export function northAmericanReleaseDate(details) {
+  return (
+    (details.release_dates?.results || [])
+      .filter((country) => REGIONS.includes(country.iso_3166_1))
+      .flatMap((country) =>
+        (country.release_dates || []).map((release) =>
+          isoDate(release.release_date),
+        ),
+      )
+      .filter(Boolean)
+      .sort()[0] || ""
+  );
+}
+
+export function worldwideReleaseDate(details) {
+  return (
+    [
+      details.release_date,
+      ...(details.release_dates?.results || []).flatMap((country) =>
+        (country.release_dates || []).map((release) => release.release_date),
+      ),
+    ]
+      .map(isoDate)
+      .filter(Boolean)
+      .sort()[0] || ""
+  );
+}
+
+export async function movieForReview(env, reference, options = []) {
+  const value = String(reference || "").trim();
+  if (!value) return null;
+  let id;
+  if (/^\d+$/.test(value)) id = Number(value);
+  else {
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      throw Object.assign(new Error("Enter a TMDB movie ID or movie link."), {
+        status: 400,
+      });
+    }
+    const match = url.pathname.match(/^\/movie\/(\d+)(?:-|\/|$)/);
+    if (
+      url.protocol !== "https:" ||
+      !["www.themoviedb.org", "themoviedb.org"].includes(url.hostname) ||
+      !match ||
+      url.username ||
+      url.password
+    )
+      throw Object.assign(new Error("Enter a TMDB movie ID or movie link."), {
+        status: 400,
+      });
+    id = Number(match[1]);
+  }
+  if (!Number.isSafeInteger(id) || id < 1)
+    throw Object.assign(new Error("Enter a valid TMDB movie ID."), {
+      status: 400,
+    });
+  const existing = options.find((option) => option.tmdbId === id);
+  if (existing) return existing;
+  const details = await tmdbRequest(env, `movie/${id}`, {
+    append_to_response: "release_dates",
+  });
+  if (!details)
+    throw Object.assign(new Error("That movie was not found on TMDB."), {
+      status: 400,
+    });
+  if (
+    details.id !== id ||
+    !details.title?.trim() ||
+    details.title.trim().length > 200
+  )
+    throw new Error("TMDB returned an invalid movie identity.");
+  return {
+    id: `tmdb-${id}`,
+    tmdbId: id,
+    name: details.title.trim(),
+    releaseDate: northAmericanReleaseDate(details),
+    worldwideReleaseDate: worldwideReleaseDate(details),
+    previousNames: [],
+  };
+}
+
+export function movieFromDetails(details, year, previous, now = new Date()) {
   if (
     !Number.isSafeInteger(details?.id) ||
     details.id <= 0 ||
@@ -26,19 +113,19 @@ export function movieFromDetails(details, year, previous) {
     throw new Error(
       "TMDB release history is missing; retrying before publication.",
     );
-  const dates = [
-    details.release_date,
-    ...(details.release_dates?.results || []).flatMap((country) =>
-      (country.release_dates || []).map((release) => release.release_date),
-    ),
-  ]
-    .map(isoDate)
-    .filter(Boolean)
-    .sort();
-  const releaseDate = dates[0];
-  // Primary dates and all countries/types are considered, including premieres.
-  // A 2027 streaming/video window must never reintroduce an older movie.
-  if (details.adult || !releaseDate || !releaseDate.startsWith(`${year}-`))
+  const releaseDate = northAmericanReleaseDate(details);
+  const firstWorldwide = worldwideReleaseDate(details);
+  if (
+    details.adult ||
+    !firstWorldwide ||
+    firstWorldwide <= now.toISOString().slice(0, 10)
+  )
+    return null;
+  if (
+    releaseDate
+      ? !releaseDate.startsWith(`${year}-`)
+      : !firstWorldwide.startsWith(`${year}-`)
+  )
     return null;
   const name = details.title.trim();
   if (name.length > 200)
@@ -48,6 +135,7 @@ export function movieFromDetails(details, year, previous) {
     tmdbId: details.id,
     name,
     releaseDate,
+    worldwideReleaseDate: firstWorldwide,
     previousNames: [
       ...new Set(
         [...(previous?.previousNames || []), previous?.name].filter(
@@ -97,20 +185,32 @@ async function parallelMap(items, operation) {
   return results;
 }
 
-export async function advanceMovieJob(job, previous, env, fetcher = fetch) {
+export async function advanceMovieJob(
+  job,
+  previous,
+  env,
+  fetcher = fetch,
+  now = new Date(),
+) {
   const next = structuredClone(job);
   if (next.phase === "discover") {
     let budget = 8;
-    while (
-      budget-- > 0 &&
-      (next.totalPages === null || next.page <= next.totalPages)
-    ) {
+    while (budget-- > 0 && (next.regionIndex || 0) < DISCOVERY_SCOPES.length) {
       const page = await tmdbRequest(
         env,
         "discover/movie",
         {
-          "release_date.gte": `${MOVIE_YEAR}-01-01`,
-          "release_date.lte": `${MOVIE_YEAR}-12-31`,
+          ...(DISCOVERY_SCOPES[next.regionIndex || 0] === "worldwide"
+            ? {
+                "primary_release_date.gte": `${MOVIE_YEAR}-01-01`,
+                "primary_release_date.lte": `${MOVIE_YEAR}-12-31`,
+              }
+            : {
+                region: DISCOVERY_SCOPES[next.regionIndex || 0],
+                with_release_type: "1|2|3|4|5|6",
+                "release_date.gte": `${MOVIE_YEAR}-01-01`,
+                "release_date.lte": `${MOVIE_YEAR}-12-31`,
+              }),
           include_adult: false,
           include_video: true,
           sort_by: "primary_release_date.asc",
@@ -135,8 +235,17 @@ export async function advanceMovieJob(job, previous, env, fetcher = fetch) {
         next.ids.push(movie.id);
       }
       next.page += 1;
+      if (next.page > next.totalPages) {
+        next.regionIndex = (next.regionIndex || 0) + 1;
+        next.page = 1;
+        next.totalPages = null;
+      }
     }
-    if (next.page > next.totalPages) {
+    if (next.regionIndex === DISCOVERY_SCOPES.length) {
+      if (!next.ids.length)
+        throw new Error(
+          "TMDB returned empty regional discovery; retaining the previous catalog.",
+        );
       next.ids = [
         ...new Set([
           ...next.ids,
@@ -166,16 +275,12 @@ export async function advanceMovieJob(job, previous, env, fetcher = fetch) {
       if (details && details.id !== id)
         throw new Error("TMDB returned a different movie identity.");
       return details
-        ? movieFromDetails(details, MOVIE_YEAR, oldMovies.get(id))
+        ? movieFromDetails(details, MOVIE_YEAR, oldMovies.get(id), now)
         : null;
     });
     next.movies.push(...movies.filter(Boolean));
     next.cursor += ids.length;
     if (next.cursor === next.ids.length) {
-      if (!next.movies.length)
-        throw new Error(
-          "No eligible first releases were returned; retaining the previous catalog.",
-        );
       next.phase = "publish";
     }
   }
@@ -216,6 +321,9 @@ export function mergeMovieCatalog(original, catalog) {
       .filter((option) => option.tmdbId)
       .map((option) => [option.tmdbId, option]),
   );
+  const submittedNames = new Map(
+    state.picks.map((pick) => [pick.optionId, pick.optionName]),
+  );
   const adopted = new Set();
   const retained = state.options.filter((option) => !option.tmdbId);
   const manualByTmdb = new Map();
@@ -253,8 +361,17 @@ export function mergeMovieCatalog(original, catalog) {
       id: existing?.id || movie.id,
       tmdbId: movie.tmdbId,
       name: movie.name,
-      previousNames: movie.previousNames,
+      previousNames: [
+        ...new Set(
+          [
+            ...movie.previousNames,
+            ...(existing?.previousNames || []),
+            submittedNames.get(existing?.id),
+          ].filter((name) => name && name !== movie.name),
+        ),
+      ].slice(-40),
       releaseDate: hasOverride ? overrides[movie.tmdbId] : movie.releaseDate,
+      worldwideReleaseDate: movie.worldwideReleaseDate,
       ...(hasOverride ? { releaseDateOverride: overrides[movie.tmdbId] } : {}),
     };
   });
@@ -274,9 +391,19 @@ export function mergeMovieCatalog(original, catalog) {
   ];
   if (Object.keys(overrides).length)
     state.movieResourceDateOverrides = overrides;
+  if (catalog.policy === MOVIE_POLICY) {
+    const linkedIds = new Set(
+      state.options
+        .filter((option) => option.tmdbId)
+        .map((option) => option.id),
+    );
+    for (const pick of state.picks)
+      if (!pick.reviewedAt && !linkedIds.has(pick.optionId))
+        pick.needsReview = true;
+  }
   state.movieResource = {
     source: "tmdb",
-    policy: "first-worldwide",
+    policy: catalog.policy || MOVIE_POLICY,
     updatedAt: catalog.updatedAt,
     count: catalog.movies.length,
   };
@@ -285,7 +412,7 @@ export function mergeMovieCatalog(original, catalog) {
     revision: state.revision,
     action: "movie-resource-sync",
     actor: "system",
-    reason: "First worldwide movie releases refreshed from TMDB.",
+    reason: "Movie release resource refreshed from TMDB.",
     at: catalog.updatedAt,
   });
   return state;
@@ -329,7 +456,14 @@ export async function refreshMovieResource(
     .first();
   if (row.lease_until > now.toISOString()) return { phase: "busy" };
   let job = JSON.parse(row.job);
-  if (!job && row.next_run > now.toISOString()) return { phase: "idle" };
+  const previousPublication = JSON.parse(row.published);
+  if (job && job.policy !== MOVIE_POLICY) job = null;
+  if (
+    !job &&
+    previousPublication?.policy === MOVIE_POLICY &&
+    row.next_run > now.toISOString()
+  )
+    return { phase: "idle" };
   const lease = new Date(now.getTime() + 5 * 60_000).toISOString();
   const locked = await env.DB.prepare(
     "UPDATE league_drafts_movie_resource SET revision = revision + 1, lease_until = ? WHERE environment = ? AND year = ? AND revision = ? AND lease_until = ?",
@@ -349,6 +483,8 @@ export async function refreshMovieResource(
   try {
     job ||= {
       phase: "discover",
+      policy: MOVIE_POLICY,
+      regionIndex: 0,
       page: 1,
       totalPages: null,
       ids: [],
@@ -356,16 +492,24 @@ export async function refreshMovieResource(
       startedAt: now.toISOString(),
     };
     if (["discover", "details"].includes(job.phase))
-      job = await advanceMovieJob(job, published, env, fetcher);
+      job = await advanceMovieJob(job, published, env, fetcher, now);
     else if (job.phase === "publish") {
       published = {
         source: "tmdb",
-        policy: "first-worldwide",
+        policy: MOVIE_POLICY,
         year: MOVIE_YEAR,
         updatedAt: now.toISOString(),
-        movies: job.movies,
+        movies: job.movies.filter(
+          (movie) =>
+            movie.worldwideReleaseDate > now.toISOString().slice(0, 10),
+        ),
       };
-      job = { phase: "drafts", after: "", startedAt: job.startedAt };
+      job = {
+        phase: "drafts",
+        policy: MOVIE_POLICY,
+        after: "",
+        startedAt: job.startedAt,
+      };
     } else if (job.phase === "drafts") {
       const rows = await env.DB.prepare(
         "SELECT id, state FROM league_drafts_state WHERE environment = ? AND year = ? AND league = ? AND id > ? ORDER BY id LIMIT 1",

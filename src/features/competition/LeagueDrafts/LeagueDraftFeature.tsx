@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, Plus, Ban } from "lucide-react";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
 import { FloatingField } from "../../../components/FloatingField/FloatingField";
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
@@ -523,7 +524,10 @@ function Options({
               </FloatingField>
               <button
                 type="submit"
-                className={styles.pickSubmit}
+                className={`${styles.pickSubmit} ${styles.pickIcon}`}
+                aria-label={claimed(custom) ? "Taken" : "Draft"}
+                title={claimed(custom) ? "Already taken" : "Draft this name"}
+                data-taken={Boolean(claimed(custom))}
                 disabled={
                   !canPick ||
                   !search.trim() ||
@@ -531,7 +535,11 @@ function Options({
                   ("retired" in custom && Boolean(custom.retired))
                 }
               >
-                {claimed(custom) ? "Taken" : "Draft"}
+                {claimed(custom) ? (
+                  <Check aria-hidden="true" />
+                ) : (
+                  <Plus aria-hidden="true" />
+                )}
               </button>
             </div>
             {search.trim() && !options.length && (
@@ -608,16 +616,38 @@ function Options({
                       <td>
                         <button
                           type="button"
+                          className={
+                            testMode && !pick ? undefined : styles.pickIcon
+                          }
+                          aria-label={
+                            pick
+                              ? "Taken"
+                              : option.retired
+                                ? "Unavailable"
+                                : testMode
+                                  ? "Test select"
+                                  : "Draft"
+                          }
+                          title={
+                            pick
+                              ? `Taken by ${managerName(draft, pick.managerId)}`
+                              : option.retired
+                                ? "Unavailable"
+                                : `Draft ${option.name}`
+                          }
+                          data-taken={Boolean(pick)}
                           disabled={Boolean(pick) || !canPick || option.retired}
                           onClick={() => choose(option)}
                         >
-                          {pick
-                            ? "Taken"
-                            : option.retired
-                              ? "Unavailable"
-                              : testMode
-                                ? "Test select"
-                                : "Draft"}
+                          {pick ? (
+                            <Check aria-hidden="true" />
+                          ) : option.retired ? (
+                            <Ban aria-hidden="true" />
+                          ) : testMode ? (
+                            "Test select"
+                          ) : (
+                            <Plus aria-hidden="true" />
+                          )}
                         </button>
                       </td>
                     </tr>

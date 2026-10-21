@@ -370,3 +370,22 @@
   color: var(--text-muted);
   margin-top: var(--space-1);
 }
+
+.panel .pickIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-touch);
+  min-width: var(--control-touch);
+  padding: 0;
+}
+.pickIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 2.5;
+}
+.panel .pickIcon[data-taken="true"] {
+  color: var(--text-muted);
+  background: transparent;
+  opacity: 1;
+}

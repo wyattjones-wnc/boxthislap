@@ -1,5 +1,6 @@
 const FOOTBALL_CLUB_NAME_ALIASES = Object.freeze({
   "athletic bilbao": "athletic club",
+  "bayern munich": "bayern munchen",
   "slavia prague": "slavia praha",
   "sporting clube de portugal": "sporting",
   "sporting cp": "sporting",
@@ -29,6 +30,8 @@ export function isSameFootballClubName(firstName, secondName) {
 
 export function normalizeFootballClubName(value) {
   const normalizedName = String(value ?? "").trim().toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\b(afc|cf|fc|fk|osc|sc|sk)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();

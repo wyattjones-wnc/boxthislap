@@ -63,6 +63,19 @@ const [athletic] = mergeFixtures([
 assert.deepEqual(athletic.sources, ["football-data.org", "TheSportsDB"]);
 assert.equal(athletic.away, "Athletic Club");
 
+const bayernFixtures = [
+  fixture({ home: "FC Bayern München", away: "Arsenal FC", teamId: "1", date: "2026-10-21", source: "football-data.org", sources: ["football-data.org"], sourceIds: { "football-data.org": "575372" }, matchId: "primary-match" }),
+  fixture({ home: "Bayern Munich", away: "Arsenal", teamId: "1", date: "2026-10-21", source: "Arsenal.com", sources: ["Arsenal.com"], sourceIds: { "Arsenal.com": "arsenal-match" }, matchId: "secondary-match" }),
+];
+for (const fixtures of [bayernFixtures, [...bayernFixtures].reverse()]) {
+  const merged = mergeFixtures(fixtures);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].home, "FC Bayern München");
+  assert.equal(merged[0].matchId, "primary-match");
+  assert.deepEqual(merged[0].sourceIds, { "football-data.org": "575372", "Arsenal.com": "arsenal-match" });
+}
+assert.equal(mergeFixtures([bayernFixtures[0], { ...bayernFixtures[1], date: "2026-10-22" }]).length, 2);
+
 const currentFixtures = getCurrentTeamFixtures({
   generatedAt: "2026-08-16T10:00:00Z",
   previousFixtures: [

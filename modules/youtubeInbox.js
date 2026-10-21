@@ -5,12 +5,19 @@ const STATUS_OPTIONS = [
   ["all", "All"],
 ];
 const SESSION_STORAGE_KEY = "boxThisLapYouTubeSession";
-const SNAPSHOT_STORAGE_PREFIX = "boxThisLapYouTubeSnapshotV1:";
+const SNAPSHOT_STORAGE_PREFIX = "boxThisLapYouTubeSnapshotV2:";
 const VIDEO_PAGE_SIZE = 100;
 
 export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeoutMs = 15000, scrollToTop }) {
   const view = document.querySelector("#youtube-inbox-view");
   let loadPromise = null;
+  let currentQuery = null;
+  let nextCursor = null;
+  let nextOffset = 0;
+  let hasMore = false;
+  let hasLoaded = false;
+  let loadingMore = false;
+  let mutating = false;
   const state = {
     channel: "",
     channels: [],
@@ -43,7 +50,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
     }
 
     render();
-    if (!state.loading && !state.videos.length) {
+    if (!state.loading && !hasLoaded) {
       return load();
     }
 
@@ -62,6 +69,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
 
   async function performLoad() {
     state.loading = true;
+    hasMore = false;
     render();
 
     let snapshotKey = "";
@@ -79,8 +87,11 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
       }
       snapshotKey = `${SNAPSHOT_STORAGE_PREFIX}${state.status}:${state.priority}:${state.channel || "all"}`;
 
+      currentQuery = query;
+      nextCursor = null;
+      nextOffset = 0;
       const [videoData, playlistData] = await Promise.all([
-        loadAllVideos(query),
+        loadVideoPage(allowedChannels),
         request("/api/youtube/playlists"),
       ]);
       state.videos = filterVideosByPriority(Array.isArray(videoData.videos) ? videoData.videos : [], allowedChannels);
@@ -89,6 +100,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
       state.lastSyncAt = videoData.lastSyncAt || "";
       state.error = "";
       state.needsAuth = false;
+      hasLoaded = true;
       try {
         localStorage.setItem(snapshotKey, JSON.stringify({
           channels: state.channels,
@@ -111,6 +123,8 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
             state.lastSyncAt = cached.lastSyncAt || "";
             state.syncMessage = `Showing saved inbox data from ${formatRelativeDate(cached.savedAt)}.`;
             restored = true;
+            hasLoaded = true;
+            hasMore = false;
           }
         } catch {}
       }
@@ -121,26 +135,51 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
     }
   }
 
-  async function loadAllVideos(query) {
-    const videos = [];
+  async function loadVideoPage(allowedChannels) {
+    // Continue through title-filtered pages only when a page has no matches.
+    // Otherwise leave older videos for an explicit Load more action.
+    let videos = [];
     let lastSyncAt = "";
-    let offset = 0;
-
-    while (true) {
-      const pageQuery = new URLSearchParams(query);
+    do {
+      const pageQuery = new URLSearchParams(currentQuery);
       pageQuery.set("limit", String(VIDEO_PAGE_SIZE));
-      pageQuery.set("offset", String(offset));
+      if (nextCursor) pageQuery.set("cursor", nextCursor);
+      else pageQuery.set("offset", String(nextOffset));
       const pageData = await request(`/api/videos?${pageQuery}`);
       const pageVideos = Array.isArray(pageData.videos) ? pageData.videos : [];
-
-      videos.push(...pageVideos);
-      lastSyncAt ||= pageData.lastSyncAt || "";
-
-      if (pageVideos.length < VIDEO_PAGE_SIZE) break;
-      offset += pageVideos.length;
-    }
-
+      videos = filterVideosByPriority(pageVideos, allowedChannels);
+      lastSyncAt = pageData.lastSyncAt || "";
+      nextOffset += pageVideos.length;
+      nextCursor = pageData.nextCursor || null;
+      hasMore = Object.hasOwn(pageData, "nextCursor")
+        ? Boolean(nextCursor)
+        : pageVideos.length === VIDEO_PAGE_SIZE;
+    } while (!videos.length && hasMore);
     return { lastSyncAt, videos };
+  }
+
+  async function loadMore() {
+    if (state.loading || state.syncing || loadingMore || mutating || !hasMore || !currentQuery) return;
+    loadingMore = true;
+    state.syncMessage = "";
+    render();
+    try {
+      const pageData = await loadVideoPage(getAllowedChannels());
+      const existing = new Set(state.videos.map((video) => video.youtubeVideoId));
+      state.videos.push(...pageData.videos.filter((video) => !existing.has(video.youtubeVideoId)));
+    } catch (error) {
+      state.syncMessage = error.message || "Unable to load more videos.";
+    } finally {
+      loadingMore = false;
+      render();
+    }
+  }
+
+  function clearSavedSnapshots() {
+    try {
+      const keys = Object.keys(localStorage).filter((key) => key.startsWith("boxThisLapYouTubeSnapshot"));
+      keys.forEach((key) => localStorage.removeItem(key));
+    } catch {}
   }
 
   function render() {
@@ -183,6 +222,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
         ` : ""}
       </div>
       ${renderBody()}
+      ${hasMore && !state.loading && !state.needsAuth && !state.error ? `<button class="action-button" type="button" data-youtube-load-more${loadingMore || state.syncing ? " disabled" : ""}>${loadingMore ? "Loading..." : "Load more"}</button>` : ""}
       ${state.syncMessage ? `<p class="youtube-sync-message" role="status">${escapeHtml(state.syncMessage)}</p>` : ""}
       ${state.lastSyncAt ? `<p class="youtube-sync-note">Last refreshed ${escapeHtml(formatRelativeDate(state.lastSyncAt))}</p>` : ""}
     `;
@@ -227,8 +267,8 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
       return `
         <div class="youtube-state">
           <span aria-hidden="true">&#10003;</span>
-          <h2>All caught up</h2>
-          <p>No ${state.status === "all" ? "videos" : escapeHtml(state.status + " videos")} match these filters.</p>
+          <h2>${hasMore ? "More videos available" : "All caught up"}</h2>
+          <p>${hasMore ? "Load more to see older videos." : `No ${state.status === "all" ? "videos" : escapeHtml(state.status + " videos")} match these filters.`}</p>
         </div>
       `;
     }
@@ -272,6 +312,12 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
   }
 
   async function handleClick(event) {
+    if (event.target.closest("[data-youtube-load-more]")) {
+      await loadMore();
+      return;
+    }
+
+    if (loadingMore || state.loading || state.syncing || mutating) return;
     const statusButton = event.target.closest("[data-youtube-status]");
     if (statusButton) {
       state.status = statusButton.dataset.youtubeStatus;
@@ -327,6 +373,10 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
   }
 
   async function handleChange(event) {
+    if (loadingMore || state.loading || state.syncing || mutating) {
+      render();
+      return;
+    }
     if (event.target.matches("[data-youtube-more-controls]")) {
       state.moreControls = event.target.checked;
       if (!state.moreControls) state.channel = "";
@@ -390,6 +440,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
 
   async function sync() {
     state.syncing = true;
+    clearSavedSnapshots();
     state.syncMessage = "";
     render();
     try {
@@ -423,6 +474,7 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
   }
 
   async function updateStatus(videoId, status, button) {
+    mutating = true;
     setBusy(button, true);
     try {
       await request(`/api/videos/${encodeURIComponent(videoId)}/status`, {
@@ -430,17 +482,23 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
-      state.videos = state.status === "all"
+      clearSavedSnapshots();
+      state.error = "";
+      state.syncMessage = "";
+      state.videos = state.status === "all" || state.status === status
         ? state.videos.map((video) => video.youtubeVideoId === videoId ? { ...video, status } : video)
         : state.videos.filter((video) => video.youtubeVideoId !== videoId);
       render();
     } catch (error) {
-      state.error = error.message || "Unable to update the video.";
+      state.syncMessage = error.message || "Unable to update the video.";
       render();
+    } finally {
+      mutating = false;
     }
   }
 
   async function saveToPlaylist(videoId, playlistId, button) {
+    mutating = true;
     setBusy(button, true);
     try {
       await request(`/api/youtube/playlists/${encodeURIComponent(playlistId)}/videos`, {
@@ -448,17 +506,23 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
-      state.videos = state.status === "all"
+      clearSavedSnapshots();
+      state.error = "";
+      state.syncMessage = "";
+      state.videos = state.status === "all" || state.status === "saved"
         ? state.videos.map((video) => video.youtubeVideoId === videoId ? { ...video, status: "saved" } : video)
         : state.videos.filter((video) => video.youtubeVideoId !== videoId);
       render();
     } catch (error) {
-      state.error = error.message || "Unable to save the video.";
+      state.syncMessage = error.message || "Unable to save the video.";
       render();
+    } finally {
+      mutating = false;
     }
   }
 
   async function markSeenThrough(videoId, button) {
+    mutating = true;
     setBusy(button, true);
     try {
       const selectedIndex = state.videos.findIndex((video) => video.youtubeVideoId === videoId);
@@ -467,20 +531,25 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
         .slice(0, selectedIndex + 1)
         .filter((video) => video.status === "new")
         .map((video) => video.youtubeVideoId);
-      await request(`/api/videos/${encodeURIComponent(videoId)}/seen-through`, {
-        body: JSON.stringify({ videoIds }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      const markedIds = new Set(videoIds);
-      if (state.status === "all") {
-        state.videos = state.videos.map((video) => {
-          return markedIds.has(video.youtubeVideoId)
-            ? { ...video, status: "watched" }
-            : video;
+      for (let index = 0; index < videoIds.length; index += 1000) {
+        const batchIds = videoIds.slice(index, index + 1000);
+        await request(`/api/videos/${encodeURIComponent(batchIds.at(-1))}/seen-through`, {
+          body: JSON.stringify({ videoIds: batchIds }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
         });
-      } else {
-        state.videos = state.videos.filter((video) => !markedIds.has(video.youtubeVideoId));
+        clearSavedSnapshots();
+        state.error = "";
+        const markedIds = new Set(batchIds);
+        if (state.status === "all") {
+          state.videos = state.videos.map((video) => {
+            return markedIds.has(video.youtubeVideoId)
+              ? { ...video, status: "watched" }
+              : video;
+          });
+        } else {
+          state.videos = state.videos.filter((video) => !markedIds.has(video.youtubeVideoId));
+        }
       }
       state.syncMessage = "";
       render();
@@ -488,6 +557,8 @@ export function createYouTubeInboxController({ endpoint, loadSheet, requestTimeo
     } catch (error) {
       state.syncMessage = error.message || "Unable to mark the videos as seen.";
       render();
+    } finally {
+      mutating = false;
     }
   }
 

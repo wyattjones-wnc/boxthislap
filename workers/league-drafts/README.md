@@ -8,7 +8,7 @@ The shipped configuration names the Worker `box-this-lap-league-drafts-dev`, use
 
 `league_drafts_state` is a new, prefixed table in the existing Formula One D1 database. It does not change Formula One or Fantasy Office tables. Migration history is isolated as `league_drafts_dev_migrations`.
 
-Each draft is a bounded JSON aggregate containing its configuration, scheduled turns, picks, retry receipts, notification preferences, audit history, and outbox. A conditional single-row update checks revision and prior state and saves the entire aggregate atomically. There is no independently editable Taken flag: ownership is derived from accepted picks. This is intentionally simpler than normalized cross-table transactions for small manager leagues. Limits are 16 participants, 24 rounds, and 500 options per draft.
+Each draft is a bounded JSON aggregate containing its configuration, scheduled turns, picks, retry receipts, notification preferences, audit history, and outbox. A conditional single-row update checks revision and prior state and saves the entire aggregate atomically. There is no independently editable Taken flag: ownership is derived from accepted picks. This is intentionally simpler than normalized cross-table transactions for small manager leagues. Limits are 16 participants, 24 rounds, and 500 manually configured options per draft. The centrally refreshed TMDB catalog is added separately.
 
 The Rankings service verifies manager access tokens and supplies active manager accounts. Admin ID is configured server-side, initially `6`. Private Draft Lists and 2026 rosters are separate services and are not modified by these drafts.
 
@@ -116,3 +116,29 @@ Draft is the first league tab: it shows the open-draft banner and each participa
 Active has Pick and Resource tabs. Pick accepts any nonempty name (up to 200 characters), shows matching resource suggestions as you type, and confirms before submitting. Exact normalized resource matches claim that resource entry; unlisted names are recorded directly without being added to the resource. Names already picked cannot be selected again, including case/spacing/Unicode variants. Retry receipts cover both paths and survive undo.
 
 Resource shows all options, release dates, Taken labels, and per-entry Draft buttons. Dates display as TBA until supplied by the admin. Setup accepts `Movie name | YYYY-MM-DD` per line; Manage → Resource release dates can maintain dates after start without altering picks or schedule. Resources are optional; publish/start no longer require enough resource entries for every turn. Existing draft data needs no migration or reset.
+
+## Automatic 2027 movie resource
+
+Fantasy Office uses TMDB movie IDs (`tmdb-123` for new entries) to track title and date changes. It imports movies whose **earliest recorded worldwide release is in 2027**, including theatrical, digital/streaming, physical, TV, and premiere releases. Discovery includes video movies and does not restrict release type. Details are checked across countries/types, together with TMDB's primary date. A 2026 theatrical film with a 2027 video release is excluded. TV series are not movies; adult entries are excluded by TMDB's standard discovery setting. This is a release-calendar resource, not an eligibility restriction on the existing free-text picking feature. Coverage and dates depend on TMDB's records.
+
+The deployment workflow reads `TMDB_READ_ACCESS_TOKEN` (preferred) or `TMDB_API_KEY` from GitHub repository secrets and installs the credential as a Worker secret. No credential enters frontend files, logs, or catalog data. The official logo and required disclaimer appear in the drafting card's **Movie data and credits** disclosure. The date there is the last complete refresh.
+
+The empty `league_drafts_movie_resource` table is created by `0002_movie_resource.sql`; it adds no index or migration to existing tables. Deployment runs that idempotent statement directly rather than applying unrelated pending migrations. One row stores the dev/2027 publication and an in-progress checkpoint. New drafts inherit the current catalog. Daily refresh starts at **09:00 UTC**; five-minute cron ticks continue bounded batches until finished. Initial installation starts a refresh immediately. A five-minute lease prevents concurrent cron/manual jobs from replacing each other's checkpoints. An incomplete, empty, oversized, or failed fetch keeps the last published catalog, and the next tick retries from its checkpoint. Finished/cancelled drafts remain historical records.
+
+Existing manual choices are retained. Unambiguous name/previous-name matches are adopted without changing pick IDs, turn order, pick history, retry receipts, or notifications. Renames update the resource and roster display while original submitted names remain in pick history. Old working titles remain searchable and resolve to the same claim. Manual release-date corrections survive subsequent refreshes. Films moved outside 2027 leave the available feed; picked entries remain marked taken. Duplicate titles with different TMDB IDs remain different movies.
+
+Use Manage → Resource release dates to search for a title and correct a date. Only changed fields are submitted, so a correction does not freeze the dates of every other title. Setup's manual-options field excludes centrally maintained entries.
+
+### Bounded usage review
+
+The new cron adds **288 small invocations/day**; idle ticks perform one keyed insert-ignore and one keyed row read, without calling TMDB. Active ticks fetch at most **32 TMDB responses** and a handful of keyed D1 operations. This is below the Workers Free 50 external subrequests/invocation limit, with no KV, extra browser polling, or per-movie D1 rows. At the discovery ceiling (500 pages / 10,000 IDs), a refresh uses at most about 380 provider batches plus up to 201 draft-sync batches; existing previously-known IDs can add detail batches within the 1.5 MB combined checkpoint/publication budget. No provider page is silently dropped: exceeding TMDB's page ceiling or the storage budget fails visibly and retains the last good publication.
+
+Draft synchronization uses the existing season index, touches only dev/2027 Fantasy Office drafts, and performs at most one aggregate compare-and-swap per invocation, with a hard operational ceiling of 200 drafts. Normal use is a handful of drafts. Even a full bounded run is thousands of keyed reads and roughly 1,600 row updates, rather than a library-wide D1 scan/rewrite. The initial schema statement creates an empty table; no older league rows are rewritten. The recurring request estimate is less than 0.3% of the 100,000/day Workers Free request allowance; keyed catalog operations are a small fraction of the 5 million D1 reads/day and 100,000 writes/day allowances. These comparisons do not assert current account-wide headroom, which is not known here. Job serialization, per-tick limits, and the row/draft ceilings cap this feature's contribution. Bootstrap uses the same job through GitHub Actions and D1's authenticated API; it does not create another data pipeline or run a broad database migration.
+
+For a first fill or a resumed checkpoint after a credential correction, dispatch the existing Worker deployment with `refresh_movies=true`:
+
+```bash
+gh workflow run deploy-league-drafts-worker.yml --ref dev -f refresh_movies=true
+```
+
+The scheduled refresh lives in the dev Worker, so it runs without promoting a new GitHub schedule to `main`. The workflow reports only batch phase/counts, not movie payloads or secrets. Public read-only status is available at `/api/movie-resource` (`updatedAt`, movie count, refresh/delay flags, and next run); provider errors and credentials are not exposed.

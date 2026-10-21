@@ -437,6 +437,48 @@ describe("2027 league drafting", () => {
       screen.getByRole("link", { name: "Go to drafting" }).getAttribute("href"),
     ).toContain("-active?draft=");
   });
+  it("finds previous movie titles, keeps canonical identity, and shows renamed picks with movie credits", async () => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ managerId: "1" }),
+    );
+    let state = activeState();
+    state.options[0].tmdbId = 42;
+    state.options[0].previousNames = ["Working title"];
+    state.movieResource = {
+      source: "tmdb",
+      policy: "first-worldwide",
+      updatedAt: "2026-10-21T09:00:00.000Z",
+      count: 1,
+    };
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, options) => {
+      if (String(input).endsWith("/picks")) {
+        const body = JSON.parse(String(options?.body));
+        expect(body.optionId).toBe("option-0");
+        state = transition(state, "pick", body, "1", false);
+        return Response.json({ draft: visibleDraft(state, "1") });
+      }
+      return Response.json({ drafts: [visibleDraft(state, "1")] });
+    });
+    const active = wrapper(
+      <LeagueDraftPage league="fantasy-office" mode="active" />,
+    );
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Movie or pick name" }),
+      "Working title",
+    );
+    expect(screen.getByRole("rowheader", { name: "Movie 0" })).toBeTruthy();
+    expect(screen.getByText(/Movie data and credits/)).toBeTruthy();
+    expect(screen.queryByRole("caption")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Draft pick" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirm pick" }));
+    await waitFor(() => expect(state.picks).toHaveLength(1));
+    state.options[0].name = "Final movie title";
+    active.unmount();
+    wrapper(<LeagueDraftPage league="fantasy-office" mode="draft" />);
+    expect(await screen.findByText("Final movie title")).toBeTruthy();
+    expect(state.picks[0].optionName).toBe("Movie 0");
+  });
   it("protects manage pages for non-admin managers", () => {
     localStorage.setItem(
       "boxThisLapManagerSession",

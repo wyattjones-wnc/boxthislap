@@ -373,9 +373,15 @@ function Options({
         optionKey(pick.optionName) === optionKey(option.name),
     );
   const taken = selected ? claimed(selected) : undefined;
-  const exact = draft.options.find(
-    (option) => optionKey(option.name) === optionKey(search),
-  );
+  const exact =
+    draft.options.find(
+      (option) => optionKey(option.name) === optionKey(search),
+    ) ||
+    draft.options.find((option) =>
+      (option.previousNames || []).some(
+        (name) => optionKey(name) === optionKey(search),
+      ),
+    );
   const custom = exact || { id: "", name: search.trim() };
   const choose = (option: DraftOption) => {
     mutation.reset();
@@ -386,7 +392,9 @@ function Options({
   const options =
     tab === "resource" || query.trim()
       ? draft.options.filter((option) =>
-          optionKey(option.name).includes(optionKey(query)),
+          [option.name, ...(option.previousNames || [])].some((name) =>
+            optionKey(name).includes(optionKey(query)),
+          ),
         )
       : [];
   options.sort((a, b) => {
@@ -466,7 +474,13 @@ function Options({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (canPick && search.trim() && !claimed(custom)) choose(custom);
+              if (
+                canPick &&
+                search.trim() &&
+                !claimed(custom) &&
+                !("retired" in custom && custom.retired)
+              )
+                choose(custom);
             }}
           >
             <p id="pick-help" className={styles.pickHelp}>
@@ -487,7 +501,10 @@ function Options({
                 type="submit"
                 className={styles.pickSubmit}
                 disabled={
-                  !canPick || !search.trim() || Boolean(claimed(custom))
+                  !canPick ||
+                  !search.trim() ||
+                  Boolean(claimed(custom)) ||
+                  ("retired" in custom && Boolean(custom.retired))
                 }
               >
                 {claimed(custom) ? "Taken" : "Draft pick"}
@@ -567,14 +584,16 @@ function Options({
                       <td>
                         <button
                           type="button"
-                          disabled={Boolean(pick) || !canPick}
+                          disabled={Boolean(pick) || !canPick || option.retired}
                           onClick={() => choose(option)}
                         >
                           {pick
                             ? "Taken"
-                            : testMode
-                              ? "Test select"
-                              : "Draft this"}
+                            : option.retired
+                              ? "Unavailable"
+                              : testMode
+                                ? "Test select"
+                                : "Draft this"}
                         </button>
                       </td>
                     </tr>
@@ -589,6 +608,34 @@ function Options({
                 ? "No matching titles."
                 : "No resource options yet. Use Pick to enter any name."}
             </p>
+          )}
+          {draft.movieResource && (
+            <details className={styles.movieCredits}>
+              <summary>
+                Movie data and credits · updated{" "}
+                {new Date(draft.movieResource.updatedAt).toLocaleDateString()}
+              </summary>
+              <p>
+                First recorded release worldwide, across all release types.
+                Refreshed nightly; dates can change.
+              </p>
+              <a
+                href="https://www.themoviedb.org/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img
+                  src="assets/tmdb-logo.svg"
+                  width="76"
+                  height="12"
+                  alt="TMDB"
+                />
+              </a>
+              <p>
+                This product uses the TMDB API but is not endorsed or certified
+                by TMDB.
+              </p>
+            </details>
           )}
         </div>
       </div>
@@ -703,7 +750,11 @@ function Rosters({ draft }: { draft: Draft }) {
                     <li key={round}>
                       <span>Round {round + 1}</span>
                       <strong className={pick ? "" : styles.muted}>
-                        {pick ? pick.optionName : "Awaiting pick"}
+                        {pick
+                          ? draft.options.find(
+                              (option) => option.id === pick.optionId,
+                            )?.name || pick.optionName
+                          : "Awaiting pick"}
                       </strong>
                     </li>
                   );
@@ -719,6 +770,10 @@ function Rosters({ draft }: { draft: Draft }) {
 
 function ResourceDates({ draft }: { draft: Draft }) {
   const [dates, setDates] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
+  const visible = draft.options
+    .filter((option) => optionKey(option.name).includes(optionKey(search)))
+    .slice(0, 25);
   const mutation = useDraftAction(draft);
   return (
     <details className={styles.panel}>
@@ -730,9 +785,9 @@ function ResourceDates({ draft }: { draft: Draft }) {
             {
               action: "resource-dates",
               body: {
-                options: draft.options.map((option) => ({
-                  id: option.id,
-                  releaseDate: dates[option.id] ?? option.releaseDate ?? "",
+                options: Object.entries(dates).map(([id, releaseDate]) => ({
+                  id,
+                  releaseDate,
                 })),
               },
             },
@@ -740,7 +795,19 @@ function ResourceDates({ draft }: { draft: Draft }) {
           );
         }}
       >
-        {draft.options.map((option) => (
+        <p>
+          Search to edit a release date. Corrections stay in place when movie
+          data refreshes.
+        </p>
+        <FloatingField>
+          <span>Find a movie to edit</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </FloatingField>
+        {visible.map((option) => (
           <FloatingField key={option.id}>
             <span>{option.name}</span>
             <input
@@ -754,7 +821,7 @@ function ResourceDates({ draft }: { draft: Draft }) {
         ))}
         <button
           type="submit"
-          disabled={mutation.isPending || !draft.options.length}
+          disabled={mutation.isPending || !Object.keys(dates).length}
         >
           Save release dates
         </button>
@@ -845,6 +912,7 @@ function Setup({
   const [rounds, setRounds] = useState(draft?.rounds || 2);
   const [options, setOptions] = useState(
     draft?.options
+      .filter((option) => !option.tmdbId)
       .map(
         (option) =>
           `${option.name}${option.releaseDate ? ` | ${option.releaseDate}` : ""}`,
@@ -1063,7 +1131,15 @@ function Setup({
             setResourceLabel(draft.resourceLabel);
             setParticipants(draft.participants);
             setRounds(draft.rounds);
-            setOptions(draft.options.map((option) => option.name).join("\n"));
+            setOptions(
+              draft.options
+                .filter((option) => !option.tmdbId)
+                .map(
+                  (option) =>
+                    `${option.name}${option.releaseDate ? ` | ${option.releaseDate}` : ""}`,
+                )
+                .join("\n"),
+            );
             setBaseRevision(draft.revision);
             mutation.reset();
           }}

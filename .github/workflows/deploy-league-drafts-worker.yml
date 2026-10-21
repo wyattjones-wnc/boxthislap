@@ -7,6 +7,11 @@ on:
       - workers/league-drafts/**
       - .github/workflows/deploy-league-drafts-worker.yml
   workflow_dispatch:
+    inputs:
+      refresh_movies:
+        description: Bootstrap/continue the movie catalog after deploying
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,6 +23,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -32,5 +38,27 @@ jobs:
         run: node --test workers/league-drafts/test/*.test.mjs
       - name: Validate League Drafts worker
         run: npx wrangler deploy --dry-run --config workers/league-drafts/wrangler.toml --outdir .tmp/league-drafts-dry-run
+      - name: Create movie resource table
+        run: npx wrangler d1 execute formula-one --remote --config workers/league-drafts/wrangler.toml --file workers/league-drafts/migrations/0002_movie_resource.sql
+      - name: Configure TMDB read credential
+        env:
+          TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        shell: bash
+        run: |
+          if [ -n "$TMDB_READ_ACCESS_TOKEN" ]; then
+            printf '%s' "$TMDB_READ_ACCESS_TOKEN" | npx wrangler secret put TMDB_READ_ACCESS_TOKEN --config workers/league-drafts/wrangler.toml
+          elif [ -n "$TMDB_API_KEY" ]; then
+            printf '%s' "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --config workers/league-drafts/wrangler.toml
+          else
+            echo "A TMDB repository secret is required."
+            exit 1
+          fi
       - name: Deploy League Drafts worker
         run: npx wrangler deploy --config workers/league-drafts/wrangler.toml
+      - name: Bootstrap movie resource
+        if: github.event_name == 'workflow_dispatch' && inputs.refresh_movies
+        env:
+          TMDB_READ_ACCESS_TOKEN: ${{ secrets.TMDB_READ_ACCESS_TOKEN }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: node scripts/refresh-draft-movies.mjs

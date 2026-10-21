@@ -343,3 +343,16 @@
 .resourceView > form {
   flex-shrink: 0;
 }
+
+.movieCredits {
+  margin-top: var(--space-4);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.movieCredits summary {
+  cursor: pointer;
+}
+.movieCredits img {
+  display: block;
+  margin-top: var(--space-3);
+}

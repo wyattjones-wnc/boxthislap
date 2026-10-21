@@ -188,7 +188,8 @@ export function transition(
       previous.managerId !== actor ||
       (body.optionId
         ? previous.optionId !== body.optionId
-        : choiceKey(previous.optionName) !== choiceKey(body.optionName))
+        : choiceKey(previous.requestedName || previous.optionName) !==
+          choiceKey(body.optionName))
     )
       fail(409, "This retry key was used for another selection.");
     return original;
@@ -206,7 +207,18 @@ export function transition(
     const config = configuration(body);
     if (config.league !== state.league || config.year !== state.year)
       fail(400, "A draft cannot move to another league or year.");
-    Object.assign(state, config);
+    const catalogOptions = state.options.filter(
+      (option) =>
+        option.tmdbId &&
+        !config.options.some(
+          (manual) =>
+            manual.id === option.id ||
+            choiceKey(manual.name) === choiceKey(option.name),
+        ),
+    );
+    Object.assign(state, config, {
+      options: [...config.options, ...catalogOptions],
+    });
     for (const id of Object.keys(state.preferences)) {
       if (!state.participants.some((manager) => manager.id === id))
         delete state.preferences[id];
@@ -232,11 +244,18 @@ export function transition(
       ? state.options.find((entry) => entry.id === body.optionId)
       : state.options.find(
           (entry) => choiceKey(entry.name) === choiceKey(body.optionName),
+        ) ||
+        state.options.find((entry) =>
+          (entry.previousNames || []).some(
+            (name) => choiceKey(name) === choiceKey(body.optionName),
+          ),
         ) || {
           id: `custom-${crypto.randomUUID()}`,
           name: label(body.optionName, "Pick name", 200),
         };
     if (!option) fail(400, "That resource option does not exist.");
+    if (option.retired)
+      fail(409, "That movie is no longer in this release-year resource.");
     if (
       state.picks.some(
         (pick) =>
@@ -258,6 +277,7 @@ export function transition(
       managerId: actor,
       optionId: option.id,
       optionName: option.name,
+      ...(!body.optionId ? { requestedName: body.optionName } : {}),
     };
     nextTurn(state);
   } else if (action === "resource-dates") {
@@ -270,6 +290,7 @@ export function transition(
         fail(400, "Choose distinct existing resource entries.");
       seen.add(update.id);
       option.releaseDate = releaseDate(update.releaseDate);
+      if (option.tmdbId) option.releaseDateOverride = option.releaseDate;
     }
   } else if (action === "pause") {
     if (state.status !== "active")

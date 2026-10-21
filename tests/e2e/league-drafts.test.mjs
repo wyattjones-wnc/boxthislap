@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+/** @param {import("@playwright/test").Locator} locator */
+async function heightOf(locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("Expected a visible drafting card.");
+  return box.height;
+}
+
 const participants = ["1", "2", "3", "6"].map((id) => ({
   id,
   name: `Manager ${id}`,
@@ -11,6 +18,12 @@ function fixture() {
     year: 2027,
     name: "Mobile test draft",
     resourceLabel: "Movies",
+    movieResource: {
+      source: "tmdb",
+      policy: "first-worldwide",
+      updatedAt: "2026-10-21T09:00:00.000Z",
+      count: 10,
+    },
     revision: 3,
     status: "active",
     reason: "",
@@ -145,13 +158,16 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   const active = page.locator('[data-page="fantasy-office-2027-active"]');
   await expect(active).toHaveClass(/is-active/);
   const pickCard = active.locator("#draft-options");
-  const pickHeight = (await pickCard.boundingBox()).height;
+  const pickHeight = await heightOf(pickCard);
   const heading = active.getByRole("heading", {
     name: "Fantasy Office",
     exact: true,
   });
   expect(
-    await heading.evaluate((element) => element.parentElement.offsetHeight),
+    await heading.evaluate(
+      (element) =>
+        element.parentElement?.offsetHeight ?? Number.POSITIVE_INFINITY,
+    ),
   ).toBeLessThan(50);
   await active
     .getByRole("searchbox", { name: "Movie or pick name" })
@@ -169,7 +185,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await expect(active.getByRole("rowheader").first()).toHaveText(
     "Test Movie 0",
   );
-  expect((await pickCard.boundingBox()).height).toBe(pickHeight);
+  expect(await heightOf(pickCard)).toBe(pickHeight);
   const suggestions = active.getByRole("region", { name: "Pick suggestions" });
   expect(
     await suggestions.evaluate(
@@ -181,7 +197,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await active
     .getByRole("searchbox", { name: "Movie or pick name" })
     .fill("Movie 0");
-  expect((await pickCard.boundingBox()).height).toBe(pickHeight);
+  expect(await heightOf(pickCard)).toBe(pickHeight);
   const option = active.getByRole("row").filter({
     has: page.getByText("Test Movie 0", { exact: true }),
   });
@@ -192,7 +208,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   );
   await active.getByRole("tab", { name: "Resource", exact: true }).click();
   const resourceCard = active.locator("#draft-options");
-  const initialHeight = (await resourceCard.boundingBox()).height;
+  const initialHeight = await heightOf(resourceCard);
   expect(initialHeight).toBe(pickHeight);
   await expect(active.getByRole("caption")).toHaveCount(0);
   await active.getByRole("button", { name: "Name", exact: true }).click();
@@ -210,7 +226,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await expect(active.getByRole("rowheader").first()).toContainText(
     "Test Movie 0",
   );
-  expect((await resourceCard.boundingBox()).height).toBe(initialHeight);
+  expect(await heightOf(resourceCard)).toBe(initialHeight);
   const list = active.getByRole("region", { name: "Resource list" });
   expect(
     await list.evaluate(
@@ -225,7 +241,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     .getByRole("searchbox", { name: "Search resource" })
     .fill("Test Movie 0");
   await expect(active.getByRole("row")).toHaveCount(2);
-  expect((await resourceCard.boundingBox()).height).toBe(initialHeight);
+  expect(await heightOf(resourceCard)).toBe(initialHeight);
   await expect(active.getByText("Test Movie 1", { exact: true })).toHaveCount(
     0,
   );
@@ -233,6 +249,16 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     active.getByRole("button", { name: "Taken", exact: true }),
   ).toBeDisabled();
   await expect(active.getByText("Taken by Manager 1")).toBeVisible();
+  await active.getByText(/Movie data and credits/).click();
+  await expect(
+    active.getByRole("img", { name: "TMDB", exact: true }),
+  ).toBeVisible();
+  await expect(
+    active.getByText(
+      "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+    ),
+  ).toBeVisible();
+  expect(await heightOf(resourceCard)).toBe(initialHeight);
   await page
     .locator('[data-nav-scope="fantasy-office-2027"]')
     .getByRole("tab", { name: "Draft", exact: true })

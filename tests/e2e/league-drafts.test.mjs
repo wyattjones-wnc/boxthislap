@@ -19,6 +19,11 @@ function fixture() {
     options: Array.from({ length: 10 }, (_, index) => ({
       id: `movie-${index}`,
       name: `Test Movie ${index}`,
+      ...(index === 0
+        ? { releaseDate: "2027-06-01" }
+        : index === 1
+          ? { releaseDate: "2027-01-15" }
+          : {}),
     })),
     schedule: [participants, [...participants].reverse()].flatMap(
       (order, round) =>
@@ -51,6 +56,7 @@ test("2027 navigation preserves the current-year default and a signed-out draft 
   await page.getByRole("link", { name: "Open 2027 Fantasy Office" }).click();
   const draft = page.locator('[data-page="fantasy-office-2027-draft"]');
   await expect(draft).toHaveClass(/is-active/);
+  await expect(draft.locator(".manager-chip")).toHaveCount(4);
   await expect(
     draft.getByRole("link", { name: "Log in", exact: true }),
   ).toBeVisible();
@@ -130,6 +136,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   });
   const draft = page.locator('[data-page="fantasy-office-2027-draft"]');
   await expect(draft).toHaveClass(/is-active/);
+  await expect(draft.locator(".manager-chip")).toHaveCount(4);
   await expect(draft.getByRole("status")).toContainText("Your turn");
   await expect(
     draft.getByRole("region", { name: "Draft choices" }),
@@ -149,6 +156,32 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     "Manager 2 is picking",
   );
   await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  const resourceCard = active.locator("#draft-options");
+  const initialHeight = (await resourceCard.boundingBox()).height;
+  await expect(active.getByRole("caption")).toHaveCount(0);
+  await active.getByRole("button", { name: "Name", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 9",
+  );
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 1",
+  );
+  await expect(
+    active.getByRole("columnheader", { name: /Release/ }),
+  ).toHaveAttribute("aria-sort", "ascending");
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toContainText(
+    "Test Movie 0",
+  );
+  expect((await resourceCard.boundingBox()).height).toBe(initialHeight);
+  const list = active.getByRole("region", { name: "Resource list" });
+  expect(
+    await list.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
@@ -156,6 +189,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     .getByRole("searchbox", { name: "Search resource" })
     .fill("Test Movie 0");
   await expect(active.getByRole("row")).toHaveCount(2);
+  expect((await resourceCard.boundingBox()).height).toBe(initialHeight);
   await expect(active.getByText("Test Movie 1", { exact: true })).toHaveCount(
     0,
   );

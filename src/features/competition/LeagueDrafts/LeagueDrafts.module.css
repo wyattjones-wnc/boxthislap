@@ -277,3 +277,47 @@
   font-size: 0.75rem;
   margin-top: var(--space-1);
 }
+
+.resourcePanel {
+  height: min(38rem, 75dvh);
+  min-height: 22rem;
+  display: flex;
+  flex-direction: column;
+}
+.resourcePanel .viewTabs {
+  flex-shrink: 0;
+}
+.resourceView {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.resourceView .resourceSearch {
+  flex-shrink: 0;
+}
+.resourceScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.resourceScroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-panel);
+  z-index: 1;
+}
+.panel .resourceTable .sortButton {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+.roster header h2 :global(.manager-chip) {
+  font-size: 0.875rem;
+}

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
 import { FloatingField } from "../../../components/FloatingField/FloatingField";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { useAppState } from "../../../app/providers";
 import {
   draftEndpoint,
@@ -21,6 +21,7 @@ import type {
   Participant,
 } from "./types";
 import styles from "./LeagueDrafts.module.css";
+import { MANAGER_COLORS } from "../../../../modules/siteConfig.js";
 
 function useDrafts(league?: League) {
   const { session } = useAppState();
@@ -350,6 +351,15 @@ function Options({
   const [tab, setTab] = useState("pick");
   const [search, setSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
+  const [sort, setSort] = useState<{
+    column: "name" | "release";
+    descending: boolean;
+  }>({ column: "name", descending: false });
+  const sortBy = (column: "name" | "release") =>
+    setSort((current) => ({
+      column,
+      descending: current.column === column ? !current.descending : false,
+    }));
   const [selected, setSelected] = useState<DraftOption | null>(null);
   const [retryKey, setRetryKey] = useState("");
   const mutation = useDraftAction(draft);
@@ -379,8 +389,28 @@ function Options({
           optionKey(option.name).includes(optionKey(query)),
         )
       : [];
+  if (tab === "resource")
+    options.sort((a, b) => {
+      // Undated entries stay last in either direction.
+      if (sort.column === "release" && (!a.releaseDate || !b.releaseDate)) {
+        if (Boolean(a.releaseDate) !== Boolean(b.releaseDate))
+          return a.releaseDate ? -1 : 1;
+      }
+      const comparison =
+        sort.column === "name"
+          ? a.name.localeCompare(b.name, undefined, {
+              sensitivity: "base",
+              numeric: true,
+            })
+          : (a.releaseDate || "").localeCompare(b.releaseDate || "") ||
+            a.name.localeCompare(b.name);
+      return sort.descending ? -comparison : comparison;
+    });
   return (
-    <section className={styles.panel} id="draft-options">
+    <section
+      className={`${styles.panel} ${tab === "resource" ? styles.resourcePanel : ""}`}
+      id="draft-options"
+    >
       {testMode && <h2>Admin test drafting</h2>}
       {testMode && (
         <p>
@@ -429,6 +459,7 @@ function Options({
       </div>
       <div
         role="tabpanel"
+        className={tab === "resource" ? styles.resourceView : undefined}
         id={`draft-${testMode ? "test-" : ""}panel`}
         aria-labelledby={`draft-${testMode ? "test-" : ""}${tab}-tab`}
       >
@@ -478,60 +509,98 @@ function Options({
             />
           </FloatingField>
         )}
-        {options.length > 0 && (
-          <table className={styles.resourceTable}>
-            <caption>
-              {tab === "resource"
-                ? draft.resourceLabel
-                : "Matching suggestions"}
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Release</th>
-                <th scope="col">Pick</th>
-              </tr>
-            </thead>
-            <tbody>
-              {options.map((option) => {
-                const pick = claimed(option);
-                return (
-                  <tr key={option.id}>
-                    <th scope="row">
-                      {option.name}
-                      {pick && (
-                        <span className={styles.resourceOwner}>
-                          Taken by {managerName(draft, pick.managerId)}
-                        </span>
+        <div
+          className={tab === "resource" ? styles.resourceScroll : undefined}
+          role={tab === "resource" ? "region" : undefined}
+          aria-label={tab === "resource" ? "Resource list" : undefined}
+          tabIndex={tab === "resource" ? 0 : undefined}
+        >
+          {options.length > 0 && (
+            <table className={styles.resourceTable}>
+              {tab === "pick" && <caption>Matching suggestions</caption>}
+              <thead>
+                <tr>
+                  {(["name", "release"] as const).map((column) => (
+                    <th
+                      scope="col"
+                      key={column}
+                      aria-sort={
+                        tab === "resource"
+                          ? sort.column === column
+                            ? sort.descending
+                              ? "descending"
+                              : "ascending"
+                            : "none"
+                          : undefined
+                      }
+                    >
+                      {tab === "resource" ? (
+                        <button
+                          type="button"
+                          className={styles.sortButton}
+                          onClick={() => sortBy(column)}
+                        >
+                          {column === "name" ? "Name" : "Release"}
+                          <span aria-hidden="true">
+                            {" "}
+                            {sort.column === column
+                              ? sort.descending
+                                ? "↓"
+                                : "↑"
+                              : "↕"}
+                          </span>
+                        </button>
+                      ) : column === "name" ? (
+                        "Name"
+                      ) : (
+                        "Release"
                       )}
                     </th>
-                    <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
-                    <td>
-                      <button
-                        type="button"
-                        disabled={Boolean(pick) || !canPick}
-                        onClick={() => choose(option)}
-                      >
-                        {pick
-                          ? "Taken"
-                          : testMode
-                            ? "Test select"
-                            : "Draft this"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        {tab === "resource" && !options.length && (
-          <p>
-            {draft.options.length
-              ? "No matching titles."
-              : "No resource options yet. Use Pick to enter any name."}
-          </p>
-        )}
+                  ))}
+                  <th scope="col">Pick</th>
+                </tr>
+              </thead>
+              <tbody>
+                {options.map((option) => {
+                  const pick = claimed(option);
+                  return (
+                    <tr key={option.id}>
+                      <th scope="row">
+                        {option.name}
+                        {pick && (
+                          <span className={styles.resourceOwner}>
+                            Taken by {managerName(draft, pick.managerId)}
+                          </span>
+                        )}
+                      </th>
+                      <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
+                      <td>
+                        <button
+                          type="button"
+                          disabled={Boolean(pick) || !canPick}
+                          onClick={() => choose(option)}
+                        >
+                          {pick
+                            ? "Taken"
+                            : testMode
+                              ? "Test select"
+                              : "Draft this"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+          {tab === "resource" && !options.length && (
+            <p>
+              {draft.options.length
+                ? "No matching titles."
+                : "No resource options yet. Use Pick to enter any name."}
+            </p>
+          )}
+        </div>
       </div>
       {selected && (
         <ContainedDialog
@@ -601,6 +670,21 @@ function Options({
     </section>
   );
 }
+function ManagerChip({ name }: { name: string }) {
+  const displayName = name.trim().split(/\s+/)[0] || "Manager";
+  const color =
+    MANAGER_COLORS[displayName.toLowerCase() as keyof typeof MANAGER_COLORS] ||
+    "#5f6978";
+  return (
+    <span
+      className="manager-chip"
+      style={{ "--manager-color": color } as CSSProperties}
+    >
+      <span aria-hidden="true" className="manager-dot" />
+      <span className="manager-name">{displayName}</span>
+    </span>
+  );
+}
 function Rosters({ draft }: { draft: Draft }) {
   return (
     <section aria-label="Draft choices">
@@ -615,7 +699,9 @@ function Rosters({ draft }: { draft: Draft }) {
               key={manager.id}
             >
               <header>
-                <h2>{manager.name}</h2>
+                <h2 aria-label={manager.name}>
+                  <ManagerChip name={manager.name} />
+                </h2>
                 <span>
                   {picks.length} / {draft.rounds}
                 </span>

@@ -389,26 +389,25 @@ function Options({
           optionKey(option.name).includes(optionKey(query)),
         )
       : [];
-  if (tab === "resource")
-    options.sort((a, b) => {
-      // Undated entries stay last in either direction.
-      if (sort.column === "release" && (!a.releaseDate || !b.releaseDate)) {
-        if (Boolean(a.releaseDate) !== Boolean(b.releaseDate))
-          return a.releaseDate ? -1 : 1;
-      }
-      const comparison =
-        sort.column === "name"
-          ? a.name.localeCompare(b.name, undefined, {
-              sensitivity: "base",
-              numeric: true,
-            })
-          : (a.releaseDate || "").localeCompare(b.releaseDate || "") ||
-            a.name.localeCompare(b.name);
-      return sort.descending ? -comparison : comparison;
-    });
+  options.sort((a, b) => {
+    // Undated entries stay last in either direction.
+    if (sort.column === "release" && (!a.releaseDate || !b.releaseDate)) {
+      if (Boolean(a.releaseDate) !== Boolean(b.releaseDate))
+        return a.releaseDate ? -1 : 1;
+    }
+    const comparison =
+      sort.column === "name"
+        ? a.name.localeCompare(b.name, undefined, {
+            sensitivity: "base",
+            numeric: true,
+          })
+        : (a.releaseDate || "").localeCompare(b.releaseDate || "") ||
+          a.name.localeCompare(b.name);
+    return sort.descending ? -comparison : comparison;
+  });
   return (
     <section
-      className={`${styles.panel} ${tab === "resource" ? styles.resourcePanel : ""}`}
+      className={`${styles.panel} ${styles.resourcePanel}`}
       id="draft-options"
     >
       {testMode && <h2>Admin test drafting</h2>}
@@ -459,7 +458,7 @@ function Options({
       </div>
       <div
         role="tabpanel"
-        className={tab === "resource" ? styles.resourceView : undefined}
+        className={styles.resourceView}
         id={`draft-${testMode ? "test-" : ""}panel`}
         aria-labelledby={`draft-${testMode ? "test-" : ""}${tab}-tab`}
       >
@@ -510,14 +509,13 @@ function Options({
           </FloatingField>
         )}
         <div
-          className={tab === "resource" ? styles.resourceScroll : undefined}
-          role={tab === "resource" ? "region" : undefined}
-          aria-label={tab === "resource" ? "Resource list" : undefined}
-          tabIndex={tab === "resource" ? 0 : undefined}
+          className={styles.resourceScroll}
+          role="region"
+          aria-label={tab === "resource" ? "Resource list" : "Pick suggestions"}
+          tabIndex={0}
         >
           {options.length > 0 && (
             <table className={styles.resourceTable}>
-              {tab === "pick" && <caption>Matching suggestions</caption>}
               <thead>
                 <tr>
                   {(["name", "release"] as const).map((column) => (
@@ -525,36 +523,28 @@ function Options({
                       scope="col"
                       key={column}
                       aria-sort={
-                        tab === "resource"
-                          ? sort.column === column
-                            ? sort.descending
-                              ? "descending"
-                              : "ascending"
-                            : "none"
-                          : undefined
+                        sort.column === column
+                          ? sort.descending
+                            ? "descending"
+                            : "ascending"
+                          : "none"
                       }
                     >
-                      {tab === "resource" ? (
-                        <button
-                          type="button"
-                          className={styles.sortButton}
-                          onClick={() => sortBy(column)}
-                        >
-                          {column === "name" ? "Name" : "Release"}
-                          <span aria-hidden="true">
-                            {" "}
-                            {sort.column === column
-                              ? sort.descending
-                                ? "↓"
-                                : "↑"
-                              : "↕"}
-                          </span>
-                        </button>
-                      ) : column === "name" ? (
-                        "Name"
-                      ) : (
-                        "Release"
-                      )}
+                      <button
+                        type="button"
+                        className={styles.sortButton}
+                        onClick={() => sortBy(column)}
+                      >
+                        {column === "name" ? "Name" : "Release"}
+                        <span aria-hidden="true">
+                          {" "}
+                          {sort.column === column
+                            ? sort.descending
+                              ? "↓"
+                              : "↑"
+                            : "↕"}
+                        </span>
+                      </button>
                     </th>
                   ))}
                   <th scope="col">Pick</th>
@@ -1315,20 +1305,16 @@ export function LeagueDraftPage({
   };
   return (
     <div className={styles.stack}>
-      <div className="league-detail-heading">
-        <div>
-          <h1>
-            {league === "fantasy-office" ? "Fantasy Office" : "World Cup"}
-          </h1>
-          <p>
-            2027 ·{" "}
-            {mode === "active"
-              ? "Active draft"
-              : mode === "manage"
-                ? "Manage drafts"
-                : "Draft"}
-          </p>
-        </div>
+      <div className={styles.pageHeading}>
+        <h1>{league === "fantasy-office" ? "Fantasy Office" : "World Cup"}</h1>
+        <p>
+          2027 ·{" "}
+          {mode === "active"
+            ? "Active draft"
+            : mode === "manage"
+              ? "Manage drafts"
+              : "Draft"}
+        </p>
       </div>
       {!draftEndpoint() && (
         <p>League drafting is currently available on dev.</p>

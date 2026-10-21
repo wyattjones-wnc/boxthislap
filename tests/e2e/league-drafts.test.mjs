@@ -144,9 +144,44 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await draft.getByRole("link", { name: "Go to drafting" }).click();
   const active = page.locator('[data-page="fantasy-office-2027-active"]');
   await expect(active).toHaveClass(/is-active/);
+  const pickCard = active.locator("#draft-options");
+  const pickHeight = (await pickCard.boundingBox()).height;
+  const heading = active.getByRole("heading", {
+    name: "Fantasy Office",
+    exact: true,
+  });
+  expect(
+    await heading.evaluate((element) => element.parentElement.offsetHeight),
+  ).toBeLessThan(50);
+  await active
+    .getByRole("searchbox", { name: "Movie or pick name" })
+    .fill("Movie");
+  await expect(active.getByRole("caption")).toHaveCount(0);
+  await active.getByRole("button", { name: "Name", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 9",
+  );
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 1",
+  );
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 0",
+  );
+  expect((await pickCard.boundingBox()).height).toBe(pickHeight);
+  const suggestions = active.getByRole("region", { name: "Pick suggestions" });
+  expect(
+    await suggestions.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+  // Return to the default sort before checking the Resource view.
+  await active.getByRole("button", { name: "Name", exact: true }).click();
   await active
     .getByRole("searchbox", { name: "Movie or pick name" })
     .fill("Movie 0");
+  expect((await pickCard.boundingBox()).height).toBe(pickHeight);
   const option = active.getByRole("row").filter({
     has: page.getByText("Test Movie 0", { exact: true }),
   });
@@ -158,6 +193,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await active.getByRole("tab", { name: "Resource", exact: true }).click();
   const resourceCard = active.locator("#draft-options");
   const initialHeight = (await resourceCard.boundingBox()).height;
+  expect(initialHeight).toBe(pickHeight);
   await expect(active.getByRole("caption")).toHaveCount(0);
   await active.getByRole("button", { name: "Name", exact: true }).click();
   await expect(active.getByRole("rowheader").first()).toHaveText(

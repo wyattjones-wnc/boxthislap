@@ -23,9 +23,15 @@
 
         const storageKey = `boxThisLapLastPage:${window.location.pathname}`;
         try {
-          const savedHash = localStorage.getItem(storageKey);
-          if (!window.location.hash && savedHash?.startsWith("#")) {
-            window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${savedHash}`);
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+          const age = Date.now() - saved?.savedAt;
+          if (typeof saved?.hash === "string" && saved.hash.startsWith("#") &&
+              Number.isFinite(saved.savedAt) && age >= 0 && age < 60 * 60 * 1000) {
+            if (!window.location.hash) {
+              window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${saved.hash}`);
+            }
+          } else {
+            localStorage.removeItem(storageKey);
           }
         } catch {
           // Storage may be unavailable; navigation must still work.
@@ -34,7 +40,7 @@
         const rememberPage = () => {
           try {
             if (window.location.hash) {
-              localStorage.setItem(storageKey, window.location.hash);
+              localStorage.setItem(storageKey, JSON.stringify({ hash: window.location.hash, savedAt: Date.now() }));
             } else {
               localStorage.removeItem(storageKey);
             }
@@ -201,7 +207,7 @@
     </script>
     <script>
       window.BOX_THIS_LAP_RELEASE = "2.5";
-      window.BOX_THIS_LAP_VERSION = "2026.10.22.07.57";
+      window.BOX_THIS_LAP_VERSION = "2026.10.22.23.17";
     </script>
     <link rel="manifest" href="manifest.webmanifest?v=202606300001" data-app-manifest vite-ignore>
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=202606300001" data-apple-touch-icon>
@@ -215,7 +221,7 @@
         document.querySelector("[data-icon-512]")?.setAttribute("href", "assets/dev-icon-512.png?v=202607140001");
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=202610220757">
+    <link rel="stylesheet" href="styles.css?v=202610222317">
   </head>
   <body>
     <div class="pull-refresh-indicator" aria-hidden="true">

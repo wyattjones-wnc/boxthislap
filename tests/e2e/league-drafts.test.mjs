@@ -32,10 +32,18 @@ function fixture() {
     options: Array.from(
       { length: 10 },
       (_, index) =>
-        /** @type {{ id: string, name: string, releaseDate?: string, worldwideReleaseDate?: string, tmdbId?: number, previousNames?: string[] }} */ ({
+        /** @type {{ id: string, name: string, popularity?: number, releaseDate?: string, worldwideReleaseDate?: string, tmdbId?: number, previousNames?: string[] }} */ ({
           id: `movie-${index}`,
           name: `Test Movie ${index}`,
           tmdbId: index + 1,
+          popularity:
+            index === 8
+              ? undefined
+              : index === 9
+                ? 0
+                : index === 4
+                  ? 200
+                  : 10 - index,
           worldwideReleaseDate: "2027-01-01",
           ...(index === 0
             ? { releaseDate: "2027-06-01" }
@@ -179,6 +187,22 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     .getByRole("searchbox", { name: "Movie or pick name" })
     .fill("Movie");
   await expect(active.getByRole("caption")).toHaveCount(0);
+  await expect(
+    active.getByRole("columnheader", { name: /Popularity/ }),
+  ).toHaveAttribute("aria-sort", "descending");
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 4",
+  );
+  await active.getByRole("button", { name: "Popularity", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 9",
+  );
+  await expect(active.getByRole("rowheader").last()).toHaveText("Test Movie 8");
+  await active.getByRole("button", { name: "Popularity", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 4",
+  );
+  await active.getByRole("button", { name: "Name", exact: true }).click();
   await active.getByRole("button", { name: "Name", exact: true }).click();
   await expect(active.getByRole("rowheader").first()).toHaveText(
     "Test Movie 9",
@@ -232,6 +256,13 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await expect(active.getByRole("rowheader").first()).toContainText(
     "Test Movie 0",
   );
+  await active.getByRole("button", { name: "Popularity", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 4",
+  );
+  await expect(
+    active.getByRole("columnheader", { name: /Popularity/ }),
+  ).toHaveAttribute("aria-sort", "descending");
   expect(await heightOf(resourceCard)).toBe(initialHeight);
   const list = active.getByRole("region", { name: "Resource list" });
   expect(

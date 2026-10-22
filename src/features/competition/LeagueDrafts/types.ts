@@ -10,6 +10,7 @@ export interface DraftOption {
   name: string;
   releaseDate?: string;
   worldwideReleaseDate?: string;
+  popularity?: number | null;
   tmdbId?: number;
   previousNames?: string[];
   retired?: boolean;

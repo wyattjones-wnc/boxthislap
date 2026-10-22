@@ -38,6 +38,7 @@ const entry = (
   name,
   releaseDate: date,
   worldwideReleaseDate: date || "2027-01-01",
+  popularity: 12.34,
   previousNames,
 });
 const catalog = (
@@ -47,12 +48,14 @@ const catalog = (
   year: 2027,
   source: "tmdb",
   policy: "unreleased-na-2027",
+  metricsVersion: 1,
   movies,
   updatedAt,
 });
 const details = (id, title, date, releases = null) => ({
   id,
   title,
+  popularity: 12.34,
   release_date: date,
   release_dates: {
     results: [
@@ -71,6 +74,7 @@ const details = (id, title, date, releases = null) => ({
 const start = () => ({
   phase: "discover",
   policy: "unreleased-na-2027",
+  metricsVersion: 1,
   regionIndex: 0,
   page: 1,
   totalPages: null,
@@ -217,6 +221,12 @@ test("a rename keeps the TMDB ID and previous names", () => {
     entry(1, "Working title"),
   );
   assert.equal(movie.id, "tmdb-1");
+  assert.equal(movie.popularity, 12.34);
+  const invalid = details(2, "No metric", "2027-06-01");
+  invalid.popularity = null;
+  assert.equal(movieFromDetails(invalid, 2027).popularity, null);
+  invalid.popularity = 0;
+  assert.equal(movieFromDetails(invalid, 2027).popularity, 0);
   assert.deepEqual(movie.previousNames, ["Working title"]);
 });
 
@@ -334,6 +344,7 @@ test("legacy and free-text picks adopt stable identity, remain taken after a ren
   assert.equal(state.options.length, 1);
   assert.equal(state.options[0].id, "legacy");
   assert.equal(state.options[0].tmdbId, 1);
+  assert.equal(state.options[0].popularity, 12.34);
   assert.equal(state.options[0].name, "New title");
   assert.deepEqual(state.picks, before.picks);
   assert.deepEqual(state.requests, before.requests);
@@ -633,6 +644,7 @@ test("concurrent refreshes are leased, provider failures retain the publication,
       JSON.stringify({
         phase: "drafts",
         policy: "unreleased-na-2027",
+        metricsVersion: 1,
         after: "",
       }),
     );

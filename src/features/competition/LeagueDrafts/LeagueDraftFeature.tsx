@@ -354,13 +354,19 @@ function Options({
   const [search, setSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
   const [sort, setSort] = useState<{
-    column: "name" | "release";
+    column: "name" | "release" | "popularity";
     descending: boolean;
-  }>({ column: "name", descending: false });
-  const sortBy = (column: "name" | "release") =>
+  }>({
+    column: draft.league === "fantasy-office" ? "popularity" : "name",
+    descending: draft.league === "fantasy-office",
+  });
+  const sortBy = (column: "name" | "release" | "popularity") =>
     setSort((current) => ({
       column,
-      descending: current.column === column ? !current.descending : false,
+      descending:
+        current.column === column
+          ? !current.descending
+          : column === "popularity",
     }));
   const [selected, setSelected] = useState<DraftOption | null>(null);
   const [retryKey, setRetryKey] = useState("");
@@ -423,6 +429,17 @@ function Options({
         )
       : [];
   options.sort((a, b) => {
+    if (sort.column === "popularity") {
+      if (a.popularity == null || b.popularity == null) {
+        if ((a.popularity == null) !== (b.popularity == null))
+          return a.popularity == null ? 1 : -1;
+      }
+      const difference = (a.popularity ?? 0) - (b.popularity ?? 0);
+      return (
+        (sort.descending ? -difference : difference) ||
+        a.name.localeCompare(b.name)
+      );
+    }
     // Undated entries stay last in either direction.
     if (sort.column === "release" && (!a.releaseDate || !b.releaseDate)) {
       if (Boolean(a.releaseDate) !== Boolean(b.releaseDate))
@@ -567,7 +584,10 @@ function Options({
             <table className={styles.resourceTable}>
               <thead>
                 <tr>
-                  {(["name", "release"] as const).map((column) => (
+                  {(draft.league === "fantasy-office"
+                    ? (["name", "release", "popularity"] as const)
+                    : (["name", "release"] as const)
+                  ).map((column) => (
                     <th
                       scope="col"
                       key={column}
@@ -584,7 +604,11 @@ function Options({
                         className={styles.sortButton}
                         onClick={() => sortBy(column)}
                       >
-                        {column === "name" ? "Name" : "Release"}
+                        {column === "name"
+                          ? "Name"
+                          : column === "release"
+                            ? "Release"
+                            : "Popularity"}
                         <span aria-hidden="true">
                           {" "}
                           {sort.column === column
@@ -613,6 +637,15 @@ function Options({
                         )}
                       </th>
                       <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
+                      {draft.league === "fantasy-office" && (
+                        <td title="TMDB interest score; refreshed nightly">
+                          {option.popularity == null
+                            ? "—"
+                            : option.popularity.toLocaleString(undefined, {
+                                maximumFractionDigits: 1,
+                              })}
+                        </td>
+                      )}
                       <td>
                         <button
                           type="button"

@@ -255,7 +255,7 @@
   width: 24%;
 }
 .resourceTable thead th:last-child {
-  width: 5.5rem;
+  width: 3.25rem;
 }
 .resourceTable tbody th {
   font-weight: 500;
@@ -388,4 +388,11 @@
   color: var(--text-muted);
   background: transparent;
   opacity: 1;
+}
+
+.resourceTable thead th:nth-child(3) {
+  width: 5.5rem;
+}
+.resourceTable td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
 }

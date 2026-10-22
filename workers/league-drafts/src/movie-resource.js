@@ -98,6 +98,10 @@ export async function movieForReview(env, reference, options = []) {
     name: details.title.trim(),
     releaseDate: northAmericanReleaseDate(details),
     worldwideReleaseDate: worldwideReleaseDate(details),
+    popularity:
+      Number.isFinite(details.popularity) && details.popularity >= 0
+        ? details.popularity
+        : null,
     previousNames: [],
   };
 }
@@ -136,6 +140,10 @@ export function movieFromDetails(details, year, previous, now = new Date()) {
     name,
     releaseDate,
     worldwideReleaseDate: firstWorldwide,
+    popularity:
+      Number.isFinite(details.popularity) && details.popularity >= 0
+        ? details.popularity
+        : null,
     previousNames: [
       ...new Set(
         [...(previous?.previousNames || []), previous?.name].filter(
@@ -372,6 +380,7 @@ export function mergeMovieCatalog(original, catalog) {
       ].slice(-40),
       releaseDate: hasOverride ? overrides[movie.tmdbId] : movie.releaseDate,
       worldwideReleaseDate: movie.worldwideReleaseDate,
+      popularity: movie.popularity ?? null,
       ...(hasOverride ? { releaseDateOverride: overrides[movie.tmdbId] } : {}),
     };
   });
@@ -457,10 +466,12 @@ export async function refreshMovieResource(
   if (row.lease_until > now.toISOString()) return { phase: "busy" };
   let job = JSON.parse(row.job);
   const previousPublication = JSON.parse(row.published);
-  if (job && job.policy !== MOVIE_POLICY) job = null;
+  if (job && (job.policy !== MOVIE_POLICY || job.metricsVersion !== 1))
+    job = null;
   if (
     !job &&
     previousPublication?.policy === MOVIE_POLICY &&
+    previousPublication?.metricsVersion === 1 &&
     row.next_run > now.toISOString()
   )
     return { phase: "idle" };
@@ -484,6 +495,7 @@ export async function refreshMovieResource(
     job ||= {
       phase: "discover",
       policy: MOVIE_POLICY,
+      metricsVersion: 1,
       regionIndex: 0,
       page: 1,
       totalPages: null,
@@ -497,6 +509,7 @@ export async function refreshMovieResource(
       published = {
         source: "tmdb",
         policy: MOVIE_POLICY,
+        metricsVersion: 1,
         year: MOVIE_YEAR,
         updatedAt: now.toISOString(),
         movies: job.movies.filter(
@@ -507,6 +520,7 @@ export async function refreshMovieResource(
       job = {
         phase: "drafts",
         policy: MOVIE_POLICY,
+        metricsVersion: 1,
         after: "",
         startedAt: job.startedAt,
       };

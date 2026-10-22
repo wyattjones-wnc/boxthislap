@@ -188,17 +188,20 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     .fill("Movie");
   await expect(active.getByRole("caption")).toHaveCount(0);
   await expect(
-    active.getByRole("columnheader", { name: /Popularity/ }),
-  ).toHaveAttribute("aria-sort", "descending");
+    active.getByRole("columnheader", { name: /Rank/ }),
+  ).toHaveAttribute("aria-sort", "ascending");
   await expect(active.getByRole("rowheader").first()).toHaveText(
     "Test Movie 4",
   );
-  await active.getByRole("button", { name: "Popularity", exact: true }).click();
+  await expect(
+    active.locator("tbody tr").first().getByRole("cell").nth(1),
+  ).toHaveText("#1");
+  await active.getByRole("button", { name: "Rank", exact: true }).click();
   await expect(active.getByRole("rowheader").first()).toHaveText(
     "Test Movie 9",
   );
   await expect(active.getByRole("rowheader").last()).toHaveText("Test Movie 8");
-  await active.getByRole("button", { name: "Popularity", exact: true }).click();
+  await active.getByRole("button", { name: "Rank", exact: true }).click();
   await expect(active.getByRole("rowheader").first()).toHaveText(
     "Test Movie 4",
   );
@@ -227,6 +230,9 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await active
     .getByRole("searchbox", { name: "Movie or pick name" })
     .fill("Movie 0");
+  await expect(
+    active.locator("tbody tr").first().getByRole("cell").nth(1),
+  ).toHaveText("#2");
   expect(await heightOf(pickCard)).toBe(pickHeight);
   const option = active.getByRole("row").filter({
     has: page.getByText("Test Movie 0", { exact: true }),
@@ -256,13 +262,13 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await expect(active.getByRole("rowheader").first()).toContainText(
     "Test Movie 0",
   );
-  await active.getByRole("button", { name: "Popularity", exact: true }).click();
+  await active.getByRole("button", { name: "Rank", exact: true }).click();
   await expect(active.getByRole("rowheader").first()).toHaveText(
     "Test Movie 4",
   );
   await expect(
-    active.getByRole("columnheader", { name: /Popularity/ }),
-  ).toHaveAttribute("aria-sort", "descending");
+    active.getByRole("columnheader", { name: /Rank/ }),
+  ).toHaveAttribute("aria-sort", "ascending");
   expect(await heightOf(resourceCard)).toBe(initialHeight);
   const list = active.getByRole("region", { name: "Resource list" });
   expect(

@@ -354,19 +354,16 @@ function Options({
   const [search, setSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
   const [sort, setSort] = useState<{
-    column: "name" | "release" | "popularity";
+    column: "name" | "release" | "rank";
     descending: boolean;
   }>({
-    column: draft.league === "fantasy-office" ? "popularity" : "name",
-    descending: draft.league === "fantasy-office",
+    column: draft.league === "fantasy-office" ? "rank" : "name",
+    descending: false,
   });
-  const sortBy = (column: "name" | "release" | "popularity") =>
+  const sortBy = (column: "name" | "release" | "rank") =>
     setSort((current) => ({
       column,
-      descending:
-        current.column === column
-          ? !current.descending
-          : column === "popularity",
+      descending: current.column === column ? !current.descending : false,
     }));
   const [selected, setSelected] = useState<DraftOption | null>(null);
   const [retryKey, setRetryKey] = useState("");
@@ -404,6 +401,21 @@ function Options({
       );
     return !option.worldwideReleaseDate || option.worldwideReleaseDate > today;
   });
+  const rankedOptions = availableOptions
+    .filter((option) => option.popularity != null)
+    .sort(
+      (a, b) => b.popularity! - a.popularity! || a.name.localeCompare(b.name),
+    );
+  const ranks = new Map<string, number>();
+  let rank = 0;
+  rankedOptions.forEach((option, index) => {
+    if (
+      index === 0 ||
+      option.popularity !== rankedOptions[index - 1].popularity
+    )
+      rank = index + 1;
+    ranks.set(option.id, rank);
+  });
   const exact =
     availableOptions.find(
       (option) => optionKey(option.name) === optionKey(search),
@@ -429,12 +441,13 @@ function Options({
         )
       : [];
   options.sort((a, b) => {
-    if (sort.column === "popularity") {
-      if (a.popularity == null || b.popularity == null) {
-        if ((a.popularity == null) !== (b.popularity == null))
-          return a.popularity == null ? 1 : -1;
+    if (sort.column === "rank") {
+      const aRank = ranks.get(a.id);
+      const bRank = ranks.get(b.id);
+      if (aRank == null || bRank == null) {
+        if ((aRank == null) !== (bRank == null)) return aRank == null ? 1 : -1;
       }
-      const difference = (a.popularity ?? 0) - (b.popularity ?? 0);
+      const difference = (aRank ?? 0) - (bRank ?? 0);
       return (
         (sort.descending ? -difference : difference) ||
         a.name.localeCompare(b.name)
@@ -585,7 +598,7 @@ function Options({
               <thead>
                 <tr>
                   {(draft.league === "fantasy-office"
-                    ? (["name", "release", "popularity"] as const)
+                    ? (["name", "release", "rank"] as const)
                     : (["name", "release"] as const)
                   ).map((column) => (
                     <th
@@ -602,13 +615,18 @@ function Options({
                       <button
                         type="button"
                         className={styles.sortButton}
+                        title={
+                          column === "rank"
+                            ? "Popularity rank among eligible movies; #1 is highest"
+                            : undefined
+                        }
                         onClick={() => sortBy(column)}
                       >
                         {column === "name"
                           ? "Name"
                           : column === "release"
                             ? "Release"
-                            : "Popularity"}
+                            : "Rank"}
                         <span aria-hidden="true">
                           {" "}
                           {sort.column === column
@@ -638,12 +656,10 @@ function Options({
                       </th>
                       <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
                       {draft.league === "fantasy-office" && (
-                        <td title="TMDB interest score; refreshed nightly">
-                          {option.popularity == null
-                            ? "—"
-                            : option.popularity.toLocaleString(undefined, {
-                                maximumFractionDigits: 1,
-                              })}
+                        <td title="Popularity rank among eligible movies; #1 is highest">
+                          {ranks.has(option.id)
+                            ? `#${ranks.get(option.id)}`
+                            : "—"}
                         </td>
                       )}
                       <td>

@@ -390,8 +390,8 @@
   opacity: 1;
 }
 
-.resourceTable thead th:nth-child(3) {
-  width: 5.5rem;
+.resourceTable thead th:nth-child(3):not(:last-child) {
+  width: 3.5rem;
 }
 .resourceTable td:nth-child(3) {
   font-variant-numeric: tabular-nums;

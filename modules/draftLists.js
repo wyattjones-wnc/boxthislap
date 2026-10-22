@@ -87,6 +87,7 @@ export function createDraftListsController({ getManagerId, request }) {
     document.addEventListener("pointercancel", cancelPointerDrag, true);
     document.addEventListener("error", handleImageError, true);
     window.addEventListener("boxthislap:draft-list-reorder", handleReactReorder);
+    window.addEventListener("boxthislap:draft-list-saved", () => { state.loadedManagerId = ""; });
   }
 
   function renderPage() {
@@ -102,6 +103,8 @@ export function createDraftListsController({ getManagerId, request }) {
       reset();
     }
 
+    const requestedSheet = new URLSearchParams(window.location.hash.split("?")[1] || "").get("sheet");
+    if (requestedSheet && state.sheets.some((sheet) => sheet.id === requestedSheet)) state.activeSheetId = requestedSheet;
     render();
     if (!state.loading && state.loadedManagerId !== managerId) return load();
     return state.loadPromise || Promise.resolve();
@@ -124,6 +127,8 @@ export function createDraftListsController({ getManagerId, request }) {
         state.sheets = Array.isArray(response.sheets) ? response.sheets.map(normalizeSheet) : [];
         state.items = Array.isArray(response.items) ? response.items.map(normalizeItem) : [];
         state.loadedManagerId = managerId;
+        const requestedSheet = new URLSearchParams(window.location.hash.split("?")[1] || "").get("sheet");
+        if (requestedSheet && state.sheets.some((sheet) => sheet.id === requestedSheet)) state.activeSheetId = requestedSheet;
         if (!state.sheets.some((sheet) => sheet.id === state.activeSheetId)) {
           state.activeSheetId = state.sheets.find((sheet) => sheet.id === DEFAULT_SHEET_ID)?.id || state.sheets[0]?.id || "";
         }

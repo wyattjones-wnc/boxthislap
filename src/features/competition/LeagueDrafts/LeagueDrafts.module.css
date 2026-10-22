@@ -279,6 +279,7 @@
 }
 
 .resourcePanel {
+  position: relative;
   height: min(38rem, 75dvh);
   min-height: 22rem;
   display: flex;
@@ -395,4 +396,46 @@
 }
 .resourceTable td:nth-child(3) {
   font-variant-numeric: tabular-nums;
+}
+
+.listTools {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.listOptions {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  top: 100%;
+  display: grid;
+  gap: var(--space-3);
+  width: min(19rem, 75vw);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+.listOptions label {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.savedListTools {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+.resourceTable:has(thead th:nth-child(5)) th:nth-child(4),
+.resourceTable:has(thead th:nth-child(5)) th:nth-child(5) {
+  width: 2.75rem;
+}
+
+.resourcePanel .viewTabs {
+  padding-right: 3.25rem;
 }

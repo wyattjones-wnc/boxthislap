@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Ban } from "lucide-react";
+import { Check, Plus, Ban, Filter, ListPlus } from "lucide-react";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
 import { FloatingField } from "../../../components/FloatingField/FloatingField";
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
@@ -23,9 +23,16 @@ import type {
   Pick,
 } from "./types";
 import styles from "./LeagueDrafts.module.css";
+import {
+  eligibleMovies,
+  movieRanks,
+  loadMovieList,
+  saveMovie,
+  savedMovie,
+} from "./movieDraftList";
 import { MANAGER_COLORS } from "../../../../modules/siteConfig.js";
 
-function useDrafts(league?: League) {
+export function useDrafts(league?: League) {
   const { session } = useAppState();
   const managerId = session?.managerId || "";
   const client = useQueryClient();
@@ -67,7 +74,7 @@ function useDrafts(league?: League) {
   return { ...query, managerId };
 }
 
-function useDraftAction(draft: Draft) {
+export function useDraftAction(draft: Draft) {
   const client = useQueryClient();
   const { session } = useAppState();
   return useMutation({
@@ -350,7 +357,13 @@ function Options({
   managerId: string;
   testMode?: boolean;
 }) {
-  const [tab, setTab] = useState("pick");
+  const [tab, setTab] = useState(() =>
+    new URLSearchParams(window.location.hash.split("?")[1] || "").get(
+      "view",
+    ) === "resource"
+      ? "resource"
+      : "pick",
+  );
   const [search, setSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
   const [sort, setSort] = useState<{
@@ -384,37 +397,23 @@ function Options({
       );
     });
   const taken = selected ? claimed(selected) : undefined;
-  const today = new Date().toISOString().slice(0, 10);
-  const availableOptions = draft.options.filter((option) => {
-    if (option.retired) return false;
-    if (
-      draft.league === "fantasy-office" &&
-      draft.movieResource?.policy === "unreleased-na-2027"
-    )
-      return Boolean(
-        option.tmdbId &&
-        option.worldwideReleaseDate &&
-        option.worldwideReleaseDate > today &&
-        (option.releaseDate
-          ? option.releaseDate.startsWith("2027-")
-          : option.worldwideReleaseDate.startsWith("2027-")),
-      );
-    return !option.worldwideReleaseDate || option.worldwideReleaseDate > today;
+  const availableOptions = eligibleMovies(draft);
+  const ranks = movieRanks(availableOptions);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSave, setShowSave] = useState(false);
+  const client = useQueryClient();
+  const saved = useQuery({
+    queryKey: ["movie-draft-list", managerId],
+    queryFn: () => loadMovieList(managerId),
+    enabled: Boolean(
+      managerId && showSave && draft.league === "fantasy-office",
+    ),
+    staleTime: 30_000,
   });
-  const rankedOptions = availableOptions
-    .filter((option) => option.popularity != null)
-    .sort(
-      (a, b) => b.popularity! - a.popularity! || a.name.localeCompare(b.name),
-    );
-  const ranks = new Map<string, number>();
-  let rank = 0;
-  rankedOptions.forEach((option, index) => {
-    if (
-      index === 0 ||
-      option.popularity !== rankedOptions[index - 1].popularity
-    )
-      rank = index + 1;
-    ranks.set(option.id, rank);
+  const save = useMutation({
+    mutationFn: (option: DraftOption) => saveMovie(managerId, option),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["movie-draft-list", managerId] }),
   });
   const exact =
     availableOptions.find(
@@ -479,6 +478,40 @@ function Options({
           Dev testing: make a selection for {managerName(draft, managerId)}. The
           selection will be marked as an admin test pick.
         </p>
+      )}
+      {draft.league === "fantasy-office" && !testMode && (
+        <div className={styles.listTools}>
+          <button
+            type="button"
+            className={styles.pickIcon}
+            aria-label="Movie list options"
+            title="Movie list options"
+            aria-expanded={showFilters}
+            aria-controls="movie-list-options"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter aria-hidden="true" />
+          </button>
+          {showFilters && (
+            <div id="movie-list-options" className={styles.listOptions}>
+              {managerId ? (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showSave}
+                    onChange={(event) => setShowSave(event.target.checked)}
+                  />
+                  Save to Draft List
+                </label>
+              ) : (
+                <LoginLink />
+              )}
+              <a href="#draft-list?sheet=fantasy-office">
+                Open Fantasy Office Draft List
+              </a>
+            </div>
+          )}
+        </div>
       )}
       <div
         role="tablist"
@@ -587,6 +620,15 @@ function Options({
             />
           </FloatingField>
         )}
+        {showSave && (save.error || saved.error) && (
+          <p role="alert">{(save.error || saved.error)?.message}</p>
+        )}
+        {showSave && save.isSuccess && (
+          <p role="status">
+            {save.data.existed ? "Already in" : "Saved to"} your Fantasy Office
+            Draft List.
+          </p>
+        )}
         <div
           className={styles.resourceScroll}
           role="region"
@@ -639,6 +681,7 @@ function Options({
                     </th>
                   ))}
                   <th scope="col">Pick</th>
+                  {showSave && !testMode && <th scope="col">Save</th>}
                 </tr>
               </thead>
               <tbody>
@@ -699,6 +742,40 @@ function Options({
                           )}
                         </button>
                       </td>
+                      {showSave && !testMode && (
+                        <td>
+                          <button
+                            type="button"
+                            className={styles.pickIcon}
+                            aria-label={
+                              savedMovie(saved.data?.items || [], option)
+                                ? `Saved ${option.name}`
+                                : `Save ${option.name} to Draft List`
+                            }
+                            title={
+                              savedMovie(saved.data?.items || [], option)
+                                ? "Already in your Draft List"
+                                : "Save to Fantasy Office Draft List"
+                            }
+                            disabled={
+                              !managerId ||
+                              !option.tmdbId ||
+                              save.isPending ||
+                              saved.isLoading ||
+                              Boolean(
+                                savedMovie(saved.data?.items || [], option),
+                              )
+                            }
+                            onClick={() => save.mutate(option)}
+                          >
+                            {savedMovie(saved.data?.items || [], option) ? (
+                              <Check aria-hidden="true" />
+                            ) : (
+                              <ListPlus aria-hidden="true" />
+                            )}
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

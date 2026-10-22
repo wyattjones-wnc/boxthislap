@@ -443,3 +443,147 @@ test("admin reviews an unlisted movie and the associated resource becomes taken"
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 });
+
+test("a manager saves a movie once and drafts it directly from Fantasy Office Draft List", async ({
+  page,
+}) => {
+  const state = fixture();
+  /** @type {Array<{id:string,sheetId:string,name:string,dataUrl:string,releaseDate:string,rank:number}>} */
+  const items = [];
+  let revision = 0;
+  let posts = 0;
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        managerId: "1",
+        manager: { id: "1", displayName: "Manager 1" },
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00Z",
+          accessToken: "test-token",
+        },
+      }),
+    ),
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (
+        path.endsWith("/fantasy-office/items") &&
+        route.request().method() === "POST"
+      ) {
+        const body = route.request().postDataJSON();
+        expect(body.name).toBe("Test Movie 0");
+        expect(body.dataUrl).toBe("https://www.themoviedb.org/movie/1");
+        expect(body.releaseDate).toBe("2027-06-01");
+        posts++;
+        const item = {
+          ...body,
+          id: "saved-movie",
+          sheetId: "fantasy-office",
+          rank: 1,
+        };
+        items.push(item);
+        revision++;
+        return route.fulfill({ json: { ok: true, item, revision } });
+      }
+      if (path.endsWith("/draft-lists"))
+        return route.fulfill({
+          json: {
+            ok: true,
+            sheets: [
+              {
+                id: "fantasy-critic",
+                name: "Fantasy Critic",
+                icon: "gamepad",
+                position: 1,
+                revision: 0,
+              },
+              {
+                id: "fantasy-office",
+                name: "Fantasy Office",
+                icon: "film",
+                position: 2,
+                revision,
+              },
+            ],
+            items,
+          },
+        });
+      return route.fulfill({
+        json: {
+          ok: true,
+          managers: participants.map((p) => ({ ...p, active: true })),
+          sheets: [],
+          teams: [],
+          matchIds: [],
+        },
+      });
+    },
+  );
+  await page.route(
+    "https://box-this-lap-league-drafts-dev.boxthislap.workers.dev/**",
+    async (route) => {
+      if (route.request().url().endsWith("/picks")) {
+        const body = route.request().postDataJSON();
+        expect(body.optionId).toBe("movie-0");
+        expect(body.requestId).toBeTruthy();
+        state.picks.push({
+          ...state.schedule[0],
+          optionId: "movie-0",
+          optionName: "Test Movie 0",
+          requestId: body.requestId,
+          at: new Date().toISOString(),
+        });
+        state.revision++;
+        return route.fulfill({ json: { ok: true, draft: state } });
+      }
+      return route.fulfill({ json: { ok: true, drafts: [state] } });
+    },
+  );
+  await page.goto("/#fantasy-office-2027-active", {
+    waitUntil: "domcontentloaded",
+  });
+  const active = page.locator('[data-page="fantasy-office-2027-active"]');
+  await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  await expect(
+    active.getByRole("button", { name: "Save Test Movie 0 to Draft List" }),
+  ).toHaveCount(0);
+  await active.getByRole("button", { name: "Movie list options" }).click();
+  await active.getByRole("checkbox", { name: "Save to Draft List" }).check();
+  await active
+    .getByRole("button", {
+      name: "Save Test Movie 0 to Draft List",
+      exact: true,
+    })
+    .click();
+  await expect(
+    active.getByRole("button", { name: "Saved Test Movie 0", exact: true }),
+  ).toBeDisabled();
+  expect(posts).toBe(1);
+  await active
+    .getByRole("link", { name: "Open Fantasy Office Draft List" })
+    .click();
+  const list = page.locator('[data-page="draft-list"]');
+  await expect(list).toHaveClass(/is-active/);
+  await expect(
+    list.getByRole("heading", { name: "Test Movie 0", exact: true }),
+  ).toBeVisible();
+  await expect(list.getByText(/Movie rank #2/)).toBeVisible();
+  await list
+    .getByRole("button", { name: "Draft Test Movie 0", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Confirm your selection" })
+    .getByRole("button", { name: "Confirm pick", exact: true })
+    .click();
+  await expect(list.getByText(/Taken by Manager 1/)).toBeVisible();
+  await expect(
+    list.getByRole("button", { name: "Draft Test Movie 0", exact: true }),
+  ).toBeDisabled();
+  expect(state.picks).toHaveLength(1);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
+});

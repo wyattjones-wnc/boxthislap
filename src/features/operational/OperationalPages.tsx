@@ -12,7 +12,6 @@ import {
   Dices,
   Dumbbell,
   Eye,
-  ExternalLink,
   Film,
   Filter,
   Folder,
@@ -31,10 +30,13 @@ import {
   Trophy,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import type { DraftListItemView } from "./DraftListCards";
 import { IconButton } from "../../components/IconButton/IconButton";
 import { GuidesFeature } from "./GuidesFeature";
 import { LeagueDraftHubEntry } from "../competition/LeagueDrafts/LeagueDraftEntry";
+
+const DraftListCards = lazy(() => import("./DraftListCards"));
 
 export function NextPage() {
   return (
@@ -1999,19 +2001,6 @@ interface DraftListSheetView {
   revision: number;
 }
 
-interface DraftListItemView {
-  archived: boolean;
-  dataUrl: string;
-  drafted: boolean;
-  id: string;
-  imageUrl: string;
-  name: string;
-  rank: number;
-  releaseLabel: string;
-  sheetId: string;
-  unavailable: boolean;
-}
-
 interface DraftListView {
   activeSheetId: string;
   emptyAction: "" | "add" | "clear" | "filters" | "retry";
@@ -2102,16 +2091,24 @@ function DraftListItems() {
     );
   }
   if (view.items.length) {
-    return sortable.orderedItems.map((item, index) => (
-      <DraftListCard
-        dragging={sortable.draggingId === item.id}
-        item={item}
-        moveWithKeyboard={sortable.moveWithKeyboard}
-        rank={index + 1}
-        startDrag={sortable.start}
-        key={item.id}
-      />
-    ));
+    return (
+      <Suspense fallback={<p>Loading Draft List…</p>}>
+        <DraftListCards
+          items={sortable.orderedItems}
+          sheetId={view.activeSheetId}
+          draggingId={sortable.draggingId}
+          renderHandle={(item) => (
+            <SortHandle
+              className="draft-list-drag-handle"
+              id={item.id}
+              label={`Reorder ${item.name}`}
+              onKeyboardMove={sortable.moveWithKeyboard}
+              onPointerDown={sortable.start}
+            />
+          )}
+        />
+      </Suspense>
+    );
   }
   return (
     <div className="draft-list-empty">
@@ -2139,91 +2136,6 @@ function DraftListItems() {
         </button>
       ) : null}
     </div>
-  );
-}
-
-function DraftListCard({
-  dragging,
-  item,
-  moveWithKeyboard,
-  rank,
-  startDrag,
-}: {
-  dragging: boolean;
-  item: DraftListItemView;
-  moveWithKeyboard: (id: string, direction: -1 | 1) => void;
-  rank: number;
-  startDrag: (id: string, event: React.PointerEvent<HTMLElement>) => void;
-}) {
-  const [showImage, setShowImage] = useState(Boolean(item.imageUrl));
-  const flags = [
-    item.archived && "Archived",
-    item.drafted && "Drafted",
-    item.unavailable && "Unavailable",
-  ].filter(Boolean) as string[];
-  return (
-    <article
-      className={`draft-list-item${showImage ? " has-image" : ""}${dragging ? " is-dragging" : ""}`}
-      data-draft-list-item-id={item.id}
-      data-draft-list-sheet-id={item.sheetId}
-      data-sortable-id={item.id}
-      data-sortable-kind="draft-list"
-    >
-      {showImage ? (
-        <div className="draft-list-item-image">
-          <img
-            src={item.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            data-draft-list-image
-            onError={() => setShowImage(false)}
-          />
-        </div>
-      ) : null}
-      <span className="draft-list-rank">{rank}</span>
-      <div className="draft-list-item-main">
-        <h2>{item.name}</h2>
-        <p className="draft-list-item-date">{item.releaseLabel}</p>
-        {flags.length ? (
-          <div className="draft-list-item-flags">
-            {flags.map((flag) => (
-              <span key={flag}>{flag}</span>
-            ))}
-          </div>
-        ) : null}
-      </div>
-      <div className="draft-list-item-actions">
-        {item.dataUrl ? (
-          <a
-            className="icon-action-button draft-list-item-action"
-            href={item.dataUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open data page for ${item.name}`}
-            title="Open data page"
-          >
-            <ExternalLink aria-hidden="true" />
-          </a>
-        ) : null}
-        <button
-          className="icon-action-button draft-list-item-action"
-          type="button"
-          data-draft-list-edit={item.id}
-          aria-label={`Edit ${item.name}`}
-          title="Edit item"
-        >
-          <Pencil aria-hidden="true" />
-        </button>
-      </div>
-      <SortHandle
-        className="draft-list-drag-handle"
-        id={item.id}
-        label={`Reorder ${item.name}`}
-        onKeyboardMove={moveWithKeyboard}
-        onPointerDown={startDrag}
-      />
-    </article>
   );
 }
 

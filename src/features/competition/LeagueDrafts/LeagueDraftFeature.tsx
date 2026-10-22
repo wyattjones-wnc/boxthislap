@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, Plus, Ban, Filter, ListPlus } from "lucide-react";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
 import { FloatingField } from "../../../components/FloatingField/FloatingField";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { useAppState } from "../../../app/providers";
 import {
   draftEndpoint,
@@ -19,10 +20,19 @@ import type {
   DraftOption,
   League,
   Participant,
+  Pick,
 } from "./types";
 import styles from "./LeagueDrafts.module.css";
+import {
+  eligibleMovies,
+  movieRanks,
+  loadMovieList,
+  saveMovie,
+  savedMovie,
+} from "./movieDraftList";
+import { MANAGER_COLORS } from "../../../../modules/siteConfig.js";
 
-function useDrafts(league?: League) {
+export function useDrafts(league?: League) {
   const { session } = useAppState();
   const managerId = session?.managerId || "";
   const client = useQueryClient();
@@ -64,7 +74,7 @@ function useDrafts(league?: League) {
   return { ...query, managerId };
 }
 
-function useDraftAction(draft: Draft) {
+export function useDraftAction(draft: Draft) {
   const client = useQueryClient();
   const { session } = useAppState();
   return useMutation({
@@ -347,9 +357,27 @@ function Options({
   managerId: string;
   testMode?: boolean;
 }) {
-  const [tab, setTab] = useState("pick");
+  const [tab, setTab] = useState(() =>
+    new URLSearchParams(window.location.hash.split("?")[1] || "").get(
+      "view",
+    ) === "resource"
+      ? "resource"
+      : "pick",
+  );
   const [search, setSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
+  const [sort, setSort] = useState<{
+    column: "name" | "release" | "rank";
+    descending: boolean;
+  }>({
+    column: draft.league === "fantasy-office" ? "rank" : "name",
+    descending: false,
+  });
+  const sortBy = (column: "name" | "release" | "rank") =>
+    setSort((current) => ({
+      column,
+      descending: current.column === column ? !current.descending : false,
+    }));
   const [selected, setSelected] = useState<DraftOption | null>(null);
   const [retryKey, setRetryKey] = useState("");
   const mutation = useDraftAction(draft);
@@ -357,15 +385,45 @@ function Options({
     draft.status === "active" &&
     draft.schedule[draft.picks.length]?.managerId === managerId;
   const claimed = (option: DraftOption) =>
-    draft.picks.find(
-      (pick) =>
-        pick.optionId === option.id ||
-        optionKey(pick.optionName) === optionKey(option.name),
-    );
+    draft.picks.find((pick) => {
+      const previous = draft.options.find(
+        (entry) => entry.id === pick.optionId,
+      );
+      if (pick.optionId === option.id) return true;
+      const tmdbId = pick.tmdbId || previous?.tmdbId;
+      if (tmdbId && option.tmdbId) return tmdbId === option.tmdbId;
+      return (
+        optionKey(previous?.name || pick.optionName) === optionKey(option.name)
+      );
+    });
   const taken = selected ? claimed(selected) : undefined;
-  const exact = draft.options.find(
-    (option) => optionKey(option.name) === optionKey(search),
-  );
+  const availableOptions = eligibleMovies(draft);
+  const ranks = movieRanks(availableOptions);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSave, setShowSave] = useState(false);
+  const client = useQueryClient();
+  const saved = useQuery({
+    queryKey: ["movie-draft-list", managerId],
+    queryFn: () => loadMovieList(managerId),
+    enabled: Boolean(
+      managerId && showSave && draft.league === "fantasy-office",
+    ),
+    staleTime: 30_000,
+  });
+  const save = useMutation({
+    mutationFn: (option: DraftOption) => saveMovie(managerId, option),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["movie-draft-list", managerId] }),
+  });
+  const exact =
+    availableOptions.find(
+      (option) => optionKey(option.name) === optionKey(search),
+    ) ||
+    availableOptions.find((option) =>
+      (option.previousNames || []).some(
+        (name) => optionKey(name) === optionKey(search),
+      ),
+    );
   const custom = exact || { id: "", name: search.trim() };
   const choose = (option: DraftOption) => {
     mutation.reset();
@@ -375,18 +433,85 @@ function Options({
   const query = tab === "resource" ? resourceSearch : search;
   const options =
     tab === "resource" || query.trim()
-      ? draft.options.filter((option) =>
-          optionKey(option.name).includes(optionKey(query)),
+      ? availableOptions.filter((option) =>
+          [option.name, ...(option.previousNames || [])].some((name) =>
+            optionKey(name).includes(optionKey(query)),
+          ),
         )
       : [];
+  options.sort((a, b) => {
+    if (sort.column === "rank") {
+      const aRank = ranks.get(a.id);
+      const bRank = ranks.get(b.id);
+      if (aRank == null || bRank == null) {
+        if ((aRank == null) !== (bRank == null)) return aRank == null ? 1 : -1;
+      }
+      const difference = (aRank ?? 0) - (bRank ?? 0);
+      return (
+        (sort.descending ? -difference : difference) ||
+        a.name.localeCompare(b.name)
+      );
+    }
+    // Undated entries stay last in either direction.
+    if (sort.column === "release" && (!a.releaseDate || !b.releaseDate)) {
+      if (Boolean(a.releaseDate) !== Boolean(b.releaseDate))
+        return a.releaseDate ? -1 : 1;
+    }
+    const comparison =
+      sort.column === "name"
+        ? a.name.localeCompare(b.name, undefined, {
+            sensitivity: "base",
+            numeric: true,
+          })
+        : (a.releaseDate || "").localeCompare(b.releaseDate || "") ||
+          a.name.localeCompare(b.name);
+    return sort.descending ? -comparison : comparison;
+  });
   return (
-    <section className={styles.panel} id="draft-options">
+    <section
+      className={`${styles.panel} ${styles.resourcePanel}`}
+      id="draft-options"
+    >
       {testMode && <h2>Admin test drafting</h2>}
       {testMode && (
         <p>
           Dev testing: make a selection for {managerName(draft, managerId)}. The
           selection will be marked as an admin test pick.
         </p>
+      )}
+      {draft.league === "fantasy-office" && !testMode && (
+        <div className={styles.listTools}>
+          <button
+            type="button"
+            className={styles.pickIcon}
+            aria-label="Movie list options"
+            title="Movie list options"
+            aria-expanded={showFilters}
+            aria-controls="movie-list-options"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter aria-hidden="true" />
+          </button>
+          {showFilters && (
+            <div id="movie-list-options" className={styles.listOptions}>
+              {managerId ? (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showSave}
+                    onChange={(event) => setShowSave(event.target.checked)}
+                  />
+                  Save to Draft List
+                </label>
+              ) : (
+                <LoginLink />
+              )}
+              <a href="#draft-list?sheet=fantasy-office">
+                Open Fantasy Office Draft List
+              </a>
+            </div>
+          )}
+        </div>
       )}
       <div
         role="tablist"
@@ -429,6 +554,7 @@ function Options({
       </div>
       <div
         role="tabpanel"
+        className={styles.resourceView}
         id={`draft-${testMode ? "test-" : ""}panel`}
         aria-labelledby={`draft-${testMode ? "test-" : ""}${tab}-tab`}
       >
@@ -436,7 +562,13 @@ function Options({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (canPick && search.trim() && !claimed(custom)) choose(custom);
+              if (
+                canPick &&
+                search.trim() &&
+                !claimed(custom) &&
+                !("retired" in custom && custom.retired)
+              )
+                choose(custom);
             }}
           >
             <p id="pick-help" className={styles.pickHelp}>
@@ -455,12 +587,22 @@ function Options({
               </FloatingField>
               <button
                 type="submit"
-                className={styles.pickSubmit}
+                className={`${styles.pickSubmit} ${styles.pickIcon}`}
+                aria-label={claimed(custom) ? "Taken" : "Draft"}
+                title={claimed(custom) ? "Already taken" : "Draft this name"}
+                data-taken={Boolean(claimed(custom))}
                 disabled={
-                  !canPick || !search.trim() || Boolean(claimed(custom))
+                  !canPick ||
+                  !search.trim() ||
+                  Boolean(claimed(custom)) ||
+                  ("retired" in custom && Boolean(custom.retired))
                 }
               >
-                {claimed(custom) ? "Taken" : "Draft pick"}
+                {claimed(custom) ? (
+                  <Check aria-hidden="true" />
+                ) : (
+                  <Plus aria-hidden="true" />
+                )}
               </button>
             </div>
             {search.trim() && !options.length && (
@@ -478,60 +620,208 @@ function Options({
             />
           </FloatingField>
         )}
-        {options.length > 0 && (
-          <table className={styles.resourceTable}>
-            <caption>
-              {tab === "resource"
-                ? draft.resourceLabel
-                : "Matching suggestions"}
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Release</th>
-                <th scope="col">Pick</th>
-              </tr>
-            </thead>
-            <tbody>
-              {options.map((option) => {
-                const pick = claimed(option);
-                return (
-                  <tr key={option.id}>
-                    <th scope="row">
-                      {option.name}
-                      {pick && (
-                        <span className={styles.resourceOwner}>
-                          Taken by {managerName(draft, pick.managerId)}
-                        </span>
-                      )}
-                    </th>
-                    <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
-                    <td>
-                      <button
-                        type="button"
-                        disabled={Boolean(pick) || !canPick}
-                        onClick={() => choose(option)}
-                      >
-                        {pick
-                          ? "Taken"
-                          : testMode
-                            ? "Test select"
-                            : "Draft this"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {showSave && (save.error || saved.error) && (
+          <p role="alert">{(save.error || saved.error)?.message}</p>
         )}
-        {tab === "resource" && !options.length && (
-          <p>
-            {draft.options.length
-              ? "No matching titles."
-              : "No resource options yet. Use Pick to enter any name."}
+        {showSave && save.isSuccess && (
+          <p role="status">
+            {save.data.existed ? "Already in" : "Saved to"} your Fantasy Office
+            Draft List.
           </p>
         )}
+        <div
+          className={styles.resourceScroll}
+          role="region"
+          aria-label={tab === "resource" ? "Resource list" : "Pick suggestions"}
+          tabIndex={0}
+        >
+          {options.length > 0 && (
+            <table className={styles.resourceTable}>
+              <thead>
+                <tr>
+                  {(draft.league === "fantasy-office"
+                    ? (["name", "release", "rank"] as const)
+                    : (["name", "release"] as const)
+                  ).map((column) => (
+                    <th
+                      scope="col"
+                      key={column}
+                      aria-sort={
+                        sort.column === column
+                          ? sort.descending
+                            ? "descending"
+                            : "ascending"
+                          : "none"
+                      }
+                    >
+                      <button
+                        type="button"
+                        className={styles.sortButton}
+                        title={
+                          column === "rank"
+                            ? "Popularity rank among eligible movies; #1 is highest"
+                            : undefined
+                        }
+                        onClick={() => sortBy(column)}
+                      >
+                        {column === "name"
+                          ? "Name"
+                          : column === "release"
+                            ? "Release"
+                            : "Rank"}
+                        <span aria-hidden="true">
+                          {" "}
+                          {sort.column === column
+                            ? sort.descending
+                              ? "↓"
+                              : "↑"
+                            : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                  ))}
+                  <th scope="col">Pick</th>
+                  {showSave && !testMode && <th scope="col">Save</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {options.map((option) => {
+                  const pick = claimed(option);
+                  return (
+                    <tr key={option.id}>
+                      <th scope="row">
+                        {option.name}
+                        {pick && (
+                          <span className={styles.resourceOwner}>
+                            Taken by {managerName(draft, pick.managerId)}
+                          </span>
+                        )}
+                      </th>
+                      <td>{option.releaseDate ? dateLabel(option) : "TBA"}</td>
+                      {draft.league === "fantasy-office" && (
+                        <td title="Popularity rank among eligible movies; #1 is highest">
+                          {ranks.has(option.id)
+                            ? `#${ranks.get(option.id)}`
+                            : "—"}
+                        </td>
+                      )}
+                      <td>
+                        <button
+                          type="button"
+                          className={
+                            testMode && !pick ? undefined : styles.pickIcon
+                          }
+                          aria-label={
+                            pick
+                              ? "Taken"
+                              : option.retired
+                                ? "Unavailable"
+                                : testMode
+                                  ? "Test select"
+                                  : "Draft"
+                          }
+                          title={
+                            pick
+                              ? `Taken by ${managerName(draft, pick.managerId)}`
+                              : option.retired
+                                ? "Unavailable"
+                                : `Draft ${option.name}`
+                          }
+                          data-taken={Boolean(pick)}
+                          disabled={Boolean(pick) || !canPick || option.retired}
+                          onClick={() => choose(option)}
+                        >
+                          {pick ? (
+                            <Check aria-hidden="true" />
+                          ) : option.retired ? (
+                            <Ban aria-hidden="true" />
+                          ) : testMode ? (
+                            "Test select"
+                          ) : (
+                            <Plus aria-hidden="true" />
+                          )}
+                        </button>
+                      </td>
+                      {showSave && !testMode && (
+                        <td>
+                          <button
+                            type="button"
+                            className={styles.pickIcon}
+                            aria-label={
+                              savedMovie(saved.data?.items || [], option)
+                                ? `Saved ${option.name}`
+                                : `Save ${option.name} to Draft List`
+                            }
+                            title={
+                              savedMovie(saved.data?.items || [], option)
+                                ? "Already in your Draft List"
+                                : "Save to Fantasy Office Draft List"
+                            }
+                            disabled={
+                              !managerId ||
+                              !option.tmdbId ||
+                              save.isPending ||
+                              saved.isLoading ||
+                              Boolean(
+                                savedMovie(saved.data?.items || [], option),
+                              )
+                            }
+                            onClick={() => save.mutate(option)}
+                          >
+                            {savedMovie(saved.data?.items || [], option) ? (
+                              <Check aria-hidden="true" />
+                            ) : (
+                              <ListPlus aria-hidden="true" />
+                            )}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+          {tab === "resource" && !options.length && (
+            <p>
+              {draft.options.length
+                ? "No matching titles."
+                : "No resource options yet. Use Pick to enter any name."}
+            </p>
+          )}
+          {draft.movieResource && (
+            <details className={styles.movieCredits}>
+              <summary>
+                Movie data and credits · updated{" "}
+                {new Date(draft.movieResource.updatedAt).toLocaleDateString()}
+              </summary>
+              <p>
+                {draft.movieResource.policy === "unreleased-na-2027"
+                  ? "Unreleased worldwide. Dates are first US/Canada releases in 2027; unannounced North American dates show TBA."
+                  : draft.movieResource.policy === "first-north-america"
+                    ? "First US/Canada release, across all release types."
+                    : "First recorded worldwide release, across all release types."}{" "}
+                Refreshed nightly; dates can change.
+              </p>
+              <a
+                href="https://www.themoviedb.org/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img
+                  src="assets/tmdb-logo.svg"
+                  width="76"
+                  height="12"
+                  alt="TMDB"
+                />
+              </a>
+              <p>
+                This product uses the TMDB API but is not endorsed or certified
+                by TMDB.
+              </p>
+            </details>
+          )}
+        </div>
       </div>
       {selected && (
         <ContainedDialog
@@ -594,11 +884,26 @@ function Options({
           <p>
             {selected.id
               ? dateLabel(selected)
-              : "This name is outside the resource."}
+              : "This name is outside the resource and will be flagged for admin review."}
           </p>
         </ContainedDialog>
       )}
     </section>
+  );
+}
+function ManagerChip({ name }: { name: string }) {
+  const displayName = name.trim().split(/\s+/)[0] || "Manager";
+  const color =
+    MANAGER_COLORS[displayName.toLowerCase() as keyof typeof MANAGER_COLORS] ||
+    "#5f6978";
+  return (
+    <span
+      className="manager-chip"
+      style={{ "--manager-color": color } as CSSProperties}
+    >
+      <span aria-hidden="true" className="manager-dot" />
+      <span className="manager-name">{displayName}</span>
+    </span>
   );
 }
 function Rosters({ draft }: { draft: Draft }) {
@@ -615,7 +920,9 @@ function Rosters({ draft }: { draft: Draft }) {
               key={manager.id}
             >
               <header>
-                <h2>{manager.name}</h2>
+                <h2 aria-label={manager.name}>
+                  <ManagerChip name={manager.name} />
+                </h2>
                 <span>
                   {picks.length} / {draft.rounds}
                 </span>
@@ -627,7 +934,11 @@ function Rosters({ draft }: { draft: Draft }) {
                     <li key={round}>
                       <span>Round {round + 1}</span>
                       <strong className={pick ? "" : styles.muted}>
-                        {pick ? pick.optionName : "Awaiting pick"}
+                        {pick
+                          ? draft.options.find(
+                              (option) => option.id === pick.optionId,
+                            )?.name || pick.optionName
+                          : "Awaiting pick"}
                       </strong>
                     </li>
                   );
@@ -641,8 +952,187 @@ function Rosters({ draft }: { draft: Draft }) {
   );
 }
 
+function needsReview(pick: Pick) {
+  return (
+    !pick.reviewedAt &&
+    (typeof pick.needsReview === "boolean"
+      ? pick.needsReview
+      : pick.optionId.startsWith("custom-"))
+  );
+}
+
+function PickReview({ draft }: { draft: Draft }) {
+  const [selected, setSelected] = useState<Pick | null>(null);
+  const [reference, setReference] = useState("");
+  const [optionId, setOptionId] = useState("");
+  const [links, setLinks] = useState<Record<string, string>>({});
+  const mutation = useDraftAction(draft);
+  const pending = draft.picks.filter(needsReview);
+  const reviewed = draft.picks.filter((pick) => pick.reviewedAt);
+  const fields =
+    draft.league === "fantasy-office"
+      ? [
+          ["letterboxd", "Letterboxd link"],
+          ["rottenTomatoes", "Rotten Tomatoes link"],
+          ["boxOfficeMojo", "Box Office Mojo link"],
+        ]
+      : [["reference", "Reference link"]];
+  function open(pick: Pick) {
+    mutation.reset();
+    setSelected(pick);
+    setReference(
+      String(
+        pick.tmdbId ||
+          draft.options.find((option) => option.id === pick.optionId)?.tmdbId ||
+          "",
+      ),
+    );
+    setOptionId("");
+    setLinks(pick.sourceLinks || {});
+  }
+  return (
+    <section className={styles.panel} aria-label="Pick review">
+      <h2>Unlisted picks · {pending.length} to review</h2>
+      {!pending.length && (
+        <p className={styles.muted}>No unlisted picks need review.</p>
+      )}
+      {pending.map((pick) => (
+        <div className={styles.reviewRow} key={pick.number}>
+          <div>
+            <strong>{pick.optionName}</strong>
+            <small>
+              {managerName(draft, pick.managerId)} · pick #{pick.number}
+            </small>
+          </div>
+          <button type="button" onClick={() => open(pick)}>
+            Review
+          </button>
+        </div>
+      ))}
+      {reviewed.length > 0 && (
+        <details>
+          <summary>Reviewed picks</summary>
+          {reviewed.map((pick) => (
+            <div className={styles.reviewRow} key={pick.number}>
+              <span>{pick.optionName}</span>
+              <button type="button" onClick={() => open(pick)}>
+                Edit links
+              </button>
+            </div>
+          ))}
+        </details>
+      )}
+      {selected && (
+        <ContainedDialog
+          title="Associate draft pick"
+          description={`${selected.optionName} · pick #${selected.number}`}
+          close={() => {
+            if (!mutation.isPending) setSelected(null);
+          }}
+          footer={
+            <div className={styles.actions}>
+              <button
+                type="button"
+                disabled={
+                  mutation.isPending ||
+                  (!reference.trim() &&
+                    !optionId &&
+                    !fields.some(([key]) => links[key]?.trim()))
+                }
+                onClick={() =>
+                  mutation.mutate(
+                    {
+                      action: "associate-pick",
+                      body: {
+                        pickNumber: selected.number,
+                        tmdbReference: reference,
+                        optionId: optionId || undefined,
+                        links,
+                      },
+                    },
+                    { onSuccess: () => setSelected(null) },
+                  )
+                }
+              >
+                {mutation.isPending ? "Saving…" : "Save association"}
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => setSelected(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          }
+        >
+          <p>Link this pick without changing its manager or draft order.</p>
+          {draft.league === "fantasy-office" ? (
+            <>
+              <a
+                href={`https://www.themoviedb.org/search/movie?query=${encodeURIComponent(selected.optionName)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Find on TMDB
+              </a>
+              <FloatingField>
+                <span>TMDB movie ID or link</span>
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(event) => setReference(event.target.value)}
+                />
+              </FloatingField>
+            </>
+          ) : (
+            <FloatingField>
+              <span>Resource option</span>
+              <select
+                value={optionId}
+                onChange={(event) => setOptionId(event.target.value)}
+              >
+                <option value="">Keep entered name</option>
+                {draft.options.map((option) => (
+                  <option value={option.id} key={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </FloatingField>
+          )}
+          <p className={styles.muted}>
+            Source links are optional when a resource is associated.
+          </p>
+          {fields.map(([key, label]) => (
+            <FloatingField key={key}>
+              <span>{label}</span>
+              <input
+                type="url"
+                value={links[key] || ""}
+                onChange={(event) =>
+                  setLinks({ ...links, [key]: event.target.value })
+                }
+              />
+            </FloatingField>
+          ))}
+          {mutation.error && (
+            <p role="alert" className={styles.error}>
+              {mutation.error.message}
+            </p>
+          )}
+        </ContainedDialog>
+      )}
+    </section>
+  );
+}
+
 function ResourceDates({ draft }: { draft: Draft }) {
   const [dates, setDates] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
+  const visible = draft.options
+    .filter((option) => optionKey(option.name).includes(optionKey(search)))
+    .slice(0, 25);
   const mutation = useDraftAction(draft);
   return (
     <details className={styles.panel}>
@@ -654,9 +1144,9 @@ function ResourceDates({ draft }: { draft: Draft }) {
             {
               action: "resource-dates",
               body: {
-                options: draft.options.map((option) => ({
-                  id: option.id,
-                  releaseDate: dates[option.id] ?? option.releaseDate ?? "",
+                options: Object.entries(dates).map(([id, releaseDate]) => ({
+                  id,
+                  releaseDate,
                 })),
               },
             },
@@ -664,7 +1154,19 @@ function ResourceDates({ draft }: { draft: Draft }) {
           );
         }}
       >
-        {draft.options.map((option) => (
+        <p>
+          Search to edit a release date. Corrections stay in place when movie
+          data refreshes.
+        </p>
+        <FloatingField>
+          <span>Find a movie to edit</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </FloatingField>
+        {visible.map((option) => (
           <FloatingField key={option.id}>
             <span>{option.name}</span>
             <input
@@ -678,7 +1180,7 @@ function ResourceDates({ draft }: { draft: Draft }) {
         ))}
         <button
           type="submit"
-          disabled={mutation.isPending || !draft.options.length}
+          disabled={mutation.isPending || !Object.keys(dates).length}
         >
           Save release dates
         </button>
@@ -769,6 +1271,7 @@ function Setup({
   const [rounds, setRounds] = useState(draft?.rounds || 2);
   const [options, setOptions] = useState(
     draft?.options
+      .filter((option) => !option.tmdbId)
       .map(
         (option) =>
           `${option.name}${option.releaseDate ? ` | ${option.releaseDate}` : ""}`,
@@ -987,7 +1490,15 @@ function Setup({
             setResourceLabel(draft.resourceLabel);
             setParticipants(draft.participants);
             setRounds(draft.rounds);
-            setOptions(draft.options.map((option) => option.name).join("\n"));
+            setOptions(
+              draft.options
+                .filter((option) => !option.tmdbId)
+                .map(
+                  (option) =>
+                    `${option.name}${option.releaseDate ? ` | ${option.releaseDate}` : ""}`,
+                )
+                .join("\n"),
+            );
             setBaseRevision(draft.revision);
             mutation.reset();
           }}
@@ -1229,20 +1740,16 @@ export function LeagueDraftPage({
   };
   return (
     <div className={styles.stack}>
-      <div className="league-detail-heading">
-        <div>
-          <h1>
-            {league === "fantasy-office" ? "Fantasy Office" : "World Cup"}
-          </h1>
-          <p>
-            2027 ·{" "}
-            {mode === "active"
-              ? "Active draft"
-              : mode === "manage"
-                ? "Manage drafts"
-                : "Draft"}
-          </p>
-        </div>
+      <div className={styles.pageHeading}>
+        <h1>{league === "fantasy-office" ? "Fantasy Office" : "World Cup"}</h1>
+        <p>
+          2027 ·{" "}
+          {mode === "active"
+            ? "Active draft"
+            : mode === "manage"
+              ? "Manage drafts"
+              : "Draft"}
+        </p>
       </div>
       {!draftEndpoint() && (
         <p>League drafting is currently available on dev.</p>
@@ -1323,6 +1830,7 @@ export function LeagueDraftPage({
           {mode === "manage" ? (
             <>
               <Manage draft={draft} league={league} onSaved={saved} />
+              <PickReview draft={draft} />
               <ResourceDates draft={draft} />
             </>
           ) : mode === "active" ? (
@@ -1354,6 +1862,8 @@ export function LeagueDraftPage({
 }
 
 export function LeagueDraftHubCard() {
+  const { session } = useAppState();
+  const admin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
   const query = useDrafts();
   if (!draftEndpoint()) return null;
   const drafts = [...(query.data?.drafts || [])].sort(
@@ -1388,6 +1898,7 @@ export function LeagueDraftHubCard() {
         <p>No league drafts yet.</p>
       ) : (
         drafts.map((draft) => {
+          const reviewCount = draft.picks.filter(needsReview).length;
           const next = draft.schedule
             .slice(draft.picks.length)
             .find((pick) => pick.managerId === query.managerId);
@@ -1415,6 +1926,16 @@ export function LeagueDraftHubCard() {
               <a className="action-button" href={draftLink(draft)}>
                 Open draft
               </a>
+              {admin && reviewCount > 0 && (
+                <p>
+                  <a
+                    href={`#${draft.league}-${draft.year}-manage?draft=${draft.id}`}
+                  >
+                    {reviewCount} unlisted{" "}
+                    {reviewCount === 1 ? "pick needs" : "picks need"} review
+                  </a>
+                </p>
+              )}
               <NotificationSettings draft={draft} managerId={query.managerId} />
               {draft.notifications.map((event) => (
                 <p key={event.id}>

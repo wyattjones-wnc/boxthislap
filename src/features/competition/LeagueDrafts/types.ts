@@ -9,6 +9,11 @@ export interface DraftOption {
   id: string;
   name: string;
   releaseDate?: string;
+  worldwideReleaseDate?: string;
+  popularity?: number | null;
+  tmdbId?: number;
+  previousNames?: string[];
+  retired?: boolean;
 }
 export interface ScheduledPick {
   number: number;
@@ -21,6 +26,11 @@ export interface Pick extends ScheduledPick {
   at: string;
   requestId: string;
   adminActor?: string;
+  needsReview?: boolean;
+  tmdbId?: number;
+  sourceLinks?: Record<string, string>;
+  reviewedAt?: string;
+  reviewedBy?: string;
 }
 export interface Draft {
   id: string;
@@ -34,6 +44,12 @@ export interface Draft {
   participants: Participant[];
   rounds: number;
   options: DraftOption[];
+  movieResource?: {
+    source: "tmdb";
+    policy: "first-worldwide" | "first-north-america" | "unreleased-na-2027";
+    updatedAt: string;
+    count: number;
+  };
   schedule: ScheduledPick[];
   picks: Pick[];
   preference: { enabled: boolean; push: boolean };

@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+/** @param {import("@playwright/test").Locator} locator */
+async function heightOf(locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("Expected a visible drafting card.");
+  return box.height;
+}
+
 const participants = ["1", "2", "3", "6"].map((id) => ({
   id,
   name: `Manager ${id}`,
@@ -11,15 +18,40 @@ function fixture() {
     year: 2027,
     name: "Mobile test draft",
     resourceLabel: "Movies",
+    movieResource: {
+      source: "tmdb",
+      policy: "unreleased-na-2027",
+      updatedAt: "2026-10-21T09:00:00.000Z",
+      count: 10,
+    },
     revision: 3,
     status: "active",
     reason: "",
     participants,
     rounds: 2,
-    options: Array.from({ length: 10 }, (_, index) => ({
-      id: `movie-${index}`,
-      name: `Test Movie ${index}`,
-    })),
+    options: Array.from(
+      { length: 10 },
+      (_, index) =>
+        /** @type {{ id: string, name: string, popularity?: number, releaseDate?: string, worldwideReleaseDate?: string, tmdbId?: number, previousNames?: string[] }} */ ({
+          id: `movie-${index}`,
+          name: `Test Movie ${index}`,
+          tmdbId: index + 1,
+          popularity:
+            index === 8
+              ? undefined
+              : index === 9
+                ? 0
+                : index === 4
+                  ? 200
+                  : 10 - index,
+          worldwideReleaseDate: "2027-01-01",
+          ...(index === 0
+            ? { releaseDate: "2027-06-01" }
+            : index === 1
+              ? { releaseDate: "2027-01-15" }
+              : {}),
+        }),
+    ),
     schedule: [participants, [...participants].reverse()].flatMap(
       (order, round) =>
         order.map((manager, position) => ({
@@ -28,7 +60,7 @@ function fixture() {
           round: round + 1,
         })),
     ),
-    /** @type {Array<{number: number, round: number, managerId: string, optionId: string, optionName: string, at: string, requestId: string}>} */
+    /** @type {Array<{number: number, round: number, managerId: string, optionId: string, optionName: string, at: string, requestId: string, needsReview?: boolean, reviewedAt?: string, sourceLinks?: Record<string, string>}>} */
     picks: [],
     preference: { enabled: false, push: false },
     notifications: [],
@@ -51,6 +83,7 @@ test("2027 navigation preserves the current-year default and a signed-out draft 
   await page.getByRole("link", { name: "Open 2027 Fantasy Office" }).click();
   const draft = page.locator('[data-page="fantasy-office-2027-draft"]');
   await expect(draft).toHaveClass(/is-active/);
+  await expect(draft.locator(".manager-chip")).toHaveCount(4);
   await expect(
     draft.getByRole("link", { name: "Log in", exact: true }),
   ).toBeVisible();
@@ -130,6 +163,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   });
   const draft = page.locator('[data-page="fantasy-office-2027-draft"]');
   await expect(draft).toHaveClass(/is-active/);
+  await expect(draft.locator(".manager-chip")).toHaveCount(4);
   await expect(draft.getByRole("status")).toContainText("Your turn");
   await expect(
     draft.getByRole("region", { name: "Draft choices" }),
@@ -137,18 +171,112 @@ test("manager confirms a pick and resources show ownership on the next turn", as
   await draft.getByRole("link", { name: "Go to drafting" }).click();
   const active = page.locator('[data-page="fantasy-office-2027-active"]');
   await expect(active).toHaveClass(/is-active/);
+  const pickCard = active.locator("#draft-options");
+  const pickHeight = await heightOf(pickCard);
+  const heading = active.getByRole("heading", {
+    name: "Fantasy Office",
+    exact: true,
+  });
+  expect(
+    await heading.evaluate(
+      (element) =>
+        element.parentElement?.offsetHeight ?? Number.POSITIVE_INFINITY,
+    ),
+  ).toBeLessThan(50);
+  await active
+    .getByRole("searchbox", { name: "Movie or pick name" })
+    .fill("Movie");
+  await expect(active.getByRole("caption")).toHaveCount(0);
+  await expect(
+    active.getByRole("columnheader", { name: /Rank/ }),
+  ).toHaveAttribute("aria-sort", "ascending");
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 4",
+  );
+  await expect(
+    active.locator("tbody tr").first().getByRole("cell").nth(1),
+  ).toHaveText("#1");
+  await active.getByRole("button", { name: "Rank", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 9",
+  );
+  await expect(active.getByRole("rowheader").last()).toHaveText("Test Movie 8");
+  await active.getByRole("button", { name: "Rank", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 4",
+  );
+  await active.getByRole("button", { name: "Name", exact: true }).click();
+  await active.getByRole("button", { name: "Name", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 9",
+  );
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 1",
+  );
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 0",
+  );
+  expect(await heightOf(pickCard)).toBe(pickHeight);
+  const suggestions = active.getByRole("region", { name: "Pick suggestions" });
+  expect(
+    await suggestions.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+  // Return to the default sort before checking the Resource view.
+  await active.getByRole("button", { name: "Name", exact: true }).click();
   await active
     .getByRole("searchbox", { name: "Movie or pick name" })
     .fill("Movie 0");
+  await expect(
+    active.locator("tbody tr").first().getByRole("cell").nth(1),
+  ).toHaveText("#2");
+  expect(await heightOf(pickCard)).toBe(pickHeight);
   const option = active.getByRole("row").filter({
     has: page.getByText("Test Movie 0", { exact: true }),
   });
-  await option.getByRole("button", { name: "Draft this", exact: true }).click();
+  await option.getByRole("button", { name: "Draft", exact: true }).click();
   await page.getByRole("button", { name: "Confirm pick", exact: true }).click();
   await expect(active.getByRole("status")).toContainText(
     "Manager 2 is picking",
   );
   await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  const resourceCard = active.locator("#draft-options");
+  const initialHeight = await heightOf(resourceCard);
+  expect(initialHeight).toBe(pickHeight);
+  await expect(active.getByRole("caption")).toHaveCount(0);
+  await active.getByRole("button", { name: "Name", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 9",
+  );
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 1",
+  );
+  await expect(
+    active.getByRole("columnheader", { name: /Release/ }),
+  ).toHaveAttribute("aria-sort", "ascending");
+  await active.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toContainText(
+    "Test Movie 0",
+  );
+  await active.getByRole("button", { name: "Rank", exact: true }).click();
+  await expect(active.getByRole("rowheader").first()).toHaveText(
+    "Test Movie 4",
+  );
+  await expect(
+    active.getByRole("columnheader", { name: /Rank/ }),
+  ).toHaveAttribute("aria-sort", "ascending");
+  expect(await heightOf(resourceCard)).toBe(initialHeight);
+  const list = active.getByRole("region", { name: "Resource list" });
+  expect(
+    await list.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true);
+
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
@@ -156,6 +284,7 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     .getByRole("searchbox", { name: "Search resource" })
     .fill("Test Movie 0");
   await expect(active.getByRole("row")).toHaveCount(2);
+  expect(await heightOf(resourceCard)).toBe(initialHeight);
   await expect(active.getByText("Test Movie 1", { exact: true })).toHaveCount(
     0,
   );
@@ -163,6 +292,16 @@ test("manager confirms a pick and resources show ownership on the next turn", as
     active.getByRole("button", { name: "Taken", exact: true }),
   ).toBeDisabled();
   await expect(active.getByText("Taken by Manager 1")).toBeVisible();
+  await active.getByText(/Movie data and credits/).click();
+  await expect(
+    active.getByRole("img", { name: "TMDB", exact: true }),
+  ).toBeVisible();
+  await expect(
+    active.getByText(
+      "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+    ),
+  ).toBeVisible();
+  expect(await heightOf(resourceCard)).toBe(initialHeight);
   await page
     .locator('[data-nav-scope="fantasy-office-2027"]')
     .getByRole("tab", { name: "Draft", exact: true })
@@ -200,4 +339,251 @@ test("World Cup has an independent 2027 Draft page", async ({ page }) => {
   await expect(
     draft.getByText("A draft has not been scheduled."),
   ).toBeVisible();
+});
+
+test("admin reviews an unlisted movie and the associated resource becomes taken", async ({
+  page,
+}) => {
+  const state = fixture();
+  state.options[0].tmdbId = 42;
+  state.picks.push({
+    number: 1,
+    round: 1,
+    managerId: "1",
+    optionId: "custom-unlisted",
+    optionName: "Unlisted movie name",
+    requestId: "original",
+    at: new Date().toISOString(),
+    needsReview: true,
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        managerId: "6",
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00Z",
+          accessToken: "admin-token",
+        },
+      }),
+    );
+  });
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        json: {
+          ok: true,
+          managers: participants.map((manager) => ({
+            ...manager,
+            active: true,
+            name: manager.id === "6" ? "Wyatt" : manager.name,
+            isAdmin: manager.id === "6",
+          })),
+          sheets: [],
+          teams: [],
+          matchIds: [],
+        },
+      }),
+  );
+  await page.route(
+    "https://box-this-lap-league-drafts-dev.boxthislap.workers.dev/**",
+    async (route) => {
+      if (route.request().url().endsWith("/api/managers"))
+        return route.fulfill({ json: { ok: true, managers: participants } });
+      if (route.request().url().endsWith("/associate-pick")) {
+        const body = route.request().postDataJSON();
+        expect(body.pickNumber).toBe(1);
+        expect(body.tmdbReference).toBe("42");
+        state.picks[0].needsReview = false;
+        state.picks[0].reviewedAt = new Date().toISOString();
+        state.picks[0].sourceLinks = {
+          ...body.links,
+          tmdb: "https://www.themoviedb.org/movie/42",
+        };
+        state.options[0].id = state.picks[0].optionId;
+        state.options[0].previousNames = [state.picks[0].optionName];
+        state.revision += 1;
+        return route.fulfill({ json: { ok: true, draft: state } });
+      }
+      return route.fulfill({ json: { ok: true, drafts: [state] } });
+    },
+  );
+  await page.goto("/#fantasy-office-2027-manage", {
+    waitUntil: "domcontentloaded",
+  });
+  const manage = page.locator('[data-page="fantasy-office-2027-manage"]');
+  await manage.getByRole("button", { name: "Review", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Associate draft pick" });
+  await dialog
+    .getByRole("textbox", { name: "TMDB movie ID or link" })
+    .fill("42");
+  await dialog
+    .getByRole("textbox", { name: "Letterboxd link" })
+    .fill("https://letterboxd.com/film/test-movie/");
+  await dialog.getByRole("button", { name: "Save association" }).click();
+  await expect(
+    manage.getByText("No unlisted picks need review."),
+  ).toBeVisible();
+  expect(state.picks[0].optionName).toBe("Unlisted movie name");
+  await page.goto("/#fantasy-office-2027-active", {
+    waitUntil: "domcontentloaded",
+  });
+  const active = page.locator('[data-page="fantasy-office-2027-active"]');
+  await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  await expect(
+    active
+      .getByRole("rowheader", { name: /Test Movie 0/ })
+      .locator("..")
+      .getByRole("button", { name: "Taken", exact: true }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
+});
+
+test("a manager saves a movie once and drafts it directly from Fantasy Office Draft List", async ({
+  page,
+}) => {
+  const state = fixture();
+  /** @type {Array<{id:string,sheetId:string,name:string,dataUrl:string,releaseDate:string,rank:number}>} */
+  const items = [];
+  let revision = 0;
+  let posts = 0;
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        managerId: "1",
+        manager: { id: "1", displayName: "Manager 1" },
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00Z",
+          accessToken: "test-token",
+        },
+      }),
+    ),
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (
+        path.endsWith("/fantasy-office/items") &&
+        route.request().method() === "POST"
+      ) {
+        const body = route.request().postDataJSON();
+        expect(body.name).toBe("Test Movie 0");
+        expect(body.dataUrl).toBe("https://www.themoviedb.org/movie/1");
+        expect(body.releaseDate).toBe("2027-06-01");
+        posts++;
+        const item = {
+          ...body,
+          id: "saved-movie",
+          sheetId: "fantasy-office",
+          rank: 1,
+        };
+        items.push(item);
+        revision++;
+        return route.fulfill({ json: { ok: true, item, revision } });
+      }
+      if (path.endsWith("/draft-lists"))
+        return route.fulfill({
+          json: {
+            ok: true,
+            sheets: [
+              {
+                id: "fantasy-critic",
+                name: "Fantasy Critic",
+                icon: "gamepad",
+                position: 1,
+                revision: 0,
+              },
+              {
+                id: "fantasy-office",
+                name: "Fantasy Office",
+                icon: "film",
+                position: 2,
+                revision,
+              },
+            ],
+            items,
+          },
+        });
+      return route.fulfill({
+        json: {
+          ok: true,
+          managers: participants.map((p) => ({ ...p, active: true })),
+          sheets: [],
+          teams: [],
+          matchIds: [],
+        },
+      });
+    },
+  );
+  await page.route(
+    "https://box-this-lap-league-drafts-dev.boxthislap.workers.dev/**",
+    async (route) => {
+      if (route.request().url().endsWith("/picks")) {
+        const body = route.request().postDataJSON();
+        expect(body.optionId).toBe("movie-0");
+        expect(body.requestId).toBeTruthy();
+        state.picks.push({
+          ...state.schedule[0],
+          optionId: "movie-0",
+          optionName: "Test Movie 0",
+          requestId: body.requestId,
+          at: new Date().toISOString(),
+        });
+        state.revision++;
+        return route.fulfill({ json: { ok: true, draft: state } });
+      }
+      return route.fulfill({ json: { ok: true, drafts: [state] } });
+    },
+  );
+  await page.goto("/#fantasy-office-2027-active", {
+    waitUntil: "domcontentloaded",
+  });
+  const active = page.locator('[data-page="fantasy-office-2027-active"]');
+  await active.getByRole("tab", { name: "Resource", exact: true }).click();
+  await expect(
+    active.getByRole("button", { name: "Save Test Movie 0 to Draft List" }),
+  ).toHaveCount(0);
+  await active.getByRole("button", { name: "Movie list options" }).click();
+  await active.getByRole("checkbox", { name: "Save to Draft List" }).check();
+  await active
+    .getByRole("button", {
+      name: "Save Test Movie 0 to Draft List",
+      exact: true,
+    })
+    .click();
+  await expect(
+    active.getByRole("button", { name: "Saved Test Movie 0", exact: true }),
+  ).toBeDisabled();
+  expect(posts).toBe(1);
+  await active
+    .getByRole("link", { name: "Open Fantasy Office Draft List" })
+    .click();
+  const list = page.locator('[data-page="draft-list"]');
+  await expect(list).toHaveClass(/is-active/);
+  await expect(
+    list.getByRole("heading", { name: "Test Movie 0", exact: true }),
+  ).toBeVisible();
+  await expect(list.getByText(/Movie rank #2/)).toBeVisible();
+  await list
+    .getByRole("button", { name: "Draft Test Movie 0", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Confirm your selection" })
+    .getByRole("button", { name: "Confirm pick", exact: true })
+    .click();
+  await expect(list.getByText(/Taken by Manager 1/)).toBeVisible();
+  await expect(
+    list.getByRole("button", { name: "Draft Test Movie 0", exact: true }),
+  ).toBeDisabled();
+  expect(state.picks).toHaveLength(1);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 });

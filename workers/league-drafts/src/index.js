@@ -1,4 +1,12 @@
 import {
+  MOVIE_CRON,
+  MOVIE_POLICY,
+  movieForReview,
+  mergeMovieCatalog,
+  readMovieCatalog,
+  refreshMovieResource,
+} from "./movie-resource.js";
+import {
   eventIsCurrent,
   fail,
   newDraft,
@@ -201,7 +209,31 @@ export default {
           ok: true,
           environment: env.DRAFT_ENVIRONMENT,
           pushConfigured: Boolean(env.DRAFT_PUSH_SECRET && env.PUSH_SERVICE),
+          movieResourceConfigured:
+            env.TMDB_CATALOG_ENABLED === "true" &&
+            Boolean(env.TMDB_READ_ACCESS_TOKEN || env.TMDB_API_KEY),
         });
+      if (url.pathname === "/api/movie-resource" && request.method === "GET") {
+        const catalog = await readMovieCatalog(env);
+        const job =
+          env.TMDB_CATALOG_ENABLED === "true"
+            ? await env.DB.prepare(
+                "SELECT job, next_run, last_error FROM league_drafts_movie_resource WHERE environment = ? AND year = ?",
+              )
+                .bind(env.DRAFT_ENVIRONMENT, 2027)
+                .first()
+            : null;
+        return response(request, env, {
+          ok: true,
+          source: "tmdb",
+          policy: catalog?.policy || MOVIE_POLICY,
+          updatedAt: catalog?.updatedAt || null,
+          movies: catalog?.movies.length || 0,
+          refreshing: Boolean(job && JSON.parse(job.job)),
+          delayed: Boolean(job?.last_error),
+          nextRun: job?.next_run || null,
+        });
+      }
       const manager = await managerFor(
         request,
         env,
@@ -216,10 +248,12 @@ export default {
       }
       if (url.pathname === "/api/drafts" && request.method === "POST") {
         if (!manager.admin) fail(403, "Administrator access is required.");
-        const state = newDraft(
+        let state = newDraft(
           await validateParticipants(env, await readBody(request)),
           manager.id,
         );
+        if (state.league === "fantasy-office")
+          state = mergeMovieCatalog(state, await readMovieCatalog(env));
         await env.DB.prepare(
           "INSERT INTO league_drafts_state (environment, id, league, year, status, revision, state, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
@@ -300,6 +334,19 @@ export default {
         (!manager.admin || env.DRAFT_ENVIRONMENT !== "dev")
       )
         fail(403, "Test picks are available only to administrators on dev.");
+      let associatedMovie = null;
+      if (action === "associate-pick") {
+        if (!manager.admin) fail(403, "Administrator access is required.");
+        if (Number(body.revision) !== state.revision)
+          fail(409, "The draft changed. Refresh and try again.");
+        if (body.tmdbReference && state.league !== "fantasy-office")
+          fail(400, "TMDB links are for movie drafts.");
+        associatedMovie = await movieForReview(
+          env,
+          body.tmdbReference,
+          state.options,
+        );
+      }
       // Outbox delivery updates share the row without advancing revision, so merge
       // them on conflict. Gameplay revision conflicts still reject stale clients.
       for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -315,6 +362,7 @@ export default {
           actor,
           manager.admin,
           manager.id,
+          associatedMovie,
         );
         if (action === "test-pick" && next !== state) {
           next.picks.at(-1).adminActor = manager.id;
@@ -352,7 +400,15 @@ export default {
       );
     }
   },
-  async scheduled(_event, env, ctx) {
+  async scheduled(event, env, ctx) {
+    if (event.cron === MOVIE_CRON) {
+      ctx.waitUntil(
+        refreshMovieResource(env, saveState).catch((error) =>
+          console.warn("Movie resource refresh pending retry:", error.message),
+        ),
+      );
+      return;
+    }
     const rows = await env.DB.prepare(
       "SELECT id FROM league_drafts_state WHERE environment = ? ORDER BY updated_at DESC LIMIT 200",
     )

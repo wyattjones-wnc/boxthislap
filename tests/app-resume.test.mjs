@@ -19,7 +19,7 @@ function launch({
   hash = "",
   pathname = "/",
   blocked = false,
-  saved = "#rankings?type=games",
+  saved = JSON.stringify({ hash: "#rankings?type=games", savedAt: Date.now() }),
 } = {}) {
   const values = new Map([["boxThisLapLastPage:/", saved]]);
   const listeners = new Map();
@@ -91,7 +91,7 @@ test("backgrounding saves routes changed with history.pushState", () => {
   app.context.window.location.hash = "#footy-team-123?match=456";
   app.fire("visibilitychange");
   assert.equal(
-    app.values.get("boxThisLapLastPage:/"),
+    JSON.parse(app.values.get("boxThisLapLastPage:/")).hash,
     "#footy-team-123?match=456",
   );
 });
@@ -111,4 +111,34 @@ test("returning from a long background period does not reload content", () => {
   app.context.document.visibilityState = "visible";
   app.fire("visibilitychange");
   app.fire("pageshow", { persisted: true });
+});
+
+test("fresh launches discard expired, legacy, and invalid saved pages", () => {
+  const now = Date.now();
+  for (const saved of [
+    JSON.stringify({ hash: "#next", savedAt: now - 60 * 60 * 1000 }),
+    JSON.stringify({ hash: "#next", savedAt: now - 24 * 60 * 60 * 1000 }),
+    JSON.stringify({ hash: "#next", savedAt: now + 60 * 60 * 1000 }),
+    JSON.stringify({ hash: "#next" }),
+    "#next",
+    "invalid json",
+  ]) {
+    assert.equal(launch({ saved }).context.window.location.hash, "");
+  }
+});
+test("fresh launches restore a page just under one hour old", () => {
+  const saved = JSON.stringify({
+    hash: "#next",
+    savedAt: Date.now() - 59 * 60 * 1000,
+  });
+  assert.equal(launch({ saved }).context.window.location.hash, "#next");
+});
+test("saving on background starts a new one-hour restoration window", () => {
+  const app = launch();
+  const now = Date.now() + 2 * 60 * 60 * 1000;
+  app.context.Date = { now: () => now };
+  app.fire("pagehide");
+  const saved = JSON.parse(app.values.get("boxThisLapLastPage:/"));
+  assert.equal(saved.savedAt, now);
+  assert.equal(saved.hash, "#rankings?type=games");
 });

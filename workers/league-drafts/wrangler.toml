@@ -3,7 +3,7 @@ main = "src/index.js"
 compatibility_date = "2026-10-09"
 
 [triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/15 * * * *", "2-57/5 * * * *"]
 
 [[d1_databases]]
 binding = "DB"
@@ -22,6 +22,7 @@ service = "box-this-lap-footy-push"
 
 [vars]
 DRAFT_ENVIRONMENT = "dev"
+TMDB_CATALOG_ENABLED = "true"
 ADMIN_MANAGER_IDS = "6"
 ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
 SITE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/"

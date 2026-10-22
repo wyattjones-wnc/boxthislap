@@ -255,7 +255,7 @@
   width: 24%;
 }
 .resourceTable thead th:last-child {
-  width: 5.5rem;
+  width: 3.25rem;
 }
 .resourceTable tbody th {
   font-weight: 500;
@@ -276,4 +276,166 @@
   color: var(--text-muted);
   font-size: 0.75rem;
   margin-top: var(--space-1);
+}
+
+.resourcePanel {
+  position: relative;
+  height: min(38rem, 75dvh);
+  min-height: 22rem;
+  display: flex;
+  flex-direction: column;
+}
+.resourcePanel .viewTabs {
+  flex-shrink: 0;
+}
+.resourceView {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.resourceView .resourceSearch {
+  flex-shrink: 0;
+}
+.resourceScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.resourceScroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-panel);
+  z-index: 1;
+}
+.panel .resourceTable .sortButton {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+.roster header h2 :global(.manager-chip) {
+  font-size: 0.875rem;
+}
+
+.pageHeading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.pageHeading h1 {
+  margin: 0;
+  font-size: clamp(0.95rem, 3.5vw, 1.125rem);
+  line-height: 1.4;
+}
+.pageHeading p {
+  margin: 0;
+  font-size: clamp(0.7rem, 2.6vw, 0.875rem);
+  color: var(--text-muted);
+}
+.resourceView > form {
+  flex-shrink: 0;
+}
+
+.movieCredits {
+  margin-top: var(--space-4);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.movieCredits summary {
+  cursor: pointer;
+}
+.movieCredits img {
+  display: block;
+  margin-top: var(--space-3);
+}
+
+.reviewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.reviewRow small {
+  display: block;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.panel .pickIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-touch);
+  min-width: var(--control-touch);
+  padding: 0;
+}
+.pickIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 2.5;
+}
+.panel .pickIcon[data-taken="true"] {
+  color: var(--text-muted);
+  background: transparent;
+  opacity: 1;
+}
+
+.resourceTable thead th:nth-child(3):not(:last-child) {
+  width: 3.5rem;
+}
+.resourceTable td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
+}
+
+.listTools {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.listOptions {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  top: 100%;
+  display: grid;
+  gap: var(--space-3);
+  width: min(19rem, 75vw);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+.listOptions label {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.savedListTools {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+.resourceTable:has(thead th:nth-child(5)) th:nth-child(4),
+.resourceTable:has(thead th:nth-child(5)) th:nth-child(5) {
+  width: 2.75rem;
+}
+
+.resourcePanel .viewTabs {
+  padding-right: 3.25rem;
 }

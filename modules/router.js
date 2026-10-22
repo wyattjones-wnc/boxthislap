@@ -69,7 +69,7 @@ export function createRouter({
   tabs,
 }) {
   function showPage(pageName, options = {}) {
-    const routeName = /^(?:fantasy-office|world-cup)-2027-/.test(pageName) ? pageName.split('?')[0] : pageName;
+    const routeName = /^(?:(?:fantasy-office|world-cup)-2027-|draft-list(?:\?|$))/.test(pageName) ? pageName.split('?')[0] : pageName;
     const allowedPageName = PAGE_ALIASES[routeName] || routeName;
     const renderedPageName = getRenderedPageName(allowedPageName);
     const testRulesBlocked =

@@ -7,10 +7,11 @@ const source = readFileSync(new URL('./box-this-lap-footy-widget.js', import.met
 const functions = source.slice(0, source.indexOf('if (!WIDGET_OPTIONS.managerValue) {'))
   + source.slice(source.indexOf('async function loadFixtures() {'));
 
-function load(files, parameter = '', responses = {}, family = 'medium') {
+function load(files, parameter = '', responses = {}, family = 'medium', exerciseBadges = false) {
+  let imageRequests = 0;
   const context = vm.createContext({
     args: { widgetParameter: parameter },
-    config: { widgetFamily: family },
+    config: { widgetFamily: family, runsInWidget: true },
     Color: class {},
     console: { warn() {} },
     FileManager: { local: () => ({
@@ -19,9 +20,15 @@ function load(files, parameter = '', responses = {}, family = 'medium') {
       fileExists: (path) => files.has(path),
       readString: (path) => files.get(path),
       writeString: (path, value) => files.set(path, value),
+      readImage: (path) => files.get(path),
+      writeImage: (path, value) => files.set(path, value),
     }) },
     Request: class {
       constructor(url) { this.url = url.split('?')[0]; }
+      async loadImage() {
+        imageRequests += 1;
+        return 'badge-image';
+      }
       async loadJSON() {
         if (!(this.url in responses)) throw new Error('No service');
         return responses[this.url];
@@ -29,7 +36,13 @@ function load(files, parameter = '', responses = {}, family = 'medium') {
     },
   });
   vm.runInContext(functions, context);
-  return vm.runInContext('loadFixtures()', context);
+  const result = vm.runInContext(exerciseBadges
+    ? '(async () => { const result = await loadFixtures(); const badges = []; for (const fixture of result.fixtures) badges.push(await loadTeamBadge(fixture)); return { ...result, badges }; })()'
+    : 'loadFixtures()', context);
+  return result.then((value) => {
+    if (exerciseBadges === 'offline') assert.equal(imageRequests, 0);
+    return value;
+  });
 }
 
 const scheduleUrl = 'https://wyattjones-wnc.github.io/boxthislap/data/footy-schedule.json';
@@ -84,4 +97,31 @@ test('a successful refresh replaces the saved display, including an empty schedu
   await load(files, '', responses);
   await load(files, '', { [scheduleUrl]: { teamSchedules: [] } });
   assert.equal((await load(files)).fixtures.length, 0);
+});
+
+test('offline display renders saved badges without issuing artwork requests', async () => {
+  const files = new Map();
+  const online = await load(files, '', responses, 'medium', true);
+  assert.equal(online.badges[0], 'badge-image');
+  const offline = await load(files, '', {}, 'large', 'offline');
+  assert.equal(offline.cached, true);
+  assert.equal(offline.badges[0], 'badge-image');
+  for (const key of files.keys()) if (key.includes('-badge-')) files.delete(key);
+  const missingArt = await load(files, '', {}, 'large', 'offline');
+  assert.equal(missingArt.fixtures.length, 8);
+  assert.ok(missingArt.badges.every((badge) => badge === null));
+});
+
+test('background requests share a bounded refresh budget', () => {
+  let now = 1000;
+  const context = vm.createContext({
+    args: {}, config: { runsInWidget: true }, Color: class {},
+    Date: { now: () => now },
+  });
+  vm.runInContext(functions, context);
+  assert.equal(vm.runInContext('getRequestTimeout()', context), 3);
+  now += 7500;
+  assert.equal(vm.runInContext('getRequestTimeout()', context), 0.5);
+  now += 500;
+  assert.throws(() => vm.runInContext('getRequestTimeout()', context), /budget exhausted/);
 });

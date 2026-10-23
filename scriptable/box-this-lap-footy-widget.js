@@ -50,6 +50,7 @@ const COLORS = {
 };
 let loadedManagers = null;
 let refreshFailed = false;
+const refreshDeadline = Date.now() + (config.runsInWidget ? 8000 : 60000);
 
 if (!WIDGET_OPTIONS.managerValue) {
   if (config.runsInWidget) {
@@ -86,7 +87,7 @@ async function loadFixtures() {
     let schedule;
     try {
       const request = new Request(`${SCHEDULE_URL}?nonce=${Date.now()}`);
-      request.timeoutInterval = 20;
+      request.timeoutInterval = getRequestTimeout();
       schedule = await request.loadJSON();
 
       if (!isValidSchedule(schedule)) {
@@ -152,7 +153,7 @@ async function loadManagerPreferences(managerId) {
   try {
     const request = new Request(`${followedTeamsUrl}?nonce=${Date.now()}`);
     request.headers = { "X-Box-This-Lap-Channel": SITE_CHANNEL };
-    request.timeoutInterval = 20;
+    request.timeoutInterval = getRequestTimeout();
     const preferences = await request.loadJSON();
 
     if (!preferences || preferences.ok !== true || !Array.isArray(preferences.teams)) {
@@ -208,7 +209,7 @@ async function loadManagers() {
 
   try {
     const request = new Request(`${MANAGERS_URL}?nonce=${Date.now()}`);
-    request.timeoutInterval = 20;
+    request.timeoutInterval = getRequestTimeout();
     const response = await request.loadJSON();
     managers = response && response.ok === true && Array.isArray(response.managers) ? response.managers : null;
 
@@ -537,6 +538,14 @@ async function addFixture(widget, fixture) {
   row.addSpacer();
 }
 
+function getRequestTimeout() {
+  const remaining = (refreshDeadline - Date.now()) / 1000;
+  if (remaining <= 0) {
+    throw new Error("Widget refresh budget exhausted.");
+  }
+  return Math.min(config.runsInWidget ? 3 : 20, remaining);
+}
+
 async function loadTeamBadge(fixture) {
   const path = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
   const localPath = getFootyLocalTeamBadge(fixture.teamName, fixture.teamId);
@@ -545,11 +554,30 @@ async function loadTeamBadge(fixture) {
   for (const badgePath of paths) {
     try {
       const url = /^https?:\/\//i.test(badgePath) ? badgePath : `${SITE_ASSET_BASE_URL}${badgePath.replace(/^\/+/, "")}`;
+      const manager = FileManager.local();
+      const cachePath = manager.joinPath(manager.documentsDirectory(), `box-this-lap-footy-badge-${encodeURIComponent(url)}.png`);
+      try {
+        if (manager.fileExists(cachePath)) {
+          return manager.readImage(cachePath);
+        }
+      } catch {
+        // A damaged image can be downloaded again while online.
+      }
+      if (refreshFailed) {
+        continue;
+      }
       const request = new Request(url);
-      request.timeoutInterval = 10;
-      return await request.loadImage();
+      request.timeoutInterval = getRequestTimeout();
+      const image = await request.loadImage();
+      try {
+        manager.writeImage(cachePath, image);
+      } catch {
+        // Storage failure must not prevent rendering the downloaded badge.
+      }
+      return image;
     } catch {
-      // Try the local team badge after a stale or unavailable schedule badge.
+      // Stop artwork requests after a failure so offline rendering stays quick.
+      refreshFailed = true;
     }
   }
 

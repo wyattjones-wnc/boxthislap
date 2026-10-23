@@ -39,6 +39,29 @@ The Trophy Log's **Renew PSN sign-in** panel replaces the terminal step for rout
 
 The hourly synchronization compares PSN's per-title `lastUpdatedDateTime` values with D1. Up to four changed or new titles are prioritized immediately, while the normal four-title cursor continues refreshing the complete archive. The Trophy Log's **Refresh** button runs the same priority check on demand.
 
+## Chronological platinum numbers
+
+Migration `0015_chronological_platinums.sql` orders platinum numbers by earned
+UTC timestamp, then game ID and trophy ID for ties. Late imports and corrected
+earned dates adjust later platinum numbers atomically with the trophy update.
+Retries and rolled-back imports do not consume numbers. Trophy preferences and
+the separate earned-trophy ordinals are preserved.
+
+The migration also repairs existing numbered platinums, writing only mismatches.
+Its query plan uses `idx_trophies_platinum_number` for the numbered-platinum set
+and primary-key lookups for updates; it creates no indexes or full-library backfill.
+At the observed 165 platinums, budget fewer than 1,000 D1 row reads for repair
+and verification together, plus two expected trophy updates and index maintenance
+(allow 20 row writes). Actual billing may differ; current account-wide usage is
+not available from the local plan. This is small relative to D1 Free's daily
+5 million row reads and 100,000 row writes, but does not establish current headroom.
+Each future platinum membership/date change ranks the current platinum set;
+ordinary trophy metadata updates skip this additional work. No new Worker
+requests, KV operations, indexes, or scheduled jobs are introduced by the repair.
+The existing deployment workflow runs its normal tests, deployment and one
+platinum verification query; pushing to `dev` does not apply migrations.
+Live application requires approval of this migration and its usage estimate.
+
 ## Terminal recovery and full sync
 
 The webpage is the normal token-renewal path. For recovery or an immediate full-library sync, run this from the repository:

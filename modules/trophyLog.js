@@ -490,7 +490,10 @@ export function createTrophyLogController({ endpoint, getAccessToken }) {
     try {
       const value = await request("/api/psn/sync", { method: "POST" });
       pageCache.clear();
-      syncStatus.textContent = `Refresh complete: ${value.titlesSynced || 0} games checked and ${value.trophiesUpdated || 0} trophies updated.`;
+      const failures = value.failedTitles || [];
+      syncStatus.textContent = failures.length
+        ? `Refresh incomplete: ${value.titlesSynced || 0} games checked, ${value.trophiesUpdated || 0} trophies updated, and ${failures.length} games failed. ${failures[0].error || "Try Refresh again."}`
+        : `Refresh complete: ${value.titlesSynced || 0} games checked and ${value.trophiesUpdated || 0} trophies updated.`;
       state.page = 1;
       await load(true);
     } catch (error) {

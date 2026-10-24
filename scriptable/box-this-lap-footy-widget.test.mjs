@@ -112,7 +112,7 @@ test('offline display renders saved badges without issuing artwork requests', as
   assert.ok(missingArt.badges.every((badge) => badge === null));
 });
 
-test('background requests share a bounded refresh budget', () => {
+test('schedule requests share a bounded refresh budget', () => {
   let now = 1000;
   const context = vm.createContext({
     args: {}, config: { runsInWidget: true }, Color: class {},
@@ -124,4 +124,70 @@ test('background requests share a bounded refresh budget', () => {
   assert.equal(vm.runInContext('getRequestTimeout()', context), 0.5);
   now += 500;
   assert.throws(() => vm.runInContext('getRequestTimeout()', context), /budget exhausted/);
+});
+
+test('a failed badge still tries its PNG fallback and subsequent teams', async () => {
+  const requests = [];
+  let now = 1000;
+  const files = new Map();
+  const context = vm.createContext({
+    args: {}, config: { runsInWidget: true }, Color: class {},
+    Date: { now: () => now },
+    FileManager: { local: () => ({
+      documentsDirectory: () => '/cache',
+      joinPath: (directory, name) => `${directory}/${name}`,
+      fileExists: (path) => files.has(path),
+      readImage: (path) => files.get(path),
+      writeImage: (path, image) => files.set(path, image),
+    }) },
+    Request: class {
+      constructor(url) { this.url = url; }
+      async loadImage() {
+        requests.push({ url: this.url, timeout: this.timeoutInterval });
+        now += 11000;
+        if (this.url.includes('broken')) throw new Error('Unsupported image');
+        return this.url;
+      }
+    },
+  });
+  vm.runInContext(functions, context);
+  const fallback = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/broken.svg", teamId: "7" })', context);
+  assert.ok(fallback.endsWith('assets/teams/7/badge.png'));
+  const next = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/charlotte.png", teamId: "6" })', context);
+  assert.equal(next, 'https://example.com/charlotte.png');
+  assert.equal(requests.length, 3);
+  assert.ok(requests.every((request) => request.timeout === 10));
+  assert.equal(vm.runInContext('refreshFailed', context), false);
+});
+
+test('all eight online badges load even after the schedule refresh budget expires', async () => {
+  let now = 1000;
+  const requests = [];
+  const context = vm.createContext({
+    args: {}, config: { runsInWidget: true }, Color: class {},
+    Date: { now: () => now },
+    FileManager: { local: () => ({
+      documentsDirectory: () => '/cache',
+      joinPath: (directory, name) => `${directory}/${name}`,
+      fileExists: () => false,
+      writeImage() {},
+    }) },
+    Request: class {
+      constructor(url) { this.url = url; }
+      async loadImage() {
+        requests.push(this.url);
+        assert.equal(this.timeoutInterval, 10);
+        now += 2000;
+        return this.url;
+      }
+    },
+  });
+  vm.runInContext(functions, context);
+  // Schedule and manager requests can already have consumed the data budget.
+  now += 9000;
+  for (let index = 0; index < 8; index += 1) {
+    const url = `https://example.com/team-${index}.png`;
+    assert.equal(await vm.runInContext(`loadTeamBadge({ teamBadge: "${url}" })`, context), url);
+  }
+  assert.equal(requests.length, 8);
 });

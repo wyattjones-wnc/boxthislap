@@ -567,7 +567,9 @@ async function loadTeamBadge(fixture) {
         continue;
       }
       const request = new Request(url);
-      request.timeoutInterval = getRequestTimeout();
+      // Artwork has its own timeout: schedule refresh time must not cut off
+      // working badge downloads later in a large widget.
+      request.timeoutInterval = 10;
       const image = await request.loadImage();
       try {
         manager.writeImage(cachePath, image);
@@ -576,8 +578,8 @@ async function loadTeamBadge(fixture) {
       }
       return image;
     } catch {
-      // Stop artwork requests after a failure so offline rendering stays quick.
-      refreshFailed = true;
+      // A missing or unsupported image is not a connectivity failure. Try the
+      // fallback and other teams independently.
     }
   }
 

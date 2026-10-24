@@ -425,7 +425,7 @@ async function createWidget(result) {
   const widget = new ListWidget();
   widget.backgroundColor = COLORS.background;
   widget.setPadding(2, 14, 6, 14);
-  addHeader(widget);
+  addHeader(widget, result);
 
   if (result.pending) {
     addPendingState(widget);
@@ -453,7 +453,7 @@ async function createWidget(result) {
   return widget;
 }
 
-function addHeader(widget) {
+function addHeader(widget, result = {}) {
   const header = widget.addStack();
   header.centerAlignContent();
   header.addSpacer(4);
@@ -465,6 +465,16 @@ function addHeader(widget) {
   title.textColor = COLORS.muted;
 
   header.addSpacer();
+  if (result.cached) {
+    const badge = header.addStack();
+    badge.backgroundColor = COLORS.card;
+    badge.cornerRadius = 4;
+    badge.setPadding(2, 4, 2, 4);
+    const label = badge.addText("CACHED");
+    label.font = Font.semiboldSystemFont(8);
+    label.textColor = COLORS.muted;
+    header.addSpacer(6);
+  }
   const image = header.addImage(SFSymbol.named("soccerball").image);
   image.imageSize = new Size(14, 14);
   image.tintColor = COLORS.accent;
@@ -549,20 +559,17 @@ function getRequestTimeout() {
 async function loadTeamBadge(fixture) {
   const path = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
   const localPath = getFootyLocalTeamBadge(fixture.teamName, fixture.teamId);
-  const paths = [path, localPath].filter(Boolean);
+  const paths = [...new Set((String(fixture.teamId) === "7" || normalizeTeamName(fixture.teamName) === "inter miami cf"
+    ? [localPath, path]
+    : [path, localPath]).filter(Boolean))];
+  const cachedPaths = [];
 
   for (const badgePath of paths) {
     try {
       const url = /^https?:\/\//i.test(badgePath) ? badgePath : `${SITE_ASSET_BASE_URL}${badgePath.replace(/^\/+/, "")}`;
       const manager = FileManager.local();
       const cachePath = manager.joinPath(manager.documentsDirectory(), `box-this-lap-footy-badge-${encodeURIComponent(url)}.png`);
-      try {
-        if (manager.fileExists(cachePath)) {
-          return manager.readImage(cachePath);
-        }
-      } catch {
-        // A damaged image can be downloaded again while online.
-      }
+      cachedPaths.push(cachePath);
       if (refreshFailed) {
         continue;
       }
@@ -583,6 +590,15 @@ async function loadTeamBadge(fixture) {
     }
   }
 
+  // Live sources take priority, including a working local PNG fallback.
+  const manager = FileManager.local();
+  for (const cachePath of cachedPaths) {
+    try {
+      if (manager.fileExists(cachePath)) return manager.readImage(cachePath);
+    } catch {
+      // Ignore damaged saved images.
+    }
+  }
   return null;
 }
 

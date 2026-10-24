@@ -576,8 +576,8 @@ async function loadTeamBadge(fixture) {
       }
       return image;
     } catch {
-      // Stop artwork requests after a failure so offline rendering stays quick.
-      refreshFailed = true;
+      // A missing or unsupported image is not a connectivity failure. Try the
+      // fallback and other teams within the shared refresh budget.
     }
   }
 

@@ -125,3 +125,33 @@ test('background requests share a bounded refresh budget', () => {
   now += 500;
   assert.throws(() => vm.runInContext('getRequestTimeout()', context), /budget exhausted/);
 });
+
+test('a failed badge still tries its PNG fallback and subsequent teams', async () => {
+  const requests = [];
+  const files = new Map();
+  const context = vm.createContext({
+    args: {}, config: { runsInWidget: true }, Color: class {},
+    FileManager: { local: () => ({
+      documentsDirectory: () => '/cache',
+      joinPath: (directory, name) => `${directory}/${name}`,
+      fileExists: (path) => files.has(path),
+      readImage: (path) => files.get(path),
+      writeImage: (path, image) => files.set(path, image),
+    }) },
+    Request: class {
+      constructor(url) { this.url = url; }
+      async loadImage() {
+        requests.push(this.url);
+        if (this.url.includes('broken')) throw new Error('Unsupported image');
+        return this.url;
+      }
+    },
+  });
+  vm.runInContext(functions, context);
+  const fallback = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/broken.svg", teamId: "7" })', context);
+  assert.ok(fallback.endsWith('assets/teams/7/badge.png'));
+  const next = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/charlotte.png", teamId: "6" })', context);
+  assert.equal(next, 'https://example.com/charlotte.png');
+  assert.equal(requests.length, 3);
+  assert.equal(vm.runInContext('refreshFailed', context), false);
+});

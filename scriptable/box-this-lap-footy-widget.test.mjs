@@ -41,6 +41,7 @@ function load(files, parameter = '', responses = {}, family = 'medium', exercise
     : 'loadFixtures()', context);
   return result.then((value) => {
     if (exerciseBadges === 'offline') assert.equal(imageRequests, 0);
+    if (exerciseBadges === 'online-refresh') assert.equal(imageRequests, value.fixtures.length);
     return value;
   });
 }
@@ -151,8 +152,8 @@ test('a failed badge still tries its PNG fallback and subsequent teams', async (
     },
   });
   vm.runInContext(functions, context);
-  const fallback = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/broken.svg", teamId: "7" })', context);
-  assert.ok(fallback.endsWith('assets/teams/7/badge.png'));
+  const fallback = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/broken.svg", teamId: "6" })', context);
+  assert.ok(fallback.endsWith('assets/teams/6/badge.png'));
   const next = await vm.runInContext('loadTeamBadge({ teamBadge: "https://example.com/charlotte.png", teamId: "6" })', context);
   assert.equal(next, 'https://example.com/charlotte.png');
   assert.equal(requests.length, 3);
@@ -190,4 +191,43 @@ test('all eight online badges load even after the schedule refresh budget expire
     assert.equal(await vm.runInContext(`loadTeamBadge({ teamBadge: "${url}" })`, context), url);
   }
   assert.equal(requests.length, 8);
+});
+
+test('online badge loading refreshes existing cached images', async () => {
+  const files = new Map();
+  await load(files, '', responses, 'medium', true);
+  await load(files, '', responses, 'medium', 'online-refresh');
+});
+
+test('cached schedule indicator appears only for saved schedule data', () => {
+  const labels = [];
+  const stack = {
+    addStack: () => stack, centerAlignContent() {}, setPadding() {},
+    addSpacer() {}, addText: (text) => { labels.push(text); return {}; },
+    addImage: () => ({}),
+  };
+  const context = vm.createContext({
+    args: {}, config: {}, Color: class {}, Size: class {},
+    Font: { semiboldSystemFont() {} }, SFSymbol: { named: () => ({ image: {} }) },
+    widget: stack,
+  });
+  vm.runInContext(functions, context);
+  vm.runInContext('addHeader(widget, { cached: false })', context);
+  assert.ok(!labels.includes('CACHED'));
+  vm.runInContext('addHeader(widget, { cached: true })', context);
+  assert.ok(labels.includes('CACHED'));
+});
+
+test('Inter Miami uses the corrected transparent PNG before the missing schedule image', async () => {
+  const context = vm.createContext({
+    args: {}, config: {}, Color: class {},
+    FileManager: { local: () => ({ documentsDirectory: () => '/cache', joinPath: (a, b) => `${a}/${b}`, writeImage() {} }) },
+    Request: class {
+      constructor(url) { this.url = url; }
+      async loadImage() { return this.url; }
+    },
+  });
+  vm.runInContext(functions, context);
+  const result = await vm.runInContext('loadTeamBadge({ teamId: "7", teamBadge: "assets/teams/inter-miami-cf.webp" })', context);
+  assert.ok(result.endsWith('/assets/teams/7/badge.png'));
 });

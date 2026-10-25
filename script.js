@@ -1,3 +1,4 @@
+import { isAppOnline } from "./modules/connectivity.js";
 import { bundledRankingImages, clearSharedRankingImages, loadSharedRankingImages, sharedRankingImages } from './modules/rankingImages.js';
 
 import { loadOfflineSnapshot, initializeOfflineMode } from "./modules/offline.js";
@@ -3289,7 +3290,7 @@ function syncFootyNotificationToggle() {
   const enabled = isFootyNotificationEnabled();
   const managerReady = Boolean(getCurrentManagerId());
 
-  footyNotificationToggle.hidden = !navigator.onLine || !managerReady;
+  footyNotificationToggle.hidden = !isAppOnline() || !managerReady;
   footyNotificationToggle.disabled = !managerReady || isFootyNotificationBusy;
   footyNotificationToggle.classList.toggle("is-active", enabled);
   footyNotificationToggle.classList.toggle("is-loading", isFootyNotificationBusy);
@@ -3480,7 +3481,7 @@ async function registerBoxThisLapServiceWorker() {
   }
 
   serviceWorkerRegistrationPromise ||= navigator.serviceWorker.register(`service-worker.js?v=${encodeURIComponent(SITE_VERSION)}`, { updateViaCache: "none" }).then((registration) => {
-    if (navigator.onLine) void registration.update().catch((error) => recordDiagnostic("offline worker update failed", error));
+    if (isAppOnline()) void registration.update().catch((error) => recordDiagnostic("offline worker update failed", error));
     return registration;
   });
   return serviceWorkerRegistrationPromise;
@@ -5407,7 +5408,7 @@ function shouldRefreshFootyMatchNotes() {
 }
 
 function shouldWaitForFootyMatchNotes() {
-  return navigator.onLine && shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
+  return isAppOnline() && shouldShowPastFootyFixtures && (!hasFootyMatchNotesLoaded() || shouldRefreshFootyMatchNotes());
 }
 
 function ensureFootyMatchNotes({ force = false } = {}) {
@@ -7026,7 +7027,7 @@ function comparePreviousNextItems(first, second) {
 }
 
 function isNextEditModeEnabled() {
-  return navigator.onLine && Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
+  return isAppOnline() && Boolean(isCurrentManagerAdmin() && nextEditModeFilter?.checked);
 }
 
 function syncNextFilters() {
@@ -9140,7 +9141,7 @@ function getActiveRankingManagerId() {
 }
 
 function canEditActiveRankingManager() {
-  return navigator.onLine && Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
+  return isAppOnline() && Boolean(getCurrentManagerId()) && getActiveRankingManagerId() === getCurrentManagerId();
 }
 
 function resetRankingManagerData() {
@@ -18287,7 +18288,7 @@ function ensureSharedData(key, loader) {
 }
 
 function loadPageData(scope) {
-  if (!navigator.onLine && !["footy", "next", "rankings", "login"].includes(scope)) return Promise.resolve();
+  if (!isAppOnline() && !["footy", "next", "rankings", "login"].includes(scope)) return Promise.resolve();
   if (scope === "account-settings") {
     return followedTeamsController.load();
   }
@@ -18536,7 +18537,7 @@ function ensureFootyData() {
     checkFootyMatchNotifications();
     console.info("Box This Lap footy schedule loaded", schedule);
 
-    if (navigator.onLine) ensureFootyMatchNotes()
+    if (isAppOnline()) ensureFootyMatchNotes()
       .then((notes) => {
         if (notes.length) {
           renderFootySchedule(siteData.footySchedule);
@@ -19188,7 +19189,7 @@ hydrateBracketSubmitter();
 hydrateManagerAuthStatusCache();
 hydrateManagerSession();
 showPage(window.location.hash.replace("#", "") || "footy");
-if (navigator.onLine) {
+if (isAppOnline()) {
   void loadOfflineSnapshot("footy", () => loadJson("data/footy-schedule.json")).catch((error) => recordDiagnostic("offline Footy preparation failed", error));
   void ensureNextData().catch((error) => recordDiagnostic("offline Next preparation failed", error));
 }

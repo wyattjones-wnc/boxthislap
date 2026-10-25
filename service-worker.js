@@ -43,6 +43,16 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(Promise.all([clients.claim(), caches.delete("box-this-lap-images-v1")]));
 });
 
+async function fetchShell(request) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  try {
+    return await fetch(request, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   const isOfflineData = OFFLINE_DATA_PATHS.some(path => url.pathname === new URL(path, self.registration.scope).pathname);
@@ -62,7 +72,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE_NAME);
       try {
-        const response = await fetch(event.request, { cache: "no-store" });
+        const response = await fetchShell(event.request);
         if (response.ok) {
           const key = event.request.mode === "navigate" ? new URL("index.html", self.registration.scope) : event.request;
           try { await cache.put(key, response.clone()); } catch { /* Keep a successful online load usable. */ }

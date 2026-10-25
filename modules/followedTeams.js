@@ -1,3 +1,4 @@
+import { isAppOnline } from "./connectivity.js";
 import { loadOfflineSnapshot } from "./offline.js";
 export function createFollowedTeamsController({
   getManagerId,
@@ -445,7 +446,7 @@ export function createFollowedTeamsController({
   }
 
   function applyPreference(response = {}) {
-    if (state.catalogSnapshot && navigator.onLine) {
+    if (state.catalogSnapshot && isAppOnline()) {
       void loadOfflineSnapshot(
         `footy-following:${String(getManagerId() || "anonymous")}`,
         async () => [state.catalogSnapshot, response],

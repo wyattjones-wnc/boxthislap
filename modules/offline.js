@@ -1,3 +1,10 @@
+import {
+  isAppOnline,
+  reportConnectivity,
+  isConnectionFailure,
+  withConnectionDeadline,
+  initializeConnectivity,
+} from "./connectivity.js";
 import { updateOfflineSettings } from "./offlineStatus.js";
 const PREFIX = "boxthislap-offline-v1:";
 const SNAPSHOT_CACHE = "box-this-lap-offline-data-v1";
@@ -85,7 +92,7 @@ export function loadOfflineSnapshot(key, loader) {
   return promise;
 }
 async function loadSnapshot(key, loader) {
-  const saved = !navigator.onLine ? await readSnapshot(key) : null;
+  let saved;
   const restore = () => {
     if (!saved)
       throw new Error(
@@ -100,8 +107,20 @@ async function loadSnapshot(key, loader) {
     window.dispatchEvent(new Event("boxthislap:offline-data"));
     return saved.data;
   };
-  if (!navigator.onLine) return restore();
-  const data = await loader();
+  if (!isAppOnline()) {
+    saved = await readSnapshot(key);
+    return restore();
+  }
+  let data;
+  try {
+    data = await withConnectionDeadline(loader);
+  } catch (error) {
+    if (!isConnectionFailure(error)) throw error;
+    reportConnectivity(false);
+    saved = await readSnapshot(key);
+    if (!saved) throw error;
+    return restore();
+  }
   const savedAt = Date.now();
   const persisted = await saveSnapshot(key, { savedAt, data });
   loaded.set(key, {
@@ -116,15 +135,17 @@ async function loadSnapshot(key, loader) {
 
 export function initializeOfflineMode() {
   const disabled = new Map();
-  let wasOffline = !navigator.onLine;
+  let wasOffline = !isAppOnline();
   window.addEventListener("offline", () => {
     wasOffline = true;
   });
-  window.addEventListener("online", () => {
-    if (wasOffline && navigator.onLine) window.location.reload();
+  window.addEventListener("boxthislap:connectivity", () => {
+    if (!isAppOnline()) wasOffline = true;
+    else if (wasOffline) window.location.reload();
   });
+  initializeConnectivity();
   const blocked = (element) => {
-    if (navigator.onLine) return false;
+    if (isAppOnline()) return false;
     const href = element.getAttribute("href");
     if (href?.startsWith("#"))
       return !available.has(href.slice(1).split("?")[0]);
@@ -158,7 +179,7 @@ export function initializeOfflineMode() {
       .querySelectorAll('a, button, input, select, [role="button"]')
       .forEach((element) => {
         const unusableFootyControl =
-          !navigator.onLine &&
+          !isAppOnline() &&
           element.closest('[data-page="footy"]') &&
           element.matches("button:disabled");
         if (blocked(element) || unusableFootyControl) {
@@ -198,7 +219,7 @@ export function initializeOfflineMode() {
   document.addEventListener(
     "submit",
     (event) => {
-      if (!navigator.onLine) {
+      if (!isAppOnline()) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
@@ -219,6 +240,7 @@ export function initializeOfflineMode() {
   for (const name of [
     "online",
     "offline",
+    "boxthislap:connectivity",
     "hashchange",
     "boxthislap:offline-data",
     "boxthislap:page-shown",

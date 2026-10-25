@@ -1,6 +1,7 @@
-import { test } from "node:test";
+import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { loadOfflineSnapshot } from "./offline.js";
+import { reportConnectivity, isAppOnline } from "./connectivity.js";
 const values = new Map();
 Object.defineProperty(globalThis, "navigator", {
   value: { onLine: true },
@@ -11,6 +12,10 @@ globalThis.localStorage = {
   setItem: (key, value) => values.set(key, value),
 };
 globalThis.window = { dispatchEvent() {} };
+beforeEach(() => {
+  navigator.onLine = true;
+  reportConnectivity(true);
+});
 test("successful loads persist, offline reloads avoid network, and online failures stay visible", async () => {
   const data = { items: [{ id: "1" }] };
   assert.deepEqual(await loadOfflineSnapshot("next", async () => data), data);
@@ -154,5 +159,48 @@ test("online loads replace old snapshots and server errors never restore them", 
       assert.fail("network called"),
     ),
     { items: ["new"] },
+  );
+});
+
+test("transport failure restores saved data while the browser still reports online", async () => {
+  const data = { items: ["saved"] };
+  await loadOfflineSnapshot("weak-signal", async () => data);
+  assert.deepEqual(
+    await loadOfflineSnapshot("weak-signal", async () => {
+      throw new TypeError("Failed to fetch");
+    }),
+    data,
+  );
+  assert.equal(navigator.onLine, true);
+  assert.equal(isAppOnline(), false);
+  assert.deepEqual(
+    await loadOfflineSnapshot("weak-signal", () =>
+      assert.fail("offline network request"),
+    ),
+    data,
+  );
+});
+
+test("stalled loads restore saved data in four seconds and late responses cannot overwrite it", async (t) => {
+  const data = { items: ["saved"] };
+  await loadOfflineSnapshot("stalled", async () => data);
+  let complete;
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const pending = loadOfflineSnapshot(
+    "stalled",
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+  );
+  await Promise.resolve();
+  t.mock.timers.tick(4000);
+  assert.deepEqual(await pending, data);
+  assert.equal(isAppOnline(), false);
+  complete({ items: ["late"] });
+  await Promise.resolve();
+  assert.deepEqual(
+    JSON.parse(values.get("boxthislap-offline-v1:stalled")).data,
+    data,
   );
 });

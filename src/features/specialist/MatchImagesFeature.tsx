@@ -108,6 +108,7 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
       Authorization: `Bearer ${token}`,
       ...(options.body ? { "Content-Type": "application/json" } : {}),
     },
+    cache: "no-store",
     signal: AbortSignal.timeout(30_000),
   });
   const value = await response.json().catch(() => ({}));
@@ -236,26 +237,58 @@ export default function MatchImagesFeature() {
       })
       .catch(() => setFixtures([]));
   }, []);
+  const scanKey = scan
+    ? `${scan.id}:${scan.status}:${scan.finishedAt}:${scan.newImageCount}`
+    : "";
+  const previousScanKey = useRef<string | null>(null);
   useEffect(() => {
-    if (!scan || !["queued", "running"].includes(scan.status)) return;
+    const previous = previousScanKey.current;
+    previousScanKey.current = scanKey;
+    if (previous === null || previous === scanKey || !scan) return;
+    if (["queued", "running"].includes(scan.status)) {
+      setMessage(
+        scan.status === "queued"
+          ? "The scan is queued. Waiting for the background job to start…"
+          : "Scanning for new images in the background…",
+      );
+    } else {
+      setMessage(
+        scan.status === "failed"
+          ? `Scan failed. ${scan.errorSummary || "Check source health for details."}`
+          : `Scan ${scan.status === "partial" ? "partially completed" : "completed"}: ${scan.newImageCount} new images found.${scan.errorCount ? " Some sources failed; check source health." : ""}`,
+      );
+      void load();
+    }
+  }, [load, scan, scanKey]);
+
+  const scanning = Boolean(scan && ["queued", "running"].includes(scan.status));
+  useEffect(() => {
     let checking = false;
-    const timer = window.setInterval(async () => {
-      if (checking) return;
+    let disposed = false;
+    const check = async () => {
+      if (checking || document.visibilityState === "hidden") return;
       checking = true;
       try {
         const latest = await loadHealth();
-        if (
-          latest !== undefined &&
-          (!latest || !["queued", "running"].includes(latest.status))
-        ) {
-          await load();
-        }
+        if (!disposed && latest !== undefined && !scanning) await load();
       } finally {
         checking = false;
       }
-    }, 15_000);
-    return () => window.clearInterval(timer);
-  }, [load, loadHealth, scan]);
+    };
+    const timer = window.setInterval(
+      () => void check(),
+      scanning ? 15_000 : 300_000,
+    );
+    const onReturn = () => void check();
+    window.addEventListener("focus", onReturn);
+    document.addEventListener("visibilitychange", onReturn);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onReturn);
+      document.removeEventListener("visibilitychange", onReturn);
+    };
+  }, [load, loadHealth, scanning]);
 
   const grouped = useMemo(() => {
     const values = new Map<string, ImageCandidate[]>();

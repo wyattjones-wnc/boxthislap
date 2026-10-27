@@ -1,6 +1,8 @@
 name: Scan Footy Match Images
 
 on:
+  schedule:
+    - cron: "37 4 * * *"
   workflow_dispatch:
     inputs:
       request_id:

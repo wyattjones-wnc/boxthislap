@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import process from "node:process";
+import { assertImportBudget } from "./footy-media/import-budget.mjs";
 import {
   normalizeDiscoveredGallery,
   parseArsenalSitemap,
@@ -54,6 +55,7 @@ try {
   const settled = await Promise.all(scans);
   report.sources = settled.map((value) => value.run);
   report.galleries = settled.flatMap((value) => value.galleries);
+  assertImportBudget(report.galleries);
   if (!dryRun)
     await sync("import", {
       sourceRuns: report.sources,

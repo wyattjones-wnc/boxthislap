@@ -8,6 +8,8 @@ if (!token || !repository)
 const report = JSON.parse(
   await readFile(".tmp/fantasy-office-report.json", "utf8"),
 );
+// A scoped verification must not resolve or replace a whole-season incident.
+if (report.partial) process.exit(0);
 const apiBase = `https://api.github.com/repos/${repository}`;
 
 async function github(path, options = {}) {
@@ -80,6 +82,8 @@ const body = [
   `Completed: ${report.completedAt}`,
   `Succeeded: ${report.succeeded || 0}`,
   `Failed: ${report.failed || failures.length || "system failure"}`,
+  `Movies saved: ${report.completedMovies ?? "unknown"}/${report.totalMovies ?? "unknown"}`,
+  ...(report.error ? [`Stopped: ${report.error}`] : []),
   "",
   ...systemic,
   ...(systemic.length ? [""] : []),

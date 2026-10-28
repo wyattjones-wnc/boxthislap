@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "17 9 * * *"
   workflow_dispatch:
+    inputs:
+      movie_limit:
+        description: "Maximum movies to update (0 updates the whole season)"
+        required: false
+        default: "0"
+        type: string
 
 permissions:
   contents: read
@@ -15,7 +21,7 @@ concurrency:
 
 jobs:
   update:
-    if: github.event_name == 'workflow_dispatch' || vars.FANTASY_OFFICE_AUTOMATION_ENABLED == 'true'
+    if: github.event_name == 'workflow_dispatch' || vars.FANTASY_OFFICE_AUTOMATION_ENABLED != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -28,6 +34,7 @@ jobs:
         continue-on-error: true
         env:
           FANTASY_OFFICE_SYNC_SECRET: ${{ secrets.FANTASY_OFFICE_SYNC_SECRET }}
+          FANTASY_OFFICE_MOVIE_LIMIT: ${{ inputs.movie_limit || '0' }}
         run: node scripts/update-fantasy-office-data.mjs
       - name: Retain failed source responses
         if: always()
@@ -40,7 +47,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - name: Update incident issue
-        if: always()
+        if: always() && (github.event_name != 'workflow_dispatch' || inputs.movie_limit == '0')
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/report-fantasy-office-failure.mjs

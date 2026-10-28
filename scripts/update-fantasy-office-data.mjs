@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import {
   countNumberOneWeekends,
   discoverMovieSources,
@@ -11,35 +12,41 @@ import {
   releaseIdFromUrl,
 } from "./fantasy-office-sources.mjs";
 
-const ENDPOINT =
-  process.env.FANTASY_OFFICE_ENDPOINT ||
-  "https://box-this-lap-fantasy-office.boxthislap.workers.dev";
-const SECRET = process.env.FANTASY_OFFICE_SYNC_SECRET || "";
-const YEAR = Number(process.env.FANTASY_OFFICE_YEAR || 2026);
 const REPORT_PATH = ".tmp/fantasy-office-report.json";
 const DEBUG_DIRECTORY = ".tmp/fantasy-office-debug";
 
-async function api(path, options = {}) {
-  const response = await fetch(`${ENDPOINT}${path}`, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${SECRET}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    signal: AbortSignal.timeout(30_000),
-  });
-  const value = await response.json().catch(() => ({}));
-  if (!response.ok || !value.ok) {
-    throw new Error(
-      value.error || `Fantasy Office API returned HTTP ${response.status}.`,
-    );
-  }
-  return value;
+export function createFantasyOfficeApi({
+  endpoint,
+  secret,
+  fetchImpl = fetch,
+}) {
+  return async (path, options = {}) => {
+    const method = options.method || "GET";
+    try {
+      const response = await fetchImpl(`${endpoint}${path}`, {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
+        signal: AbortSignal.timeout(30_000),
+      });
+      const value = await response.json().catch(() => ({}));
+      if (!response.ok || !value.ok) {
+        throw new Error(
+          value.error || `Fantasy Office API returned HTTP ${response.status}.`,
+        );
+      }
+      return value;
+    } catch (error) {
+      throw new Error(`${method} ${path}: ${error.message}`, { cause: error });
+    }
+  };
 }
 
-async function observation(movie, metric, url, parser) {
+async function observation(movie, metric, url, parser, sourceFetch) {
   const fetchedAt = new Date().toISOString();
   if (!url) {
     return failed(
@@ -52,7 +59,7 @@ async function observation(movie, metric, url, parser) {
     );
   }
   try {
-    const html = await fetchSource(url);
+    const html = await sourceFetch(url);
     let result;
     try {
       result = parser(html);
@@ -105,11 +112,11 @@ async function saveDebug(movie, metric, contents) {
   );
 }
 
-async function loadWeekendWinners() {
-  const url = `https://www.boxofficemojo.com/weekend/by-year/${YEAR}/`;
+async function loadWeekendWinners(year, sourceFetch) {
+  const url = `https://www.boxofficemojo.com/weekend/by-year/${year}/`;
   try {
-    const html = await fetchSource(url);
-    return { url, winners: extractWeekendWinners(html, YEAR) };
+    const html = await sourceFetch(url);
+    return { url, winners: extractWeekendWinners(html, year) };
   } catch (error) {
     await mkdir(DEBUG_DIRECTORY, { recursive: true });
     if (error.responseText) {
@@ -123,129 +130,189 @@ async function loadWeekendWinners() {
   }
 }
 
-async function main() {
-  if (!SECRET) throw new Error("FANTASY_OFFICE_SYNC_SECRET is required.");
+export async function runFantasyOfficeUpdate({
+  env = process.env,
+  fetchImpl = fetch,
+  sourceFetch = fetchSource,
+  discoverSources = discoverMovieSources,
+  log = console.log,
+  saveReport = writeReport,
+} = {}) {
+  const endpoint =
+    env.FANTASY_OFFICE_ENDPOINT ||
+    "https://box-this-lap-fantasy-office.boxthislap.workers.dev";
+  const year = Number(env.FANTASY_OFFICE_YEAR || 2026);
   const startedAt = new Date().toISOString();
-  const runId = `${startedAt.slice(0, 10)}-${randomUUID()}`;
-  const config = await api(`/api/sync/seasons/${YEAR}/config`);
-  const discoveries = await discoverMissingSources(config.movies);
-  if (discoveries.length) {
-    await api(`/api/sync/seasons/${YEAR}/sources`, {
-      method: "POST",
-      body: JSON.stringify({
-        discoveredAt: new Date().toISOString(),
-        discoveries,
-      }),
-    });
-    applyDiscoveries(config.movies, discoveries);
-  }
-  const weekend = await loadWeekendWinners();
-  const observations = [];
-
-  for (const movie of config.movies) {
-    observations.push(
-      await observation(
-        movie,
-        "letterboxd_rating",
-        movie.letterboxdUrl,
-        extractLetterboxdRating,
-      ),
-      await observation(
-        movie,
-        "tomatometer",
-        movie.rottenTomatoesUrl,
-        extractTomatometer,
-      ),
-      await observation(
-        movie,
-        "domestic_gross",
-        movie.boxOfficeMojoUrl,
-        extractDomesticGross,
-      ),
-    );
-
-    const fetchedAt = new Date().toISOString();
-    const releaseId =
-      movie.boxOfficeMojoReleaseId || releaseIdFromUrl(movie.boxOfficeMojoUrl);
-    if (!releaseId) {
-      observations.push(
-        failed(
-          movie.id,
-          "number_one_weekends",
-          fetchedAt,
-          weekend.url,
-          "CONFIG_ERROR",
-          "Box Office Mojo release ID is not configured.",
-        ),
-      );
-    } else if (!weekend.winners) {
-      observations.push(
-        failed(
-          movie.id,
-          "number_one_weekends",
-          fetchedAt,
-          weekend.url,
-          weekend.error.sourceType || "PARSE_ERROR",
-          weekend.error.message,
-        ),
-      );
-    } else {
-      observations.push({
-        fetchedAt,
-        metric: "number_one_weekends",
-        movieId: movie.id,
-        sourceUrl: weekend.url,
-        state: "available",
-        success: true,
-        value: countNumberOneWeekends(weekend.winners, releaseId),
-      });
-    }
-  }
-
-  const completedAt = new Date().toISOString();
-  const result = await api(`/api/sync/seasons/${YEAR}/observations`, {
-    method: "POST",
-    body: JSON.stringify({ completedAt, observations, runId, startedAt }),
-  });
   const report = {
-    completedAt,
-    endpoint: ENDPOINT,
-    failed: result.failed,
-    outcomes: result.outcomes,
-    runId,
+    runId: `${startedAt.slice(0, 10)}-${randomUUID()}`,
     startedAt,
-    status: result.status,
-    succeeded: result.succeeded,
-    year: YEAR,
+    completedAt: null,
+    endpoint,
+    year,
+    status: "running",
+    phase: "configuration",
+    succeeded: 0,
+    failed: 0,
+    completedMovies: 0,
+    totalMovies: 0,
+    outcomes: [],
   };
-  await mkdir(".tmp", { recursive: true });
-  await writeFile(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`, "utf8");
-  console.log(
-    `Fantasy Office ${YEAR}: ${result.succeeded} succeeded, ${result.failed} failed.`,
+  const api = createFantasyOfficeApi({
+    endpoint,
+    secret: env.FANTASY_OFFICE_SYNC_SECRET,
+    fetchImpl,
+  });
+  try {
+    if (!env.FANTASY_OFFICE_SYNC_SECRET)
+      throw new Error("FANTASY_OFFICE_SYNC_SECRET is required.");
+    const movieLimit = Number(env.FANTASY_OFFICE_MOVIE_LIMIT || 0);
+    if (!Number.isInteger(movieLimit) || movieLimit < 0)
+      throw new Error(
+        "FANTASY_OFFICE_MOVIE_LIMIT must be a non-negative integer.",
+      );
+    log("Loading Fantasy Office configuration.");
+    await saveReport(report);
+    const config = await api(`/api/sync/seasons/${year}/config`);
+    const movies = movieLimit
+      ? config.movies.slice(0, movieLimit)
+      : config.movies;
+    report.totalMovies = movies.length;
+    report.partial = movies.length < config.movies.length;
+    if (!movies.length)
+      throw new Error("No movies are configured; no data was updated.");
+    report.phase = "weekend source";
+    await saveReport(report);
+    const weekend = await loadWeekendWinners(year, sourceFetch);
+    for (const movie of movies) {
+      report.movieId = movie.id;
+      report.phase = "source discovery";
+      log(
+        `[${report.completedMovies + 1}/${movies.length}] Discovering sources for ${movie.title} (${movie.id}).`,
+      );
+      await saveReport(report);
+      if (
+        !movie.letterboxdUrl ||
+        !movie.rottenTomatoesUrl ||
+        !movie.boxOfficeMojoUrl
+      ) {
+        const discovery = {
+          movieId: movie.id,
+          sources: await discoverSources(movie, year),
+        };
+        report.phase = "saving sources";
+        await saveReport(report);
+        await api(`/api/sync/seasons/${year}/sources`, {
+          method: "POST",
+          body: JSON.stringify({
+            discoveredAt: new Date().toISOString(),
+            discoveries: [discovery],
+          }),
+        });
+        applyDiscoveries([movie], [discovery]);
+      }
+      report.phase = "collecting metrics";
+      log(`Collecting metrics for ${movie.id}.`);
+      await saveReport(report);
+      const observations = await Promise.all([
+        observation(
+          movie,
+          "letterboxd_rating",
+          movie.letterboxdUrl,
+          extractLetterboxdRating,
+          sourceFetch,
+        ),
+        observation(
+          movie,
+          "tomatometer",
+          movie.rottenTomatoesUrl,
+          extractTomatometer,
+          sourceFetch,
+        ),
+        observation(
+          movie,
+          "domestic_gross",
+          movie.boxOfficeMojoUrl,
+          extractDomesticGross,
+          sourceFetch,
+        ),
+      ]);
+      const fetchedAt = new Date().toISOString();
+      const releaseId =
+        movie.boxOfficeMojoReleaseId ||
+        releaseIdFromUrl(movie.boxOfficeMojoUrl);
+      if (!releaseId) {
+        observations.push(
+          failed(
+            movie.id,
+            "number_one_weekends",
+            fetchedAt,
+            weekend.url,
+            "CONFIG_ERROR",
+            "Box Office Mojo release ID is not configured.",
+          ),
+        );
+      } else if (!weekend.winners) {
+        observations.push(
+          failed(
+            movie.id,
+            "number_one_weekends",
+            fetchedAt,
+            weekend.url,
+            weekend.error.sourceType || "PARSE_ERROR",
+            weekend.error.message,
+          ),
+        );
+      } else {
+        observations.push({
+          fetchedAt,
+          metric: "number_one_weekends",
+          movieId: movie.id,
+          sourceUrl: weekend.url,
+          state: "available",
+          success: true,
+          value: countNumberOneWeekends(weekend.winners, releaseId),
+        });
+      }
+      // Each request contains four metrics for one movie. A whole-season request
+      // can exceed the Worker's D1 subrequest budget or API deadline.
+      report.phase = "saving metrics";
+      await saveReport(report);
+      const result = await api(`/api/sync/seasons/${year}/observations`, {
+        method: "POST",
+        body: JSON.stringify({
+          completedAt: new Date().toISOString(),
+          observations,
+          runId: `${report.runId}-${movie.id}`,
+          startedAt,
+        }),
+      });
+      report.succeeded += result.succeeded;
+      report.failed += result.failed;
+      report.outcomes.push(...result.outcomes);
+      report.completedMovies += 1;
+      log(
+        `${movie.id}: ${result.succeeded} succeeded, ${result.failed} failed; saved.`,
+      );
+      await saveReport(report);
+    }
+    report.status = report.failed ? "warning" : "healthy";
+    report.phase = "complete";
+  } catch (error) {
+    report.status = "failed";
+    report.error = `${report.phase}${report.movieId ? ` (${report.movieId})` : ""}: ${error.message}`;
+    log(report.error);
+  }
+  report.completedAt = new Date().toISOString();
+  await saveReport(report);
+  log(
+    `Fantasy Office ${year}: ${report.completedMovies}/${report.totalMovies} movies saved, ${report.succeeded} observations succeeded, ${report.failed} failed.`,
   );
-  if (result.failed) process.exitCode = 1;
+  return report;
 }
 
-async function discoverMissingSources(movies) {
-  const pending = movies.filter(
-    (movie) =>
-      !movie.letterboxdUrl ||
-      !movie.rottenTomatoesUrl ||
-      !movie.boxOfficeMojoUrl,
-  );
-  const discoveries = [];
-  for (let index = 0; index < pending.length; index += 3) {
-    const batch = pending.slice(index, index + 3);
-    discoveries.push(
-      ...(await Promise.all(
-        batch.map(async (movie) => ({
-          movieId: movie.id,
-          sources: await discoverMovieSources(movie, YEAR),
-        })),
-      )),
-    );
-  }
-  return discoveries;
+async function writeReport(report) {
+  await mkdir(".tmp", { recursive: true });
+  await writeFile(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 }
 
 function applyDiscoveries(movies, discoveries) {
@@ -261,22 +328,16 @@ function applyDiscoveries(movies, discoveries) {
   }
 }
 
-main().catch(async (error) => {
-  await mkdir(".tmp", { recursive: true });
-  await writeFile(
-    REPORT_PATH,
-    `${JSON.stringify(
-      {
-        completedAt: new Date().toISOString(),
-        error: error.message,
-        status: "failed",
-        year: YEAR,
-      },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  runFantasyOfficeUpdate()
+    .then((report) => {
+      if (report.status !== "healthy") process.exitCode = 1;
+    })
+    .catch((error) => {
+      console.error(error.message);
+      process.exitCode = 1;
+    });
+}

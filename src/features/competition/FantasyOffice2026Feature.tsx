@@ -391,7 +391,7 @@ function ResultsView({ data }: { data: SeasonData }) {
 }
 
 function ManageView({ data }: { data: SeasonData }) {
-  const [issueFilter, setIssueFilter] = useState("attention");
+  const [issueFilter, setIssueFilter] = useState("all");
   const diagnostics = data.movies.map((movie) => ({
     movie,
     ...movieDiagnostic(movie),
@@ -407,7 +407,7 @@ function ManageView({ data }: { data: SeasonData }) {
     issueFilter === "all"
       ? true
       : issueFilter === "attention"
-        ? ["pending", "source", "error"].includes(category)
+        ? ["source", "error"].includes(category)
         : category === issueFilter,
   );
   return (
@@ -418,8 +418,8 @@ function ManageView({ data }: { data: SeasonData }) {
         verified; you only need to edit a URL when discovery picked the wrong
         film.
       </p>
-      <section className={styles.healthSummary}>
-        <h3>Update health</h3>
+      <details className={styles.healthSummary}>
+        <summary>Automatic update history</summary>
         <p>
           Latest successful verification: {formatDate(data.latestVerification)}
         </p>
@@ -432,15 +432,15 @@ function ManageView({ data }: { data: SeasonData }) {
             </span>
           </div>
         ))}
-      </section>
+      </details>
       <section className={styles.issueQueue}>
         <header>
           <div>
             <h3>Movie diagnostics</h3>
             <p>
-              Pending movies have not been visited by the rotating collector.
-              Missing source and collection error movies need review. Expected
-              unavailable means the source page exists but has no value yet.
+              Waiting movies need no action. Use “Needs review” to see missing
+              source pages and update problems. Open a movie only when you need
+              to review its sources or edit its settings.
             </p>
           </div>
           <FloatingField>
@@ -449,18 +449,18 @@ function ManageView({ data }: { data: SeasonData }) {
               value={issueFilter}
               onChange={(event) => setIssueFilter(event.target.value)}
             >
-              <option value="attention">Everything needing attention</option>
+              <option value="attention">Needs review</option>
               <option value="pending">
-                Pending first collection ({counts.pending || 0})
+                Waiting for first update ({counts.pending || 0})
               </option>
               <option value="source">
                 Missing source ({counts.source || 0})
               </option>
               <option value="error">
-                Collection error ({counts.error || 0})
+                Update needs review ({counts.error || 0})
               </option>
               <option value="unavailable">
-                Expected unavailable ({counts.unavailable || 0})
+                Waiting for published data ({counts.unavailable || 0})
               </option>
               <option value="healthy">Healthy ({counts.healthy || 0})</option>
               <option value="all">All movies ({data.movies.length})</option>
@@ -497,12 +497,21 @@ type DiagnosticCategory =
 
 function diagnosticLabel(category: DiagnosticCategory) {
   return {
-    error: "collection errors",
+    error: "update needs review",
     healthy: "healthy",
-    pending: "pending",
-    source: "missing sources",
-    unavailable: "expected unavailable",
+    pending: "waiting for first update",
+    source: "source pages missing",
+    unavailable: "waiting for published data",
   }[category];
+}
+
+function metricLabel(metric: MetricName) {
+  return {
+    domestic_gross: "Domestic box office",
+    letterboxd_rating: "Letterboxd rating",
+    tomatometer: "Rotten Tomatoes score",
+    number_one_weekends: "Number-one weekends",
+  }[metric];
 }
 
 function movieDiagnostic(movie: FantasyOfficeMovie): {
@@ -536,7 +545,7 @@ function movieDiagnostic(movie: FantasyOfficeMovie): {
         ...sourceDetails,
         ...errors.map(
           ([name, metric]) =>
-            `${name.replaceAll("_", " ")}: ${metric.lastErrorType || metric.status}${metric.lastErrorMessage ? ` — ${metric.lastErrorMessage}` : ""}`,
+            `${metricLabel(name)}: ${!metric.lastErrorType && (metric.status === "stale" || metric.status === "warning") ? "the last successful update is overdue; the saved value is being kept." : "the latest update failed; check the source page before making corrections."}`,
         ),
       ],
     };
@@ -619,12 +628,19 @@ function MovieAdminForm({
       title: form.get("title"),
     });
   };
+  const nextStep = {
+    pending:
+      "No action needed. This movie is waiting for its first automatic update.",
+    unavailable:
+      "No action needed if the movie has no published ratings or box office figures yet.",
+    healthy: "No action needed. Automatic updates are working.",
+    source:
+      "Review sources below. Add any missing page URLs for this movie, then save.",
+    error:
+      "Review the affected sources below. Check that each page is for the correct movie. If the pages are correct, leave the values unchanged and check again after the next automatic update.",
+  }[category];
   return (
-    <form
-      className={styles.adminCard}
-      id={`movie-admin-${movie.id}`}
-      onSubmit={submit}
-    >
+    <article className={styles.adminCard}>
       <header>
         <div>
           <h3>{movie.movie}</h3>
@@ -632,141 +648,162 @@ function MovieAdminForm({
             <ManagerChip name={movie.manager} /> · {movie.draftNumber}
           </p>
         </div>
-        <label>
-          <input defaultChecked={movie.active} name="active" type="checkbox" />{" "}
-          Active
-        </label>
-      </header>
-      <div className={styles.diagnosticStatus}>
         <strong className={styles[category]}>
           {diagnosticLabel(category)}
         </strong>
+      </header>
+      <p>{nextStep}</p>
+      {category === "source" || category === "error" ? (
         <ul>
           {details.map((detail) => (
             <li key={detail}>{detail}</li>
           ))}
         </ul>
-      </div>
-      <div className={styles.sourceGrid}>
-        <FloatingField>
-          <span>Movie title</span>
-          <input defaultValue={movie.movie} name="title" required />
-        </FloatingField>
-        <FloatingField>
-          <span>Letterboxd URL</span>
-          <input
-            defaultValue={movie.letterboxdUrl}
-            name="letterboxdUrl"
-            type="url"
-          />
-          <SourceVerification
-            available={Boolean(movie.letterboxdUrl)}
-            defaultChecked={movie.letterboxdVerified}
-            name="letterboxdVerified"
-          />
-        </FloatingField>
-        <FloatingField>
-          <span>Rotten Tomatoes URL</span>
-          <input
-            defaultValue={movie.rottenTomatoesUrl}
-            name="rottenTomatoesUrl"
-            type="url"
-          />
-          <SourceVerification
-            available={Boolean(movie.rottenTomatoesUrl)}
-            defaultChecked={movie.rottenTomatoesVerified}
-            name="rottenTomatoesVerified"
-          />
-        </FloatingField>
-        <FloatingField>
-          <span>Box Office Mojo URL</span>
-          <input
-            defaultValue={movie.boxOfficeMojoUrl}
-            name="boxOfficeMojoUrl"
-            type="url"
-          />
-          <SourceVerification
-            available={Boolean(movie.boxOfficeMojoUrl)}
-            defaultChecked={movie.boxOfficeMojoVerified}
-            name="boxOfficeMojoVerified"
-          />
-        </FloatingField>
-        <FloatingField>
-          <span>Box Office Mojo release ID</span>
-          <input
-            defaultValue={movie.boxOfficeMojoReleaseId}
-            name="boxOfficeMojoReleaseId"
-          />
-        </FloatingField>
-        <FloatingField>
-          <span>Award points</span>
-          <input
-            defaultValue={movie.awardPoints}
-            min="0"
-            name="awardPoints"
-            step="1"
-            type="number"
-          />
-        </FloatingField>
-      </div>
+      ) : null}
       <details>
-        <summary>Health, emergency corrections, and freezes</summary>
-        <div className={styles.metricGrid}>
-          {(Object.keys(movie.health) as MetricName[]).map((metric) => {
-            const health = movie.health[metric];
-            return (
-              <fieldset key={metric}>
-                <legend>{metric.replaceAll("_", " ")}</legend>
-                <p
-                  className={
-                    styles[
-                      health.status === "healthy" ? "healthy" : "unhealthy"
-                    ]
-                  }
-                >
-                  {health.status} · {formatDate(health.lastSuccessAt)}
-                </p>
-                {health.lastErrorMessage ? (
-                  <p className={styles.error}>{health.lastErrorMessage}</p>
-                ) : null}
-                <FloatingField>
-                  <span>Override</span>
-                  <input
-                    defaultValue={health.manualOverride ?? ""}
-                    name={`${metric}.manualOverride`}
-                    step="any"
-                    type="number"
-                  />
-                </FloatingField>
-                <FloatingField>
-                  <span>Frozen value</span>
-                  <input
-                    defaultValue={health.frozenValue ?? ""}
-                    name={`${metric}.frozenValue`}
-                    step="any"
-                    type="number"
-                  />
-                </FloatingField>
-              </fieldset>
-            );
-          })}
-        </div>
+        <summary>Review sources and edit movie</summary>
+        <form id={`movie-admin-${movie.id}`} onSubmit={submit}>
+          <header>
+            <div>
+              <h3>{movie.movie}</h3>
+              <p>
+                <ManagerChip name={movie.manager} /> · {movie.draftNumber}
+              </p>
+            </div>
+            <label>
+              <input
+                defaultChecked={movie.active}
+                name="active"
+                type="checkbox"
+              />{" "}
+              Active
+            </label>
+          </header>
+          <div className={styles.sourceGrid}>
+            <FloatingField>
+              <span>Movie title</span>
+              <input defaultValue={movie.movie} name="title" required />
+            </FloatingField>
+            <FloatingField>
+              <span>Letterboxd URL</span>
+              <input
+                defaultValue={movie.letterboxdUrl}
+                name="letterboxdUrl"
+                type="url"
+              />
+              <SourceVerification
+                available={Boolean(movie.letterboxdUrl)}
+                defaultChecked={movie.letterboxdVerified}
+                name="letterboxdVerified"
+              />
+            </FloatingField>
+            <FloatingField>
+              <span>Rotten Tomatoes URL</span>
+              <input
+                defaultValue={movie.rottenTomatoesUrl}
+                name="rottenTomatoesUrl"
+                type="url"
+              />
+              <SourceVerification
+                available={Boolean(movie.rottenTomatoesUrl)}
+                defaultChecked={movie.rottenTomatoesVerified}
+                name="rottenTomatoesVerified"
+              />
+            </FloatingField>
+            <FloatingField>
+              <span>Box Office Mojo URL</span>
+              <input
+                defaultValue={movie.boxOfficeMojoUrl}
+                name="boxOfficeMojoUrl"
+                type="url"
+              />
+              <SourceVerification
+                available={Boolean(movie.boxOfficeMojoUrl)}
+                defaultChecked={movie.boxOfficeMojoVerified}
+                name="boxOfficeMojoVerified"
+              />
+            </FloatingField>
+            <FloatingField>
+              <span>Box Office Mojo release ID</span>
+              <input
+                defaultValue={movie.boxOfficeMojoReleaseId}
+                name="boxOfficeMojoReleaseId"
+              />
+            </FloatingField>
+            <FloatingField>
+              <span>Award points</span>
+              <input
+                defaultValue={movie.awardPoints}
+                min="0"
+                name="awardPoints"
+                step="1"
+                type="number"
+              />
+            </FloatingField>
+          </div>
+          <details>
+            <summary>Health, emergency corrections, and freezes</summary>
+            <div className={styles.metricGrid}>
+              {(Object.keys(movie.health) as MetricName[]).map((metric) => {
+                const health = movie.health[metric];
+                return (
+                  <fieldset key={metric}>
+                    <legend>{metricLabel(metric)}</legend>
+                    <p
+                      className={
+                        styles[
+                          health.status === "healthy" ? "healthy" : "unhealthy"
+                        ]
+                      }
+                    >
+                      {health.status} · {formatDate(health.lastSuccessAt)}
+                    </p>
+                    {health.lastErrorType ? (
+                      <p>Error code: {health.lastErrorType}</p>
+                    ) : null}
+                    {health.lastErrorMessage ? (
+                      <p className={styles.error}>{health.lastErrorMessage}</p>
+                    ) : null}
+                    <FloatingField>
+                      <span>Override</span>
+                      <input
+                        defaultValue={health.manualOverride ?? ""}
+                        name={`${metric}.manualOverride`}
+                        step="any"
+                        type="number"
+                      />
+                    </FloatingField>
+                    <FloatingField>
+                      <span>Frozen value</span>
+                      <input
+                        defaultValue={health.frozenValue ?? ""}
+                        name={`${metric}.frozenValue`}
+                        step="any"
+                        type="number"
+                      />
+                    </FloatingField>
+                  </fieldset>
+                );
+              })}
+            </div>
+          </details>
+          <footer>
+            <button
+              className="action-button"
+              disabled={mutation.isPending}
+              type="submit"
+            >
+              {mutation.isPending ? "Saving…" : "Save movie"}
+            </button>
+            {mutation.error ? (
+              <span className={styles.error}>{mutation.error.message}</span>
+            ) : (
+              <span>{message}</span>
+            )}
+          </footer>
+        </form>
       </details>
-      <footer>
-        <button
-          className="action-button"
-          disabled={mutation.isPending}
-          type="submit"
-        >
-          {mutation.isPending ? "Saving…" : "Save movie"}
-        </button>
-        {mutation.error ? (
-          <span className={styles.error}>{mutation.error.message}</span>
-        ) : (
-          <span>{message}</span>
-        )}
-      </footer>
-    </form>
+    </article>
   );
 }
 

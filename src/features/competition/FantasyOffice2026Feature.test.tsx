@@ -156,6 +156,20 @@ describe("FantasyOffice2026Page", () => {
 
     expect(await screen.findByText("Movie diagnostics")).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Show" })).toBeTruthy();
+    expect(
+      screen.getByText("Review sources and edit movie").closest("details")
+        ?.open,
+    ).toBe(false);
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Show" }),
+      "attention",
+    );
+    expect(screen.queryByText("Review sources and edit movie")).toBeNull();
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Show" }),
+      "all",
+    );
+    await userEvent.click(screen.getByText("Review sources and edit movie"));
     expect(screen.getByRole("textbox", { name: "Movie title" })).toBeTruthy();
     expect(
       screen.getByRole("spinbutton", { name: "Award points" }),
@@ -166,9 +180,9 @@ describe("FantasyOffice2026Page", () => {
     expect(
       screen.getAllByLabelText("Frozen value", { exact: true }),
     ).toHaveLength(4);
-    expect(screen.getByText("1 pending")).toBeTruthy();
+    expect(screen.getByText("1 waiting for first update")).toBeTruthy();
     expect(
-      screen.getByText(/rotating collector has not attempted this movie yet/i),
+      screen.getByText(/waiting for its first automatic update/i),
     ).toBeTruthy();
     delete window.boxThisLapGetManagerAccessToken;
   });

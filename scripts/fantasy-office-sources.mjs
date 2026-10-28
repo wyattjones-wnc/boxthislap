@@ -231,6 +231,42 @@ export function extractLetterboxdRating(html) {
 }
 
 export function extractTomatometer(html) {
+  const scorecard = String(html).match(
+    /<script\b(?=[^>]*\bid=["']media-scorecard-json["'])[^>]*>([\s\S]*?)<\/script>/i,
+  );
+  if (scorecard) {
+    let critics;
+    try {
+      critics = JSON.parse(scorecard[1]).criticsScore;
+    } catch {
+      throw sourceError(
+        "PARSE_ERROR",
+        "Rotten Tomatoes scorecard JSON is invalid.",
+      );
+    }
+    const rawScore = critics?.score;
+    if (
+      rawScore !== undefined &&
+      rawScore !== null &&
+      /^\d{1,3}$/.test(String(rawScore)) &&
+      Number(rawScore) <= 100
+    ) {
+      return { state: "available", value: Number(rawScore) };
+    }
+    // Upcoming films omit score entirely when there are no critic reviews.
+    // Restrict this to the movie's scorecard: audience and sidebar TV scores
+    // must never supply a Tomatometer value for this movie.
+    if (
+      (rawScore === undefined || rawScore === null || rawScore === "") &&
+      (critics?.reviewCount ?? critics?.ratingCount) === 0
+    ) {
+      return { state: "not_available", value: null };
+    }
+    throw sourceError(
+      "PARSE_ERROR",
+      "The movie's critic score state could not be identified.",
+    );
+  }
   const patterns = [
     /tomatometerscore=["'](\d{1,3})["']/i,
     /tomatometerScore["']?\s*[:=]\s*["']?(\d{1,3})/i,

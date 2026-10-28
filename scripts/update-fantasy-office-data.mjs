@@ -296,7 +296,12 @@ export async function runFantasyOfficeUpdate({
       });
       report.succeeded += result.succeeded;
       report.failed += result.failed;
-      report.outcomes.push(...result.outcomes);
+      report.outcomes.push(
+        ...result.outcomes.map((outcome) => ({
+          ...outcome,
+          movieTitle: movie.title,
+        })),
+      );
       report.completedMovies += 1;
       log(
         `${movie.id}: ${result.succeeded} succeeded, ${result.failed} failed; saved.`,
@@ -312,10 +317,54 @@ export async function runFantasyOfficeUpdate({
   }
   report.completedAt = new Date().toISOString();
   await saveReport(report);
+  if (env.GITHUB_STEP_SUMMARY) {
+    await writeFile(
+      env.GITHUB_STEP_SUMMARY,
+      renderFantasyOfficeSummary(report),
+      "utf8",
+    );
+  }
   log(
     `Fantasy Office ${year}: ${report.completedMovies}/${report.totalMovies} movies saved, ${report.succeeded} observations succeeded, ${report.failed} failed.`,
   );
   return report;
+}
+
+export function renderFantasyOfficeSummary(report) {
+  const failures = report.outcomes.filter(
+    (outcome) => !["healthy", "not_available"].includes(outcome.status),
+  );
+  const missing = failures.filter(
+    (outcome) => outcome.error === "CONFIG_ERROR",
+  );
+  const lines = [
+    "## Fantasy Office update",
+    "",
+    `${report.completedMovies}/${report.totalMovies} movies saved. ${report.succeeded} observations succeeded; ${report.failed} need attention.`,
+    ...(report.error ? ["", `Stopped: ${report.error}`] : []),
+    ...(report.partial
+      ? [
+          "",
+          "This was a limited verification, not a whole-season health check.",
+        ]
+      : []),
+    ...(missing.length
+      ? [
+          "",
+          `${missing.length} observations are missing a source URL or Box Office Mojo release ID. Review the matching movie in Manage. Mark genuinely non-theatrical movies as non-theatrical; otherwise add the correct source. Missing matches remain failures so they cannot silently leave scoring incomplete.`,
+        ]
+      : []),
+  ];
+  if (failures.length) {
+    lines.push("", "| Movie | Metric | Issue |", "| --- | --- | --- |");
+    for (const outcome of failures) {
+      const clean = (value) => String(value || "").replace(/[|\r\n]/g, " ");
+      lines.push(
+        `| ${clean(outcome.movieTitle || outcome.movieId)} | ${clean(outcome.metric).replaceAll("_", " ")} | ${clean(outcome.error || outcome.status)} |`,
+      );
+    }
+  }
+  return `${lines.join("\n")}\n`;
 }
 
 async function writeReport(report) {

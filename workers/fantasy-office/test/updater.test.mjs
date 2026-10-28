@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runFantasyOfficeUpdate } from "../../../scripts/update-fantasy-office-data.mjs";
+import {
+  runFantasyOfficeUpdate,
+  renderFantasyOfficeSummary,
+} from "../../../scripts/update-fantasy-office-data.mjs";
 
 function movie(index, configured = true) {
   return {
@@ -204,4 +207,33 @@ test("non-theatrical movies require only rating sources and submit no box office
       .body.observations.map((entry) => entry.metric),
     ["letterboxd_rating", "tomatometer"],
   );
+});
+
+test("the Actions summary distinguishes completed work from missing sources and parser failures", () => {
+  const summary = renderFantasyOfficeSummary({
+    completedMovies: 55,
+    totalMovies: 55,
+    succeeded: 159,
+    failed: 2,
+    outcomes: [
+      {
+        movieTitle: "Missing Film",
+        metric: "domestic_gross",
+        status: "error",
+        error: "CONFIG_ERROR",
+      },
+      {
+        movieTitle: "Changed Page",
+        metric: "tomatometer",
+        status: "error",
+        error: "PARSE_ERROR",
+      },
+      { movieTitle: "Good Film", metric: "tomatometer", status: "healthy" },
+    ],
+  });
+  assert.match(summary, /55\/55 movies saved/);
+  assert.match(summary, /1 observations are missing a source/);
+  assert.match(summary, /Missing Film \| domestic gross \| CONFIG_ERROR/);
+  assert.match(summary, /Changed Page \| tomatometer \| PARSE_ERROR/);
+  assert.ok(!summary.includes("Good Film"));
 });

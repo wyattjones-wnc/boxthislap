@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers";
 import { FantasyOffice2026Page } from "./FantasyOffice2026Feature";
@@ -184,6 +185,113 @@ describe("FantasyOffice2026Page", () => {
     expect(
       screen.getByText(/waiting for its first automatic update/i),
     ).toBeTruthy();
+    delete window.boxThisLapGetManagerAccessToken;
+  });
+
+  it("ignores box office warnings for non-theatrical movies and saves the release setting", async () => {
+    window.location.hash = "#fantasy-office-2026-manage";
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({ isAdmin: true, managerId: "6" }),
+    );
+    window.boxThisLapGetManagerAccessToken = async () => "admin-token";
+    const healthy = {
+      lastAttemptAt: "2026-10-28T00:00:00Z",
+      lastSuccessAt: "2026-10-28T00:00:00Z",
+      status: "healthy",
+    };
+    const movie = {
+      id: "streaming",
+      movie: "Streaming Movie",
+      active: true,
+      nonTheatrical: true,
+      manager: "Manager One",
+      draftNumber: "D1",
+      awardPoints: 0,
+      letterboxdUrl: "https://letterboxd.com/film/streaming/",
+      rottenTomatoesUrl: "https://www.rottentomatoes.com/m/streaming",
+      health: {
+        letterboxd_rating: healthy,
+        tomatometer: healthy,
+        domestic_gross: { ...healthy, status: "error" },
+        number_one_weekends: { ...healthy, status: "error" },
+      },
+      score: { points: 800 },
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (_url, options) => {
+        if (options?.method === "PUT") {
+          Object.assign(movie, JSON.parse(String(options.body)));
+          return Response.json({ ok: true });
+        }
+        return Response.json({
+          ok: true,
+          movies: [movie],
+          draft: [],
+          standings: [],
+          runs: [],
+        });
+      });
+    render(
+      <AppProviders>
+        <QueryClientProvider
+          client={
+            new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          }
+        >
+          <FantasyOffice2026Page mode="manage" />
+        </QueryClientProvider>
+      </AppProviders>,
+    );
+    expect(
+      await screen.findByText(
+        "No action needed. Automatic updates are working.",
+      ),
+    ).toBeTruthy();
+    await userEvent.click(screen.getByText("Review sources and edit movie"));
+    const releaseOption = screen.getByRole("checkbox", {
+      name: "Non-theatrical — no box office",
+    }) as HTMLInputElement;
+    expect(releaseOption.checked).toBe(true);
+    expect(
+      (screen.getByLabelText("Box Office Mojo release ID") as HTMLInputElement)
+        .disabled,
+    ).toBe(true);
+    expect(screen.getAllByLabelText("Override", { exact: true })).toHaveLength(
+      2,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save movie" }));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([, options]) => options?.method === "PUT"),
+      ).toBe(true),
+    );
+    const saved = JSON.parse(
+      String(
+        fetchMock.mock.calls.find(
+          ([, options]) => options?.method === "PUT",
+        )?.[1]?.body,
+      ),
+    );
+    expect(saved.nonTheatrical).toBe(true);
+    expect(saved.overrides.domestic_gross).toBeUndefined();
+    expect(saved.boxOfficeMojoUrl).toBeUndefined();
+    await userEvent.click(releaseOption);
+    expect(
+      (screen.getByLabelText("Box Office Mojo release ID") as HTMLInputElement)
+        .disabled,
+    ).toBe(false);
+    await userEvent.click(screen.getByRole("button", { name: "Save movie" }));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([, options]) => options?.method === "PUT"),
+      ).toHaveLength(2),
+    );
+    const restored = fetchMock.mock.calls
+      .filter(([, options]) => options?.method === "PUT")
+      .at(-1);
+    expect(JSON.parse(String(restored?.[1]?.body)).nonTheatrical).toBe(false);
     delete window.boxThisLapGetManagerAccessToken;
   });
 

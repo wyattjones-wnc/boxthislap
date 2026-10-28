@@ -182,3 +182,26 @@ test("an empty configuration cannot falsely report a recovered season", async ()
   assert.equal(report.status, "failed");
   assert.match(report.error, /No movies are configured/);
 });
+
+test("non-theatrical movies require only rating sources and submit no box office observations", async () => {
+  const entry = { ...movie(1), nonTheatrical: true, boxOfficeMojoUrl: "" };
+  const setup = fixture({ movies: [entry] });
+  const urls = [];
+  const fetchRating = setup.options.sourceFetch;
+  setup.options.sourceFetch = async (url) => {
+    urls.push(url);
+    return fetchRating(url);
+  };
+  const report = await runFantasyOfficeUpdate(setup.options);
+  assert.equal(report.status, "healthy");
+  assert.equal(report.succeeded, 2);
+  assert.equal(setup.discoveryCalls.length, 0);
+  assert.equal(urls.length, 2);
+  assert.ok(urls.every((url) => !url.includes("boxofficemojo")));
+  assert.deepEqual(
+    setup.requests
+      .find((entry) => entry.body?.observations)
+      .body.observations.map((entry) => entry.metric),
+    ["letterboxd_rating", "tomatometer"],
+  );
+});

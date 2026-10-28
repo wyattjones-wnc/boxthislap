@@ -5,7 +5,9 @@ export async function discoverMovieSources(movie, year) {
   const results = await Promise.allSettled([
     discoverLetterboxd(movie.title, year),
     discoverRottenTomatoes(movie.title, year),
-    discoverBoxOfficeMojo(movie.title, year),
+    movie.nonTheatrical
+      ? Promise.resolve(null)
+      : discoverBoxOfficeMojo(movie.title, year),
   ]);
   const [letterboxd, rottenTomatoes, boxOfficeMojo] = results.map((result) =>
     result.status === "fulfilled"

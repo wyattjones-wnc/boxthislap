@@ -182,7 +182,9 @@ export async function runFantasyOfficeUpdate({
       throw new Error("No movies are configured; no data was updated.");
     report.phase = "weekend source";
     await saveReport(report);
-    const weekend = await loadWeekendWinners(year, sourceFetch);
+    const weekend = movies.some((movie) => !movie.nonTheatrical)
+      ? await loadWeekendWinners(year, sourceFetch)
+      : null;
     for (const movie of movies) {
       report.movieId = movie.id;
       report.phase = "source discovery";
@@ -193,7 +195,7 @@ export async function runFantasyOfficeUpdate({
       if (
         !movie.letterboxdUrl ||
         !movie.rottenTomatoesUrl ||
-        !movie.boxOfficeMojoUrl
+        (!movie.nonTheatrical && !movie.boxOfficeMojoUrl)
       ) {
         const discovery = {
           movieId: movie.id,
@@ -228,52 +230,58 @@ export async function runFantasyOfficeUpdate({
           extractTomatometer,
           sourceFetch,
         ),
-        observation(
-          movie,
-          "domestic_gross",
-          movie.boxOfficeMojoUrl,
-          extractDomesticGross,
-          sourceFetch,
-        ),
+        ...(movie.nonTheatrical
+          ? []
+          : [
+              observation(
+                movie,
+                "domestic_gross",
+                movie.boxOfficeMojoUrl,
+                extractDomesticGross,
+                sourceFetch,
+              ),
+            ]),
       ]);
-      const fetchedAt = new Date().toISOString();
-      const releaseId =
-        movie.boxOfficeMojoReleaseId ||
-        releaseIdFromUrl(movie.boxOfficeMojoUrl);
-      if (!releaseId) {
-        observations.push(
-          failed(
-            movie.id,
-            "number_one_weekends",
+      if (!movie.nonTheatrical) {
+        const fetchedAt = new Date().toISOString();
+        const releaseId =
+          movie.boxOfficeMojoReleaseId ||
+          releaseIdFromUrl(movie.boxOfficeMojoUrl);
+        if (!releaseId) {
+          observations.push(
+            failed(
+              movie.id,
+              "number_one_weekends",
+              fetchedAt,
+              weekend.url,
+              "CONFIG_ERROR",
+              "Box Office Mojo release ID is not configured.",
+            ),
+          );
+        } else if (!weekend.winners) {
+          observations.push(
+            failed(
+              movie.id,
+              "number_one_weekends",
+              fetchedAt,
+              weekend.url,
+              weekend.error.sourceType || "PARSE_ERROR",
+              weekend.error.message,
+            ),
+          );
+        } else {
+          observations.push({
             fetchedAt,
-            weekend.url,
-            "CONFIG_ERROR",
-            "Box Office Mojo release ID is not configured.",
-          ),
-        );
-      } else if (!weekend.winners) {
-        observations.push(
-          failed(
-            movie.id,
-            "number_one_weekends",
-            fetchedAt,
-            weekend.url,
-            weekend.error.sourceType || "PARSE_ERROR",
-            weekend.error.message,
-          ),
-        );
-      } else {
-        observations.push({
-          fetchedAt,
-          metric: "number_one_weekends",
-          movieId: movie.id,
-          sourceUrl: weekend.url,
-          state: "available",
-          success: true,
-          value: countNumberOneWeekends(weekend.winners, releaseId),
-        });
+            metric: "number_one_weekends",
+            movieId: movie.id,
+            sourceUrl: weekend.url,
+            state: "available",
+            success: true,
+            value: countNumberOneWeekends(weekend.winners, releaseId),
+          });
+        }
       }
-      // Each request contains four metrics for one movie. A whole-season request
+      // Each request contains at most four metrics for one movie. A whole-season request
       // can exceed the Worker's D1 subrequest budget or API deadline.
       report.phase = "saving metrics";
       await saveReport(report);

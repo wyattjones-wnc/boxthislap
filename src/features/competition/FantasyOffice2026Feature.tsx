@@ -43,6 +43,7 @@ interface MovieScore {
 
 interface FantasyOfficeMovie {
   active: boolean;
+  nonTheatrical?: boolean;
   awardPoints: number;
   boxOfficeMojoReleaseId?: string;
   boxOfficeMojoUrl?: string;
@@ -323,13 +324,22 @@ function MoviesView({ movies }: { movies: FantasyOfficeMovie[] }) {
             <tr key={movie.id}>
               <td>
                 <strong>{movie.movie}</strong>
-                <small>{movie.draftNumber}</small>
+                <small>
+                  {movie.draftNumber}
+                  {movie.nonTheatrical ? " · Non-theatrical" : ""}
+                </small>
               </td>
               <td>
                 <ManagerChip name={movie.manager} />
               </td>
-              <td>{formatGross(movie.domesticGross)}</td>
-              <td>{movie.numberOneWeekends ?? "N/A"}</td>
+              <td>
+                {movie.nonTheatrical ? "N/A" : formatGross(movie.domesticGross)}
+              </td>
+              <td>
+                {movie.nonTheatrical
+                  ? "N/A"
+                  : (movie.numberOneWeekends ?? "N/A")}
+              </td>
               <td>{movie.letterboxdRating?.toFixed(1) ?? "N/A"}</td>
               <td>{movie.tomatometer ?? "N/A"}</td>
               <td>{movie.awardPoints}</td>
@@ -521,7 +531,12 @@ function movieDiagnostic(movie: FantasyOfficeMovie): {
   const health = Object.entries(movie.health) as Array<
     [MetricName, MetricHealth]
   >;
-  if (health.every(([, metric]) => !metric.lastAttemptAt)) {
+  const requiredHealth = health.filter(
+    ([metric]) =>
+      !movie.nonTheatrical ||
+      !["domestic_gross", "number_one_weekends"].includes(metric),
+  );
+  if (requiredHealth.every(([, metric]) => !metric.lastAttemptAt)) {
     return {
       category: "pending",
       details: ["The rotating collector has not attempted this movie yet."],
@@ -530,12 +545,12 @@ function movieDiagnostic(movie: FantasyOfficeMovie): {
   const missing = [
     !movie.letterboxdUrl ? "Letterboxd" : "",
     !movie.rottenTomatoesUrl ? "Rotten Tomatoes" : "",
-    !movie.boxOfficeMojoUrl ? "Box Office Mojo" : "",
+    !movie.nonTheatrical && !movie.boxOfficeMojoUrl ? "Box Office Mojo" : "",
   ].filter(Boolean);
   const sourceDetails = missing.length
     ? [`No discovered source: ${missing.join(", ")}.`]
     : [];
-  const errors = health.filter(([, metric]) =>
+  const errors = requiredHealth.filter(([, metric]) =>
     ["error", "warning", "stale"].includes(metric.status),
   );
   if (errors.length) {
@@ -551,7 +566,7 @@ function movieDiagnostic(movie: FantasyOfficeMovie): {
     };
   }
   if (missing.length) return { category: "source", details: sourceDetails };
-  const unavailable = health
+  const unavailable = requiredHealth
     .filter(([, metric]) => metric.status === "not_available")
     .map(([name]) => name.replaceAll("_", " "));
   if (unavailable.length) {
@@ -577,6 +592,9 @@ function MovieAdminForm({
 }) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
+  const [nonTheatrical, setNonTheatrical] = useState(
+    Boolean(movie.nonTheatrical),
+  );
   const mutation = useMutation({
     mutationFn: (body: object) =>
       request(
@@ -606,20 +624,31 @@ function MovieAdminForm({
           "tomatometer",
           "number_one_weekends",
         ] as MetricName[]
-      ).map((metric) => [
-        metric,
-        {
-          frozenValue: emptyNumber(form.get(`${metric}.frozenValue`)),
-          manualOverride: emptyNumber(form.get(`${metric}.manualOverride`)),
-        },
-      ]),
+      )
+        .filter(
+          (metric) =>
+            !nonTheatrical ||
+            !["domestic_gross", "number_one_weekends"].includes(metric),
+        )
+        .map((metric) => [
+          metric,
+          {
+            frozenValue: emptyNumber(form.get(`${metric}.frozenValue`)),
+            manualOverride: emptyNumber(form.get(`${metric}.manualOverride`)),
+          },
+        ]),
     );
     mutation.mutate({
       active: form.get("active") === "on",
+      ...(movie.nonTheatrical !== undefined ? { nonTheatrical } : {}),
       awardPoints: Number(form.get("awardPoints") || 0),
-      boxOfficeMojoReleaseId: form.get("boxOfficeMojoReleaseId"),
-      boxOfficeMojoUrl: form.get("boxOfficeMojoUrl"),
-      boxOfficeMojoVerified: form.get("boxOfficeMojoVerified") === "on",
+      ...(!nonTheatrical
+        ? {
+            boxOfficeMojoReleaseId: form.get("boxOfficeMojoReleaseId"),
+            boxOfficeMojoUrl: form.get("boxOfficeMojoUrl"),
+            boxOfficeMojoVerified: form.get("boxOfficeMojoVerified") === "on",
+          }
+        : {}),
       letterboxdUrl: form.get("letterboxdUrl"),
       letterboxdVerified: form.get("letterboxdVerified") === "on",
       overrides,
@@ -644,6 +673,9 @@ function MovieAdminForm({
       <header>
         <div>
           <h3>{movie.movie}</h3>
+          {movie.nonTheatrical ? (
+            <small>Non-theatrical · no box office</small>
+          ) : null}
           <p>
             <ManagerChip name={movie.manager} /> · {movie.draftNumber}
           </p>
@@ -666,6 +698,9 @@ function MovieAdminForm({
           <header>
             <div>
               <h3>{movie.movie}</h3>
+              {movie.nonTheatrical ? (
+                <small>Non-theatrical · no box office</small>
+              ) : null}
               <p>
                 <ManagerChip name={movie.manager} /> · {movie.draftNumber}
               </p>
@@ -679,6 +714,22 @@ function MovieAdminForm({
               Active
             </label>
           </header>
+          {movie.nonTheatrical !== undefined ? (
+            <label className={styles.releaseType}>
+              <input
+                type="checkbox"
+                name="nonTheatrical"
+                checked={nonTheatrical}
+                onChange={(event) => setNonTheatrical(event.target.checked)}
+              />
+              <span>Non-theatrical — no box office</span>
+            </label>
+          ) : null}
+          {nonTheatrical ? (
+            <p className={styles.notice}>
+              Box office does not apply. Only ratings and award points count.
+            </p>
+          ) : null}
           <div className={styles.sourceGrid}>
             <FloatingField>
               <span>Movie title</span>
@@ -713,19 +764,25 @@ function MovieAdminForm({
             <FloatingField>
               <span>Box Office Mojo URL</span>
               <input
+                disabled={nonTheatrical}
                 defaultValue={movie.boxOfficeMojoUrl}
                 name="boxOfficeMojoUrl"
                 type="url"
               />
-              <SourceVerification
-                available={Boolean(movie.boxOfficeMojoUrl)}
-                defaultChecked={movie.boxOfficeMojoVerified}
-                name="boxOfficeMojoVerified"
-              />
+              {nonTheatrical ? (
+                <small>Not applicable</small>
+              ) : (
+                <SourceVerification
+                  available={Boolean(movie.boxOfficeMojoUrl)}
+                  defaultChecked={movie.boxOfficeMojoVerified}
+                  name="boxOfficeMojoVerified"
+                />
+              )}
             </FloatingField>
             <FloatingField>
               <span>Box Office Mojo release ID</span>
               <input
+                disabled={nonTheatrical}
                 defaultValue={movie.boxOfficeMojoReleaseId}
                 name="boxOfficeMojoReleaseId"
               />
@@ -744,47 +801,57 @@ function MovieAdminForm({
           <details>
             <summary>Health, emergency corrections, and freezes</summary>
             <div className={styles.metricGrid}>
-              {(Object.keys(movie.health) as MetricName[]).map((metric) => {
-                const health = movie.health[metric];
-                return (
-                  <fieldset key={metric}>
-                    <legend>{metricLabel(metric)}</legend>
-                    <p
-                      className={
-                        styles[
-                          health.status === "healthy" ? "healthy" : "unhealthy"
-                        ]
-                      }
-                    >
-                      {health.status} · {formatDate(health.lastSuccessAt)}
-                    </p>
-                    {health.lastErrorType ? (
-                      <p>Error code: {health.lastErrorType}</p>
-                    ) : null}
-                    {health.lastErrorMessage ? (
-                      <p className={styles.error}>{health.lastErrorMessage}</p>
-                    ) : null}
-                    <FloatingField>
-                      <span>Override</span>
-                      <input
-                        defaultValue={health.manualOverride ?? ""}
-                        name={`${metric}.manualOverride`}
-                        step="any"
-                        type="number"
-                      />
-                    </FloatingField>
-                    <FloatingField>
-                      <span>Frozen value</span>
-                      <input
-                        defaultValue={health.frozenValue ?? ""}
-                        name={`${metric}.frozenValue`}
-                        step="any"
-                        type="number"
-                      />
-                    </FloatingField>
-                  </fieldset>
-                );
-              })}
+              {(Object.keys(movie.health) as MetricName[])
+                .filter(
+                  (metric) =>
+                    !nonTheatrical ||
+                    !["domestic_gross", "number_one_weekends"].includes(metric),
+                )
+                .map((metric) => {
+                  const health = movie.health[metric];
+                  return (
+                    <fieldset key={metric}>
+                      <legend>{metricLabel(metric)}</legend>
+                      <p
+                        className={
+                          styles[
+                            health.status === "healthy"
+                              ? "healthy"
+                              : "unhealthy"
+                          ]
+                        }
+                      >
+                        {health.status} · {formatDate(health.lastSuccessAt)}
+                      </p>
+                      {health.lastErrorType ? (
+                        <p>Error code: {health.lastErrorType}</p>
+                      ) : null}
+                      {health.lastErrorMessage ? (
+                        <p className={styles.error}>
+                          {health.lastErrorMessage}
+                        </p>
+                      ) : null}
+                      <FloatingField>
+                        <span>Override</span>
+                        <input
+                          defaultValue={health.manualOverride ?? ""}
+                          name={`${metric}.manualOverride`}
+                          step="any"
+                          type="number"
+                        />
+                      </FloatingField>
+                      <FloatingField>
+                        <span>Frozen value</span>
+                        <input
+                          defaultValue={health.frozenValue ?? ""}
+                          name={`${metric}.frozenValue`}
+                          step="any"
+                          type="number"
+                        />
+                      </FloatingField>
+                    </fieldset>
+                  );
+                })}
             </div>
           </details>
           <footer>

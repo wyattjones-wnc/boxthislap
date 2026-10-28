@@ -28,3 +28,11 @@ gh workflow run update-fantasy-office.yml --ref dev -f movie_limit=1
 This updates four metrics for the first configured movie. Limited runs do not open or close the whole-season incident issue. A successful limited run confirms only the selected movies; it is not a full-season health check. A whole-season manual run uses `movie_limit=0` and requires the repository's usage review before execution.
 
 The fallback saves discovered sources and observations one movie at a time to keep Worker requests within the D1 subrequest budget. Each movie has its own ingestion ID; writes are not automatically replayed after a timeout because the server may already have applied them. The report artifact preserves completed movie counts and outcomes, and records the failed stage, movie, and API path if a later request fails. Source failures still fail the run and retain debug responses; successful movies remain saved.
+
+## Non-theatrical movies
+
+In Manage, open a movie and check **Non-theatrical — no box office**, then save. These movies earn only ratings and award points. Domestic gross and number-one weekends contribute no points and are excluded from missing-source and health warnings. Both collectors skip Box Office Mojo discovery, gross, and weekend collection for these movies. Previously saved box office values remain stored so unchecking the option restores theatrical handling.
+
+Apply `0004_non_theatrical.sql` before deploying this Worker version. It adds a boolean column defaulting to theatrical for existing movies; there is no data backfill, index creation, or change to scoring for existing unmarked movies. The frontend exposes the checkbox only after the API returns the new setting, so an older Worker cannot silently ignore a user's selection.
+
+Deployment is manual via `.github/workflows/deploy-fantasy-office-worker.yml`. Review pending migrations and obtain deployment approval first. The expected new migration is only `0004_non_theatrical.sql`: one schema change over the current 55-movie roster and a migration-history entry, with no bulk metric updates or full-season sync. Recurring cron frequency and request budget stay unchanged; marked movies require fewer source fetches. Account-wide usage has not been measured as part of this change. If other migrations are pending, review their impact separately before applying them.

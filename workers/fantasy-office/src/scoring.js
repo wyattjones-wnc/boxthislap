@@ -20,10 +20,14 @@ export function grossBonusPoints(domesticGross) {
 }
 
 export function scoreFantasyOfficeMovie(movie) {
-  const domesticGross = finiteOrNull(movie.domesticGross);
+  const domesticGross = finiteOrNull(
+    movie.nonTheatrical ? 0 : movie.domesticGross,
+  );
   const letterboxdRating = finiteOrNull(movie.letterboxdRating);
   const tomatometer = finiteOrNull(movie.tomatometer);
-  const numberOneWeekends = finiteOrNull(movie.numberOneWeekends);
+  const numberOneWeekends = finiteOrNull(
+    movie.nonTheatrical ? 0 : movie.numberOneWeekends,
+  );
   const awardPoints = finiteOrNull(movie.awardPoints) ?? 0;
   const grossBase =
     domesticGross === null ? 0 : Math.round(domesticGross / 1_000_000);

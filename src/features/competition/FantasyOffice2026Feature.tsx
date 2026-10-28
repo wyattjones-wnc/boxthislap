@@ -444,7 +444,7 @@ function ManageView({ data }: { data: SeasonData }) {
             </p>
           </div>
           <FloatingField>
-            Show
+            <span>Show</span>
             <select
               value={issueFilter}
               onChange={(event) => setIssueFilter(event.target.value)}
@@ -649,11 +649,11 @@ function MovieAdminForm({
       </div>
       <div className={styles.sourceGrid}>
         <FloatingField>
-          Movie title
+          <span>Movie title</span>
           <input defaultValue={movie.movie} name="title" required />
         </FloatingField>
         <FloatingField>
-          Letterboxd URL
+          <span>Letterboxd URL</span>
           <input
             defaultValue={movie.letterboxdUrl}
             name="letterboxdUrl"
@@ -666,7 +666,7 @@ function MovieAdminForm({
           />
         </FloatingField>
         <FloatingField>
-          Rotten Tomatoes URL
+          <span>Rotten Tomatoes URL</span>
           <input
             defaultValue={movie.rottenTomatoesUrl}
             name="rottenTomatoesUrl"
@@ -679,7 +679,7 @@ function MovieAdminForm({
           />
         </FloatingField>
         <FloatingField>
-          Box Office Mojo URL
+          <span>Box Office Mojo URL</span>
           <input
             defaultValue={movie.boxOfficeMojoUrl}
             name="boxOfficeMojoUrl"
@@ -692,14 +692,14 @@ function MovieAdminForm({
           />
         </FloatingField>
         <FloatingField>
-          Box Office Mojo release ID
+          <span>Box Office Mojo release ID</span>
           <input
             defaultValue={movie.boxOfficeMojoReleaseId}
             name="boxOfficeMojoReleaseId"
           />
         </FloatingField>
         <FloatingField>
-          Award points
+          <span>Award points</span>
           <input
             defaultValue={movie.awardPoints}
             min="0"
@@ -730,7 +730,7 @@ function MovieAdminForm({
                   <p className={styles.error}>{health.lastErrorMessage}</p>
                 ) : null}
                 <FloatingField>
-                  Override
+                  <span>Override</span>
                   <input
                     defaultValue={health.manualOverride ?? ""}
                     name={`${metric}.manualOverride`}
@@ -739,7 +739,7 @@ function MovieAdminForm({
                   />
                 </FloatingField>
                 <FloatingField>
-                  Frozen value
+                  <span>Frozen value</span>
                   <input
                     defaultValue={health.frozenValue ?? ""}
                     name={`${metric}.frozenValue`}

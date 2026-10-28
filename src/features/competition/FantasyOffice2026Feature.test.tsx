@@ -155,6 +155,17 @@ describe("FantasyOffice2026Page", () => {
     );
 
     expect(await screen.findByText("Movie diagnostics")).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Show" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Movie title" })).toBeTruthy();
+    expect(
+      screen.getByRole("spinbutton", { name: "Award points" }),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Override", { exact: true })).toHaveLength(
+      4,
+    );
+    expect(
+      screen.getAllByLabelText("Frozen value", { exact: true }),
+    ).toHaveLength(4);
     expect(screen.getByText("1 pending")).toBeTruthy();
     expect(
       screen.getByText(/rotating collector has not attempted this movie yet/i),

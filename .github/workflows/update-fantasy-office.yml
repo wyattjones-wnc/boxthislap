@@ -1,4 +1,4 @@
-name: Update Fantasy Office data
+name: Update Fantasy Office data (manual fallback)
 
 on:
   schedule:
@@ -21,7 +21,9 @@ concurrency:
 
 jobs:
   update:
-    if: github.event_name == 'workflow_dispatch' || vars.FANTASY_OFFICE_AUTOMATION_ENABLED != 'false'
+    # The Worker owns six-hour automatic updates. Scheduled Actions stay opt-in
+    # to avoid running a second collector against the same season.
+    if: github.event_name == 'workflow_dispatch' || vars.FANTASY_OFFICE_AUTOMATION_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

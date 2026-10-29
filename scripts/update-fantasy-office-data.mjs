@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { classifyFantasyOfficeRun } from "./fantasy-office-run-status.mjs";
 import {
   countNumberOneWeekends,
   discoverMovieSources,
@@ -201,6 +202,29 @@ export async function runFantasyOfficeUpdate({
           movieId: movie.id,
           sources: await discoverSources(movie, year),
         };
+        for (const [provider, source] of Object.entries(
+          discovery.sources || {},
+        )) {
+          if (!source?.error) continue;
+          // Discovery may identify an upcoming film before a domestic release
+          // page exists. Treat that known absence as a source gap, not a broken
+          // parser; unexpected discovery parsing/transport failures still fail.
+          if (
+            provider === "boxOfficeMojo" &&
+            source.error.type === "PARSE_ERROR" &&
+            source.error.message ===
+              "Box Office Mojo domestic release was not found."
+          )
+            continue;
+          report.failed += 1;
+          report.outcomes.push({
+            movieId: movie.id,
+            movieTitle: movie.title,
+            metric: `${provider} discovery`,
+            status: "error",
+            error: source.error.type || "DISCOVERY_ERROR",
+          });
+        }
         report.phase = "saving sources";
         await saveReport(report);
         await api(`/api/sync/seasons/${year}/sources`, {
@@ -310,6 +334,7 @@ export async function runFantasyOfficeUpdate({
     }
     report.status = report.failed ? "warning" : "healthy";
     report.phase = "complete";
+    report.status = classifyFantasyOfficeRun(report).status;
   } catch (error) {
     report.status = "failed";
     report.error = `${report.phase}${report.movieId ? ` (${report.movieId})` : ""}: ${error.message}`;
@@ -334,11 +359,16 @@ export function renderFantasyOfficeSummary(report) {
   const failures = report.outcomes.filter(
     (outcome) => !["healthy", "not_available"].includes(outcome.status),
   );
-  const missing = failures.filter(
-    (outcome) => outcome.error === "CONFIG_ERROR",
-  );
+  const execution = classifyFantasyOfficeRun(report);
+  const missing = execution.gaps;
   const lines = [
     "## Fantasy Office update",
+    "",
+    execution.exitCode
+      ? "Execution failed. See errors below."
+      : missing.length
+        ? "Update completed successfully with source gaps."
+        : "Update completed successfully.",
     "",
     `${report.completedMovies}/${report.totalMovies} movies saved. ${report.succeeded} observations succeeded; ${report.failed} need attention.`,
     ...(report.error ? ["", `Stopped: ${report.error}`] : []),
@@ -351,7 +381,7 @@ export function renderFantasyOfficeSummary(report) {
     ...(missing.length
       ? [
           "",
-          `${missing.length} observations are missing a source URL or Box Office Mojo release ID. Review the matching movie in Manage. Mark genuinely non-theatrical movies as non-theatrical; otherwise add the correct source. Missing matches remain failures so they cannot silently leave scoring incomplete.`,
+          `${missing.length} observations are missing a source URL or Box Office Mojo release ID. Review the matching movie in Manage. Mark genuinely non-theatrical movies as non-theatrical; otherwise add the correct source. These gaps are warnings and do not fail a completed update. Scores may remain provisional until sources are available.`,
         ]
       : []),
   ];
@@ -391,7 +421,7 @@ if (
 ) {
   runFantasyOfficeUpdate()
     .then((report) => {
-      if (report.status !== "healthy") process.exitCode = 1;
+      process.exitCode = classifyFantasyOfficeRun(report).exitCode;
     })
     .catch((error) => {
       console.error(error.message);

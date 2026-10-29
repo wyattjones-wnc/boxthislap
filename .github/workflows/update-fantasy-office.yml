@@ -53,6 +53,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/report-fantasy-office-failure.mjs
-      - name: Fail unhealthy run
+      - name: Fail execution errors
         if: steps.update.outcome == 'failure'
         run: exit 1

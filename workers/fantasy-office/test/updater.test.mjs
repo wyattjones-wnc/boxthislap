@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { classifyFantasyOfficeRun } from "../../../scripts/fantasy-office-run-status.mjs";
 import {
   runFantasyOfficeUpdate,
   renderFantasyOfficeSummary,
@@ -161,7 +162,7 @@ test("a later ingestion timeout preserves saved results and identifies the reque
 test("source failures remain visible while successful metrics and later movies are saved", async () => {
   const setup = fixture({ sourceError: true });
   const report = await runFantasyOfficeUpdate(setup.options);
-  assert.equal(report.status, "warning");
+  assert.equal(report.status, "failed");
   assert.equal(report.completedMovies, 2);
   assert.equal(report.succeeded, 6);
   assert.equal(report.failed, 2);
@@ -236,4 +237,50 @@ test("the Actions summary distinguishes completed work from missing sources and 
   assert.match(summary, /Missing Film \| domestic gross \| CONFIG_ERROR/);
   assert.match(summary, /Changed Page \| tomatometer \| PARSE_ERROR/);
   assert.ok(!summary.includes("Good Film"));
+});
+
+test("missing source matches are warnings after all movie results have been saved", async () => {
+  const setup = fixture({ movies: [movie(1, false), movie(2, false)] });
+  setup.options.discoverSources = async () => ({
+    letterboxd: null,
+    rottenTomatoes: null,
+    boxOfficeMojo: null,
+  });
+  const report = await runFantasyOfficeUpdate(setup.options);
+  assert.equal(report.status, "warning");
+  assert.equal(report.completedMovies, 2);
+  assert.equal(report.failed, 8);
+  assert.equal(classifyFantasyOfficeRun(report).exitCode, 0);
+  const summary = renderFantasyOfficeSummary(report);
+  assert.match(summary, /completed successfully with source gaps/);
+  assert.match(summary, /gaps are warnings and do not fail/);
+});
+
+test("discovery transport errors cannot be hidden behind missing URL warnings", async () => {
+  const setup = fixture({ movies: [movie(1, false)] });
+  setup.options.discoverSources = async () => ({
+    letterboxd: { error: { type: "NETWORK_ERROR", message: "unreachable" } },
+  });
+  const report = await runFantasyOfficeUpdate(setup.options);
+  assert.equal(classifyFantasyOfficeRun(report).exitCode, 1);
+  assert.equal(report.status, "failed");
+  assert.ok(
+    report.outcomes.some((outcome) => outcome.error === "NETWORK_ERROR"),
+  );
+});
+
+test("a discovered movie without a domestic release page remains a source gap", async () => {
+  const setup = fixture({ movies: [movie(1, false)] });
+  setup.options.discoverSources = async () => ({
+    boxOfficeMojo: {
+      error: {
+        type: "PARSE_ERROR",
+        message: "Box Office Mojo domestic release was not found.",
+      },
+    },
+  });
+  const report = await runFantasyOfficeUpdate(setup.options);
+  assert.equal(report.status, "warning");
+  assert.equal(classifyFantasyOfficeRun(report).exitCode, 0);
+  assert.equal(classifyFantasyOfficeRun(report).gaps.length, 4);
 });

@@ -1,3 +1,4 @@
+import { NotificationTestButton } from "../notifications/NotificationControls";
 import { FloatingField } from "../../components/FloatingField/FloatingField";
 import type { ReactNode } from "react";
 import { Bell, CalendarDays } from "lucide-react";
@@ -659,6 +660,7 @@ export function FormulaOne2026WeeklyPage() {
             >
               <Bell aria-hidden="true" />
             </button>
+            <NotificationTestButton topic="formula-one" label="Formula 1" />
           </div>
         }
       />

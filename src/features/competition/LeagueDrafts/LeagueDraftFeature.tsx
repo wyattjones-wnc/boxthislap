@@ -1,3 +1,4 @@
+import { NotificationTestButton } from "../../notifications/NotificationControls";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, Ban, Filter, ListPlus } from "lucide-react";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
@@ -324,6 +325,7 @@ function NotificationSettings({
               ? "Turn off device alerts"
               : "Enable device alerts"}
       </button>
+      <NotificationTestButton topic="league-drafts" label="draft alerts" />
       {(pushError || mutation.error) && (
         <p role="alert" className={styles.error}>
           {pushError || mutation.error?.message}

@@ -35,6 +35,10 @@ export default {
         return json({ publicKey: env.VAPID_PUBLIC_KEY }, env);
       }
 
+      if (request.method === "POST" && url.pathname === "/test") {
+        return json(await sendTestNotification(request, env), env);
+      }
+
       if (request.method === "POST" && url.pathname === "/subscribe") {
         return json(await subscribe(request, env), env);
       }
@@ -80,6 +84,50 @@ export default {
     ctx.waitUntil(sendDueFootyAlerts(env));
   },
 };
+
+export async function sendTestNotification(request, env, send = sendEmptyWebPush) {
+  assertEnv(env, ["FOOTY_PUSH_KV", "AUTH_SECRET"]);
+  const manager = await requireManager(request, env);
+  if (!String(env.ADMIN_MANAGER_IDS || "").split(",").map((id) => id.trim()).includes(String(manager.sub))) {
+    throw httpError(403, "Only admins can send test notifications.");
+  }
+  const body = await request.json();
+  const topic = normalizeTopic(body.topic);
+  const endpoint = String(body.endpoint || "").trim();
+  if (!endpoint) throw httpError(400, "Missing subscription endpoint.");
+  const hash = await hashText(endpoint);
+  const record = await getJson(env.FOOTY_PUSH_KV, `${SUBSCRIPTION_PREFIX}${hash}`, null);
+  if (!record?.active || String(record.managerId) !== String(manager.sub)) {
+    throw httpError(404, "Enable alerts with the bell first to register this device.");
+  }
+  if (!getSubscriptionTopics(record)[topic]) throw httpError(400, "Enable this alert with its bell before testing.");
+  const cooldownKey = `test-cooldown:${hash}`;
+  if (await env.FOOTY_PUSH_KV.get(cooldownKey)) throw httpError(429, "Wait a minute before sending another test.");
+  const channel = getFootySubscriptionChannel(record);
+  const label = { footy: "Footy", "formula-one": "Formula 1", "league-drafts": "Draft alerts" }[topic];
+  const notification = {
+    title: `${label} notification test`,
+    body: "Your test push arrived on this device.",
+    tag: `box-this-lap-test-${topic}-${crypto.randomUUID()}`,
+    url: topic === "formula-one" ? getFormulaOneNotificationUrl(channel, env)
+      : topic === "footy" ? getFootyNotificationUrl(channel, env)
+      : getFootyNotificationUrl(channel, env).replace(/#.*$/, "#manager-hub"),
+  };
+  const pendingKey = `${PENDING_PREFIX}${hash}`;
+  const pending = await getJson(env.FOOTY_PUSH_KV, pendingKey, []);
+  await env.FOOTY_PUSH_KV.put(cooldownKey, "1", { expirationTtl: 60 });
+  await env.FOOTY_PUSH_KV.put(pendingKey, JSON.stringify([...pending, notification]), { expirationTtl: 3600 });
+  const result = await send(record, env);
+  if (!result.ok) {
+    if (result.status === 404 || result.status === 410) {
+      await env.FOOTY_PUSH_KV.delete(`${SUBSCRIPTION_PREFIX}${hash}`);
+      await env.FOOTY_PUSH_KV.delete(pendingKey);
+      throw httpError(410, "This device subscription expired. Turn alerts off and back on with the bell.");
+    }
+    throw httpError(502, "Push service rejected the test. Try again in a minute.");
+  }
+  return { ok: true, accepted: true };
+}
 
 async function subscribe(request, env) {
   assertEnv(env, ["FOOTY_PUSH_KV", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT", "AUTH_SECRET"]);

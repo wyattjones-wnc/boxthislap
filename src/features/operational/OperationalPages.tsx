@@ -1,3 +1,4 @@
+import { NotificationTestButton } from "../notifications/NotificationControls";
 import { useAppState } from "../../app/providers";
 import { FloatingField } from "../../components/FloatingField/FloatingField";
 import {
@@ -345,6 +346,7 @@ export function FootyPage() {
             label="Subscribe to match alerts"
             aria-pressed="false"
           />
+          <NotificationTestButton topic="footy" label="Footy" />
           <IconButton
             className="icon-action-button footy-filter-toggle"
             icon={<Filter />}

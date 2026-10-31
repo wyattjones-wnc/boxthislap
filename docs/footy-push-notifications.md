@@ -117,3 +117,19 @@ If `ADMIN_RUN_TOKEN` is set as a Worker secret, include:
 ```bash
 curl -X POST https://YOUR_WORKER.workers.dev/run -H "Authorization: Bearer TOKEN"
 ```
+
+## Admin device tests
+
+In Account Settings, admins can enable **Show notification test buttons**. This
+preference is saved on the current browser/device and is off by default. Test
+buttons appear beside the Footy and Formula 1 bells and draft device-alert controls.
+Enable the relevant alerts first, then select **Test push**. A successful request
+means the push provider accepted it; verify that the notification arrives on the
+device to confirm delivery. A generic fallback notification still indicates that
+the background wakeup arrived, but its queued details were unavailable.
+
+`POST /test` requires a signed admin access token, an active subscription owned by
+that admin, and the selected topic enabled. It targets only the supplied device,
+preserves existing pending alerts, and uses a best-effort KV cooldown of one minute
+per device. Each click uses bounded KV reads/writes and one push request, with no
+D1 queries, subscription scans, new scheduled jobs, or migrations.

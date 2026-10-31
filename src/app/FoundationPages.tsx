@@ -1,3 +1,4 @@
+import { NotificationTestSetting } from "../features/notifications/NotificationControls";
 import {
   getOfflineSettingsText,
   subscribeOfflineSettings,
@@ -119,6 +120,7 @@ export const AccountSettingsPage = memo(function AccountSettingsPage() {
         </p>
       </div>
       <div className="account-settings-grid">
+        <NotificationTestSetting />
         <section
           className={`account-settings-card ${styles.settingsCard}`}
           aria-labelledby="appearance-settings-heading"

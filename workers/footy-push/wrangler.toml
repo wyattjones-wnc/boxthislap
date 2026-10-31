@@ -21,6 +21,7 @@ database_name = "formula-one"
 database_id = "b3e28ed0-a9c9-43d1-a6cb-ae22b8a181a6"
 
 [vars]
+ADMIN_MANAGER_IDS = "6"
 ALLOWED_ORIGIN = "https://wyattjones-wnc.github.io"
 FOOTY_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/data/footy-schedule.json"
 FOOTY_DEV_SCHEDULE_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json"

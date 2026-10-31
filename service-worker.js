@@ -127,7 +127,7 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  event.waitUntil(showPendingFootyNotifications());
+  event.waitUntil(showPendingFootyNotifications().catch(() => showPushFallback()));
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -150,17 +150,14 @@ self.addEventListener("notificationclick", (event) => {
 
 async function showPendingFootyNotifications() {
   if (!FOOTY_PUSH_ENDPOINT) {
-    await self.registration.showNotification("Box This Lap", {
-      body: "A match alert is ready.",
-      data: { url: "./#footy" },
-      tag: "box-this-lap-footy-alert",
-    });
+    await showPushFallback();
     return;
   }
 
   const subscription = await self.registration.pushManager.getSubscription();
 
   if (!subscription?.endpoint) {
+    await showPushFallback();
     return;
   }
 
@@ -171,11 +168,7 @@ async function showPendingFootyNotifications() {
   });
 
   if (!response.ok) {
-    await self.registration.showNotification("Box This Lap", {
-      body: "A match alert is ready.",
-      data: { url: "./#footy" },
-      tag: "box-this-lap-footy-alert",
-    });
+    await showPushFallback();
     return;
   }
 
@@ -186,6 +179,7 @@ async function showPendingFootyNotifications() {
   const managerId = savedManager ? await savedManager.text() : '';
 
   if (notifications.length === 0) {
+    await showPushFallback();
     return;
   }
 
@@ -196,6 +190,16 @@ async function showPendingFootyNotifications() {
       tag: notification.tag || `box-this-lap-footy-${Date.now()}`,
     })
   ));
+}
+
+// Every wakeup must remain visible, even when KV propagation or the network
+// prevents loading its details. Never include manager-specific draft data here.
+function showPushFallback() {
+  return self.registration.showNotification("Box This Lap", {
+    body: "An alert is ready. Open Box This Lap to check for updates.",
+    data: { url: "./" },
+    tag: "box-this-lap-push-alert",
+  });
 }
 
 function isCacheableImageRequest(request) {

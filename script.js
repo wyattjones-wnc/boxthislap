@@ -3684,8 +3684,17 @@ async function setPushNotificationTopic(topic, enabled) {
 
 async function reconcileStoredPushNotificationTopics() {
   if (!isFootyPushNotificationSupported() || Notification.permission !== "granted" || !getCurrentManagerId()) return;
-  if (getStoredBoolean(FORMULA_ONE_NOTIFICATION_STORAGE_KEY)) {
-    await subscribeFootyPushNotifications("formula-one");
+  const topics = [
+    ["footy", FOOTY_NOTIFICATION_STORAGE_KEY],
+    ["formula-one", FORMULA_ONE_NOTIFICATION_STORAGE_KEY],
+  ];
+  for (const [topic, storageKey] of topics) {
+    if (!getStoredBoolean(storageKey)) continue;
+    try {
+      await subscribeFootyPushNotifications(topic);
+    } catch (error) {
+      recordDiagnostic(`${topic} push subscription recovery failed`, error);
+    }
   }
 }
 

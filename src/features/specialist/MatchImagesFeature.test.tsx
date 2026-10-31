@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MatchImagesFeature from "./MatchImagesFeature";
@@ -43,11 +43,73 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   delete window.boxThisLapGetManagerAccessToken;
 });
 
 describe("MatchImagesFeature", () => {
+  it("refreshes idle data and reports background scan completion", async () => {
+    vi.useFakeTimers();
+    let status = "completed";
+    let scanId = "old-scan";
+    let images = [candidate];
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      const value = url.endsWith("data/footy-schedule.json")
+        ? { teamSchedules: [] }
+        : url.endsWith("/health")
+          ? {
+              latestScan: {
+                id: scanId,
+                status,
+                finishedAt: status === "completed" ? "2026-10-27" : "",
+                newImageCount: 2,
+                galleryCount: 1,
+                unmatchedGalleryCount: 0,
+              },
+              sources: [],
+            }
+          : {
+              images,
+              pagination: { page: 1, total: images.length, hasMore: false },
+              facets: [],
+            };
+      return { ok: true, json: async () => value } as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<MatchImagesFeature />);
+    await act(async () => {});
+    images = [{ ...candidate, caption: "New image" }];
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300_000);
+    });
+    expect(screen.getByAltText("New image")).not.toBeNull();
+    scanId = "new-scan";
+    status = "running";
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(
+      screen.getByText("Scanning for new images in the background…"),
+    ).not.toBeNull();
+    status = "completed";
+    images = [{ ...candidate, caption: "Completed image" }];
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(
+      screen.getByText("Scan completed: 2 new images found."),
+    ).not.toBeNull();
+    expect(screen.getByAltText("Completed image")).not.toBeNull();
+    const calls = fetchMock.mock.calls.length;
+    cleanup();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300_000);
+    });
+    expect(fetchMock.mock.calls).toHaveLength(calls);
+  });
+
   it("starts a manual scan and applies filtered Seen through here", async () => {
     const requests: Array<{ url: string; options?: RequestInit }> = [];
     vi.stubGlobal(

@@ -117,3 +117,51 @@ test("deduplicates long-weekend rows by Box Office Mojo week", () => {
     "rl111",
   );
 });
+
+test("recognizes current movie scorecards with no published critic score", () => {
+  // Avengers: Doomsday and other upcoming films omit criticsScore.score.
+  const scorecard = JSON.stringify({
+    audienceScore: { score: 100, reviewCount: 12 },
+    criticsScore: {
+      likedCount: 0,
+      notLikedCount: 0,
+      ratingCount: 0,
+      reviewCount: 0,
+      title: "Tomatometer",
+    },
+  });
+  assert.deepEqual(
+    extractTomatometer(
+      `<media-scorecard></media-scorecard><script id="media-scorecard-json" type="application/json">${scorecard}</script><script>{"tomatometerScore":98}</script>`,
+    ),
+    { state: "not_available", value: null },
+  );
+});
+
+test("reads the movie's own critic score, including zero, before unrelated scores", () => {
+  for (const score of [0, 91, "95"]) {
+    assert.deepEqual(
+      extractTomatometer(
+        `<script>{"tomatometerScore":77}</script><script type="application/json" id="media-scorecard-json">${JSON.stringify({ audienceScore: { score: 100 }, criticsScore: { score, reviewCount: 25 } })}</script>`,
+      ),
+      { state: "available", value: Number(score) },
+    );
+  }
+});
+
+test("malformed or unrecognized scorecards remain errors instead of silently reporting no score", () => {
+  for (const contents of [
+    "{broken",
+    "{}",
+    '{"criticsScore":{"reviewCount":12}}',
+    '{"criticsScore":{"score":105,"reviewCount":12}}',
+  ]) {
+    assert.throws(
+      () =>
+        extractTomatometer(
+          `<script id="media-scorecard-json">${contents}</script>`,
+        ),
+      { sourceType: "PARSE_ERROR" },
+    );
+  }
+});

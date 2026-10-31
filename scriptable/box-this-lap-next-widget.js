@@ -32,6 +32,8 @@ const COLORS = {
   warning: new Color("#f1c65b"),
 };
 
+let refreshFailed = false;
+
 const loadedResult = await loadNextItems();
 const result = loadedResult.ok
   ? { ...loadedResult, items: loadedResult.items.filter((item) => SHOW_ALL_NEXT_ITEMS || item.nonAdmin) }
@@ -62,7 +64,7 @@ Script.complete();
 async function loadNextItems() {
   try {
     const request = new Request(`${NEXT_ITEMS_ENDPOINT}?nonce=${Date.now()}`);
-    request.timeoutInterval = 20;
+    request.timeoutInterval = config.runsInWidget ? 3 : 20;
     const data = await request.loadJSON();
     const items = getNormalizedNextItems(data);
 
@@ -76,6 +78,7 @@ async function loadNextItems() {
       items,
     };
   } catch (error) {
+    refreshFailed = true;
     const cachedData = readJsonCache(NEXT_ITEMS_CACHE_FILE);
     const cachedItems = getNormalizedNextItems(cachedData);
 
@@ -248,6 +251,7 @@ async function createLargeWidget(result) {
   title.font = Font.boldSystemFont(18);
   title.textColor = COLORS.text;
   header.addSpacer();
+  addCacheIndicator(header, result);
   const symbol = SFSymbol.named("calendar.badge.clock");
   const icon = header.addImage(symbol.image);
   icon.imageSize = new Size(18, 18);
@@ -311,17 +315,42 @@ async function createLargeWidget(result) {
 }
 
 async function loadItemImage(item) {
-  for (const url of [WIDGET_IMAGE_MIRRORS[item.id], item.imageUrl].filter(Boolean)) {
+  const manager = FileManager.local();
+  const cachePaths = [];
+  for (const url of [...new Set([WIDGET_IMAGE_MIRRORS[item.id], item.imageUrl].filter(Boolean))]) {
+    const path = manager.joinPath(manager.documentsDirectory(), `box-this-lap-next-art-${encodeURIComponent(url)}.png`);
+    cachePaths.push(path);
+    if (refreshFailed) continue;
     try {
       const request = new Request(url);
       request.timeoutInterval = 10;
-      return await request.loadImage();
+      const image = await request.loadImage();
+      try {
+        manager.writeImage(path, image);
+      } catch {
+        // Rendering must still work if artwork cannot be saved.
+      }
+      return image;
     } catch (error) {
       console.warn(`Unable to load Next artwork from ${url}: ${error}`);
     }
   }
-
+  for (const path of cachePaths) {
+    try {
+      if (manager.fileExists(path)) return manager.readImage(path);
+    } catch {
+      // Ignore damaged saved artwork.
+    }
+  }
   return null;
+}
+
+function addCacheIndicator(header, result) {
+  if (!result.cached) return;
+  const label = header.addText("CACHED");
+  label.font = Font.semiboldSystemFont(8);
+  label.textColor = COLORS.muted;
+  header.addSpacer(6);
 }
 
 async function createWidget(item, result) {
@@ -344,6 +373,7 @@ async function createWidget(item, result) {
   applyTextShadow(title, hasBackgroundImage);
 
   header.addSpacer();
+  addCacheIndicator(header, result);
 
   const symbol = SFSymbol.named("calendar.badge.clock");
   const image = header.addImage(symbol.image);

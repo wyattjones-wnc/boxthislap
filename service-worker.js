@@ -43,6 +43,16 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(Promise.all([clients.claim(), caches.delete("box-this-lap-images-v1")]));
 });
 
+async function fetchShell(request) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  try {
+    return await fetch(request, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   const isOfflineData = OFFLINE_DATA_PATHS.some(path => url.pathname === new URL(path, self.registration.scope).pathname);
@@ -62,7 +72,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE_NAME);
       try {
-        const response = await fetch(event.request, { cache: "no-store" });
+        const response = await fetchShell(event.request);
         if (response.ok) {
           const key = event.request.mode === "navigate" ? new URL("index.html", self.registration.scope) : event.request;
           try { await cache.put(key, response.clone()); } catch { /* Keep a successful online load usable. */ }
@@ -117,7 +127,7 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  event.waitUntil(showPendingFootyNotifications());
+  event.waitUntil(showPendingFootyNotifications().catch(() => showPushFallback()));
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -140,17 +150,14 @@ self.addEventListener("notificationclick", (event) => {
 
 async function showPendingFootyNotifications() {
   if (!FOOTY_PUSH_ENDPOINT) {
-    await self.registration.showNotification("Box This Lap", {
-      body: "A match alert is ready.",
-      data: { url: "./#footy" },
-      tag: "box-this-lap-footy-alert",
-    });
+    await showPushFallback();
     return;
   }
 
   const subscription = await self.registration.pushManager.getSubscription();
 
   if (!subscription?.endpoint) {
+    await showPushFallback();
     return;
   }
 
@@ -161,11 +168,7 @@ async function showPendingFootyNotifications() {
   });
 
   if (!response.ok) {
-    await self.registration.showNotification("Box This Lap", {
-      body: "A match alert is ready.",
-      data: { url: "./#footy" },
-      tag: "box-this-lap-footy-alert",
-    });
+    await showPushFallback();
     return;
   }
 
@@ -176,6 +179,7 @@ async function showPendingFootyNotifications() {
   const managerId = savedManager ? await savedManager.text() : '';
 
   if (notifications.length === 0) {
+    await showPushFallback();
     return;
   }
 
@@ -186,6 +190,16 @@ async function showPendingFootyNotifications() {
       tag: notification.tag || `box-this-lap-footy-${Date.now()}`,
     })
   ));
+}
+
+// Every wakeup must remain visible, even when KV propagation or the network
+// prevents loading its details. Never include manager-specific draft data here.
+function showPushFallback() {
+  return self.registration.showNotification("Box This Lap", {
+    body: "An alert is ready. Open Box This Lap to check for updates.",
+    data: { url: "./" },
+    tag: "box-this-lap-push-alert",
+  });
 }
 
 function isCacheableImageRequest(request) {

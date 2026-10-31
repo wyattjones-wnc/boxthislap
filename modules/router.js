@@ -1,3 +1,4 @@
+import { isAppOnline } from "./connectivity.js";
 const PAGE_ALIASES = {
   "fantasy-office-2025": "fantasy-office-2025-results",
   "fantasy-office-2026": "fantasy-office-2026-draft",
@@ -98,7 +99,7 @@ export function createRouter({
     headerArt.forEach((art) => {
       art.classList.toggle(
         "is-active",
-        art.dataset.headerArt === (navigator.onLine ? getHeaderArtName(activePageName) : "offline"),
+        art.dataset.headerArt === (isAppOnline() ? getHeaderArtName(activePageName) : "offline"),
       );
     });
 

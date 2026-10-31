@@ -38,3 +38,7 @@ Feature CSS belongs in CSS Modules. Global CSS is limited to resets, design toke
 - Add component coverage for shared primitives and Playwright coverage for migrated user journeys.
 - Keep `index.html` page, header, and footer mount points structurally empty; the production build rejects static UI regressions.
 - Delete compatibility listeners, DOM references, and CSS for a leaf feature only after its typed React replacement passes parity checks.
+
+## Connection state and saved data
+
+`modules/connectivity.js` supplies the shared connection state used by React and the compatibility engines. Saved-page reads try the live loader first, then restore their snapshot on a transport failure or after four seconds without a result. HTTP and permission errors remain visible. A network-only manifest request checks reachability on startup, when returning to the app or changing networks, and every 15 seconds while visible. Recovery reloads the app to refresh its data. The service worker also limits app-shell network waits to four seconds before using an installed copy.

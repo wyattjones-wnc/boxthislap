@@ -203,7 +203,7 @@ async function readSeason(env, year, options = {}) {
       .bind(year)
       .first(),
     env.DB.prepare(
-      "SELECT id, year, manager_name, draft_number, title, active, substitute, letterboxd_url, letterboxd_verified, rotten_tomatoes_url, rotten_tomatoes_verified, box_office_mojo_url, box_office_mojo_release_id, box_office_mojo_verified, source_discovery_json, source_discovered_at, award_points, updated_at FROM fantasy_office_movies WHERE year = ? ORDER BY manager_name, substitute, draft_number",
+      "SELECT id, year, manager_name, draft_number, title, active, non_theatrical, substitute, letterboxd_url, letterboxd_verified, rotten_tomatoes_url, rotten_tomatoes_verified, box_office_mojo_url, box_office_mojo_release_id, box_office_mojo_verified, source_discovery_json, source_discovered_at, award_points, updated_at FROM fantasy_office_movies WHERE year = ? ORDER BY manager_name, substitute, draft_number",
     )
       .bind(year)
       .all(),
@@ -227,8 +227,13 @@ async function readSeason(env, year, options = {}) {
     const health = {};
     for (const [metric, field] of Object.entries(METRIC_FIELDS)) {
       const entry = metricRecords[metric];
-      values[field] = effectiveMetricValue(entry);
-      health[metric] = normalizeMetricHealth(entry);
+      const notApplicable =
+        Boolean(record.non_theatrical) &&
+        ["domestic_gross", "number_one_weekends"].includes(metric);
+      values[field] = notApplicable ? null : effectiveMetricValue(entry);
+      health[metric] = notApplicable
+        ? { lastAttemptAt: "", lastSuccessAt: "", status: "not_applicable" }
+        : normalizeMetricHealth(entry);
       if (options.admin && entry) {
         health[metric].automaticValue = entry.automatic_value;
         health[metric].manualOverride = entry.manual_override;
@@ -237,6 +242,7 @@ async function readSeason(env, year, options = {}) {
     }
     const movie = {
       active: Boolean(record.active),
+      nonTheatrical: Boolean(record.non_theatrical),
       awardPoints: record.award_points,
       boxOfficeMojoReleaseId: record.box_office_mojo_release_id,
       boxOfficeMojoUrl: record.box_office_mojo_url,
@@ -366,7 +372,7 @@ function normalizeMetricHealth(metric) {
 
 async function readSyncConfig(env, year) {
   const query = await env.DB.prepare(
-    "SELECT id, title, letterboxd_url, letterboxd_verified, rotten_tomatoes_url, rotten_tomatoes_verified, box_office_mojo_url, box_office_mojo_release_id, box_office_mojo_verified FROM fantasy_office_movies WHERE year = ? ORDER BY id",
+    "SELECT id, title, non_theatrical, letterboxd_url, letterboxd_verified, rotten_tomatoes_url, rotten_tomatoes_verified, box_office_mojo_url, box_office_mojo_release_id, box_office_mojo_verified FROM fantasy_office_movies WHERE year = ? ORDER BY id",
   )
     .bind(year)
     .all();
@@ -376,6 +382,7 @@ async function readSyncConfig(env, year) {
       boxOfficeMojoUrl: movie.box_office_mojo_url,
       boxOfficeMojoVerified: Boolean(movie.box_office_mojo_verified),
       id: movie.id,
+      nonTheatrical: Boolean(movie.non_theatrical),
       letterboxdUrl: movie.letterboxd_url,
       letterboxdVerified: Boolean(movie.letterboxd_verified),
       rottenTomatoesUrl: movie.rotten_tomatoes_url,
@@ -445,7 +452,7 @@ async function runScheduledUpdate(env, year) {
     if (
       !movie.letterboxdUrl ||
       !movie.rottenTomatoesUrl ||
-      !movie.boxOfficeMojoUrl
+      (!movie.nonTheatrical && !movie.boxOfficeMojoUrl)
     ) {
       const sources = await discoverMovieSources(movie, year);
       discoveries.push({ movieId: movie.id, sources });
@@ -462,7 +469,11 @@ async function runScheduledUpdate(env, year) {
   let weekendWinners = null;
   let weekendError = null;
   try {
-    weekendWinners = extractWeekendWinners(await fetchSource(weekendUrl), year);
+    if (movies.some((movie) => !movie.nonTheatrical))
+      weekendWinners = extractWeekendWinners(
+        await fetchSource(weekendUrl),
+        year,
+      );
   } catch (error) {
     weekendError = error;
   }
@@ -481,13 +492,18 @@ async function runScheduledUpdate(env, year) {
         movie.rottenTomatoesUrl,
         extractTomatometer,
       ),
-      await scheduledObservation(
-        movie,
-        "domestic_gross",
-        movie.boxOfficeMojoUrl,
-        extractDomesticGross,
-      ),
+      ...(movie.nonTheatrical
+        ? []
+        : [
+            await scheduledObservation(
+              movie,
+              "domestic_gross",
+              movie.boxOfficeMojoUrl,
+              extractDomesticGross,
+            ),
+          ]),
     );
+    if (movie.nonTheatrical) continue;
     const fetchedAt = new Date().toISOString();
     const releaseId =
       movie.boxOfficeMojoReleaseId || releaseIdFromUrl(movie.boxOfficeMojoUrl);
@@ -546,7 +562,7 @@ export function scheduledBatch(movies, cursor) {
     const needsDiscovery =
       !movie.letterboxdUrl ||
       !movie.rottenTomatoesUrl ||
-      !movie.boxOfficeMojoUrl;
+      (!movie.nonTheatrical && !movie.boxOfficeMojoUrl);
     const movieCost = needsDiscovery ? 8 : 3;
     if (selected.length && cost + movieCost > 44) break;
     selected.push(movie);
@@ -635,10 +651,15 @@ async function ingestObservations(env, year, body) {
     throw httpError(409, "This synchronization run was already ingested.");
 
   const knownMovies = await env.DB.prepare(
-    "SELECT id FROM fantasy_office_movies WHERE year = ?",
+    "SELECT id, non_theatrical FROM fantasy_office_movies WHERE year = ?",
   )
     .bind(year)
     .all();
+  const nonTheatricalIds = new Set(
+    (knownMovies.results || [])
+      .filter((movie) => movie.non_theatrical)
+      .map((movie) => movie.id),
+  );
   const movieIds = new Set(
     (knownMovies.results || []).map((movie) => movie.id),
   );
@@ -663,6 +684,18 @@ async function ingestObservations(env, year, body) {
         metric: observation.metric,
         status: "rejected",
         error: "Unknown metric.",
+      });
+      continue;
+    }
+    if (
+      nonTheatricalIds.has(String(observation.movieId)) &&
+      ["domestic_gross", "number_one_weekends"].includes(observation.metric)
+    ) {
+      succeeded += 1;
+      outcomes.push({
+        movieId: observation.movieId,
+        metric: observation.metric,
+        status: "not_available",
       });
       continue;
     }
@@ -898,6 +931,12 @@ async function updateMovie(env, year, movieId, body, managerId) {
   if (!existing) throw httpError(404, "Movie was not found.");
   const next = {
     active: body.active === undefined ? existing.active : body.active ? 1 : 0,
+    nonTheatrical:
+      body.nonTheatrical === undefined
+        ? existing.non_theatrical
+        : body.nonTheatrical
+          ? 1
+          : 0,
     awardPoints:
       body.awardPoints === undefined
         ? existing.award_points
@@ -957,11 +996,12 @@ async function updateMovie(env, year, movieId, body, managerId) {
     }
   }
   await env.DB.prepare(
-    "UPDATE fantasy_office_movies SET title = ?, active = ?, award_points = ?, letterboxd_url = ?, letterboxd_verified = ?, rotten_tomatoes_url = ?, rotten_tomatoes_verified = ?, box_office_mojo_url = ?, box_office_mojo_release_id = ?, box_office_mojo_verified = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND year = ?",
+    "UPDATE fantasy_office_movies SET title = ?, active = ?, non_theatrical = ?, award_points = ?, letterboxd_url = ?, letterboxd_verified = ?, rotten_tomatoes_url = ?, rotten_tomatoes_verified = ?, box_office_mojo_url = ?, box_office_mojo_release_id = ?, box_office_mojo_verified = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND year = ?",
   )
     .bind(
       next.title,
       next.active,
+      next.nonTheatrical,
       next.awardPoints,
       next.letterboxdUrl,
       next.letterboxdVerified,

@@ -1,3 +1,4 @@
+import { isAppOnline } from "../../modules/connectivity.js";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import {
@@ -54,7 +55,7 @@ function readSession(): ManagerSession | null {
 export function AppProviders({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState(readRoute);
   const [session, setSession] = useState(readSession);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(isAppOnline);
   const [theme, setTheme] = useState<"dark" | "light">(
     document.documentElement.dataset.theme === "light" ? "light" : "dark",
   );
@@ -85,7 +86,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       );
     const syncSession = () => setSession(readSession());
     const syncOffline = () => setIsOnline(false);
-    const syncOnline = () => setIsOnline(true);
+    const syncOnline = () => setIsOnline(isAppOnline());
     const syncTheme = () =>
       setTheme(
         document.documentElement.dataset.theme === "light" ? "light" : "dark",
@@ -99,6 +100,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     window.addEventListener("boxthislap:route-changed", syncLegacyRoute);
     window.addEventListener("offline", syncOffline);
     window.addEventListener("online", syncOnline);
+    window.addEventListener("boxthislap:connectivity", syncOnline);
     window.addEventListener("popstate", syncRoute);
     window.addEventListener("boxthislap:session-changed", syncSession);
     window.addEventListener("storage", syncSession);
@@ -107,6 +109,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       window.removeEventListener("boxthislap:route-changed", syncLegacyRoute);
       window.removeEventListener("offline", syncOffline);
       window.removeEventListener("online", syncOnline);
+      window.removeEventListener("boxthislap:connectivity", syncOnline);
       window.removeEventListener("popstate", syncRoute);
       window.removeEventListener("boxthislap:session-changed", syncSession);
       window.removeEventListener("storage", syncSession);

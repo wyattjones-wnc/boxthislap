@@ -1,105 +1,131 @@
 import { readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
+import { classifyFantasyOfficeRun } from "./fantasy-office-run-status.mjs";
 
-const title = "[Movie Data] Fantasy Office updater needs attention";
-const token = process.env.GH_TOKEN;
-const repository = process.env.GITHUB_REPOSITORY;
-if (!token || !repository)
-  throw new Error("GH_TOKEN and GITHUB_REPOSITORY are required.");
-const report = JSON.parse(
-  await readFile(".tmp/fantasy-office-report.json", "utf8"),
-);
-const apiBase = `https://api.github.com/repos/${repository}`;
+export async function reportFantasyOfficeIncident({
+  report,
+  token,
+  repository,
+  fetchImpl = fetch,
+}) {
+  const title = "[Movie Data] Fantasy Office updater needs attention";
+  // A scoped verification must not resolve or replace a whole-season incident.
+  if (report.partial) return;
+  if (!token || !repository)
+    throw new Error("GH_TOKEN and GITHUB_REPOSITORY are required.");
+  const apiBase = `https://api.github.com/repos/${repository}`;
 
-async function github(path, options = {}) {
-  const response = await fetch(`${apiBase}${path}`, {
-    ...options,
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(options.headers || {}),
-    },
-  });
-  const value = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(
-      value.message || `GitHub returned HTTP ${response.status}.`,
-    );
-  return value;
-}
-
-const issues = await github("/issues?state=open&per_page=100");
-const existing = issues.find((issue) => issue.title === title);
-const failures = (report.outcomes || []).filter(
-  (outcome) => !["healthy", "not_available"].includes(outcome.status),
-);
-const systemic = [];
-const metrics = new Set(
-  (report.outcomes || []).map((outcome) => outcome.metric),
-);
-for (const metric of metrics) {
-  if (!metric) continue;
-  const attempts = report.outcomes.filter(
-    (outcome) => outcome.metric === metric,
-  );
-  const metricFailures = attempts.filter(
-    (outcome) => !["healthy", "not_available"].includes(outcome.status),
-  );
-  if (attempts.length && metricFailures.length / attempts.length >= 0.5) {
-    systemic.push(
-      `- Systemic source failure suspected for \`${metric}\`: ${metricFailures.length}/${attempts.length} observations failed.`,
-    );
+  async function github(path, options = {}) {
+    const response = await fetchImpl(`${apiBase}${path}`, {
+      ...options,
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(options.headers || {}),
+      },
+    });
+    const value = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw new Error(
+        value.message || `GitHub returned HTTP ${response.status}.`,
+      );
+    return value;
   }
-}
-if (report.status === "healthy") {
+
+  const issues = await github("/issues?state=open&per_page=100");
+  const existing = issues.find((issue) => issue.title === title);
+  const execution = classifyFantasyOfficeRun(report);
+  const failures = execution.errors;
+  const systemic = [];
+  const metrics = new Set(
+    (report.outcomes || []).map((outcome) => outcome.metric),
+  );
+  for (const metric of metrics) {
+    if (!metric) continue;
+    const attempts = report.outcomes.filter(
+      (outcome) => outcome.metric === metric,
+    );
+    const metricFailures = failures.filter(
+      (outcome) => outcome.metric === metric,
+    );
+    if (attempts.length && metricFailures.length / attempts.length >= 0.5) {
+      systemic.push(
+        `- Systemic source failure suspected for \`${metric}\`: ${metricFailures.length}/${attempts.length} observations failed.`,
+      );
+    }
+  }
+  if (execution.exitCode === 0) {
+    if (existing) {
+      await github(`/issues/${existing.number}/comments`, {
+        method: "POST",
+        body: JSON.stringify({
+          body: `Recovered in run \`${report.runId}\` at ${report.completedAt}. The update completed successfully: ${report.succeeded} observations succeeded; ${execution.gaps.length} source gaps remain as warnings in the run summary.`,
+        }),
+      });
+      await github(`/issues/${existing.number}`, {
+        method: "PATCH",
+        body: JSON.stringify({ state: "closed" }),
+      });
+    }
+    return;
+  }
+
+  const detail = failures
+    .slice(0, 50)
+    .map(
+      (failure) =>
+        `- \`${failure.movieId || "system"}\` / \`${failure.metric || "run"}\`: ${failure.error || failure.status}`,
+    )
+    .join("\n");
+  const body = [
+    `Run: \`${report.runId || "unavailable"}\``,
+    `Completed: ${report.completedAt}`,
+    `Succeeded: ${report.succeeded || 0}`,
+    `Execution errors: ${failures.length || "system failure"}`,
+    `Source gaps (warnings): ${execution.gaps.length}`,
+    `Movies saved: ${report.completedMovies ?? "unknown"}/${report.totalMovies ?? "unknown"}`,
+    ...(report.error ? [`Stopped: ${report.error}`] : []),
+    "",
+    ...systemic,
+    ...(systemic.length ? [""] : []),
+    detail ||
+      report.error ||
+      "The updater failed before metric results were available.",
+    "",
+    "The workflow artifact contains sanitized source responses captured for parse failures.",
+  ].join("\n");
   if (existing) {
-    await github(`/issues/${existing.number}/comments`, {
+    const age = Date.now() - Date.parse(existing.updated_at);
+    if (age >= 24 * 60 * 60 * 1000) {
+      await github(`/issues/${existing.number}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      });
+    }
+  } else {
+    await github("/issues", {
       method: "POST",
-      body: JSON.stringify({
-        body: `Recovered in run \`${report.runId}\` at ${report.completedAt}. All ${report.succeeded} observations succeeded.`,
-      }),
-    });
-    await github(`/issues/${existing.number}`, {
-      method: "PATCH",
-      body: JSON.stringify({ state: "closed" }),
+      body: JSON.stringify({ body, title }),
     });
   }
-  process.exit(0);
 }
 
-const detail = failures
-  .slice(0, 50)
-  .map(
-    (failure) =>
-      `- \`${failure.movieId || "system"}\` / \`${failure.metric || "run"}\`: ${failure.error || failure.status}`,
-  )
-  .join("\n");
-const body = [
-  `Run: \`${report.runId || "unavailable"}\``,
-  `Completed: ${report.completedAt}`,
-  `Succeeded: ${report.succeeded || 0}`,
-  `Failed: ${report.failed || failures.length || "system failure"}`,
-  "",
-  ...systemic,
-  ...(systemic.length ? [""] : []),
-  detail ||
-    report.error ||
-    "The updater failed before metric results were available.",
-  "",
-  "The workflow artifact contains sanitized source responses captured for parse failures.",
-].join("\n");
-if (existing) {
-  const age = Date.now() - Date.parse(existing.updated_at);
-  if (age >= 24 * 60 * 60 * 1000) {
-    await github(`/issues/${existing.number}/comments`, {
-      method: "POST",
-      body: JSON.stringify({ body }),
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  readFile(".tmp/fantasy-office-report.json", "utf8")
+    .then((contents) =>
+      reportFantasyOfficeIncident({
+        report: JSON.parse(contents),
+        token: process.env.GH_TOKEN,
+        repository: process.env.GITHUB_REPOSITORY,
+      }),
+    )
+    .catch((error) => {
+      console.error(error.message);
+      process.exitCode = 1;
     });
-  }
-} else {
-  await github("/issues", {
-    method: "POST",
-    body: JSON.stringify({ body, title }),
-  });
 }

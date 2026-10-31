@@ -37,6 +37,8 @@ async function fixture() {
     Date,
     Promise,
     setTimeout,
+    clearTimeout,
+    AbortController,
     caches: { open: async () => cache, delete: async () => entries.clear() },
     /** @param {Request} request */
     fetch: async (request) => {

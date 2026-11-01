@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-31T15:45:58.310Z",
+  "generatedAt": "2026-11-01T16:50:06.068Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-10-31T15:45:58.310Z",
-    "attemptedAt": "2026-10-31T15:45:58.310Z",
-    "updatedAt": "2026-10-31T15:45:58.310Z",
-    "oldestTeamUpdatedAt": "2026-10-31T15:45:58.310Z",
+    "generatedAt": "2026-11-01T16:50:06.068Z",
+    "attemptedAt": "2026-11-01T16:50:06.068Z",
+    "updatedAt": "2026-11-01T16:50:06.068Z",
+    "oldestTeamUpdatedAt": "2026-11-01T16:50:06.068Z",
     "competitionCount": 11,
     "competitionFixtureCount": 2285,
     "teamCount": 7,
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 262,
-      "syncedAt": "2026-10-31T15:45:58.310Z",
+      "syncedAt": "2026-11-01T16:50:06.068Z",
       "appended": 0,
       "updated": 262
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-10-31T15:50:51.867Z",
+      "attemptedAt": "2026-11-01T16:54:59.647Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -1894,10 +1894,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560593",
-            "iCalendar": "6a3507b354aa884ccf093b00",
-            "Arsenal.com": "4dfeuonuytszjsligsh4vuexg",
-            "TheSportsDB": "2494052"
+            "football-data.org": "560593"
           },
           "sources": [
             "football-data.org"
@@ -1906,7 +1903,7 @@
           "time": "11:30:00",
           "timestamp": "2026-10-10T11:30:00Z",
           "venue": "",
-          "matchId": "footy_de2b62cce9c3",
+          "matchId": "footy_comp_football_data_org_560593",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -2547,10 +2544,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "560608",
-            "iCalendar": "6a3507b354aa884ccf093b01",
-            "Arsenal.com": "4jnc5oa6ta5avt8amdcunz8r8",
-            "TheSportsDB": "2494069"
+            "football-data.org": "560608"
           },
           "sources": [
             "football-data.org"
@@ -2559,7 +2553,7 @@
           "time": "15:30:00",
           "timestamp": "2026-10-18T15:30:00Z",
           "venue": "",
-          "matchId": "footy_db640982a4a1",
+          "matchId": "footy_comp_football_data_org_560608",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -3030,7 +3024,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -3066,7 +3060,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -3102,7 +3096,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -3138,7 +3132,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -3174,7 +3168,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -3210,7 +3204,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "17:30:00",
           "timestamp": "2026-10-31T17:30:00Z",
           "venue": "",
@@ -3246,7 +3240,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "20:00:00",
           "timestamp": "2026-10-31T20:00:00Z",
           "venue": "",
@@ -3285,7 +3279,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "time": "16:30:00",
           "timestamp": "2026-11-01T16:30:00Z",
           "venue": "",
@@ -13898,15 +13892,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:23.629Z",
+      "attemptedAt": "2026-11-01T16:55:31.496Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -14513,15 +14507,15 @@
       "notes": [
         "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:04.593Z",
+      "attemptedAt": "2026-11-01T16:55:12.344Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -15389,10 +15383,7 @@
           "season": "2026",
           "source": "football-data.org",
           "sourceIds": {
-            "football-data.org": "575346",
-            "Arsenal.com": "5ewdf058290urqnuvbyl8oglw",
-            "iCalendar": "6a92eae554aa8848aa16f118",
-            "TheSportsDB": "2594543"
+            "football-data.org": "575346"
           },
           "sources": [
             "football-data.org"
@@ -15401,7 +15392,7 @@
           "time": "19:00:00",
           "timestamp": "2026-10-13T19:00:00Z",
           "venue": "",
-          "matchId": "footy_comp_arsenal_com_5ewdf058290urqnuvbyl8oglw",
+          "matchId": "footy_comp_football_data_org_575346",
           "followedTeamNames": [
             "Arsenal"
           ],
@@ -16628,7 +16619,8 @@
           "source": "football-data.org",
           "sourceIds": {
             "football-data.org": "575380",
-            "iCalendar": "6a92f2c554aa88426515def5"
+            "iCalendar": "6a92f2c554aa88426515def5",
+            "TheSportsDB": "2594616"
           },
           "sources": [
             "football-data.org"
@@ -19782,15 +19774,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:11.218Z",
+      "attemptedAt": "2026-11-01T16:55:19.220Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -23510,7 +23502,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "IN_PLAY",
+          "status": "FINISHED",
           "time": "15:15:00",
           "timestamp": "2026-10-31T15:15:00Z",
           "venue": "",
@@ -23546,7 +23538,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "17:30:00",
           "timestamp": "2026-10-31T17:30:00Z",
           "venue": "",
@@ -23584,7 +23576,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "20:00:00",
           "timestamp": "2026-10-31T20:00:00Z",
           "venue": "",
@@ -23622,7 +23614,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "13:00:00",
           "timestamp": "2026-11-01T13:00:00Z",
           "venue": "",
@@ -23658,7 +23650,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "time": "15:15:00",
           "timestamp": "2026-11-01T15:15:00Z",
           "venue": "",
@@ -33670,15 +33662,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:18.037Z",
+      "attemptedAt": "2026-11-01T16:55:25.844Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -38932,7 +38924,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "FINISHED",
           "time": "20:00:00",
           "timestamp": "2026-10-30T20:00:00Z",
           "venue": "",
@@ -39078,7 +39070,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39114,7 +39106,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39150,7 +39142,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39186,7 +39178,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39222,7 +39214,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39258,7 +39250,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39294,7 +39286,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -39330,7 +39322,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "LIVE",
+          "status": "FINISHED",
           "time": "15:00:00",
           "timestamp": "2026-10-31T15:00:00Z",
           "venue": "",
@@ -53705,15 +53697,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:30.091Z",
+      "attemptedAt": "2026-11-01T16:55:37.889Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53816,15 +53808,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:30.092Z",
+      "attemptedAt": "2026-11-01T16:55:37.891Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -54106,16 +54098,16 @@
       "notes": [
         "Preserved 6 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:30.092Z",
+      "attemptedAt": "2026-11-01T16:55:37.891Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -59439,15 +59431,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:43.216Z",
+      "attemptedAt": "2026-11-01T16:55:51.108Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -77453,15 +77445,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:43.219Z",
+      "attemptedAt": "2026-11-01T16:55:51.114Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -80220,15 +80212,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     },
     {
-      "attemptedAt": "2026-10-31T15:51:43.222Z",
+      "attemptedAt": "2026-11-01T16:55:51.117Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82432,12 +82424,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-10-31T15:45:58.310Z"
+      "updatedAt": "2026-11-01T16:50:06.068Z"
     }
   ],
   "teamCatalog": [
@@ -82635,7 +82627,8 @@
       "name": "Aston Villa FC",
       "prettyName": "Aston Villa FC",
       "providerTeamIds": {
-        "football-data.org": "58"
+        "football-data.org": "58",
+        "TheSportsDB": "133601"
       }
     },
     {
@@ -87923,9 +87916,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -88734,7 +88727,7 @@
             "iCalendar"
           ],
           "sourceDetail": "team-upcoming",
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
@@ -90147,19 +90140,19 @@
         }
       ],
       "notes": [
-        "Loaded 35 all-status matches from 2026-10-31 through 2027-10-31.",
+        "Loaded 35 all-status matches from 2026-11-01 through 2027-11-01.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 35 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 41 iCalendar fixtures from 2026-07-01 through 2027-10-31.",
-        "Preserved 12 registered fixtures that were not returned by providers this run."
+        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-11-01.",
+        "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -90936,13 +90929,13 @@
           "time": "20:00:00",
           "timestamp": "2026-10-31T20:00:00Z",
           "venue": "Spotify Camp Nou",
+          "isFriendly": false,
+          "matchId": "footy_c1e303ae400b",
           "awayProviderTeamId": "263",
           "awaySportDbTeamId": "134221",
           "homeProviderTeamId": "81",
           "homeSportDbTeamId": "133739",
           "lastSeen": "",
-          "matchId": "footy_c1e303ae400b",
-          "isFriendly": false,
           "homeTeamId": "2",
           "awayTeamId": "team:deportivo-alaves"
         },
@@ -90960,25 +90953,29 @@
           "priority": "2",
           "round": "4",
           "season": "2026",
-          "source": "football-data.org + iCalendar",
+          "source": "football-data.org + TheSportsDB + iCalendar",
           "sourceIds": {
             "iCalendar": "6a92f2c554aa88426515def5",
-            "football-data.org": "575380"
+            "football-data.org": "575380",
+            "TheSportsDB": "2594616"
           },
           "sources": [
             "football-data.org",
+            "TheSportsDB",
             "iCalendar"
           ],
-          "sourceDetail": "calendar-feed",
+          "sourceDetail": "team-upcoming",
           "status": "TIMED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "20:00:00",
           "timestamp": "2026-11-03T20:00:00Z",
-          "venue": "Barcelona, Barcelona",
+          "venue": "Spotify Camp Nou",
           "awayProviderTeamId": "58",
+          "awaySportDbTeamId": "133601",
           "homeProviderTeamId": "81",
+          "homeSportDbTeamId": "133739",
           "lastSeen": "",
           "matchId": "footy_comp_football_data_org_575380",
           "isFriendly": false,
@@ -92297,18 +92294,18 @@
         }
       ],
       "notes": [
-        "Loaded 33 all-status matches from 2026-10-31 through 2027-10-31.",
+        "Loaded 32 all-status matches from 2026-11-01 through 2027-11-01.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 37 iCalendar fixtures from 2026-07-01 through 2027-10-31.",
+        "Loaded 37 iCalendar fixtures from 2026-07-01 through 2027-11-01.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -94307,18 +94304,18 @@
         }
       ],
       "notes": [
-        "Loaded 33 all-status matches from 2026-10-31 through 2027-10-31.",
+        "Loaded 33 all-status matches from 2026-11-01 through 2027-11-01.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 37 iCalendar fixtures from 2026-07-01 through 2027-10-31.",
+        "Loaded 37 iCalendar fixtures from 2026-07-01 through 2027-11-01.",
         "Preserved 13 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -94487,9 +94484,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -94628,9 +94625,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -95664,21 +95661,22 @@
           "isFriendly": false,
           "matchId": "footy_c1e9af00dc98",
           "homeTeamId": "6",
-          "awayTeamId": "team:orlando-city"
+          "awayTeamId": "team:orlando-city",
+          "lastSeen": ""
         }
       ],
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-10-31.",
+        "Loaded 15 iCalendar fixtures from 2026-01-01 through 2027-11-01.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-10-31T15:45:58.310Z",
-      "updatedAt": "2026-10-31T15:45:58.310Z",
-      "previousUpdatedAt": "2026-10-30T16:43:02.450Z",
+      "attemptedAt": "2026-11-01T16:50:06.068Z",
+      "updatedAt": "2026-11-01T16:50:06.068Z",
+      "previousUpdatedAt": "2026-10-31T15:45:58.310Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -96612,7 +96610,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 11 iCalendar fixtures from 2026-01-01 through 2027-10-31.",
+        "Loaded 11 iCalendar fixtures from 2026-01-01 through 2027-11-01.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

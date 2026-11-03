@@ -1,3 +1,4 @@
+import { fetchOfficialQualifying } from "./official-qualifying.js";
 import {
   buildOptimalWeeklyEntry,
   buildWeeklyStandings,
@@ -959,7 +960,7 @@ async function fetchSession(
       : sessionType === "sprint"
         ? "sprint"
         : "results";
-  const sourceUrl = `${baseUrl}/${year}/${round}/${endpoint}.json`;
+  let sourceUrl = `${baseUrl}/${year}/${round}/${endpoint}.json`;
   let response;
   let payload;
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -1018,11 +1019,24 @@ async function fetchSession(
       404,
       "No provider results are available for this session yet.",
     );
-  const results = sourceResults.map((result) =>
+  let results = sourceResults.map((result) =>
     normalizeProviderResult(result),
   );
+  if (sessionType === "qualifying") {
+    try {
+      const official = await fetchOfficialQualifying(results, year, race.date);
+      results = official.results;
+      sourceUrl = official.sourceUrl;
+    } catch (error) {
+      throw httpError(
+        502,
+        `Qualifying could not be verified against official results: ${error.message}`,
+      );
+    }
+    enrichProviderQualifyingTimes(results);
+  }
   await resolveKnownDriverIds(env, year, results);
-  if (sessionType === "qualifying") enrichProviderQualifyingTimes(results);
+  const source = sessionType === "qualifying" ? "jolpica_formula1" : "jolpica";
   const fetchedAt = new Date().toISOString();
   const hasSprint = Boolean(race.Sprint || sessionType === "sprint");
   const statements = [
@@ -1050,7 +1064,7 @@ async function fetchSession(
       year,
       round,
       sessionType,
-      reconcileApproved ? "jolpica_reconciled" : "jolpica",
+      reconcileApproved ? `${source}_reconciled` : source,
       sourceUrl,
       fetchedAt,
     ),
@@ -1085,7 +1099,7 @@ async function fetchSession(
       round,
       sessionType,
       status: "needs_review",
-      source: reconcileApproved ? "jolpica_reconciled" : "jolpica",
+      source: reconcileApproved ? `${source}_reconciled` : source,
       sourceUrl,
       fetchedAt,
       reconciled: reconcileApproved,

@@ -131,5 +131,5 @@ the background wakeup arrived, but its queued details were unavailable.
 `POST /test` requires a signed admin access token, an active subscription owned by
 that admin, and the selected topic enabled. It targets only the supplied device,
 preserves existing pending alerts, and uses a best-effort KV cooldown of one minute
-per device. Each click uses bounded KV reads/writes and one push request, with no
+per device and alert type, so testing Footy does not block a Formula 1 test. Each click uses bounded KV reads/writes and one push request, with no
 D1 queries, subscription scans, new scheduled jobs, or migrations.

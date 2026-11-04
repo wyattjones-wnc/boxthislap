@@ -2,6 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fetchRound } from "../src/index.js";
 
+function officialResponse(url, date, count = 1) {
+  if (!url.startsWith("https://www.formula1.com/")) return null;
+  if (url.endsWith("/races"))
+    return new Response(
+      `<table><tr><td><a href="/en/results/2026/races/999/test/race-result">Test</a></td><td>${date}</td></tr></table>`,
+    );
+  return new Response(
+    `<table>${Array.from({ length: count }, (_, index) => `<tr><td>${index + 1}</td><td>${index + 1}</td><td>Driver</td><td>Team</td><td>1:38.000</td><td></td><td></td><td>3</td></tr>`).join("")}</table>`,
+  );
+}
+
 function database() {
   const batches = [];
   return {
@@ -88,6 +99,8 @@ for (const scenario of [
 
 test("available round results are fetched into review", async (t) => {
   t.mock.method(globalThis, "fetch", async (url) => {
+    const official = officialResponse(url, "24 May");
+    if (official) return official;
     if (url.endsWith("/2026/5.json"))
       return Response.json({ MRData: { RaceTable: { Races: [] } } });
     const key = url.includes("qualifying") ? "QualifyingResults" : "Results";
@@ -103,6 +116,7 @@ test("available round results are fetched into review", async (t) => {
                   position: "1",
                   Driver: {
                     driverId: "test",
+                    permanentNumber: "1",
                     givenName: "Test",
                     familyName: "Driver",
                   },
@@ -129,6 +143,8 @@ test("round fetch retries rate limiting and imports qualifying independently of 
   let qualifyingAttempts = 0;
   t.mock.method(globalThis, "fetch", async (url) => {
     requests.push(url);
+    const official = officialResponse(url, "04 Oct", 22);
+    if (official) return official;
     if (!url.includes("qualifying"))
       return Response.json({ MRData: { RaceTable: { Races: [] } } });
     qualifyingAttempts += 1;
@@ -145,6 +161,7 @@ test("round fetch retries rate limiting and imports qualifying independently of 
                 position: String(index + 1),
                 Driver: {
                   driverId: `driver_${index}`,
+                  permanentNumber: String(index + 1),
                   givenName: "Driver",
                   familyName: String(index),
                 },

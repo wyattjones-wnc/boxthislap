@@ -130,3 +130,25 @@ for (const topic of ["formula-one", "league-drafts"]) {
     );
   });
 }
+
+// Testing one bell must not block another bell on the same device.
+test("Footy and Formula 1 can be tested consecutively on one device", async () => {
+  const { env, request, entries, hash } = await setup();
+  let sent = 0;
+  const send = async () => {
+    sent++;
+    return { ok: true };
+  };
+  await sendTestNotification(request("footy"), env, send);
+  await sendTestNotification(request("formula-one"), env, send);
+  const pending = JSON.parse(entries.get(`pending:${hash}`));
+  assert.equal(sent, 2);
+  assert.deepEqual(
+    pending.slice(1).map((alert) => alert.title),
+    ["Footy notification test", "Formula 1 notification test"],
+  );
+  await assert.rejects(
+    sendTestNotification(request("formula-one"), env, send),
+    { status: 429 },
+  );
+});

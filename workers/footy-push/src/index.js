@@ -101,8 +101,8 @@ export async function sendTestNotification(request, env, send = sendEmptyWebPush
     throw httpError(404, "Enable alerts with the bell first to register this device.");
   }
   if (!getSubscriptionTopics(record)[topic]) throw httpError(400, "Enable this alert with its bell before testing.");
-  const cooldownKey = `test-cooldown:${hash}`;
-  if (await env.FOOTY_PUSH_KV.get(cooldownKey)) throw httpError(429, "Wait a minute before sending another test.");
+  const cooldownKey = `test-cooldown:${hash}:${topic}`;
+  if (await env.FOOTY_PUSH_KV.get(cooldownKey)) throw httpError(429, "Wait a minute before testing this alert again. You can test a different alert now.");
   const channel = getFootySubscriptionChannel(record);
   const label = { footy: "Footy", "formula-one": "Formula 1", "league-drafts": "Draft alerts" }[topic];
   const notification = {

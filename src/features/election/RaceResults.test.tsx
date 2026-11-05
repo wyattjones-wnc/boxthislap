@@ -4,12 +4,18 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RaceResults, type Candidate } from "./RaceResults";
+import { loadBaselines, seenQueryKey, type Baseline } from "./electionSeen";
 
-const key = "test-election-baseline";
 const candidate = (id: string, votes: number): Candidate => ({
   id,
   first: id,
@@ -18,134 +24,181 @@ const candidate = (id: string, votes: number): Candidate => ({
   votes,
   percent: 0.5,
 });
-const props = {
-  caption: "Alaska Senate vote totals",
-  storageKey: key,
-  isAdmin: true,
-  sourceUpdated: 1000,
-  canMarkSeen: true,
-};
+const initial = [candidate("A", 100), candidate("B", 80)];
+let shared: Baseline | null;
+let failSave = false;
 const row = (name: string) =>
   within(screen.getByRole("rowheader", { name }).closest("tr")!);
+function Harness({
+  candidates = initial,
+  isAdmin = true,
+  sourceUpdated = 1000,
+}: {
+  candidates?: Candidate[];
+  isAdmin?: boolean;
+  sourceUpdated?: number;
+}) {
+  const seen = useQuery({
+    queryKey: seenQueryKey,
+    queryFn: ({ signal }) => loadBaselines(signal),
+  });
+  return (
+    <RaceResults
+      candidates={candidates}
+      caption="Alaska Senate vote totals"
+      raceKey="AK:3079"
+      baseline={seen.data?.baselines["AK:3079"] || null}
+      baselineLoaded={Boolean(seen.data)}
+      isAdmin={isAdmin}
+      sourceUpdated={sourceUpdated}
+      canMarkSeen={seen.isSuccess}
+    />
+  );
+}
+function renderRace(props: Parameters<typeof Harness>[0] = {}) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrap = (value: Parameters<typeof Harness>[0]) => (
+    <QueryClientProvider client={client}>
+      <Harness {...value} />
+    </QueryClientProvider>
+  );
+  const view = render(wrap(props));
+  return {
+    ...view,
+    update: (value: Parameters<typeof Harness>[0]) =>
+      view.rerender(wrap(value)),
+  };
+}
 beforeEach(() => {
-  localStorage.clear();
+  shared = null;
+  failSave = false;
+  window.boxThisLapGetManagerAccessToken = async () => "admin-token";
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, options?: RequestInit) => {
+      if (options?.method === "PUT") {
+        if (failSave)
+          return {
+            ok: false,
+            json: async () => ({
+              ok: false,
+              error: "Administrator access is required.",
+            }),
+          };
+        const body = JSON.parse(options.body as string);
+        const sorted = [...body.candidates].sort((a, b) => b.votes - a.votes);
+        shared = {
+          markedAt: "2026-11-05T19:00:00Z",
+          sourceUpdated: body.sourceUpdated,
+          votes: Object.fromEntries(
+            body.candidates.map((c: Candidate) => [c.id, c.votes]),
+          ),
+          total: body.candidates.reduce(
+            (sum: number, c: Candidate) => sum + c.votes,
+            0,
+          ),
+          gap: sorted.length > 1 ? sorted[0].votes - sorted[1].votes : null,
+          revision: (shared?.revision || 0) + 1,
+        };
+        return { ok: true, json: async () => ({ ok: true, baseline: shared }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          ok: true,
+          baselines: shared ? { "AK:3079": shared } : {},
+        }),
+      };
+    }),
+  );
 });
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  delete window.boxThisLapGetManagerAccessToken;
 });
 
-describe("race comparisons", () => {
-  it("sums every vote, orders candidates and saves a persistent timestamped baseline", () => {
-    const candidates = [
-      candidate("B", 80),
-      candidate("A", 100),
-      { ...candidate("other", 5), first: "", last: "Other" },
-    ];
-    const view = render(<RaceResults {...props} candidates={candidates} />);
-    expect(row("Total votes").getByText("185")).toBeTruthy();
-    expect(screen.getByText("20 votes")).toBeTruthy();
-    expect(screen.getByText(/A Candidate leads B Candidate/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Mark .* seen/ }));
-    const stored = JSON.parse(localStorage.getItem(key)!);
-    expect(stored.total).toBe(185);
-    expect(stored.gap).toBe(20);
-    expect(Date.parse(stored.markedAt)).toBeGreaterThan(0);
-    expect(
-      screen.getByText(/Comparing against results marked seen/),
-    ).toBeTruthy();
-    view.unmount();
-    render(
-      <RaceResults
-        {...props}
-        sourceUpdated={2000}
-        candidates={[
-          candidate("B", 90),
-          candidate("A", 130),
-          { ...candidate("other", 5), first: "", last: "Other" },
-        ]}
-      />,
+describe("shared election comparisons", () => {
+  it("admin saves a baseline and an independent signed-out viewer sees the same timestamp and changes", async () => {
+    const admin = renderRace();
+    await waitFor(() =>
+      expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
     );
-    expect(row("A Candidate Test").getByText("+30 since seen")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button"));
+    await screen.findByText("Shared seen baseline saved.");
+    expect(shared?.total).toBe(180);
+    expect(
+      (
+        vi
+          .mocked(fetch)
+          .mock.calls.find(([, options]) => options?.method === "PUT")?.[1]
+          ?.headers as Record<string, string>
+      ).Authorization,
+    ).toBe("Bearer admin-token");
+    admin.unmount();
+    delete window.boxThisLapGetManagerAccessToken;
+    renderRace({
+      isAdmin: false,
+      sourceUpdated: 2000,
+      candidates: [candidate("A", 130), candidate("B", 90)],
+    });
+    expect(await screen.findByText("+30 since seen")).toBeTruthy();
     expect(row("B Candidate Test").getByText("+10 since seen")).toBeTruthy();
     expect(row("Total votes").getByText("+40 since seen")).toBeTruthy();
     expect(screen.getByText("+20 votes since seen")).toBeTruthy();
-    expect(JSON.parse(localStorage.getItem(key)!).markedAt).toBe(
-      stored.markedAt,
-    );
-  });
-  it("handles corrections, a change of leader and re-marking seen", () => {
-    const view = render(
-      <RaceResults
-        {...props}
-        candidates={[candidate("A", 100), candidate("B", 90)]}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button"));
-    view.rerender(
-      <RaceResults
-        {...props}
-        sourceUpdated={2000}
-        candidates={[candidate("A", 98), candidate("B", 105)]}
-      />,
-    );
-    expect(row("A Candidate Test").getByText("−2 since seen")).toBeTruthy();
-    expect(screen.getByText(/B Candidate leads A Candidate/)).toBeTruthy();
-    expect(screen.getByText("−3 votes since seen")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button"));
-    expect(row("Total votes").getByText("0 since seen")).toBeTruthy();
-    expect(screen.getByText("0 votes since seen")).toBeTruthy();
-  });
-  it("does not offer non-admins a seen action and handles missing/invalid baselines", () => {
-    localStorage.setItem(key, "bad json");
-    render(
-      <RaceResults
-        {...props}
-        isAdmin={false}
-        candidates={[candidate("A", 100)]}
-      />,
+    expect(document.querySelector("time")?.getAttribute("datetime")).toBe(
+      "2026-11-05T19:00:00Z",
     );
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText(/No seen baseline/)).toBeTruthy();
-    expect(screen.getByText(/Top-two gap unavailable/)).toBeTruthy();
   });
-  it("reports storage failures without pretending results were saved", () => {
-    const view = render(
-      <RaceResults {...props} candidates={[candidate("A", 100)]} />,
-    );
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("storage unavailable");
+  it("shows corrections and leadership changes against a shared baseline", async () => {
+    shared = {
+      markedAt: "2026-11-05T19:00:00Z",
+      sourceUpdated: 1000,
+      votes: { A: 100, B: 90 },
+      total: 190,
+      gap: 10,
+      revision: 1,
+    };
+    renderRace({
+      sourceUpdated: 2000,
+      candidates: [candidate("A", 98), candidate("B", 105)],
     });
-    fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("alert").textContent).toContain("Could not save");
-    expect(screen.queryByText("Seen baseline saved.")).toBeNull();
-    view.rerender(
-      <RaceResults
-        {...props}
-        canMarkSeen={false}
-        candidates={[candidate("A", 100)]}
-      />,
+    expect(await screen.findByText("−2 since seen")).toBeTruthy();
+    expect(screen.getByText(/B Candidate leads A Candidate/)).toBeTruthy();
+    expect(screen.getByText("−3 votes since seen")).toBeTruthy();
+  });
+  it("does not claim success when the server rejects a save", async () => {
+    failSave = true;
+    renderRace();
+    await waitFor(() =>
+      expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
     );
+    fireEvent.click(screen.getByRole("button"));
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Administrator access is required",
+    );
+    expect(shared).toBeNull();
+    expect(screen.queryByText("Shared seen baseline saved.")).toBeNull();
+  });
+  it("ignores browser-local baselines and disables writes when shared data is unavailable", async () => {
+    localStorage.setItem(
+      "boxThisLap:election-seen:2026:admin:AK:3079",
+      JSON.stringify({ total: 1000 }),
+    );
+    vi.mocked(fetch).mockRejectedValue(new Error("unavailable"));
+    renderRace();
+    expect(await screen.findByText(/Shared baseline not loaded/)).toBeTruthy();
     expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(
       true,
     );
-  });
-  it("does not compare older cached results against a newer baseline", () => {
-    const view = render(
-      <RaceResults
-        {...props}
-        sourceUpdated={2000}
-        candidates={[candidate("A", 100), candidate("B", 90)]}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button"));
-    view.rerender(
-      <RaceResults
-        {...props}
-        candidates={[candidate("A", 70), candidate("B", 60)]}
-      />,
-    );
-    expect(screen.getByText(/older than your seen baseline/)).toBeTruthy();
-    expect(screen.queryByText("−30 since seen")).toBeNull();
+    expect(screen.queryByText(/since seen/)).toBeNull();
+    localStorage.clear();
   });
 });

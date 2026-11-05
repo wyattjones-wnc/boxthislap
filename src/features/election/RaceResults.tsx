@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  saveBaseline,
+  seenQueryKey,
+  type Baseline,
+  type SharedBaselines,
+} from "./electionSeen";
 import styles from "./ElectionPage.module.css";
 
 export interface Candidate {
@@ -10,37 +16,6 @@ export interface Candidate {
   percent: number;
   winner?: string;
 }
-interface Baseline {
-  markedAt: string;
-  sourceUpdated: number;
-  votes: Record<string, number>;
-  total: number;
-  gap: number | null;
-}
-
-function readBaseline(key: string): Baseline | null {
-  try {
-    const value = JSON.parse(
-      localStorage.getItem(key) || "null",
-    ) as Baseline | null;
-    if (
-      !value ||
-      !Number.isFinite(Date.parse(value.markedAt)) ||
-      !Number.isFinite(value.sourceUpdated) ||
-      !Number.isFinite(value.total) ||
-      !(value.gap === null || Number.isFinite(value.gap)) ||
-      !value.votes ||
-      typeof value.votes !== "object" ||
-      Array.isArray(value.votes) ||
-      !Object.values(value.votes).every(Number.isFinite)
-    )
-      return null;
-    return value;
-  } catch {
-    return null;
-  }
-}
-
 const signed = (value: number) =>
   `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toLocaleString()}`;
 const name = (candidate: Candidate) =>
@@ -49,21 +24,39 @@ const name = (candidate: Candidate) =>
 export function RaceResults({
   candidates,
   caption,
-  storageKey,
+  raceKey,
+  baseline,
+  baselineLoaded,
   isAdmin,
   sourceUpdated,
   canMarkSeen,
 }: {
   candidates: Candidate[];
   caption: string;
-  storageKey: string;
+  raceKey: string;
+  baseline: Baseline | null;
+  baselineLoaded: boolean;
   isAdmin: boolean;
   sourceUpdated: number;
   canMarkSeen: boolean;
 }) {
-  const [baseline, setBaseline] = useState(() => readBaseline(storageKey));
-  const [saveError, setSaveError] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const client = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: () =>
+      saveBaseline({
+        raceKey,
+        candidates,
+        sourceUpdated,
+        expectedRevision: baseline?.revision || 0,
+      }),
+    onMutate: () => client.cancelQueries({ queryKey: seenQueryKey }),
+    onSuccess: ({ baseline: saved }) => {
+      client.setQueryData<SharedBaselines>(seenQueryKey, (current) => ({
+        baselines: { ...current?.baselines, [raceKey]: saved },
+      }));
+    },
+    onSettled: () => void client.invalidateQueries({ queryKey: seenQueryKey }),
+  });
   const sorted = [...candidates].sort(
     (a, b) => b.votes - a.votes || a.id.localeCompare(b.id),
   );
@@ -76,25 +69,14 @@ export function RaceResults({
   const comparison =
     baseline && sourceUpdated >= baseline.sourceUpdated ? baseline : null;
   function markSeen() {
-    if (!isAdmin || !canMarkSeen || (baseline && !comparison)) return;
-    const next: Baseline = {
-      markedAt: new Date().toISOString(),
-      sourceUpdated,
-      votes: Object.fromEntries(
-        candidates.map((candidate) => [candidate.id, candidate.votes]),
-      ),
-      total,
-      gap,
-    };
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      setBaseline(next);
-      setSaveError(false);
-      setSaved(true);
-    } catch {
-      setSaveError(true);
-      setSaved(false);
-    }
+    if (
+      !isAdmin ||
+      !canMarkSeen ||
+      mutation.isPending ||
+      (baseline && !comparison)
+    )
+      return;
+    mutation.mutate();
   }
   return (
     <>
@@ -168,11 +150,15 @@ export function RaceResults({
           <button
             type="button"
             className="action-button"
-            disabled={!canMarkSeen || Boolean(baseline && !comparison)}
+            disabled={
+              !canMarkSeen ||
+              mutation.isPending ||
+              Boolean(baseline && !comparison)
+            }
             onClick={markSeen}
             aria-label={`Mark ${caption} seen`}
           >
-            Mark seen
+            {mutation.isPending ? "Saving…" : "Mark seen"}
           </button>
         )}
         {baseline ? (
@@ -187,22 +173,25 @@ export function RaceResults({
           </p>
         ) : (
           <p>
-            No seen baseline saved
-            {isAdmin ? ". Mark seen to start comparing vote changes." : "."}
+            {baselineLoaded
+              ? "No shared seen baseline saved"
+              : "Shared baseline not loaded"}
+            {baselineLoaded && isAdmin
+              ? ". Mark seen to start comparing vote changes."
+              : "."}
           </p>
         )}
         {baseline && !comparison && (
           <p role="status">
-            These source results are older than your seen baseline. Changes will
-            appear when newer results arrive.
+            These source results are older than the shared seen baseline.
+            Changes will appear when newer results arrive.
           </p>
         )}
-        {isAdmin && <small>Saved in this browser for your account.</small>}
-        {saved && <p role="status">Seen baseline saved.</p>}
-        {saveError && (
+        <small>The admin sets this comparison baseline for everyone.</small>
+        {mutation.isSuccess && <p role="status">Shared seen baseline saved.</p>}
+        {mutation.isError && (
           <p role="alert">
-            Could not save the seen baseline. Allow browser storage and try
-            again.
+            Could not save the shared seen baseline. {mutation.error.message}
           </p>
         )}
       </div>

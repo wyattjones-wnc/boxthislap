@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAppState } from "../../app/providers";
+import { loadBaselines, seenQueryKey } from "./electionSeen";
 import { RaceResults, type Candidate } from "./RaceResults";
 import styles from "./ElectionPage.module.css";
 
@@ -24,7 +25,12 @@ interface Results {
 export default function ElectionPage() {
   const { session } = useAppState();
   const isAdmin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
-  const baselineAccount = session?.managerId || (isAdmin ? "admin" : "guest");
+  const seen = useQuery({
+    queryKey: seenQueryKey,
+    queryFn: ({ signal }) => loadBaselines(signal),
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true,
+  });
   const query = useQuery<Results>({
     queryKey: ["election-results-2026"],
     queryFn: async ({ signal }) => {
@@ -81,6 +87,18 @@ export default function ElectionPage() {
           counts.
         </p>
       )}
+      {seen.isPending && <p role="status">Loading shared seen baselines…</p>}
+      {seen.isError && (
+        <p role="alert">
+          The shared seen baseline could not be refreshed.{" "}
+          {seen.data
+            ? "Showing the last loaded baseline."
+            : "Comparisons are unavailable until it loads."}{" "}
+          <button type="button" onClick={() => void seen.refetch()}>
+            Retry shared baseline
+          </button>
+        </p>
+      )}
       <div className={styles.states}>
         {(
           [
@@ -134,13 +152,22 @@ export default function ElectionPage() {
                       : ""}
                   </p>
                   <RaceResults
-                    key={`${query.data!.year}:${race.state}:${race.id}:${baselineAccount}`}
+                    key={`${query.data!.year}:${race.state}:${race.id}`}
                     candidates={race.candidates}
                     caption={`${name} ${race.officeName}${race.office === "H" ? ` District ${race.seatNumber || "At large"}` : ""} vote totals`}
-                    storageKey={`boxThisLap:election-seen:${query.data!.year}:${baselineAccount}:${race.state}:${race.id}`}
+                    raceKey={`${race.state}:${race.id}`}
+                    baseline={
+                      seen.data?.baselines[`${race.state}:${race.id}`] || null
+                    }
+                    baselineLoaded={Boolean(seen.data)}
                     isAdmin={isAdmin}
                     sourceUpdated={race.updated}
-                    canMarkSeen={!query.isError && !query.isFetching}
+                    canMarkSeen={
+                      !query.isError &&
+                      !query.isFetching &&
+                      !seen.isPending &&
+                      !seen.isError
+                    }
                   />
                   <p className={styles.updated}>
                     Source updated: {new Date(race.updated).toLocaleString()}

@@ -4,6 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ElectionPage from "./ElectionPage";
 
+vi.mock("./electionSeen", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./electionSeen")>()),
+  loadBaselines: async () => ({ baselines: {} }),
+}));
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -23,36 +28,34 @@ describe("Election page", () => {
   it("shows AP vote totals, call status and Alaska ranked-choice context", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({
-            year: 2026,
-            fetchedAt: new Date().toISOString(),
-            races: [
-              {
-                id: "1",
-                state: "AK",
-                office: "S",
-                officeName: "U.S. Senate",
-                raceCallStatus: "Too Early to Call",
-                eevp: 0.74,
-                updated: Date.now(),
-                candidates: [
-                  {
-                    id: "a",
-                    first: "Test",
-                    last: "Candidate",
-                    party: "Dem",
-                    votes: 1234,
-                    percent: 0.51,
-                  },
-                ],
-              },
-            ],
-          }),
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          year: 2026,
+          fetchedAt: new Date().toISOString(),
+          races: [
+            {
+              id: "1",
+              state: "AK",
+              office: "S",
+              officeName: "U.S. Senate",
+              raceCallStatus: "Too Early to Call",
+              eevp: 0.74,
+              updated: Date.now(),
+              candidates: [
+                {
+                  id: "a",
+                  first: "Test",
+                  last: "Candidate",
+                  party: "Dem",
+                  votes: 1234,
+                  percent: 0.51,
+                },
+              ],
+            },
+          ],
         }),
+      }),
     );
     renderPage();
     expect(await screen.findByText("Test Candidate")).toBeTruthy();

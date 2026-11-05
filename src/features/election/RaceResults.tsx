@@ -17,7 +17,13 @@ export interface Candidate {
   winner?: string;
 }
 const signed = (value: number) =>
-  `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toLocaleString()}`;
+  value === 0
+    ? "—"
+    : `${value > 0 ? "+" : "−"}${Math.abs(value).toLocaleString()}`;
+const changeLabel = (value: number, metric: string) =>
+  value === 0
+    ? `No change in ${metric} since seen`
+    : `${signed(value)} ${metric} since seen`;
 const name = (candidate: Candidate) =>
   `${candidate.first} ${candidate.last}`.trim();
 
@@ -106,7 +112,10 @@ export function RaceResults({
                     className={styles.change}
                     aria-label={
                       Object.hasOwn(comparison.votes, candidate.id)
-                        ? `${signed(candidate.votes - comparison.votes[candidate.id])} votes since seen`
+                        ? changeLabel(
+                            candidate.votes - comparison.votes[candidate.id],
+                            "votes",
+                          )
                         : "New candidate since seen"
                     }
                   >
@@ -128,7 +137,10 @@ export function RaceResults({
               {comparison && (
                 <small
                   className={styles.change}
-                  aria-label={`${signed(total - comparison.total)} total votes since seen`}
+                  aria-label={changeLabel(
+                    total - comparison.total,
+                    "total votes",
+                  )}
                 >
                   {signed(total - comparison.total)}
                 </small>
@@ -140,11 +152,13 @@ export function RaceResults({
       </table>
       <p className={styles.gap}>
         <span>Lead</span>
-        <strong>{gap === null ? "—" : `${gap.toLocaleString()} votes`}</strong>
+        <strong>
+          {gap === null || gap === 0 ? "—" : `${gap.toLocaleString()} votes`}
+        </strong>
         {gap !== null && comparison && comparison.gap !== null && (
           <small
             className={styles.change}
-            aria-label={`${signed(gap - comparison.gap)} change in lead since seen`}
+            aria-label={changeLabel(gap - comparison.gap, "lead")}
           >
             {signed(gap - comparison.gap)}
           </small>

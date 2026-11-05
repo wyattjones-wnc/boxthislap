@@ -112,10 +112,10 @@ export default function ElectionPage() {
       <div className={styles.states}>
         {(
           [
-            ["AK", "Alaska", "alaska"],
-            ["MS", "Mississippi", "mississippi"],
+            ["AK", "Alaska"],
+            ["MS", "Mississippi"],
           ] as const
-        ).map(([code, name, slug]) => (
+        ).map(([code, name]) => (
           <section
             className={styles.state}
             key={code}
@@ -128,14 +128,22 @@ export default function ElectionPage() {
             />
             <header className={styles.stateHeading}>
               <h2>{name}</h2>
-              <a
-                href={`https://apps.npr.org/2026-election-results/${slug}.html`}
-                aria-label={`Latest ${name} Senate results at NPR`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                NPR ↗
-              </a>
+              {results?.races
+                .filter(
+                  (race) =>
+                    race.state === code &&
+                    race.office === "S" &&
+                    typeof race.eevp === "number",
+                )
+                .map((race) => (
+                  <span
+                    className={styles.counted}
+                    key={race.id}
+                    title="Estimated votes counted"
+                  >
+                    {(race.eevp! * 100).toFixed(1)}% counted
+                  </span>
+                ))}
             </header>
             {results?.races
               .filter((race) => race.state === code && race.office === "S")
@@ -144,24 +152,6 @@ export default function ElectionPage() {
               )
               .map((race) => (
                 <article className={styles.race} key={race.id}>
-                  <div className={styles.meta}>
-                    <p className={styles.status}>
-                      {race.raceCallStatus}
-                      {typeof race.eevp === "number" ? (
-                        <span title="Estimated votes counted">
-                          {" "}
-                          · {(race.eevp * 100).toFixed(1)}% counted
-                        </span>
-                      ) : (
-                        ""
-                      )}
-                    </p>
-                    {code === "AK" && (
-                      <p className={styles.ranked}>
-                        Initial count · ranked choice
-                      </p>
-                    )}
-                  </div>
                   <RaceResults
                     key={`${results!.year}:${race.state}:${race.id}`}
                     candidates={race.candidates}
@@ -180,7 +170,10 @@ export default function ElectionPage() {
                       !seen.isError
                     }
                   />
-                  <p className={styles.updated}>
+                  <p
+                    className={styles.updated}
+                    title="Race update timestamp supplied by NPR/AP"
+                  >
                     Updated {new Date(race.updated).toLocaleString()}
                   </p>
                 </article>

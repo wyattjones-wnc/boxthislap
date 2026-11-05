@@ -26,7 +26,7 @@ function renderPage() {
   );
 }
 describe("Election page", () => {
-  it("shows AP vote totals, call status and Alaska ranked-choice context", async () => {
+  it("shows only counted progress beside the state name and one source link", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -60,24 +60,22 @@ describe("Election page", () => {
     );
     renderPage();
     expect(await screen.findByText("Test Candidate")).toBeTruthy();
-    expect(screen.getByText(/Too Early to Call/).textContent).toContain(
-      "74.0%",
-    );
-    expect(screen.getByText(/Initial count/)).toBeTruthy();
-    expect(screen.getByAltText("Outline of Mississippi")).toBeTruthy();
     expect(
-      screen
-        .getByRole("link", { name: "Latest Mississippi Senate results at NPR" })
-        .getAttribute("href"),
-    ).toContain("mississippi.html");
+      screen.getByText("74.0% counted").closest("header")?.textContent,
+    ).toContain("Alaska");
+    expect(screen.queryByText(/Too Early to Call/)).toBeNull();
+    expect(screen.queryByText(/ranked choice/)).toBeNull();
+    expect(screen.getByAltText("Outline of Mississippi")).toBeTruthy();
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(
+      screen.getByRole("link", { name: /AP via NPR/ }).getAttribute("href"),
+    ).toContain("apps.npr.org/2026-election-results/");
   });
   it("keeps source links available when results cannot load", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
     renderPage();
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(
-      screen.getByRole("link", { name: "Latest Alaska Senate results at NPR" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: /AP via NPR/ })).toBeTruthy();
   });
   it("polls the live Worker every minute and replaces vote counts without a reload", async () => {
     vi.useFakeTimers();

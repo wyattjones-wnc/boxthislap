@@ -201,4 +201,22 @@ describe("shared election comparisons", () => {
     expect(screen.queryByText(/Compared with/)).toBeNull();
     localStorage.clear();
   });
+  it("uses an empty dash for unchanged candidate, total and lead differences", async () => {
+    shared = {
+      markedAt: "2026-11-05T19:00:00Z",
+      sourceUpdated: 1000,
+      votes: { A: 100, B: 80 },
+      total: 180,
+      gap: 20,
+      revision: 1,
+    };
+    renderRace({ isAdmin: false });
+    await screen.findByText(/Compared with/);
+    expect(screen.getAllByText("—")).toHaveLength(4);
+    expect(screen.queryByText("0")).toBeNull();
+    expect(screen.getByText("20 votes")).toBeTruthy();
+    expect(
+      screen.getByLabelText("No change in total votes since seen"),
+    ).toBeTruthy();
+  });
 });

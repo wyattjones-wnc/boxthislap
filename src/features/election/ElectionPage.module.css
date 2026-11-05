@@ -1,6 +1,7 @@
 .page {
   color: var(--text-primary);
-  padding: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
+  margin-top: calc(-1 * var(--space-5));
 }
 .heading,
 .stateHeading {
@@ -21,8 +22,7 @@
   color: var(--text-muted);
   font-weight: 400;
 }
-.heading a,
-.stateHeading a {
+.heading a {
   font-size: 0.75rem;
   color: var(--text-muted);
   text-decoration: none;
@@ -64,27 +64,25 @@
 }
 .stateHeading h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
+  font-weight: 500;
   letter-spacing: -0.03em;
 }
 .race {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
 }
-.status,
-.ranked {
+.counted {
   color: var(--text-muted);
   font-size: 0.75rem;
-  margin: var(--space-1) 0;
-}
-.ranked {
-  margin-bottom: var(--space-3);
+  font-weight: 400;
+  white-space: nowrap;
 }
 .race table {
   width: 100%;
   min-width: 0;
   table-layout: fixed;
   border-collapse: collapse;
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
   font-variant-numeric: tabular-nums;
 }
 .race th,
@@ -179,6 +177,9 @@
   border: 0;
 }
 @media (max-width: 700px) {
+  .page {
+    margin-top: calc(-1 * var(--space-3));
+  }
   .states {
     grid-template-columns: 1fr;
   }
@@ -194,9 +195,6 @@
 .race tfoot th {
   text-transform: none;
   font-size: 0.85rem;
-}
-.meta {
-  min-height: 40px;
 }
 
 .feedInfo {

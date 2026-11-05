@@ -102,10 +102,17 @@ export function RaceResults({
               <td>
                 {candidate.votes.toLocaleString()}
                 {comparison && (
-                  <small className={styles.change}>
+                  <small
+                    className={styles.change}
+                    aria-label={
+                      Object.hasOwn(comparison.votes, candidate.id)
+                        ? `${signed(candidate.votes - comparison.votes[candidate.id])} votes since seen`
+                        : "New candidate since seen"
+                    }
+                  >
                     {Object.hasOwn(comparison.votes, candidate.id)
-                      ? `${signed(candidate.votes - comparison.votes[candidate.id])} since seen`
-                      : "New since seen"}
+                      ? signed(candidate.votes - comparison.votes[candidate.id])
+                      : "New"}
                   </small>
                 )}
               </td>
@@ -119,8 +126,11 @@ export function RaceResults({
             <td>
               {total.toLocaleString()}
               {comparison && (
-                <small className={styles.change}>
-                  {signed(total - comparison.total)} since seen
+                <small
+                  className={styles.change}
+                  aria-label={`${signed(total - comparison.total)} total votes since seen`}
+                >
+                  {signed(total - comparison.total)}
                 </small>
               )}
             </td>
@@ -129,20 +139,22 @@ export function RaceResults({
         </tfoot>
       </table>
       <p className={styles.gap}>
-        {gap === null ? (
-          "Top-two gap unavailable until two candidates are reported."
-        ) : (
-          <>
-            Top-two gap: <strong>{gap.toLocaleString()} votes</strong> ·{" "}
+        <span>Lead</span>
+        <strong>{gap === null ? "—" : `${gap.toLocaleString()} votes`}</strong>
+        {gap !== null && comparison && comparison.gap !== null && (
+          <small
+            className={styles.change}
+            aria-label={`${signed(gap - comparison.gap)} change in lead since seen`}
+          >
+            {signed(gap - comparison.gap)}
+          </small>
+        )}
+        {gap !== null && (
+          <span className={styles.srOnly}>
             {gap === 0
               ? "Tied"
               : `${name(leaders[0])} leads ${name(leaders[1])}`}
-            {comparison && comparison.gap !== null && (
-              <small className={styles.change}>
-                {signed(gap - comparison.gap)} votes since seen
-              </small>
-            )}
-          </>
+          </span>
         )}
       </p>
       <div className={styles.seen}>
@@ -163,36 +175,22 @@ export function RaceResults({
         )}
         {baseline ? (
           <p>
-            Comparing against results marked seen:{" "}
+            Compared with{" "}
             <time dateTime={baseline.markedAt}>
               {new Date(baseline.markedAt).toLocaleString()}
             </time>
-            .<br />
-            Baseline source updated:{" "}
-            {new Date(baseline.sourceUpdated).toLocaleString()}.
           </p>
         ) : (
-          <p>
-            {baselineLoaded
-              ? "No shared seen baseline saved"
-              : "Shared baseline not loaded"}
-            {baselineLoaded && isAdmin
-              ? ". Mark seen to start comparing vote changes."
-              : "."}
-          </p>
+          <p>{baselineLoaded ? "Not marked seen" : "Loading comparison…"}</p>
         )}
-        {baseline && !comparison && (
-          <p role="status">
-            These source results are older than the shared seen baseline.
-            Changes will appear when newer results arrive.
-          </p>
+        {baseline && !comparison && <p role="status">Awaiting newer counts.</p>}
+        {mutation.isSuccess && (
+          <span className={styles.srOnly} role="status">
+            Shared seen baseline saved.
+          </span>
         )}
-        <small>The admin sets this comparison baseline for everyone.</small>
-        {mutation.isSuccess && <p role="status">Shared seen baseline saved.</p>}
         {mutation.isError && (
-          <p role="alert">
-            Could not save the shared seen baseline. {mutation.error.message}
-          </p>
+          <p role="alert">Save failed. {mutation.error.message}</p>
         )}
       </div>
     </>

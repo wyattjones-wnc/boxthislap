@@ -6,7 +6,7 @@ import { writeFile } from "node:fs/promises";
 const base = "https://apps.npr.org/2026-election-results/";
 const races = (
   await Promise.all(
-    ["senate", "house", "gov"].map(async (office) => {
+    ["senate"].map(async (office) => {
       const data = JSON.parse(
         execFileSync(
           "curl",

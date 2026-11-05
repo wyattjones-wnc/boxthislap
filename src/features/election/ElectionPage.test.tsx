@@ -62,11 +62,11 @@ describe("Election page", () => {
     expect(screen.getByText(/Too Early to Call/).textContent).toContain(
       "74.0%",
     );
-    expect(screen.getByText(/first-round lead/)).toBeTruthy();
+    expect(screen.getByText(/Initial count/)).toBeTruthy();
     expect(screen.getByAltText("Outline of Mississippi")).toBeTruthy();
     expect(
       screen
-        .getByRole("link", { name: "Latest Mississippi results at NPR" })
+        .getByRole("link", { name: "Latest Mississippi Senate results at NPR" })
         .getAttribute("href"),
     ).toContain("mississippi.html");
   });
@@ -75,7 +75,7 @@ describe("Election page", () => {
     renderPage();
     expect(await screen.findByRole("alert")).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Latest Alaska results at NPR" }),
+      screen.getByRole("link", { name: "Latest Alaska Senate results at NPR" }),
     ).toBeTruthy();
   });
 });

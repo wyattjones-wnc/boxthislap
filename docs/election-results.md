@@ -1,6 +1,6 @@
 # Election results
 
-The `#election` page displays Alaska and Mississippi's November 3, 2026 general-election Senate, House and governor races. Alaska's counts are initial ranked-choice tallies. Only explicit AP winner flags receive winner labels.
+The `#election` page displays Alaska and Mississippi's November 3, 2026 general-election Senate races. Alaska's counts are initial ranked-choice tallies. Only explicit AP winner flags receive winner labels.
 
 Source: NPR's public 2026 election results JSON, tabulated by The Associated Press: https://apps.npr.org/2026-election-results/. State silhouettes also come from NPR's election assets. The page links to each state's original reporting.
 
@@ -18,4 +18,4 @@ All users compare against the same server-saved timestamp and counts. Browsers c
 
 Rollout requires the Rankings Worker deployment and migration 0019 before the shared feature can work. Use the existing manual `deploy-rankings-worker.yml` workflow after explicit deployment approval and checking pending migrations. This change does not auto-deploy the Worker on a dev push.
 
-The new table starts empty (no backfill or existing-row rewrite). A page load or minute refresh performs one public Worker request and one indexed query returning the currently eight race baselines. Each admin mark performs one conditional indexed insert/update affecting one row. Candidate JSON is bounded to 100 candidates per race. No extra scheduled jobs or scans of other tables are added. For 100 viewer-hours, the minute polling adds about 6,000 Worker requests and at most 48,000 result rows, before normal browser visibility throttling; actual use depends on visitors. Check account headroom if traffic materially increases. The baseline remains unset until an admin chooses Mark seen.
+The new table starts empty (no backfill or existing-row rewrite). A page load or minute refresh performs one public Worker request and one indexed query returning the two Senate race baselines. Each admin mark performs one conditional indexed insert/update affecting one row. Older baselines for other offices are not shown on this Senate-only page. Candidate JSON is bounded to 100 candidates per race. No extra scheduled jobs or scans of other tables are added. For 100 viewer-hours, the minute polling adds about 6,000 Worker requests and at most 12,000 result rows, before normal browser visibility throttling; actual use depends on visitors. Check account headroom if traffic materially increases. The baseline remains unset until an admin chooses Mark seen.

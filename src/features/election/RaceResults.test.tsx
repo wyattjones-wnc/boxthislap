@@ -146,10 +146,10 @@ describe("shared election comparisons", () => {
       sourceUpdated: 2000,
       candidates: [candidate("A", 130), candidate("B", 90)],
     });
-    expect(await screen.findByText("+30 since seen")).toBeTruthy();
-    expect(row("B Candidate Test").getByText("+10 since seen")).toBeTruthy();
-    expect(row("Total votes").getByText("+40 since seen")).toBeTruthy();
-    expect(screen.getByText("+20 votes since seen")).toBeTruthy();
+    expect(await screen.findByText("+30")).toBeTruthy();
+    expect(row("B Candidate Test").getByText("+10")).toBeTruthy();
+    expect(row("Total votes").getByText("+40")).toBeTruthy();
+    expect(screen.getByText("+20")).toBeTruthy();
     expect(document.querySelector("time")?.getAttribute("datetime")).toBe(
       "2026-11-05T19:00:00Z",
     );
@@ -168,9 +168,9 @@ describe("shared election comparisons", () => {
       sourceUpdated: 2000,
       candidates: [candidate("A", 98), candidate("B", 105)],
     });
-    expect(await screen.findByText("−2 since seen")).toBeTruthy();
+    expect(await screen.findByText("−2")).toBeTruthy();
     expect(screen.getByText(/B Candidate leads A Candidate/)).toBeTruthy();
-    expect(screen.getByText("−3 votes since seen")).toBeTruthy();
+    expect(screen.getByText("−3")).toBeTruthy();
   });
   it("does not claim success when the server rejects a save", async () => {
     failSave = true;
@@ -194,11 +194,11 @@ describe("shared election comparisons", () => {
     );
     vi.mocked(fetch).mockRejectedValue(new Error("unavailable"));
     renderRace();
-    expect(await screen.findByText(/Shared baseline not loaded/)).toBeTruthy();
+    expect(await screen.findByText(/Loading comparison/)).toBeTruthy();
     expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(
       true,
     );
-    expect(screen.queryByText(/since seen/)).toBeNull();
+    expect(screen.queryByText(/Compared with/)).toBeNull();
     localStorage.clear();
   });
 });

@@ -50,52 +50,37 @@ export default function ElectionPage() {
     query.data && Date.now() - Date.parse(query.data.fetchedAt) > 30 * 60000;
   return (
     <div className={styles.page}>
-      <h1>Election 2026</h1>
-      <p>November 3 general election · Senate, House and governor results</p>
-      <p>
-        Vote totals: The Associated Press, via{" "}
+      <header className={styles.heading}>
+        <h1>
+          Senate <span>2026</span>
+        </h1>
         <a
           href="https://apps.npr.org/2026-election-results/"
           target="_blank"
           rel="noreferrer"
         >
-          NPR
+          AP via NPR ↗
         </a>
-        . Results are unofficial and may change.
-      </p>
-      {query.isPending && <p role="status">Loading election results…</p>}
+      </header>
+      {query.isPending && <p role="status">Loading results…</p>}
       {query.isError && (
         <p role="alert">
-          Results could not be refreshed.{" "}
-          {query.data
-            ? "Showing the last available results."
-            : "Use the NPR links below for current results."}{" "}
+          Results unavailable.{" "}
           <button type="button" onClick={() => void query.refetch()}>
             Retry
           </button>
         </p>
       )}
-      {query.data && (
-        <p>
-          Snapshot retrieved: {new Date(query.data.fetchedAt).toLocaleString()}.
-          Checks for a new snapshot every minute.
-        </p>
-      )}
       {stale && (
         <p role="status">
-          These results are more than 30 minutes old. Check NPR for the latest
-          counts.
+          Results are over 30 minutes old. Check NPR for updates.
         </p>
       )}
-      {seen.isPending && <p role="status">Loading shared seen baselines…</p>}
       {seen.isError && (
         <p role="alert">
-          The shared seen baseline could not be refreshed.{" "}
-          {seen.data
-            ? "Showing the last loaded baseline."
-            : "Comparisons are unavailable until it loads."}{" "}
+          Comparison unavailable.{" "}
           <button type="button" onClick={() => void seen.refetch()}>
-            Retry shared baseline
+            Retry
           </button>
         </p>
       )}
@@ -116,45 +101,46 @@ export default function ElectionPage() {
               src={`assets/election/${code}.svg`}
               alt={`Outline of ${name}`}
             />
-            <h2>{name}</h2>
-            <a
-              href={`https://apps.npr.org/2026-election-results/${slug}.html`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Latest {name} results at NPR
-            </a>
-            {code === "AK" && (
-              <p>
-                Alaska uses ranked-choice voting. These are initial tallies; a
-                first-round lead does not establish a winner.
-              </p>
-            )}
+            <header className={styles.stateHeading}>
+              <h2>{name}</h2>
+              <a
+                href={`https://apps.npr.org/2026-election-results/${slug}.html`}
+                aria-label={`Latest ${name} Senate results at NPR`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                NPR ↗
+              </a>
+            </header>
             {query.data?.races
-              .filter((race) => race.state === code)
+              .filter((race) => race.state === code && race.office === "S")
               .sort(
                 (a, b) => Number(a.seatNumber || 0) - Number(b.seatNumber || 0),
               )
               .map((race) => (
                 <article className={styles.race} key={race.id}>
-                  <h3>
-                    {race.officeName}
-                    {race.office === "H"
-                      ? race.state === "AK"
-                        ? " · At large"
-                        : ` · District ${race.seatNumber || "At large"}`
-                      : ""}
-                  </h3>
-                  <p>
-                    {race.raceCallStatus}
-                    {typeof race.eevp === "number"
-                      ? ` · ${(race.eevp * 100).toFixed(1)}% of estimated votes counted`
-                      : ""}
-                  </p>
+                  <div className={styles.meta}>
+                    <p className={styles.status}>
+                      {race.raceCallStatus}
+                      {typeof race.eevp === "number" ? (
+                        <span title="Estimated votes counted">
+                          {" "}
+                          · {(race.eevp * 100).toFixed(1)}% counted
+                        </span>
+                      ) : (
+                        ""
+                      )}
+                    </p>
+                    {code === "AK" && (
+                      <p className={styles.ranked}>
+                        Initial count · ranked choice
+                      </p>
+                    )}
+                  </div>
                   <RaceResults
                     key={`${query.data!.year}:${race.state}:${race.id}`}
                     candidates={race.candidates}
-                    caption={`${name} ${race.officeName}${race.office === "H" ? ` District ${race.seatNumber || "At large"}` : ""} vote totals`}
+                    caption={`${name} Senate vote totals`}
                     raceKey={`${race.state}:${race.id}`}
                     baseline={
                       seen.data?.baselines[`${race.state}:${race.id}`] || null
@@ -170,14 +156,14 @@ export default function ElectionPage() {
                     }
                   />
                   <p className={styles.updated}>
-                    Source updated: {new Date(race.updated).toLocaleString()}
+                    Updated {new Date(race.updated).toLocaleString()}
                   </p>
                 </article>
               ))}
             {query.data &&
-              !query.data.races.some((race) => race.state === code) && (
-                <p>No results are available yet.</p>
-              )}
+              !query.data.races.some(
+                (race) => race.state === code && race.office === "S",
+              ) && <p>Awaiting results.</p>}
           </section>
         ))}
       </div>

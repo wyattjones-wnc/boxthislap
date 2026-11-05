@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - dev
+  # GitHub schedules run from the default branch; enable there when promoted.
+  schedule:
+    - cron: "7,22,37,52 * 3-10 11 *"
   workflow_dispatch:
 
 permissions:
@@ -57,6 +60,7 @@ jobs:
 
           if node -e "const pkg=require('./dev-site/package.json'); process.exit(pkg.scripts?.build ? 0 : 1)"; then
             npm --prefix dev-site ci
+            (cd dev-site && node scripts/update-election-results.mjs)
             npm --prefix dev-site run build
             rsync -a dev-site/dist/ _site/dev/
           else

@@ -1,3 +1,5 @@
+import * as Tooltip from "@radix-ui/react-tooltip";
+import tooltipStyles from "../components/IconButton/IconButton.module.css";
 import {
   BookOpen,
   CalendarDays,
@@ -86,6 +88,7 @@ const headerArt = [
 const navIcons: Record<string, LucideIcon> = {
   bracket: GitFork,
   footy: SoccerBallIcon,
+  election: ClipboardList,
   guides: BookOpen,
   leagues: Trophy,
   next: ListTodo,
@@ -285,7 +288,7 @@ function NavLink({
 }) {
   const Icon = navIcons[item.route] ?? Flag;
 
-  return (
+  const link = (
     <a
       className={route.split("?")[0] === item.route ? "is-active" : undefined}
       href={`#${item.route}`}
@@ -299,11 +302,26 @@ function NavLink({
         Boolean(item.testOnly)
       }
       aria-current={route.split("?")[0] === item.route ? "page" : undefined}
+      aria-label={item.iconOnly ? item.label : undefined}
+      title={item.iconOnly ? item.label : undefined}
       role="tab"
     >
       <Icon className="nav-link-icon" aria-hidden="true" />
-      <span>{item.label}</span>
+      {!item.iconOnly && <span>{item.label}</span>}
     </a>
+  );
+  return item.iconOnly ? (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>{link}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className={tooltipStyles.tooltip} sideOffset={7}>
+          {item.label}
+          <Tooltip.Arrow />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  ) : (
+    link
   );
 }
 

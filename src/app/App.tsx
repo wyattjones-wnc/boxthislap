@@ -108,6 +108,17 @@ function DeferredFormulaOne2026QuestionsPage() {
   );
 }
 
+const ElectionPage = lazy(() => import("../features/election/ElectionPage"));
+
+function DeferredElectionPage() {
+  const { route } = useAppState();
+  return route === "election" ? (
+    <Suspense fallback={<p>Loading election results…</p>}>
+      <ElectionPage />
+    </Suspense>
+  ) : null;
+}
+
 const HelpPage = lazy(() => import("./HelpPage"));
 
 function DeferredFantasyOffice2026Page({
@@ -255,6 +266,7 @@ export interface CompetitionRoots {
 }
 
 export interface OperationalRoots {
+  election: Element;
   draftList: Element;
   footy: Element;
   footyCustomSchedule: Element;
@@ -310,6 +322,7 @@ export function App({
           </Suspense>,
           helpRoot,
         )}
+        {createPortal(<DeferredElectionPage />, operationalRoots.election)}
         {createPortal(<NextPage />, operationalRoots.next)}
         {createPortal(<RankingsPage />, operationalRoots.rankings)}
         {createPortal(<TodoPage />, operationalRoots.todo)}

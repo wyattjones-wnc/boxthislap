@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { RANKINGS_ENDPOINT } from "../../../modules/siteConfig.js";
 import { useAppState } from "../../app/providers";
 import { loadBaselines, seenQueryKey } from "./electionSeen";
 import { RaceResults, type Candidate } from "./RaceResults";
@@ -34,10 +35,13 @@ export default function ElectionPage() {
   const query = useQuery<Results>({
     queryKey: ["election-results-2026"],
     queryFn: async ({ signal }) => {
-      const response = await fetch("data/election-results.json", {
-        signal,
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `${RANKINGS_ENDPOINT}/api/elections/2026/results`,
+        {
+          signal,
+          cache: "no-store",
+        },
+      );
       if (!response.ok) throw new Error("Election results are unavailable.");
       const data = (await response.json()) as Results;
       if (data.year !== 2026 || !Array.isArray(data.races))
@@ -45,6 +49,7 @@ export default function ElectionPage() {
       return data;
     },
     refetchInterval: 60000,
+    refetchOnWindowFocus: true,
   });
   const stale =
     query.data && Date.now() - Date.parse(query.data.fetchedAt) > 30 * 60000;
@@ -54,13 +59,24 @@ export default function ElectionPage() {
         <h1>
           Senate <span>2026</span>
         </h1>
-        <a
-          href="https://apps.npr.org/2026-election-results/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          AP via NPR ↗
-        </a>
+        <div className={styles.feedInfo}>
+          <a
+            href="https://apps.npr.org/2026-election-results/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            AP via NPR ↗
+          </a>
+          {query.data && (
+            <small title={new Date(query.data.fetchedAt).toLocaleString()}>
+              Checked{" "}
+              {new Date(query.data.fetchedAt).toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </small>
+          )}
+        </div>
       </header>
       {query.isPending && <p role="status">Loading results…</p>}
       {query.isError && (

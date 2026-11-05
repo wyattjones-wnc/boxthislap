@@ -198,3 +198,14 @@
 .meta {
   min-height: 40px;
 }
+
+.feedInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+.feedInfo small {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}

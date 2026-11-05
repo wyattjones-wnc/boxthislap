@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ElectionPage from "./ElectionPage";
@@ -12,6 +12,7 @@ vi.mock("./electionSeen", async (importOriginal) => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 function renderPage() {
   return render(
@@ -77,5 +78,54 @@ describe("Election page", () => {
     expect(
       screen.getByRole("link", { name: "Latest Alaska Senate results at NPR" }),
     ).toBeTruthy();
+  });
+  it("polls the live Worker every minute and replaces vote counts without a reload", async () => {
+    vi.useFakeTimers();
+    let votes = 100;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toContain("/api/elections/2026/results");
+      return {
+        ok: true,
+        json: async () => ({
+          year: 2026,
+          fetchedAt: new Date().toISOString(),
+          races: [
+            {
+              id: "3079",
+              state: "AK",
+              office: "S",
+              officeName: "U.S. Senate",
+              raceCallStatus: "Too Early to Call",
+              updated: Date.now(),
+              candidates: [
+                {
+                  id: "a",
+                  first: "Live",
+                  last: "Candidate",
+                  party: "Dem",
+                  votes,
+                  percent: 0.5,
+                },
+              ],
+            },
+          ],
+        }),
+      };
+    });
+    vi.stubGlobal("fetch", fetcher);
+    renderPage();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(screen.getAllByRole("cell", { name: "100" })).toHaveLength(2);
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain(
+      "/api/elections/2026/results",
+    );
+    votes = 125;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60010);
+    });
+    expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole("cell", { name: "125" })).toHaveLength(2);
   });
 });

@@ -128,4 +128,85 @@ describe("Election page", () => {
     expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByRole("cell", { name: "125" })).toHaveLength(2);
   });
+  it("checks before showing totals even on an immediate return with warm query data", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: 30000 } },
+    });
+    const prior = {
+      year: 2026,
+      fetchedAt: new Date().toISOString(),
+      races: [
+        {
+          id: "3079",
+          state: "AK",
+          office: "S",
+          officeName: "U.S. Senate",
+          raceCallStatus: "Too Early to Call",
+          updated: Date.now(),
+          candidates: [
+            {
+              id: "a",
+              first: "Cached",
+              last: "Candidate",
+              party: "Dem",
+              votes: 100,
+              percent: 0.5,
+            },
+          ],
+        },
+      ],
+    };
+    client.setQueryData(["election-results-2026"], prior);
+    let complete!: (value: {
+      ok: boolean;
+      json: () => Promise<typeof prior>;
+    }) => void;
+    const fetcher = vi.fn(
+      () =>
+        new Promise<{ ok: boolean; json: () => Promise<typeof prior> }>(
+          (resolve) => {
+            complete = resolve;
+          },
+        ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const view = render(
+      <QueryClientProvider client={client}>
+        <ElectionPage />
+      </QueryClientProvider>,
+    );
+    expect(screen.queryByText("Cached Candidate")).toBeNull();
+    expect(screen.getByText("Checking results…")).toBeTruthy();
+    await act(async () => {
+      complete({ ok: true, json: async () => prior });
+    });
+    expect(await screen.findByText("Cached Candidate")).toBeTruthy();
+    expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain("?fresh=1");
+    view.unmount();
+    render(
+      <QueryClientProvider client={client}>
+        <ElectionPage />
+      </QueryClientProvider>,
+    );
+    expect(screen.queryByText("Cached Candidate")).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      complete({
+        ok: true,
+        json: async () => ({
+          ...prior,
+          races: prior.races.map((r) => ({
+            ...r,
+            candidates: r.candidates.map((c) => ({
+              ...c,
+              first: "Updated",
+              votes: 125,
+            })),
+          })),
+        }),
+      });
+    });
+    expect(await screen.findByText("Updated Candidate")).toBeTruthy();
+    expect(String(vi.mocked(fetch).mock.calls[1]?.[0])).toContain("?fresh=1");
+  });
 });

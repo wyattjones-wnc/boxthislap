@@ -63,14 +63,21 @@ export async function loadLiveSenateResults(
   // Cache only normalized, validated source data. Public responses receive CORS
   // separately, so a cached response cannot contain another visitor's origin.
   const key = new Request(new URL("/__cache/senate-results-2026-v1", url));
-  const hit = await cache?.match(key).catch(() => undefined);
+  const fresh = new URL(url).searchParams.get("fresh") === "1";
+  const hit = fresh
+    ? undefined
+    : await cache?.match(key).catch(() => undefined);
   if (hit) return hit.json();
   if (inFlight.has(key.url)) return inFlight.get(key.url);
   const job = (async () => {
     let source;
     try {
       source = await fetcher(SOURCE, {
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          ...(fresh ? { "Cache-Control": "no-cache" } : {}),
+        },
+        ...(fresh ? { cache: "no-store" } : {}),
         signal: AbortSignal.timeout(10000),
       });
     } catch {

@@ -135,3 +135,31 @@ test("only complete, live Alaska and Mississippi Senate results are accepted", (
     assert.throws(() => normalizeSenateResults(bad), { status: 502 });
   }
 });
+
+test("opening checks bypass a warm cache and request upstream revalidation", async () => {
+  const cache = fakeCache();
+  const url = new URL("https://test-opening/api/elections/2026/results");
+  let calls = 0;
+  const fetcher = async (_url, options) => {
+    calls++;
+    if (calls === 2) {
+      assert.equal(options.cache, "no-store");
+      assert.equal(options.headers["Cache-Control"], "no-cache");
+    }
+    const data = source();
+    data.results[0].candidates[0].votes += calls;
+    return Response.json(data);
+  };
+  const first = await loadLiveSenateResults(url, { cache, fetcher });
+  const fresh = await loadLiveSenateResults(new URL(`${url}?fresh=1`), {
+    cache,
+    fetcher,
+  });
+  assert.equal(calls, 2);
+  assert.equal(
+    fresh.races[0].candidates[0].votes,
+    first.races[0].candidates[0].votes + 1,
+  );
+  assert.deepEqual(await loadLiveSenateResults(url, { cache, fetcher }), fresh);
+  assert.equal(calls, 2);
+});

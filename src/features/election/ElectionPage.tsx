@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RANKINGS_ENDPOINT } from "../../../modules/siteConfig.js";
 import { useAppState } from "../../app/providers";
@@ -25,6 +26,7 @@ interface Results {
 
 export default function ElectionPage() {
   const { session } = useAppState();
+  const needsOpeningCheck = useRef(true);
   const isAdmin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
   const seen = useQuery({
     queryKey: seenQueryKey,
@@ -36,7 +38,7 @@ export default function ElectionPage() {
     queryKey: ["election-results-2026"],
     queryFn: async ({ signal }) => {
       const response = await fetch(
-        `${RANKINGS_ENDPOINT}/api/elections/2026/results`,
+        `${RANKINGS_ENDPOINT}/api/elections/2026/results${needsOpeningCheck.current ? "?fresh=1" : ""}`,
         {
           signal,
           cache: "no-store",
@@ -46,13 +48,20 @@ export default function ElectionPage() {
       const data = (await response.json()) as Results;
       if (data.year !== 2026 || !Array.isArray(data.races))
         throw new Error("Invalid election results.");
+      signal.throwIfAborted();
+      needsOpeningCheck.current = false;
       return data;
     },
     refetchInterval: 60000,
     refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
+  const results =
+    query.isFetchedAfterMount && !needsOpeningCheck.current
+      ? query.data
+      : undefined;
   const stale =
-    query.data && Date.now() - Date.parse(query.data.fetchedAt) > 30 * 60000;
+    results && Date.now() - Date.parse(results.fetchedAt) > 30 * 60000;
   return (
     <div className={styles.page}>
       <header className={styles.heading}>
@@ -67,10 +76,10 @@ export default function ElectionPage() {
           >
             AP via NPR ↗
           </a>
-          {query.data && (
-            <small title={new Date(query.data.fetchedAt).toLocaleString()}>
+          {results && (
+            <small title={new Date(results.fetchedAt).toLocaleString()}>
               Checked{" "}
-              {new Date(query.data.fetchedAt).toLocaleTimeString([], {
+              {new Date(results.fetchedAt).toLocaleTimeString([], {
                 hour: "numeric",
                 minute: "2-digit",
               })}
@@ -78,7 +87,7 @@ export default function ElectionPage() {
           )}
         </div>
       </header>
-      {query.isPending && <p role="status">Loading results…</p>}
+      {!results && !query.isError && <p role="status">Checking results…</p>}
       {query.isError && (
         <p role="alert">
           Results unavailable.{" "}
@@ -128,7 +137,7 @@ export default function ElectionPage() {
                 NPR ↗
               </a>
             </header>
-            {query.data?.races
+            {results?.races
               .filter((race) => race.state === code && race.office === "S")
               .sort(
                 (a, b) => Number(a.seatNumber || 0) - Number(b.seatNumber || 0),
@@ -154,7 +163,7 @@ export default function ElectionPage() {
                     )}
                   </div>
                   <RaceResults
-                    key={`${query.data!.year}:${race.state}:${race.id}`}
+                    key={`${results!.year}:${race.state}:${race.id}`}
                     candidates={race.candidates}
                     caption={`${name} Senate vote totals`}
                     raceKey={`${race.state}:${race.id}`}
@@ -176,8 +185,8 @@ export default function ElectionPage() {
                   </p>
                 </article>
               ))}
-            {query.data &&
-              !query.data.races.some(
+            {results &&
+              !results.races.some(
                 (race) => race.state === code && race.office === "S",
               ) && <p>Awaiting results.</p>}
           </section>

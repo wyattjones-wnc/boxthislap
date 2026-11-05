@@ -231,3 +231,8 @@
   justify-content: center;
   box-sizing: border-box;
 }
+
+:global(.nav-link-icon.lucide-united-states) {
+  height: 1.25rem;
+  width: 1.25rem;
+}

@@ -65,3 +65,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+.race tfoot {
+  font-weight: bold;
+}
+.race .change {
+  display: block;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.gap {
+  padding-block: var(--space-2);
+}
+.seen {
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-small);
+  font-size: 0.85rem;
+}
+.seen p {
+  margin-block: var(--space-2);
+}

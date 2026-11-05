@@ -1,15 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAppState } from "../../app/providers";
+import { RaceResults, type Candidate } from "./RaceResults";
 import styles from "./ElectionPage.module.css";
 
-interface Candidate {
-  id: string;
-  first: string;
-  last: string;
-  party: string;
-  votes: number;
-  percent: number;
-  winner?: string;
-}
 interface Race {
   id: string;
   state: string;
@@ -29,6 +22,9 @@ interface Results {
 }
 
 export default function ElectionPage() {
+  const { session } = useAppState();
+  const isAdmin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
+  const baselineAccount = session?.managerId || (isAdmin ? "admin" : "guest");
   const query = useQuery<Results>({
     queryKey: ["election-results-2026"],
     queryFn: async ({ signal }) => {
@@ -137,33 +133,15 @@ export default function ElectionPage() {
                       ? ` · ${(race.eevp * 100).toFixed(1)}% of estimated votes counted`
                       : ""}
                   </p>
-                  <table>
-                    <caption className={styles.caption}>
-                      {name} {race.officeName} vote totals
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Candidate</th>
-                        <th scope="col">Votes</th>
-                        <th scope="col">Share</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {race.candidates.map((candidate) => (
-                        <tr key={candidate.id}>
-                          <th scope="row">
-                            {candidate.first} {candidate.last}
-                            <small>
-                              {candidate.party}
-                              {candidate.winner === "X" ? " · AP winner" : ""}
-                            </small>
-                          </th>
-                          <td>{candidate.votes.toLocaleString()}</td>
-                          <td>{(candidate.percent * 100).toFixed(1)}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <RaceResults
+                    key={`${query.data!.year}:${race.state}:${race.id}:${baselineAccount}`}
+                    candidates={race.candidates}
+                    caption={`${name} ${race.officeName}${race.office === "H" ? ` District ${race.seatNumber || "At large"}` : ""} vote totals`}
+                    storageKey={`boxThisLap:election-seen:${query.data!.year}:${baselineAccount}:${race.state}:${race.id}`}
+                    isAdmin={isAdmin}
+                    sourceUpdated={race.updated}
+                    canMarkSeen={!query.isError && !query.isFetching}
+                  />
                   <p className={styles.updated}>
                     Source updated: {new Date(race.updated).toLocaleString()}
                   </p>

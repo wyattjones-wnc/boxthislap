@@ -53,3 +53,22 @@ npx wrangler deploy
 ```
 
 Use a fine-grained GitHub token limited to this repository with Actions write access. Store the same media sync token as repository secret `FOOTY_MEDIA_SYNC_TOKEN`, and set repository secret `FOOTY_MEDIA_SYNC_ENDPOINT` to this Worker's public origin. The initial and subsequent scans examine the latest 30 days, so reruns are safe and can fill galleries that were incomplete earlier.
+
+### Overnight result sync
+
+`POST /api/match-notes/results/sync` accepts `{ results: [{ matchId, homeScore, awayScore }] }`
+(up to 100 results) with `X-Results-Sync-Token` matching the Worker secret
+`RESULTS_SYNC_TOKEN`. It fills only missing scores, preserves all manual fields,
+and records changed revisions in immutable history. Repeated results are no-ops.
+Scorer, assister, and kit data always remain manual.
+
+Deploy the updated Worker, set `RESULTS_SYNC_TOKEN` with Wrangler, and configure
+GitHub Actions secrets `FOOTY_RESULTS_SYNC_TOKEN` to the same value and
+`FOOTY_RESULTS_SYNC_ENDPOINT` to this Worker's `/api/match-notes/results/sync` URL.
+The existing daily 10:17 UTC schedule refresh submits completed provider results;
+its workflow requires this configuration and fails visibly if sync fails.
+The refresh includes a 30-day lookback and recent TheSportsDB team results. Results
+without an unambiguous completed score remain unresolved for manual entry.
+Dev and production share these notes; reruns from either branch are safe.
+
+Penalty shootout results with ambiguous provider totals are left for manual entry.

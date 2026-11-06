@@ -28,7 +28,13 @@ jobs:
       - name: Verify football-data.org token
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          FOOTY_RESULTS_SYNC_ENDPOINT: ${{ secrets.FOOTY_RESULTS_SYNC_ENDPOINT }}
+          FOOTY_RESULTS_SYNC_TOKEN: ${{ secrets.FOOTY_RESULTS_SYNC_TOKEN }}
         run: |
+          if [ -z "$FOOTY_RESULTS_SYNC_ENDPOINT" ] || [ -z "$FOOTY_RESULTS_SYNC_TOKEN" ]; then
+            echo "::error::Footy results sync endpoint and token must be configured."
+            exit 1
+          fi
           if [ -z "$FOOTBALL_DATA_API_KEY" ]; then
             echo "::error::FOOTBALL_DATA_API_KEY is not available to this workflow run."
             exit 1
@@ -39,6 +45,8 @@ jobs:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
           FOOTY_VERIFY_FOOTBALL_DATA_TEAMS: "1"
           FOOTY_API_REFRESH: "1"
+          FOOTY_RESULTS_SYNC_ENDPOINT: ${{ secrets.FOOTY_RESULTS_SYNC_ENDPOINT }}
+          FOOTY_RESULTS_SYNC_TOKEN: ${{ secrets.FOOTY_RESULTS_SYNC_TOKEN }}
           FOOTY_MATCH_SYNC_ENDPOINT: ${{ secrets.FOOTY_MATCH_SYNC_ENDPOINT }}
         run: node scripts/update-footy-schedule.mjs
 

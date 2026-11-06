@@ -12,6 +12,7 @@ import {
   GitFork,
   Heart,
   House,
+  Landmark,
   LayoutDashboard,
   ListChecks,
   ListTodo,
@@ -26,7 +27,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { memo, useEffect, useRef } from "react";
-import { SoccerBallIcon, UnitedStatesIcon } from "../components/icons";
+import { SoccerBallIcon } from "../components/icons";
 import { getNavScope, navItems, type NavItem, type NavScope } from "./routes";
 import { useAppState } from "./providers";
 import "./Shell.module.css";
@@ -88,7 +89,7 @@ const headerArt = [
 const navIcons: Record<string, LucideIcon> = {
   bracket: GitFork,
   footy: SoccerBallIcon,
-  election: UnitedStatesIcon,
+  election: Landmark,
   guides: BookOpen,
   leagues: Trophy,
   next: ListTodo,

@@ -443,10 +443,9 @@ export function normalizeDiscoveredGallery(
     { ...gallery, teamId, category },
     fixtures,
   );
-  const reviewedMatch =
-    category === "training" && match.matchStatus === "rejected"
-      ? { ...match, matchStatus: "review" }
-      : match;
+  const reviewedMatch = /\b(?:women|training|train)\b/i.test(gallery.title)
+    ? { ...match, matchId: "", matchStatus: "rejected" }
+    : match;
   return {
     id: stableMediaId(
       "gallery",

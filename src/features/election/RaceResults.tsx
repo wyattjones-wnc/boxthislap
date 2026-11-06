@@ -27,6 +27,15 @@ const changeLabel = (value: number, metric: string) =>
 const name = (candidate: Candidate) =>
   `${candidate.first} ${candidate.last}`.trim();
 
+const compactTimestamp = (value: string | number) =>
+  new Date(value).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
 export function RaceResults({
   candidates,
   caption,
@@ -69,6 +78,19 @@ export function RaceResults({
   const leaders = sorted
     .filter((candidate) => !(candidate.last === "Other" && !candidate.first))
     .slice(0, 2);
+  const leaderIds = new Set(leaders.map((candidate) => candidate.id));
+  const others = candidates.filter((candidate) => !leaderIds.has(candidate.id));
+  const rows: (Candidate & { grouped?: boolean })[] = [...leaders];
+  if (others.length)
+    rows.push({
+      id: "__grouped-other__",
+      first: "",
+      last: "Other",
+      party: "",
+      grouped: true,
+      votes: others.reduce((sum, candidate) => sum + candidate.votes, 0),
+      percent: others.reduce((sum, candidate) => sum + candidate.percent, 0),
+    });
   const total = candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
   const gap = leaders.length === 2 ? leaders[0].votes - leaders[1].votes : null;
   // A cached/older source must not be presented as new votes after a baseline.
@@ -96,38 +118,50 @@ export function RaceResults({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((candidate) => (
-            <tr key={candidate.id}>
-              <th scope="row">
-                {name(candidate)}{" "}
-                <small>
-                  {candidate.party}
-                  {candidate.winner === "X" ? " · AP winner" : ""}
-                </small>
-              </th>
-              <td>
-                {candidate.votes.toLocaleString()}
-                {comparison && (
-                  <small
-                    className={styles.change}
-                    aria-label={
-                      Object.hasOwn(comparison.votes, candidate.id)
-                        ? changeLabel(
-                            candidate.votes - comparison.votes[candidate.id],
-                            "votes",
-                          )
-                        : "New candidate since seen"
-                    }
-                  >
-                    {Object.hasOwn(comparison.votes, candidate.id)
-                      ? signed(candidate.votes - comparison.votes[candidate.id])
-                      : "New"}
-                  </small>
-                )}
-              </td>
-              <td>{(candidate.percent * 100).toFixed(1)}%</td>
-            </tr>
-          ))}
+          {rows.map((candidate) => {
+            const priorVotes = comparison
+              ? candidate.grouped
+                ? comparison.total -
+                  leaders.reduce(
+                    (sum, leader) => sum + (comparison.votes[leader.id] || 0),
+                    0,
+                  )
+                : comparison.votes[candidate.id]
+              : undefined;
+            const change =
+              priorVotes === undefined
+                ? undefined
+                : candidate.votes - priorVotes;
+            return (
+              <tr key={candidate.id}>
+                <th scope="row">
+                  {name(candidate)}{" "}
+                  {(candidate.party || candidate.winner === "X") && (
+                    <small>
+                      {candidate.party}
+                      {candidate.winner === "X" ? " · AP winner" : ""}
+                    </small>
+                  )}
+                </th>
+                <td>
+                  {candidate.votes.toLocaleString()}
+                  {comparison && (
+                    <small
+                      className={styles.change}
+                      aria-label={
+                        change === undefined
+                          ? "New candidate since seen"
+                          : changeLabel(change, "votes")
+                      }
+                    >
+                      {change === undefined ? "New" : signed(change)}
+                    </small>
+                  )}
+                </td>
+                <td>{(candidate.percent * 100).toFixed(1)}%</td>
+              </tr>
+            );
+          })}
         </tbody>
         <tfoot>
           <tr>
@@ -187,16 +221,35 @@ export function RaceResults({
             {mutation.isPending ? "Saving…" : "Mark seen"}
           </button>
         )}
-        {baseline ? (
-          <p>
-            Compared with{" "}
-            <time dateTime={baseline.markedAt}>
-              {new Date(baseline.markedAt).toLocaleString()}
+        <p className={styles.timing}>
+          <span>
+            {baseline ? (
+              <>
+                Compared with{" "}
+                <time
+                  dateTime={baseline.markedAt}
+                  title={new Date(baseline.markedAt).toLocaleString()}
+                >
+                  {compactTimestamp(baseline.markedAt)}
+                </time>
+              </>
+            ) : baselineLoaded ? (
+              "Not marked seen"
+            ) : (
+              "Loading comparison…"
+            )}
+          </span>
+          <span aria-hidden="true"> · </span>
+          <span title="Race update timestamp supplied by NPR/AP">
+            Updated{" "}
+            <time
+              dateTime={new Date(sourceUpdated).toISOString()}
+              title={new Date(sourceUpdated).toLocaleString()}
+            >
+              {compactTimestamp(sourceUpdated)}
             </time>
-          </p>
-        ) : (
-          <p>{baselineLoaded ? "Not marked seen" : "Loading comparison…"}</p>
-        )}
+          </span>
+        </p>
         {baseline && !comparison && <p role="status">Awaiting newer counts.</p>}
         {mutation.isSuccess && (
           <span className={styles.srOnly} role="status">

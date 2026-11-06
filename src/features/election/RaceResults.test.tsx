@@ -219,4 +219,59 @@ describe("shared election comparisons", () => {
       screen.getByLabelText("No change in total votes since seen"),
     ).toBeTruthy();
   });
+  it("groups remaining candidates into one Other row without changing saved raw counts", async () => {
+    shared = {
+      markedAt: "2026-11-05T19:00:00Z",
+      sourceUpdated: 1000,
+      votes: { A: 100, B: 80, C: 10, D: 5, other: 5 },
+      total: 200,
+      gap: 20,
+      revision: 1,
+    };
+    const candidates = [
+      candidate("A", 110),
+      candidate("B", 90),
+      candidate("C", 14),
+      candidate("D", 6),
+      { ...candidate("other", 10), first: "", last: "Other" },
+    ].map((c) => ({ ...c, percent: c.votes / 230 }));
+    renderRace({ candidates, sourceUpdated: 2000 });
+    await screen.findByText(/Compared with/);
+    expect(screen.queryByRole("rowheader", { name: /C Candidate/ })).toBeNull();
+    expect(screen.queryByRole("rowheader", { name: /D Candidate/ })).toBeNull();
+    expect(row("Other").getByText("30")).toBeTruthy();
+    expect(row("Other").getByText("13.0%")).toBeTruthy();
+    expect(row("Other").getByText("+10")).toBeTruthy();
+    expect(row("Total votes").getByText("230")).toBeTruthy();
+    const timing = screen.getByText(/Compared with/).closest("p")!;
+    expect(timing.textContent).toContain(" · Updated");
+    expect(timing.querySelectorAll("time")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button"));
+    await screen.findByText("Shared seen baseline saved.");
+    expect(shared?.votes).toEqual({ A: 110, B: 90, C: 14, D: 6, other: 10 });
+  });
+  it("compares Other using the current members when a candidate enters the top two", async () => {
+    shared = {
+      markedAt: "2026-11-05T19:00:00Z",
+      sourceUpdated: 1000,
+      votes: { A: 100, B: 80, C: 70, other: 5 },
+      total: 255,
+      gap: 20,
+      revision: 1,
+    };
+    renderRace({
+      isAdmin: false,
+      sourceUpdated: 2000,
+      candidates: [
+        candidate("C", 120),
+        candidate("A", 110),
+        candidate("B", 90),
+        { ...candidate("other", 10), first: "", last: "Other" },
+      ],
+    });
+    await screen.findByText(/Compared with/);
+    expect(screen.queryByRole("rowheader", { name: /B Candidate/ })).toBeNull();
+    expect(row("Other").getByText("100")).toBeTruthy();
+    expect(row("Other").getByText("+15")).toBeTruthy();
+  });
 });

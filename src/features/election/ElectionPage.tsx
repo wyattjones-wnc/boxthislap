@@ -170,12 +170,6 @@ export default function ElectionPage() {
                       !seen.isError
                     }
                   />
-                  <p
-                    className={styles.updated}
-                    title="Race update timestamp supplied by NPR/AP"
-                  >
-                    Updated {new Date(race.updated).toLocaleString()}
-                  </p>
                 </article>
               ))}
             {results &&

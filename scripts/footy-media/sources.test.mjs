@@ -245,6 +245,53 @@ test("recent completed fixtures selects only followed teams and final states", (
     [{ id: "training-image" }],
     new Date(now).toISOString(),
   );
-  assert.equal(training.matchStatus, "review");
-  assert.equal(training.images.length, 1);
+  assert.equal(training.matchStatus, "rejected");
+  assert.equal(training.images.length, 0);
+});
+
+test("excluded gallery words are rejected even when a fixture matches", () => {
+  for (const word of ["Women", "TRAINING", "train", "women’s", "pre-training"]) {
+    const gallery = normalizeDiscoveredGallery(
+      {
+        source: "arsenal",
+        sourceGalleryId: word,
+        sourceUrl: "https://www.arsenal.com/photos/gallery",
+        title: `Photos from the win over Chelsea: ${word}`,
+        publishedAt: "2026-09-20T20:00:00Z",
+      },
+      "1",
+      [
+        {
+          teamId: "1",
+          opponent: "Chelsea",
+          matchId: "match-1",
+          timestamp: "2026-09-20T18:00:00Z",
+        },
+      ],
+      [{ id: "image-1" }],
+    );
+    assert.equal(gallery.matchStatus, "rejected", word);
+    assert.equal(gallery.matchId, "", word);
+    assert.deepEqual(gallery.images, [], word);
+  }
+  const gallery = normalizeDiscoveredGallery(
+    {
+      source: "arsenal",
+      sourceGalleryId: "travel",
+      title: "Photos from the win over Chelsea: trainspotting",
+      publishedAt: "2026-09-20T20:00:00Z",
+    },
+    "1",
+    [
+      {
+        teamId: "1",
+        opponent: "Chelsea",
+        matchId: "match-1",
+        timestamp: "2026-09-20T18:00:00Z",
+      },
+    ],
+    [{ id: "image-1" }],
+  );
+  assert.equal(gallery.matchStatus, "auto");
+  assert.equal(gallery.images.length, 1);
 });

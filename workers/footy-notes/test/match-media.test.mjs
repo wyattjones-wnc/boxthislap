@@ -170,6 +170,76 @@ test("review can keep a training gallery without a match", async (context) => {
   });
 });
 
+test("rescans preserve rejected galleries and manual matchless decisions", async (context) => {
+  const worker = await createWorker();
+  context.after(() => worker.dispose());
+  const DB = await worker.getD1Database("DB");
+  await executeSql(DB, await readFile(schemaPath, "utf8"));
+  await executeSql(DB, await readFile(trainingMigrationPath, "utf8"));
+  const env = { DB };
+  const galleries = ["rejected", "kept", "linked", "pending"].map((id) => ({
+    id,
+    source: "barcelona",
+    sourceGalleryId: id,
+    teamId: "2",
+    sourceUrl: `https://www.fcbarcelona.com/gallery/${id}`,
+    title: `Photos ${id}`,
+    category: "match",
+    matchStatus: "review",
+    images: [image(`image-${id}`, id, "2026-09-28T01:00:00Z")],
+  }));
+  await importMatchMedia(env, "scan-1", { galleries });
+  await reviewMatchMediaGallery(env, "rejected", { rejected: true });
+  await reviewMatchMediaGallery(env, "kept", { category: "other", matchId: "" });
+  await reviewMatchMediaGallery(env, "linked", { category: "celebration", matchId: "chosen-match" });
+  for (const matchStatus of ["review", "auto"]) {
+    await importMatchMedia(env, "scan-2", {
+      galleries: galleries.map((gallery) => ({ ...gallery, matchStatus, matchId: "suggested-match" })),
+    });
+    const rows = await DB.prepare("SELECT id, match_id, category, match_status FROM footy_media_galleries ORDER BY id").all();
+    const byId = Object.fromEntries(rows.results.map((row) => [row.id, row]));
+    assert.equal(byId.rejected.match_status, "rejected");
+    assert.equal(byId.rejected.match_id, null);
+    assert.equal(byId.kept.match_status, "manual");
+    assert.equal(byId.kept.match_id, null);
+    assert.equal(byId.kept.category, "other");
+    assert.equal(byId.linked.match_id, "chosen-match");
+    assert.equal(byId.linked.category, "celebration");
+    assert.equal(byId.pending.match_status, matchStatus);
+    const feed = await listMatchMedia(env, "6", new URLSearchParams("view=needs-match"));
+    assert.deepEqual(feed.images.map((entry) => entry.gallery.id), matchStatus === "review" ? ["pending"] : []);
+  }
+});
+
+test("Needs Match excludes existing galleries containing unwanted words", async (context) => {
+  const worker = await createWorker();
+  context.after(() => worker.dispose());
+  const DB = await worker.getD1Database("DB");
+  await executeSql(DB, await readFile(schemaPath, "utf8"));
+  const titles = ["Women’s match photos", "TRAINING session", "Players train", "Pre-training photos", "Match photos", "Trainspotting photos", ...Array.from({ length: 48 }, (_, index) => `Match photos ${index}`)];
+  await importMatchMedia({ DB }, "scan-1", {
+    galleries: titles.map((title, index) => ({
+      id: `gallery-${index}`,
+      source: "barcelona",
+      sourceGalleryId: String(index),
+      teamId: "2",
+      sourceUrl: `https://www.fcbarcelona.com/gallery/${index}`,
+      title,
+      category: "match",
+      matchStatus: "review",
+      images: [image(`image-${index}`, String(index), "2026-09-28T01:00:00Z")],
+    })),
+  });
+  const feed = await listMatchMedia({ DB }, "6", new URLSearchParams("view=needs-match"));
+  assert.equal(feed.pagination.total, 50);
+  assert.equal(feed.images.length, 48);
+  assert.equal(feed.pagination.hasMore, true);
+  for (const page of [1, 2]) {
+    const result = await listMatchMedia({ DB }, "6", new URLSearchParams(`view=needs-match&page=${page}`));
+    assert.ok(titles.slice(4).includes(result.images[0].gallery.title));
+  }
+});
+
 test("Hard Save copies an imported club image and applies Soft Save", async (context) => {
   const worker = await createWorker();
   context.after(() => worker.dispose());

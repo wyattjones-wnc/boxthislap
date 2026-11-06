@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-11-05T18:04:46.076Z",
+  "generatedAt": "2026-11-06T17:31:50.241Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-11-05T18:04:46.076Z",
-    "attemptedAt": "2026-11-05T18:04:46.076Z",
-    "updatedAt": "2026-11-05T18:04:46.076Z",
-    "oldestTeamUpdatedAt": "2026-11-05T18:04:46.076Z",
+    "generatedAt": "2026-11-06T17:31:50.241Z",
+    "attemptedAt": "2026-11-06T17:31:50.241Z",
+    "updatedAt": "2026-11-06T17:31:50.241Z",
+    "oldestTeamUpdatedAt": "2026-11-06T17:31:50.241Z",
     "competitionCount": 11,
     "competitionFixtureCount": 2285,
     "teamCount": 7,
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 262,
-      "syncedAt": "2026-11-05T18:04:46.076Z",
+      "syncedAt": "2026-11-06T17:31:50.241Z",
       "appended": 0,
       "updated": 262
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-11-05T18:09:39.807Z",
+      "attemptedAt": "2026-11-06T17:36:43.894Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -13893,15 +13893,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:11.460Z",
+      "attemptedAt": "2026-11-06T17:37:15.660Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -14508,15 +14508,15 @@
       "notes": [
         "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:09:52.353Z",
+      "attemptedAt": "2026-11-06T17:36:56.418Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -19776,15 +19776,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:09:59.121Z",
+      "attemptedAt": "2026-11-06T17:37:03.700Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -33663,15 +33663,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:05.753Z",
+      "attemptedAt": "2026-11-06T17:37:10.090Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -53695,15 +53695,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:17.925Z",
+      "attemptedAt": "2026-11-06T17:37:22.079Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -53806,15 +53806,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:17.927Z",
+      "attemptedAt": "2026-11-06T17:37:22.080Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -54096,16 +54096,16 @@
       "notes": [
         "Preserved 6 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:17.927Z",
+      "attemptedAt": "2026-11-06T17:37:22.080Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -59429,15 +59429,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:30.930Z",
+      "attemptedAt": "2026-11-06T17:37:35.415Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -77443,15 +77443,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:30.934Z",
+      "attemptedAt": "2026-11-06T17:37:35.423Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -80210,15 +80210,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     },
     {
-      "attemptedAt": "2026-11-05T18:10:30.937Z",
+      "attemptedAt": "2026-11-06T17:37:35.427Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -82422,12 +82422,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-05T18:04:46.076Z"
+      "updatedAt": "2026-11-06T17:31:50.241Z"
     }
   ],
   "teamCatalog": [
@@ -87917,9 +87917,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -90149,19 +90149,19 @@
         }
       ],
       "notes": [
-        "Loaded 33 all-status matches from 2026-11-05 through 2027-11-05.",
+        "Loaded 33 all-status matches from 2026-11-06 through 2027-11-06.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
         "Loaded 33 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-11-05.",
+        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-11-06.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -92307,18 +92307,18 @@
         }
       ],
       "notes": [
-        "Loaded 31 all-status matches from 2026-11-05 through 2027-11-05.",
+        "Loaded 31 all-status matches from 2026-11-06 through 2027-11-06.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 36 iCalendar fixtures from 2026-07-01 through 2027-11-05.",
+        "Loaded 36 iCalendar fixtures from 2026-07-01 through 2027-11-06.",
         "Preserved 16 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -93093,7 +93093,7 @@
             "iCalendar"
           ],
           "sourceDetail": "team-upcoming",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93134,7 +93134,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93173,7 +93173,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93212,7 +93212,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93251,7 +93251,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93290,7 +93290,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93329,7 +93329,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93368,7 +93368,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93407,7 +93407,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93446,7 +93446,7 @@
             "iCalendar"
           ],
           "sourceDetail": "calendar-feed",
-          "status": "TIMED",
+          "status": "SCHEDULED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -93489,8 +93489,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-01-01T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-01-01T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "60",
           "homeProviderTeamId": "404",
@@ -93528,8 +93528,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-01-16T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-01-16T12:00:00Z",
           "venue": "Deepdale, Preston",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "1081",
@@ -93567,8 +93567,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-01-23T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-01-23T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "356",
           "homeProviderTeamId": "404",
@@ -93606,8 +93606,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-01-27T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-01-27T12:00:00Z",
           "venue": "Riverside Stadium, Middlesbrough",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "343",
@@ -93645,8 +93645,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-01-30T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-01-30T12:00:00Z",
           "venue": "Molineux Stadium, Wolverhampton",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "76",
@@ -93684,8 +93684,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-02-06T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-02-06T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "1126",
           "homeProviderTeamId": "404",
@@ -93723,8 +93723,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-02-13T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-02-13T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "563",
           "homeProviderTeamId": "404",
@@ -93762,8 +93762,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-02-16T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-02-16T12:00:00Z",
           "venue": "The Hawthorns, West Bromwich",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "74",
@@ -93801,8 +93801,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-02-20T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-02-20T12:00:00Z",
           "venue": "St. Mary's Stadium, Southampton",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "340",
@@ -93840,8 +93840,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-02-27T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-02-27T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "342",
           "homeProviderTeamId": "404",
@@ -93879,8 +93879,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-03-02T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-03-02T12:00:00Z",
           "venue": "Vicarage Road, Watford",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "346",
@@ -93918,8 +93918,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-03-06T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-03-06T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "715",
           "homeProviderTeamId": "404",
@@ -93957,8 +93957,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-03-13T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-03-13T12:00:00Z",
           "venue": "Fratton Park, Portsmouth",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "325",
@@ -93996,8 +93996,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-03-16T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-03-16T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "68",
           "homeProviderTeamId": "404",
@@ -94035,8 +94035,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-03-20T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-03-20T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "70",
           "homeProviderTeamId": "404",
@@ -94074,8 +94074,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-04-03T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-04-03T12:00:00Z",
           "venue": "MATRADE Loftus Road, London",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "69",
@@ -94113,8 +94113,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-04-06T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-04-06T12:00:00Z",
           "venue": "Turf Moor, Burnley",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "328",
@@ -94152,8 +94152,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-04-10T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-04-10T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "72",
           "homeProviderTeamId": "404",
@@ -94191,8 +94191,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-04-17T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-04-17T12:00:00Z",
           "venue": "St. Andrew's @ Knighthead Park, Birmingham",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "332",
@@ -94230,8 +94230,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-04-20T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-04-20T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "384",
           "homeProviderTeamId": "404",
@@ -94269,8 +94269,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-04-24T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-04-24T12:00:00Z",
           "venue": "The Valley, London",
           "awayProviderTeamId": "404",
           "homeProviderTeamId": "348",
@@ -94308,8 +94308,8 @@
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
-          "time": "00:00:00",
-          "timestamp": "2027-05-01T00:00:00Z",
+          "time": "12:00:00",
+          "timestamp": "2027-05-01T12:00:00Z",
           "venue": "Racecourse Ground, Wrexham",
           "awayProviderTeamId": "387",
           "homeProviderTeamId": "404",
@@ -94321,18 +94321,18 @@
         }
       ],
       "notes": [
-        "Loaded 32 all-status matches from 2026-11-05 through 2027-11-05.",
+        "Loaded 32 all-status matches from 2026-11-06 through 2027-11-06.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 35 iCalendar fixtures from 2026-07-01 through 2027-11-05.",
+        "Loaded 35 iCalendar fixtures from 2026-07-01 through 2027-11-06.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -94501,9 +94501,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -94642,9 +94642,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -95685,15 +95685,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 14 iCalendar fixtures from 2026-01-01 through 2027-11-05.",
+        "Loaded 14 iCalendar fixtures from 2026-01-01 through 2027-11-06.",
         "Preserved 16 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-05T18:04:46.076Z",
-      "updatedAt": "2026-11-05T18:04:46.076Z",
-      "previousUpdatedAt": "2026-11-04T18:02:11.164Z",
+      "attemptedAt": "2026-11-06T17:31:50.241Z",
+      "updatedAt": "2026-11-06T17:31:50.241Z",
+      "previousUpdatedAt": "2026-11-05T18:04:46.076Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -96627,7 +96627,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 10 iCalendar fixtures from 2026-01-01 through 2027-11-05.",
+        "Loaded 10 iCalendar fixtures from 2026-01-01 through 2027-11-06.",
         "Preserved 16 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

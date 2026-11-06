@@ -13,6 +13,7 @@ export type NavScope =
   | "world-cup-2027";
 
 export interface NavItem {
+  iconOnly?: boolean;
   adminOnly?: boolean;
   label: string;
   loginOnly?: boolean;
@@ -34,10 +35,11 @@ export const navItems: Record<NavScope, NavItem[]> = {
   "fantasy-office-2027": draftNavigation("fantasy-office"),
   "world-cup-2027": draftNavigation("world-cup"),
   home: [
-    { label: "Footy", route: "footy" },
-    { label: "Next", route: "next" },
-    { label: "Rankings", loginOnly: true, route: "rankings" },
-    { label: "Leagues", route: "leagues" },
+    { iconOnly: true, label: "Footy", route: "footy" },
+    { iconOnly: true, label: "Election", route: "election" },
+    { iconOnly: true, label: "Next", route: "next" },
+    { iconOnly: true, label: "Rankings", loginOnly: true, route: "rankings" },
+    { iconOnly: true, label: "Leagues", route: "leagues" },
   ],
   "the-monster-maniac": [
     { label: "Home", route: "the-monster-maniac" },

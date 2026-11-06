@@ -22,6 +22,7 @@ const footyDialogsRoot = document.createElement("div");
 footyDialogsRoot.id = "footy-operational-dialog-root";
 document.body.append(footyDialogsRoot);
 const operationalRoots = {
+  election: document.querySelector('[data-page="election"]'),
   draftList: document.querySelector('[data-page="draft-list"]'),
   footy: document.querySelector('[data-page="footy"]'),
   footyCustomSchedule: document.querySelector(

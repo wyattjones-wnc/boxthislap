@@ -1,0 +1,221 @@
+.page {
+  color: var(--text-primary);
+  padding: 0 var(--space-4) var(--space-4);
+  margin-top: calc(-1 * var(--space-5));
+}
+.heading,
+.stateHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.heading {
+  margin-bottom: var(--space-5);
+}
+.heading h1 {
+  font-size: 1.75rem;
+  margin: 0;
+  letter-spacing: -0.04em;
+}
+.heading h1 span {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.heading a {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.states {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.state {
+  min-width: 0;
+  padding: var(--space-5);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface-panel) 94%, #7b9ac7),
+    var(--surface-panel) 60%
+  );
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+.outline {
+  display: block;
+  width: 100%;
+  height: 190px;
+  object-fit: contain;
+  padding: var(--space-4);
+  box-sizing: border-box;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(113 151 192 / 10%),
+    transparent 65%
+  );
+  filter: drop-shadow(0 4px 12px rgb(107 145 195 / 16%));
+}
+.stateHeading {
+  margin-top: var(--space-3);
+}
+.stateHeading h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.race {
+  margin-top: var(--space-2);
+}
+.counted {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.race table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+.race th,
+.race td {
+  padding: var(--space-3) var(--space-1);
+  text-align: right;
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.race th:first-child {
+  width: 48%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.race th {
+  font-weight: 500;
+}
+.race thead th {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.race td {
+  font-size: 0.85rem;
+}
+.race small {
+  display: block;
+  font-weight: normal;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+.race tfoot th,
+.race tfoot td {
+  font-weight: 600;
+  border-bottom: 0;
+}
+.race .change {
+  display: block;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.gap {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-block: var(--space-3);
+  margin-block: var(--space-3);
+}
+.gap > span:first-child {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  flex: 1;
+}
+.gap strong {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.seen {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.seen p {
+  margin: 0;
+}
+.seen button {
+  font-size: 0.7rem;
+  min-height: 36px;
+}
+.timing {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+.caption,
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 700px) {
+  .page {
+    margin-top: calc(-1 * var(--space-3));
+  }
+  .states {
+    grid-template-columns: 1fr;
+  }
+  .state {
+    padding: var(--space-4);
+  }
+  .outline {
+    height: 160px;
+  }
+}
+
+.race tbody th,
+.race tfoot th {
+  text-transform: none;
+  font-size: 0.85rem;
+}
+
+.feedInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+.feedInfo small {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding-inline: 0;
+    margin-inline: calc(-1 * var(--space-1));
+  }
+  .state {
+    padding: var(--space-2);
+  }
+}

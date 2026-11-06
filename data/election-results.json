@@ -1,0 +1,137 @@
+{
+  "year": 2026,
+  "fetchedAt": "2026-11-05T19:58:16.919Z",
+  "source": "https://apps.npr.org/2026-election-results/",
+  "races": [
+    {
+      "test": false,
+      "id": "3079",
+      "office": "S",
+      "officeName": "U.S. Senate",
+      "resultsType": "live",
+      "tabulationStatus": "Active Tabulation",
+      "eevp": 0.7409,
+      "type": "General",
+      "seatNumber": "2",
+      "seat": "Class II",
+      "winThreshold": 50,
+      "rankedChoice": true,
+      "raceCallStatus": "Too Early to Call",
+      "level": "state",
+      "state": "AK",
+      "updated": 1793892467578,
+      "reporting": 298,
+      "precincts": 403,
+      "reportingunitID": "2",
+      "reportingPercent": 0.739454094292804,
+      "stateName": "Alaska",
+      "stateAP": "Alaska",
+      "rating": "toss-up",
+      "previousParty": "GOP",
+      "keyRace": "yes",
+      "candidates": [
+        {
+          "first": "Mary",
+          "last": "Peltola",
+          "party": "Dem",
+          "id": "70718",
+          "votes": 102962,
+          "percent": 0.4817
+        },
+        {
+          "first": "Dan",
+          "last": "Sullivan",
+          "party": "GOP",
+          "id": "64262",
+          "votes": 102325,
+          "incumbent": true,
+          "percent": 0.4788
+        },
+        {
+          "first": "Gerald",
+          "last": "Heikes",
+          "party": "GOP",
+          "id": "57566",
+          "votes": 4846,
+          "percent": 0.0227
+        },
+        {
+          "first": "Daniel",
+          "last": "Sullivan",
+          "party": "UDC",
+          "id": "177716",
+          "votes": 3600,
+          "percent": 0.0168
+        },
+        {
+          "first": "",
+          "last": "Other",
+          "party": "Other",
+          "id": "other-3079",
+          "votes": 0,
+          "avotes": 0,
+          "electoral": 0,
+          "count": 0,
+          "percent": 0
+        }
+      ]
+    },
+    {
+      "test": false,
+      "id": "26692",
+      "office": "S",
+      "officeName": "U.S. Senate",
+      "resultsType": "live",
+      "tabulationStatus": "Active Tabulation",
+      "eevp": 0.9561,
+      "type": "General",
+      "seatNumber": "2",
+      "seat": "Class II",
+      "raceCallStatus": "Too Early to Call",
+      "level": "state",
+      "state": "MS",
+      "updated": 1793906859617,
+      "reporting": 1733,
+      "precincts": 1736,
+      "reportingunitID": "25",
+      "reportingPercent": 0.9982718894009217,
+      "stateName": "Mississippi",
+      "stateAP": "Miss.",
+      "rating": "likely-r",
+      "previousParty": "GOP",
+      "keyRace": "yes",
+      "candidates": [
+        {
+          "first": "Scott",
+          "last": "Colom",
+          "party": "Dem",
+          "id": "169318",
+          "votes": 466226,
+          "avotes": 1845,
+          "percent": 0.4904
+        },
+        {
+          "first": "Cindy",
+          "last": "Hyde-Smith",
+          "party": "GOP",
+          "id": "28529",
+          "votes": 464502,
+          "avotes": 730,
+          "incumbent": true,
+          "percent": 0.4886
+        },
+        {
+          "first": "",
+          "last": "Other",
+          "party": "Other",
+          "id": "other-26692",
+          "votes": 19978,
+          "avotes": 39,
+          "electoral": 0,
+          "count": 1,
+          "percent": 0.021
+        }
+      ]
+    }
+  ]
+}

@@ -224,3 +224,10 @@
     flex-wrap: wrap;
   }
 }
+
+:global(.nav-links[data-nav-scope="home"] a) {
+  min-width: var(--control-touch);
+  min-height: var(--control-touch);
+  justify-content: center;
+  box-sizing: border-box;
+}

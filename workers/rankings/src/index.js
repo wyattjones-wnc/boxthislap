@@ -1,4 +1,6 @@
 import { buildRosterProviderIndex, getRosterProviderIds } from "../../../scripts/footy-roster-providers.mjs";
+import { loadLiveSenateResults } from "./election-results.js";
+import { handleElectionSeenRequest } from "./election-seen.js";
 import { handleWorkoutRequest } from "./workouts.js";
 
 const TYPES = new Set(["games", "movies", "tv", "mcu"]);
@@ -70,6 +72,13 @@ export default {
           : await setMatchNotification(env, manager.sub, await readBody(request));
         return json({ ok: true, ...result }, 200, cors);
       }
+
+      if (request.method === "GET" && url.pathname === "/api/elections/2026/results") {
+        return json({ ok: true, ...(await loadLiveSenateResults(url)) }, 200, cors);
+      }
+
+      const electionSeenResult = await handleElectionSeenRequest({ env, readBody, readManagerCatalog, request, requireManager, url });
+      if (electionSeenResult) return json({ ok: true, ...electionSeenResult }, 200, { ...cors, "Cache-Control": "no-store" });
 
       const workoutResult = await handleWorkoutRequest({ env, readBody, readManagerCatalog, request, requireManager, url });
       if (workoutResult) return json({ ok: true, ...workoutResult }, 200, cors);

@@ -205,11 +205,11 @@ export function RaceResults({
         </tfoot>
       </table>
       <p className={styles.gap}>
-        <span title="Democratic candidate votes minus Republican candidate votes">
-          Lead (D − R)
-        </span>
+        <span>Lead</span>
         <strong>
-          {gap === null || gap === 0 ? "—" : `${signed(gap)} votes`}
+          {gap === null || gap === 0
+            ? "—"
+            : `${gap < 0 ? "−" : ""}${Math.abs(gap).toLocaleString()} votes`}
         </strong>
         {gap !== null && priorGap !== null && (
           <small

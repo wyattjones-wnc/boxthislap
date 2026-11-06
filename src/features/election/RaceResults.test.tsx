@@ -214,7 +214,8 @@ describe("shared election comparisons", () => {
     await screen.findByText(/Compared with/);
     expect(screen.getAllByText("—")).toHaveLength(4);
     expect(screen.queryByText("0")).toBeNull();
-    expect(screen.getByText("+20 votes")).toBeTruthy();
+    expect(screen.getByText("20 votes")).toBeTruthy();
+    expect(screen.getByText("Lead")).toBeTruthy();
     expect(
       screen.getByLabelText("No change in total votes since seen"),
     ).toBeTruthy();

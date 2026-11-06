@@ -92,10 +92,30 @@ export function RaceResults({
       percent: others.reduce((sum, candidate) => sum + candidate.percent, 0),
     });
   const total = candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
-  const gap = leaders.length === 2 ? leaders[0].votes - leaders[1].votes : null;
+  const democrat = sorted.find((candidate) =>
+    ["dem", "democrat", "democratic", "d"].includes(
+      candidate.party.trim().toLowerCase(),
+    ),
+  );
+  const republican = sorted.find((candidate) =>
+    ["gop", "rep", "republican", "r"].includes(
+      candidate.party.trim().toLowerCase(),
+    ),
+  );
+  const gap = democrat && republican ? democrat.votes - republican.votes : null;
   // A cached/older source must not be presented as new votes after a baseline.
   const comparison =
     baseline && sourceUpdated >= baseline.sourceUpdated ? baseline : null;
+  // Derive the old signed lead from saved candidate counts, so existing
+  // baselines using the former absolute gap need no migration or re-mark.
+  const priorGap =
+    comparison &&
+    democrat &&
+    republican &&
+    Object.hasOwn(comparison.votes, democrat.id) &&
+    Object.hasOwn(comparison.votes, republican.id)
+      ? comparison.votes[democrat.id] - comparison.votes[republican.id]
+      : null;
   function markSeen() {
     if (
       !isAdmin ||
@@ -185,23 +205,27 @@ export function RaceResults({
         </tfoot>
       </table>
       <p className={styles.gap}>
-        <span>Lead</span>
+        <span title="Democratic candidate votes minus Republican candidate votes">
+          Lead (D − R)
+        </span>
         <strong>
-          {gap === null || gap === 0 ? "—" : `${gap.toLocaleString()} votes`}
+          {gap === null || gap === 0 ? "—" : `${signed(gap)} votes`}
         </strong>
-        {gap !== null && comparison && comparison.gap !== null && (
+        {gap !== null && priorGap !== null && (
           <small
             className={styles.change}
-            aria-label={changeLabel(gap - comparison.gap, "lead")}
+            aria-label={changeLabel(gap - priorGap, "lead")}
           >
-            {signed(gap - comparison.gap)}
+            {signed(gap - priorGap)}
           </small>
         )}
         {gap !== null && (
           <span className={styles.srOnly}>
             {gap === 0
               ? "Tied"
-              : `${name(leaders[0])} leads ${name(leaders[1])}`}
+              : gap > 0
+                ? `${name(democrat!)} leads ${name(republican!)}`
+                : `${name(republican!)} leads ${name(democrat!)}`}
           </span>
         )}
       </p>

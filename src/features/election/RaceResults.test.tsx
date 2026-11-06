@@ -20,7 +20,7 @@ const candidate = (id: string, votes: number): Candidate => ({
   id,
   first: id,
   last: "Candidate",
-  party: "Test",
+  party: id === "A" ? "Dem" : id === "B" ? "GOP" : "Ind",
   votes,
   percent: 0.5,
 });
@@ -147,7 +147,7 @@ describe("shared election comparisons", () => {
       candidates: [candidate("A", 130), candidate("B", 90)],
     });
     expect(await screen.findByText("+30")).toBeTruthy();
-    expect(row("B Candidate Test").getByText("+10")).toBeTruthy();
+    expect(row("B Candidate GOP").getByText("+10")).toBeTruthy();
     expect(row("Total votes").getByText("+40")).toBeTruthy();
     expect(screen.getByText("+20")).toBeTruthy();
     expect(document.querySelector("time")?.getAttribute("datetime")).toBe(
@@ -170,7 +170,7 @@ describe("shared election comparisons", () => {
     });
     expect(await screen.findByText("−2")).toBeTruthy();
     expect(screen.getByText(/B Candidate leads A Candidate/)).toBeTruthy();
-    expect(screen.getByText("−3")).toBeTruthy();
+    expect(screen.getByText("−17")).toBeTruthy();
   });
   it("does not claim success when the server rejects a save", async () => {
     failSave = true;
@@ -214,7 +214,7 @@ describe("shared election comparisons", () => {
     await screen.findByText(/Compared with/);
     expect(screen.getAllByText("—")).toHaveLength(4);
     expect(screen.queryByText("0")).toBeNull();
-    expect(screen.getByText("20 votes")).toBeTruthy();
+    expect(screen.getByText("+20 votes")).toBeTruthy();
     expect(
       screen.getByLabelText("No change in total votes since seen"),
     ).toBeTruthy();
@@ -273,5 +273,30 @@ describe("shared election comparisons", () => {
     expect(screen.queryByRole("rowheader", { name: /B Candidate/ })).toBeNull();
     expect(row("Other").getByText("100")).toBeTruthy();
     expect(row("Other").getByText("+15")).toBeTruthy();
+  });
+  it("shows a negative Democratic lead and compares legacy baselines using signed raw counts", async () => {
+    shared = {
+      markedAt: "2026-11-05T19:00:00Z",
+      sourceUpdated: 1000,
+      votes: { A: 80, B: 100, C: 8 },
+      total: 188,
+      gap: 20,
+      revision: 1,
+    };
+    renderRace({
+      isAdmin: false,
+      sourceUpdated: 2000,
+      candidates: [
+        candidate("A", 90),
+        candidate("B", 120),
+        { ...candidate("C", 10), party: "GOP" },
+      ],
+    });
+    expect(await screen.findByText(/Compared with/)).toBeTruthy();
+    expect(screen.getByText("−30 votes")).toBeTruthy();
+    expect(screen.getByLabelText("−10 lead since seen")).toBeTruthy();
+    expect(
+      screen.getByRole("rowheader", { name: "B Candidate GOP" }),
+    ).toBeTruthy();
   });
 });

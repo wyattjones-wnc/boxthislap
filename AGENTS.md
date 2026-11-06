@@ -58,6 +58,8 @@ If shell Git cannot access `origin/dev`, use an available authorized GitHub conn
 
 ## Product Defaults
 
+- Keep normal interface copy minimal. Preserve requested labels; do not add parenthetical labels or explanatory descriptions unless asked.
+
 - Do not invent or seed user-facing content when a feature describes an admin-configured default. An admin-configured default may begin empty; managers inherit it only after the admin supplies it.
 
 ## Form Field Standard

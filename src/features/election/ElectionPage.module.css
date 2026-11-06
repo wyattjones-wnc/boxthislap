@@ -212,9 +212,10 @@
 
 @media (max-width: 360px) {
   .page {
-    padding-inline: var(--space-2);
+    padding-inline: 0;
+    margin-inline: calc(-1 * var(--space-1));
   }
   .state {
-    padding: var(--space-3);
+    padding: var(--space-2);
   }
 }

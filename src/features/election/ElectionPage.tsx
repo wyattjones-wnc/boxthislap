@@ -77,11 +77,16 @@ export default function ElectionPage() {
             AP via NPR ↗
           </a>
           {results && (
-            <small title={new Date(results.fetchedAt).toLocaleString()}>
+            <small
+              title={new Date(results.fetchedAt).toLocaleString(undefined, {
+                hour12: true,
+              })}
+            >
               Checked{" "}
               {new Date(results.fetchedAt).toLocaleTimeString([], {
                 hour: "numeric",
                 minute: "2-digit",
+                hour12: true,
               })}
             </small>
           )}

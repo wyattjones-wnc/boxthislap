@@ -31,9 +31,9 @@ const compactTimestamp = (value: string | number) =>
   new Date(value).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
+    hour: "numeric",
     minute: "2-digit",
-    hourCycle: "h23",
+    hour12: true,
   });
 
 export function RaceResults({
@@ -228,7 +228,9 @@ export function RaceResults({
                 Compared with{" "}
                 <time
                   dateTime={baseline.markedAt}
-                  title={new Date(baseline.markedAt).toLocaleString()}
+                  title={new Date(baseline.markedAt).toLocaleString(undefined, {
+                    hour12: true,
+                  })}
                 >
                   {compactTimestamp(baseline.markedAt)}
                 </time>
@@ -244,7 +246,9 @@ export function RaceResults({
             Updated{" "}
             <time
               dateTime={new Date(sourceUpdated).toISOString()}
-              title={new Date(sourceUpdated).toLocaleString()}
+              title={new Date(sourceUpdated).toLocaleString(undefined, {
+                hour12: true,
+              })}
             >
               {compactTimestamp(sourceUpdated)}
             </time>

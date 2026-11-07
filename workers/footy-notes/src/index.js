@@ -2,9 +2,6 @@ import { imageInfo } from '../../image-library/src/image-info.js';
 import { recordFootyFile, forgetFootyFile } from '../../shared/file-metadata.js';
 import { reserveMedia, releaseMediaStorage, mediaBudget } from '../../shared/media-budget.js';
 export default {
-  async scheduled(_event, env, context) {
-    context.waitUntil(dispatchResultRefresh(env));
-  },
   async fetch(request, env, context) {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin, env);

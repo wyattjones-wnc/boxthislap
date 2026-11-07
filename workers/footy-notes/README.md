@@ -62,11 +62,16 @@ Use a fine-grained GitHub token limited to this repository with Actions write ac
 and records changed revisions in immutable history. Repeated results are no-ops.
 Scorer, assister, and kit data always remain manual.
 
-The deployed Worker dispatches `update-footy-schedule.yml` on `dev` daily at
-10:17 UTC using the existing `GITHUB_ACTIONS_TOKEN`. This is necessary while
-GitHub's native scheduled workflow runs the default branch's older code.
-`GITHUB_RESULTS_REF` selects the branch. The dispatch performs one GitHub API
-request per day and no D1 work in the scheduled handler.
+The existing Footy Push timer calls the private `ResultRefreshScheduler` service
+entrypoint daily at 10:30 UTC. Footy Notes then dispatches
+`update-footy-schedule.yml` on `dev` using the existing `GITHUB_ACTIONS_TOKEN`.
+This works while GitHub's native scheduled workflow still runs the default
+branch's older code. `GITHUB_RESULTS_REF` selects the branch. Failed dispatches
+retry at 10:45, 11:00, and 11:15; a KV marker deduplicates successful dispatches.
+This needs no additional cron slot: daily overhead is at most four KV reads,
+one KV write, one private service call and one GitHub API call on success, with
+no D1 work in the timer. Deploy Footy Notes before deploying Footy Push so the
+private service entrypoint exists. The public Worker API cannot dispatch jobs.
 
 The workflow uses the existing `FOOTY_ROSTER_SYNC_TOKEN` and the public Worker
 result endpoint by default. No new secrets are required. Optional dedicated

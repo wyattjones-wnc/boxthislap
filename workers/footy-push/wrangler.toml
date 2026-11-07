@@ -34,3 +34,9 @@ FORMULA_ONE_SCHEDULE_URL = "https://api.jolpi.ca/ergast/f1/2026.json"
 FORMULA_ONE_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/#formula-1-2026-weekly"
 FORMULA_ONE_DEV_NOTIFICATION_URL = "https://wyattjones-wnc.github.io/boxthislap/dev/#formula-1-2026-weekly"
 VAPID_SUBJECT = "mailto:boxthislap@example.com"
+
+# Reuse the existing timer; no additional account cron slot is needed.
+[[services]]
+binding = "RESULT_REFRESH"
+service = "box-this-lap-footy-notes"
+entrypoint = "ResultRefreshScheduler"

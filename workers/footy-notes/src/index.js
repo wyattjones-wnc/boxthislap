@@ -2,6 +2,9 @@ import { imageInfo } from '../../image-library/src/image-info.js';
 import { recordFootyFile, forgetFootyFile } from '../../shared/file-metadata.js';
 import { reserveMedia, releaseMediaStorage, mediaBudget } from '../../shared/media-budget.js';
 export default {
+  async scheduled(_event, env, context) {
+    context.waitUntil(dispatchResultRefresh(env));
+  },
   async fetch(request, env, context) {
     const origin = request.headers.get("Origin") || "";
     const cors = corsHeaders(origin, env);
@@ -134,7 +137,7 @@ export default {
       }
 
       if (request.method === "POST" && url.pathname === "/api/match-notes/results/sync") {
-        const token = String(env.RESULTS_SYNC_TOKEN || "");
+        const token = String(env.RESULTS_SYNC_TOKEN || env.ROSTER_SYNC_TOKEN || "");
         if (!token || request.headers.get("X-Results-Sync-Token") !== token) throw httpError(401, "Result synchronization is not authorized.");
         return json({ ok: true, notes: await syncMatchResults(env, await readBody(request)) }, 200, cors);
       }
@@ -1043,8 +1046,19 @@ function parsePerformanceId(value) {
   return id;
 }
 
+export async function dispatchResultRefresh(env, fetchImpl = fetch) {
+  if (!env.GITHUB_ACTIONS_TOKEN || !env.GITHUB_REPOSITORY) throw new Error("Overnight result refresh is not configured.");
+  const response = await fetchImpl(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions/workflows/update-footy-schedule.yml/dispatches`, {
+    method: "POST",
+    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${env.GITHUB_ACTIONS_TOKEN}`, "Content-Type": "application/json", "User-Agent": "box-this-lap-footy-results" },
+    body: JSON.stringify({ ref: env.GITHUB_RESULTS_REF || "dev" }),
+  });
+  if (!response.ok) throw new Error(`Overnight result refresh dispatch failed (${response.status}).`);
+  console.log("Dispatched overnight Footy schedule and result refresh.");
+}
+
 export async function syncMatchResults(env, body) {
-  if (!Array.isArray(body.results) || body.results.length > 100) throw httpError(400, "Expected up to 100 results.");
+  if (!Array.isArray(body.results) || body.results.length > 20) throw httpError(400, "Expected up to 20 results.");
   const results = body.results.map((result) => {
     const matchId = parseMatchId(result.matchId);
     for (const score of [result.homeScore, result.awayScore]) {

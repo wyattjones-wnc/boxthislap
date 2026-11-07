@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
-import { syncMatchResults } from "../src/index.js";
+import { syncMatchResults, dispatchResultRefresh } from "../src/index.js";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
 
@@ -106,7 +106,7 @@ async function createWorker() {
         config: {
           compatibilityDate: "2026-08-22",
           env: {
-            RESULTS_SYNC_TOKEN: { type: "text", value: "test-token" },
+            ROSTER_SYNC_TOKEN: { type: "text", value: "test-token" },
             DB: { name: `footy-media-${crypto.randomUUID()}`, type: "d1" },
           },
           manifest: {
@@ -150,3 +150,20 @@ async function createWorker() {
     ],
   });
 }
+
+test("overnight cron dispatches the dev refresh and reports failures", async () => {
+  const env = {
+    GITHUB_ACTIONS_TOKEN: "test",
+    GITHUB_REPOSITORY: "owner/repo",
+    GITHUB_RESULTS_REF: "dev",
+  };
+  await dispatchResultRefresh(env, async (url, options) => {
+    assert.match(url, /update-footy-schedule.yml\/dispatches$/);
+    assert.deepEqual(JSON.parse(options.body), { ref: "dev" });
+    return { ok: true };
+  });
+  await assert.rejects(
+    dispatchResultRefresh(env, async () => ({ ok: false, status: 403 })),
+    /403/,
+  );
+});

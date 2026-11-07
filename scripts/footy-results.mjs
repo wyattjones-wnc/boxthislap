@@ -55,14 +55,14 @@ export async function syncFinalResults(
     );
   const results = collectFinalResults(fixtures);
   const notes = [];
-  for (let index = 0; index < results.length; index += 100) {
+  for (let index = 0; index < results.length; index += 20) {
     const response = await fetchImpl(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Results-Sync-Token": token,
       },
-      body: JSON.stringify({ results: results.slice(index, index + 100) }),
+      body: JSON.stringify({ results: results.slice(index, index + 20) }),
     });
     const data = await response.json();
     if (!response.ok || !data.ok)

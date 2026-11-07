@@ -57,18 +57,25 @@ Use a fine-grained GitHub token limited to this repository with Actions write ac
 ### Overnight result sync
 
 `POST /api/match-notes/results/sync` accepts `{ results: [{ matchId, homeScore, awayScore }] }`
-(up to 100 results) with `X-Results-Sync-Token` matching the Worker secret
-`RESULTS_SYNC_TOKEN`. It fills only missing scores, preserves all manual fields,
+(up to 20 results) with `X-Results-Sync-Token` matching the Worker secret
+`RESULTS_SYNC_TOKEN`, or the existing `ROSTER_SYNC_TOKEN` when no dedicated result token is set. It fills only missing scores, preserves all manual fields,
 and records changed revisions in immutable history. Repeated results are no-ops.
 Scorer, assister, and kit data always remain manual.
 
-Deploy the updated Worker, set `RESULTS_SYNC_TOKEN` with Wrangler, and configure
-GitHub Actions secrets `FOOTY_RESULTS_SYNC_TOKEN` to the same value and
-`FOOTY_RESULTS_SYNC_ENDPOINT` to this Worker's `/api/match-notes/results/sync` URL.
-The existing daily 10:17 UTC schedule refresh submits completed provider results;
-its workflow requires this configuration and fails visibly if sync fails.
-The refresh includes a 30-day lookback and recent TheSportsDB team results. Results
-without an unambiguous completed score remain unresolved for manual entry.
+The deployed Worker dispatches `update-footy-schedule.yml` on `dev` daily at
+10:17 UTC using the existing `GITHUB_ACTIONS_TOKEN`. This is necessary while
+GitHub's native scheduled workflow runs the default branch's older code.
+`GITHUB_RESULTS_REF` selects the branch. The dispatch performs one GitHub API
+request per day and no D1 work in the scheduled handler.
+
+The workflow uses the existing `FOOTY_ROSTER_SYNC_TOKEN` and the public Worker
+result endpoint by default. No new secrets are required. Optional dedicated
+`RESULTS_SYNC_TOKEN` (Worker) and matching `FOOTY_RESULTS_SYNC_TOKEN` (Actions)
+can override the shared automation token; `FOOTY_RESULTS_SYNC_ENDPOINT` can
+override the endpoint. Results are sent in batches of 20 to stay within the
+free Worker's 50 subrequest limit (at most 40 D1 calls per sync request).
+The refresh includes a 30-day lookback and recent TheSportsDB team results.
+Results without an unambiguous completed score remain unresolved for manual entry.
 Dev and production share these notes; reruns from either branch are safe.
 
 Penalty shootout results with ambiguous provider totals are left for manual entry.

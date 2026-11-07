@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-11-07T06:15:10.690Z",
+  "generatedAt": "2026-11-07T10:31:12.319Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-11-07T06:15:10.690Z",
-    "attemptedAt": "2026-11-07T06:15:10.690Z",
-    "updatedAt": "2026-11-07T06:15:10.690Z",
-    "oldestTeamUpdatedAt": "2026-11-07T06:15:10.690Z",
+    "generatedAt": "2026-11-07T10:31:12.319Z",
+    "attemptedAt": "2026-11-07T10:31:12.319Z",
+    "updatedAt": "2026-11-07T10:31:12.319Z",
+    "oldestTeamUpdatedAt": "2026-11-07T10:31:12.319Z",
     "competitionCount": 11,
     "competitionFixtureCount": 2286,
     "teamCount": 7,
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 262,
-      "syncedAt": "2026-11-07T06:15:10.690Z",
+      "syncedAt": "2026-11-07T10:31:12.319Z",
       "appended": 0,
       "updated": 262
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-11-07T06:20:43.202Z",
+      "attemptedAt": "2026-11-07T10:36:44.778Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -15800,15 +15800,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:15.108Z",
+      "attemptedAt": "2026-11-07T10:37:16.630Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -16609,15 +16609,15 @@
       "notes": [
         "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:20:55.903Z",
+      "attemptedAt": "2026-11-07T10:36:57.678Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -23169,15 +23169,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:02.830Z",
+      "attemptedAt": "2026-11-07T10:37:04.396Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -39140,15 +39140,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:09.441Z",
+      "attemptedAt": "2026-11-07T10:37:10.947Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -62265,15 +62265,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:21.561Z",
+      "attemptedAt": "2026-11-07T10:37:23.092Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -62378,15 +62378,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:21.562Z",
+      "attemptedAt": "2026-11-07T10:37:23.093Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -62664,7 +62664,6 @@
           "matchId": "footy_comp_thesportsdb_2549112",
           "homeTeamId": "5",
           "awayTeamId": "team:spain-women",
-          "lastSeen": "",
           "followedTeamNames": [
             "USWNT"
           ],
@@ -62706,22 +62705,23 @@
           ],
           "isCompetitionFixture": true,
           "homeTeamId": "4",
-          "awayTeamId": "team:jamaica"
+          "awayTeamId": "team:jamaica",
+          "lastSeen": ""
         }
       ],
       "notes": [
         "Preserved 7 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:21.562Z",
+      "attemptedAt": "2026-11-07T10:37:23.093Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -68045,15 +68045,15 @@
       "notes": [
         "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "UEFA.com"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:34.705Z",
+      "attemptedAt": "2026-11-07T10:37:36.202Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -86059,15 +86059,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:34.710Z",
+      "attemptedAt": "2026-11-07T10:37:36.206Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -88826,15 +88826,15 @@
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     },
     {
-      "attemptedAt": "2026-11-07T06:21:34.714Z",
+      "attemptedAt": "2026-11-07T10:37:36.208Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -91038,12 +91038,12 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-07T06:15:10.690Z"
+      "updatedAt": "2026-11-07T10:31:12.319Z"
     }
   ],
   "teamCatalog": [
@@ -96512,9 +96512,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -98905,16 +98905,16 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
         "id": "2",
         "league": "La Liga",
         "leagueGames": 38,
-        "projectedPoints": 114,
+        "projectedPoints": 111,
         "name": "Barcelona",
         "prettyName": "Futbol Club Barcelona",
         "priority": "2"
@@ -101319,16 +101319,16 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
         "id": "3",
         "league": "Championship",
         "leagueGames": 46,
-        "projectedPoints": 136,
+        "projectedPoints": 127,
         "name": "Wrexham",
         "prettyName": "Wrexham Association Football Club",
         "priority": "3"
@@ -103453,9 +103453,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -103624,9 +103624,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -103804,9 +103804,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -104850,9 +104850,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-07T06:15:10.690Z",
-      "updatedAt": "2026-11-07T06:15:10.690Z",
-      "previousUpdatedAt": "2026-10-18T05:38:11.935Z",
+      "attemptedAt": "2026-11-07T10:31:12.319Z",
+      "updatedAt": "2026-11-07T10:31:12.319Z",
+      "previousUpdatedAt": "2026-11-07T06:15:10.690Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",

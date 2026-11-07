@@ -44,3 +44,9 @@
 - ESPN postponement and suspension reports override pending primary statuses. Abandonment maps to the existing suspended/no-kickoff behavior, with the exact ESPN status retained in `statusVerification`. Evidence includes event ID, URL, and verification time. Verified interruptions survive stale primary data and verifier failures until the kickoff changes or the primary provider reports match progress.
 - Verification failures appear in schedule errors with partial status. Missing or ambiguous event matches leave the primary status unchanged. Status lookups bypass the API disk cache; the overnight workflow also explicitly refreshes provider caches. This cannot detect an interruption absent from both providers.
 - Validate with `npm run test:footy-following` and `node scripts/test-update-footy-schedule.mjs`.
+
+## Result Reconciliation
+
+- `scripts/footy-result-reconciliation.mjs` fills recent missing results dynamically from ESPN league/date scoreboards and exact TheSportsDB event IDs. Both the normal refresh and `scripts/sync-footy-results.mjs` use it; the latter is selected by the workflow's `results_only` input.
+- Match only a unique home/away/date pairing, preserve stable match IDs, require explicit completion, and keep shootout totals separate from match goals. ESPN requests use Eastern calendar days for late UTC kickoffs. Cup league keys take precedence over ambiguous provider competition codes.
+- The fallback has a 30-day window and deduplicates provider requests. It never overwrites saved scores or manual scorer, assister, and kit fields. Failures appear in schedule errors rather than inferring a result.

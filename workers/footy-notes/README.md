@@ -83,4 +83,16 @@ The refresh includes a 30-day lookback and recent TheSportsDB team results.
 Results without an unambiguous completed score remain unresolved for manual entry.
 Dev and production share these notes; reruns from either branch are safe.
 
-Penalty shootout results with ambiguous provider totals are left for manual entry.
+Missing completed results are reconciled dynamically against ESPN league/date
+scoreboards, then exact TheSportsDB event IDs where available. This includes
+calendar-fed MLS fixtures and cup games. A unique home/away/date match and an
+explicit completed status are required. Match goals are saved separately from
+provider shootout totals, so penalty-decided games can retain a drawn score.
+The fallback covers the latest 30 days and deduplicates league/date and event
+requests. Unavailable or ambiguous results remain unresolved; no result is
+inferred from elapsed time.
+
+For a manual repair, dispatch `update-footy-schedule.yml` on `dev` with
+`results_only=true`. This uses the same reconciliation code as the overnight
+refresh, skips fixture-list rebuilding, and only syncs newly resolved results.
+Existing scores and all manually curated fields remain protected.

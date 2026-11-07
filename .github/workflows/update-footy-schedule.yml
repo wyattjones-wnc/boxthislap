@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "17 10 * * *"
   workflow_dispatch:
+    inputs:
+      results_only:
+        description: Reconcile missing results without refreshing fixture lists
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -57,7 +62,12 @@ jobs:
           FOOTY_RESULTS_SYNC_ENDPOINT: ${{ secrets.FOOTY_RESULTS_SYNC_ENDPOINT || 'https://box-this-lap-footy-notes.boxthislap.workers.dev/api/match-notes/results/sync' }}
           FOOTY_RESULTS_SYNC_TOKEN: ${{ secrets.FOOTY_RESULTS_SYNC_TOKEN || secrets.FOOTY_ROSTER_SYNC_TOKEN }}
           FOOTY_MATCH_SYNC_ENDPOINT: ${{ secrets.FOOTY_MATCH_SYNC_ENDPOINT }}
-        run: node scripts/update-footy-schedule.mjs
+        run: |
+          if [ "${{ inputs.results_only }}" = "true" ]; then
+            node scripts/sync-footy-results.mjs
+          else
+            node scripts/update-footy-schedule.mjs
+          fi
 
       - name: Commit updated schedule
         id: commit-updated-schedule

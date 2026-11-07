@@ -1,3 +1,4 @@
+import { reconcileFootyResults } from "./footy-result-reconciliation.mjs";
 import { finalFootballDataResult, resultScores, syncFinalResults } from "./footy-results.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -343,6 +344,11 @@ async function main() {
     }
   }
   const teamCatalog = attachCanonicalFootyTeams({ competitionSchedules, teamSchedules });
+  const resultReconciliation = await reconcileFootyResults({
+    schedules: [...competitionSchedules, ...teamSchedules], generatedAt,
+    loadJson: async (url) => JSON.parse(await loadText(url, { extension: "json", fresh: true })),
+  });
+  console.log(`Reconciled ${resultReconciliation.resolved} missing provider results.`);
   if (process.env.FOOTY_RESULTS_SYNC_ENDPOINT || process.env.FOOTY_RESULTS_SYNC_TOKEN) {
     const fixtures = [...teamSchedules, ...competitionSchedules].flatMap((schedule) => schedule.fixtures || []);
     const synced = await syncFinalResults(fixtures, {

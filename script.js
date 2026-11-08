@@ -6,6 +6,7 @@ import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
   buildFootyNextItemDefaults,
+  deduplicateFootyFixtureCards,
   findFootyFixtureBySharedIdentity,
   getFootyFixtureSourceIdentities,
   getFootyNotificationFixtures,
@@ -3119,7 +3120,7 @@ function getFilteredFootyFixtures(fixtures) {
   const shouldShowCompetitionPastFixtures = Boolean(footyCompetitionPastFilter?.checked);
   const selectedTeams = getSelectedFootyTeams();
 
-  return fixtures.filter((fixture) => {
+  const filteredFixtures = fixtures.filter((fixture) => {
     if (footyFriendliesFilter && !footyFriendliesFilter.checked && isFootyFriendlyFixture(fixture)) {
       return false;
     }
@@ -3146,6 +3147,7 @@ function getFilteredFootyFixtures(fixtures) {
 
     return getFootyFixtureSearchText(fixture).includes(searchTerm);
   });
+  return deduplicateFootyFixtureCards(filteredFixtures);
 }
 
 function hasActiveFootyFilters() {
@@ -4108,6 +4110,7 @@ function renderFootyMatchNotificationAction(fixture = {}) {
 
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
+  const hasMultipleFollowedTeams = (fixture.followedTeamIds || []).length > 1;
   const sideLabel = fixture.isHome ? "H" : "A";
   const isCompetitionFixture = Boolean(fixture.isCompetitionFixture);
   const scheduleBadge = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
@@ -4153,10 +4156,10 @@ function renderFootyFixture(fixture) {
   const followedTeamMarkup = followedTeamLabel
     ? `
       <span class="footy-followed-team-label">${escapeHtml(followedTeamLabel)}</span>
-      <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
+      ${hasMultipleFollowedTeams ? "" : `<span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>`}
     `
     : "";
-  const badgeMarkup = isCompetitionFixture
+  const badgeMarkup = isCompetitionFixture || hasMultipleFollowedTeams
     ? renderFootyCompetitionBadgePair(fixture)
     : `
       <div class="footy-fixture-badge" aria-hidden="true">

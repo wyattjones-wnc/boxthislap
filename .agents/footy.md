@@ -50,3 +50,8 @@
 - `scripts/footy-result-reconciliation.mjs` fills recent missing results dynamically from ESPN league/date scoreboards and exact TheSportsDB event IDs. Both the normal refresh and `scripts/sync-footy-results.mjs` use it; the latter is selected by the workflow's `results_only` input.
 - Match only a unique home/away/date pairing, preserve stable match IDs, require explicit completion, and keep shootout totals separate from match goals. ESPN requests use Eastern calendar days for late UTC kickoffs. Cup league keys take precedence over ambiguous provider competition codes.
 - The fallback has a 30-day window and deduplicates provider requests. It never overwrites saved scores or manual scorer, assister, and kit fields. Failures appear in schedule errors rather than inferring a result.
+
+## Manual Followed Match Notes
+
+- Automatic note sync excludes the live default/admin followed-team selection, using canonical team IDs. Both workflows share the client filter; the Worker independently enforces it and resolves older payloads through the published schedule. Selection failures stop automatic writes; unknown fixtures are skipped.
+- Missing Match Notes and its notification show past followed matches only while all saved note fields are empty. Any saved note data, including a zero score, excludes the match. Do not erase existing notes when changing automation policy.

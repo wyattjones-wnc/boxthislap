@@ -53,73 +53,114 @@ test("only completed, numeric results are synced, once per match", async () => {
         json: async () => ({ error: "Failed" }),
       }),
     }),
-    /Failed/,
+    /selection failed/,
   );
 });
 
-test("manual detail completion follows the selected sides and any scorer entry", () => {
-  const fixture = {
-    date: "2020-01-01",
+test("any saved match-note data excludes a followed match from Missing Match Notes", () => {
+  const fixture = { date: "2020-01-01", homeTeamId: "a", awayTeamId: "b" };
+  assert.equal(isFootyFixtureMissingDetails(fixture, ["a"]), true);
+  assert.equal(isFootyFixtureMissingDetails(fixture, ["b"]), true);
+  assert.equal(isFootyFixtureMissingDetails(fixture, ["c"]), false);
+  assert.equal(
+    isFootyFixtureMissingDetails({ ...fixture, matchNote: {} }, ["a"]),
+    true,
+  );
+  for (const matchNote of [
+    { homeScore: "0" },
+    { awayScore: "2" },
+    { kit: "home" },
+    { note: "Details" },
+    { highlightLink: "https://example.com" },
+    { followGoalAssists: [{ scorer: "Player" }] },
+    { opponentGoalAssists: [{ assister: "Player" }] },
+  ])
+    assert.equal(
+      isFootyFixtureMissingDetails({ ...fixture, matchNote }, ["a", "b"]),
+      false,
+    );
+  for (const change of [
+    { date: "2099-01-01" },
+    { status: "POSTPONED" },
+    { status: "CANCELLED" },
+  ]) {
+    assert.equal(
+      isFootyFixtureMissingDetails({ ...fixture, ...change }, ["a"]),
+      false,
+    );
+  }
+});
+
+test("automation excludes every copy of a followed match and keeps unrelated results", () => {
+  const result = {
+    status: "FINISHED",
+    finalResult: { homeScore: "1", awayScore: "0" },
+  };
+  const followed = {
+    ...result,
+    matchId: "followed",
     homeTeamId: "a",
     awayTeamId: "b",
-    isHome: true,
-    matchNote: { kit: "home", homeScore: "0", awayScore: "2" },
+    sourceIds: { provider: "one" },
   };
-  const missing = (f, ids = ["a"]) =>
-    isFootyFixtureMissingDetails(f, ids, "home");
-  assert.equal(missing(fixture), false);
-  assert.equal(
-    missing({
-      ...fixture,
-      date: "2099-01-01",
-      matchNote: { kit: "home", homeScore: "2" },
-    }),
-    false,
+  const alternate = {
+    ...result,
+    matchId: "alternate",
+    sourceIds: { provider: "one" },
+  };
+  const other = {
+    ...result,
+    matchId: "other",
+    homeTeamId: "c",
+    awayTeamId: "d",
+  };
+  assert.deepEqual(
+    collectFinalResults([alternate, followed, other], { manualTeamIds: ["b"] }),
+    [{ matchId: "other", homeScore: "1", awayScore: "0" }],
   );
-  assert.equal(missing(fixture, ["c"]), false);
-  assert.equal(missing(fixture, ["b"]), true);
-  assert.equal(
-    missing({ ...fixture, matchNote: { ...fixture.matchNote, kit: "" } }),
-    true,
+  assert.deepEqual(
+    collectFinalResults([followed], { manualTeamIds: ["a", "b"] }),
+    [],
   );
-  assert.equal(
-    missing({ ...fixture, matchNote: { ...fixture.matchNote, homeScore: "" } }),
-    true,
+});
+
+test("sync uses the live followed selection and posts only unfollowed results", async () => {
+  const fixtures = ["a", "c"].map((id) => ({
+    matchId: id,
+    homeTeamId: id,
+    awayTeamId: "b",
+    status: "FINISHED",
+    finalResult: { homeScore: "0", awayScore: "0" },
+  }));
+  const posts = [];
+  await syncFinalResults(fixtures, {
+    endpoint: "https://example.com/sync",
+    token: "test",
+    async fetchImpl(url, options) {
+      if (!options)
+        return {
+          ok: true,
+          json: async () => ({ ok: true, teams: [{ teamId: "a" }] }),
+        };
+      posts.push(JSON.parse(options.body).results);
+      return { ok: true, json: async () => ({ ok: true, notes: [] }) };
+    },
+  });
+  assert.deepEqual(
+    posts.flat().map((result) => result.matchId),
+    ["c"],
   );
-  assert.equal(
-    missing({
-      ...fixture,
-      matchNote: {
-        ...fixture.matchNote,
-        homeScore: "4",
-        followGoalAssists: [{ scorer: "Player", assister: "" }],
+  let wrote = false;
+  await assert.rejects(
+    syncFinalResults(fixtures, {
+      endpoint: "https://example.com/sync",
+      token: "test",
+      async fetchImpl(_url, options) {
+        if (options) wrote = true;
+        return { ok: false, status: 503 };
       },
     }),
-    false,
+    /selection failed/,
   );
-  assert.equal(
-    missing({
-      ...fixture,
-      matchNote: {
-        ...fixture.matchNote,
-        homeScore: "1",
-        followGoalAssists: [{ scorer: " ", assister: "Player" }],
-      },
-    }),
-    true,
-  );
-  assert.equal(
-    missing(
-      {
-        ...fixture,
-        matchNote: {
-          ...fixture.matchNote,
-          opponentGoalAssists: [{ scorer: "Player" }],
-        },
-      },
-      ["a", "b"],
-    ),
-    false,
-  );
-  assert.equal(missing({ ...fixture, status: "POSTPONED" }), false);
+  assert.equal(wrote, false);
 });

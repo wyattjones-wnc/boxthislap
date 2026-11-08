@@ -3,7 +3,11 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
-import { syncMatchResults, dispatchResultRefresh } from "../src/index.js";
+import {
+  syncMatchResults,
+  dispatchResultRefresh,
+  filterAutomaticResults,
+} from "../src/index.js";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const workerPath = fileURLToPath(new URL("../src/index.js", import.meta.url));
 
@@ -83,11 +87,11 @@ test("result sync fills only missing scores and records only changed revisions",
         "X-Results-Sync-Token": "test-token",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ results }),
+      body: JSON.stringify({ results: [] }),
     },
   );
   assert.equal(authorized.status, 200);
-  assert.equal((await authorized.json()).notes[0].kit, "third");
+  assert.deepEqual((await authorized.json()).notes, []);
 });
 
 async function executeSql(db, sql) {
@@ -165,5 +169,77 @@ test("overnight cron dispatches the dev refresh and reports failures", async () 
   await assert.rejects(
     dispatchResultRefresh(env, async () => ({ ok: false, status: 403 })),
     /403/,
+  );
+});
+
+test("server blocks followed matches for current and older workflow payloads", async () => {
+  const env = {
+    ADMIN_MANAGER_IDS: "6",
+    RESULTS_SCHEDULE_URL: "https://example.com/policy-test",
+    MANAGER_AUTH: {
+      async fetch() {
+        return {
+          ok: true,
+          json: async () => ({ ok: true, teams: [{ teamId: "manual" }] }),
+        };
+      },
+    },
+  };
+  const current = {
+    results: [
+      {
+        matchId: "followed",
+        homeTeamId: "manual",
+        awayTeamId: "other",
+        homeScore: "1",
+        awayScore: "0",
+      },
+      {
+        matchId: "automatic",
+        homeTeamId: "other",
+        awayTeamId: "third",
+        homeScore: "2",
+        awayScore: "0",
+      },
+    ],
+  };
+  assert.deepEqual(
+    (await filterAutomaticResults(env, current)).results.map(
+      (result) => result.matchId,
+    ),
+    ["automatic"],
+  );
+  const old = {
+    results: current.results.map(
+      ({ homeTeamId, awayTeamId, ...result }) => result,
+    ),
+  };
+  const filtered = await filterAutomaticResults(
+    env,
+    {
+      results: [
+        ...old.results,
+        { matchId: "unknown", homeScore: "0", awayScore: "0" },
+      ],
+    },
+    async () => ({
+      ok: true,
+      json: async () => ({ teamSchedules: [{ fixtures: current.results }] }),
+    }),
+  );
+  assert.deepEqual(
+    filtered.results.map((result) => result.matchId),
+    ["automatic"],
+  );
+  await assert.rejects(
+    filterAutomaticResults(
+      {
+        MANAGER_AUTH: {
+          fetch: async () => ({ ok: false, json: async () => ({}) }),
+        },
+      },
+      current,
+    ),
+    /selection is unavailable/,
   );
 });

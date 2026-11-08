@@ -439,3 +439,79 @@
 .resourcePanel .viewTabs {
   padding-right: 3.25rem;
 }
+
+/* Keep Hub summaries compact without shrinking their touch targets. */
+.hubDraft {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hubDraft p,
+.hubDraft h3 {
+  margin: 0;
+}
+.hubHeading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.hubHeading h3 {
+  font-size: 1rem;
+}
+.hubStatus {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  text-transform: capitalize;
+}
+.hubTurn {
+  font-size: 0.875rem;
+}
+.hubActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.hubActions > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-touch);
+  margin: 0;
+}
+.stack .hubIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-touch);
+  padding: 0;
+}
+.hubIcon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.hubAlerts {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.hubAlerts summary {
+  cursor: pointer;
+  padding-block: var(--space-1);
+}
+.hubAlerts ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.hubSection {
+  gap: var(--space-2);
+}
+.hubSection > h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}

@@ -1,6 +1,14 @@
 import { NotificationTestButton } from "../../notifications/NotificationControls";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Ban, Filter, ListPlus } from "lucide-react";
+import {
+  Check,
+  Plus,
+  Ban,
+  Filter,
+  ListPlus,
+  Bell,
+  BellRing,
+} from "lucide-react";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
 import { FloatingField } from "../../../components/FloatingField/FloatingField";
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
@@ -258,9 +266,11 @@ export function DraftBanner({
 function NotificationSettings({
   draft,
   managerId,
+  compact = false,
 }: {
   draft: Draft;
   managerId: string;
+  compact?: boolean;
 }) {
   const { session } = useAppState();
   const admin = Boolean(session?.isAdmin || session?.manager?.isAdmin);
@@ -288,10 +298,21 @@ function NotificationSettings({
   if (!draft.participants.some((manager) => manager.id === managerId) && !admin)
     return null;
   const on = draft.preference.enabled && draft.preference.push && deviceEnabled;
+  const label = checkingDevice
+    ? "Checking alerts…"
+    : pushBusy || mutation.isPending
+      ? "Saving…"
+      : on
+        ? "Turn off device alerts"
+        : "Enable device alerts";
   return (
     <div className={styles.alertControl}>
       <button
         type="button"
+        className={compact ? styles.hubIcon : undefined}
+        aria-label={label}
+        title={label}
+        aria-pressed={on}
         disabled={mutation.isPending || pushBusy || checkingDevice}
         onClick={async () => {
           setPushError("");
@@ -317,13 +338,15 @@ function NotificationSettings({
           }
         }}
       >
-        {checkingDevice
-          ? "Checking alerts…"
-          : pushBusy || mutation.isPending
-            ? "Saving…"
-            : on
-              ? "Turn off device alerts"
-              : "Enable device alerts"}
+        {compact ? (
+          on ? (
+            <BellRing aria-hidden="true" />
+          ) : (
+            <Bell aria-hidden="true" />
+          )
+        ) : (
+          label
+        )}
       </button>
       <NotificationTestButton topic="league-drafts" label="draft alerts" />
       {(pushError || mutation.error) && (
@@ -1881,7 +1904,7 @@ export function LeagueDraftHubCard() {
   );
   return (
     <section
-      className={`manager-hub-card ${styles.stack}`}
+      className={`manager-hub-card ${styles.stack} ${styles.hubSection}`}
       aria-label="League drafts"
     >
       <h2>League Drafts</h2>
@@ -1904,46 +1927,69 @@ export function LeagueDraftHubCard() {
           const next = draft.schedule
             .slice(draft.picks.length)
             .find((pick) => pick.managerId === query.managerId);
+          const context = `${draft.league === "fantasy-office" ? "Fantasy Office" : "World Cup"} ${draft.year}`;
+          const alerts = [
+            ...new Map(
+              draft.notifications.map((event) => [
+                `${event.title.trim()}\u0000${event.body.trim()}`,
+                event,
+              ]),
+            ).values(),
+          ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
           return (
-            <article className={styles.panel} key={draft.id}>
-              <h3>{draft.name}</h3>
-              <p>
-                2027 ·{" "}
-                {draft.league === "fantasy-office"
-                  ? "Fantasy Office"
-                  : "World Cup"}{" "}
-                · {draft.status}
-              </p>
-              <p>
-                {draft.status === "active"
-                  ? next?.number === draft.picks.length + 1
-                    ? `Your turn · pick #${next.number}`
-                    : next
-                      ? `Your next pick is #${next.number} — ${next.number - draft.picks.length - 1} selections before you.`
-                      : "No remaining selections for you."
-                  : draft.status === "published"
-                    ? "Waiting for the admin to start."
-                    : draft.reason}
-              </p>
-              <a className="action-button" href={draftLink(draft)}>
-                Open draft
-              </a>
-              {admin && reviewCount > 0 && (
-                <p>
-                  <a
-                    href={`#${draft.league}-${draft.year}-manage?draft=${draft.id}`}
-                  >
-                    {reviewCount} unlisted{" "}
-                    {reviewCount === 1 ? "pick needs" : "picks need"} review
-                  </a>
+            <article className={styles.hubDraft} key={draft.id}>
+              <header className={styles.hubHeading}>
+                <h3>{draft.name}</h3>
+                <span className={styles.hubStatus}>{draft.status}</span>
+              </header>
+              {optionKey(draft.name) !== optionKey(context) && (
+                <p className={styles.muted}>{context}</p>
+              )}
+              {(draft.status === "active" ||
+                draft.status === "published" ||
+                draft.reason) && (
+                <p className={styles.hubTurn}>
+                  {draft.status === "active"
+                    ? next?.number === draft.picks.length + 1
+                      ? `Your turn · pick #${next.number}`
+                      : next
+                        ? `Your next pick is #${next.number} — ${next.number - draft.picks.length - 1} selections before you.`
+                        : "No remaining selections for you."
+                    : draft.status === "published"
+                      ? "Waiting for the admin to start."
+                      : draft.reason}
                 </p>
               )}
-              <NotificationSettings draft={draft} managerId={query.managerId} />
-              {draft.notifications.map((event) => (
-                <p key={event.id}>
-                  {event.title}: {event.body}
-                </p>
-              ))}
+              <div className={styles.hubActions}>
+                <a className="action-button" href={draftLink(draft)}>
+                  Open draft
+                </a>
+                {admin && reviewCount > 0 && (
+                  <a
+                    href={`#${draft.league}-${draft.year}-manage?draft=${draft.id}`}
+                    aria-label={`${reviewCount} unlisted ${reviewCount === 1 ? "pick needs" : "picks need"} review`}
+                  >
+                    Review ({reviewCount})
+                  </a>
+                )}
+                <NotificationSettings
+                  draft={draft}
+                  managerId={query.managerId}
+                  compact
+                />
+              </div>
+              {alerts.length > 0 && (
+                <details className={styles.hubAlerts}>
+                  <summary>Alerts ({alerts.length})</summary>
+                  <ul>
+                    {alerts.map((event) => (
+                      <li key={event.id}>
+                        {event.title}: {event.body}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </article>
           );
         })

@@ -587,3 +587,115 @@ test("a manager saves a movie once and drafts it directly from Fantasy Office Dr
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 });
+
+test("admin Hub draft summary stays compact with separated controls and unique collapsed alerts", async ({
+  page,
+}) => {
+  const base = fixture();
+  const turnBody = "Fantasy Office 2027: round 3, pick #5.";
+  const state = {
+    ...base,
+    name: "Fantasy Office 2027",
+    picks: base.schedule.slice(0, 4).map((pick, index) => ({
+      ...pick,
+      optionId: `movie-${index}`,
+      optionName: `Test Movie ${index}`,
+      requestId: `picked-${index}`,
+      at: "2026-10-21T09:00:00Z",
+    })),
+    notifications: [
+      {
+        id: "start",
+        title: "Draft started",
+        body: "Fantasy Office 2027",
+        createdAt: "2026-10-21T09:00:00Z",
+      },
+      {
+        id: "turn-1",
+        title: "Your turn to draft",
+        body: turnBody,
+        createdAt: "2026-10-21T09:01:00Z",
+      },
+      {
+        id: "turn-2",
+        title: "Your turn to draft",
+        body: turnBody,
+        createdAt: "2026-10-21T09:02:00Z",
+      },
+    ],
+  };
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "boxThisLapManagerSession",
+      JSON.stringify({
+        managerId: "6",
+        isAdmin: true,
+        manager: { id: "6", displayName: "Wyatt", isAdmin: true },
+        rankingAuth: {
+          accessExpiresAt: "2099-01-01T00:00:00Z",
+          accessToken: "admin-token",
+        },
+      }),
+    ),
+  );
+  await page.route(
+    "https://box-this-lap-rankings.boxthislap.workers.dev/**",
+    (route) =>
+      route.fulfill({
+        json: {
+          ok: true,
+          managers: participants.map((p) => ({
+            ...p,
+            name: p.id === "6" ? "Wyatt" : p.name,
+            active: true,
+          })),
+          sheets: [],
+          teams: [],
+          matchIds: [],
+        },
+      }),
+  );
+  await page.route(
+    "https://box-this-lap-league-drafts-dev.boxthislap.workers.dev/**",
+    (route) => route.fulfill({ json: { ok: true, drafts: [state] } }),
+  );
+  await page.goto("/#manager-hub", { waitUntil: "domcontentloaded" });
+  const hub = page.getByRole("region", { name: "League drafts", exact: true });
+  const card = hub.locator("article").first();
+  await expect(
+    card.getByRole("heading", { name: "Fantasy Office 2027", exact: true }),
+  ).toBeVisible();
+  await expect(
+    card.getByText("Your turn · pick #5", { exact: true }),
+  ).toBeVisible();
+  const open = card.getByRole("link", { name: "Open draft", exact: true });
+  const alerts = card.getByRole("button", {
+    name: "Enable device alerts",
+    exact: true,
+  });
+  await expect(alerts).toBeEnabled();
+  const a = await open.boundingBox(),
+    b = await alerts.boundingBox();
+  if (!a || !b) throw new Error("Draft controls must be visible.");
+  expect(
+    a.x + a.width <= b.x ||
+      b.x + b.width <= a.x ||
+      a.y + a.height <= b.y ||
+      b.y + b.height <= a.y,
+  ).toBe(true);
+  expect(await heightOf(card)).toBeLessThan(220);
+  await expect(card.locator("details")).not.toHaveAttribute("open");
+  const screenshotStyle = await page.addStyleTag({
+    content: ".site-header { visibility: hidden !important; }",
+  });
+  await hub.screenshot({ path: test.info().outputPath("compact-hub.png") });
+  await screenshotStyle.evaluate((element) => element.remove());
+  await card.locator("summary").filter({ hasText: "Alerts (2)" }).click();
+  await expect(card.getByRole("listitem")).toHaveCount(2);
+  await expect(
+    card.getByText(`Your turn to draft: ${turnBody}`, { exact: true }),
+  ).toHaveCount(1);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
+});

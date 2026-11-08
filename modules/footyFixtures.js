@@ -19,7 +19,8 @@ export function isFootyFriendlyFixture(fixture = {}) {
   if (typeof fixture.isFriendly === "boolean") return fixture.isFriendly;
   return (
     FRIENDLY_COMPETITION_IDS.has(String(fixture.leagueId || "").trim()) ||
-    FRIENDLY_COMPETITION_NAMES.has(normalizeLookupName(fixture.league))
+    FRIENDLY_COMPETITION_NAMES.has(normalizeLookupName(fixture.league)) ||
+    /\bfriendl(?:y|ies)\b/.test(normalizeLookupName(fixture.league))
   );
 }
 
@@ -194,6 +195,7 @@ export function isFootyFixtureMissingDetails(
   now = Date.now(),
 ) {
   if (
+    isFootyFriendlyFixture(fixture) ||
     getFootyFixtureComparableTime(fixture) > now ||
     !isFootyFixturePast(fixture, now) ||
     ["cancelled", "canceled", "suspended", "postponed"].includes(

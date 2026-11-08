@@ -54,4 +54,4 @@
 ## Manual Followed Match Notes
 
 - Automatic note sync excludes the live default/admin followed-team selection, using canonical team IDs. Both workflows share the client filter; the Worker independently enforces it and resolves older payloads through the published schedule. Selection failures stop automatic writes; unknown fixtures are skipped.
-- Missing Match Notes and its notification show past followed matches only while all saved note fields are empty. Any saved note data, including a zero score, excludes the match. Do not erase existing notes when changing automation policy.
+- Missing Match Notes and its notification exclude friendlies and show past competitive followed matches only while all saved note fields are empty. Any saved note data, including a zero score, excludes the match. Do not erase existing notes when changing automation policy.

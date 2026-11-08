@@ -164,3 +164,26 @@ test("sync uses the live followed selection and posts only unfollowed results", 
   );
   assert.equal(wrote, false);
 });
+
+test("Missing Match Notes excludes all friendlies even without saved notes", () => {
+  const fixture = { date: "2020-01-01", homeTeamId: "a", awayTeamId: "b" };
+  for (const metadata of [
+    { isFriendly: true },
+    { league: "MLS Preseason Friendlies" },
+    { league: "International Friendly" },
+    { league: "Club Friendly" },
+    { leagueId: "4569" },
+  ]) {
+    assert.equal(
+      isFootyFixtureMissingDetails({ ...fixture, ...metadata }, ["a", "b"]),
+      false,
+    );
+  }
+  assert.equal(
+    isFootyFixtureMissingDetails(
+      { ...fixture, league: "MLS - Regular Season" },
+      ["a"],
+    ),
+    true,
+  );
+});

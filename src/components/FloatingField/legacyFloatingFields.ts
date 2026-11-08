@@ -17,8 +17,16 @@ export function enhanceLegacyFloatingFields(root: ParentNode) {
         ? (control.parentElement as HTMLLabelElement)
         : null;
     const caption = label?.querySelector(":scope > span");
+    const textNodes = Array.from(label?.childNodes || []).filter(
+      (node) => node.nodeType === Node.TEXT_NODE,
+    );
+    const textLabel = textNodes
+      .map((node) => node.textContent)
+      .join("")
+      .trim();
     const captionText =
       caption?.textContent?.trim() ||
+      textLabel ||
       control.getAttribute("aria-label") ||
       control.getAttribute("placeholder") ||
       control.getAttribute("title") ||
@@ -47,6 +55,7 @@ export function enhanceLegacyFloatingFields(root: ParentNode) {
       floatingLabel.textContent = captionText;
       label.prepend(floatingLabel);
     }
+    for (const node of textNodes) node.remove();
   }
 }
 

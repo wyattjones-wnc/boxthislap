@@ -80,10 +80,25 @@ export default {
     }
   },
 
-  async scheduled(_controller, env, ctx) {
+  async scheduled(controller, env, ctx) {
     ctx.waitUntil(sendDueFootyAlerts(env));
+    ctx.waitUntil(maybeRefreshMatchResults(env, controller.scheduledTime));
   },
 };
+
+export async function maybeRefreshMatchResults(env, scheduledTime = Date.now()) {
+  const now = new Date(scheduledTime);
+  // Four attempts at most; successful dispatch is deduplicated for the UTC day.
+  // Outside this window the existing 15-minute notification tick has no extra IO.
+  const minute = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (minute < 630 || minute > 675) return false;
+  const key = `footy-results-refresh:${now.toISOString().slice(0, 10)}`;
+  if (await env.FOOTY_PUSH_KV.get(key)) return false;
+  if (!env.RESULT_REFRESH) throw new Error("Result refresh service binding is missing.");
+  await env.RESULT_REFRESH.dispatch();
+  await env.FOOTY_PUSH_KV.put(key, "dispatched", { expirationTtl: 172800 });
+  return true;
+}
 
 export async function sendTestNotification(request, env, send = sendEmptyWebPush) {
   assertEnv(env, ["FOOTY_PUSH_KV", "AUTH_SECRET"]);

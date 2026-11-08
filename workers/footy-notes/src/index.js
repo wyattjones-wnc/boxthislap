@@ -133,6 +133,12 @@ export default {
         return json({ ok: true, player }, 200, cors);
       }
 
+      if (request.method === "POST" && url.pathname === "/api/match-notes/results/sync") {
+        const token = String(env.RESULTS_SYNC_TOKEN || env.ROSTER_SYNC_TOKEN || "");
+        if (!token || request.headers.get("X-Results-Sync-Token") !== token) throw httpError(401, "Result synchronization is not authorized.");
+        return json({ ok: true, notes: await syncMatchResults(env, await readBody(request)) }, 200, cors);
+      }
+
       if (request.method === "GET" && url.pathname === "/api/match-notes") {
         return json({ ok: true, notes: await listMatchNotes(env) }, 200, cors);
       }
@@ -1035,6 +1041,49 @@ function parsePerformanceId(value) {
   }
   if (!id || id.length > 100) throw httpError(400, "Performance ID is invalid.");
   return id;
+}
+
+export async function dispatchResultRefresh(env, fetchImpl = fetch) {
+  if (!env.GITHUB_ACTIONS_TOKEN || !env.GITHUB_REPOSITORY) throw new Error("Overnight result refresh is not configured.");
+  const response = await fetchImpl(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions/workflows/update-footy-schedule.yml/dispatches`, {
+    method: "POST",
+    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${env.GITHUB_ACTIONS_TOKEN}`, "Content-Type": "application/json", "User-Agent": "box-this-lap-footy-results" },
+    body: JSON.stringify({ ref: env.GITHUB_RESULTS_REF || "dev" }),
+  });
+  if (!response.ok) throw new Error(`Overnight result refresh dispatch failed (${response.status}).`);
+  console.log("Dispatched overnight Footy schedule and result refresh.");
+}
+
+export async function syncMatchResults(env, body) {
+  if (!Array.isArray(body.results) || body.results.length > 20) throw httpError(400, "Expected up to 20 results.");
+  const results = body.results.map((result) => {
+    const matchId = parseMatchId(result.matchId);
+    for (const score of [result.homeScore, result.awayScore]) {
+      if (score === null || score === undefined || !/^\d{1,3}$/.test(String(score))) throw httpError(400, "Final scores must be nonnegative integers.");
+    }
+    return { matchId, homeScore: String(result.homeScore), awayScore: String(result.awayScore) };
+  });
+  const notes = [];
+  for (const result of results) {
+    // Both statements run in one transaction. SQL fills only blanks in the current
+    // row, so a concurrent manual edit cannot be replaced by a stale snapshot.
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO footy_match_notes (match_id, home_score, away_score, revision, updated_by)
+        VALUES (?, ?, ?, 1, 'results-sync')
+        ON CONFLICT(match_id) DO UPDATE SET
+          home_score = CASE WHEN footy_match_notes.home_score = '' THEN excluded.home_score ELSE footy_match_notes.home_score END,
+          away_score = CASE WHEN footy_match_notes.away_score = '' THEN excluded.away_score ELSE footy_match_notes.away_score END,
+          revision = footy_match_notes.revision + 1, updated_at = CURRENT_TIMESTAMP, updated_by = 'results-sync'
+        WHERE footy_match_notes.home_score = '' OR footy_match_notes.away_score = ''`)
+        .bind(result.matchId, result.homeScore, result.awayScore),
+      env.DB.prepare(`INSERT INTO footy_match_note_history
+        (match_id, revision, home_score, away_score, kit, follow_goal_assists, opponent_goal_assists, note, highlight_link, changed_by)
+        SELECT match_id, revision, home_score, away_score, kit, follow_goal_assists, opponent_goal_assists, note, highlight_link, updated_by
+        FROM footy_match_notes WHERE match_id = ? AND changes() > 0`).bind(result.matchId),
+    ]);
+    notes.push(await getMatchNote(env, result.matchId));
+  }
+  return notes;
 }
 
 async function listMatchNotes(env) {

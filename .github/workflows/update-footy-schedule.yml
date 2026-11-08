@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "17 10 * * *"
   workflow_dispatch:
+    inputs:
+      results_only:
+        description: Reconcile missing results without refreshing fixture lists
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -25,22 +30,44 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Verify football-data.org token
+      - name: Verify provider and result-sync access
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          FOOTY_RESULTS_SYNC_ENDPOINT: ${{ secrets.FOOTY_RESULTS_SYNC_ENDPOINT || 'https://box-this-lap-footy-notes.boxthislap.workers.dev/api/match-notes/results/sync' }}
+          FOOTY_RESULTS_SYNC_TOKEN: ${{ secrets.FOOTY_RESULTS_SYNC_TOKEN || secrets.FOOTY_ROSTER_SYNC_TOKEN }}
         run: |
+          if [ -z "$FOOTY_RESULTS_SYNC_ENDPOINT" ] || [ -z "$FOOTY_RESULTS_SYNC_TOKEN" ]; then
+            echo "::error::Footy results sync endpoint and token must be configured."
+            exit 1
+          fi
           if [ -z "$FOOTBALL_DATA_API_KEY" ]; then
             echo "::error::FOOTBALL_DATA_API_KEY is not available to this workflow run."
             exit 1
           fi
+          node --input-type=module <<'NODE'
+          const response = await fetch(process.env.FOOTY_RESULTS_SYNC_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Results-Sync-Token": process.env.FOOTY_RESULTS_SYNC_TOKEN },
+            body: JSON.stringify({ results: [] }),
+          });
+          if (!response.ok || !(await response.json()).ok) throw new Error(`Result sync authentication failed (${response.status}).`);
+          console.log("Result sync authentication verified.");
+          NODE
 
       - name: Update cached footy schedule
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
           FOOTY_VERIFY_FOOTBALL_DATA_TEAMS: "1"
           FOOTY_API_REFRESH: "1"
+          FOOTY_RESULTS_SYNC_ENDPOINT: ${{ secrets.FOOTY_RESULTS_SYNC_ENDPOINT || 'https://box-this-lap-footy-notes.boxthislap.workers.dev/api/match-notes/results/sync' }}
+          FOOTY_RESULTS_SYNC_TOKEN: ${{ secrets.FOOTY_RESULTS_SYNC_TOKEN || secrets.FOOTY_ROSTER_SYNC_TOKEN }}
           FOOTY_MATCH_SYNC_ENDPOINT: ${{ secrets.FOOTY_MATCH_SYNC_ENDPOINT }}
-        run: node scripts/update-footy-schedule.mjs
+        run: |
+          if [ "${{ inputs.results_only }}" = "true" ]; then
+            node scripts/sync-footy-results.mjs
+          else
+            node scripts/update-footy-schedule.mjs
+          fi
 
       - name: Commit updated schedule
         id: commit-updated-schedule

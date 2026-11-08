@@ -15,6 +15,43 @@ export function getFootyNotificationFixtures(schedule = {}) {
   return unique.map((record) => record.fixture);
 }
 
+// Apply after team filters so either team's own schedule retains its perspective.
+export function deduplicateFootyFixtureCards(fixtures = []) {
+  const records = [];
+  const byIdentity = new Map();
+  for (const fixture of fixtures) {
+    const identities = getFootyFixtureIdentities(fixture);
+    const existing = identities
+      .map((identity) => byIdentity.get(identity))
+      .find(Boolean);
+    const record = existing || {
+      fixture: { ...fixture },
+      teamIds: new Set(),
+      teamNames: new Set(),
+    };
+    if (!existing) records.push(record);
+    if (fixture.teamId) record.teamIds.add(String(fixture.teamId));
+    if (fixture.teamName) record.teamNames.add(fixture.teamName);
+    if (fixture.isHome && fixture.teamBadge)
+      record.fixture.followedHomeBadge ||= fixture.teamBadge;
+    if (fixture.isHome === false && fixture.teamBadge)
+      record.fixture.followedAwayBadge ||= fixture.teamBadge;
+    if (!record.fixture.matchNote && fixture.matchNote)
+      record.fixture.matchNote = fixture.matchNote;
+    record.fixture.sourceIds = {
+      ...fixture.sourceIds,
+      ...record.fixture.sourceIds,
+    };
+    identities.forEach((identity) => byIdentity.set(identity, record));
+  }
+  return records.map(({ fixture, teamIds, teamNames }) => ({
+    ...fixture,
+    followedTeamIds: [...teamIds],
+    followedTeamNames:
+      teamNames.size > 1 ? [...teamNames] : fixture.followedTeamNames,
+  }));
+}
+
 export function getFootyFixtureSourceIdentities(fixture = {}) {
   const sourceIds = fixture.sourceIds && typeof fixture.sourceIds === "object" && !Array.isArray(fixture.sourceIds)
     ? fixture.sourceIds

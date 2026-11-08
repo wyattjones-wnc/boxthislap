@@ -1,3 +1,5 @@
+import { reconcileFootyResults } from "./footy-result-reconciliation.mjs";
+import { finalFootballDataResult, resultScores, syncFinalResults } from "./footy-results.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -205,7 +207,7 @@ async function main() {
 
   assertRequiredProviderConfiguration(activeTeams);
 
-  const dateFrom = formatDate(new Date());
+  const dateFrom = formatDate(addDays(new Date(), -30));
   const dateTo = formatDate(addDays(new Date(), LOOKAHEAD_DAYS));
   const teams = [];
   const fixtures = [];
@@ -342,6 +344,23 @@ async function main() {
     }
   }
   const teamCatalog = attachCanonicalFootyTeams({ competitionSchedules, teamSchedules });
+  const resultReconciliation = await reconcileFootyResults({
+    schedules: [...competitionSchedules, ...teamSchedules], generatedAt,
+    loadJson: async (url) => JSON.parse(await loadText(url, { extension: "json", fresh: true })),
+  });
+  console.log(`Reconciled ${resultReconciliation.resolved} missing provider results.`);
+  if (process.env.FOOTY_RESULTS_SYNC_ENDPOINT || process.env.FOOTY_RESULTS_SYNC_TOKEN) {
+    const fixtures = [...teamSchedules, ...competitionSchedules].flatMap((schedule) => schedule.fixtures || []);
+    const synced = await syncFinalResults(fixtures, {
+      endpoint: process.env.FOOTY_RESULTS_SYNC_ENDPOINT,
+      token: process.env.FOOTY_RESULTS_SYNC_TOKEN,
+    });
+    const notesById = new Map(synced.map((note) => [note.matchId, note]));
+    for (const fixture of fixtures) {
+      if (notesById.has(fixture.matchId)) fixture.matchNote = notesById.get(fixture.matchId);
+    }
+    console.log(`Synchronized final results for ${synced.length} match notes.`);
+  }
   const rosterProviderIndex = buildRosterProviderIndex({ competitionSchedules, teamCatalog, teamSchedules });
   for (const team of teamCatalog) team.providerTeamIds = getRosterProviderIds(rosterProviderIndex, team);
   const footyMatchSync = await syncFootyMatchesToSheet(footyMatchRegistry.rows, { generatedAt });
@@ -548,6 +567,7 @@ function normalizeFootballDataMatch(match, team) {
     sourceIds: buildSourceIds(PRIMARY_PROVIDER_NAME, match.id),
     sources: [PRIMARY_PROVIDER_NAME],
     status: match.status || "",
+    finalResult: finalFootballDataResult(match),
     teamBadge: team.badge || "",
     teamId: team.id,
     teamName: team.name,
@@ -757,6 +777,7 @@ function normalizeFootballDataCompetitionMatch(match) {
     sourceIds: buildSourceIds(PRIMARY_PROVIDER_NAME, match.id),
     sources: [PRIMARY_PROVIDER_NAME],
     status: match.status || "",
+    finalResult: finalFootballDataResult(match),
     time: timestamp.slice(11, 19),
     timestamp,
     venue: match.venue || "",
@@ -793,6 +814,16 @@ async function loadSportDbSchedules({ dateFrom, dateTo, leagueRowsByTeamId, team
       fixtures.push(...matchingTeamEvents.map((event) => normalizeSportDbMatch(event, team, sportDbTeamId, "team-upcoming")));
     } catch (error) {
       errors.push(`${team.name}: Unable to load ${SPORTDB_PROVIDER_NAME} upcoming team matches: ${error.message}`);
+    }
+
+    try {
+      const query = new URLSearchParams({ id: sportDbTeamId });
+      const recent = JSON.parse(await loadText(`${SPORTDB_BASE_URL}/eventslast.php?${query}`, { extension: "json" }));
+      fixtures.push(...(recent.results || recent.events || [])
+        .filter((event) => isSportDbTeamEvent(event, sportDbTeamId, team) && isSportDbEventInRange(event, dateFrom, dateTo))
+        .map((event) => normalizeSportDbMatch(event, team, sportDbTeamId, "team-recent")));
+    } catch (error) {
+      errors.push(`${team.name}: Unable to load recent ${SPORTDB_PROVIDER_NAME} results: ${error.message}`);
     }
 
     for (const leagueRow of sportDbLeagueRows) {
@@ -1165,6 +1196,7 @@ function normalizeSportDbMatch(event, team, sportDbTeamId, detailSource = "") {
     sources: [SPORTDB_PROVIDER_NAME],
     sourceDetail: detailSource,
     status: normalizeSportDbStatus(event),
+    finalResult: resultScores(event.intHomeScore, event.intAwayScore),
     teamBadge: team.badge || "",
     teamId: team.id,
     teamName: team.name,
@@ -1206,6 +1238,10 @@ function normalizeArsenalMatch(match, team, arsenalTeamId) {
     sources: [ARSENAL_PROVIDER_NAME],
     sourceDetail: "monthly-graphql",
     status: status || "Fixture",
+    finalResult: match.liveData?.matchDetails?.scores?.pen?.home != null ? null : resultScores(
+      match.liveData?.matchDetails?.scores?.total?.home,
+      match.liveData?.matchDetails?.scores?.total?.away,
+    ),
     teamBadge: team.badge || "",
     teamId: team.id,
     teamName: team.name,
@@ -3092,7 +3128,7 @@ function isSportDbTeamEvent(event, sportDbTeamId, team) {
 function isSportDbEventInRange(event, dateFrom, dateTo) {
   const eventDate = String(event.dateEvent || "").slice(0, 10);
 
-  return eventDate >= dateFrom && eventDate <= dateTo && !isPastSportDbStatus(event);
+  return eventDate >= dateFrom && eventDate <= dateTo;
 }
 
 function isArsenalTeamMatch(match, arsenalTeamId, team) {
@@ -3107,9 +3143,7 @@ function isArsenalTeamMatch(match, arsenalTeamId, team) {
 
 function isArsenalMatchInRange(match, dateFrom, dateTo) {
   const matchDate = String(match.matchInfo?.localDate || match.matchInfo?.date || "").slice(0, 10);
-  const status = normalizeText(match.liveData?.matchDetails?.matchStatus || "");
-
-  return matchDate >= dateFrom && matchDate <= dateTo && !["played", "full time", "ft", "post match"].includes(status);
+  return matchDate >= dateFrom && matchDate <= dateTo;
 }
 
 function isCalendarMatchEvent(event, team) {

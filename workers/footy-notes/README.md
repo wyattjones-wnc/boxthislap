@@ -53,3 +53,46 @@ npx wrangler deploy
 ```
 
 Use a fine-grained GitHub token limited to this repository with Actions write access. Store the same media sync token as repository secret `FOOTY_MEDIA_SYNC_TOKEN`, and set repository secret `FOOTY_MEDIA_SYNC_ENDPOINT` to this Worker's public origin. The initial and subsequent scans examine the latest 30 days, so reruns are safe and can fill galleries that were incomplete earlier.
+
+### Overnight result sync
+
+`POST /api/match-notes/results/sync` accepts `{ results: [{ matchId, homeScore, awayScore }] }`
+(up to 20 results) with `X-Results-Sync-Token` matching the Worker secret
+`RESULTS_SYNC_TOKEN`, or the existing `ROSTER_SYNC_TOKEN` when no dedicated result token is set. It fills only missing scores, preserves all manual fields,
+and records changed revisions in immutable history. Repeated results are no-ops.
+Scorer, assister, and kit data always remain manual.
+
+The existing Footy Push timer calls the private `ResultRefreshScheduler` service
+entrypoint daily at 10:30 UTC. Footy Notes then dispatches
+`update-footy-schedule.yml` on `dev` using the existing `GITHUB_ACTIONS_TOKEN`.
+This works while GitHub's native scheduled workflow still runs the default
+branch's older code. `GITHUB_RESULTS_REF` selects the branch. Failed dispatches
+retry at 10:45, 11:00, and 11:15; a KV marker deduplicates successful dispatches.
+This needs no additional cron slot: daily overhead is at most four KV reads,
+one KV write, one private service call and one GitHub API call on success, with
+no D1 work in the timer. Deploy Footy Notes before deploying Footy Push so the
+private service entrypoint exists. The public Worker API cannot dispatch jobs.
+
+The workflow uses the existing `FOOTY_ROSTER_SYNC_TOKEN` and the public Worker
+result endpoint by default. No new secrets are required. Optional dedicated
+`RESULTS_SYNC_TOKEN` (Worker) and matching `FOOTY_RESULTS_SYNC_TOKEN` (Actions)
+can override the shared automation token; `FOOTY_RESULTS_SYNC_ENDPOINT` can
+override the endpoint. Results are sent in batches of 20 to stay within the
+free Worker's 50 subrequest limit (at most 40 D1 calls per sync request).
+The refresh includes a 30-day lookback and recent TheSportsDB team results.
+Results without an unambiguous completed score remain unresolved for manual entry.
+Dev and production share these notes; reruns from either branch are safe.
+
+Missing completed results are reconciled dynamically against ESPN league/date
+scoreboards, then exact TheSportsDB event IDs where available. This includes
+calendar-fed MLS fixtures and cup games. A unique home/away/date match and an
+explicit completed status are required. Match goals are saved separately from
+provider shootout totals, so penalty-decided games can retain a drawn score.
+The fallback covers the latest 30 days and deduplicates league/date and event
+requests. Unavailable or ambiguous results remain unresolved; no result is
+inferred from elapsed time.
+
+For a manual repair, dispatch `update-footy-schedule.yml` on `dev` with
+`results_only=true`. This uses the same reconciliation code as the overnight
+refresh, skips fixture-list rebuilding, and only syncs newly resolved results.
+Existing scores and all manually curated fields remain protected.

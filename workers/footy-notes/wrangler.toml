@@ -1,5 +1,5 @@
 name = "box-this-lap-footy-notes"
-main = "src/index.js"
+main = "src/entry.js"
 compatibility_date = "2026-08-22"
 
 [vars]
@@ -7,6 +7,7 @@ ALLOWED_ORIGINS = "https://wyattjones-wnc.github.io,http://localhost:8000,http:/
 ADMIN_MANAGER_IDS = "6"
 GITHUB_REPOSITORY = "wyattjones-wnc/boxthislap"
 GITHUB_MEDIA_REF = "dev"
+GITHUB_RESULTS_REF = "dev"
 GITHUB_MEDIA_WORKFLOW = "update-footy-media.yml"
 
 [[services]]

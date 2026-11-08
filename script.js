@@ -6,6 +6,7 @@ import { loadJson, loadPlayers, loadSheet, loadSheetText } from "./dataLoader.js
 import { openContainedDialog } from "./modules/dialogs/containDialog.js?v=202609130510";
 import {
   buildFootyNextItemDefaults,
+  deduplicateFootyFixtureCards,
   findFootyFixtureBySharedIdentity,
   getFootyFixtureSourceIdentities,
   getFootyNotificationFixtures,
@@ -25,7 +26,7 @@ import {
   groupFootyFixturesByCalendarWeek,
   hasFootyMatchNoteData,
   isFootyFixtureInDateRange,
-  isFootyFixtureMissingMatchNoteCandidate,
+  isFootyFixtureMissingDetails,
   isFootyFixturePast,
   isFootyFixturePostponed,
   isFootyFixtureStarted,
@@ -1061,7 +1062,7 @@ function renderFootyMissingNotesPage() {
   if (footyMissingNotesSummary) {
     const pageEnd = Math.min(pageStart + pageFixtures.length, visibleFixtures.length);
     footyMissingNotesSummary.textContent = visibleFixtures.length
-      ? `Showing ${pageStart + 1}-${pageEnd} of ${visibleFixtures.length} ${visibleFixtures.length === 1 ? "match" : "matches"} needing notes${hasFilters && visibleFixtures.length !== missingFixtures.length ? ` (${missingFixtures.length} total)` : ""}.`
+      ? `Showing ${pageStart + 1}-${pageEnd} of ${visibleFixtures.length} ${visibleFixtures.length === 1 ? "match" : "matches"} needing match details${hasFilters && visibleFixtures.length !== missingFixtures.length ? ` (${missingFixtures.length} total)` : ""}.`
       : "";
   }
 
@@ -1069,8 +1070,8 @@ function renderFootyMissingNotesPage() {
   footyMissingNotesList.innerHTML = visibleFixtures.length
     ? `<div class="footy-list footy-list--calendar-weeks">${pageFixtures.map(renderFootyFixture).join("")}</div>`
     : `<p class="table-message">${missingFixtures.length && hasFilters
-      ? "No matches needing notes match the current filters."
-      : "All past matches in your followed-team competitions have match notes."}</p>`;
+      ? "No matches needing match details match the current filters."
+      : "All past matches for your followed teams have completed match details."}</p>`;
 
   if (footyMissingNotesPagination) {
     footyMissingNotesPagination.hidden = visibleFixtures.length <= FOOTY_MISSING_NOTES_PAGE_SIZE;
@@ -1120,10 +1121,11 @@ function getFootyMissingNotesFixtures(schedule = {}) {
 
   return [...fixturesByMatch.values()]
     .filter((fixture) => (
-      isFootyFixtureMissingMatchNoteCandidate(fixture) &&
-      !isFootyFriendlyFixture(fixture) &&
-      getFootyCanonicalCompetition(fixture.league).key !== "leagues cup" &&
-      getFootyCanonicalCompetition(fixture.league).key !== "u.s. open cup"
+      isFootyFixtureMissingDetails(
+        fixture,
+        followedTeamsController.getFollowedTeamIds(),
+        getFootyFixtureSides(getFootyFixtureByMatchId(fixture.matchId) || fixture).followed,
+      )
     ));
 }
 
@@ -3118,7 +3120,7 @@ function getFilteredFootyFixtures(fixtures) {
   const shouldShowCompetitionPastFixtures = Boolean(footyCompetitionPastFilter?.checked);
   const selectedTeams = getSelectedFootyTeams();
 
-  return fixtures.filter((fixture) => {
+  const filteredFixtures = fixtures.filter((fixture) => {
     if (footyFriendliesFilter && !footyFriendliesFilter.checked && isFootyFriendlyFixture(fixture)) {
       return false;
     }
@@ -3145,6 +3147,7 @@ function getFilteredFootyFixtures(fixtures) {
 
     return getFootyFixtureSearchText(fixture).includes(searchTerm);
   });
+  return deduplicateFootyFixtureCards(filteredFixtures);
 }
 
 function hasActiveFootyFilters() {
@@ -4107,6 +4110,7 @@ function renderFootyMatchNotificationAction(fixture = {}) {
 
 function renderFootyFixture(fixture) {
   const dateLabel = formatFootyFixtureDate(fixture.timestamp || fixture.date);
+  const hasMultipleFollowedTeams = (fixture.followedTeamIds || []).length > 1;
   const sideLabel = fixture.isHome ? "H" : "A";
   const isCompetitionFixture = Boolean(fixture.isCompetitionFixture);
   const scheduleBadge = String(fixture.teamBadge || (fixture.isHome ? fixture.homeBadge : fixture.awayBadge) || "").trim();
@@ -4152,10 +4156,10 @@ function renderFootyFixture(fixture) {
   const followedTeamMarkup = followedTeamLabel
     ? `
       <span class="footy-followed-team-label">${escapeHtml(followedTeamLabel)}</span>
-      <span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>
+      ${hasMultipleFollowedTeams ? "" : `<span class="footy-side-chip" aria-label="${fixture.isHome ? "Home" : "Away"}">${escapeHtml(sideLabel)}</span>`}
     `
     : "";
-  const badgeMarkup = isCompetitionFixture
+  const badgeMarkup = isCompetitionFixture || hasMultipleFollowedTeams
     ? renderFootyCompetitionBadgePair(fixture)
     : `
       <div class="footy-fixture-badge" aria-hidden="true">
@@ -16501,7 +16505,7 @@ function buildFootyMissingNotesWorkflowItems() {
 
   return [{
     actionLabel: "Review matches",
-    description: `${fixtures.length} past ${fixtures.length === 1 ? "match has" : "matches have"} no saved score or match notes.`,
+    description: `${fixtures.length} past ${fixtures.length === 1 ? "match has" : "matches have"} missing kit or scorer details (or awaiting a result).`,
     dueDate: "",
     id: "footy-missing-match-notes",
     priority: "1",

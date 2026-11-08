@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
 import {
   buildFootyNextItemDefaults,
+  deduplicateFootyFixtureCards,
   findFootyFixtureBySharedIdentity,
   getFootyFixtureSourceIdentities,
   getFootyNotificationFixtures,
@@ -68,4 +71,113 @@ test("Next defaults use the displayed Eastern match date and time", () => {
     thing: "Arsenal v Chelsea",
     time: "20:30",
   });
+});
+
+test("combined cards merge followed-team perspectives and retain both badges", () => {
+  const shared = {
+    home: "Home",
+    away: "Away",
+    homeTeamId: "home",
+    awayTeamId: "away",
+    matchId: "shared",
+    sourceIds: { provider: "123" },
+  };
+  const away = {
+    ...shared,
+    teamId: "away",
+    teamName: "Away",
+    isHome: false,
+    teamBadge: "away.svg",
+  };
+  const home = {
+    ...shared,
+    teamId: "home",
+    teamName: "Home",
+    isHome: true,
+    teamBadge: "home.svg",
+    matchNote: { homeScore: "1", awayScore: "0", kit: "away" },
+  };
+  const cards = deduplicateFootyFixtureCards([away, home, away]);
+  assert.equal(cards.length, 1);
+  assert.deepEqual(cards[0].followedTeamIds, ["away", "home"]);
+  assert.deepEqual(cards[0].followedTeamNames, ["Away", "Home"]);
+  assert.equal(cards[0].followedHomeBadge, "home.svg");
+  assert.equal(cards[0].followedAwayBadge, "away.svg");
+  assert.equal(cards[0].matchNote, home.matchNote);
+  assert.equal(away.followedHomeBadge, undefined);
+  assert.equal(deduplicateFootyFixtureCards([home])[0].isHome, true);
+  assert.equal(deduplicateFootyFixtureCards([away])[0].isHome, false);
+});
+
+test("shared source identity merges generated IDs while distinct fixtures stay separate", () => {
+  const first = {
+    matchId: "team-id",
+    teamId: "1",
+    sourceIds: { provider: "123" },
+  };
+  const second = {
+    matchId: "competition-id",
+    teamId: "2",
+    sourceIds: { provider: "123" },
+  };
+  const third = {
+    matchId: "different",
+    teamId: "1",
+    sourceIds: { provider: "456" },
+  };
+  assert.deepEqual(
+    deduplicateFootyFixtureCards([first, second, third]).map(
+      (fixture) => fixture.matchId,
+    ),
+    ["team-id", "different"],
+  );
+});
+
+
+test("combined list deduplicates after team filtering and renders one shared card", () => {
+  const source = readFileSync(new URL("../script.js", import.meta.url), "utf8");
+  const filterSource = source.slice(source.indexOf("function getFilteredFootyFixtures("), source.indexOf("function hasActiveFootyFilters("));
+  const renderSource = source.slice(source.indexOf("function renderFootyFixture("), source.indexOf("function renderFootyCompetitionBadgePair("));
+  let selected = new Set(["home", "away"]);
+  const context = vm.createContext({
+    deduplicateFootyFixtureCards,
+    normalizeLookupName: (value) => String(value).toLowerCase(),
+    footySearchInput: null, footyMatchPeriodFilter: null, footyCompetitionPastFilter: null, footyFriendliesFilter: null,
+    getFootyDateFilterRange: () => null,
+    getSelectedFootyTeams: () => selected,
+    getFootyTeamFilterKey: (name) => name.toLowerCase(),
+    activeFootyScheduleMode: "followed",
+    formatFootyFixtureDate: () => "Date",
+    getFootyLocalTeamBadge: () => "",
+    getFootyFixtureFallbackBadge: () => "",
+    getFootyFixtureTimingLabel: () => "",
+    expandedFootyMatchIds: new Set(),
+    getFootyMatchScore: () => null,
+    getFootyFixtureResultClass: () => "",
+    isFootyFixturePostponed: () => false,
+    shouldShowFootyFixtureVenue: () => false,
+    escapeHtml: String,
+    renderFootyCompetitionBadgePair: () => '<div class="badge-pair"></div>',
+    renderFootyBadgeMarkup: () => "badge",
+    fixtures: [
+      { matchId: "shared", home: "Home", away: "Away", teamId: "home", teamName: "Home", isHome: true },
+      { matchId: "shared", home: "Home", away: "Away", teamId: "away", teamName: "Away", isHome: false },
+    ],
+  });
+  vm.runInContext(filterSource + renderSource, context);
+  const shared = vm.runInContext("getFilteredFootyFixtures(fixtures)", context);
+  assert.equal(shared.length, 1);
+  const markup = vm.runInContext("getFilteredFootyFixtures(fixtures).map(renderFootyFixture).join('')", context);
+  assert.equal((markup.match(/data-footy-match-id=/g) || []).length, 1);
+  assert.match(markup, /Home · Away/);
+  assert.match(markup, /badge-pair/);
+  assert.doesNotMatch(markup, /footy-side-chip/);
+  for (const [team, side] of [["home", "Home"], ["away", "Away"]]) {
+    selected = new Set([team]);
+    const filtered = vm.runInContext("getFilteredFootyFixtures(fixtures)", context);
+    assert.equal(filtered.length, 1);
+    assert.equal(filtered[0].teamId, team);
+    const individual = vm.runInContext("renderFootyFixture(getFilteredFootyFixtures(fixtures)[0])", context);
+    assert.match(individual, new RegExp(`aria-label="${side}"`));
+  }
 });

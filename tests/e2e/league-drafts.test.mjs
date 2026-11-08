@@ -684,17 +684,25 @@ test("admin Hub draft summary stays compact with separated controls and unique c
       b.y + b.height <= a.y,
   ).toBe(true);
   expect(await heightOf(card)).toBeLessThan(220);
-  await expect(card.locator("details")).not.toHaveAttribute("open");
+  await expect(card.locator("details")).toHaveCount(0);
+  await expect(
+    card.getByRole("img", { name: "Draft active", exact: true }),
+  ).toBeVisible();
+  await expect(card.getByText("active", { exact: true })).toHaveCount(0);
+  await expect(
+    card.getByText("Draft started: Fantasy Office 2027", { exact: true }),
+  ).toHaveCount(0);
+  const heading = await card.locator("header").boundingBox();
+  if (!heading) throw new Error("Draft heading must be visible.");
+  expect(heading.height).toBeLessThan(28);
   const screenshotStyle = await page.addStyleTag({
     content: ".site-header { visibility: hidden !important; }",
   });
   await hub.screenshot({ path: test.info().outputPath("compact-hub.png") });
   await screenshotStyle.evaluate((element) => element.remove());
-  await card.locator("summary").filter({ hasText: "Alerts (2)" }).click();
-  await expect(card.getByRole("listitem")).toHaveCount(2);
   await expect(
     card.getByText(`Your turn to draft: ${turnBody}`, { exact: true }),
-  ).toHaveCount(1);
+  ).toHaveCount(0);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));

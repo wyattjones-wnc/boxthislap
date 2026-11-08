@@ -8,6 +8,12 @@ import {
   ListPlus,
   Bell,
   BellRing,
+  CirclePlay,
+  CirclePause,
+  CircleCheck,
+  CircleX,
+  Clock,
+  CircleDashed,
 } from "lucide-react";
 import { ContainedDialog } from "../../../components/ContainedDialog/ContainedDialog";
 import { FloatingField } from "../../../components/FloatingField/FloatingField";
@@ -1928,19 +1934,58 @@ export function LeagueDraftHubCard() {
             .slice(draft.picks.length)
             .find((pick) => pick.managerId === query.managerId);
           const context = `${draft.league === "fantasy-office" ? "Fantasy Office" : "World Cup"} ${draft.year}`;
+          const StatusIcon = {
+            active: CirclePlay,
+            paused: CirclePause,
+            completed: CircleCheck,
+            cancelled: CircleX,
+            published: Clock,
+            setup: CircleDashed,
+          }[draft.status];
+          const summarizedTypes = new Set([
+            "started",
+            "turn",
+            "paused",
+            "resumed",
+            "completed",
+            "cancelled",
+          ]);
+          const summarizedTitles = new Set([
+            "Draft started",
+            "Your turn to draft",
+            "Draft paused",
+            "Draft resumed",
+            "Draft completed",
+            "Draft cancelled",
+          ]);
           const alerts = [
             ...new Map(
-              draft.notifications.map((event) => [
-                `${event.title.trim()}\u0000${event.body.trim()}`,
-                event,
-              ]),
+              draft.notifications
+                .filter(
+                  (event) =>
+                    !summarizedTypes.has(event.type || "") &&
+                    !summarizedTitles.has(event.title.trim()),
+                )
+                .map((event) => [
+                  `${event.title.trim()}\u0000${event.body.trim()}`,
+                  event,
+                ]),
             ).values(),
-          ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          ].sort((a, b) =>
+            (b.createdAt || "").localeCompare(a.createdAt || ""),
+          );
           return (
             <article className={styles.hubDraft} key={draft.id}>
               <header className={styles.hubHeading}>
                 <h3>{draft.name}</h3>
-                <span className={styles.hubStatus}>{draft.status}</span>
+                <StatusIcon
+                  className={styles.hubStatus}
+                  data-state={draft.status}
+                  role="img"
+                  aria-label={`Draft ${draft.status}`}
+                >
+                  <title>{`Draft ${draft.status}`}</title>
+                </StatusIcon>
               </header>
               {optionKey(draft.name) !== optionKey(context) && (
                 <p className={styles.muted}>{context}</p>

@@ -19,7 +19,9 @@ function database() {
     batches,
     prepare(sql) {
       return {
-        bind() {
+        sql,
+        bind(...values) {
+          this.values = values;
           return this;
         },
         async first() {
@@ -186,3 +188,62 @@ test("round fetch retries rate limiting and imports qualifying independently of 
   );
   assert.equal(DB.batches.length, 1);
 });
+
+for (const permanentNumber of [undefined, ""]) {
+  test(`qualifying matches a reserve driver's session number when the profile number is ${permanentNumber === undefined ? "missing" : "empty"}`, async (t) => {
+    // Jolpica's Brazil 2026 result has number 51 but no Driver.permanentNumber.
+    const providerResult = {
+      number: "51",
+      position: "13",
+      Driver: {
+        driverId: "rafael_camara",
+        permanentNumber,
+        code: "CAM",
+        givenName: "Rafael",
+        familyName: "Câmara",
+      },
+      Constructor: { constructorId: "haas", name: "Haas F1 Team" },
+      Q1: "1:32.809",
+      Q2: "1:31.515",
+    };
+    t.mock.method(globalThis, "fetch", async (url) => {
+      if (url.startsWith("https://www.formula1.com/")) {
+        if (url.endsWith("/races")) return officialResponse(url, "08 Nov");
+        return new Response(
+          "<table><tr><td>13</td><td>51</td><td>Rafael Câmara</td><td>Haas F1 Team</td><td>1:32.809</td><td>1:31.515</td><td></td><td>18</td></tr></table>",
+        );
+      }
+      const races = url.endsWith("/qualifying.json")
+        ? [
+            {
+              raceName: "Brazilian Grand Prix",
+              date: "2026-11-08",
+              QualifyingResults: [providerResult],
+            },
+          ]
+        : [];
+      return Response.json({ MRData: { RaceTable: { Races: races } } });
+    });
+    const DB = database();
+    const result = await fetchRound({ DB }, 2026, 20, "admin");
+    assert.equal(result.fetchedCount, 1);
+    assert.equal(result.sessions[0].status, "needs_review");
+    assert.equal(result.sessions[0].resultCount, 1);
+    const statements = DB.batches.flat();
+    const driver = statements.find((statement) =>
+      statement.sql.includes("INSERT INTO f1_drivers"),
+    );
+    assert.equal(driver.values[1], "rafael_camara");
+    assert.equal(driver.values[2], "51");
+    const qualifying = statements.find((statement) =>
+      statement.sql.includes("INSERT INTO f1_session_results"),
+    );
+    assert.equal(qualifying.values[4], 13);
+    assert.equal(qualifying.values[13], "1:31.515");
+    assert.equal(qualifying.values[10], 18);
+    assert.deepEqual(
+      JSON.parse(qualifying.values[20]).provider,
+      JSON.parse(JSON.stringify(providerResult)),
+    );
+  });
+}

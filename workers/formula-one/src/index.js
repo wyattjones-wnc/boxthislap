@@ -2215,7 +2215,7 @@ function normalizeProviderResult(result) {
   const constructor = result.Constructor || {};
   return {
     driverId: clean(driver.driverId, 80),
-    permanentNumber: clean(driver.permanentNumber, 10),
+    permanentNumber: clean(driver.permanentNumber || result.number, 10),
     code: clean(driver.code, 10),
     givenName: clean(driver.givenName, 80),
     familyName: clean(driver.familyName, 80),

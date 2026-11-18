@@ -764,7 +764,13 @@ export default function MatchImagesFeature() {
           <button
             type="button"
             disabled={busy || !feed.pagination.hasMore}
-            onClick={() => setPage((value) => value + 1)}
+            onClick={() => {
+              setPage((value) => value + 1);
+              pageRef.current?.scrollIntoView?.({
+                block: "start",
+                behavior: "instant",
+              });
+            }}
           >
             Next
           </button>

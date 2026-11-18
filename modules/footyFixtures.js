@@ -19,7 +19,8 @@ export function isFootyFriendlyFixture(fixture = {}) {
   if (typeof fixture.isFriendly === "boolean") return fixture.isFriendly;
   return (
     FRIENDLY_COMPETITION_IDS.has(String(fixture.leagueId || "").trim()) ||
-    FRIENDLY_COMPETITION_NAMES.has(normalizeLookupName(fixture.league))
+    FRIENDLY_COMPETITION_NAMES.has(normalizeLookupName(fixture.league)) ||
+    /\bfriendl(?:y|ies)\b/.test(normalizeLookupName(fixture.league))
   );
 }
 
@@ -191,10 +192,10 @@ export function isFootyFixtureMissingMatchNoteCandidate(
 export function isFootyFixtureMissingDetails(
   fixture,
   followedTeamIds,
-  followedSide = fixture.isHome ? "home" : "away",
   now = Date.now(),
 ) {
   if (
+    isFootyFriendlyFixture(fixture) ||
     getFootyFixtureComparableTime(fixture) > now ||
     !isFootyFixturePast(fixture, now) ||
     ["cancelled", "canceled", "suspended", "postponed"].includes(
@@ -203,20 +204,12 @@ export function isFootyFixtureMissingDetails(
   )
     return false;
   const followed = new Set(followedTeamIds.map(String));
-  const sides = ["home", "away"].filter((side) =>
-    followed.has(String(fixture[`${side}TeamId`] || "")),
-  );
-  if (!sides.length) return false;
-  const note = fixture.matchNote || {};
-  if (!String(note.kit || "").trim()) return true;
-  return sides.some((side) => {
-    const score = String(note[`${side}Score`] ?? "").trim();
-    if (!/^\d+$/.test(score)) return true;
-    if (Number(score) === 0) return false;
-    const entries =
-      side === followedSide ? note.followGoalAssists : note.opponentGoalAssists;
-    return !(entries || []).some((entry) => String(entry.scorer || "").trim());
-  });
+  const isFollowed = [
+    fixture.homeTeamId,
+    fixture.awayTeamId,
+    fixture.teamId,
+  ].some((teamId) => teamId && followed.has(String(teamId)));
+  return isFollowed && !hasFootyMatchNoteData(fixture);
 }
 
 export function hasFootyMatchNoteData(fixture) {

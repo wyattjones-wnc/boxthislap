@@ -33,11 +33,16 @@ export function FloatingField({
   const originalLabel = isValidElement<ComponentProps<"span">>(existingLabel)
     ? existingLabel
     : undefined;
+  const textLabel = entries
+    .filter((child) => typeof child === "string" || typeof child === "number")
+    .join("")
+    .trim();
   const caption =
     label ??
     (originalLabel
       ? originalLabel.props.children
-      : control?.props["aria-label"] ||
+      : textLabel ||
+        control?.props["aria-label"] ||
         control?.props.placeholder ||
         control?.props.name);
 
@@ -66,7 +71,12 @@ export function FloatingField({
         <span className="floating-label">{caption}</span>
       )}
       {entries
-        .filter((child) => child !== existingLabel)
+        .filter(
+          (child) =>
+            child !== existingLabel &&
+            typeof child !== "string" &&
+            typeof child !== "number",
+        )
         .map((child) => {
           if (child !== control || !control) return child;
           return cloneElement(control, {

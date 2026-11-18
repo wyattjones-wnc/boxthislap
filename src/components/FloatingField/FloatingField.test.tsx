@@ -11,6 +11,46 @@ import {
 afterEach(cleanup);
 
 describe("shared floating fields", () => {
+  it("uses plain-text captions once and preserves controls through rerenders", () => {
+    const { rerender } = render(
+      <FloatingField>
+        Team
+        <select aria-label="Team" defaultValue="all">
+          <option value="all">All teams</option>
+        </select>
+      </FloatingField>,
+    );
+    const select = screen.getByRole("combobox", { name: "Team" });
+    expect(select.closest("label")?.textContent).toBe("TeamAll teams");
+    rerender(
+      <FloatingField>
+        Sort
+        <select aria-label="Sort seen products" defaultValue="all">
+          <option value="all">All products</option>
+        </select>
+      </FloatingField>,
+    );
+    expect(screen.getByRole("combobox", { name: "Sort seen products" })).toBe(
+      select,
+    );
+    expect(select.closest("label")?.textContent).toBe("SortAll products");
+  });
+
+  it("moves plain-text legacy captions into a single floating label", () => {
+    const root = document.createElement("div");
+    root.innerHTML =
+      '<label>Team<select aria-label="Choose team"><option>All teams</option></select></label><label>Notes<textarea></textarea></label>';
+    const select = root.querySelector("select");
+    enhanceLegacyFloatingFields(root);
+    enhanceLegacyFloatingFields(root);
+    expect(root.querySelector("select")).toBe(select);
+    expect(select?.closest("label")?.textContent).toBe("TeamAll teams");
+    expect(root.querySelector("textarea")?.closest("label")?.textContent).toBe(
+      "Notes",
+    );
+    expect(root.querySelectorAll(".floating-label").length).toBe(2);
+  });
+
   it("keeps the native control, ref, validation, and edits through rerenders", () => {
     const ref = createRef<HTMLInputElement>();
     function Form() {

@@ -89,6 +89,7 @@ export function MerchandiseFeature() {
     () => new Set(),
   );
   const loadSequence = useRef(0);
+  const pageRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     if (route !== "merchandise") return;
@@ -210,7 +211,7 @@ export function MerchandiseFeature() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
       <div className={styles.heading}>
         <div>
           <a
@@ -429,14 +430,22 @@ export function MerchandiseFeature() {
             Previous
           </button>
           <span>Page {page}</span>
-          <button
-            className="action-button"
-            type="button"
-            disabled={!feed.pagination.hasMore || busy}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            Next
-          </button>
+          {feed.pagination.hasMore ? (
+            <button
+              className="action-button"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setPage((value) => value + 1);
+                pageRef.current?.scrollIntoView?.({
+                  block: "start",
+                  behavior: "instant",
+                });
+              }}
+            >
+              Next
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

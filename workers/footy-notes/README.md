@@ -96,3 +96,20 @@ For a manual repair, dispatch `update-footy-schedule.yml` on `dev` with
 `results_only=true`. This uses the same reconciliation code as the overnight
 refresh, skips fixture-list rebuilding, and only syncs newly resolved results.
 Existing scores and all manually curated fields remain protected.
+
+### Followed matches stay manual
+
+Automatic note writes exclude matches involving teams in the default/admin's
+current followed-team selection. The workflow reads that live selection before
+sending results; failure to load it stops writes. The sync Worker independently
+checks the selection through `MANAGER_AUTH`, including requests from older
+workflow versions. New payloads include canonical `homeTeamId` and `awayTeamId`;
+older payloads resolve their match IDs against the published dev schedule
+(cached for five minutes). Unknown matches are skipped, never assumed unfollowed.
+`FOOTY_MANUAL_TEAMS_ENDPOINT` can select another shared-note owner's public
+following endpoint; the default is manager 6, matching the configured admin.
+
+Missing Match Notes and its admin notification include only past followed-team
+matches with no saved note data at all. Any saved score (including zero), kit,
+text, highlight link, or goal/assist entry excludes the match. Existing saved
+notes are retained. Automatic scoring continues for unfollowed competition matches.

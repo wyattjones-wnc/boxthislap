@@ -2,6 +2,36 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+
+test("Match Notes penalty clears and disables for an assister and resets for another entry", () => {
+  const source = readFileSync(new URL("../script.js", import.meta.url), "utf8");
+  const start = source.indexOf("function clearFootyNoteGoalAssistInputs(");
+  const end = source.indexOf("function getFootyNoteGoalAssistBuilder(", start);
+  for (const side of ["follow", "opponent"]) {
+    const fields = {
+      scorer: { value: "Scorer" },
+      assister: { value: "Assister" },
+      minute: { value: "45" },
+      penalty: { checked: true, disabled: false },
+    };
+    const builder = { querySelector: (selector) => fields[selector.match(/field=["']([^"']+)/)[1]] };
+    const context = vm.createContext({ builder, getFootyNoteGoalAssistBuilder: () => builder });
+    vm.runInContext(source.slice(start, end), context);
+    vm.runInContext("syncFootyNotePenaltyInput(builder)", context);
+    assert.equal(fields.penalty.checked, false);
+    assert.equal(fields.penalty.disabled, true);
+    fields.assister.value = "";
+    vm.runInContext("syncFootyNotePenaltyInput(builder)", context);
+    assert.equal(fields.penalty.disabled, false);
+    assert.equal(fields.penalty.checked, false);
+    fields.assister.value = "Another assister";
+    vm.runInContext("syncFootyNotePenaltyInput(builder)", context);
+    vm.runInContext(`clearFootyNoteGoalAssistInputs("${side}")`, context);
+    assert.equal(fields.assister.value, "");
+    assert.equal(fields.penalty.disabled, false);
+    assert.equal(fields.penalty.checked, false);
+  }
+});
 import {
   buildFootyNextItemDefaults,
   deduplicateFootyFixtureCards,
@@ -11,6 +41,42 @@ import {
   isFootyFixtureFollowed,
   shouldOfferFootyMatchNotification,
 } from "./footyMatchActions.js";
+
+test("saving match notes refreshes schedule cards before closing and preserves failed edits", async () => {
+  const source = readFileSync(new URL("../script.js", import.meta.url), "utf8");
+  const saveSource = source.slice(source.indexOf("async function saveFootyMatchNoteFromDialog("), source.indexOf("function hasFootyMatchNotesLoaded("));
+  const savedNote = { matchId: "past-match", note: "Updated notes", homeScore: 2, awayScore: 0 };
+  const calls = [];
+  let fail = false;
+  const context = vm.createContext({
+    activeFootyNoteMatchId: savedNote.matchId,
+    FOOTY_MATCH_NOTES_ENDPOINT: "https://notes.test",
+    footyNoteSave: { disabled: false },
+    siteData: { footySchedule: {}, managerSession: null },
+    buildFootyMatchNoteFromDialog: () => savedNote,
+    saveFootyMatchNote: async () => {
+      if (fail) throw new Error("Save failed");
+      return { savedNote };
+    },
+    setFootyNoteStatus: (message) => calls.push(message),
+    upsertFootyMatchNote: (note) => { assert.equal(note, savedNote); calls.push("cache"); },
+    updateFootyFixtureMatchNote: (note) => { assert.equal(note, savedNote); calls.push("fixtures"); },
+    renderFootySchedule: () => calls.push("schedule"),
+    renderFootyCustomSchedule: () => calls.push("custom"),
+    renderFootyTeamPage: () => calls.push("team"),
+    renderFootyMissingNotesPage: () => calls.push("missing"),
+    closeFootyNoteDialog: () => calls.push("close"),
+  });
+  vm.runInContext(saveSource, context);
+  await vm.runInContext("saveFootyMatchNoteFromDialog()", context);
+  assert.deepEqual(calls, ["Saving match note...", "cache", "fixtures", "schedule", "custom", "team", "missing", "close"]);
+
+  calls.length = 0;
+  fail = true;
+  await vm.runInContext("saveFootyMatchNoteFromDialog()", context);
+  assert.deepEqual(calls, ["Saving match note...", "Save failed"]);
+  assert.equal(context.footyNoteSave.disabled, false);
+});
 
 test("notification fixtures include and deduplicate full competition matches", () => {
   const shared = { home: "A", away: "B", matchId: "match-1" };

@@ -136,7 +136,8 @@ export default {
       if (request.method === "POST" && url.pathname === "/api/match-notes/results/sync") {
         const token = String(env.RESULTS_SYNC_TOKEN || env.ROSTER_SYNC_TOKEN || "");
         if (!token || request.headers.get("X-Results-Sync-Token") !== token) throw httpError(401, "Result synchronization is not authorized.");
-        return json({ ok: true, notes: await syncMatchResults(env, await readBody(request)) }, 200, cors);
+        const body = await filterAutomaticResults(env, await readBody(request));
+        return json({ ok: true, notes: await syncMatchResults(env, body) }, 200, cors);
       }
 
       if (request.method === "GET" && url.pathname === "/api/match-notes") {
@@ -1052,6 +1053,37 @@ export async function dispatchResultRefresh(env, fetchImpl = fetch) {
   });
   if (!response.ok) throw new Error(`Overnight result refresh dispatch failed (${response.status}).`);
   console.log("Dispatched overnight Footy schedule and result refresh.");
+}
+
+let resultScheduleCache = null;
+
+export async function filterAutomaticResults(env, body, fetchImpl = fetch) {
+  if (!Array.isArray(body.results) || body.results.length > 20) throw httpError(400, "Expected up to 20 results.");
+  if (!body.results.length) return body;
+  const managerId = String(env.ADMIN_MANAGER_IDS || "6").split(",")[0].trim();
+  const response = await env.MANAGER_AUTH.fetch(new Request(`https://manager-auth/api/managers/${encodeURIComponent(managerId)}/followed-teams`));
+  const selection = await response.json();
+  if (!response.ok || !selection.ok || !Array.isArray(selection.teams)) throw httpError(503, "Followed-team selection is unavailable; result writes are paused.");
+  const followed = new Set(selection.teams.map((team) => String(team.teamId)));
+  const needsSchedule = body.results.some((result) => !result?.homeTeamId || !result?.awayTeamId);
+  let matches = new Map();
+  if (needsSchedule) {
+    // Older workflow versions send only match IDs. Resolve their canonical sides
+    // against the published schedule instead of allowing them to bypass policy.
+    const url = env.RESULTS_SCHEDULE_URL || "https://wyattjones-wnc.github.io/boxthislap/dev/data/footy-schedule.json";
+    if (resultScheduleCache?.url !== url || resultScheduleCache.expiresAt < Date.now()) {
+      const scheduleResponse = await fetchImpl(url);
+      if (!scheduleResponse.ok) throw httpError(503, "Result schedule is unavailable; result writes are paused.");
+      const schedule = await scheduleResponse.json();
+      const fixtures = [...(schedule.teamSchedules || []), ...(schedule.competitionSchedules || [])].flatMap((entry) => entry.fixtures || []);
+      resultScheduleCache = { url, expiresAt: Date.now() + 300000, matches: new Map(fixtures.map((fixture) => [fixture.matchId, fixture])) };
+    }
+    matches = resultScheduleCache.matches;
+  }
+  return { results: body.results.filter((result) => {
+    const fixture = result?.homeTeamId && result?.awayTeamId ? result : matches.get(result?.matchId);
+    return fixture?.homeTeamId && fixture?.awayTeamId && ![fixture.homeTeamId, fixture.awayTeamId].some((id) => followed.has(String(id)));
+  }) };
 }
 
 export async function syncMatchResults(env, body) {

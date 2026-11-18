@@ -570,3 +570,51 @@ describe("2027 league drafting", () => {
     expect(screen.queryByRole("button", { name: "Save setup" })).toBeNull();
   });
 });
+
+it("summarizes status and turn once while retaining distinct Hub notices", async () => {
+  localStorage.setItem(
+    "boxThisLapManagerSession",
+    JSON.stringify({ managerId: "1", isAdmin: true }),
+  );
+  const draft = visibleDraft(activeState(), "1", true);
+  draft.notifications = [
+    {
+      id: "start",
+      type: "started",
+      title: "Draft started",
+      body: draft.name,
+      createdAt: "2026-11-08T00:00:00Z",
+    },
+    {
+      id: "turn",
+      type: "turn",
+      title: "Your turn to draft",
+      body: `${draft.name}: round 1, pick #1.`,
+    },
+    {
+      id: "notice",
+      title: "Resource updated",
+      body: "New movies available.",
+      createdAt: "2026-11-08T00:01:00Z",
+    },
+    {
+      id: "notice-copy",
+      title: "Resource updated",
+      body: "New movies available.",
+      createdAt: "2026-11-08T00:02:00Z",
+    },
+  ];
+  vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+    Response.json({ drafts: [draft] }),
+  );
+  wrapper(<LeagueDraftHubCard />);
+  expect(await screen.findByRole("img", { name: "Draft active" })).toBeTruthy();
+  expect(screen.getAllByText("Your turn · pick #1")).toHaveLength(1);
+  expect(screen.queryByText(/Draft started:/)).toBeNull();
+  expect(screen.queryByText(/Your turn to draft:/)).toBeNull();
+  await userEvent.click(screen.getByText("Alerts (1)"));
+  expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  expect(
+    screen.getByText("Resource updated: New movies available."),
+  ).toBeTruthy();
+});

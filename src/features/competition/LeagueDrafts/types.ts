@@ -55,9 +55,10 @@ export interface Draft {
   preference: { enabled: boolean; push: boolean };
   notifications: Array<{
     id: string;
+    type?: string;
     title: string;
     body: string;
-    createdAt: string;
+    createdAt?: string;
   }>;
   audit?: Array<{
     revision: number;

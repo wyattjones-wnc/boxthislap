@@ -1071,7 +1071,7 @@ function renderFootyMissingNotesPage() {
     ? `<div class="footy-list footy-list--calendar-weeks">${pageFixtures.map(renderFootyFixture).join("")}</div>`
     : `<p class="table-message">${missingFixtures.length && hasFilters
       ? "No matches needing match details match the current filters."
-      : "All past matches for your followed teams have completed match details."}</p>`;
+      : "All past matches for your followed teams have saved match note data."}</p>`;
 
   if (footyMissingNotesPagination) {
     footyMissingNotesPagination.hidden = visibleFixtures.length <= FOOTY_MISSING_NOTES_PAGE_SIZE;
@@ -1124,7 +1124,6 @@ function getFootyMissingNotesFixtures(schedule = {}) {
       isFootyFixtureMissingDetails(
         fixture,
         followedTeamsController.getFollowedTeamIds(),
-        getFootyFixtureSides(getFootyFixtureByMatchId(fixture.matchId) || fixture).followed,
       )
     ));
 }
@@ -5258,6 +5257,7 @@ function commitPendingFootyNoteGoalAssistEntry(side) {
   }
 
   const builder = getFootyNoteGoalAssistBuilder(side);
+  syncFootyNotePenaltyInput(builder);
   const scorer = String(builder?.querySelector("[data-footy-note-ga-field=\"scorer\"]")?.value || "").trim();
   const assister = String(builder?.querySelector("[data-footy-note-ga-field=\"assister\"]")?.value || "").trim();
   const minute = String(builder?.querySelector("[data-footy-note-ga-field=\"minute\"]")?.value || "").trim();
@@ -5360,7 +5360,16 @@ function clearFootyNoteGoalAssistInputs(side) {
 
   if (penalty) {
     penalty.checked = false;
+    penalty.disabled = false;
   }
+}
+
+function syncFootyNotePenaltyInput(builder) {
+  const assister = builder?.querySelector('[data-footy-note-ga-field="assister"]');
+  const penalty = builder?.querySelector('[data-footy-note-ga-field="penalty"]');
+  if (!penalty) return;
+  penalty.disabled = Boolean(String(assister?.value || "").trim());
+  if (penalty.disabled) penalty.checked = false;
 }
 
 function getFootyNoteGoalAssistBuilder(side) {
@@ -5401,6 +5410,8 @@ async function saveFootyMatchNoteFromDialog() {
     upsertFootyMatchNote(savedNote);
     updateFootyFixtureMatchNote(savedNote);
     renderFootySchedule(siteData.footySchedule);
+    renderFootyCustomSchedule();
+    renderFootyTeamPage();
     renderFootyMissingNotesPage();
     if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
     closeFootyNoteDialog();
@@ -14146,9 +14157,14 @@ footyNoteForm?.addEventListener("focusin", (event) => {
 });
 
 footyNoteForm?.addEventListener("input", (event) => {
+  syncFootyNotePenaltyInput(event.target.closest("[data-footy-note-ga-side]"));
   if (isFootyPlayerAutocompleteInput(event.target)) {
     renderFootyPlayerAutocomplete(event.target);
   }
+});
+
+footyNoteForm?.addEventListener("change", (event) => {
+  syncFootyNotePenaltyInput(event.target.closest("[data-footy-note-ga-side]"));
 });
 
 footyNoteForm?.addEventListener("keydown", (event) => {
@@ -16505,7 +16521,7 @@ function buildFootyMissingNotesWorkflowItems() {
 
   return [{
     actionLabel: "Review matches",
-    description: `${fixtures.length} past ${fixtures.length === 1 ? "match has" : "matches have"} missing kit or scorer details (or awaiting a result).`,
+    description: `${fixtures.length} past ${fixtures.length === 1 ? "match has" : "matches have"} no saved match note data.`,
     dueDate: "",
     id: "footy-missing-match-notes",
     priority: "1",

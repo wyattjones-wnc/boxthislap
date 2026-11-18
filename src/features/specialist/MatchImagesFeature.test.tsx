@@ -179,6 +179,8 @@ describe("MatchImagesFeature", () => {
     ).toBe(readsBeforeFilter + 1);
     await user.click(screen.getByRole("button", { name: "Next" }));
     await screen.findByText("Page 2");
+    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(2);
+    vi.mocked(HTMLElement.prototype.scrollIntoView).mockClear();
     const readsBeforeSeen = requests.filter((request) =>
       request.url.includes("/api/match-media?"),
     ).length;

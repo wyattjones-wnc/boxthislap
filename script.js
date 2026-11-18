@@ -5400,6 +5400,8 @@ async function saveFootyMatchNoteFromDialog() {
     upsertFootyMatchNote(savedNote);
     updateFootyFixtureMatchNote(savedNote);
     renderFootySchedule(siteData.footySchedule);
+    renderFootyCustomSchedule();
+    renderFootyTeamPage();
     renderFootyMissingNotesPage();
     if (siteData.managerSession) renderManagerWorkflow(siteData.managerSession.managerId);
     closeFootyNoteDialog();

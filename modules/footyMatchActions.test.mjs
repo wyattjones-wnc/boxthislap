@@ -12,6 +12,42 @@ import {
   shouldOfferFootyMatchNotification,
 } from "./footyMatchActions.js";
 
+test("saving match notes refreshes schedule cards before closing and preserves failed edits", async () => {
+  const source = readFileSync(new URL("../script.js", import.meta.url), "utf8");
+  const saveSource = source.slice(source.indexOf("async function saveFootyMatchNoteFromDialog("), source.indexOf("function hasFootyMatchNotesLoaded("));
+  const savedNote = { matchId: "past-match", note: "Updated notes", homeScore: 2, awayScore: 0 };
+  const calls = [];
+  let fail = false;
+  const context = vm.createContext({
+    activeFootyNoteMatchId: savedNote.matchId,
+    FOOTY_MATCH_NOTES_ENDPOINT: "https://notes.test",
+    footyNoteSave: { disabled: false },
+    siteData: { footySchedule: {}, managerSession: null },
+    buildFootyMatchNoteFromDialog: () => savedNote,
+    saveFootyMatchNote: async () => {
+      if (fail) throw new Error("Save failed");
+      return { savedNote };
+    },
+    setFootyNoteStatus: (message) => calls.push(message),
+    upsertFootyMatchNote: (note) => { assert.equal(note, savedNote); calls.push("cache"); },
+    updateFootyFixtureMatchNote: (note) => { assert.equal(note, savedNote); calls.push("fixtures"); },
+    renderFootySchedule: () => calls.push("schedule"),
+    renderFootyCustomSchedule: () => calls.push("custom"),
+    renderFootyTeamPage: () => calls.push("team"),
+    renderFootyMissingNotesPage: () => calls.push("missing"),
+    closeFootyNoteDialog: () => calls.push("close"),
+  });
+  vm.runInContext(saveSource, context);
+  await vm.runInContext("saveFootyMatchNoteFromDialog()", context);
+  assert.deepEqual(calls, ["Saving match note...", "cache", "fixtures", "schedule", "custom", "team", "missing", "close"]);
+
+  calls.length = 0;
+  fail = true;
+  await vm.runInContext("saveFootyMatchNoteFromDialog()", context);
+  assert.deepEqual(calls, ["Saving match note...", "Save failed"]);
+  assert.equal(context.footyNoteSave.disabled, false);
+});
+
 test("notification fixtures include and deduplicate full competition matches", () => {
   const shared = { home: "A", away: "B", matchId: "match-1" };
   const extra = { home: "C", away: "D", matchId: "match-2" };

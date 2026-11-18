@@ -2,6 +2,36 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+
+test("Match Notes penalty clears and disables for an assister and resets for another entry", () => {
+  const source = readFileSync(new URL("../script.js", import.meta.url), "utf8");
+  const start = source.indexOf("function clearFootyNoteGoalAssistInputs(");
+  const end = source.indexOf("function getFootyNoteGoalAssistBuilder(", start);
+  for (const side of ["follow", "opponent"]) {
+    const fields = {
+      scorer: { value: "Scorer" },
+      assister: { value: "Assister" },
+      minute: { value: "45" },
+      penalty: { checked: true, disabled: false },
+    };
+    const builder = { querySelector: (selector) => fields[selector.match(/field=["']([^"']+)/)[1]] };
+    const context = vm.createContext({ builder, getFootyNoteGoalAssistBuilder: () => builder });
+    vm.runInContext(source.slice(start, end), context);
+    vm.runInContext("syncFootyNotePenaltyInput(builder)", context);
+    assert.equal(fields.penalty.checked, false);
+    assert.equal(fields.penalty.disabled, true);
+    fields.assister.value = "";
+    vm.runInContext("syncFootyNotePenaltyInput(builder)", context);
+    assert.equal(fields.penalty.disabled, false);
+    assert.equal(fields.penalty.checked, false);
+    fields.assister.value = "Another assister";
+    vm.runInContext("syncFootyNotePenaltyInput(builder)", context);
+    vm.runInContext(`clearFootyNoteGoalAssistInputs("${side}")`, context);
+    assert.equal(fields.assister.value, "");
+    assert.equal(fields.penalty.disabled, false);
+    assert.equal(fields.penalty.checked, false);
+  }
+});
 import {
   buildFootyNextItemDefaults,
   deduplicateFootyFixtureCards,

@@ -5257,6 +5257,7 @@ function commitPendingFootyNoteGoalAssistEntry(side) {
   }
 
   const builder = getFootyNoteGoalAssistBuilder(side);
+  syncFootyNotePenaltyInput(builder);
   const scorer = String(builder?.querySelector("[data-footy-note-ga-field=\"scorer\"]")?.value || "").trim();
   const assister = String(builder?.querySelector("[data-footy-note-ga-field=\"assister\"]")?.value || "").trim();
   const minute = String(builder?.querySelector("[data-footy-note-ga-field=\"minute\"]")?.value || "").trim();
@@ -5359,7 +5360,16 @@ function clearFootyNoteGoalAssistInputs(side) {
 
   if (penalty) {
     penalty.checked = false;
+    penalty.disabled = false;
   }
+}
+
+function syncFootyNotePenaltyInput(builder) {
+  const assister = builder?.querySelector('[data-footy-note-ga-field="assister"]');
+  const penalty = builder?.querySelector('[data-footy-note-ga-field="penalty"]');
+  if (!penalty) return;
+  penalty.disabled = Boolean(String(assister?.value || "").trim());
+  if (penalty.disabled) penalty.checked = false;
 }
 
 function getFootyNoteGoalAssistBuilder(side) {
@@ -14147,9 +14157,14 @@ footyNoteForm?.addEventListener("focusin", (event) => {
 });
 
 footyNoteForm?.addEventListener("input", (event) => {
+  syncFootyNotePenaltyInput(event.target.closest("[data-footy-note-ga-side]"));
   if (isFootyPlayerAutocompleteInput(event.target)) {
     renderFootyPlayerAutocomplete(event.target);
   }
+});
+
+footyNoteForm?.addEventListener("change", (event) => {
+  syncFootyNotePenaltyInput(event.target.closest("[data-footy-note-ga-side]"));
 });
 
 footyNoteForm?.addEventListener("keydown", (event) => {

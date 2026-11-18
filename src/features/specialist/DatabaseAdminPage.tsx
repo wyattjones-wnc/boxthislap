@@ -1,5 +1,5 @@
 import { FloatingField } from "../../components/FloatingField/FloatingField";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DATABASE_ADMIN_ENDPOINT } from "../../../modules/siteConfig";
 
 type Database = { id: string; label: string };
@@ -90,6 +90,7 @@ export function DatabaseAdminPage() {
     direction: "asc" | "desc";
   } | null>(null);
   const [page, setPage] = useState(1);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [rowCount, setRowCount] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(
@@ -477,7 +478,7 @@ export function DatabaseAdminPage() {
       </p>
       {!!columns.length && (
         <>
-          <div className="table-wrap database-admin-table-wrap">
+          <div className="table-wrap database-admin-table-wrap" ref={tableRef}>
             <table className="database-admin-table">
               <thead>
                 <tr>
@@ -597,7 +598,13 @@ export function DatabaseAdminPage() {
             <button
               type="button"
               disabled={busy || page * 50 >= rowCount}
-              onClick={() => loadRows(page + 1)}
+              onClick={() => {
+                void loadRows(page + 1);
+                tableRef.current?.scrollIntoView?.({
+                  block: "start",
+                  behavior: "instant",
+                });
+              }}
             >
               Next
             </button>

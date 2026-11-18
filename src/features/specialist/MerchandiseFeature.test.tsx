@@ -57,6 +57,71 @@ afterEach(() => {
 });
 
 describe("MerchandiseFeature", () => {
+  it.each(["Unseen", "All", "Seen", "Wishlist", "Sale"])(
+    "paginates %s through page 3, scrolls to the top, and hides Next on the last page",
+    async (view) => {
+      const scrollIntoView = vi.fn();
+      const originalScroll = HTMLElement.prototype.scrollIntoView;
+      HTMLElement.prototype.scrollIntoView = scrollIntoView;
+      const requests: string[] = [];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          requests.push(url);
+          const page = Number(new URL(url).searchParams.get("page"));
+          return {
+            ok: true,
+            json: async () => ({
+              ...feed,
+              items: [{ ...feed.items[0], title: `Shirt page ${page}` }],
+              pagination: { page, hasMore: page < 3 },
+            }),
+          } as Response;
+        }),
+      );
+      try {
+        const user = userEvent.setup();
+        render(
+          <AppProviders>
+            <MerchandiseFeature />
+          </AppProviders>,
+        );
+        await screen.findByRole("heading", { name: "Shirt page 1" });
+        await user.click(
+          screen.getByRole("button", {
+            name: view,
+            pressed: view === "Unseen",
+          }),
+        );
+        for (const page of [2, 3]) {
+          await waitFor(() =>
+            expect(
+              screen
+                .getByRole("button", { name: "Next" })
+                .hasAttribute("disabled"),
+            ).toBe(false),
+          );
+          await user.click(screen.getByRole("button", { name: "Next" }));
+          await screen.findByRole("heading", { name: `Shirt page ${page}` });
+          expect(requests.some((url) => url.includes(`page=${page}`))).toBe(
+            true,
+          );
+        }
+        expect(scrollIntoView).toHaveBeenCalledTimes(2);
+        expect(scrollIntoView).toHaveBeenLastCalledWith({
+          block: "start",
+          behavior: "instant",
+        });
+        expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+        await user.click(screen.getByRole("button", { name: "Previous" }));
+        await screen.findByRole("heading", { name: "Shirt page 2" });
+        expect(screen.getByRole("button", { name: "Next" })).not.toBeNull();
+      } finally {
+        HTMLElement.prototype.scrollIntoView = originalScroll;
+      }
+    },
+  );
+
   it("confirms and submits Seen through here with the active filters", async () => {
     const requests = [] as Array<{ url: string; options?: RequestInit }>;
     vi.stubGlobal(

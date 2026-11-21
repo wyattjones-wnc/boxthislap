@@ -70,3 +70,5 @@ Shows the first incomplete item whose `Thing` contains `Fantasy Critic`.
 - If a saved focus used an ID from before the Cloudflare migration, the widget recovers it by its saved item name and stores the new ID.
 
 - Each run tries live item data first. If that request fails, the widget uses saved items and artwork, skips artwork downloads, and marks the header `CACHED`. Run the updated widget online once to save artwork; older installs only saved item data.
+
+- Medium widget backgrounds and large widget thumbnails use each entry’s saved horizontal and vertical image positions. Entries without a saved position remain centered. Run the widget loader again to install this update.

@@ -7294,6 +7294,15 @@ async function openNextItemDialog(itemId = "", options = {}) {
     const controller = await ensureNextItemDialogController();
     if (!isNextItemDialogOpen) return;
     controller.open({
+      buildPreviewItem: (values) => {
+        const preview = normalizeNextItem({ ...values, thing: values.thing || "Image preview" });
+        return {
+          ...preview,
+          dateLabel: formatNextDateRange(preview),
+          isPast: isNextItemPast(preview, getDateKey(0)),
+          passed: !hasActiveNextFilters() && hasNextItemTimePassed(preview),
+        };
+      },
       initialValues: {
         completed: Boolean(item?.completed),
         date: item?.dateKey || fixtureDefaults?.date || "",

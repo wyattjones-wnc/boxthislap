@@ -600,10 +600,16 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
   await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 });
 
-test("Next item form loads as a contained React dialog and saves", async ({
-  page,
-  browserName,
-}) => {
+for (const widePreview of [false, true]) {
+  test(`Next item form loads as a contained React dialog and saves (${widePreview ? "desktop preview" : "mobile preview"})`, (context) =>
+    checkNextItemForm(context, widePreview));
+}
+
+/**
+ * @param {{page: import("@playwright/test").Page, browserName: string}} context
+ * @param {boolean} widePreview
+ */
+async function checkNextItemForm({ page, browserName }, widePreview) {
   /** @type {string[]} */
   const dialogBundleRequests = [];
   page.on("request", (request) => {
@@ -773,7 +779,10 @@ test("Next item form loads as a contained React dialog and saves", async ({
   await expect(popup).toBeHidden();
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Time: No time" }).click();
-  const hourWheel = dialog.getByRole("listbox", { name: "Hour", exact: true });
+  const hourWheel = dialog.getByRole("listbox", {
+    name: "Hour",
+    exact: true,
+  });
   const minuteWheel = dialog.getByRole("listbox", {
     name: "Minute",
     exact: true,
@@ -850,6 +859,7 @@ test("Next item form loads as a contained React dialog and saves", async ({
     dialog.getByRole("button", { name: "Time: 2:15 PM" }),
   ).toBeVisible();
 
+  if (widePreview) await page.setViewportSize({ width: 1280, height: 900 });
   await page.route("https://example.com/next.jpg", (route) =>
     route.fulfill({
       contentType: "image/svg+xml",
@@ -877,6 +887,27 @@ test("Next item form loads as a contained React dialog and saves", async ({
   await thing.fill("React migration check");
   await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
   await dialog.getByLabel("Priority", { exact: true }).fill("8");
+  const previewImage = dialog.getByAltText("Image position preview");
+  const previewAspectRatio = await previewImage.evaluate((image) => {
+    const bounds = image.getBoundingClientRect();
+    return bounds.width / bounds.height;
+  });
+  const previewCanvasWidth = await dialog
+    .locator(".next-image-position-canvas")
+    .evaluate((canvas) => canvas.offsetWidth);
+  const listWidth = (await page.locator("#next-list .next-list").count())
+    ? await page
+        .locator("#next-list .next-list")
+        .evaluate((list) => list.getBoundingClientRect().width)
+    : await page.locator("#next-list").evaluate((list) => {
+        const style = getComputedStyle(list);
+        return (
+          list.clientWidth -
+          parseFloat(style.paddingLeft) -
+          parseFloat(style.paddingRight)
+        );
+      });
+  expect(previewCanvasWidth).toBeCloseTo(listWidth, 0);
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toBeHidden();
   expect(
@@ -898,13 +929,20 @@ test("Next item form loads as a contained React dialog and saves", async ({
     "object-position",
     "20% 80%",
   );
+  const savedAspectRatio = await page
+    .locator("[data-next-card-image]")
+    .evaluate((image) => {
+      const bounds = image.getBoundingClientRect();
+      return bounds.width / bounds.height;
+    });
+  expect(previewAspectRatio).toBeCloseTo(savedAspectRatio, 2);
   await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 
   await page.getByRole("button", { name: "Add Next item" }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(dialog).toBeHidden();
-});
+}
 
 test("To Do form uses the shared contained React dialog", async ({ page }) => {
   /** @type {string[]} */

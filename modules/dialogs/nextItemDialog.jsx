@@ -1,3 +1,4 @@
+import { NextImagePreview } from "../../src/features/operational/NextImagePreview.tsx";
 import { TimePicker } from "../../src/components/TimePicker/TimePicker.tsx";
 import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useRef, useState } from "react";
@@ -41,6 +42,7 @@ export function createNextItemDialog({ mount, onClose, onSubmit }) {
 
 function NextItemDialog({
   initialValues = {},
+  buildPreviewItem,
   message = "",
   messageIsError = false,
   onClose,
@@ -96,17 +98,7 @@ function NextItemDialog({
         </FloatingField>
         {values.imageUrl ? (
           <div className="next-item-wide next-image-position-controls">
-            <div className="next-image-position-preview next-card next-card--with-image">
-              <img
-                alt="Image position preview"
-                className="next-card-image"
-                src={values.imageUrl}
-                style={{
-                  objectPosition: `${values.imagePositionX}% ${values.imagePositionY}%`,
-                }}
-              />
-              <h2>{values.thing || "Image preview"}</h2>
-            </div>
+            <NextImagePreview item={buildPreviewItem(values)} />
             {["X", "Y"].map((axis) => (
               <label key={axis}>
                 <span>

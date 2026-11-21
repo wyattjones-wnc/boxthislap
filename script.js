@@ -6870,6 +6870,8 @@ function renderNextList(items = siteData.nextItems || []) {
     dateLabel: formatNextDateRange(item),
     id: item.id,
     imageUrl: item.imageUrl,
+    imagePositionX: item.imagePositionX,
+    imagePositionY: item.imagePositionY,
     isPast: isNextItemPast(item, getDateKey(0)),
     passed: Boolean(showPassedStatus && hasNextItemTimePassed(item)),
     thing: item.thing,
@@ -6887,6 +6889,11 @@ function renderNextList(items = siteData.nextItems || []) {
   window.__boxThisLapNextListView = detail;
   window.__boxThisLapSetNextListView?.(detail);
   window.dispatchEvent(new CustomEvent("boxthislap:next-list", { detail }));
+}
+
+function normalizeNextImagePosition(value) {
+  const position = Number(value ?? 50);
+  return Number.isFinite(position) ? Math.max(0, Math.min(100, position)) : 50;
 }
 
 function normalizeNextItem(row) {
@@ -6910,6 +6917,8 @@ function normalizeNextItem(row) {
     endDateKey,
     id,
     imageUrl: String(row?.["Image URL"] || row?.imageUrl || row?.Image || row?.image || "").trim(),
+    imagePositionX: normalizeNextImagePosition(row?.imagePositionX),
+    imagePositionY: normalizeNextImagePosition(row?.imagePositionY),
     nonAdmin,
     priority,
     raw: { ...row, Time: rawTime },
@@ -7291,6 +7300,8 @@ async function openNextItemDialog(itemId = "", options = {}) {
         endDate: item?.endDateKey || "",
         id: item?.id || "",
         imageUrl: item?.imageUrl || "",
+        imagePositionX: item?.imagePositionX ?? 50,
+        imagePositionY: item?.imagePositionY ?? 50,
         nonAdmin: Boolean(item?.nonAdmin),
         priority: item?.priority ?? 5,
         thing: item?.thing || fixtureDefaults?.thing || "",
@@ -7371,6 +7382,8 @@ function buildNextItemPayloadFromForm(values = {}) {
     endDate,
     id: existingId,
     imageUrl,
+    imagePositionX: normalizeNextImagePosition(values.imagePositionX),
+    imagePositionY: normalizeNextImagePosition(values.imagePositionY),
     nonAdmin: Boolean(values.nonAdmin),
     priority,
     revision: Number(existing?.revision || 0),

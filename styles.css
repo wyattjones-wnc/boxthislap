@@ -12769,3 +12769,12 @@ html.has-contained-dialog body {
 
 html:not([data-fantasy-office-draft-open="true"]) a[data-page-link="fantasy-office-2027-active"],
 html:not([data-world-cup-draft-open="true"]) a[data-page-link="world-cup-2027-active"] { display: none; }
+
+.next-image-position-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.next-image-position-preview {
+  min-height: 180px;
+}

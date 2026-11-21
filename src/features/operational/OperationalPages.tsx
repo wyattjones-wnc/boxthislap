@@ -144,6 +144,8 @@ export function NextPage() {
 }
 
 interface NextItemView {
+  imagePositionX?: number;
+  imagePositionY?: number;
   completed: boolean;
   dateLabel: string;
   id: string;
@@ -249,6 +251,9 @@ function NextCard({ item, view }: { item: NextItemView; view: NextListView }) {
           alt=""
           loading="lazy"
           decoding="async"
+          style={{
+            objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%`,
+          }}
           data-next-card-image
         />
       ) : null}

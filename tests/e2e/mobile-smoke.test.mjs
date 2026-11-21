@@ -850,6 +850,30 @@ test("Next item form loads as a contained React dialog and saves", async ({
     dialog.getByRole("button", { name: "Time: 2:15 PM" }),
   ).toBeVisible();
 
+  await page.route("https://example.com/next.jpg", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect width="800" height="1200" fill="blue"/></svg>',
+    }),
+  );
+  await dialog
+    .getByLabel("Image URL", { exact: true })
+    .fill("https://example.com/next.jpg");
+  const horizontal = dialog.getByRole("slider", {
+    name: /Horizontal position/,
+  });
+  const vertical = dialog.getByRole("slider", { name: /Vertical position/ });
+  await expect(horizontal).toHaveValue("50");
+  await horizontal.fill("20");
+  await vertical.fill("80");
+  await expect(dialog.getByAltText("Image position preview")).toHaveCSS(
+    "object-position",
+    "20% 80%",
+  );
+  await dialog.getByRole("button", { name: "Center image" }).click();
+  await expect(vertical).toHaveValue("50");
+  await horizontal.fill("20");
+  await vertical.fill("80");
   await thing.fill("React migration check");
   await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
   await dialog.getByLabel("Priority", { exact: true }).fill("8");
@@ -861,11 +885,19 @@ test("Next item form loads as a contained React dialog and saves", async ({
     date: "2099-01-02",
     priority: 8,
     thing: "React migration check",
+    imagePositionX: 20,
+    imagePositionY: 80,
     time: "2:15 PM",
   });
   await expect(
-    page.getByText("React migration check", { exact: true }),
+    page
+      .locator("#next-list")
+      .getByText("React migration check", { exact: true }),
   ).toBeVisible();
+  await expect(page.locator("[data-next-card-image]")).toHaveCSS(
+    "object-position",
+    "20% 80%",
+  );
   await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 
   await page.getByRole("button", { name: "Add Next item" }).click();

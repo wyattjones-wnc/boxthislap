@@ -44,3 +44,14 @@ node scripts\migrate-todo-items.mjs --verify https://box-this-lap-next.boxthisla
 ```
 
 Delete `legacy-todo-import.sql` after the import; generated legacy import files are ignored by Git.
+
+## Next image positioning
+
+The dev deployment workflow applies migrations before deploying the Worker. For a manual deployment, apply migration `0005_image_position.sql` first:
+
+```sh
+npx wrangler d1 migrations apply DB --remote --config workers/next-items/wrangler.toml
+npx wrangler deploy --config workers/next-items/wrangler.toml
+```
+
+Each Next item stores horizontal and vertical image positions (0–100%). Existing items default to centered (50%, 50%). The edit dialog previews the crop and saves both positions with the item.

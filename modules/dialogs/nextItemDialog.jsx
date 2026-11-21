@@ -94,6 +94,51 @@ function NextItemDialog({
           />
           <span>Image URL</span>
         </FloatingField>
+        {values.imageUrl ? (
+          <div className="next-item-wide next-image-position-controls">
+            <div className="next-image-position-preview next-card next-card--with-image">
+              <img
+                alt="Image position preview"
+                className="next-card-image"
+                src={values.imageUrl}
+                style={{
+                  objectPosition: `${values.imagePositionX}% ${values.imagePositionY}%`,
+                }}
+              />
+              <h2>{values.thing || "Image preview"}</h2>
+            </div>
+            {["X", "Y"].map((axis) => (
+              <label key={axis}>
+                <span>
+                  {axis === "X" ? "Horizontal position" : "Vertical position"} (
+                  {values[`imagePosition${axis}`]}%)
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={values[`imagePosition${axis}`]}
+                  onChange={(event) =>
+                    update(`imagePosition${axis}`, Number(event.target.value))
+                  }
+                />
+              </label>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                setValues((current) => ({
+                  ...current,
+                  imagePositionX: 50,
+                  imagePositionY: 50,
+                }))
+              }
+            >
+              Center image
+            </button>
+          </div>
+        ) : null}
         <FloatingField>
           <span>Date</span>
           <input
@@ -162,6 +207,8 @@ function normalizeValues(values) {
     endDate: String(values.endDate || ""),
     id: String(values.id || ""),
     imageUrl: String(values.imageUrl || ""),
+    imagePositionX: values.imagePositionX ?? 50,
+    imagePositionY: values.imagePositionY ?? 50,
     nonAdmin: Boolean(values.nonAdmin),
     priority: String(values.priority ?? 5),
     thing: String(values.thing || ""),

@@ -15111,10 +15111,8 @@ Object.entries(formulaOneViews).forEach(([year, view]) => {
     formulaOneManagerWeeklyEditing.add(editKey);
     renderFormulaOneManagerWeeklyEntry();
     if (isCurrentManagerAdmin()) {
-      void Promise.all([
-        ensureFormulaOneAdminData({ year: "2026" }),
-        ensureFormulaOneRoundDrivers("2026", formulaOneManagerWeeklySelectedRound),
-      ]).then(() => renderFormulaOneManagerWeeklyEntry())
+      void ensureFormulaOneAdminData({ year: "2026" })
+        .then(() => renderFormulaOneManagerWeeklyEntry())
         .catch((error) => renderFormulaOneManagerWeeklyEntry({ error: getErrorMessage(error) }));
     }
   });

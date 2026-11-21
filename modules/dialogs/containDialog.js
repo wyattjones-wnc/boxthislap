@@ -65,6 +65,13 @@ export function openContainedDialog({
       event.preventDefault();
       return;
     }
+    // Range controls own their drag gesture. Canceling touchmove here stops
+    // native sliders at a scroll boundary, even for horizontal movement.
+    if (
+      event.target instanceof Element &&
+      event.target.closest('input[type="range"]')
+    )
+      return;
     const touchY = event.touches[0]?.clientY ?? lastTouchY;
     const movingDown = touchY > lastTouchY;
     if (nestedScrollCanConsume(event.target, movingDown ? -1 : 1)) {

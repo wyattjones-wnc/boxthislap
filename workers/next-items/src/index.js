@@ -205,7 +205,7 @@ export default {
 async function listItems(env) {
   const result = await env.DB.prepare(
     `
-    SELECT id, thing, image_url, start_date, end_date, time, priority,
+    SELECT id, thing, image_url, image_position_x, image_position_y, start_date, end_date, time, priority,
       completed, non_admin, revision, source_match_id, created_at, updated_at
     FROM next_items
     ORDER BY start_date, time, priority DESC, thing
@@ -567,7 +567,7 @@ async function moveWantToTodo(env, wantId, body, managerId) {
 async function getItem(env, id) {
   const row = await env.DB.prepare(
     `
-    SELECT id, thing, image_url, start_date, end_date, time, priority,
+    SELECT id, thing, image_url, image_position_x, image_position_y, start_date, end_date, time, priority,
       completed, non_admin, revision, source_match_id, created_at, updated_at
     FROM next_items
     WHERE id = ?
@@ -585,9 +585,9 @@ async function addItem(env, body, managerId) {
   const result = await env.DB.prepare(
     `
     INSERT INTO next_items (
-      thing, image_url, start_date, end_date, time, priority,
+      thing, image_url, image_position_x, image_position_y, start_date, end_date, time, priority,
       completed, non_admin, source_match_id, revision, updated_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
   `,
   )
     .bind(...itemValues(item), managerId)
@@ -622,7 +622,7 @@ async function updateItem(env, id, body, managerId) {
   const result = await env.DB.prepare(
     `
     UPDATE next_items SET
-      thing = ?, image_url = ?, start_date = ?, end_date = ?, time = ?,
+      thing = ?, image_url = ?, image_position_x = ?, image_position_y = ?, start_date = ?, end_date = ?, time = ?,
       priority = ?, completed = ?, non_admin = ?, source_match_id = ?, revision = ?,
       updated_at = CURRENT_TIMESTAMP, updated_by = ?
     WHERE id = ? AND revision = ?
@@ -661,6 +661,8 @@ function itemValues(item) {
   return [
     item.thing,
     item.imageUrl,
+    item.imagePositionX,
+    item.imagePositionY,
     item.date,
     item.endDate,
     item.time,
@@ -669,6 +671,14 @@ function itemValues(item) {
     Number(item.nonAdmin),
     item.sourceMatchId,
   ];
+}
+
+function cleanImagePosition(value) {
+  const position = Number(value ?? 50);
+  if (!Number.isFinite(position) || position < 0 || position > 100) {
+    throw httpError(400, "Image position must be between 0 and 100.");
+  }
+  return position;
 }
 
 function normalizeItem(body) {
@@ -691,6 +701,8 @@ function normalizeItem(body) {
     date,
     endDate,
     imageUrl: cleanOptionalUrl(body.imageUrl),
+    imagePositionX: cleanImagePosition(body.imagePositionX),
+    imagePositionY: cleanImagePosition(body.imagePositionY),
     nonAdmin: Boolean(body.nonAdmin),
     priority,
     sourceMatchId: cleanText(body.sourceMatchId, 200, "Source match ID"),
@@ -879,6 +891,8 @@ function mapItem(row) {
     endDate: String(row.end_date || ""),
     id: String(row.id),
     imageUrl: String(row.image_url || ""),
+    imagePositionX: Number(row.image_position_x ?? 50),
+    imagePositionY: Number(row.image_position_y ?? 50),
     nonAdmin: Boolean(row.non_admin),
     priority: Number(row.priority || 0),
     revision: Number(row.revision || 0),

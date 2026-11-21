@@ -1,3 +1,4 @@
+import { NextImagePreview } from "../../src/features/operational/NextImagePreview.tsx";
 import { TimePicker } from "../../src/components/TimePicker/TimePicker.tsx";
 import { FloatingField } from "../../src/components/FloatingField/FloatingField.tsx";
 import React, { useRef, useState } from "react";
@@ -41,6 +42,7 @@ export function createNextItemDialog({ mount, onClose, onSubmit }) {
 
 function NextItemDialog({
   initialValues = {},
+  buildPreviewItem,
   message = "",
   messageIsError = false,
   onClose,
@@ -94,6 +96,41 @@ function NextItemDialog({
           />
           <span>Image URL</span>
         </FloatingField>
+        {values.imageUrl ? (
+          <div className="next-item-wide next-image-position-controls">
+            <NextImagePreview item={buildPreviewItem(values)} />
+            {["X", "Y"].map((axis) => (
+              <label key={axis}>
+                <span>
+                  {axis === "X" ? "Horizontal position" : "Vertical position"} (
+                  {values[`imagePosition${axis}`]}%)
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={values[`imagePosition${axis}`]}
+                  onChange={(event) =>
+                    update(`imagePosition${axis}`, Number(event.target.value))
+                  }
+                />
+              </label>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                setValues((current) => ({
+                  ...current,
+                  imagePositionX: 50,
+                  imagePositionY: 50,
+                }))
+              }
+            >
+              Center image
+            </button>
+          </div>
+        ) : null}
         <FloatingField>
           <span>Date</span>
           <input
@@ -162,6 +199,8 @@ function normalizeValues(values) {
     endDate: String(values.endDate || ""),
     id: String(values.id || ""),
     imageUrl: String(values.imageUrl || ""),
+    imagePositionX: values.imagePositionX ?? 50,
+    imagePositionY: values.imagePositionY ?? 50,
     nonAdmin: Boolean(values.nonAdmin),
     priority: String(values.priority ?? 5),
     thing: String(values.thing || ""),

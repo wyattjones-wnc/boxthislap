@@ -600,10 +600,18 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
   await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 });
 
-test("Next item form loads as a contained React dialog and saves", async ({
-  page,
-  browserName,
-}) => {
+for (const widePreview of [false, true]) {
+  test(`Next item form loads as a contained React dialog and saves (${widePreview ? "desktop preview" : "mobile preview"})`, ({
+    page,
+    browserName,
+  }) => checkNextItemForm({ page, browserName }, widePreview));
+}
+
+/**
+ * @param {{page: import("@playwright/test").Page, browserName: string}} context
+ * @param {boolean} widePreview
+ */
+async function checkNextItemForm({ page, browserName }, widePreview) {
   /** @type {string[]} */
   const dialogBundleRequests = [];
   page.on("request", (request) => {
@@ -773,7 +781,10 @@ test("Next item form loads as a contained React dialog and saves", async ({
   await expect(popup).toBeHidden();
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Time: No time" }).click();
-  const hourWheel = dialog.getByRole("listbox", { name: "Hour", exact: true });
+  const hourWheel = dialog.getByRole("listbox", {
+    name: "Hour",
+    exact: true,
+  });
   const minuteWheel = dialog.getByRole("listbox", {
     name: "Minute",
     exact: true,
@@ -850,9 +861,107 @@ test("Next item form loads as a contained React dialog and saves", async ({
     dialog.getByRole("button", { name: "Time: 2:15 PM" }),
   ).toBeVisible();
 
+  if (widePreview) await page.setViewportSize({ width: 1280, height: 900 });
+  await page.route("https://example.com/next.jpg", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect width="800" height="1200" fill="blue"/></svg>',
+    }),
+  );
+  await dialog
+    .getByLabel("Image URL", { exact: true })
+    .fill("https://example.com/next.jpg");
+  const horizontal = dialog.getByRole("slider", {
+    name: /Horizontal position/,
+  });
+  const vertical = dialog.getByRole("slider", { name: /Vertical position/ });
+  await vertical.scrollIntoViewIfNeeded();
+  const sliderBounds = await vertical.boundingBox();
+  if (!sliderBounds) throw new Error("Image position slider must be visible");
+  await vertical.tap({
+    position: { x: sliderBounds.width * 0.8, y: sliderBounds.height / 2 },
+  });
+  await expect
+    .poll(async () => Number(await vertical.inputValue()))
+    .toBeGreaterThan(60);
+  await dialog.getByRole("button", { name: "Center image" }).click();
+  // A horizontal slider gesture at the dialog's scroll boundary must remain
+  // available to the native range control rather than the page-scroll guard.
+  await dialog.locator(".react-form-dialog-scroll").evaluate((area) => {
+    area.scrollTop = area.scrollHeight;
+  });
+  expect(
+    await vertical.evaluate((input) => {
+      /** @param {string} type @param {number} x */
+      const dispatch = (type, x) => {
+        const event = new Event(type, { bubbles: true, cancelable: true });
+        Object.defineProperty(event, "touches", {
+          value: [{ clientX: x, clientY: 100 }],
+        });
+        return input.dispatchEvent(event);
+      };
+      dispatch("touchstart", 100);
+      return dispatch("touchmove", 150);
+    }),
+  ).toBe(true);
+  await horizontal.scrollIntoViewIfNeeded();
+  const horizontalBounds = await horizontal.boundingBox();
+  if (!horizontalBounds)
+    throw new Error("Horizontal position slider must be visible");
+  await page.mouse.move(
+    horizontalBounds.x + horizontalBounds.width / 2,
+    horizontalBounds.y + horizontalBounds.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    horizontalBounds.x + horizontalBounds.width * 0.8,
+    horizontalBounds.y + horizontalBounds.height / 2,
+    { steps: 8 },
+  );
+  await page.mouse.up();
+  await expect
+    .poll(async () => Number(await horizontal.inputValue()))
+    .toBeGreaterThan(60);
+  await expect(dialog.getByAltText("Image position preview")).toHaveCSS(
+    "object-position",
+    `${await horizontal.inputValue()}% 50%`,
+  );
+  await dialog.getByRole("button", { name: "Center image" }).click();
+  await expect(horizontal).toHaveValue("50");
+  await horizontal.fill("20");
+  await vertical.fill("80");
+  await expect(dialog.getByAltText("Image position preview")).toHaveCSS(
+    "object-position",
+    "20% 80%",
+  );
+  await dialog.getByRole("button", { name: "Center image" }).click();
+  await expect(vertical).toHaveValue("50");
+  await horizontal.fill("20");
+  await vertical.fill("80");
   await thing.fill("React migration check");
   await dialog.getByLabel("Date", { exact: true }).fill("2099-01-02");
   await dialog.getByLabel("Priority", { exact: true }).fill("8");
+  const previewImage = dialog.getByAltText("Image position preview");
+  const previewAspectRatio = await previewImage.evaluate((image) => {
+    const bounds = image.getBoundingClientRect();
+    return bounds.width / bounds.height;
+  });
+  const previewCanvasWidth = await dialog
+    .locator(".next-image-position-canvas")
+    .evaluate((canvas) => canvas.offsetWidth);
+  const listWidth = (await page.locator("#next-list .next-list").count())
+    ? await page
+        .locator("#next-list .next-list")
+        .evaluate((list) => list.getBoundingClientRect().width)
+    : await page.locator("#next-list").evaluate((list) => {
+        const style = getComputedStyle(list);
+        return (
+          list.clientWidth -
+          parseFloat(style.paddingLeft) -
+          parseFloat(style.paddingRight)
+        );
+      });
+  expect(previewCanvasWidth).toBeCloseTo(listWidth, 0);
   await dialog.getByRole("button", { name: "Save" }).click();
   await expect(dialog).toBeHidden();
   expect(
@@ -861,18 +970,33 @@ test("Next item form loads as a contained React dialog and saves", async ({
     date: "2099-01-02",
     priority: 8,
     thing: "React migration check",
+    imagePositionX: 20,
+    imagePositionY: 80,
     time: "2:15 PM",
   });
   await expect(
-    page.getByText("React migration check", { exact: true }),
+    page
+      .locator("#next-list")
+      .getByText("React migration check", { exact: true }),
   ).toBeVisible();
+  await expect(page.locator("[data-next-card-image]")).toHaveCSS(
+    "object-position",
+    "20% 80%",
+  );
+  const savedAspectRatio = await page
+    .locator("[data-next-card-image]")
+    .evaluate((image) => {
+      const bounds = image.getBoundingClientRect();
+      return bounds.width / bounds.height;
+    });
+  expect(previewAspectRatio).toBeCloseTo(savedAspectRatio, 2);
   await expect(page.locator("html")).not.toHaveClass(/has-contained-dialog/);
 
   await page.getByRole("button", { name: "Add Next item" }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(dialog).toBeHidden();
-});
+}
 
 test("To Do form uses the shared contained React dialog", async ({ page }) => {
   /** @type {string[]} */

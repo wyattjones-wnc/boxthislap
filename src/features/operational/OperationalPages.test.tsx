@@ -75,7 +75,9 @@ describe("operational React pages", () => {
               completed: false,
               dateLabel: "Jan 2, 2099",
               id: "next-1",
-              imageUrl: "",
+              imageUrl: "https://example.com/next.jpg",
+              imagePositionX: 20,
+              imagePositionY: 80,
               isPast: false,
               passed: false,
               thing: "React-owned Next card",
@@ -89,6 +91,10 @@ describe("operational React pages", () => {
 
     expect(await screen.findByText("React-owned Next card")).not.toBeNull();
     expect(screen.getByText("Jan 2, 2099")).not.toBeNull();
+    expect(
+      document.querySelector<HTMLImageElement>("[data-next-card-image]")?.style
+        .objectPosition,
+    ).toBe("20% 80%");
   });
 
   it("uses accessible Lucide actions for the Footy surface", () => {

@@ -286,7 +286,7 @@ async function createLargeWidget(result) {
 
     const artwork = await loadItemImage(item);
     if (artwork) {
-      const thumbnail = card.addImage(artwork);
+      const thumbnail = card.addImage(positionItemImage(artwork, item, new Size(120, 42)));
       // A wide, filling crop gives the artwork space while keeping six rows.
       thumbnail.imageSize = new Size(120, 42);
       thumbnail.cornerRadius = 5;
@@ -435,8 +435,47 @@ async function createWidget(item, result) {
 async function applyItemBackground(widget, item) {
   const artwork = await loadItemImage(item);
   if (!artwork) return false;
-  widget.backgroundImage = artwork;
+  widget.backgroundImage = positionItemImage(artwork, item, getMediumWidgetSize());
   return true;
+}
+
+// Scriptable centers native image fills. Render the cover crop ourselves so
+// saved positions have the same percentage semantics as CSS object-position.
+function positionItemImage(image, item, size) {
+  const scale = Math.max(size.width / image.size.width, size.height / image.size.height);
+  const width = image.size.width * scale;
+  const height = image.size.height * scale;
+  const context = new DrawContext();
+  context.size = size;
+  context.opaque = false;
+  context.respectScreenScale = true;
+  context.drawImageInRect(image, new Rect(
+    (size.width - width) * normalizeImagePosition(item.imagePositionX) / 100,
+    (size.height - height) * normalizeImagePosition(item.imagePositionY) / 100,
+    width,
+    height
+  ));
+  return context.getImage();
+}
+
+function normalizeImagePosition(value) {
+  const position = Number(value ?? 50);
+  return Number.isFinite(position) ? Math.max(0, Math.min(100, position)) : 50;
+}
+
+function getMediumWidgetSize() {
+  const screen = Device.screenSize();
+  const width = Math.min(screen.width, screen.height);
+  // Medium widget point sizes for common iPhone displays, including zoomed
+  // layouts. Fall back to the same width estimate used by the Footy widget.
+  const sizes = {
+    320: [292, 141], 375: [329, 155], 390: [338, 158],
+    393: [338, 158], 402: [344, 162], 414: [360, 169],
+    428: [364, 170], 430: [364, 170], 440: [382, 180],
+  };
+  const estimatedWidth = Math.max(280, Math.round(width * 0.45 + 134));
+  const dimensions = sizes[width] || [estimatedWidth, Math.round(estimatedWidth * 0.47)];
+  return new Size(...dimensions);
 }
 
 function applyTextShadow(text, enabled) {
@@ -522,6 +561,8 @@ function normalizeItem(item) {
     completed: item.completed === true || String(item.completed || "").toLowerCase() === "true",
     nonAdmin: item.nonAdmin === true || String(item.nonAdmin || "").toLowerCase() === "true",
     imageUrl: String(item.imageUrl || item["Image URL"] || "").trim(),
+    imagePositionX: normalizeImagePosition(item.imagePositionX),
+    imagePositionY: normalizeImagePosition(item.imagePositionY),
     startDate,
     endDate,
   };

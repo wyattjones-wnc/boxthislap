@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-11-20T18:38:32.472Z",
+  "generatedAt": "2026-11-21T17:37:11.587Z",
   "schemaVersion": 4,
   "source": "football-data.org + TheSportsDB + Arsenal.com + U.S. Soccer + UEFA.com + iCalendar",
   "updateTracker": {
-    "generatedAt": "2026-11-20T18:38:32.472Z",
-    "attemptedAt": "2026-11-20T18:38:32.472Z",
-    "updatedAt": "2026-11-20T18:38:32.472Z",
-    "oldestTeamUpdatedAt": "2026-11-20T18:38:32.472Z",
+    "generatedAt": "2026-11-21T17:37:11.587Z",
+    "attemptedAt": "2026-11-21T17:37:11.587Z",
+    "updatedAt": "2026-11-21T17:37:11.587Z",
+    "oldestTeamUpdatedAt": "2026-11-21T17:37:11.587Z",
     "competitionCount": 12,
     "competitionFixtureCount": 2317,
     "teamCount": 7,
@@ -44,14 +44,14 @@
     "sync": {
       "status": "synced",
       "rows": 271,
-      "syncedAt": "2026-11-20T18:38:32.472Z",
+      "syncedAt": "2026-11-21T17:37:11.587Z",
       "appended": 0,
       "updated": 271
     }
   },
   "competitionSchedules": [
     {
-      "attemptedAt": "2026-11-20T18:44:04.960Z",
+      "attemptedAt": "2026-11-21T17:42:43.679Z",
       "competition": {
         "code": "PL",
         "followedTeamNames": [
@@ -5322,8 +5322,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "1",
+            "awayScore": "1"
+          },
           "time": "12:30:00",
           "timestamp": "2026-11-21T12:30:00Z",
           "venue": "",
@@ -5336,7 +5339,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:manchester-city-fc",
-          "awayTeamId": "team:fulham-fc"
+          "awayTeamId": "team:fulham-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_560643",
+            "homeScore": "1",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:46:47"
+          }
         },
         {
           "away": "Leeds United FC",
@@ -5359,8 +5374,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "1",
+            "awayScore": "4"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -5373,7 +5391,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:chelsea-fc",
-          "awayTeamId": "team:leeds-united-fc"
+          "awayTeamId": "team:leeds-united-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_560642",
+            "homeScore": "1",
+            "awayScore": "4",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:46:47"
+          }
         },
         {
           "away": "Sunderland AFC",
@@ -5396,8 +5426,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "0",
+            "awayScore": "0"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -5410,7 +5443,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:aston-villa-fc",
-          "awayTeamId": "team:sunderland-afc"
+          "awayTeamId": "team:sunderland-afc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_560644",
+            "homeScore": "0",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:46:47"
+          }
         },
         {
           "away": "Nottingham Forest FC",
@@ -5433,8 +5478,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "0"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -5447,7 +5495,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:afc-bournemouth",
-          "awayTeamId": "team:nottingham-forest-fc"
+          "awayTeamId": "team:nottingham-forest-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_560647",
+            "homeScore": "2",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:46:48"
+          }
         },
         {
           "away": "Ipswich Town FC",
@@ -5470,8 +5530,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "0"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -5484,7 +5547,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:tottenham-hotspur-fc",
-          "awayTeamId": "team:ipswich-town-fc"
+          "awayTeamId": "team:ipswich-town-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_560648",
+            "homeScore": "2",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:46:48"
+          }
         },
         {
           "away": "Crystal Palace FC",
@@ -5507,8 +5582,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "3",
+            "awayScore": "2"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -5521,7 +5599,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:coventry-city-fc",
-          "awayTeamId": "team:crystal-palace-fc"
+          "awayTeamId": "team:crystal-palace-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_560650",
+            "homeScore": "3",
+            "awayScore": "2",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:46:48"
+          }
         },
         {
           "away": "Arsenal FC",
@@ -5547,7 +5637,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "finalResult": null,
           "time": "17:30:00",
           "timestamp": "2026-11-21T17:30:00Z",
@@ -15778,15 +15868,15 @@
       "notes": [
         "Loaded the full Premier League 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:36.750Z",
+      "attemptedAt": "2026-11-21T17:43:15.930Z",
       "competition": {
         "category": "",
         "code": "ELC",
@@ -16575,15 +16665,15 @@
       "notes": [
         "Loaded all 15 currently published EFL Cup matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:17.575Z",
+      "attemptedAt": "2026-11-21T17:42:56.593Z",
       "competition": {
         "code": "CL",
         "followedTeamNames": [
@@ -22969,15 +23059,15 @@
       "notes": [
         "Loaded the full UEFA Champions League 2026 schedule (144 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:24.312Z",
+      "attemptedAt": "2026-11-21T17:43:03.177Z",
       "competition": {
         "code": "PD",
         "followedTeamNames": [
@@ -28969,8 +29059,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "0",
+            "awayScore": "1"
+          },
           "time": "20:00:00",
           "timestamp": "2026-11-20T20:00:00Z",
           "venue": "",
@@ -29008,8 +29101,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "3",
+            "awayScore": "1"
+          },
           "time": "13:00:00",
           "timestamp": "2026-11-21T13:00:00Z",
           "venue": "",
@@ -29022,7 +29118,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:deportivo-alaves",
-          "awayTeamId": "team:rc-deportivo-la-coruna"
+          "awayTeamId": "team:rc-deportivo-la-coruna",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_564755",
+            "homeScore": "3",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:07"
+          }
         },
         {
           "away": "Valencia CF",
@@ -29045,8 +29153,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "0",
+            "awayScore": "1"
+          },
           "time": "15:15:00",
           "timestamp": "2026-11-21T15:15:00Z",
           "venue": "",
@@ -29059,7 +29170,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:rayo-vallecano-de-madrid",
-          "awayTeamId": "team:valencia-cf"
+          "awayTeamId": "team:valencia-cf",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_564751",
+            "homeScore": "0",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:07"
+          }
         },
         {
           "away": "Real Betis Balompié",
@@ -29082,7 +29205,7 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "finalResult": null,
           "time": "17:30:00",
           "timestamp": "2026-11-21T17:30:00Z",
@@ -38734,15 +38857,15 @@
       "notes": [
         "Loaded the full Primera Division 2026 schedule (380 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:30.940Z",
+      "attemptedAt": "2026-11-21T17:43:10.385Z",
       "competition": {
         "code": "ELC",
         "followedTeamNames": [
@@ -47998,8 +48121,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "0"
+          },
           "time": "12:30:00",
           "timestamp": "2026-11-21T12:30:00Z",
           "venue": "",
@@ -48012,7 +48138,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:southampton-fc",
-          "awayTeamId": "team:derby-county-fc"
+          "awayTeamId": "team:derby-county-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561944",
+            "homeScore": "2",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:24"
+          }
         },
         {
           "away": "Cardiff City FC",
@@ -48035,8 +48173,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "1"
+          },
           "time": "12:30:00",
           "timestamp": "2026-11-21T12:30:00Z",
           "venue": "",
@@ -48049,7 +48190,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:norwich-city-fc",
-          "awayTeamId": "team:cardiff-city-fc"
+          "awayTeamId": "team:cardiff-city-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561948",
+            "homeScore": "2",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:24"
+          }
         },
         {
           "away": "Queens Park Rangers FC",
@@ -48072,8 +48225,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "0",
+            "awayScore": "1"
+          },
           "time": "12:30:00",
           "timestamp": "2026-11-21T12:30:00Z",
           "venue": "",
@@ -48086,7 +48242,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:millwall-fc",
-          "awayTeamId": "team:queens-park-rangers-fc"
+          "awayTeamId": "team:queens-park-rangers-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561950",
+            "homeScore": "0",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:24"
+          }
         },
         {
           "away": "Watford FC",
@@ -48109,8 +48277,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "4",
+            "awayScore": "0"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48123,7 +48294,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:sheffield-united-fc",
-          "awayTeamId": "team:watford-fc"
+          "awayTeamId": "team:watford-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561941",
+            "homeScore": "4",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "West Bromwich Albion FC",
@@ -48146,8 +48329,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "2"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48160,7 +48346,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:swansea-city-afc",
-          "awayTeamId": "team:west-bromwich-albion-fc"
+          "awayTeamId": "team:west-bromwich-albion-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561942",
+            "homeScore": "2",
+            "awayScore": "2",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "Bristol City FC",
@@ -48183,8 +48381,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "0"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48197,7 +48398,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:middlesbrough-fc",
-          "awayTeamId": "team:bristol-city-fc"
+          "awayTeamId": "team:bristol-city-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561943",
+            "homeScore": "2",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "Portsmouth FC",
@@ -48220,8 +48433,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "1",
+            "awayScore": "1"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48234,7 +48450,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:bolton-wanderers-fc",
-          "awayTeamId": "team:portsmouth-fc"
+          "awayTeamId": "team:portsmouth-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561945",
+            "homeScore": "1",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "Birmingham City FC",
@@ -48257,8 +48485,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "1",
+            "awayScore": "0"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48271,7 +48502,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:stoke-city-fc",
-          "awayTeamId": "team:birmingham-city-fc"
+          "awayTeamId": "team:birmingham-city-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561946",
+            "homeScore": "1",
+            "awayScore": "0",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "Wrexham AFC",
@@ -48296,8 +48539,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "0",
+            "awayScore": "1"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48312,7 +48558,14 @@
           "teamId": "3",
           "teamName": "Wrexham",
           "homeTeamId": "team:lincoln-city-fc",
-          "awayTeamId": "3"
+          "awayTeamId": "3",
+          "resultVerification": {
+            "source": "ESPN",
+            "eventId": "401880158",
+            "reportedStatus": "STATUS_FULL_TIME",
+            "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20261121&limit=100",
+            "checkedAt": "2026-11-21T17:37:11.587Z"
+          }
         },
         {
           "away": "Preston North End FC",
@@ -48335,8 +48588,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "1",
+            "awayScore": "1"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48349,7 +48605,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:west-ham-united-fc",
-          "awayTeamId": "team:preston-north-end-fc"
+          "awayTeamId": "team:preston-north-end-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561951",
+            "homeScore": "1",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "Charlton Athletic FC",
@@ -48372,8 +48640,11 @@
           "sources": [
             "football-data.org"
           ],
-          "status": "SCHEDULED",
-          "finalResult": null,
+          "status": "FINISHED",
+          "finalResult": {
+            "homeScore": "2",
+            "awayScore": "1"
+          },
           "time": "15:00:00",
           "timestamp": "2026-11-21T15:00:00Z",
           "venue": "",
@@ -48386,7 +48657,19 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:wolverhampton-wanderers-fc",
-          "awayTeamId": "team:charlton-athletic-fc"
+          "awayTeamId": "team:charlton-athletic-fc",
+          "matchNote": {
+            "matchId": "footy_comp_football_data_org_561952",
+            "homeScore": "2",
+            "awayScore": "1",
+            "kit": "",
+            "followGoalAssists": [],
+            "opponentGoalAssists": [],
+            "note": "",
+            "highlightLink": "",
+            "revision": 1,
+            "updatedAt": "2026-11-21 17:47:25"
+          }
         },
         {
           "away": "Blackburn Rovers FC",
@@ -61839,15 +62122,15 @@
       "notes": [
         "Loaded the full Championship 2026 schedule (552 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "football-data.org"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:43.244Z",
+      "attemptedAt": "2026-11-21T17:43:22.380Z",
       "competition": {
         "category": "",
         "code": "SDE",
@@ -61952,15 +62235,15 @@
       "notes": [
         "Loaded all 2 currently published Supercopa de España matches from TheSportsDB."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "TheSportsDB"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:43.245Z",
+      "attemptedAt": "2026-11-21T17:43:22.382Z",
       "competition": {
         "category": "international",
         "code": "INT-FRIENDLY",
@@ -62298,16 +62581,16 @@
       "notes": [
         "Preserved 7 USMNT and USWNT international friendlies."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "TheSportsDB",
         "U.S. Soccer"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:43.245Z",
+      "attemptedAt": "2026-11-21T17:43:22.382Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -67641,7 +67924,7 @@
       "updatedAt": "2026-11-19T19:01:38.696Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:56.340Z",
+      "attemptedAt": "2026-11-21T17:43:35.659Z",
       "competition": {
         "code": "MLS",
         "followedTeamNames": [
@@ -83548,7 +83831,7 @@
             "iCalendar"
           ],
           "sourceDetail": "league-calendar-feed",
-          "status": "FINISHED",
+          "status": "Scheduled",
           "time": "23:00:00",
           "timestamp": "2026-10-21T23:00:00Z",
           "venue": "TQL Stadium, Cincinnati, OH",
@@ -83561,30 +83844,7 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:fc-cincinnati",
-          "awayTeamId": "team:d-c-united",
-          "finalResult": {
-            "homeScore": "2",
-            "awayScore": "1"
-          },
-          "resultVerification": {
-            "source": "ESPN",
-            "eventId": "761773",
-            "reportedStatus": "STATUS_FULL_TIME",
-            "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261021&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
-          },
-          "matchNote": {
-            "matchId": "footy_comp_icalendar_mls_mat_0009kd",
-            "homeScore": "2",
-            "awayScore": "1",
-            "kit": "",
-            "followGoalAssists": [],
-            "opponentGoalAssists": [],
-            "note": "",
-            "highlightLink": "",
-            "revision": 1,
-            "updatedAt": "2026-11-07 20:04:30"
-          }
+          "awayTeamId": "team:d-c-united"
         },
         {
           "away": "Nashville SC",
@@ -83629,7 +83889,7 @@
             "eventId": "761903",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nt",
@@ -83687,7 +83947,7 @@
             "eventId": "761890",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009no",
@@ -83747,7 +84007,7 @@
             "eventId": "761891",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -83793,7 +84053,7 @@
             "eventId": "761893",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nm",
@@ -83851,7 +84111,7 @@
             "eventId": "761895",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nq",
@@ -83909,7 +84169,7 @@
             "eventId": "761892",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nv",
@@ -83967,7 +84227,7 @@
             "eventId": "761894",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nw",
@@ -84025,7 +84285,7 @@
             "eventId": "761900",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009np",
@@ -84083,7 +84343,7 @@
             "eventId": "761896",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nr",
@@ -84141,7 +84401,7 @@
             "eventId": "761899",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ns",
@@ -84199,7 +84459,7 @@
             "eventId": "761897",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nn",
@@ -84257,7 +84517,7 @@
             "eventId": "761898",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ny",
@@ -84317,7 +84577,7 @@
             "eventId": "761902",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -84363,7 +84623,7 @@
             "eventId": "761901",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009nz",
@@ -84458,7 +84718,7 @@
             "eventId": "761907",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -84506,7 +84766,7 @@
             "eventId": "761908",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -84552,7 +84812,7 @@
             "eventId": "761909",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o8",
@@ -84610,7 +84870,7 @@
             "eventId": "761905",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o9",
@@ -84668,7 +84928,7 @@
             "eventId": "761906",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009od",
@@ -84726,7 +84986,7 @@
             "eventId": "761910",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o1",
@@ -84784,7 +85044,7 @@
             "eventId": "761911",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o3",
@@ -84842,7 +85102,7 @@
             "eventId": "761912",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o4",
@@ -84900,7 +85160,7 @@
             "eventId": "761913",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o6",
@@ -84958,7 +85218,7 @@
             "eventId": "761914",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009o7",
@@ -85016,7 +85276,7 @@
             "eventId": "761915",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oc",
@@ -85074,7 +85334,7 @@
             "eventId": "761917",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oa",
@@ -85132,7 +85392,7 @@
             "eventId": "761916",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ob",
@@ -85190,7 +85450,7 @@
             "eventId": "761918",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261028&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oe",
@@ -85250,7 +85510,7 @@
             "eventId": "761922",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -85296,7 +85556,7 @@
             "eventId": "761919",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009og",
@@ -85354,7 +85614,7 @@
             "eventId": "761924",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oi",
@@ -85412,7 +85672,7 @@
             "eventId": "761930",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009om",
@@ -85470,7 +85730,7 @@
             "eventId": "761928",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oj",
@@ -85528,7 +85788,7 @@
             "eventId": "761926",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oo",
@@ -85586,7 +85846,7 @@
             "eventId": "761925",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ok",
@@ -85644,7 +85904,7 @@
             "eventId": "761929",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009on",
@@ -85702,7 +85962,7 @@
             "eventId": "761923",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261031&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oh",
@@ -85760,7 +86020,7 @@
             "eventId": "761927",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261101&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009op",
@@ -85818,7 +86078,7 @@
             "eventId": "761920",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261101&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ol",
@@ -85876,7 +86136,7 @@
             "eventId": "761931",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261101&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oq",
@@ -85936,7 +86196,7 @@
             "eventId": "761932",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261101&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -86017,7 +86277,7 @@
             "eventId": "761933",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261101&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ot",
@@ -86075,7 +86335,7 @@
             "eventId": "761935",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ov",
@@ -86133,7 +86393,7 @@
             "eventId": "761937",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ow",
@@ -86191,7 +86451,7 @@
             "eventId": "761936",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oy",
@@ -86252,7 +86512,7 @@
             "eventId": "761938",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -86298,7 +86558,7 @@
             "eventId": "761934",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p2",
@@ -86356,7 +86616,7 @@
             "eventId": "761939",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p3",
@@ -86414,7 +86674,7 @@
             "eventId": "761940",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p4",
@@ -86472,7 +86732,7 @@
             "eventId": "761941",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p5",
@@ -86530,7 +86790,7 @@
             "eventId": "761942",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ou",
@@ -86588,7 +86848,7 @@
             "eventId": "761943",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009ox",
@@ -86646,7 +86906,7 @@
             "eventId": "761944",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009oz",
@@ -86704,7 +86964,7 @@
             "eventId": "761945",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p1",
@@ -86762,7 +87022,7 @@
             "eventId": "761946",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p6",
@@ -86820,7 +87080,7 @@
             "eventId": "761947",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261107&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_0009p7",
@@ -86874,15 +87134,15 @@
       "notes": [
         "Loaded the full available MLS schedule (510 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:56.344Z",
+      "attemptedAt": "2026-11-21T17:43:35.666Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -89622,7 +89882,7 @@
             "iCalendar"
           ],
           "sourceDetail": "league-calendar-feed",
-          "status": "FINISHED",
+          "status": "Scheduled",
           "time": "00:00:00",
           "timestamp": "2026-10-22T00:00:00Z",
           "venue": "ScottsMiracle-Gro Field, Columbus, OH",
@@ -89635,44 +89895,21 @@
           "teamId": "",
           "teamName": "",
           "homeTeamId": "team:columbus-crew",
-          "awayTeamId": "team:st-louis-city-sc",
-          "finalResult": {
-            "homeScore": "0",
-            "awayScore": "0"
-          },
-          "resultVerification": {
-            "source": "ESPN",
-            "eventId": "401916449",
-            "reportedStatus": "STATUS_FINAL_PEN",
-            "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.open/scoreboard?dates=20261021&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
-          },
-          "matchNote": {
-            "matchId": "footy_comp_icalendar_mls_mat_000a8o",
-            "homeScore": "0",
-            "awayScore": "0",
-            "kit": "",
-            "followGoalAssists": [],
-            "opponentGoalAssists": [],
-            "note": "",
-            "highlightLink": "",
-            "revision": 1,
-            "updatedAt": "2026-11-07 20:04:36"
-          }
+          "awayTeamId": "team:st-louis-city-sc"
         }
       ],
       "notes": [
         "Loaded the full available U.S. Open Cup schedule (78 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:56.347Z",
+      "attemptedAt": "2026-11-21T17:43:35.671Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -91876,15 +92113,15 @@
       "notes": [
         "Loaded the full available Leagues Cup schedule (62 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     },
     {
-      "attemptedAt": "2026-11-20T18:44:56.348Z",
+      "attemptedAt": "2026-11-21T17:43:35.672Z",
       "competition": {
         "code": "",
         "followedTeamNames": [
@@ -91945,7 +92182,7 @@
             "eventId": "401933535",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261119&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_000acq",
@@ -92003,7 +92240,7 @@
             "eventId": "401933555",
             "reportedStatus": "STATUS_FINAL_PEN",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261119&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           },
           "matchNote": {
             "matchId": "footy_comp_icalendar_mls_mat_000acp",
@@ -93051,12 +93288,12 @@
       "notes": [
         "Loaded the full available MLS - Cup Playoffs schedule (31 matches)."
       ],
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "sources": [
         "iCalendar"
       ],
       "status": "updated",
-      "updatedAt": "2026-11-20T18:38:32.472Z"
+      "updatedAt": "2026-11-21T17:37:11.587Z"
     }
   ],
   "teamCatalog": [
@@ -98686,9 +98923,9 @@
   ],
   "teamSchedules": [
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
@@ -99501,7 +99738,7 @@
             "eventId": "401921835",
             "reportedStatus": "STATUS_FINAL_PEN",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard?dates=20261027&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -99679,7 +99916,7 @@
             "iCalendar"
           ],
           "sourceDetail": "team-upcoming",
-          "status": "TIMED",
+          "status": "IN_PLAY",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png",
           "teamId": "1",
           "teamName": "Arsenal",
@@ -101001,19 +101238,19 @@
         }
       ],
       "notes": [
-        "Loaded 37 all-status matches from 2026-10-21 through 2027-11-20.",
+        "Loaded 36 all-status matches from 2026-10-22 through 2027-11-21.",
         "Running competitions: Premier League (PL), Football League Cup (FLC), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 38 Arsenal.com fixtures from monthly GraphQL windows.",
-        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-11-20.",
+        "Loaded 37 Arsenal.com fixtures from monthly GraphQL windows.",
+        "Loaded 38 iCalendar fixtures from 2026-07-01 through 2027-11-21.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
@@ -103226,18 +103463,18 @@
         }
       ],
       "notes": [
-        "Loaded 34 all-status matches from 2026-10-21 through 2027-11-20.",
+        "Loaded 34 all-status matches from 2026-10-22 through 2027-11-21.",
         "Running competitions: Primera Division (PD), UEFA Champions League (CL).",
         "Loaded 1 TheSportsDB team-upcoming matches and 1 league-season matches.",
-        "Loaded 33 iCalendar fixtures from 2026-07-01 through 2027-11-20.",
+        "Loaded 33 iCalendar fixtures from 2026-07-01 through 2027-11-21.",
         "Preserved 17 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
@@ -104084,7 +104321,7 @@
             "iCalendar"
           ],
           "sourceDetail": "team-upcoming",
-          "status": "SCHEDULED",
+          "status": "FINISHED",
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/ezpymt1675092551.png",
           "teamId": "3",
           "teamName": "Wrexham",
@@ -104095,12 +104332,22 @@
           "awaySportDbTeamId": "134775",
           "homeProviderTeamId": "1126",
           "homeSportDbTeamId": "135900",
-          "finalResult": null,
+          "finalResult": {
+            "homeScore": "0",
+            "awayScore": "1"
+          },
           "lastSeen": "",
           "matchId": "footy_8c2b52394d77",
           "isFriendly": false,
           "homeTeamId": "team:lincoln-city-fc",
-          "awayTeamId": "3"
+          "awayTeamId": "3",
+          "resultVerification": {
+            "source": "ESPN",
+            "eventId": "401880158",
+            "reportedStatus": "STATUS_FULL_TIME",
+            "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20261121&limit=100",
+            "checkedAt": "2026-11-21T17:37:11.587Z"
+          }
         },
         {
           "away": "Wrexham AFC",
@@ -105304,18 +105551,18 @@
         }
       ],
       "notes": [
-        "Loaded 35 all-status matches from 2026-10-21 through 2027-11-20.",
+        "Loaded 35 all-status matches from 2026-10-22 through 2027-11-21.",
         "Running competitions: Championship (ELC), Football League Cup (FLC).",
         "Loaded 1 TheSportsDB team-upcoming matches and 0 league-season matches.",
-        "Loaded 33 iCalendar fixtures from 2026-07-01 through 2027-11-20.",
+        "Loaded 31 iCalendar fixtures from 2026-07-01 through 2027-11-21.",
         "Preserved 15 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/usmnt.svg",
@@ -105551,9 +105798,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/uswnt.svg",
@@ -105706,9 +105953,9 @@
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/charlotte-fc.svg",
@@ -106716,7 +106963,7 @@
             "eventId": "761902",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -106917,15 +107164,15 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 16 iCalendar fixtures from 2026-01-01 through 2027-11-20.",
+        "Loaded 16 iCalendar fixtures from 2026-01-01 through 2027-11-21.",
         "Preserved 16 registered fixtures that were not returned by providers this run."
       ],
       "errors": []
     },
     {
-      "attemptedAt": "2026-11-20T18:38:32.472Z",
-      "updatedAt": "2026-11-20T18:38:32.472Z",
-      "previousUpdatedAt": "2026-11-19T19:01:38.696Z",
+      "attemptedAt": "2026-11-21T17:37:11.587Z",
+      "updatedAt": "2026-11-21T17:37:11.587Z",
+      "previousUpdatedAt": "2026-11-20T18:38:32.472Z",
       "status": "updated",
       "team": {
         "badge": "assets/teams/inter-miami-cf.webp",
@@ -107792,7 +108039,7 @@
             "eventId": "761891",
             "reportedStatus": "STATUS_FULL_TIME",
             "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=20261024&limit=100",
-            "checkedAt": "2026-11-20T18:38:32.472Z"
+            "checkedAt": "2026-11-21T17:37:11.587Z"
           }
         },
         {
@@ -108038,7 +108285,7 @@
       "notes": [
         "Skipped football-data.org; no provider team ID configured.",
         "Skipped TheSportsDB; no SportDB Team ID configured.",
-        "Loaded 12 iCalendar fixtures from 2026-01-01 through 2027-11-20.",
+        "Loaded 12 iCalendar fixtures from 2026-01-01 through 2027-11-21.",
         "Preserved 17 registered fixtures that were not returned by providers this run."
       ],
       "errors": []

@@ -601,8 +601,10 @@ test("followed-team picker loads on demand with a contained mobile scroll list",
 });
 
 for (const widePreview of [false, true]) {
-  test(`Next item form loads as a contained React dialog and saves (${widePreview ? "desktop preview" : "mobile preview"})`, (context) =>
-    checkNextItemForm(context, widePreview));
+  test(`Next item form loads as a contained React dialog and saves (${widePreview ? "desktop preview" : "mobile preview"})`, ({
+    page,
+    browserName,
+  }) => checkNextItemForm({ page, browserName }, widePreview));
 }
 
 /**
@@ -873,6 +875,58 @@ async function checkNextItemForm({ page, browserName }, widePreview) {
     name: /Horizontal position/,
   });
   const vertical = dialog.getByRole("slider", { name: /Vertical position/ });
+  await vertical.scrollIntoViewIfNeeded();
+  const sliderBounds = await vertical.boundingBox();
+  if (!sliderBounds) throw new Error("Image position slider must be visible");
+  await vertical.tap({
+    position: { x: sliderBounds.width * 0.8, y: sliderBounds.height / 2 },
+  });
+  await expect
+    .poll(async () => Number(await vertical.inputValue()))
+    .toBeGreaterThan(60);
+  await dialog.getByRole("button", { name: "Center image" }).click();
+  // A horizontal slider gesture at the dialog's scroll boundary must remain
+  // available to the native range control rather than the page-scroll guard.
+  await dialog.locator(".react-form-dialog-scroll").evaluate((area) => {
+    area.scrollTop = area.scrollHeight;
+  });
+  expect(
+    await vertical.evaluate((input) => {
+      /** @param {string} type @param {number} x */
+      const dispatch = (type, x) => {
+        const event = new Event(type, { bubbles: true, cancelable: true });
+        Object.defineProperty(event, "touches", {
+          value: [{ clientX: x, clientY: 100 }],
+        });
+        return input.dispatchEvent(event);
+      };
+      dispatch("touchstart", 100);
+      return dispatch("touchmove", 150);
+    }),
+  ).toBe(true);
+  await horizontal.scrollIntoViewIfNeeded();
+  const horizontalBounds = await horizontal.boundingBox();
+  if (!horizontalBounds)
+    throw new Error("Horizontal position slider must be visible");
+  await page.mouse.move(
+    horizontalBounds.x + horizontalBounds.width / 2,
+    horizontalBounds.y + horizontalBounds.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    horizontalBounds.x + horizontalBounds.width * 0.8,
+    horizontalBounds.y + horizontalBounds.height / 2,
+    { steps: 8 },
+  );
+  await page.mouse.up();
+  await expect
+    .poll(async () => Number(await horizontal.inputValue()))
+    .toBeGreaterThan(60);
+  await expect(dialog.getByAltText("Image position preview")).toHaveCSS(
+    "object-position",
+    `${await horizontal.inputValue()}% 50%`,
+  );
+  await dialog.getByRole("button", { name: "Center image" }).click();
   await expect(horizontal).toHaveValue("50");
   await horizontal.fill("20");
   await vertical.fill("80");

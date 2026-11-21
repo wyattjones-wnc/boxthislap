@@ -12783,3 +12783,13 @@ html:not([data-world-cup-draft-open="true"]) a[data-page-link="world-cup-2027-ac
 .next-image-position-canvas {
   transform-origin: top left;
 }
+
+/* Native slider drags must not become dialog scrolling gestures. */
+.has-contained-dialog dialog input[type="range"] {
+  touch-action: none;
+}
+
+.react-form-dialog-panel .next-image-position-controls input[type="range"] {
+  padding: 0;
+  cursor: ew-resize;
+}

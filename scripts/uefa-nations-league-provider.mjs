@@ -1,9 +1,9 @@
-const DATE_BLOCK_PATTERN = /<p><b>(?:[A-Za-z]+\s+)?(\d{1,2}\s+[A-Za-z]+)<\/b><\/p>\s*<p>([\s\S]*?)<\/p>/g;
+const DATE_BLOCK_PATTERN = /<p><b>(?:[A-Za-z]+\s+)?(\d{1,2}\s+[A-Za-z]+(?:\s+\d{4})?)<\/b><\/p>\s*<p>([\s\S]*?)<\/p>/g;
 const MATCH_PATTERN = /([A-D]\d)\s*<a\b[^>]*href="[^"]*\/match\/(\d+)--[^"]*"[^>]*>([\s\S]*?)<\/a>(?:\s*\((\d{1,2}:\d{2})\))?/g;
 
 export function parseUefaNationsLeagueFixtures(html, { seasonYear = new Date().getUTCFullYear() } = {}) {
   const fixtures = [];
-  const fixtureSection = String(html || "").split("League phase fixtures and results")[1] || "";
+  const fixtureSection = (String(html || "").split(/<h2\b[^>]*>\s*(?:<b>)?League phase (?:fixtures(?: and results)?|results)(?:<\/b>)?\s*<\/h2>/i)[1] || "").split(/<h2\b/i)[0];
 
   for (const dateMatch of fixtureSection.matchAll(DATE_BLOCK_PATTERN)) {
     const date = parseUefaDate(dateMatch[1], seasonYear);
@@ -64,11 +64,11 @@ function parseUefaMatchLabel(label) {
 }
 
 function parseUefaDate(value, year) {
-  const match = String(value || "").trim().match(/^(\d{1,2})\s+([A-Za-z]+)$/);
+  const match = String(value || "").trim().match(/^(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?$/);
 
   if (!match) return "";
 
-  const parsed = new Date(`${match[2]} ${match[1]}, ${year} 12:00:00 UTC`);
+  const parsed = new Date(`${match[2]} ${match[1]}, ${match[3] || year} 12:00:00 UTC`);
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 

@@ -62342,7 +62342,7 @@
       "updatedAt": "2026-11-21T10:31:13.336Z"
     },
     {
-      "attemptedAt": "2026-11-21T10:37:24.194Z",
+      "attemptedAt": "2026-11-21T19:01:19.703Z",
       "competition": {
         "category": "international",
         "code": "UNL",
@@ -62355,9 +62355,7 @@
         "source": "UEFA.com",
         "type": "INTERNATIONAL_CUP"
       },
-      "errors": [
-        "UEFA.com returned no UEFA Nations League fixtures for 2026-2027."
-      ],
+      "errors": [],
       "fixtureCount": 156,
       "fixtures": [
         {
@@ -67666,14 +67664,14 @@
         }
       ],
       "notes": [
-        "Preserved 156 matches from the previous successful competition update."
+        "Loaded all 156 published UEFA Nations League matches from UEFA.com."
       ],
-      "previousUpdatedAt": "2026-11-19T10:31:13.932Z",
+      "previousUpdatedAt": "2026-11-20T10:31:20.206Z",
       "sources": [
         "UEFA.com"
       ],
-      "status": "stale-error",
-      "updatedAt": "2026-11-20T10:31:20.206Z"
+      "status": "updated",
+      "updatedAt": "2026-11-21T19:01:19.703Z"
     },
     {
       "attemptedAt": "2026-11-21T10:37:37.379Z",

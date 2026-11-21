@@ -28,7 +28,7 @@
     "footy:rosters:dry-run": "node scripts/update-footy-rosters.mjs --dry-run --seed-legacy",
     "test:footy-rosters": "node --test workers/footy-notes/test/rosters.test.mjs",
     "test:footy-media": "node --test scripts/footy-media/*.test.mjs workers/footy-notes/test/match-media.test.mjs",
-    "test:formula-one": "node --test modules/formulaOneQualifying.test.mjs workers/formula-one/test/*.test.mjs",
+    "test:formula-one": "node --test modules/formulaOneQualifying.test.mjs tests/formula-one-weekly-edit.test.mjs workers/formula-one/test/*.test.mjs",
     "test:fantasy-office": "node --test scripts/fantasy-office-sources.test.mjs scripts/import-fantasy-office-2026.test.mjs workers/fantasy-office/test/*.test.mjs",
     "test:youtube": "node --test workers/youtube-inbox/test/*.test.mjs",
     "test:offline": "node --test modules/connectivity.test.mjs modules/offline.test.mjs modules/offline-shell.test.mjs",

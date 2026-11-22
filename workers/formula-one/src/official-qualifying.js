@@ -14,19 +14,25 @@ function rows(html) {
   );
 }
 
-export function findOfficialQualifyingPath(html, year, raceDate) {
+export function findOfficialQualifyingPath(html, year, raceDate, raceTime) {
   const date = new Date(`${raceDate}T12:00:00Z`);
   if (
     !Number.isFinite(date.getTime()) ||
     date.getUTCFullYear() !== Number(year)
   )
     throw new Error("Invalid race date for official qualifying results.");
-  const label = new Intl.DateTimeFormat("en-GB", {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     timeZone: "UTC",
-  }).format(date);
-  const matches = rows(html).filter((row) => cells(row)[1] === label);
+  });
+  const labels = new Set([formatter.format(date)]);
+  // Jolpica dates are UTC; Formula1.com uses the circuit's local date.
+  // A start before noon UTC can fall on the previous day in UTC-12..UTC-1.
+  if (/^(?:0[0-9]|1[01]):[0-5][0-9]:[0-5][0-9]Z$/.test(raceTime || "")) {
+    labels.add(formatter.format(new Date(date.getTime() - 86400000)));
+  }
+  const matches = rows(html).filter((row) => labels.has(cells(row)[1]));
   if (matches.length !== 1)
     throw new Error(
       "Official qualifying round could not be identified by race date.",
@@ -89,7 +95,12 @@ export function applyOfficialQualifying(results, html, sourceUrl) {
   });
 }
 
-export async function fetchOfficialQualifying(results, year, raceDate) {
+export async function fetchOfficialQualifying(
+  results,
+  year,
+  raceDate,
+  raceTime,
+) {
   const base = "https://www.formula1.com";
   async function read(url) {
     const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
@@ -100,7 +111,7 @@ export async function fetchOfficialQualifying(results, year, raceDate) {
     return response.text();
   }
   const index = await read(`${base}/en/results/${year}/races`);
-  const sourceUrl = `${base}${findOfficialQualifyingPath(index, year, raceDate)}`;
+  const sourceUrl = `${base}${findOfficialQualifyingPath(index, year, raceDate, raceTime)}`;
   return {
     results: applyOfficialQualifying(results, await read(sourceUrl), sourceUrl),
     sourceUrl,

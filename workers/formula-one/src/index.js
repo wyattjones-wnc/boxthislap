@@ -1024,7 +1024,7 @@ async function fetchSession(
   );
   if (sessionType === "qualifying") {
     try {
-      const official = await fetchOfficialQualifying(results, year, race.date);
+      const official = await fetchOfficialQualifying(results, year, race.date, race.time);
       results = official.results;
       sourceUrl = official.sourceUrl;
     } catch (error) {

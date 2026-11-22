@@ -80,3 +80,42 @@ test("fetches the discovered official classification and fails on provider error
     /503/,
   );
 });
+
+test("matches Las Vegas local Saturday with the provider's Sunday UTC start", async (t) => {
+  const vegasIndex = index
+    .replaceAll("mexico", "las-vegas")
+    .replace("01 Nov", "21 Nov");
+  assert.equal(
+    findOfficialQualifyingPath(vegasIndex, 2026, "2026-11-22", "04:00:00Z"),
+    "/en/results/2026/races/1298/las-vegas/qualifying",
+  );
+  for (const time of [undefined, "invalid", "12:00:00Z", "20:00:00Z"]) {
+    assert.throws(() =>
+      findOfficialQualifyingPath(vegasIndex, 2026, "2026-11-22", time),
+    );
+  }
+  assert.throws(() =>
+    findOfficialQualifyingPath(
+      vegasIndex + vegasIndex.replace("21 Nov", "22 Nov"),
+      2026,
+      "2026-11-22",
+      "04:00:00Z",
+    ),
+  );
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url) => {
+    calls.push(url);
+    return new Response(calls.length === 1 ? vegasIndex : html);
+  });
+  const imported = await fetchOfficialQualifying(
+    results,
+    2026,
+    "2026-11-22",
+    "04:00:00Z",
+  );
+  assert.equal(
+    calls[1],
+    "https://www.formula1.com/en/results/2026/races/1298/las-vegas/qualifying",
+  );
+  assert.equal(imported.results.length, results.length);
+});

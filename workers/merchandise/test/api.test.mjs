@@ -61,7 +61,7 @@ test("seen-through rejects an anchor no longer in the filtered unseen feed", asy
   );
 });
 
-test("product listing reads one bounded page without full-feed counts", async () => {
+test("product listing keeps pagination bounded and returns the global unseen count", async () => {
   const bindings = [];
   const rows = Array.from({ length: 49 }, (_, index) => ({
     availability: "unknown",
@@ -84,8 +84,18 @@ test("product listing reads one bounded page without full-feed counts", async ()
   const env = {
     DB: {
       prepare(sql) {
-        if (sql.includes("FROM merch_products"))
-          assert.doesNotMatch(sql, /COUNT\s*\(|SUM\s*\(/i);
+        if (sql.includes("COUNT(*)")) {
+          assert.match(sql, /p.in_scope = 1 AND s.seen_at IS NULL/);
+          assert.doesNotMatch(sql, /p.team =|p.category =|LIMIT/);
+          return {
+            bind: (...values) => {
+              assert.deepEqual(values, ["6"]);
+              return {
+                all: async () => ({ results: [{ unseen_count: 1234 }] }),
+              };
+            },
+          };
+        }
         return {
           bind(...values) {
             bindings.push(values);
@@ -105,6 +115,7 @@ test("product listing reads one bounded page without full-feed counts", async ()
     "6",
     new URLSearchParams("view=unseen&page=1&limit=48"),
   );
+  assert.equal(result.unseenCount, 1234);
   assert.equal(result.items.length, 48);
   assert.equal(result.pagination.hasMore, true);
   assert.ok(bindings[0].includes(49));
@@ -114,7 +125,7 @@ test("sale listing is paginated and remains independent of seen state", async ()
   const env = {
     DB: {
       prepare(sql) {
-        if (sql.includes("FROM merch_products")) productQuery = sql;
+        if (sql.includes("SELECT p.*")) productQuery = sql;
         return {
           bind: () => ({ all: async () => ({ results: [] }) }),
           all: async () => ({ results: [] }),
@@ -133,7 +144,7 @@ test("seen listing is paginated and includes explicitly seen products", async ()
   const env = {
     DB: {
       prepare(sql) {
-        if (sql.includes("FROM merch_products")) productQuery = sql;
+        if (sql.includes("SELECT p.*")) productQuery = sql;
         return {
           bind: () => ({ all: async () => ({ results: [] }) }),
           all: async () => ({ results: [] }),

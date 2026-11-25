@@ -131,7 +131,16 @@ export async function listProducts(env, managerId, searchParams) {
     .all();
   const rows = result.results || [];
   const hasMore = rows.length > limit;
+  const counts = await env.DB.prepare(
+    `SELECT COUNT(*) AS unseen_count
+     FROM merch_products p
+     LEFT JOIN merch_manager_state s ON s.product_id = p.id AND s.manager_id = ?
+     WHERE p.in_scope = 1 AND s.seen_at IS NULL`,
+  )
+    .bind(managerId)
+    .all();
   return {
+    unseenCount: Number(counts.results?.[0]?.unseen_count || 0),
     filters: { category, team },
     items: rows.slice(0, limit).map(mapProduct),
     pagination: { hasMore, page, limit },

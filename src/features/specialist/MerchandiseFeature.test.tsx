@@ -13,6 +13,7 @@ import { AppProviders } from "../../app/providers";
 import { MerchandiseFeature } from "./MerchandiseFeature";
 
 const feed = {
+  unseenCount: 1234,
   items: [
     {
       availability: "in_stock",
@@ -145,6 +146,7 @@ describe("MerchandiseFeature", () => {
     expect(
       await screen.findByRole("heading", { name: "Home shirt" }),
     ).not.toBeNull();
+    expect(screen.getByText("1,234 unseen items total")).not.toBeNull();
     expect(document.querySelectorAll("[data-product-image]")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Seen" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Sale" })).not.toBeNull();

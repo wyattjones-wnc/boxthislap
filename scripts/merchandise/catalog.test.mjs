@@ -179,6 +179,44 @@ test("Barcelona scanner enriches only missing images and tolerates page failures
   assert.equal(calls.length, 3);
 });
 
+test("Barcelona scan includes sale merchandise beyond the first page", async () => {
+  const requested = [];
+  const scan = await scanBarcelona({
+    limit: 1,
+    fetchImpl: async (url) => {
+      requested.push(url);
+      const page = Number(new URL(url).searchParams.get("page"));
+      return {
+        ok: true,
+        json: async () => ({
+          products:
+            page > 2
+              ? []
+              : [
+                  {
+                    id: page,
+                    handle: `shirt-${page}`,
+                    title: `Shirt ${page}`,
+                    image: { src: "https://example.com/shirt.jpg" },
+                    variants: [
+                      {
+                        price: "50.00",
+                        compare_at_price: page === 2 ? "80.00" : null,
+                        available: true,
+                      },
+                    ],
+                  },
+                ],
+        }),
+      };
+    },
+  });
+  assert.equal(requested.length, 3);
+  assert.equal(scan.products.length, 2);
+  assert.equal(scan.products[1].priceMinor, 5000);
+  assert.equal(scan.products[1].regularPriceMinor, 8000);
+});
+
 test("normalizes Arsenal JSON-LD using the product code", () => {
   const html = `<script type="application/ld+json">{"@type":"Product","name":"Arsenal Away Shirt","image":"https://cdn.example/a.jpg","category":"Kit","offers":{"price":"80.00","priceCurrency":"GBP","availability":"https://schema.org/InStock"}}</script>`;
   const product = normalizeArsenalProduct(

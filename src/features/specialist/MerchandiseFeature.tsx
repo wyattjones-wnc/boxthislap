@@ -33,6 +33,7 @@ type SourceHealth = {
   status: string;
 };
 type Feed = {
+  unseenCount: number;
   items: Product[];
   pagination: { hasMore: boolean; page: number };
   sources: SourceHealth[];
@@ -223,6 +224,9 @@ export function MerchandiseFeature() {
           </a>
           <p className="eyebrow">Arsenal · FC Barcelona</p>
           <h1>Merchandise</h1>
+          {typeof feed?.unseenCount === "number" ? (
+            <p>{feed.unseenCount.toLocaleString()} unseen items total</p>
+          ) : null}
         </div>
         <div className={styles.viewTabs} aria-label="Merchandise view">
           {(["unseen", "all", "seen", "wishlist", "sale"] as View[]).map(

@@ -2207,10 +2207,25 @@ function areSameFixture(firstFixture = {}, secondFixture = {}) {
     return true;
   }
 
-  return String(firstFixture.teamId || "").trim() === String(secondFixture.teamId || "").trim() &&
-    String(firstFixture.date || "").trim() === String(secondFixture.date || "").trim() &&
-    isSameFootballClubName(firstFixture.home, secondFixture.home) &&
-    isSameFootballClubName(firstFixture.away, secondFixture.away);
+  if (String(firstFixture.teamId || "").trim() !== String(secondFixture.teamId || "").trim() ||
+      !firstFixture.date || firstFixture.date !== secondFixture.date) return false;
+
+  if (isSameFootballClubName(firstFixture.home, secondFixture.home) &&
+      isSameFootballClubName(firstFixture.away, secondFixture.away)) return true;
+
+  // Short names need independent fixture evidence before accepting a token subset.
+  // Provider league/team IDs are deliberately not compared across namespaces.
+  const kickoff = Date.parse(firstFixture.timestamp || "");
+  const hasMatchingContext = firstFixture.teamId &&
+    typeof firstFixture.isHome === "boolean" && firstFixture.isHome === secondFixture.isHome &&
+    firstFixture.time && secondFixture.time && Number.isFinite(kickoff) &&
+    kickoff === Date.parse(secondFixture.timestamp || "") &&
+    normalizeText(firstFixture.league) && normalizeText(firstFixture.league) === normalizeText(secondFixture.league) &&
+    String(firstFixture.round || "").trim() && String(firstFixture.round).trim() === String(secondFixture.round || "").trim();
+
+  return Boolean(hasMatchingContext &&
+    isSameFootballClubName(firstFixture.home, secondFixture.home, { minimumIdentityLength: 4 }) &&
+    isSameFootballClubName(firstFixture.away, secondFixture.away, { minimumIdentityLength: 4 }));
 }
 
 function buildFootyMatchRegistry({ fixtures = [], generatedAt, matchRows = [], matchNotes = new Map(), previousSchedules = [] }) {

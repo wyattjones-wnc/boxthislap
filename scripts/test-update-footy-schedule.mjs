@@ -86,4 +86,27 @@ const currentFixtures = getCurrentTeamFixtures({
 });
 assert.deepEqual(currentFixtures.map(({ away }) => away), ["Opponent", "Current future match"]);
 
+
+// Short provider names can match only with corroborating fixture context.
+for (const [shortName, longName] of [["Sabah FK", "Sabah Baku"], ["Ajax", "Ajax Amsterdam"], ["Lille OSC", "Lille Métropole"]]) {
+  const pair = [
+    fixture({ home: shortName, away: "FC Barcelona", isHome: false, league: "UEFA Champions League", round: "5", time: "19:30:00", source: "football-data.org", sources: ["football-data.org"], sourceIds: { "football-data.org": "primary" }, matchId: "primary" }),
+    fixture({ home: longName, away: "Barcelona", isHome: false, league: "UEFA Champions League", round: "5", time: "19:30:00", source: "TheSportsDB", sources: ["TheSportsDB"], sourceIds: { TheSportsDB: "secondary" }, matchId: "secondary" }),
+  ];
+  for (const input of [pair, [...pair].reverse()]) {
+    const merged = mergeFixtures(input);
+    assert.equal(merged.length, 1, `${shortName} / ${longName}`);
+    assert.equal(merged[0].matchId, "primary");
+    assert.deepEqual(merged[0].sources, ["football-data.org", "TheSportsDB"]);
+  }
+  for (const mismatch of [
+    { teamId: "other" }, { date: "2026-09-01" }, { timestamp: "2026-08-31T20:30:00Z" },
+    { timestamp: "invalid" }, { time: "" }, { league: "Other Cup" }, { league: "" },
+    { round: "6" }, { round: "" }, { isHome: true }, { isHome: undefined },
+    { home: `${longName} Women` }, { home: `${longName} U21` }, { home: "Unrelated Club" },
+  ]) {
+    assert.equal(mergeFixtures([pair[0], { ...pair[1], ...mismatch }]).length, 2, JSON.stringify(mismatch));
+  }
+}
+
 console.log("Footy schedule updater regression checks passed.");

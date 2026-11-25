@@ -10,7 +10,7 @@
     "competitionCount": 12,
     "competitionFixtureCount": 2318,
     "teamCount": 7,
-    "fixtureCount": 228,
+    "fixtureCount": 227,
     "statuses": {
       "updated": 7
     }
@@ -101521,7 +101521,7 @@
         "football-data.org",
         "iCalendar"
       ],
-      "fixtureCount": 55,
+      "fixtureCount": 54,
       "fixtures": [
         {
           "away": "CE Europa",
@@ -102446,9 +102446,13 @@
         {
           "away": "FC Barcelona",
           "awayBadge": "",
+          "awayProviderTeamId": "81",
+          "awaySportDbTeamId": "133739",
           "date": "2026-11-25",
           "home": "Sabah FK",
           "homeBadge": "",
+          "homeProviderTeamId": "10233",
+          "homeSportDbTeamId": "138341",
           "id": "575404",
           "leagueId": "2001",
           "isHome": false,
@@ -102457,70 +102461,31 @@
           "priority": "2",
           "round": "5",
           "season": "2026",
-          "source": "football-data.org + iCalendar",
+          "source": "football-data.org + iCalendar + TheSportsDB",
           "sourceIds": {
+            "TheSportsDB": "2594677",
             "football-data.org": "575404",
             "iCalendar": "6a92f2c554aa88426515def6"
           },
           "sources": [
             "football-data.org",
-            "iCalendar"
+            "iCalendar",
+            "TheSportsDB"
           ],
           "sourceDetail": "calendar-feed",
           "status": "TIMED",
+          "finalResult": null,
           "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
           "teamId": "2",
           "teamName": "Barcelona",
           "time": "17:45:00",
           "timestamp": "2026-11-25T17:45:00Z",
           "venue": "Baku, Baku",
-          "awayProviderTeamId": "81",
-          "homeProviderTeamId": "10233",
-          "finalResult": null,
-          "lastSeen": "",
+          "isFriendly": false,
           "matchId": "footy_comp_football_data_org_575404",
-          "isFriendly": false,
           "homeTeamId": "team:sabah-fk",
-          "awayTeamId": "2"
-        },
-        {
-          "away": "Barcelona",
-          "awayBadge": "",
-          "awayProviderTeamId": "133739",
-          "awaySportDbTeamId": "133739",
-          "date": "2026-11-25",
-          "home": "Sabah Baku",
-          "homeBadge": "",
-          "homeProviderTeamId": "138341",
-          "homeSportDbTeamId": "138341",
-          "id": "TheSportsDB:2594677",
-          "leagueId": "4480",
-          "isHome": false,
-          "league": "UEFA Champions League",
-          "opponent": "Sabah Baku",
-          "priority": "2",
-          "round": "5",
-          "season": "2026-2027",
-          "source": "TheSportsDB",
-          "sourceIds": {
-            "TheSportsDB": "2594677"
-          },
-          "sources": [
-            "TheSportsDB"
-          ],
-          "sourceDetail": "team-upcoming",
-          "status": "NS",
-          "finalResult": null,
-          "teamBadge": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png",
-          "teamId": "2",
-          "teamName": "Barcelona",
-          "time": "17:45:00",
-          "timestamp": "2026-11-25T17:45:00Z",
-          "venue": "Bakı Olimpiya Stadionu",
-          "isFriendly": false,
-          "matchId": "footy_comp_thesportsdb_2594677",
-          "homeTeamId": "team:sabah-baku",
-          "awayTeamId": "2"
+          "awayTeamId": "2",
+          "lastSeen": ""
         },
         {
           "away": "FC Barcelona",

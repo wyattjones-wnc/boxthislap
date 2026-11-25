@@ -10,7 +10,7 @@ const FOOTBALL_CLUB_NAME_ALIASES = Object.freeze({
   "usa women": "united states women",
 });
 
-export function isSameFootballClubName(firstName, secondName) {
+export function isSameFootballClubName(firstName, secondName, { minimumIdentityLength = 6 } = {}) {
   const first = normalizeFootballClubName(firstName);
   const second = normalizeFootballClubName(secondName);
 
@@ -20,11 +20,13 @@ export function isSameFootballClubName(firstName, secondName) {
   const firstTokens = getFootballClubIdentityTokens(first);
   const secondTokens = getFootballClubIdentityTokens(second);
   if (firstTokens.includes("women") !== secondTokens.includes("women")) return false;
+  const squadTokens = (tokens) => tokens.filter((token) => /^(?:u\d+|ii|iii|b|reserves|youth)$/.test(token)).sort().join(" ");
+  if (squadTokens(firstTokens) !== squadTokens(secondTokens)) return false;
   const shorterTokens = firstTokens.length <= secondTokens.length ? firstTokens : secondTokens;
   const longerTokens = new Set(firstTokens.length <= secondTokens.length ? secondTokens : firstTokens);
 
   return shorterTokens.length > 0 &&
-    shorterTokens.reduce((length, token) => length + token.length, 0) >= 6 &&
+    shorterTokens.reduce((length, token) => length + token.length, 0) >= minimumIdentityLength &&
     shorterTokens.every((token) => longerTokens.has(token));
 }
 

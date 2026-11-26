@@ -112,13 +112,16 @@ test("an upstream failure or invalid feed is not cached as fresh data", async ()
     2,
   );
 });
-test("only complete, live Alaska and Mississippi Senate results are accepted", () => {
+test("only complete, live or certified Alaska and Mississippi Senate results are accepted", () => {
   const data = source();
   data.results.push({ ...data.results[0], office: "H", state: "NY" });
   assert.equal(normalizeSenateResults(data).length, 2);
   for (const modify of [
     (data) => {
       data.results[0].test = true;
+    },
+    (data) => {
+      data.results[0].resultsType = "test";
     },
     (data) => {
       data.results[0].candidates[0].votes = -1;
@@ -134,6 +137,26 @@ test("only complete, live Alaska and Mississippi Senate results are accepted", (
     modify(bad);
     assert.throws(() => normalizeSenateResults(bad), { status: 502 });
   }
+});
+
+test("certifying Alaska does not make either state's results unavailable", async () => {
+  const data = source();
+  const alaska = data.results.find((race) => race.state === "AK");
+  alaska.resultsType = "certified";
+  alaska.certified = true;
+  alaska.tabulationStatus = "Vote Certified";
+  const cache = fakeCache();
+  const results = await loadLiveSenateResults(
+    new URL("https://test-certified/api/elections/2026/results?fresh=1"),
+    { cache, fetcher: async () => Response.json(data) },
+  );
+  assert.deepEqual(results.races, data.results);
+  assert.equal(cache.entries.size, 1);
+
+  data.results.forEach((race) => {
+    race.resultsType = "certified";
+  });
+  assert.deepEqual(normalizeSenateResults(data), data.results);
 });
 
 test("opening checks bypass a warm cache and request upstream revalidation", async () => {

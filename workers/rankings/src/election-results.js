@@ -16,7 +16,7 @@ export function normalizeSenateResults(data) {
       ["AK", "MS"].includes(race.state) &&
       race.office === "S" &&
       race.test === false &&
-      race.resultsType === "live",
+      ["live", "certified"].includes(race.resultsType),
   );
   for (const state of ["AK", "MS"]) {
     const matches = races.filter((race) => race.state === state);
